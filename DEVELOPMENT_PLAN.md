@@ -1,7 +1,7 @@
 # 🚀 PlanPrice.ai 开发计划
 
 > 最后更新：2026-02-27
-> 当前状态：✅ P0-1 完成 - Compare Plans 数据加载完成，功能正常
+> 当前状态：✅ P0-1 完成 + Arena 爬虫完成
 
 ---
 
@@ -81,17 +81,22 @@ coupons (6条记录)
 - ✅ `plan-anthropic.ts` — Claude Pro/Team/Enterprise
 - ✅ `plan-google-gemini.ts` — Google One AI Premium
 
+**Benchmark 抓取器（1个）**：
+- ✅ `benchmark-arena.ts` — Arena AI Leaderboard ELO 分数 **🆕 2026-02-27**
+
 **运行命令**：
 ```bash
-npm run scrape              # 运行所有抓取器
+npm run scrape              # 运行所有抓取器（包括 Arena）
 npm run scrape:api          # 仅 API 价格
 npm run scrape:plans        # 仅订阅套餐
+npm run scrape:arena        # 仅 Arena Leaderboard **🆕**
 npm run test:scraper        # 测试单个抓取器
 ```
 
 **当前数据**：
 - 57 条 API 价格记录
 - 9 条订阅套餐记录
+- 15+ 个模型的 Arena ELO 分数 **🆕**
 - 0 错误
 
 ---
@@ -612,12 +617,14 @@ psql < scripts/db/migrations/add_channel_provider.sql
 ### ✅ 完成
 - 数据库架构和迁移
 - 8个 API 抓取器 + 3个 Plan 抓取器
+- **✅ 1个 Benchmark 抓取器（Arena Leaderboard）🆕**
 - Logo 自动抓取系统
 - 核心 API 端点（8个）
 - 核心前端页面（6个）
 - i18n 系统
 - 构建系统无错误
 - **✅ P0-1: Compare Plans 数据加载（2026-02-27）**
+- **✅ Arena Leaderboard 爬虫（2026-02-27）🆕**
 
 ### 🔄 进行中
 - 无（当前暂停，等待下次开发）
