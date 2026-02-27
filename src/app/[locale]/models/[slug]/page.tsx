@@ -56,7 +56,36 @@ async function getProductWithChannels(slug: string) {
     .eq('is_available', true)
     .order('input_price_per_1m', { ascending: true });
 
-  return { product, channelPrices: channelPrices || [] };
+  // Get plans that include this model
+  const { data: plansData } = await supabase
+    .from('plans')
+    .select(`
+      *,
+      providers (
+        id,
+        name,
+        slug,
+        logo_url
+      )
+    `)
+    .eq('provider_id', product.provider_id)
+    .order('price', { ascending: true });
+
+  // Filter plans that include this model in their models array or are from the same provider
+  const relevantPlans = (plansData || []).filter((plan: any) => {
+    // Check if plan.models array includes this product slug
+    if (plan.models && Array.isArray(plan.models)) {
+      return plan.models.includes(slug) || plan.models.includes(product.slug);
+    }
+    // Include all plans from the same provider as fallback
+    return true;
+  });
+
+  return {
+    product,
+    channelPrices: channelPrices || [],
+    plans: relevantPlans || []
+  };
 }
 
 export default async function ModelPage({
@@ -71,7 +100,7 @@ export default async function ModelPage({
     notFound();
   }
 
-  const { product, channelPrices } = data;
+  const { product, channelPrices, plans } = data;
 
   // Find official and cheapest
   const officialChannel = channelPrices.find((cp: any) => cp.channels.type === 'official');
@@ -251,6 +280,174 @@ export default async function ModelPage({
         </div>
 
         <Separator className="my-8" />
+
+        {/* Subscription Plans Section */}
+        {plans.length > 0 && (
+          <>
+            <section className="mb-8">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold mb-2">💳 Subscription Plans</h2>
+                <p className="text-zinc-600">
+                  Access {product.name} through these subscription plans from {product.providers?.name}
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {plans
+                  .sort((a: any, b: any) => {
+                    // Sort by price: free first, then by price ascending
+                    if (a.tier === 'free') return -1;
+                    if (b.tier === 'free') return 1;
+                    return (a.price || 0) - (b.price || 0);
+                  })
+                  .map((plan: any, index: number) => {
+                    const isRecommended = plan.tier === 'pro' && !plan.name.includes('Max');
+                    const isBestValue = plan.annual_price && plan.price &&
+                      ((plan.price * 12 - plan.annual_price) / (plan.price * 12)) > 0.15;
+                    const isMostPopular = plan.tier === 'pro';
+
+                    return (
+                      <Card
+                        key={plan.id}
+                        className={`relative ${
+                          isRecommended
+                            ? 'border-2 border-blue-500 shadow-lg'
+                            : isBestValue
+                            ? 'border-2 border-green-500'
+                            : ''
+                        }`}
+                      >
+                        {isRecommended && (
+                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                            <Badge className="bg-blue-600 text-white">⭐ Recommended</Badge>
+                          </div>
+                        )}
+                        {isBestValue && !isRecommended && (
+                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                            <Badge className="bg-green-600 text-white">💰 Best Value</Badge>
+                          </div>
+                        )}
+
+                        <CardHeader className="pb-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            {plan.providers?.logo_url && (
+                              <img
+                                src={plan.providers.logo_url}
+                                alt={plan.providers.name}
+                                className="w-6 h-6 object-contain"
+                              />
+                            )}
+                            <CardTitle className="text-lg">{plan.name}</CardTitle>
+                          </div>
+                          <div className="mt-2">
+                            {plan.tier === 'free' ? (
+                              <div className="text-3xl font-bold">Free</div>
+                            ) : (
+                              <>
+                                <div className="text-3xl font-bold">
+                                  ${plan.price}
+                                  <span className="text-sm font-normal text-zinc-500">/month</span>
+                                </div>
+                                {plan.annual_price && (
+                                  <div className="text-sm text-zinc-600 mt-1">
+                                    ${plan.annual_price}/year
+                                    {plan.price && (
+                                      <span className="text-green-600 ml-1">
+                                        (Save {Math.round((1 - plan.annual_price / (plan.price * 12)) * 100)}%)
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={`mt-2 ${
+                              plan.tier === 'free'
+                                ? 'bg-gray-100'
+                                : plan.tier === 'pro'
+                                ? 'bg-blue-100 text-blue-800'
+                                : plan.tier === 'team'
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-orange-100 text-orange-800'
+                            }`}
+                          >
+                            {plan.tier === 'free' ? '🆓 Free Tier' :
+                             plan.tier === 'pro' ? '👤 Individual' :
+                             plan.tier === 'team' ? '👥 Team' :
+                             '🏢 Enterprise'}
+                          </Badge>
+                        </CardHeader>
+
+                        <CardContent>
+                          <div className="space-y-2 mb-4">
+                            {plan.features && plan.features.slice(0, 4).map((feature: string, idx: number) => (
+                              <div key={idx} className="flex items-start gap-2 text-sm">
+                                <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                <span className="text-zinc-700">{feature}</span>
+                              </div>
+                            ))}
+                            {plan.features && plan.features.length > 4 && (
+                              <div className="text-sm text-zinc-500 ml-6">
+                                +{plan.features.length - 4} more features
+                              </div>
+                            )}
+                          </div>
+
+                          {plan.access_from_china && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 mb-3">
+                              🇨🇳 Available in China
+                            </Badge>
+                          )}
+
+                          <Link
+                            href={`/${locale}/compare/plans/${slug}`}
+                            className="w-full"
+                          >
+                            <Button
+                              className={`w-full ${
+                                isRecommended
+                                  ? 'bg-blue-600 hover:bg-blue-700'
+                                  : ''
+                              }`}
+                              variant={isRecommended ? 'default' : 'outline'}
+                            >
+                              View Details
+                            </Button>
+                          </Link>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+              </div>
+
+              {/* Quick Comparison */}
+              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">💡</div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Which plan is right for you?</h3>
+                    <div className="text-sm text-zinc-700 dark:text-zinc-300 space-y-1">
+                      <p><strong>Free:</strong> Best for trying out {product.name} with basic usage</p>
+                      {plans.find((p: any) => p.tier === 'pro' && !p.name.includes('Max')) && (
+                        <p><strong>Pro:</strong> Ideal for individual professionals with regular usage needs</p>
+                      )}
+                      {plans.find((p: any) => p.name.includes('Max')) && (
+                        <p><strong>Max:</strong> For power users who need extended thinking and highest usage limits</p>
+                      )}
+                      {plans.find((p: any) => p.tier === 'team') && (
+                        <p><strong>Team:</strong> Perfect for teams needing collaboration and centralized billing</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <Separator className="my-8" />
+          </>
+        )}
 
         {/* Detailed Comparison Table */}
         <Card>
