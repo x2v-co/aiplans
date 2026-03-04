@@ -87,7 +87,7 @@ export default function ComparePlansIndexPage(props: {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href={`/${locale}`} className="flex items-center gap-2">
             <span className="text-2xl">💰</span>
-            <span className="text-xl font-bold">aiplans.ai</span>
+            <span className="text-xl font-bold">aiplans.dev</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             <Link href={`/${locale}`} className="text-sm font-medium hover:text-blue-600">
@@ -303,10 +303,10 @@ export default function ComparePlansIndexPage(props: {
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-lg">💰</span>
-            <span className="font-medium">aiplans.ai</span>
+            <span className="font-medium">aiplans.dev</span>
           </div>
           <p className="text-sm text-zinc-500">
-            {locale === 'zh' ? '© 2026 aiplans.ai - 全网 AI 价格对比' : '© 2026 aiplans.ai - Compare AI pricing & save money'}
+            {locale === 'zh' ? '© 2026 aiplans.dev - 全网 AI 价格对比' : '© 2026 aiplans.dev - Compare AI pricing & save money'}
           </p>
         </div>
       </footer>

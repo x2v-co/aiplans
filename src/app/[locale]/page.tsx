@@ -19,7 +19,7 @@ export default function HomePage(props: { params: Promise<{ locale: string }> })
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href={`/${locale}`} className="flex items-center gap-2">
             <span className="text-2xl">💰</span>
-            <span className="text-xl font-bold">aiplans.ai</span>
+            <span className="text-xl font-bold">aiplans.dev</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             <Link href={`/${locale}`} className="text-sm font-medium text-blue-600">
@@ -153,7 +153,7 @@ export default function HomePage(props: { params: Promise<{ locale: string }> })
       {/* Footer */}
       <footer className="border-t py-8 mt-12">
         <div className="container mx-auto px-4 text-center text-sm text-zinc-500">
-          {locale === 'zh' ? '© 2026 aiplans.ai - 全网 AI 价格对比' : '© 2026 aiplans.ai - Compare AI Pricing & Save Money'}
+          {locale === 'zh' ? '© 2026 aiplans.dev - 全网 AI 价格对比' : '© 2026 aiplans.dev - Compare AI Pricing & Save Money'}
         </div>
       </footer>
     </div>
