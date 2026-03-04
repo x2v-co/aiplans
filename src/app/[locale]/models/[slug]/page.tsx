@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,40 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Check, ExternalLink, TrendingDown, Zap, Globe } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { use } from "react";
+
+const baseUrl = 'https://planprice.ai';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const isZh = locale === 'zh';
+
+  // Get product name
+  const { data: product } = await supabase.from('products').select('name').eq('slug', slug).single();
+  const productName = product?.name || slug;
+
+  const title = isZh
+    ? `${productName} API 价格对比 - ${productName} 各渠道价格 | PlanPrice.ai`
+    : `${productName} API Price Comparison - All Channels | PlanPrice.ai`;
+
+  const description = isZh
+    ? `对比 ${productName} 在官方、Azure、OpenRouter、硅基流动等渠道的 API 价格。找到最便宜的 ${productName} API 供应商。`
+    : `Compare ${productName} API prices across official, Azure, OpenRouter, SiliconFlow and other channels. Find the cheapest ${productName} API provider.`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `${baseUrl}/${locale}/models/${slug}`,
+      languages: { en: `${baseUrl}/en/models/${slug}`, zh: `${baseUrl}/zh/models/${slug}` },
+    },
+    openGraph: {
+      title,
+      description,
+      url: `${baseUrl}/${locale}/models/${slug}`,
+      type: 'website',
+    },
+  };
+}
 
 // Channel type labels
 const channelTypeLabels: Record<string, { label: string; color: string }> = {

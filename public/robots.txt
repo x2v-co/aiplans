@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://planprice.ai/sitemap.xml
+
+# Geo-targeting
+# English pages
+User-agent: Googlebot
+Request-uri: /en/*
+Allow: /en/*
+
+# Chinese pages
+User-agent: Googlebot
+Request-uri: /zh/*
+Allow: /zh/*
+
+# Block irrelevant bots
+Disallow: /api/
+Disallow: /_next/

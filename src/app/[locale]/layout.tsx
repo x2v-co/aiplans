@@ -38,6 +38,11 @@ export default function LocaleLayout({
 
   return (
     <html lang={locale}>
+      <head>
+        <link rel="alternate" hrefLang="en" href="https://planprice.ai/en" />
+        <link rel="alternate" hrefLang="zh" href="https://planprice.ai/zh" />
+        <link rel="alternate" hrefLang="x-default" href="https://planprice.ai" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <TranslationsProvider messages={messages}>
           {children}
