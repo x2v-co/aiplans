@@ -35,38 +35,63 @@ export async function GET(request: Request) {
 
     let products = data || [];
 
-    // Filter featured models (hot models)
-    if (featured === 'true') {
-      const hotModelSlugs = [
-        'gpt-4o',
-        'claude-3-5-sonnet',
-        'deepseek-v3',
-        'gemini-1-5-pro',
-        'claude-3-opus',
-        'gpt-4o-mini',
-        'llama-3-1-405b',
-        'qwen-max',
-      ];
-      products = products.filter((p: any) => hotModelSlugs.includes(p.slug));
-    }
-
-    // Include plan count if requested
+    // Include plan count if requested (must do this before featured filtering)
     if (includePlanCount === 'true') {
       const productIds = products.map((p: any) => p.id);
-      const { data: plansData } = await supabase
-        .from('plans')
-        .select('product_id')
+      const { data: modelsData } = await supabase
+        .from('models')
+        .select('product_id, plan_id')
         .in('product_id', productIds);
 
       const planCountMap = new Map();
-      (plansData || []).forEach((plan: any) => {
-        planCountMap.set(plan.product_id, (planCountMap.get(plan.product_id) || 0) + 1);
+      (modelsData || []).forEach((model: any) => {
+        planCountMap.set(model.product_id, (planCountMap.get(model.product_id) || 0) + 1);
       });
 
       products = products.map((product: any) => ({
         ...product,
         planCount: planCountMap.get(product.id) || 0,
       }));
+    }
+
+    // Filter featured models (hot models) - based on Arena ELO AND planCount
+    if (featured === 'true') {
+      // Automatically select top models based on Arena ELO score and plan availability
+      products = products
+        .filter((p: any) => {
+          // Only include models that have plans available
+          if (includePlanCount === 'true' && (p.planCount || 0) === 0) return false;
+          return true;
+        })
+        .sort((a: any, b: any) => {
+          // Sort by Arena ELO first, then by plan count
+          const aElo = a.benchmark_arena_elo || 0;
+          const bElo = b.benchmark_arena_elo || 0;
+          if (bElo !== aElo) {
+            return bElo - aElo;
+          }
+          // Same ELO, sort by plan count
+          return (b.planCount || 0) - (a.planCount || 0);
+        });
+
+      // Keep only the highest ELO model per provider
+      const providerTopModels = new Map();
+      products.forEach((p: any) => {
+        const providerId = p.provider?.id || p.provider_id;
+        const currentTop = providerTopModels.get(providerId);
+        const currentElo = currentTop?.benchmark_arena_elo || 0;
+        const newElo = p.benchmark_arena_elo || 0;
+        if (newElo > currentElo) {
+          providerTopModels.set(providerId, p);
+        }
+      });
+
+      // Sort by ELO descending and take top 8
+      products = Array.from(providerTopModels.values())
+        .sort((a: any, b: any) => {
+          return (b.benchmark_arena_elo || 0) - (a.benchmark_arena_elo || 0);
+        })
+        .slice(0, 8);
     }
 
     return NextResponse.json(products);

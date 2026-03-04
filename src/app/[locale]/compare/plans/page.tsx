@@ -39,7 +39,15 @@ export default function ComparePlansIndexPage(props: {
         // 1. Load hot models
         const hotModelsResponse = await fetch('/api/products?featured=true&include_plan_count=true&type=llm');
         const hotModelsData = await hotModelsResponse.json();
-        setHotModelsList(hotModelsData);
+
+        // Sort by Arena ELO score (highest first)
+        const sortedHotModels = hotModelsData.sort((a: any, b: any) => {
+          const aElo = a.benchmark_arena_elo || 0;
+          const bElo = b.benchmark_arena_elo || 0;
+          return bElo - aElo;
+        });
+
+        setHotModelsList(sortedHotModels);
 
         // 2. Load providers
         const providersResponse = await fetch('/api/providers');
@@ -85,14 +93,11 @@ export default function ComparePlansIndexPage(props: {
             <Link href={`/${locale}`} className="text-sm font-medium hover:text-blue-600">
               {tNav('home')}
             </Link>
-            <Link href={`/${locale}/plans`} className="text-sm font-medium hover:text-blue-600">
-              {tNav('plans')}
+            <Link href={`/${locale}/compare/plans`} className="text-sm font-medium text-blue-600">
+              {tNav('comparePlans')}
             </Link>
             <Link href={`/${locale}/api-pricing`} className="text-sm font-medium hover:text-blue-600">
               {tNav('apiPricing')}
-            </Link>
-            <Link href={`/${locale}/compare/plans`} className="text-sm font-medium text-blue-600">
-              {tNav('comparePlans')}
             </Link>
             <Link href={`/${locale}/coupons`} className="text-sm font-medium hover:text-blue-600">
               {tNav('coupons')}

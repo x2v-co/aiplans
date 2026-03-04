@@ -9,12 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Check, Filter, X, Search } from "lucide-react";
+import { ArrowRight, Check, Filter, Search, Globe, MapPin } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import {
+  formatPrice,
+  formatPriceSimple,
+  calculateSavingsPercent,
+  type CurrencyCode,
+  type PriceUnit,
+} from "@/lib/currency";
+import { convertToUSD } from "@/lib/currency-conversion";
 
-interface Product {
+interface GroupedProduct {
   id: number;
   name: string;
   slug: string;
@@ -27,7 +34,15 @@ interface Product {
     name: string;
     slug: string;
     logo_url: string;
+    region?: string;
   };
+  baseName: string;
+  versions: ChannelPrice[];
+  hasChinaVersion: boolean;
+  hasGlobalVersion: boolean;
+  cheapestChina?: ChannelPrice;
+  cheapestGlobal?: ChannelPrice;
+  versionCounts: number;
 }
 
 interface ChannelPrice {
@@ -36,26 +51,15 @@ interface ChannelPrice {
   channel_id: number;
   input_price_per_1m: number;
   output_price_per_1m: number;
+  currency: CurrencyCode;
+  price_unit: PriceUnit;
   channels: {
     id: number;
     name: string;
+    slug: string;
     type: string;
     region: string;
     access_from_china: boolean;
-    provider_id?: number;
-    providers?: {
-      logo_url: string;
-    };
-  };
-  products: {
-    id: number;
-    name: string;
-    slug: string;
-    providers?: {
-      id: number;
-      name: string;
-      logo_url: string;
-    };
   };
 }
 
@@ -65,38 +69,25 @@ export default function ApiPricingPage() {
   const params = useParams();
   const locale = params.locale as string;
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [channelPrices, setChannelPrices] = useState<ChannelPrice[]>([]);
+  // 获取嵌套翻译的辅助函数
+  const tChina = () => t('china' as any);
+  const tGlobal = () => t('global' as any);
+
+  const [products, setProducts] = useState<GroupedProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
-  const [selectedChannelTypes, setSelectedChannelTypes] = useState<string[]>([]);
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
-  const [showChinaOnly, setShowChinaOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<"price" | "name" | "elo">("price");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortBy, setSortBy] = useState<"price" | "name" | "elo">("elo");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [productsRes, pricesRes] = await Promise.all([
-          fetch("/api/products?type=llm"),
-          fetch("/api/channels/1"),
-        ]);
-
-        const productsData = await productsRes.json();
-        setProducts(productsData);
-
-        // Fetch channel prices for each product
-        const pricesPromises = productsData.map((p: Product) =>
-          fetch(`/api/channels/${p.id}`).then(res => res.json())
-        );
-        const allPrices = await Promise.all(pricesPromises);
-        setChannelPrices(allPrices.flat());
+        const res = await fetch("/api/products/grouped?type=llm");
+        const data = await res.json();
+        setProducts(data);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching grouped data:", error);
       } finally {
         setLoading(false);
       }
@@ -104,81 +95,29 @@ export default function ApiPricingPage() {
     fetchData();
   }, []);
 
-  // Get unique providers from products
-  const providers = useMemo(() => {
-    const unique = new Map<number, { name: string; logo: string }>();
-    products.forEach(p => {
-      if (p.providers && !unique.has(p.provider_id)) {
-        unique.set(p.provider_id, {
-          name: p.providers.name,
-          logo: p.providers.logo_url
-        });
-      }
-    });
-    return Array.from(unique.entries()).map(([id, data]) => ({ id, ...data }));
-  }, [products]);
-
-  // Get unique channel types
-  const channelTypes = useMemo(() => {
-    const types = new Set(channelPrices.map(cp => cp.channels.type));
-    return Array.from(types);
-  }, [channelPrices]);
-
-  // Get unique regions
-  const regions = useMemo(() => {
-    const r = new Set(channelPrices.map(cp => cp.channels.region).filter(Boolean));
-    return Array.from(r);
-  }, [channelPrices]);
-
-  // Filtered and sorted prices
-  const filteredPrices = useMemo(() => {
-    let filtered = channelPrices.filter(cp => {
-      const product = products.find(p => p.id === cp.product_id);
-      if (!product) return false;
-
-      // Search filter
+  const filteredProducts = useMemo(() => {
+    let filtered = products.filter(p => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchProduct = product.name.toLowerCase().includes(query);
-        const matchChannel = cp.channels.name.toLowerCase().includes(query);
-        if (!matchProduct && !matchChannel) return false;
+        return p.name.toLowerCase().includes(query) || p.baseName.toLowerCase().includes(query);
       }
-
-      // Provider filter
-      if (selectedProviders.length > 0 && product.provider_id) {
-        if (!selectedProviders.includes(product.provider_id.toString())) return false;
-      }
-
-      // Channel type filter
-      if (selectedChannelTypes.length > 0) {
-        if (!selectedChannelTypes.includes(cp.channels.type)) return false;
-      }
-
-      // Region filter
-      if (selectedRegions.length > 0 && cp.channels.region) {
-        if (!selectedRegions.includes(cp.channels.region)) return false;
-      }
-
-      // China only filter
-      if (showChinaOnly && !cp.channels.access_from_china) return false;
-
       return true;
     });
 
-    // Sort
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "price":
+          // 使用最便宜的官方价格比较
+          const priceA = getCheapestOfficialPrice(a);
+          const priceB = getCheapestOfficialPrice(b);
           return sortOrder === "asc"
-            ? (a.input_price_per_1m || 0) - (b.input_price_per_1m || 0)
-            : (b.input_price_per_1m || 0) - (a.input_price_per_1m || 0);
+            ? (priceA || Infinity) - (priceB || Infinity)
+            : (priceB || Infinity) - (priceA || Infinity);
         case "name":
-          const nameA = products.find(p => p.id === a.product_id)?.name || "";
-          const nameB = products.find(p => p.id === b.product_id)?.name || "";
-          return sortOrder === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+          return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
         case "elo":
-          const eloA = products.find(p => p.id === a.product_id)?.benchmark_arena_elo || 0;
-          const eloB = products.find(p => p.id === b.product_id)?.benchmark_arena_elo || 0;
+          const eloA = a.benchmark_arena_elo || 0;
+          const eloB = b.benchmark_arena_elo || 0;
           return sortOrder === "asc" ? eloA - eloB : eloB - eloA;
         default:
           return 0;
@@ -186,17 +125,23 @@ export default function ApiPricingPage() {
     });
 
     return filtered;
-  }, [channelPrices, products, searchQuery, selectedProviders, selectedChannelTypes, selectedRegions, showChinaOnly, sortBy, sortOrder]);
+  }, [products, searchQuery, sortBy, sortOrder]);
+
+  function getCheapestOfficialPrice(product: GroupedProduct): number | null {
+    const officialPrices = product.versions.filter(cp =>
+      cp.channels.type === 'official'
+    );
+    if (officialPrices.length === 0) return null;
+    const prices = officialPrices.map(cp => cp.input_price_per_1m).filter((p): p is number => p != null);
+    if (prices.length === 0) return null;
+    return Math.min(...prices);
+  }
 
   const clearFilters = () => {
     setSearchQuery("");
-    setSelectedProviders([]);
-    setSelectedChannelTypes([]);
-    setSelectedRegions([]);
-    setShowChinaOnly(false);
   };
 
-  const hasActiveFilters = searchQuery || selectedProviders.length > 0 || selectedChannelTypes.length > 0 || selectedRegions.length > 0 || showChinaOnly;
+  const hasActiveFilters = searchQuery !== "";
 
   if (loading) {
     return (
@@ -206,20 +151,20 @@ export default function ApiPricingPage() {
     );
   }
 
-  // Group prices by product for display
-  const pricesByProduct: Record<number, ChannelPrice[]> = {};
-  for (const cp of filteredPrices) {
-    if (!pricesByProduct[cp.product_id]) {
-      pricesByProduct[cp.product_id] = [];
-    }
-    pricesByProduct[cp.product_id].push(cp);
-  }
-
-  const filteredProducts = products.filter(p => pricesByProduct[p.id]?.length > 0);
+  // 对价格进行分组（按同一模型的同一版本）
+  const pricesByVersion = new Map<string, ChannelPrice[]>();
+  products.forEach(p => {
+    p.versions.forEach(cp => {
+      const key = `${p.baseName}|${cp.channels.name}|${cp.channels.region}`;
+      if (!pricesByVersion.has(key)) {
+        pricesByVersion.set(key, []);
+      }
+      pricesByVersion.get(key)!.push(cp);
+    });
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
-      {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href={`/${locale}`} className="flex items-center gap-2">
@@ -244,16 +189,14 @@ export default function ApiPricingPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
+          <p className="text-zinc-600 dark:text-zinc-400 mb-6">
             {t('subtitle')}
           </p>
         </div>
 
-        {/* Filters */}
         <Card className="mb-6">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-4">
@@ -266,154 +209,42 @@ export default function ApiPricingPage() {
               )}
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-              {/* Search */}
-              <div className="lg:col-span-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                  <Input
-                    placeholder={t('searchPlaceholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-
-              {/* Provider Filter */}
-              <Select
-                value={selectedProviders[0] || "all"}
-                onValueChange={(value) => setSelectedProviders(value === "all" ? [] : [value])}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('allProviders')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('allProviders')}</SelectItem>
-                  {providers.map(p => (
-                    <SelectItem key={p.id} value={p.id.toString()}>
-                      {p.logo} {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Channel Type Filter */}
-              <Select
-                value={selectedChannelTypes[0] || "all"}
-                onValueChange={(value) => setSelectedChannelTypes(value === "all" ? [] : [value])}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('channelType')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('allTypes')}</SelectItem>
-                  {channelTypes.map(type => (
-                    <SelectItem key={type} value={type}>
-                      {t(`channelTypes.${type}` as any)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Region Filter */}
-              <Select
-                value={selectedRegions[0] || "all"}
-                onValueChange={(value) => setSelectedRegions(value === "all" ? [] : [value])}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('region')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('allRegions')}</SelectItem>
-                  <SelectItem value="global">{t('global')}</SelectItem>
-                  <SelectItem value="china">{t('china')}</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Sort */}
-              <Select
-                value={`${sortBy}-${sortOrder}`}
-                onValueChange={(value) => {
-                  const [by, order] = value.split("-") as ["price" | "name" | "elo", "asc" | "desc"];
-                  setSortBy(by);
-                  setSortOrder(order);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('sortBy')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="price-asc">{t('priceLowToHigh')}</SelectItem>
-                  <SelectItem value="price-desc">{t('priceHighToLow')}</SelectItem>
-                  <SelectItem value="name-asc">{t('nameAZ')}</SelectItem>
-                  <SelectItem value="name-desc">{t('nameZA')}</SelectItem>
-                  <SelectItem value="elo-desc">{t('performanceHighToLow')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* China Only & Active Filters */}
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="china-only"
-                  checked={showChinaOnly}
-                  onCheckedChange={(checked) => setShowChinaOnly(checked as boolean)}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Input
+                  placeholder={t('searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
                 />
-                <label htmlFor="china-only" className="text-sm cursor-pointer">
-                  {t('chinaAccessOnly')}
-                </label>
               </div>
 
-              {/* Active filter badges */}
-              <div className="flex flex-wrap gap-2">
-                {selectedProviders.map(id => {
-                  const provider = providers.find(p => p.id === parseInt(id));
-                  return provider ? (
-                    <Badge key={id} variant="secondary" className="gap-1 pr-1">
-                      <img src={provider.logo} alt={provider.name} className="w-4 h-4 rounded" />
-                      {provider.name}
-                      <button onClick={() => setSelectedProviders(prev => prev.filter(p => p !== id))} className="ml-1 hover:text-red-500">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ) : null;
-                })}
-                {selectedChannelTypes.map(type => (
-                  <Badge key={type} variant="secondary" className="gap-1 pr-1">
-                    {t(`channelTypes.${type}` as any)}
-                    <button onClick={() => setSelectedChannelTypes(prev => prev.filter(t => t !== type))} className="ml-1 hover:text-red-500">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-                {selectedRegions.map(region => (
-                  <Badge key={region} variant="secondary" className="gap-1 pr-1">
-                    {region === "global" ? t('global') : region === "china" ? t('china') : region}
-                    <button onClick={() => setSelectedRegions(prev => prev.filter(r => r !== region))} className="ml-1 hover:text-red-500">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-                {showChinaOnly && (
-                  <Badge variant="secondary" className="gap-1 bg-green-100 text-green-800 pr-1">
-                    🇨🇳 {t('chinaAccessOnly')}
-                    <button onClick={() => setShowChinaOnly(false)} className="ml-1 hover:text-red-500">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                )}
+              <div>
+                <Select
+                  value={`${sortBy}-${sortOrder}`}
+                  onValueChange={(value) => {
+                    const [by, order] = value.split("-") as ["price" | "name" | "elo", "asc" | "desc"];
+                    setSortBy(by);
+                    setSortOrder(order);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('sortBy')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="price-asc">{t('priceLowToHigh')}</SelectItem>
+                    <SelectItem value="price-desc">{t('priceHighToLow')}</SelectItem>
+                    <SelectItem value="name-asc">{t('nameAZ')}</SelectItem>
+                    <SelectItem value="name-desc">{t('nameZA')}</SelectItem>
+                    <SelectItem value="elo-desc">{t('performanceHighToLow')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-
-              <span className="ml-auto text-sm text-zinc-500">
-                {t('results', { count: filteredPrices.length })}
-              </span>
             </div>
           </CardContent>
         </Card>
 
-        {/* Pricing Table */}
         <Card>
           <CardHeader>
             <CardTitle>{t('modelChannelPrices')}</CardTitle>
@@ -424,104 +255,269 @@ export default function ApiPricingPage() {
                 {t('noResults')}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('model')}</TableHead>
-                    <TableHead>{t('channel')}</TableHead>
-                    <TableHead>{t('type')}</TableHead>
-                    <TableHead className="text-right">{t('inputPer1M')}</TableHead>
-                    <TableHead className="text-right">{t('outputPer1M')}</TableHead>
-                    <TableHead className="text-center">{t('chinaAccess')}</TableHead>
-                    <TableHead className="text-right">{t('savings')}</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts.map((product) => {
-                    const prices = pricesByProduct[product.id] || [];
-                    const cheapest = prices.reduce((min, cp) =>
-                      (cp.input_price_per_1m || 0) < (min.input_price_per_1m || Infinity) ? cp : min
-                    , prices[0]);
+              <div className="space-y-6">
+                {filteredProducts.map((product) => {
+                  // 按渠道名称分组版本
+                  const versionsByChannel = new Map<string, ChannelPrice[]>();
+                  product.versions.forEach(cp => {
+                    const key = cp.channels.name;
+                    if (!versionsByChannel.has(key)) {
+                      versionsByChannel.set(key, []);
+                    }
+                    versionsByChannel.get(key)!.push(cp);
+                  });
 
-                    return prices.map((cp, idx) => {
-                      const isCheapest = cp.id === cheapest?.id;
-                      const officialPrice = prices.find(p => p.channels.type === 'official');
-                      const savings = officialPrice && officialPrice.input_price_per_1m > cp.input_price_per_1m
-                        ? (((officialPrice.input_price_per_1m - cp.input_price_per_1m) / officialPrice.input_price_per_1m) * 100).toFixed(0)
-                        : '0';
+                  // 获取最便宜的官方价格（用于计算节省）
+                  const officialPrices = product.versions.filter(cp => cp.channels.type === 'official' && cp.input_price_per_1m != null);
+                  const cheapestOfficial = officialPrices.length > 0
+                    ? officialPrices.reduce((min, cp) =>
+                        (cp.input_price_per_1m || Infinity) < (min.input_price_per_1m || Infinity) ? cp : min
+                      )
+                    : null;
 
-                      return (
-                        <TableRow key={cp.id} className={idx > 0 ? "border-t-0" : ""}>
-                          {idx === 0 && (
-                            <TableCell rowSpan={prices.length} className="font-medium align-top">
-                              <Link href={`/${locale}/models/${product.slug}`} className="hover:text-blue-600">
-                                {product.name}
-                              </Link>
-                              <div className="flex items-center gap-1 text-xs text-zinc-500 mt-1">
-                                {product.providers && (
-                                  <>
-                                    <img src={product.providers.logo_url} alt={product.providers.name} className="w-4 h-4 rounded" />
-                                    <span>{product.providers.name}</span>
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                          )}
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className={isCheapest ? "font-medium" : ""}>
-                                {cp.channels.name}
-                              </span>
-                              {isCheapest && (
-                                <Badge className="bg-green-600 text-xs">{t('cheapest')}</Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {t(`channelTypes.${cp.channels.type}` as any)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-mono">
-                            ${cp.input_price_per_1m?.toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-right font-mono">
-                            ${cp.output_price_per_1m?.toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {cp.channels.access_from_china ? (
-                              <Check className="w-4 h-4 text-green-600 mx-auto" />
-                            ) : (
-                              <span className="text-zinc-400">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {Number(savings) > 0 ? (
-                              <span className="text-green-600 font-medium">-{savings}%</span>
-                            ) : (
-                              <span className="text-zinc-400">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Link href={`/${locale}/models/${product.slug}`}>
-                              <Button variant="ghost" size="sm" className="gap-1">
-                                {t('details')} <ArrowRight className="w-3 h-3" />
-                              </Button>
+                  return (
+                    <div key={product.id} className="border-b pb-6 last:border-0">
+                      {/* 模型名称和基本信息 */}
+                      <div className="flex items-start gap-4 mb-4">
+                        {product.providers?.logo_url && (
+                          <img
+                            src={product.providers.logo_url}
+                            alt={product.providers.name}
+                            className="w-12 h-12 rounded-lg flex-shrink-0"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Link
+                              href={`/${locale}/models/${product.slug}`}
+                              className="text-xl font-bold hover:text-blue-600"
+                            >
+                              {product.name}
                             </Link>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    });
-                  })}
-                </TableBody>
-              </Table>
+                            {product.benchmark_arena_elo && (
+                              <Badge variant="outline" className="ml-2">
+                                ⭐ {product.benchmark_arena_elo}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                            {product.providers?.name} • {product.context_window ? product.context_window.toLocaleString() : 'N/A'} tokens
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 国内版和国际版价格表格 */}
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{t('channel')}</TableHead>
+                            <TableHead className="text-center w-20">{t('region')}</TableHead>
+                            <TableHead className="text-right">{t('inputPer1M')}</TableHead>
+                            <TableHead className="text-right">{t('outputPer1M')}</TableHead>
+                            <TableHead className="text-right">{t('savings')}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Array.from(versionsByChannel.entries()).map(([channelName, prices]) => {
+                            // 按国内/国际版本分组
+                            const chinaVersion = prices.find(cp => cp.channels.region === 'china');
+                            const globalVersion = prices.find(cp => cp.channels.region === 'global');
+                            const isOfficial = prices.some(cp => cp.channels.type === 'official');
+
+                            // 如果是官方渠道且同时有国内和国际版本，合并显示
+                            if (isOfficial && chinaVersion && globalVersion) {
+                              const savingsChina = cheapestOfficial && cheapestOfficial.input_price_per_1m != null &&
+                                  chinaVersion.input_price_per_1m != null &&
+                                  chinaVersion.input_price_per_1m < cheapestOfficial.input_price_per_1m
+                                ? calculateSavingsPercent(
+                                    chinaVersion.input_price_per_1m,
+                                    chinaVersion.currency || 'USD',
+                                    cheapestOfficial.input_price_per_1m,
+                                    cheapestOfficial.currency || 'USD'
+                                  )
+                                : 0;
+                              const savingsGlobal = cheapestOfficial && cheapestOfficial.input_price_per_1m != null &&
+                                  globalVersion.input_price_per_1m != null &&
+                                  globalVersion.input_price_per_1m < cheapestOfficial.input_price_per_1m
+                                ? calculateSavingsPercent(
+                                    globalVersion.input_price_per_1m,
+                                    globalVersion.currency || 'USD',
+                                    cheapestOfficial.input_price_per_1m,
+                                    cheapestOfficial.currency || 'USD'
+                                  )
+                                : 0;
+
+                              return (
+                                <TableRow key={channelName}>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex flex-col gap-1">
+                                        {/* 国内版 */}
+                                        <div key="china-version" className="flex items-center gap-2">
+                                          <MapPin className="w-3 h-3 text-zinc-400" />
+                                          <span className="text-sm font-medium">
+                                            {channelName} {tChina()}
+                                          </span>
+                                          {chinaVersion.channels.access_from_china && (
+                                            <Check className="w-3 h-3 text-green-600" />
+                                          )}
+                                        </div>
+                                        {/* 国际版 */}
+                                        <div key="global-version" className="flex items-center gap-2">
+                                          <Globe className="w-3 h-3 text-zinc-400" />
+                                          <span className="text-sm font-medium">
+                                            {channelName} {tGlobal()}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="outline">
+                                      {t('channelTypes.official')}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex flex-col gap-1">
+                                      {/* 国内版价格 */}
+                                      <div key="china-input-price" className="flex items-center gap-2">
+                                        <span className="text-zinc-500">{t('china')}:</span>
+                                        <span className="font-mono text-sm">
+                                          {formatPrice(chinaVersion.input_price_per_1m, chinaVersion.currency || 'USD', locale)}
+                                        </span>
+                                      </div>
+                                      {/* 国际版价格 */}
+                                      <div key="global-input-price" className="flex items-center gap-2">
+                                        <span className="text-zinc-500">{t('global')}:</span>
+                                        <span className="font-mono text-sm">
+                                          {formatPrice(globalVersion.input_price_per_1m, globalVersion.currency || 'USD', locale)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex flex-col gap-1">
+                                      {/* 国内版价格 */}
+                                      <div key="china-output-price" className="flex items-center gap-2">
+                                        <span className="text-zinc-500">{t('china')}:</span>
+                                        <span className="font-mono text-sm">
+                                          {formatPrice(chinaVersion.output_price_per_1m, chinaVersion.currency || 'USD', locale)}
+                                        </span>
+                                      </div>
+                                      {/* 国际版价格 */}
+                                      <div key="global-output-price" className="flex items-center gap-2">
+                                        <span className="text-zinc-500">{t('global')}:</span>
+                                        <span className="font-mono text-sm">
+                                          {formatPrice(globalVersion.output_price_per_1m, globalVersion.currency || 'USD', locale)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex flex-col gap-1">
+                                      {/* 国内版节省 */}
+                                      <div key="china-savings" className="flex items-center gap-2">
+                                        <span className="text-zinc-500">{t('china')}:</span>
+                                        {savingsChina > 0 ? (
+                                          <span className="text-green-600 font-medium text-sm">-{savingsChina}%</span>
+                                        ) : (
+                                          <span className="text-zinc-400 text-sm">-</span>
+                                        )}
+                                      </div>
+                                      {/* 国际版节省 */}
+                                      <div key="global-savings" className="flex items-center gap-2">
+                                        <span className="text-zinc-500">{t('global')}:</span>
+                                        {savingsGlobal > 0 ? (
+                                          <span className="text-green-600 font-medium text-sm">-{savingsGlobal}%</span>
+                                        ) : (
+                                          <span className="text-zinc-400 text-sm">-</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            }
+
+                            // 标准单行显示（非合并的国内/国际版本）
+                            return prices.map((cp, idx) => {
+                              const savings = cheapestOfficial && cheapestOfficial.input_price_per_1m != null &&
+                                  cp.input_price_per_1m != null &&
+                                  cp.input_price_per_1m < cheapestOfficial.input_price_per_1m
+                                ? calculateSavingsPercent(
+                                    cp.input_price_per_1m,
+                                    cp.currency || 'USD',
+                                    cheapestOfficial.input_price_per_1m,
+                                    cheapestOfficial.currency || 'USD'
+                                  )
+                                : 0;
+
+                              return (
+                                <TableRow key={`${cp.id}-${idx}`}>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <span className={cp === cheapestOfficial ? "font-medium" : ""}>
+                                        {cp.channels.name}
+                                      </span>
+                                      {cp.channels.access_from_china && (
+                                        <Check className="w-3 h-3 text-green-600" />
+                                      )}
+                                      {cp.channels.region === 'china' && (
+                                        <Badge className="ml-2 text-xs" variant="outline">
+                                          🇨🇳
+                                        </Badge>
+                                      )}
+                                      {cp.channels.region === 'global' && (
+                                        <Badge className="ml-2 text-xs" variant="outline">
+                                          🌍
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="outline">
+                                      {t(`channelTypes.${cp.channels.type}` as any)}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono">
+                                    {formatPrice(cp.input_price_per_1m, cp.currency || 'USD', locale)}
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono">
+                                    {formatPrice(cp.output_price_per_1m, cp.currency || 'USD', locale)}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {savings > 0 ? (
+                                      <span className="text-green-600 font-medium">-{savings}%</span>
+                                    ) : cp === cheapestOfficial ? (
+                                      <Badge className="bg-green-600 text-xs">{t('cheapest')}</Badge>
+                                    ) : (
+                                      <span className="text-zinc-400">-</span>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            });
+                          })}
+                        </TableBody>
+                      </Table>
+
+                      {/* 详情按钮 */}
+                      <div className="mt-4 flex justify-end">
+                        <Link href={`/${locale}/models/${product.slug}`}>
+                          <Button variant="ghost" size="sm" className="gap-1">
+                            {t('details')} <ArrowRight className="w-3 h-3" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </CardContent>
         </Card>
       </main>
 
-      {/* Footer */}
       <footer className="border-t py-8 mt-12">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">

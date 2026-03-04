@@ -56,35 +56,66 @@ async function getProductWithChannels(slug: string) {
     .eq('is_available', true)
     .order('input_price_per_1m', { ascending: true });
 
-  // Get plans that include this model
-  const { data: plansData } = await supabase
-    .from('plans')
+  // Get plans that include this model via the models table
+  const { data: modelPlans } = await supabase
+    .from('models')
     .select(`
-      *,
-      providers (
-        id,
-        name,
-        slug,
-        logo_url
+      plan_id,
+      is_available,
+      override_rpm,
+      override_qps,
+      override_input_price_per_1m,
+      override_output_price_per_1m,
+      max_output_tokens,
+      plans:plan_id (
+        *,
+        providers:provider_id (
+          id,
+          name,
+          slug,
+          logo_url
+        )
       )
     `)
-    .eq('provider_id', product.provider_id)
-    .order('price', { ascending: true });
+    .eq('product_id', product.id)
+    .eq('is_available', true)
+    .order('plans(price)', { ascending: true });
 
-  // Filter plans that include this model in their models array or are from the same provider
-  const relevantPlans = (plansData || []).filter((plan: any) => {
-    // Check if plan.models array includes this product slug
-    if (plan.models && Array.isArray(plan.models)) {
-      return plan.models.includes(slug) || plan.models.includes(product.slug);
+  // Get plan IDs for fetching
+  const planIds = (modelPlans || []).map((m: any) => m.plan_id);
+
+  // Fetch full plan details for all matching plans
+  const { data: plansData } = planIds.length > 0 ? await supabase
+    .from('plans')
+    .select('*')
+    .in('id', planIds)
+    .order('price', { ascending: true }) : { data: [] };
+
+  // Create a map of plan_id to model overrides
+  const modelOverridesMap = new Map();
+  (modelPlans || []).forEach((m: any) => {
+    if (m.plan_id && m.plans) {
+      modelOverridesMap.set(m.plan_id, {
+        overrideRpm: m.override_rpm,
+        overrideQps: m.override_qps,
+        overrideInputPricePer1m: m.override_input_price_per_1m,
+        overrideOutputPricePer1m: m.override_output_price_per_1m,
+        maxOutputTokens: m.max_output_tokens,
+      });
     }
-    // Include all plans from the same provider as fallback
-    return true;
   });
+
+  // Add overrides to plan data
+  const plansWithProvider = (plansData || []).map((plan: any) => ({
+    ...plan,
+    providers: product.providers,
+    overrides: modelOverridesMap.get(plan.id),
+  }));
 
   return {
     product,
     channelPrices: channelPrices || [],
-    plans: relevantPlans || []
+    plans: plansWithProvider || []
   };
 }
 

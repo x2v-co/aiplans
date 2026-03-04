@@ -50,16 +50,16 @@ function normalizeArenaModelName(name: string): string {
 const MODEL_NAME_MAPPING: Record<string, string> = {
   'gpt-5-2-chat-latest': 'gpt-4o',  // Map to existing GPT-4o until GPT-5 is in DB
   'gpt-5-2-high': 'gpt-4o',
-  'claude-opus-4-6': 'claude-opus-4-6',  // Exact match exists
-  'claude-opus-4-6-thinking': 'claude-opus-4-6',
-  'claude-sonnet-4-6': 'claude-sonnet-4-6',  // Exact match exists
+  'claude-opus-4-6': 'claude-opus-4.6',  // Exact match exists
+  'claude-opus-4-6-thinking': 'claude-opus-4.6',
+  'claude-sonnet-4-6': 'claude-sonnet-4.6',  // Exact match exists
   'claude-opus-4-5-thinking': 'claude-3-opus',  // Map to Claude 3 Opus
   'claude-opus-4-5-20251101-thinking-32k': 'claude-3-opus',
-  'gemini-3-1-pro-preview': 'gemini-1-5-pro',  // Map to Gemini 1.5 Pro
+  'gemini-3-1-pro-preview': 'gemini-1-5-pro',  // Map to Gemini 1.5 Pro (hyphen format in DB)
   'gemini-3-pro': 'gemini-1-5-pro',
   'gemini-3-flash': 'gemini-1-5-flash',
-  'grok-4-20-beta1': 'grok-2-1212',  // Map to Grok 2
-  'grok-4-1-thinking': 'grok-2-1212',
+  'grok-4-20-beta1': 'grok-2',  // Map to Grok 2
+  'grok-4-1-thinking': 'grok-2',
   'dola-seed-2-0-preview': 'deepseek-v3',  // Map to similar model
   'dola-seed-2-0': 'deepseek-v3',
 };

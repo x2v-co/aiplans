@@ -157,10 +157,10 @@
     "details": "Details",
     "pricesUpdated": "Prices updated daily. Last verified: {date}",
     "channelTypes": {
-      "official": "官方",
-      "cloud": "云厂商",
-      "aggregator": "聚合平台",
-      "reseller": "转售商"
+      "official": "Official",
+      "cloud": "Cloud",
+      "aggregator": "Aggregator",
+      "reseller": "Reseller"
     }
   },
   "coupons": {
