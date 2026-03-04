@@ -1,0 +1,66 @@
+[    3696ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://chatgpt.com/ces/v1/projects/oai/settings:0
+[    3696ms] [ERROR] Failed to fetch @ https://openai.com/_next/static/chunks/32758-74c4291910d79304.js:0
+[    3791ms] Error: Minified React error #418; visit https://react.dev/errors/418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at t5 (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:24675)
+    at iZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:120540)
+    at ia (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:95167)
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91093
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91100
+    at oZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91205)
+    at MessagePort.M (https://openai.com/_next/static/chunks/32758-74c4291910d79304.js:1:104931)
+[    3791ms] Error: Minified React error #418; visit https://react.dev/errors/418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at t5 (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:24675)
+    at iZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:120540)
+    at ia (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:95167)
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91093
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91100
+    at oZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91205)
+    at MessagePort.M (https://openai.com/_next/static/chunks/32758-74c4291910d79304.js:1:104931)
+[    3792ms] Error: Minified React error #418; visit https://react.dev/errors/418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at t5 (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:24675)
+    at iZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:120540)
+    at ia (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:95167)
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91093
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91100
+    at oZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91205)
+    at MessagePort.M (https://openai.com/_next/static/chunks/32758-74c4291910d79304.js:1:104931)
+[    3792ms] Error: Minified React error #418; visit https://react.dev/errors/418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at t5 (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:24675)
+    at iZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:120540)
+    at ia (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:95167)
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91093
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91100
+    at oZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91205)
+    at MessagePort.M (https://openai.com/_next/static/chunks/32758-74c4291910d79304.js:1:104931)
+[    3792ms] Error: Minified React error #418; visit https://react.dev/errors/418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at t5 (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:24675)
+    at iZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:120540)
+    at ia (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:95167)
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91093
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91100
+    at oZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91205)
+    at MessagePort.M (https://openai.com/_next/static/chunks/32758-74c4291910d79304.js:1:104931)
+[    3792ms] Error: Minified React error #418; visit https://react.dev/errors/418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at t5 (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:24675)
+    at iZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:120540)
+    at ia (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:95167)
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91093
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91100
+    at oZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91205)
+    at MessagePort.M (https://openai.com/_next/static/chunks/32758-74c4291910d79304.js:1:104931)
+[    3793ms] Error: Minified React error #418; visit https://react.dev/errors/418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at t5 (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:24675)
+    at iZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:120540)
+    at ia (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:95167)
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91093
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91100
+    at oZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91205)
+    at MessagePort.M (https://openai.com/_next/static/chunks/32758-74c4291910d79304.js:1:104931)
+[    3793ms] Error: Minified React error #423; visit https://react.dev/errors/423 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at iZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:118354)
+    at ia (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:95167)
+    at https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:94989
+    at il (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:94996)
+    at oJ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:92352)
+    at oZ (https://openai.com/_next/static/chunks/e20591a6-1ddc6c68f178c594.js:1:91771)
+    at MessagePort.M (https://openai.com/_next/static/chunks/32758-74c4291910d79304.js:1:104931)

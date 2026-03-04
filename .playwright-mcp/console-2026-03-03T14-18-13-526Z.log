@@ -1,0 +1,3 @@
+[    3238ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/providers/zhipu.ico:0
+[    3239ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/providers/minimax.ico:0
+[    3260ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/providers/moonshot.png:0

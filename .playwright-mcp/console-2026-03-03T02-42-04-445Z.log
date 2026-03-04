@@ -1,0 +1,8 @@
+[    9767ms] [WARNING]   WARN  [Statsig] The user does not have the required id_type "userID" for Gate "4011688770" @ https://chatgpt.com/cdn/assets/2340486e-nya0m5zsz5712f3a.js:0
+[   10432ms] [WARNING] [GSI_LOGGER]: Your client application uses one of the Google One Tap prompt UI status methods that may stop functioning when FedCM becomes mandatory. Refer to the migration guide to update your code accordingly and opt-in to FedCM to test your changes. Learn more: https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#display_moment and https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#skipped_moment @ https://accounts.google.com/gsi/client:80
+[   10440ms] [ERROR] Not signed in with the identity provider. @ https://chatgpt.com/zh-Hans-CN/pricing/:0
+[   11348ms] [WARNING]   WARN  [Statsig] The user does not have the required id_type "userID" for Gate "2682059262" @ https://chatgpt.com/cdn/assets/2340486e-nya0m5zsz5712f3a.js:0
+[   11907ms] [WARNING]   WARN  [Statsig] The user does not have the required id_type "userID" for Gate "3848576186" @ https://chatgpt.com/cdn/assets/2340486e-nya0m5zsz5712f3a.js:0
+[   14209ms] [WARNING]   WARN  [Statsig] The user does not have the required id_type "userID" for Gate "676035580" @ https://chatgpt.com/cdn/assets/2340486e-nya0m5zsz5712f3a.js:0
+[   14211ms] [WARNING]   WARN  [Statsig] The user does not have the required id_type "userID" for Gate "3813654834" @ https://chatgpt.com/cdn/assets/2340486e-nya0m5zsz5712f3a.js:0
+[   19145ms] [ERROR] [GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token. @ https://chatgpt.com/cdn/assets/2340486e-nya0m5zsz5712f3a.js:0

@@ -1,0 +1,300 @@
+[     319ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     319ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     319ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     319ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at tr
+    at table
+    at b
+    at div
+    at…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316897)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at u (https://api-docs.deepseek.com/assets/js…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at hr
+    at u (https://api-docs.deepseek.com…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316897)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at u (https://api-docs.deepseek.com/assets/js…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at h2
+    at u (https://api-docs.deepseek.com…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316897)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at u (https://api-docs.deepseek.com/assets/js…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at p
+    at u (https://api-docs.deepseek.com/…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316897)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at u (https://api-docs.deepseek.com/assets/js…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at p
+    at u (https://api-docs.deepseek.com/…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at div
+    at article
+    at div
+    at div
+ …deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at div
+    at div
+    at div
+    at div
+    a…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at div
+    at div
+    at t.default (https://a…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #418; visit https://reactjs.org/docs/error-decoder.html?invariant=418 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at da (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:243920)
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316720)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at wc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304262)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299343)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: 
+    at footer
+    at Qe (https://api-docs.deepsee…deepseek.com/assets/js/main.7d0a731c.js:2:333582), digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     320ms] [ERROR] Docusaurus React Root onRecoverableError: Error: Minified React error #423; visit https://reactjs.org/docs/error-decoder.html?invariant=423 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Es (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:316406)
+    at kc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304290)
+    at vc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304218)
+    at bc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:304081)
+    at lc (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:300916)
+    at ic (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:299471)
+    at _ (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360299)
+    at MessagePort.R (https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:2:360831) {componentStack: , digest: null} @ https://api-docs.deepseek.com/assets/js/main.7d0a731c.js:1
+[     819ms] Error: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rK (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:45833)
+    at rX (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:46866)
+    at https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:140585
+    at sp (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:145746)
+    at sc (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:137086)
+    at https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:131915
+    at u9 (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:132016)
+    at sV (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:158398)
+    at MessagePort.O (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:7358)
+[    2535ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://docs.x.ai/api/log:0
+[    2535ms] [ERROR] Client-side log proxy failed:  @ https://docs.x.ai/_next/static/chunks/749e18e0e9d03065.js:11

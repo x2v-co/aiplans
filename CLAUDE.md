@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**planprice.ai** is an AI pricing comparison platform that helps users compare AI subscription plans and API token prices across providers. The core value proposition is comparing similar-tier AI plans and same-model pricing across different channels/vendors.
+**aiplans.app** is an AI pricing comparison platform that helps users compare AI subscription plans and API token prices across providers. The core value proposition is comparing similar-tier AI plans and same-model pricing across different channels/vendors.
 
 ## Development Commands
 

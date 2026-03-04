@@ -1,0 +1,17 @@
+[     110ms] [ERROR] An error has been thrown while configuring your widget TypeError: Failed to fetch TypeError: Failed to fetch
+    at $r.fetchConfig (https://static.axept.io/sdk.js:2:422830)
+    at $r.initialize (https://static.axept.io/sdk.js:2:422185)
+    at new $r (https://static.axept.io/sdk.js:2:413345)
+    at https://static.axept.io/sdk.js:2:661173
+    at c (https://static.axept.io/sdk.js:2:197206)
+    at https://static.axept.io/sdk.js:2:661142
+    at https://static.axept.io/sdk.js:2:661357
+    at https://static.axept.io/sdk.js:2:661360 @ https://static.axept.io/sdk.js:1
+[     871ms] [ERROR] Loading the stylesheet 'https://fonts.axept.io/fonts.googleapis.com/css?family=Source%20Sans%203:regular,500,600,700' violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://fonts.googleapis.com". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked. @ https://static.axept.io/sdk.js:1
+[     887ms] [WARNING] [Axeptio SDK] fonts.axept.io blocked by CSP. Falling back to Google Fonts. @ https://static.axept.io/sdk.js:1
+[    9859ms] [WARNING] The resource https://docs.mistral.ai/_next/static/css/86fbebb876e6118d.css?dpl=dpl_9HDzqaqdSDZeqDn6oxhVWu6Dwvr5 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://docs.mistral.ai/getting-started/models:0
+[    9859ms] [WARNING] The resource https://docs.mistral.ai/_next/static/css/e5d0c3be2b23e2cb.css?dpl=dpl_9HDzqaqdSDZeqDn6oxhVWu6Dwvr5 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://docs.mistral.ai/getting-started/models:0
+[    9859ms] [WARNING] The resource https://docs.mistral.ai/_next/static/css/5860c5d826a6f5e1.css?dpl=dpl_9HDzqaqdSDZeqDn6oxhVWu6Dwvr5 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://docs.mistral.ai/getting-started/models:0
+[   15253ms] [WARNING] The resource https://docs.mistral.ai/_next/static/css/86fbebb876e6118d.css?dpl=dpl_9HDzqaqdSDZeqDn6oxhVWu6Dwvr5 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://docs.mistral.ai/getting-started/models:0
+[   15253ms] [WARNING] The resource https://docs.mistral.ai/_next/static/css/e5d0c3be2b23e2cb.css?dpl=dpl_9HDzqaqdSDZeqDn6oxhVWu6Dwvr5 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://docs.mistral.ai/getting-started/models:0
+[   15253ms] [WARNING] The resource https://docs.mistral.ai/_next/static/css/5860c5d826a6f5e1.css?dpl=dpl_9HDzqaqdSDZeqDn6oxhVWu6Dwvr5 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://docs.mistral.ai/getting-started/models:0

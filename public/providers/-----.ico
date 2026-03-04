@@ -1,0 +1,298 @@
+
+<!doctype html>
+<html lang="zh">
+ <head> 
+  <meta name="aplus-auto-track-config-import" content="off"> 
+  <meta name="aplus-apm-track" content="off"> 
+  <meta name="aplus-core" content="aplus.js"> 
+  <meta name="aplus-form-track" content="off"> 
+  <meta charset="utf-8"> 
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
+  <meta name="data-spm" content="5176"> 
+  <meta http-equiv="x-dns-prefetch-control" content="on"> 
+  <link rel="dns-prefetch" href="//g.alicdn.com"> 
+  <link rel="dns-prefetch" href="//uaction.alicdn.com"> 
+  <link rel="dns-prefetch" href="//cws.alicdn.com"> 
+  <link rel="dns-prefetch" href="//at.alicdn.com"> 
+  <link rel="dns-prefetch" href="//gj.mmstat.com"> 
+  <link rel="dns-prefetch" href="//ynuf.alipay.com"> 
+  <link rel="dns-prefetch" href="//fecs.console.aliyun.com"> 
+  <link rel="dns-prefetch" href="//help.aliyun.com"> 
+  <link rel="shortcut icon" href="https://img.alicdn.com/tfs/TB1_ZXuNcfpK1RjSZFOXXa6nFXa-32-32.ico" type="image/x-icon"> 
+  <title>大模型服务平台百炼控制台</title> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+    var ONE_CONSOLE_TOOL = {
+        extend: function(o,n){
+            if(!o) o = {};
+            if(!n) n = {};
+            for (var p in n){
+                o[p] = n[p];
+            }
+            return o;
+        }
+    };
+</script> 
+  <script src="https://g.alicdn.com/console/performance-reporter/index.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script async src="https://cloud-assets.alicdn.com/console.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <!--[if lte IE 11]>
+<script src="//g.alicdn.com/aliyun/console/1.4.92/scripts/browser-not-supported.js" crossorigin="anonymous"></script>
+<![endif]--> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+                var ALIYUN_CONSOLE_CONFIG = {
+            APP_ID: "alime_efm",
+            PRODUCT: "sfm",
+            LANG: "zh",
+            LOCALE: "zh-CN",
+            portalType: 'one',
+                        MAIN_RESOURCE_CDN: 'alicdn.com'
+        }
+        </script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+    var ALIYUN_CONSOLE_GLOBAL = {"otherRoutes":[{"menuCode":"app-market","routePath":"/app/app-market/quanmiao","appPath":"iic-llm-solution/bailian-app-quanmiao","appName":"quanmiao-app","version":"1.1.14","loadType":"qiankun"},{"menuCode":"app-market","routePath":"/app/app-market/chip-tool-web","appPath":"liveme-console/chip-tool-web","appName":"chip-tool-web","version":"0.0.3"},{"menuCode":"app-market","appName":"yunmarket","routePath":"/app/app-market/yunmarket","appPath":"market-fe/bailian-app-market-detail","version":"0.0.25"},{"menuCode":"plugin-market","appName":"yunmarket","routePath":"/plugin-market/yunmarket","appPath":"market-fe/bailian-app-market-detail","version":"0.0.25","fileName":"plugin"},{"menuCode":"app-market","routePath":"/app/app-market/ccai","appPath":"isipfe/ccai","appName":"ccai","version":"2.0.19","loadType":"qiankun"},{"menuCode":"app-market","appName":"bailian_beebot","fileName":"bailian_beebot","routePath":"/app/app-market/beebot","appPath":"isipfe/beebot_llm","version":"7.1.22"},{"menuCode":"plugin-market","appName":"ipaas-bailian-plugin","routePath":"/plugin-market/iqs","appPath":"mobi/ipaas-bailian-plugin","version":"0.0.3","loadType":"qiankun"},{"menuCode":"app-market","routePath":"/app/app-market/voicebot","appPath":"cloudagentbot/bailian-voicebot","appName":"voicebot","version":"1.0.2","loadType":"qiankun"},{"menuCode":"app-market","appName":"talanet","routePath":"/app/app-market/talanet","appPath":"cloud-talanet/cloud-talanet-console","version":"0.0.10","loadType":"qiankun"},{"menuCode":"app-market","appName":"insurance-customer-copilot","routePath":"/app/app-market/insurance-customer-copilot","appPath":"fin-llm/insurance-customer-copilot","version":"0.0.10","loadType":"qiankun"},{"menuCode":"app-market","appName":"insurance-product-rule","routePath":"/app/app-market/insurance-product-rule","appPath":"fin-llm/insurance-product-rule","version":"0.0.12","loadType":"qiankun"},{"menuCode":"app-market","appName":"insurance-visual-copilot","routePath":"/app/app-market/insurance-visual-copilot","appPath":"fin-llm/insurance-visual-copilot","version":"0.0.11","loadType":"qiankun"},{"menuCode":"app-market","appName":"insurance-quality-test","routePath":"/app/app-market/insurance-quality-test","appPath":"fin-llm/insurance-quality-test","version":"0.0.7","loadType":"qiankun"},{"menuCode":"app-market","appName":"multi-modal-app","routePath":"/app/app-market/multi-modal-app","appPath":"isipfe/multi-modal-app","version":"0.0.101","loadType":"qiankun"},{"menuCode":"app-market","appName":"ai-podcast","routePath":"/app/app-market/ai-podcast","appPath":"sail-web/ai-podcast-bailian","version":"0.0.8","loadType":"qiankun"},{"menuCode":"app-market","appName":"zhiwen","routePath":"/app/app-market/zhiwen","appPath":"sail-web/qwen-doc-bailian","version":"0.0.5","loadType":"qiankun"},{"menuCode":"app-market","appName":"tingwu","routePath":"/app/app-market/tingwu/","appPath":"sail-web/tingwu-pass-bailian","version":"1.0.7","loadType":"qiankun"},{"menuCode":"app-market","appName":"edututor","routePath":"/app/app-market/edututor","appPath":"sail-web/quiz-solver-bailian","version":"0.0.7","loadType":"qiankun"},{"menuCode":"app-market","appName":"mt-bailian","routePath":"/app/app-market/mt","appPath":"nlp-web/mt-bailian","version":"1.0.2","loadType":"qiankun"},{"menuCode":"app-market","appName":"deep-search","routePath":"/app/app-market/deep-search","appPath":"nlp-web/deep-search-bailian","version":"1.0.14","loadType":"qiankun"},{"menuCode":"app-market","appName":"tongyi-mobile-agent","routePath":"/app/app-market/tongyi-mobile-agent","appPath":"sail-web/tongyi-mobile-agent","version":"0.0.2","loadType":"qiankun"},{"menuCode":"app-market","appName":"map-mind-app","routePath":"/app/app-market/map-mind-app","appPath":"isipfe/map-mind-app","version":"0.0.3","loadType":"qiankun"},{"menuCode":"app-market","appName":"insurance-claim","routePath":"/app/app-market/insurance-claim","appPath":"fin-llm/insurance-claim","version":"0.0.1","loadType":"qiankun"}],"mobiRoutes":[{"appName":"ui-data","appPath":"mobi/mobi-next/1.5.80/bailian","routePath":"/app-ui/app-data"},{"appName":"ui-create-app","appPath":"mobi/mobi-next/1.5.80/create-app","routePath":"/app-ui/create"},{"appName":"publish-ui-app","appPath":"mobi/mobi-next/1.5.80/publish-ui-app"}],"listCategories_maxResults":1200,"financeFunctionLIst":{"model":{"isShowModelFilter":false,"isShowBanners":false,"isShowCustomModels":false,"isSupportDeploy":false,"isSupportEvaluation":false},"app":{"isShowScheduleSelector":false,"isShowShareConfig":false,"isShowAppFilter":true,"isSupportFlow":true,"isSupportICE":false,"isShowLongTimeMemory":true,"isShowPromptAPI":true,"isSupportAppFlow":false,"isShowInternetSearch":true,"LLMNodeSupportSearch":false,"showSessionFile":false},"rag":{"picSearch":false,"enableRds":false},"dataCenter":{"ossRegionWarning":false,"ADBRegionWarning":false,"supportIMMPreview":false},"plugin":{"supportYunMarketPlugin":false}},"workflowClassiferMaxCount":60,"modelSpaceBannerItems":[{"bg":"https://img.alicdn.com/imgextra/i3/O1CN01dg7cUa1tTd1GthToA_!!6000000005903-2-tps-1179-378.png","linkUrl":"https://bailian.console.aliyun.com/#/efm/model_experience_center/vision?currentTab=imageComprehend&modelId=qwen2.5-vl-32b-instruct"},{"bg":"https://img.alicdn.com/imgextra/i3/O1CN01zke9vY1YlOS2IPTv1_!!6000000003099-2-tps-1179-378.png","linkUrl":"https://bailian.console.aliyun.com/#/model-market/detail/qwen2.5-omni-7b?tabKey=sdk"},{"bg":"https://img.alicdn.com/imgextra/i4/O1CN01sqfWCY1ZHSAeZ5BEs_!!6000000003169-2-tps-1176-372.png","linkUrl":"https://www.aliyun.com/activity/purchase/purchasing"}],"bannerItems":[{"title":"qwen2.5-omni-7b开源模型上线，具备文本和语音同时流式生成的能力","linkText":"查看详情","linkUrl":"https://bailian.console.aliyun.com/#/model-market/detail/qwen2.5-omni-7b?tabKey=sdk"},{"title":"aitryon模型价格下调，降至0.2元每张。","linkText":"查看详情","linkUrl":"https://bailian.console.aliyun.com/#/model-market/detail/aitryon"},{"title":"通义千问2.5-VL-32B模型上线，拥有更人性化的回答，更强的数学和图像推理能力。","linkText":"立即体验","linkUrl":"https://bailian.console.aliyun.com/#/efm/model_experience_center/vision?currentTab=imageComprehend&modelId=qwen2.5-vl-32b-instruct"},{"title":"通用文本向量-v3模型新增512/256/128/64等低纬度支持。","linkText":"点击查看","linkUrl":"https://bailian.console.aliyun.com/#/model-market/detail/text-embedding-v3"},{"title":"最强推理模型QwQ-Plus系列上新，核心指标达到DeepSeek-R1 满血版水平。","linkText":"调用方式","linkUrl":"https://bailian.console.aliyun.com/model-market/detail/qwq-plus#/model-market/detail/qwq-plus?tabKey=sdk"},{"title":"全模态Qwen-Omni-Turbo全新上线，支持输入多种模态的数据。","linkText":"查看详情","linkUrl":"https://help.aliyun.com/zh/model-studio/user-guide/qwen-omni"},{"title":"通义千问生态合作伙伴招募计划启动。","linkText":"查看最新伙伴计划","linkUrl":"https://partner.aliyun.com/program/llm_tongyi"}],"appMarketBannerItems":[{"bg":"https://img.alicdn.com/imgextra/i3/O1CN01Afs12m1zEPV5Coh6f_!!6000000006682-2-tps-1176-372.png","linkUrl":"https://survey.aliyun.com/apps/zhiliao/4V74sMCdH"},{"bg":"https://img.alicdn.com/imgextra/i1/O1CN01Em0yn41vpjMETExi4_!!6000000006222-2-tps-1568-496.png","linkUrl":"https://bailian.aliyun.com/quanmiao"},{"bg":"https://img.alicdn.com/imgextra/i4/O1CN019wG5iz1fujmzPSbYL_!!6000000004067-2-tps-1176-372.png","linkUrl":"https://bailian.console.aliyun.com/xiyan#/home"}],"iconFontUrl":"//at.alicdn.com/t/a/font_4647901_trmqjz04j8f.css","appflowCreateUrl":"https://appflow.console.aliyun.com/vendor/cn-hangzhou/weixin/oauth/modal/connector-3c60c6e123e146fbb6f8/2"};
+</script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+    var ALIYUN_CONSOLE_MESSAGE = {};
+    var ALIYUN_CONSOLE_CUSTOM_MESSAGE = {};
+</script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+    var ALIYUN_CONSOLE_I18N_MESSAGE = {};
+</script> 
+  <meta name="description" content="百炼控制台是阿里云大模型服务平台，提供AI模型训练、部署、推理一站式服务，支持多种大模型框架，助力企业快速构建AI应用。"> 
+  <meta name="robots" content="index,follow"> 
+  <link rel="canonical" href="https://bailian.console.aliyun.com/"> 
+  <meta name="aplus-etag-timeout" content="1000"> 
+  <meta name="aplus-core-version" content="1.13.24"> 
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"> 
+  <link rel="icon" type="image/x-icon" href="https://gw.alicdn.com/imgextra/i4/O1CN01vVn7g32134zNZEeAR_!!6000000006928-55-tps-24-24.svg"> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+  function getCookie(name) {
+    try {
+      // 确保 name 是字符串且非空
+      if (typeof name !== 'string' || name === '') {
+        return null;
+      }
+
+      // 转义正则元字符（ES5 兼容）
+      var escapedName = name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1');
+
+      // 构造正则：匹配以开头或分号+空白开头的 cookie
+      var regex = new RegExp('(?:^|;\\s*)' + escapedName + '=([^;]*)');
+
+      // 安全读取 document.cookie（某些安全上下文可能限制访问）
+      var cookieString = document.cookie || '';
+
+      var matches = cookieString.match(regex);
+      if (matches && matches[1]) {
+        return decodeURIComponent(matches[1]);
+      }
+    } catch (e) {
+      // 任何错误（如正则语法问题、decodeURIComponent 失败等）都静默忽略
+    }
+    return null;
+  }
+  // 安全调用
+  try {
+    var noAds = getCookie('no_ads');
+    if (noAds === 'true') {
+      window.no_ads = true;
+    }
+  } catch (e) {
+    // 即使设置 window.no_ads 出错也不影响页面
+  }
+</script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+if (window.location.hostname.indexOf('console.alibabacloud.com') !== -1) {
+    var head = document.getElementsByTagName('head')[0];
+    
+    var meta1 = document.createElement('meta');
+    meta1.setAttribute('name', 'aplus-rhost-v');
+    meta1.setAttribute('content', 'intl.mmstat.com');
+    head.appendChild(meta1);
+    
+    var meta2 = document.createElement('meta');
+    meta2.setAttribute('name', 'aplus-rhost-g');
+    meta2.setAttribute('content', 'intl.mmstat.com/alicloud');
+    head.appendChild(meta2);
+} else {
+  var head = document.getElementsByTagName('head')[0];
+    
+    var meta1 = document.createElement('meta');
+    meta1.setAttribute('name', 'aplus-rhost-v');
+    meta1.setAttribute('content', 'v.aplus.aliyun.com');
+    head.appendChild(meta1);
+    
+    var meta2 = document.createElement('meta');
+    meta2.setAttribute('name', 'aplus-rhost-g');
+    meta2.setAttribute('content', 'g.aplus.aliyun.com');
+    head.appendChild(meta2);
+}
+</script> 
+  <script src="https://g.alicdn.com/isipfe/efm-fe/3.5.115/url-mapping.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+  window.CONSOLE_BASE_SETTINGS = {
+    TOP_NAV: {
+      I18N: false,
+    },
+    REGION: {
+      regions: [],
+    },
+    regionIdDefault: "cn-shanghai",
+  };
+  document.domain = "console.aliyun.com";
+</script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+  window.XT = function () {};
+  window.g_apps = window.ALIYUN_CONSOLE_GLOBAL.g_apps || {};
+  window.g_cardview = {
+    cdn: "//" +
+    (new URL(location.href).searchParams.get("__dev__") &&
+    window.ALIYUN_CONSOLE_CONFIG.FEATURE_STATUS.devcdn
+      ? "dev."
+      : "") +
+    "g.alicdn.com",
+  };
+  window.g_config = {
+    isNormal: true,
+    productName: '阿里云百炼',
+    env: "online",
+    productMode: "Cloudme",
+    AliyunRegion: "cn-beijing",
+    AliyunProduct: "sfm_bailian",
+    aemId: "bailian",
+    ramRegion: "cn-beijing",
+    ossRegion: "cn-beijing",
+  };
+
+  window.g_open_config = {
+    base: {
+      buyAgentUrl:
+        "https://common-buy.aliyun.com/?commodityCode=sfm_platform_public_cn",
+      sseHost: "efm-ws.aliyuncs.com",
+    },
+  };
+  window.g_base = { _loaded: true };
+</script> 
+  <script src="https://g.alicdn.com/isipfe/efm-fe/3.4.232/noopconsole.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+  window.tenantId = window.ALIYUN_CONSOLE_CONFIG.CURRENT_PK;
+  window.ALIYUN_CONSOLE_CONFIG.LOCALE = "zh-CN";
+</script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+  function getSafeVersion() {
+    var v = new URL(location.href).searchParams.get("efm_v") || new URL(location.href).searchParams.get("v");
+    var versionRegex = /^\d+\.\d+\.\d+$/;
+    if (v && versionRegex.test(v)) {
+      return v;
+    }
+    return "3.5.152";
+  }
+  function getIsMobile() {
+    var ua = (navigator.userAgent || '').toLowerCase();
+    var uaMatch = /android|iphone|ipad|ipod|windows phone|mobile|blackberry|opera mini|opera mobi|ucbrowser|kindle|silk|webos/.test(ua);
+
+    return uaMatch;
+  }
+  window.efm_v = getSafeVersion();
+  window.efm_f = getIsMobile() ? '/efm_mobile' : '/efm';
+</script> 
+  <script src="//cloud-assets.alicdn.com/alicdn/dawn/user-tracker/latest/js/index.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script crossorigin src="//g.alicdn.com/code/npm/@ali/g_aem_track/1.1.41/bailian.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script crossorigin src="//g.alicdn.com/code/npm/@ali/g_aem_track/1.1.41/bailian_sls_blank.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script crossorigin src="//g.alicdn.com/IMM/office-js/1.1.19/aliyun-web-office-sdk.min.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script crossorigin src="//g.alicdn.com/isipfe/beebot/6.6.0/lib/react/18.2.0/react.production.min.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script crossorigin src="//g.alicdn.com/isipfe/beebot/6.6.0/lib/react/18.2.0/react-dom.production.min.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script src="https://g.alicdn.com/isipfe/model-studio-console/0.1.0/efm/js/async-loader/index.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script src="https://g.alicdn.com/code/lib/moment.js/2.30.1/moment.min.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+ </head> 
+ <body data-spm="28197581"> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+    window.APLUS_CONFIG = {
+        pid: 'cloud_console_sfm',
+        env: 'production',
+                userId: window.ALIYUN_CONSOLE_CONFIG.CURRENT_PK || '',
+        pvTrack: window._pvTrackOpt || 'off',
+        jsErrorTrack: window._jsErrorTrackOpt || {},
+        apiTrack: window._apiTrackOpt || { sampling: 1 },
+        perfTrack: window._perfTrackOpt || {},
+        resourceErrorTrack: window._resourceErrorTrackOpt || {},
+        blankScreenTrack: window._blankScreenTrackOpt || {}
+    };
+
+    (function(w, d, s, q, i) {
+        w[q] = w[q] || [];
+        var f = d.getElementsByTagName(s)[0],j = d.createElement(s);
+        j.async = true;
+        j.id = 'beacon-aplus';
+        j.setAttribute('exparams','userid='+(window.ALIYUN_CONSOLE_CONFIG.CURRENT_PK || '')+'&aplus&sidx=aplusSidex&ckx=aplusCkx&yunid=&yunpk=&c2=alime_efm'+'&current_pk='+(window.ALIYUN_CONSOLE_CONFIG.CURRENT_PK || ''));
+        j.src = "//g.alicdn.com/alilog/mlog/aplus_v2.js";
+        j.crossorigin = 'anonymous';
+        f.parentNode.insertBefore(j, f);
+    })(window, document, 'script', 'aplus_queue');
+</script> 
+  <div id="AliyunConsoleOverlay" style="position: fixed;top:0;left:0;width:100%;height:100%;background: #F5F6FA;color: #333;text-align: center;"> 
+   <div style="position:relative;top:38.2%;margin-top:-7px;font:italic 14px/1em Helvetica Neue,Hiragino Sans GB,STHeiti,Microsoft YaHei;">
+     Loading... 
+   </div> 
+  </div> 
+  <script src="//oneconsole.alicdn.com/one-mcms/visage/1.0.7/visage_zh-cn.js" charset="utf-8" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+    var aliyunConsoleI18nMessage = {};
+    aliyunConsoleI18nMessage = ONE_CONSOLE_TOOL.extend(window["visage_zh-cn"], aliyunConsoleI18nMessage);
+</script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+    var ALIYUN_VISAGE_MESSAGE = aliyunConsoleI18nMessage;
+</script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+  var aliyunConsoleOverlay = document.getElementById('AliyunConsoleOverlay');
+  aliyunConsoleOverlay.innerHTML = '<img style="position:absolute;left:50%;top:50%;transform: translate(-50%, -50%)" width="100" height="100" src="https://img.alicdn.com/imgextra/i4/O1CN018bad7j1WQCwtf2tvF_!!6000000002782-54-tps-512-512.apng" />'
+</script> 
+  <script crossorigin src="//g.alicdn.com/??/AWSC/AWSC/awsc.js,/sd/baxia-entry/baxiaCommon.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <div id="root"></div> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+    window.FastLoginContext = {
+      tenantName: 'website',
+    };
+</script> 
+  <script crossorigin src="//g.alicdn.com/isipfe/beebot/6.6.0/lib/qiankun/qiankun.min.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+document.write(
+  '<link rel="stylesheet" href="' + window.g_cardview.cdn + '/isipfe/efm-fe/' +
+    efm_v +
+    efm_f + '.css">'
+);
+
+Object.assign(g_apps, {
+  "isipfe/beebot": { version: "6.7.1" },
+  "isipfe/template": { version: "6.0.0" },
+  "isipfe/efm-fe": { version: efm_v, loadType: "fall" },
+});
+  window['msc-async-loader-config'] = {
+      'app-agent-detail': {
+        version: '0.1.27',
+      },
+      'app-evaluation': {
+        version: '0.1.27',
+      },
+      'app-observe': {
+        version: '0.1.27',
+      },
+      'app-observe-button': {
+        version: '0.1.27',
+      },
+    };
+</script> 
+  <script crossorigin src="//g.alicdn.com/isipfe/efm-fe/3.5.152/i18n-load-script.js" nonce="aqEILwghan9s91ZySFfF"></script> 
+  <script nonce="aqEILwghan9s91ZySFfF">
+if (window.loadI18nScript) {
+  window.loadI18nScript(efm_v, loadEfmJs);
+}
+function loadEfmJs () {
+  var script = document.createElement("script");
+  script.src = window.g_cardview.cdn + "/isipfe/efm-fe/" + efm_v + efm_f + ".js";
+  document.body.appendChild(script);
+}
+</script> 
+  <!-- @Deprecated --> 
+  <script src="//o.alicdn.com/console/hijack-for-service/index.js" async nonce="aqEILwghan9s91ZySFfF"></script>   
+ </body>
+</html>

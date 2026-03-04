@@ -1,0 +1,306 @@
+{
+  "source": "Arena AI Code Leaderboard - https://arena.ai/leaderboard/code",
+  "date": "2026-03-03T05:45:47.178Z",
+  "category": "code",
+  "top30": [
+    {
+      "rank": 1,
+      "name": "claude-opus-4-6",
+      "provider": "Anthropic",
+      "license": "Proprietary",
+      "score": 1560,
+      "confidence": "+13/-13",
+      "votes": 2845
+    },
+    {
+      "rank": 2,
+      "name": "claude-opus-4-6-thinking",
+      "provider": "Anthropic",
+      "license": "Proprietary",
+      "score": 1553,
+      "confidence": "+15/-15",
+      "votes": 2182
+    },
+    {
+      "rank": 3,
+      "name": "claude-sonnet-4-6",
+      "provider": "Anthropic",
+      "license": "Proprietary",
+      "score": 1531,
+      "confidence": "+16/-16",
+      "votes": 1839
+    },
+    {
+      "rank": 4,
+      "name": "claude-opus-4-5-20251101-thinking-32k",
+      "provider": "Anthropic",
+      "license": "Proprietary",
+      "score": 1499,
+      "confidence": "+8/-8",
+      "votes": 11149
+    },
+    {
+      "rank": 5,
+      "name": "gpt-5.2-high",
+      "provider": "OpenAI",
+      "license": "Proprietary",
+      "score": 1471,
+      "confidence": "+16/-16",
+      "votes": 1696
+    },
+    {
+      "rank": 6,
+      "name": "claude-opus-4-5-20251101",
+      "provider": "Anthropic",
+      "license": "Proprietary",
+      "score": 1471,
+      "confidence": "+8/-8",
+      "votes": 11239
+    },
+    {
+      "rank": 7,
+      "name": "gemini-3.1-pro-preview",
+      "provider": "Google",
+      "license": "Proprietary",
+      "score": 1461,
+      "confidence": "+15/-15",
+      "votes": 1826
+    },
+    {
+      "rank": 8,
+      "name": "glm-5",
+      "provider": "Z.ai",
+      "license": "MIT",
+      "score": 1451,
+      "confidence": "+13/-13",
+      "votes": 2621
+    },
+    {
+      "rank": 9,
+      "name": "gemini-3-pro",
+      "provider": "Google",
+      "license": "Proprietary",
+      "score": 1443,
+      "confidence": "+7/-7",
+      "votes": 17027
+    },
+    {
+      "rank": 10,
+      "name": "gemini-3-flash",
+      "provider": "Google",
+      "license": "Proprietary",
+      "score": 1441,
+      "confidence": "+7/-7",
+      "votes": 12934
+    },
+    {
+      "rank": 11,
+      "name": "glm-4.7",
+      "provider": "Z.ai",
+      "license": "MIT",
+      "score": 1439,
+      "confidence": "+10/-10",
+      "votes": 5128
+    },
+    {
+      "rank": 12,
+      "name": "kimi-k2.5-thinking",
+      "provider": "Moonshot",
+      "license": "Modified MIT",
+      "score": 1436,
+      "confidence": "+10/-10",
+      "votes": 4022
+    },
+    {
+      "rank": 13,
+      "name": "minimax-m2.5",
+      "provider": "MiniMax",
+      "license": "Modified MIT",
+      "score": 1436,
+      "confidence": "+11/-11",
+      "votes": 3632
+    },
+    {
+      "rank": 14,
+      "name": "kimi-k2.5-instant",
+      "provider": "Moonshot",
+      "license": "Modified MIT",
+      "score": 1419,
+      "confidence": "+12/-12",
+      "votes": 2954
+    },
+    {
+      "rank": 15,
+      "name": "minimax-m2.1-preview",
+      "provider": "MiniMax",
+      "license": "MIT",
+      "score": 1401,
+      "confidence": "+8/-8",
+      "votes": 9796
+    },
+    {
+      "rank": 16,
+      "name": "gemini-3-flash (thinking-minimal)",
+      "provider": "Google",
+      "license": "Proprietary",
+      "score": 1399,
+      "confidence": "+8/-8",
+      "votes": 8840
+    },
+    {
+      "rank": 17,
+      "name": "qwen3.5-397b-a17b",
+      "provider": "Alibaba",
+      "license": "Apache 2.0",
+      "score": 1396,
+      "confidence": "+12/-12",
+      "votes": 2473
+    },
+    {
+      "rank": 18,
+      "name": "gpt-5.2",
+      "provider": "OpenAI",
+      "license": "Proprietary",
+      "score": 1395,
+      "confidence": "+15/-15",
+      "votes": 1634
+    },
+    {
+      "rank": 19,
+      "name": "gpt-5-medium",
+      "provider": "OpenAI",
+      "license": "Proprietary",
+      "score": 1392,
+      "confidence": "+12/-12",
+      "votes": 3929
+    },
+    {
+      "rank": 20,
+      "name": "claude-sonnet-4-5-20250929-thinking-32k",
+      "provider": "Anthropic",
+      "license": "Proprietary",
+      "score": 1388,
+      "confidence": "+7/-7",
+      "votes": 14186
+    },
+    {
+      "rank": 21,
+      "name": "claude-opus-4-1-20250805",
+      "provider": "Anthropic",
+      "license": "Proprietary",
+      "score": 1388,
+      "confidence": "+8/-8",
+      "votes": 8983
+    },
+    {
+      "rank": 22,
+      "name": "gpt-5.1-medium",
+      "provider": "OpenAI",
+      "license": "Proprietary",
+      "score": 1387,
+      "confidence": "+9/-9",
+      "votes": 6438
+    },
+    {
+      "rank": 23,
+      "name": "claude-sonnet-4-5-20250929",
+      "provider": "Anthropic",
+      "license": "Proprietary",
+      "score": 1386,
+      "confidence": "+7/-7",
+      "votes": 15941
+    },
+    {
+      "rank": 24,
+      "name": "deepseek-v3.2-thinking",
+      "provider": "DeepSeek",
+      "license": "MIT",
+      "score": 1370,
+      "confidence": "+9/-9",
+      "votes": 6049
+    },
+    {
+      "rank": 25,
+      "name": "glm-4.6",
+      "provider": "Z.ai",
+      "license": "MIT",
+      "score": 1355,
+      "confidence": "+8/-8",
+      "votes": 8747
+    },
+    {
+      "rank": 26,
+      "name": "gpt-5.1",
+      "provider": "OpenAI",
+      "license": "Proprietary",
+      "score": 1342,
+      "confidence": "+7/-7",
+      "votes": 13179
+    },
+    {
+      "rank": 27,
+      "name": "mimo-v2-flash (non-thinking)",
+      "provider": "Xiaomi",
+      "license": "MIT",
+      "score": 1341,
+      "confidence": "+8/-8",
+      "votes": 6932
+    },
+    {
+      "rank": 28,
+      "name": "gpt-5.2-codex",
+      "provider": "OpenAI",
+      "license": "Proprietary",
+      "score": 1334,
+      "confidence": "+9/-9",
+      "votes": 5814
+    },
+    {
+      "rank": 29,
+      "name": "kimi-k2-thinking-turbo",
+      "provider": "Moonshot",
+      "license": "Modified MIT",
+      "score": 1331,
+      "confidence": "+7/-7",
+      "votes": 12690
+    },
+    {
+      "rank": 30,
+      "name": "gpt-5.1-codex",
+      "provider": "OpenAI",
+      "license": "Proprietary",
+      "score": 1328,
+      "confidence": "+9/-9",
+      "votes": 6507
+    }
+  ],
+  "deepSeekModels": [
+    {
+      "rank": 24,
+      "name": "deepseek-v3.2-thinking",
+      "provider": "DeepSeek",
+      "license": "MIT",
+      "score": 1370,
+      "confidence": "+9/-9",
+      "votes": 6049
+    },
+    {
+      "rank": 31,
+      "name": "deepseek-v3.2",
+      "provider": "DeepSeek",
+      "license": "MIT",
+      "score": 1319,
+      "confidence": "+8/-8",
+      "votes": 7376
+    },
+    {
+      "rank": 35,
+      "name": "deepseek-v3.2-exp",
+      "provider": "DeepSeek",
+      "license": "MIT",
+      "score": 1286,
+      "confidence": "+10/-10",
+      "votes": 5131
+    }
+  ]
+}

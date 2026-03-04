@@ -1,0 +1,4 @@
+[     745ms] [WARNING] The provided value '*/*' is not a valid enum value of type XMLHttpRequestResponseType. @ https://g.alicdn.com/aliyun-help/help-portal-fe/0.12.36/js/vendor.js:7
+[     818ms] [ERROR] Permissions policy violation: gyroscope is not allowed in this document. @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
+[     819ms] [ERROR] Permissions policy violation: accelerometer is not allowed in this document. @ https://g.alicdn.com/aliyun-help/help-portal-fe/0.12.36/js/index.js:0
+[     819ms] [WARNING] The deviceorientation events are blocked by permissions policy. See https://github.com/w3c/webappsec-permissions-policy/blob/master/features.md#sensor-features @ https://g.alicdn.com/aliyun-help/help-portal-fe/0.12.36/js/index.js:0

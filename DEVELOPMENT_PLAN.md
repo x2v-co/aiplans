@@ -1,7 +1,7 @@
 # 🚀 PlanPrice.ai 开发计划
 
-> 最后更新：2026-02-27
-> 当前状态：✅ P0-1 完成 + Arena 爬虫完成
+> 最后更新：2026-02-28
+> 当前状态：✅ P0-1 完成 + Arena 爬虫完成 + TypeScript 编译错误已修复
 
 ---
 
@@ -11,7 +11,7 @@
 核心功能：比较 AI 订阅套餐和 API token 价格
 
 **技术栈**：
-- Frontend: Next.js 15 (App Router), TypeScript, TailwindCSS, Shadcn/UI
+- Frontend: Next.js 16 (App Router), TypeScript, TailwindCSS, Shadcn/UI
 - Backend: Next.js API Routes, Drizzle ORM
 - Database: PostgreSQL (Supabase)
 - Deployment: Vercel
@@ -34,8 +34,7 @@ products (18+ LLM 模型)
 plans (9条记录)
   ├── id, name, slug, tier, pricing_model
   ├── price (monthly), annual_price
-  ├── daily_message_limit, requests_per_minute, qps, tokens_per_minute
-  ├── provider_id, product_id
+  ├── daily_message_limit, requests_per_minute
 
 channels (10+ 渠道)
   ├── id, name, slug, type (official/cloud/aggregator/reseller)
@@ -74,30 +73,56 @@ coupons (6条记录)
 - ✅ `api-google-gemini.ts` — Google Gemini API
 - ✅ `api-grok.ts` — Grok/X.AI API
 - ✅ `api-mistral.ts` — Mistral AI API
-- 🔄 `api-openrouter.ts` — OpenRouter（需要更新）
 
-**订阅套餐抓取器（3个）**：
+**动态抓取器（23个）**：
+- ✅ `openai-dynamic.ts` — OpenAI 动态抓取
+- ✅ `anthropic-dynamic.ts` — Anthropic 动态抓取
+- ✅ `deepseek-dynamic.ts` — DeepSeek 动态抓取
+- ✅ `google-gemini-dynamic.ts` — Google Gemini 动态抓取
+- ✅ `grok-dynamic.ts` — Grok 动态抓取
+- ✅ `mistral-dynamic.ts` — Mistral 动态抓取
+- ✅ `moonshot-dynamic.ts` — Moonshot 动态抓取
+- ✅ `minimax-dynamic.ts` — Minimax 动态抓取
+- ✅ `zhipu-dynamic.ts` — Zhipu 动态抓取
+- ✅ `stepfun-dynamic.ts` — StepFun 动态抓取
+- ✅ `qwen-dynamic.ts` — Qwen 动态抓取
+- ✅ `seed-dynamic.ts` — Seed/火山引擎 动态抓取
+- ✅ `hunyuan-dynamic.ts` — Hunyuan 动态抓取
+- ✅ `baidu-dynamic.ts` — Baidu 动态抓取
+- ✅ `fireworks-dynamic.ts` — Fireworks AI 动态抓取
+- ✅ `replicate-dynamic.ts` — Replicate 动态抓取
+- ✅ `anyscale-dynamic.ts` — Anyscale 动态抓取
+- ✅ `aws-bedrock-dynamic.ts` — AWS Bedrock 动态抓取
+- ✅ `azure-openai-dynamic.ts` — Azure OpenAI 动态抓取
+- ✅ `vertex-ai-dynamic.ts` — Vertex AI 动态抓取
+- ✅ `dmxapi-dynamic.ts` — DMXAPI 动态抓取
+
+**订阅套餐抓取器（6个）**：
 - ✅ `plan-openai.ts` — ChatGPT Plus/Pro/Team/Enterprise
 - ✅ `plan-anthropic.ts` — Claude Pro/Team/Enterprise
 - ✅ `plan-google-gemini.ts` — Google One AI Premium
+- ✅ `plan-minimax.ts` — Minimax Coding Plan
+- ✅ `plan-zhipu.ts` — Zhipu GLM Coding Plan
+- ✅ `plan-qwen.ts` — Qwen Plans
+- ✅ `plan-hunyuan.ts` — Hunyuan Plans
+- ✅ `plan-baidu.ts` — Baidu Plans
 
 **Benchmark 抓取器（1个）**：
-- ✅ `benchmark-arena.ts` — Arena AI Leaderboard ELO 分数 **🆕 2026-02-27**
+- ✅ `benchmark-arena.ts` — Arena AI Leaderboard ELO 分数 🆕 2026-02-27
 
 **运行命令**：
 ```bash
 npm run scrape              # 运行所有抓取器（包括 Arena）
 npm run scrape:api          # 仅 API 价格
 npm run scrape:plans        # 仅订阅套餐
-npm run scrape:arena        # 仅 Arena Leaderboard **🆕**
-npm run test:scraper        # 测试单个抓取器
+npm run scrape:arena        # 仅 Arena Leaderboard 🆕
 ```
 
 **当前数据**：
-- 57 条 API 价格记录
-- 9 条订阅套餐记录
-- 15+ 个模型的 Arena ELO 分数 **🆕**
-- 0 错误
+- 341 条 OpenRouter API 价格记录
+- 72 条 SiliconFlow 聚合平台价格记录
+- 12 条订阅套餐记录
+- 15+ 个模型的 Arena ELO 分数 🆕
 
 ---
 
@@ -127,9 +152,7 @@ npm run fetch-logos:force   # 强制更新所有 logo
 
 ---
 
-### 4. API 端点 ✅
-
-**核心 API**：
+### 4. 核心 API 端点 ✅
 
 | 端点 | 功能 | 返回数据 |
 |------|------|---------|
@@ -156,7 +179,7 @@ npm run fetch-logos:force   # 强制更新所有 logo
 | 路由 | 页面 | 状态 |
 |------|------|------|
 | `/` | 首页 | ✅ |
-| `/[locale]/api-pricing` | API 价格总表 | ✅ Logo 已修复 |
+| `/[locale]/api-pricing` | API 价格总表 | ✅ 已修复仅显示官方渠道 |
 | `/[locale]/compare/plans` | 订阅套餐对比 | ✅ TypeScript 已修复 |
 | `/[locale]/coupons` | 优惠码中心 | ✅ |
 | `/open-model/[slug]` | 开源模型渠道价格 | ✅ |
@@ -182,9 +205,29 @@ npm run fetch-logos:force   # 强制更新所有 logo
 - ✅ 开发服务器正常运行
 
 **已修复的构建错误**：
-1. ✅ `api-pricing/page.tsx` — 恢复函数声明
-2. ✅ `compare/plans/page.tsx` — 添加类型注解
-3. ✅ `api/compare/plans/route.ts` — 修复 providers 类型转换
+1. ✅ `src/app/[locale]/api-pricing/page.tsx` — 移除重复 Card 代码，修复过滤逻辑
+2. ✅ `scripts/index.ts` — 修复动态抓取器导入（`scrapeOpenAIDynamic` 等）
+3. ✅ `scripts/cleanup-old-scripts.ts` — 添加缺失的 `access` 导入
+4. ✅ `scripts/insert-fallback-2025.ts` — 修复 `model.cached` 类型错误
+5. ✅ `scripts/insert-fallback.ts` — 修复 `model.cached` 类型错误
+6. ✅ `scripts/run-openrouter-processor.ts` — 修复 provider/channel 创建参数
+7. ✅ `scripts/scraper-processor.ts` — 移除无效的计划字段
+8. ✅ `scripts/scrapers/base-parser.ts` — 修复返回类型允许 null
+9. ✅ `scripts/scrapers/aws-bedrock-dynamic.ts` — 修复 context 属性名
+10. ✅ `scripts/update-anthropic-plan-pricing.ts` — 移除无效计划字段
+11. ✅ `scripts/update-google-plan-pricing.ts` — 移除无效计划字段
+12. ✅ `scripts/update-minimax-plan-pricing.ts` — 移除无效计划字段
+13. ✅ `scripts/update-openai-plan-pricing.ts` — 移除无效计划字段
+14. ✅ `scripts/update-zhipu-plan-pricing.ts` — 移除无效计划字段
+15. ✅ `scripts/update-qwen-pricing.ts` — 移除重复定价键
+16. ✅ `tsconfig.json` — 添加 `_archive` 文件夹到排除列表
+
+**配置更新**：
+```json
+{
+  "exclude": ["node_modules", "**/_archive/**/*"]
+}
+```
 
 ---
 
@@ -192,7 +235,26 @@ npm run fetch-logos:force   # 强制更新所有 logo
 
 ### 优先级 P0（核心功能完善）
 
-#### 3.1 完善 API Pricing 页面 ✅ **P0-1 完成**
+#### 3.1 完善 API Pricing 页面 ✅ **已完成（2026-02-28）**
+
+**完成状态**：✅ 已完成
+**完成时间**：2026-02-28
+
+**已完成任务**：
+- [x] 修复 TypeScript 编译错误
+- [x] 移除重复的 Card/Table 组件
+- [x] 添加过滤器：仅显示官方渠道
+- [x] 使用 `.flatMap()` 修复嵌套 map 返回类型问题
+- [x] 简化筛选逻辑（移除不必要的过滤）
+- [x] 构建成功通过
+
+**API 端点**：
+```bash
+GET /api/products?type=llm        # 产品列表
+GET /api/channels/[productId]          # 某模型的所有渠道价格
+```
+
+#### 3.2 完善 Compare Plans 页面 ✅ **P0-1 完成**
 
 **完成状态**：✅ 已完成
 **完成时间**：2026-02-27
@@ -216,47 +278,30 @@ GET /api/products?featured=true&include_plan_count=true&type=llm
 GET /api/products?provider_id={id}&include_plan_count=true&type=llm
 ```
 
-**剩余任务**（可选优化）：
-- [ ] 执行数据库迁移 `add_channel_provider.sql`（可选）
-- [ ] 添加价格历史图表（使用 Recharts）
-- [ ] 添加「按使用量计算成本」工具
-- [ ] 添加「官方价格基准线」对比
-- [ ] 优化移动端响应式布局
+#### 3.3 添加更多数据源 ✅ **P0-2 部分完成**
 
-**文件位置**：
-- `src/app/api/products/route.ts` ✅ 已增强
-- `src/app/[locale]/compare/plans/page.tsx` ✅ 数据加载完成
-- `messages/en.json` ✅ 翻译已添加
-- `messages/zh.json` ✅ 翻译已添加
+**已完成（2026-02-28）**：
+- [x] OpenRouter 动态抓取器 - 341 个模型
+- [x] SiliconFlow 聚合平台 - 72 个模型
+- [x] 12 个订阅套餐记录（OpenAI, Anthropic, Google, Minimax, Zhipu, Qwen, Hunyuan, Baidu）
 
----
+**待添加的抓取器**：
+- [ ] Azure OpenAI Service
+- [ ] AWS Bedrock
+- [ ] Google Vertex AI
+- [ ] 火山引擎（字节）
+- [ ] 阿里百炼
 
-#### 3.2 完善 Compare Plans 页面
+**待添加的订阅套餐抓取器**：
+- [ ] DeepSeek
+- [ ] Perplexity Pro
+- [ ] Cursor Pro
+- [ ] GitHub Copilot
 
-**任务**：
-- [x] 实现真实数据加载（✅ 已完成）
-- [ ] 添加「热门模型」快捷入口（✅ 已完成，可优化）
-- [ ] 添加「按供应商」分组展示（✅ 已完成）
-- [ ] 实现「年付 vs 月付」成本对比
-- [ ] 添加「比官方便宜 X%」标签
+**聚合平台**：
+- [ ] `api-openrouter.ts` — 更新 OpenRouter 数据 ✅
 
-**API 端点**：`/api/compare/plans?model={slug}`
-
-**参考设计**：`PLAN_COMPARE.md`
-
-**关键对比维度**：
-```typescript
-{
-  💰 价格: price, annual_price, effectiveMonthly
-  🔢 限制: daily_message_limit, requests_per_minute, qps
-  📦 配额: tokens_per_minute, context_window
-  🏷️ 折扣: vs_official (比官方便宜/贵 X%)
-}
-```
-
----
-
-#### 3.3 添加价格历史追踪
+#### 3.4 添加价格历史追踪
 
 **任务**：
 - [ ] 创建 `price_history` 表的抓取逻辑
@@ -280,37 +325,6 @@ CREATE TABLE price_history (
 - 修改 `scripts/index.ts` 添加历史记录逻辑
 - 每次抓取时对比上次价格，有变化则插入历史记录
 
----
-
-### 优先级 P1（增强功能）
-
-#### 3.4 添加更多数据源
-
-**待添加的抓取器**：
-
-**API 价格抓取器**：
-- [ ] `api-azure-openai.ts` — Azure OpenAI Service
-- [ ] `api-aws-bedrock.ts` — AWS Bedrock
-- [ ] `api-vertex-ai.ts` — Google Vertex AI
-- [ ] `api-hunyuan.ts` — 腾讯混元
-- [ ] `api-qwen.ts` — 阿里通义千问
-- [ ] `api-baichuan.ts` — 百川智能
-- [ ] `api-minimax.ts` — MiniMax
-- [ ] `api-zhipu.ts` — 智谱 GLM
-
-**订阅套餐抓取器**：
-- [ ] `plan-deepseek.ts` — DeepSeek
-- [ ] `plan-perplexity.ts` — Perplexity Pro
-- [ ] `plan-cursor.ts` — Cursor Pro
-- [ ] `plan-github-copilot.ts` — GitHub Copilot
-
-**聚合平台**：
-- [ ] `api-openrouter.ts` — 更新 OpenRouter 数据
-- [ ] `api-huoshan.ts` — 火山引擎（字节）
-- [ ] `api-aliyun-bailian.ts` — 阿里百炼
-
----
-
 #### 3.5 成本计算器页面
 
 **路由**：`/calculator`
@@ -323,8 +337,6 @@ CREATE TABLE price_history (
 
 **参考 API**：`/api/calculator/estimate`
 
----
-
 #### 3.6 优惠码社区功能完善
 
 **任务**：
@@ -334,12 +346,28 @@ CREATE TABLE price_history (
 - [ ] 添加「用户提交」表单
 
 **API 端点**：
-- `POST /api/coupons` — 提交优惠码
-- `POST /api/coupons/[id]/vote` — 投票
+```
+POST /api/coupons                — 提交优惠码
+POST /api/coupons/[id]/vote     — 投票
+```
 
----
+#### 3.7 更多数据源
 
-### 优先级 P2（未来功能）
+**国内平台**：
+- [ ] 通义千问
+- [ ] 混元（字节）
+- [ ] 百川智能
+
+**云厂商**：
+- [ ] Azure OpenAI Service
+- [ ] AWS Bedrock
+- [ ] Google Vertex AI
+
+**聚合平台**：
+- [ ] 火山引擎
+- [ ] 阿里百炼
+
+### 优先级 P1（增强功能）
 
 #### 3.7 用户系统
 
@@ -348,8 +376,6 @@ CREATE TABLE price_history (
 - [ ] 保存对比方案
 - [ ] 价格提醒订阅
 - [ ] 个人使用历史
-
----
 
 #### 3.8 管理后台
 
@@ -360,8 +386,6 @@ CREATE TABLE price_history (
 - [ ] 手动添加/编辑 Channel Price
 - [ ] 审核用户提交的优惠码
 - [ ] 查看抓取日志
-
----
 
 #### 3.9 SEO 优化
 
@@ -388,11 +412,15 @@ npm run dev
 # 构建生产版本
 npm run build
 
-# 运行抓取器
-npm run scrape
+# 启动生产服务器
+npm run start
 
-# 更新 Logo
-npm run fetch-logos
+# 运行抓取器
+npm run scrape              # 运行所有抓取器（包括 Arena）
+npm run scrape:api          # 仅 API 价格
+npm run scrape:plans        # 仅订阅套餐
+npm run scrape:arena        # 仅 Arena Leaderboard
+npm run test:scraper        # 测试单个抓取器
 ```
 
 ### 环境变量
@@ -418,10 +446,10 @@ planprice/
 ├── src/
 │   ├── app/
 │   │   ├── [locale]/                 # 国际化路由
-│   │   │   ├── page.tsx             # 首页
-│   │   │   ├── api-pricing/         # API 价格总表 ✅
-│   │   │   ├── compare/plans/       # 订阅套餐对比 ✅
-│   │   │   └── coupons/             # 优惠码中心 ✅
+│   │   ├── page.tsx             # 首页
+│   │   ├── api-pricing/         # API 价格总表 ✅
+│   │   ├── compare/plans/       # 订阅套餐对比 ✅
+│   │   ├── coupons/             # 优惠码中心 ✅
 │   │   ├── api/                     # API 路由
 │   │   │   ├── products/            # 产品列表 ✅
 │   │   │   ├── channels/            # 渠道价格 ✅
@@ -435,9 +463,9 @@ planprice/
 │   │   └── LanguageSwitcher.tsx     # 语言切换 ✅
 │   ├── lib/
 │   │   ├── supabase.ts              # Supabase 客户端 ✅
-│   │   └── translations/            # i18n 翻译文件 ✅
-│   └── db/
-│       └── schema.ts                # Drizzle schema（未使用）
+│   │   ├── translations/            # i18n 翻译文件 ✅
+│   │   └── db/
+│   │       └── schema.ts             # Drizzle schema（已使用）
 ├── scripts/
 │   ├── scrapers/                    # 数据抓取器 ✅
 │   │   ├── api-openai.ts           # OpenAI API ✅
@@ -450,20 +478,23 @@ planprice/
 │   │   ├── api-mistral.ts          # Mistral AI ✅
 │   │   ├── plan-openai.ts          # OpenAI Plans ✅
 │   │   ├── plan-anthropic.ts       # Anthropic Plans ✅
-│   │   └── plan-google-gemini.ts   # Google Plans ✅
+│   │   ├── plan-google-gemini.ts   # Google Plans ✅
+│   │   ├── benchmark-arena.ts      # Arena Leaderboard ✅
+│   │   ├── *-dynamic.ts           # 动态抓取器（23个）✅
+│   │   └── _archive/              # 已归档的旧脚本
 │   ├── db/
 │   │   ├── migrations/              # SQL 迁移文件
 │   │   │   ├── final_fix.sql       # ✅ 已执行
 │   │   │   └── add_channel_provider.sql # ⚠️ 待执行
-│   │   └── queries.ts               # 数据库查询工具 ✅
-│   ├── fetch-provider-logos.ts      # Logo 抓取 ✅
+│   │   ├── queries.ts               # 数据库查询工具 ✅
+│   │   └── fetch-provider-logos.ts # Logo 抓取 ✅
 │   └── index.ts                     # 主抓取脚本 ✅
 ├── CLAUDE.md                        # Claude 项目指引
 ├── MRD.md                           # 产品需求文档
 ├── PLAN_COMPARE.md                  # 对比功能设计文档
 ├── MVP-COMPLETED.md                 # MVP 完成清单
-├── LOGO_REPLACEMENT_COMPLETED.md    # Logo 替换完成总结
-└── DEVELOPMENT_PLAN.md              # 本文档 ⭐
+├── DEVELOPMENT_PLAN.md              # 本文档 ⭐
+└── LOGO_REPLACEMENT_COMPLETED.md    # Logo 替换完成总结
 ```
 
 ---
@@ -479,7 +510,6 @@ planprice/
 **解决方案**：
 ```typescript
 // src/app/[locale]/compare/plans/page.tsx
-
 useEffect(() => {
   async function loadData() {
     // 1. 加载热门模型
@@ -506,8 +536,6 @@ useEffect(() => {
 }, []);
 ```
 
----
-
 ### 2. Channels 表缺少 `provider_id`（可选修复）
 
 **现象**：
@@ -528,9 +556,9 @@ psql < scripts/db/migrations/add_channel_provider.sql
 
 ## 📝 下次开发建议
 
-### 立即任务（1-2小时）
+### 即时任务（1-2小时）
 
-1. **✅ 完善 Compare Plans 数据加载** — 已完成 ✅
+1. **✅ 完善 Compare Plans 数据加载** — 已完成（2026-02-27）
    - ✅ 修改 `src/app/[locale]/compare/plans/page.tsx`
    - ✅ 添加 API 调用逻辑
    - ✅ 测试页面展示
@@ -538,7 +566,7 @@ psql < scripts/db/migrations/add_channel_provider.sql
 2. **添加价格历史追踪** — 下一个 P0 任务
    - 创建 `price_history` 表
    - 修改抓取脚本记录历史
-   - 添加价格趋势图
+   - 添加价格变化检测
 
 3. **添加成本计算器页面**
    - 创建 `/calculator` 路由
@@ -549,35 +577,31 @@ psql < scripts/db/migrations/add_channel_provider.sql
 
 1. **添加更多数据源**
    - 国内平台：通义千问、混元、百川
-   - 云厂商：Azure OpenAI, AWS Bedrock, Vertex AI
+   - 云厂商：Azure OpenAI、AWS Bedrock、Vertex AI
    - 聚合平台：火山引擎、阿里百炼
 
 2. **优化 SEO**
-   - 结构化数据
-   - 动态 sitemap
-   - Open Graph 标签
+   - 添加结构化数据
+   - 生成动态 sitemap
+   - Open Graph 优化
 
 3. **优惠码社区功能**
-   - 投票系统
-   - 验证标签
+   - 点赞/点踩系统
+   - 验证成功标签
    - 用户提交表单
 
 ### 长期任务（1个月）
 
 1. **用户系统**
    - Supabase Auth 集成
-   - 个人中心
+   - 保存对比方案
    - 价格提醒订阅
+   - 个人使用历史
 
 2. **管理后台**
    - CRUD 界面
    - 抓取日志查看
    - 优惠码审核
-
-3. **移动端优化**
-   - 响应式布局优化
-   - 触摸交互优化
-   - 性能优化
 
 ---
 
@@ -590,14 +614,16 @@ psql < scripts/db/migrations/add_channel_provider.sql
 - ✅ 9 条订阅套餐记录
 - ✅ 10+ 个渠道
 - ✅ 6 个优惠码
+- ✅ 15+ 个模型的 Arena ELO 分数
 
 **目标数据规模（3个月）**：
-- 🎯 30+ 供应商
-- 🎯 100+ LLM 模型
-- 🎯 500+ API 价格记录
-- 🎯 50+ 订阅套餐
-- 🎯 30+ 渠道
-- 🎯 100+ 优惠码
+- 🎯 30+ 个供应商
+- 🎯 100+ 个 LLM 模型
+- 🎯 500+ 条 API 价格记录
+- 🎯 50+ 条订阅套餐记录
+- 🎯 30+ 个渠道
+- 🎯 100+ 个优惠码
+- 🎯 50+ 个模型的 Arena ELO 分数
 
 ---
 
@@ -605,49 +631,14 @@ psql < scripts/db/migrations/add_channel_provider.sql
 
 - `CLAUDE.md` — Claude 开发指引
 - `MRD.md` — 产品需求文档
-- `PLAN_COMPARE.md` — 对比功能设计
+- `PLAN_COMPARE.md` — 对比功能设计文档
 - `MVP-COMPLETED.md` — MVP 完成清单
-- `LOGO_REPLACEMENT_COMPLETED.md` — Logo 系统总结
-- `FIX_API_PRICING_LOGO.md` — Logo 修复指南
 
 ---
 
-## 🚦 当前状态总结
+## 🚀 准备就绪，随时可以继续开发！
 
-### ✅ 完成
-- 数据库架构和迁移
-- 8个 API 抓取器 + 3个 Plan 抓取器
-- **✅ 1个 Benchmark 抓取器（Arena Leaderboard）🆕**
-- Logo 自动抓取系统
-- 核心 API 端点（8个）
-- 核心前端页面（6个）
-- i18n 系统
-- 构建系统无错误
-- **✅ P0-1: Compare Plans 数据加载（2026-02-27）**
-- **✅ Arena Leaderboard 爬虫（2026-02-27）🆕**
-
-### 🔄 进行中
-- 无（当前暂停，等待下次开发）
-
-### ⚠️ 待处理（按优先级）
-1. **P0-2: 价格历史追踪** — 下一个任务
-2. **P0-3: 成本计算器页面**
-3. P1: 更多数据源（国内平台、云厂商）
-4. P1: SEO 优化
-5. P2: 用户系统、管理后台
-
-### 🎯 下次启动任务
-**建议从 P0-2 开始**：
-1. 添加价格历史追踪功能
-2. 创建 `price_history` 表
-3. 实现价格变化检测和趋势图
-
----
-
-**📌 重要提示**：
-- 下次开发时，直接参考本文档，不需要重新打开当前 context
+**重要提示**：
+- 下次开发时，直接参考本文档
 - 所有核心代码和逻辑都已记录在文档中
 - 按照优先级 P0 → P1 → P2 依次推进
-- 遇到问题查看「已知问题」章节
-
-🚀 **准备就绪，随时可以继续开发！**

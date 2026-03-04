@@ -1,0 +1,2 @@
+[     451ms] [WARNING] [AES] 未监测到Aplus SDK @ https://g.alicdn.com/aliyun-help/help-portal-fe/0.12.37/js/index.js:0
+[     464ms] [WARNING] The provided value '*/*' is not a valid enum value of type XMLHttpRequestResponseType. @ https://g.alicdn.com/aliyun-help/help-portal-fe/0.12.37/js/vendor.js:7

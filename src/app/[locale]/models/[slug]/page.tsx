@@ -10,7 +10,7 @@ import { ArrowLeft, Check, ExternalLink, TrendingDown, Zap, Globe } from "lucide
 import { supabase } from "@/lib/supabase";
 import { use } from "react";
 
-const baseUrl = 'https://planprice.ai';
+const baseUrl = 'https://aiplans.app';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
@@ -21,8 +21,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const productName = product?.name || slug;
 
   const title = isZh
-    ? `${productName} API 价格对比 - ${productName} 各渠道价格 | PlanPrice.ai`
-    : `${productName} API Price Comparison - All Channels | PlanPrice.ai`;
+    ? `${productName} API 价格对比 - ${productName} 各渠道价格 | aiplans.ai`
+    : `${productName} API Price Comparison - All Channels | aiplans.ai`;
 
   const description = isZh
     ? `对比 ${productName} 在官方、Azure、OpenRouter、硅基流动等渠道的 API 价格。找到最便宜的 ${productName} API 供应商。`
@@ -186,7 +186,7 @@ export default async function ModelPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href={`/${locale}`} className="flex items-center gap-2">
             <span className="text-2xl">💰</span>
-            <span className="text-xl font-bold">PlanPrice.ai</span>
+            <span className="text-xl font-bold">aiplans.ai</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             <Link href={`/${locale}/compare/plans`} className="text-sm font-medium hover:text-blue-600">
@@ -669,7 +669,7 @@ export default async function ModelPage({
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-lg">💰</span>
-            <span className="font-medium">PlanPrice.ai</span>
+            <span className="font-medium">aiplans.ai</span>
           </div>
           <p className="text-sm text-zinc-500">
             Prices updated daily • Last verified: {new Date().toLocaleDateString()} • {channelPrices.length} channels tracked

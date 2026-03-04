@@ -1,0 +1,7 @@
+Total messages: 3 (Errors: 1, Warnings: 0)
+
+[INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ERROR] Each child in a list should have a unique "key" prop.%s%s See https://react.dev/link/warning-keys for more information. 
+
+Check the render method of `ApiPricingPage`.  @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127

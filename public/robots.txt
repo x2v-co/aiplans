@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://planprice.ai/sitemap.xml
+Sitemap: https://aiplans.app/sitemap.xml
 
 # Geo-targeting
 # English pages

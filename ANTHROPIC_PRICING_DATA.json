@@ -1,0 +1,62 @@
+{
+  "source": "https://docs.anthropic.com/en/docs/models-overview",
+  "extractedDate": "2026-03-02",
+  "currency": "USD",
+  "models": [
+    {
+      "name": "Claude Opus 4.6",
+      "apiId": "claude-opus-4-6",
+      "alias": "claude-opus-4-6",
+      "awsBedrockId": "anthropic.claude-opus-4-6-v1",
+      "gcpVertexAiId": "claude-opus-4-6",
+      "inputPricePer1M": 5.00,
+      "outputPricePer1M": 25.00,
+      "cachedInputPricePer1M": 0.50,
+      "contextWindow": 200000,
+      "extendedThinking": true,
+      "adaptiveThinking": true,
+      "priorityTier": true
+    },
+    {
+      "name": "Claude Sonnet 4.6",
+      "apiId": "claude-sonnet-4-6",
+      "alias": "claude-sonnet-4-6",
+      "awsBedrockId": "anthropic.claude-sonnet-4-6",
+      "gcpVertexAiId": "claude-sonnet-4-6",
+      "inputPricePer1M": 3.00,
+      "outputPricePer1M": 15.00,
+      "cachedInputPricePer1M": 0.30,
+      "contextWindow": 200000,
+      "extendedThinking": true,
+      "adaptiveThinking": true,
+      "priorityTier": true
+    },
+    {
+      "name": "Claude Haiku 4.5 (20251001)",
+      "apiId": "claude-haiku-4-5-20251001",
+      "alias": "claude-haiku-4-5",
+      "awsBedrockId": "anthropic.claude-haiku-4-5-20251001-v1:0",
+      "gcpVertexAiId": "claude-haiku-4-5",
+      "inputPricePer1M": 1.00,
+      "outputPricePer1M": 5.00,
+      "cachedInputPricePer1M": 0.10,
+      "contextWindow": 200000,
+      "extendedThinking": true,
+      "adaptiveThinking": false,
+      "priorityTier": null
+    }
+  ],
+  "notes": [
+    "All Claude 4.x models support 200,000 token context window",
+    "Extended thinking is available for all models",
+    "Adaptive thinking is only available for Opus and Sonnet",
+    "Priority Tier is available for Opus and Sonnet",
+    "Pricing is per million tokens (MTok)",
+    "Models are available via Claude API, AWS Bedrock, and Google Vertex AI"
+  ],
+  "availability": {
+    "claudeAPI": true,
+    "awsBedrock": true,
+    "googleVertexAI": true
+  }
+}

@@ -1,0 +1,589 @@
+{
+  "source": "https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya",
+  "lastUpdated": "2026-03-02",
+  "currency": "CNY",
+  "note": "Prices are in CNY per 1,000 tokens. Values in 'pricePer1M' are converted to per 1M tokens.",
+  "models": [
+    {
+      "name": "ERNIE 5.0 Thinking",
+      "apiName": "ERNIE-5.0-Thinking-Preview",
+      "inputPricePer1K": 0.006,
+      "outputPricePer1K": null,
+      "inputPricePer1M": 6.00,
+      "outputPricePer1M": null,
+      "cachePricePer1K": null,
+      "contextWindow": 32000,
+      "type": "thinking"
+    },
+    {
+      "name": "ERNIE 5.0 Thinking Latest",
+      "apiName": "ERNIE-5.0-Thinking-Latest",
+      "inputPricePer1K": 0.006,
+      "outputPricePer1K": null,
+      "inputPricePer1M": 6.00,
+      "outputPricePer1M": null,
+      "cachePricePer1K": null,
+      "contextWindow": 32000,
+      "type": "thinking"
+    },
+    {
+      "name": "ERNIE 5.0 Thinking Exp",
+      "apiName": "ERNIE-5.0-Thinking-Exp",
+      "inputPricePer1K": 0.006,
+      "outputPricePer1K": null,
+      "inputPricePer1M": 6.00,
+      "outputPricePer1M": null,
+      "cachePricePer1K": null,
+      "contextWindow": 32000,
+      "type": "thinking"
+    },
+    {
+      "name": "ERNIE 4.5 Turbo 128K",
+      "apiName": "ERNIE-4.5-Turbo-128K",
+      "inputPricePer1K": 0.0008,
+      "outputPricePer1K": 0.0032,
+      "inputPricePer1M": 0.80,
+      "outputPricePer1M": 3.20,
+      "cachePricePer1K": 0.0002,
+      "cachePricePer1M": 0.20,
+      "discountInputPricePer1K": 0.00032,
+      "discountOutputPricePer1K": 0.00128,
+      "contextWindow": 128000,
+      "type": "turbo"
+    },
+    {
+      "name": "ERNIE 4.5 Turbo 32K",
+      "apiName": "ERNIE-4.5-Turbo-32K",
+      "inputPricePer1K": 0.0008,
+      "outputPricePer1K": 0.0032,
+      "inputPricePer1M": 0.80,
+      "outputPricePer1M": 3.20,
+      "cachePricePer1K": 0.0002,
+      "cachePricePer1M": 0.20,
+      "discountInputPricePer1K": [0.00032, 0.00008, 0.00016],
+      "discountOutputPricePer1K": [0.00128, 0.00032, 0.00064],
+      "contextWindow": 32000,
+      "type": "turbo"
+    },
+    {
+      "name": "ERNIE 4.5 Turbo VL",
+      "apiName": "ERNIE-4.5-Turbo-VL",
+      "inputPricePer1K": 0.003,
+      "outputPricePer1K": 0.009,
+      "inputPricePer1M": 3.00,
+      "outputPricePer1M": 9.00,
+      "cachePricePer1K": 0.00075,
+      "cachePricePer1M": 0.75,
+      "discountInputPricePer1K": 0.0012,
+      "discountOutputPricePer1K": 0.0036,
+      "contextWindow": 32000,
+      "type": "vision-language"
+    },
+    {
+      "name": "ERNIE 4.5 8K",
+      "apiName": "ERNIE-4.5-8K",
+      "inputPricePer1K": 0.004,
+      "outputPricePer1K": 0.016,
+      "inputPricePer1M": 4.00,
+      "outputPricePer1M": 16.00,
+      "cachePricePer1K": null,
+      "discountInputPricePer1K": 0.0016,
+      "discountOutputPricePer1K": 0.0064,
+      "contextWindow": 8000,
+      "type": "base"
+    },
+    {
+      "name": "ERNIE 4.5 VL 28B",
+      "apiName": "ERNIE-4.5-VL-28B-A3B",
+      "inputPricePer1K": 0.001,
+      "outputPricePer1K": 0.004,
+      "inputPricePer1M": 1.00,
+      "outputPricePer1M": 4.00,
+      "cachePricePer1K": null,
+      "discountInputPricePer1K": 0.0004,
+      "discountOutputPricePer1K": 0.0016,
+      "contextWindow": null,
+      "type": "vision-language"
+    },
+    {
+      "name": "ERNIE 4.5 0.3B",
+      "apiName": "ERNIE-4.5-0.3B",
+      "inputPricePer1K": 0.0001,
+      "outputPricePer1K": 0.0004,
+      "inputPricePer1M": 0.10,
+      "outputPricePer1M": 0.40,
+      "cachePricePer1K": null,
+      "discountInputPricePer1K": 0.00004,
+      "discountOutputPricePer1K": 0.00016,
+      "contextWindow": null,
+      "type": "lite"
+    },
+    {
+      "name": "ERNIE 4.5 21B Thinking",
+      "apiName": "ERNIE-4.5-21B-A3B-Thinking",
+      "inputPricePer1K": 0.0005,
+      "outputPricePer1K": 0.002,
+      "inputPricePer1M": 0.50,
+      "outputPricePer1M": 2.00,
+      "cachePricePer1K": null,
+      "contextWindow": null,
+      "type": "thinking"
+    },
+    {
+      "name": "ERNIE 4.5 21B",
+      "apiName": "ERNIE-4.5-21B-A3B",
+      "inputPricePer1K": 0.0005,
+      "outputPricePer1K": 0.002,
+      "inputPricePer1M": 0.50,
+      "outputPricePer1M": 2.00,
+      "cachePricePer1K": null,
+      "discountInputPricePer1K": 0.0002,
+      "discountOutputPricePer1K": 0.0008,
+      "contextWindow": null,
+      "type": "base"
+    },
+    {
+      "name": "ERNIE X1.1",
+      "apiName": "ERNIE-X1.1-Preview",
+      "inputPricePer1K": 0.001,
+      "outputPricePer1K": 0.004,
+      "inputPricePer1M": 1.00,
+      "outputPricePer1M": 4.00,
+      "cachePricePer1K": null,
+      "contextWindow": null,
+      "type": "thinking"
+    },
+    {
+      "name": "ERNIE X1 Turbo 32K",
+      "apiName": "ERNIE-X1-Turbo-32K",
+      "inputPricePer1K": 0.001,
+      "outputPricePer1K": 0.004,
+      "inputPricePer1M": 1.00,
+      "outputPricePer1M": 4.00,
+      "cachePricePer1K": null,
+      "discountInputPricePer1K": 0.0004,
+      "discountOutputPricePer1K": 0.0016,
+      "contextWindow": 32000,
+      "type": "turbo"
+    },
+    {
+      "name": "ERNIE Speed Pro 128K",
+      "apiName": "ERNIE-Speed-Pro-128K",
+      "inputPricePer1K": 0.0003,
+      "outputPricePer1K": 0.0006,
+      "inputPricePer1M": 0.30,
+      "outputPricePer1M": 0.60,
+      "cachePricePer1K": null,
+      "discountInputPricePer1K": 0.00012,
+      "discountOutputPricePer1K": 0.00024,
+      "tpmLimit": 10000,
+      "contextWindow": 128000,
+      "type": "speed"
+    },
+    {
+      "name": "ERNIE Lite Pro 128K",
+      "apiName": "ERNIE-Lite-Pro-128K",
+      "inputPricePer1K": 0.0002,
+      "outputPricePer1K": 0.0004,
+      "inputPricePer1M": 0.20,
+      "outputPricePer1M": 0.40,
+      "cachePricePer1K": null,
+      "discountInputPricePer1K": 0.00008,
+      "discountOutputPricePer1K": 0.00016,
+      "tpmLimit": 10000,
+      "contextWindow": 128000,
+      "type": "lite"
+    },
+    {
+      "name": "ERNIE Character 8K",
+      "apiName": "ernie-char-8k",
+      "inputPricePer1K": 0.0003,
+      "outputPricePer1K": 0.0006,
+      "inputPricePer1M": 0.30,
+      "outputPricePer1M": 0.60,
+      "cachePricePer1K": null,
+      "discountInputPricePer1K": 0.00012,
+      "discountOutputPricePer1K": 0.00024,
+      "tpmLimit": 10000,
+      "contextWindow": 8000,
+      "type": "character"
+    }
+  ],
+  "thirdPartyModels": [
+    {
+      "name": "DeepSeek V3.2",
+      "apiName": "DeepSeek-V3.2",
+      "inputPricePer1K": 0.002,
+      "outputPricePer1K": 0.003,
+      "inputPricePer1M": 2.00,
+      "outputPricePer1M": 3.00,
+      "contextWindow": [32000, 128000],
+      "provider": "DeepSeek"
+    },
+    {
+      "name": "DeepSeek V3.1",
+      "apiName": "DeepSeek-V3.1-250821",
+      "inputPricePer1K": 0.004,
+      "outputPricePer1K": 0.012,
+      "inputPricePer1M": 4.00,
+      "outputPricePer1M": 12.00,
+      "contextWindow": [32000, 128000],
+      "provider": "DeepSeek"
+    },
+    {
+      "name": "DeepSeek V3",
+      "apiName": "DeepSeek-V3",
+      "inputPricePer1K": 0.002,
+      "outputPricePer1K": 0.008,
+      "inputPricePer1M": 2.00,
+      "outputPricePer1M": 8.00,
+      "contextWindow": [32000, 128000],
+      "provider": "DeepSeek"
+    },
+    {
+      "name": "DeepSeek R1",
+      "apiName": "DeepSeek-R1",
+      "inputPricePer1K": 0.004,
+      "outputPricePer1K": 0.016,
+      "inputPricePer1M": 4.00,
+      "outputPricePer1M": 16.00,
+      "contextWindow": [32000, 128000],
+      "provider": "DeepSeek"
+    },
+    {
+      "name": "Kimi K2 Instruct",
+      "apiName": "Kimi-K2-Instruct",
+      "inputPricePer1K": 0.004,
+      "outputPricePer1K": 0.016,
+      "inputPricePer1M": 4.00,
+      "outputPricePer1M": 16.00,
+      "contextWindow": null,
+      "provider": "Moonshot"
+    },
+    {
+      "name": "Kimi K2.5",
+      "apiName": "Kimi-K2.5",
+      "inputPricePer1K": 0.004,
+      "outputPricePer1K": 0.021,
+      "inputPricePer1M": 4.00,
+      "outputPricePer1M": 21.00,
+      "contextWindow": null,
+      "provider": "Moonshot"
+    },
+    {
+      "name": "Qwen3 Next 80B",
+      "apiName": "Qwen3-Next-80B-A3B-Instruct",
+      "inputPricePer1K": 0.001,
+      "outputPricePer1K": 0.004,
+      "inputPricePer1M": 1.00,
+      "outputPricePer1M": 4.00,
+      "contextWindow": [32000, 128000],
+      "provider": "Alibaba"
+    },
+    {
+      "name": "Qwen3 235B",
+      "apiName": "Qwen3-235B-A22B-Instruct-2507",
+      "inputPricePer1K": 0.002,
+      "outputPricePer1K": 0.008,
+      "inputPricePer1M": 2.00,
+      "outputPricePer1M": 8.00,
+      "contextWindow": [32000, 128000],
+      "provider": "Alibaba"
+    },
+    {
+      "name": "Qwen3 30B",
+      "apiName": "Qwen3-30B-A3B-Instruct-2507",
+      "inputPricePer1K": 0.00075,
+      "outputPricePer1K": 0.003,
+      "inputPricePer1M": 0.75,
+      "outputPricePer1M": 3.00,
+      "contextWindow": [32000, 128000],
+      "provider": "Alibaba"
+    },
+    {
+      "name": "GLM 5",
+      "apiName": "GLM-5",
+      "inputPricePer1K": 0.004,
+      "outputPricePer1K": 0.018,
+      "inputPricePer1M": 4.00,
+      "outputPricePer1M": 18.00,
+      "contextWindow": [32000, 200000],
+      "provider": "Zhipu"
+    },
+    {
+      "name": "GLM 4.7",
+      "apiName": "GLM-4.7",
+      "inputPricePer1K": 0.002,
+      "outputPricePer1K": 0.008,
+      "inputPricePer1M": 2.00,
+      "outputPricePer1M": 8.00,
+      "contextWindow": [32000, 200000],
+      "provider": "Zhipu"
+    },
+    {
+      "name": "MiniMax M2.1",
+      "apiName": "MiniMax-M2.1",
+      "inputPricePer1K": 0.0021,
+      "outputPricePer1K": 0.0084,
+      "inputPricePer1M": 2.10,
+      "outputPricePer1M": 8.40,
+      "contextWindow": null,
+      "provider": "MiniMax"
+    }
+  ],
+  "qianfanCustomModels": [
+    {
+      "name": "Qianfan Sug",
+      "apiName": "Qianfan-Sug",
+      "inputPricePer1K": 0.0003,
+      "outputPricePer1K": 0.0006,
+      "inputPricePer1M": 0.30,
+      "outputPricePer1M": 0.60,
+      "type": "suggestion"
+    },
+    {
+      "name": "Qianfan Check VL",
+      "apiName": "qianfan-check-vl",
+      "inputPricePer1K": 0.00125,
+      "outputPricePer1K": 0.00375,
+      "inputPricePer1M": 1.25,
+      "outputPricePer1M": 3.75,
+      "type": "vision-check"
+    },
+    {
+      "name": "Qianfan VL 70B",
+      "apiName": "qianfan-vl-70b",
+      "inputPricePer1K": 0.008,
+      "outputPricePer1K": 0.024,
+      "inputPricePer1M": 8.00,
+      "outputPricePer1M": 24.00,
+      "type": "vision-language"
+    },
+    {
+      "name": "Qianfan VL 8B",
+      "apiName": "qianfan-vl-8b",
+      "inputPricePer1K": 0.002,
+      "outputPricePer1K": 0.006,
+      "inputPricePer1M": 2.00,
+      "outputPricePer1M": 6.00,
+      "type": "vision-language"
+    },
+    {
+      "name": "Qianfan VL 1.5 Flash",
+      "apiName": "qianfan-vl-1.5-flash",
+      "inputPricePer1K": 0.00075,
+      "outputPricePer1K": 0.003,
+      "inputPricePer1M": 0.75,
+      "outputPricePer1M": 3.00,
+      "type": "vision-language"
+    },
+    {
+      "name": "Qianfan FuncCaller",
+      "apiName": "Qianfan-FuncCaller",
+      "inputPricePer1K": 0.0008,
+      "outputPricePer1K": 0.0032,
+      "inputPricePer1M": 0.80,
+      "outputPricePer1M": 3.20,
+      "type": "function-calling"
+    },
+    {
+      "name": "Qianfan ToyTalk",
+      "apiName": "Qianfan-ToyTalk",
+      "inputPricePer1K": 0.0001,
+      "outputPricePer1K": 0.0002,
+      "inputPricePer1M": 0.10,
+      "outputPricePer1M": 0.20,
+      "type": "conversation"
+    },
+    {
+      "name": "Qianfan Correct",
+      "apiName": "Qianfan-Correct",
+      "inputPricePer1K": 0.0006,
+      "outputPricePer1K": 0.006,
+      "inputPricePer1M": 0.60,
+      "outputPricePer1M": 6.00,
+      "type": "correction"
+    },
+    {
+      "name": "QWQ 32B",
+      "apiName": "QWQ-32B",
+      "inputPricePer1K": 0.002,
+      "outputPricePer1K": 0.006,
+      "inputPricePer1M": 2.00,
+      "outputPricePer1M": 6.00,
+      "type": "reasoning"
+    }
+  ],
+  "embeddingModels": [
+    {
+      "name": "Embedding V1",
+      "apiName": "Embedding-V1",
+      "inputPricePer1K": 0.0005,
+      "inputPricePer1M": 0.50,
+      "type": "embedding"
+    },
+    {
+      "name": "BGE Large ZH",
+      "apiName": "bge-large-zh",
+      "inputPricePer1K": 0.0005,
+      "inputPricePer1M": 0.50,
+      "type": "embedding"
+    },
+    {
+      "name": "BGE Large EN",
+      "apiName": "bge-large-en",
+      "inputPricePer1K": 0.0005,
+      "inputPricePer1M": 0.50,
+      "type": "embedding"
+    },
+    {
+      "name": "TAO 8K",
+      "apiName": "tao-8k",
+      "inputPricePer1K": 0.0005,
+      "inputPricePer1M": 0.50,
+      "type": "embedding"
+    },
+    {
+      "name": "Qwen3 Embedding 0.6B",
+      "apiName": "Qwen3-Embedding-0.6B",
+      "inputPricePer1K": 0.0005,
+      "inputPricePer1M": 0.50,
+      "type": "embedding"
+    },
+    {
+      "name": "Qwen3 Embedding 4B",
+      "apiName": "Qwen3-Embedding-4B",
+      "inputPricePer1K": 0.0005,
+      "inputPricePer1M": 0.50,
+      "type": "embedding"
+    },
+    {
+      "name": "Qwen3 Embedding 8B",
+      "apiName": "Qwen3-Embedding-8B",
+      "inputPricePer1K": 0.0005,
+      "inputPricePer1M": 0.50,
+      "type": "embedding"
+    }
+  ],
+  "rerankerModels": [
+    {
+      "name": "BCE Reranker Base",
+      "apiName": "bce-reranker-base",
+      "inputPricePer1K": 0.0005,
+      "inputPricePer1M": 0.50,
+      "type": "reranker"
+    },
+    {
+      "name": "Qwen3 Reranker 0.6B",
+      "apiName": "Qwen3-Reranker-0.6B",
+      "inputPricePer1K": 0.0008,
+      "inputPricePer1M": 0.80,
+      "type": "reranker"
+    },
+    {
+      "name": "Qwen3 Reranker 4B",
+      "apiName": "Qwen3-Reranker-4B",
+      "inputPricePer1K": 0.0008,
+      "inputPricePer1M": 0.80,
+      "type": "reranker"
+    },
+    {
+      "name": "Qwen3 Reranker 8B",
+      "apiName": "Qwen3-Reranker-8B",
+      "inputPricePer1K": 0.0008,
+      "inputPricePer1M": 0.80,
+      "type": "reranker"
+    }
+  ],
+  "ocrModels": [
+    {
+      "name": "DeepSeek OCR",
+      "apiName": "DeepSeek-OCR",
+      "inputPricePer1K": 0.0003,
+      "outputPricePer1K": 0.0012,
+      "inputPricePer1M": 0.30,
+      "outputPricePer1M": 1.20,
+      "type": "ocr"
+    },
+    {
+      "name": "Qianfan OCR",
+      "apiName": "Qianfan-OCR",
+      "inputPricePer1K": 0.00045,
+      "outputPricePer1K": 0.0018,
+      "inputPricePer1M": 0.45,
+      "outputPricePer1M": 1.80,
+      "type": "ocr"
+    },
+    {
+      "name": "Qianfan OCR Fast",
+      "apiName": "Qianfan-OCR-Fast",
+      "inputPricePer1K": 0.00485,
+      "outputPricePer1K": 0.02,
+      "inputPricePer1M": 4.85,
+      "outputPricePer1M": 20.00,
+      "type": "ocr"
+    }
+  ],
+  "prepaidPackages": [
+    {
+      "model": "ERNIE Lite Pro 128K",
+      "tokens": 100000000,
+      "tpm": 800000,
+      "rpm": 10000,
+      "duration": "12 months",
+      "price": 25,
+      "discountPrice": 22.50,
+      "discountPercent": 90
+    },
+    {
+      "model": "ERNIE Speed Pro 128K",
+      "tokens": 100000000,
+      "tpm": 800000,
+      "rpm": 10000,
+      "duration": "12 months",
+      "price": 37.50,
+      "discountPrice": 33.75,
+      "discountPercent": 90
+    },
+    {
+      "model": "ERNIE 4.5 Turbo 32K/128K",
+      "tokens": 100000000,
+      "tpm": 400000,
+      "rpm": 5000,
+      "duration": "6 months",
+      "price": 140,
+      "discountPrice": 126,
+      "discountPercent": 90
+    },
+    {
+      "model": "ERNIE 4.5 Turbo VL 32K",
+      "tokens": 100000000,
+      "tpm": 200000,
+      "rpm": 1000,
+      "duration": "6 months",
+      "price": 450,
+      "discountPrice": 405,
+      "discountPercent": 90
+    },
+    {
+      "model": "ERNIE X1 Turbo 32K",
+      "tokens": 100000000,
+      "tpm": 300000,
+      "rpm": 900,
+      "duration": "6 months",
+      "price": 175,
+      "discountPrice": 157.50,
+      "discountPercent": 90
+    }
+  ],
+  "notes": [
+    "All prices are in CNY (¥)",
+    "Prices shown as '元/千tokens' means CNY per 1,000 tokens",
+    "Volume discounts are available for many models based on token volume",
+    "Cached input tokens offer significant discounts (up to 75-80%) for selected models",
+    "Promotional period: ERNIE-4.5-Turbo-32K and DeepSeek series have limited-time discounts (Feb 2 - Mar 31, 2026)",
+    "TPM/RPM limits apply to certain models",
+    "Models with 'Thinking' suffix may have different pricing when thinking mode is enabled",
+    "Context windows vary by model: typically 8K, 32K, 128K, or 200K tokens"
+  ]
+}

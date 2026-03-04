@@ -1,0 +1,8 @@
+[    1827ms] Error: Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rK (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:45833)
+    at io (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:96554)
+    at sc (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:137025)
+    at https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:131915
+    at u9 (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:132016)
+    at sV (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:158398)
+    at MessagePort.O (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:7358)

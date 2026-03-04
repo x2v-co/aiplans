@@ -1,0 +1,210 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+/**
+ * 汇率 API 端点
+ * 每天更新一次汇率，简化版
+ */
+
+export async function GET(request: NextRequest) {
+  try {
+    // TODO: 启用数据库查询（在 exchange_rates 表创建并迁移完成后）
+    // 当前使用固定汇率
+    const FIXED_RATES = {
+      'USD': {
+        'CNY': 7.2,
+        'EUR': 0.92,
+        'GBP': 0.79,
+        'JPY': 149.5,
+        'KRW': 1320,
+      },
+      'CNY': { 'USD': 1 / 7.2 },
+      'EUR': { 'USD': 1 / 0.92 },
+      'GBP': { 'USD': 1 / 0.79 },
+      'JPY': { 'USD': 1 / 149.5 },
+      'KRW': { 'USD': 1 / 1320 },
+    };
+
+    return NextResponse.json({
+      rates: FIXED_RATES.USD,
+      lastUpdated: new Date().toISOString(),
+      sources: {
+        fixed: 'hardcoded fallback values (daily update via API planned)',
+      note: 'Database table setup pending',
+      lastUpdate: new Date().toISOString(),
+      manualUpdateUrl: '/api/admin/refresh-rates',
+      openExchangeRatesUrl: 'https://openexchangerates.org/api/latest.json',
+      adminKeyRequired: false,
+      enabled: false
+      reason: 'Exchange rates table not created yet. Run migration script in Supabase SQL Editor.',
+    });
+  } catch (error) {
+    console.error('Exchange rates API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * POST - 更新汇率（管理员或定时任务）
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // 验证密钥（生产环境应该有保护）
+    const authHeader = request.headers.get('authorization');
+    const expectedKey = process.env.EXCHANGE_RATE_API_KEY || 'demo-update-key';
+
+    if (authHeader !== `Bearer ${expectedKey}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { from, to, rate, source } = body;
+
+    if (!from || !to || !rate) {
+      return NextResponse.json({ error: 'Missing required fields: from, to, rate' }, { status: 400 });
+    }
+
+    // 更新或插入汇率
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('exchange_rates')
+      .upsert({
+        from_currency: from,
+        to_currency: to,
+        rate: parseFloat(rate),
+        source: source || 'manual',
+        updated_at: now,
+        is_active: true,
+      }, {
+        onConflict: 'from_currency,to_currency',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating exchange rate:', error);
+      return NextResponse.json({ error: 'Failed to update exchange rate' }, { status: 500 });
+    }
+
+    // 使同一方向的所有其他汇率失效（可选）
+    await supabase
+      .from('exchange_rates')
+      .update({ is_active: false })
+      .eq('from_currency', from)
+      .eq('to_currency', to)
+      .neq('id', data.id);
+
+    return NextResponse.json({
+      success: true,
+      rate: {
+        from,
+        to,
+        rate,
+      },
+      updated: data.updated_at,
+    });
+  } catch (error) {
+    console.error('Update exchange rate error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * PUT - 刷新所有汇率（获取最新汇率）
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    const expectedKey = process.env.EXCHANGE_RATE_API_KEY || 'demo-update-key';
+
+    if (authHeader !== `Bearer ${expectedKey}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 获取免费汇率数据
+    const FREE_RATES = await fetchFreeRates();
+
+    if (!FREE_RATES) {
+      return NextResponse.json({ error: 'Failed to fetch rates from external API' }, { status: 500 });
+    }
+
+    // 批量更新汇率
+    const updates = [];
+    const now = new Date().toISOString();
+
+    for (const [from, to, rate] of FREE_RATES) {
+      const { data } = await supabase
+        .from('exchange_rates')
+        .upsert({
+          from_currency: from,
+          to_currency: to,
+          rate: parseFloat(rate),
+          source: 'openexchangerates',
+          updated_at: now,
+          is_active: true,
+        }, {
+          onConflict: 'from_currency,to_currency',
+        })
+        .select()
+        .single();
+
+      if (data) {
+        updates.push(`${from}->${to}: ${rate}`);
+      }
+    }
+
+    console.log(`✅ Updated ${updates.length} exchange rates from Open Exchange Rates`);
+
+    return NextResponse.json({
+      success: true,
+      updated: updates,
+      count: updates.length,
+      timestamp: now,
+    });
+  } catch (error) {
+    console.error('Refresh exchange rates error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * 从免费 API 获取汇率
+ */
+async function fetchFreeRates(): Promise<Array<[string, string, number]>> {
+  try {
+    const response = await fetch('https://openexchangerates.org/api/latest.json', {
+      next: { revalidate: 0 }, // 不缓存，获取最新数据
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch rates: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // 转换为目标格式：[from_currency, to_currency, rate]
+    const rates: Array<[string, string, number]> = [];
+
+    if (data.rates && typeof data.rates === 'object') {
+      // USD 是基准货币
+      const usdRates = data.rates as Record<string, number>;
+      const currencies = ['CNY', 'EUR', 'GBP', 'JPY', 'KRW'];
+
+      currencies.forEach(currency => {
+        if (usdRates[currency]) {
+          rates.push(['USD', currency, usdRates[currency]]);
+        }
+      });
+    }
+
+    return rates;
+  } catch (error) {
+    console.error('Error fetching free rates:', error);
+    throw error;
+  }
+}

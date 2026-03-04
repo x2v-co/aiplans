@@ -1,0 +1,191 @@
+{
+  "categories": [
+    {
+      "categoryName": "code",
+      "models": [
+        {
+          "rank": 1,
+          "modelName": "claude-opus-4-6",
+          "rawModelName": "Anthropic claude-opus-4-6",
+          "arenaElo": 1560,
+          "votes": 2845,
+          "organization": "Anthropic",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 2,
+          "modelName": "claude-opus-4-6-thinking",
+          "rawModelName": "Anthropic claude-opus-4-6-thinking",
+          "arenaElo": 1553,
+          "votes": 2182,
+          "organization": "Anthropic",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 3,
+          "modelName": "claude-sonnet-4-6",
+          "rawModelName": "Anthropic claude-sonnet-4-6",
+          "arenaElo": 1531,
+          "votes": 1839,
+          "organization": "Anthropic",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 4,
+          "modelName": "claude-opus-4-5-20251101-thinking-32k",
+          "rawModelName": "Anthropic claude-opus-4-5-20251101-thinking-32k",
+          "arenaElo": 1499,
+          "votes": 11149,
+          "organization": "Anthropic",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 5,
+          "modelName": "gpt-5.2-high",
+          "rawModelName": "OpenAI gpt-5.2-high",
+          "arenaElo": 1471,
+          "votes": 1696,
+          "organization": "OpenAI",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 6,
+          "modelName": "claude-opus-4-5-20251101",
+          "rawModelName": "Anthropic claude-opus-4-5-20251101",
+          "arenaElo": 1471,
+          "votes": 11239,
+          "organization": "Anthropic",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 7,
+          "modelName": "gemini-3.1-pro-preview",
+          "rawModelName": "Google gemini-3.1-pro-preview",
+          "arenaElo": 1461,
+          "votes": 1826,
+          "organization": "Google",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 8,
+          "modelName": "glm-5",
+          "rawModelName": "Z.ai glm-5",
+          "arenaElo": 1451,
+          "votes": 2621,
+          "organization": "Z.ai",
+          "license": "MIT"
+        },
+        {
+          "rank": 9,
+          "modelName": "gemini-3-pro",
+          "rawModelName": "Google gemini-3-pro",
+          "arenaElo": 1443,
+          "votes": 17027,
+          "organization": "Google",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 10,
+          "modelName": "gemini-3-flash",
+          "rawModelName": "Google gemini-3-flash",
+          "arenaElo": 1441,
+          "votes": 12934,
+          "organization": "Google",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 11,
+          "modelName": "glm-4.7",
+          "rawModelName": "Z.ai glm-4.7",
+          "arenaElo": 1439,
+          "votes": 5128,
+          "organization": "Z.ai",
+          "license": "MIT"
+        },
+        {
+          "rank": 12,
+          "modelName": "kimi-k2.5-thinking",
+          "rawModelName": "Moonshot kimi-k2.5-thinking",
+          "arenaElo": 1436,
+          "votes": 4022,
+          "organization": "Moonshot",
+          "license": "Modified MIT"
+        },
+        {
+          "rank": 13,
+          "modelName": "minimax-m2.5",
+          "rawModelName": "Minimax minimax-m2.5",
+          "arenaElo": 1436,
+          "votes": 3632,
+          "organization": "Minimax",
+          "license": "Modified MIT"
+        },
+        {
+          "rank": 14,
+          "modelName": "kimi-k2.5-instant",
+          "rawModelName": "Moonshot kimi-k2.5-instant",
+          "arenaElo": 1419,
+          "votes": 2954,
+          "organization": "Moonshot",
+          "license": "Modified MIT"
+        },
+        {
+          "rank": 15,
+          "modelName": "minimax-m2.1-preview",
+          "rawModelName": "Minimax minimax-m2.1-preview",
+          "arenaElo": 1401,
+          "votes": 9796,
+          "organization": "Minimax",
+          "license": "MIT"
+        },
+        {
+          "rank": 16,
+          "modelName": "gemini-3-flash-thinking-minimal",
+          "rawModelName": "Google gemini-3-flash (thinking-minimal)",
+          "arenaElo": 1399,
+          "votes": 8840,
+          "organization": "Google",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 17,
+          "modelName": "qwen3.5-397b-a17b",
+          "rawModelName": "Alibaba qwen3.5-397b-a17b",
+          "arenaElo": 1396,
+          "votes": 2473,
+          "organization": "Alibaba",
+          "license": "Apache 2.0"
+        },
+        {
+          "rank": 18,
+          "modelName": "gpt-5.2",
+          "rawModelName": "OpenAI gpt-5.2",
+          "arenaElo": 1395,
+          "votes": 1634,
+          "organization": "OpenAI",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 19,
+          "modelName": "gpt-5-medium",
+          "rawModelName": "OpenAI gpt-5-medium",
+          "arenaElo": 1392,
+          "votes": 3929,
+          "organization": "OpenAI",
+          "license": "Proprietary"
+        },
+        {
+          "rank": 20,
+          "modelName": "claude-sonnet-4-5-20250929-thinking-32k",
+          "rawModelName": "Anthropic claude-sonnet-4-5-20250929-thinking-32k",
+          "arenaElo": 1388,
+          "votes": 14186,
+          "organization": "Anthropic",
+          "license": "Proprietary"
+        }
+      ]
+    }
+  ],
+  "updatedAt": "2026-03-03",
+  "source": "arena.ai/leaderboard/code"
+}

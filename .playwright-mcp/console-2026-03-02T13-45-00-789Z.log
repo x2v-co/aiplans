@@ -1,0 +1,29 @@
+[     675ms] TypeError: Failed to execute 'observe' on 'IntersectionObserver': parameter 1 is not of type 'Element'.
+    at https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:267343
+    at https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:276419
+    at https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:276146
+    at Object.next (https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:276251)
+    at https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:275167
+    at new Promise (<anonymous>)
+    at a (https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:274915)
+    at https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:276332
+    at ol (https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/load.online.js:2:164748)
+    at xc (https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/load.online.js:2:184712)
+[     677ms] [WARNING] Weirwood error SDK dropped repeat event: {request: Object, exception: Object, env: Object, session_id: b3b992d11c604fc38b4d91bb97be6acf, behaviors: Array(4)} @ https://bce.bdstatic.com/portal-cloud-server/online/_next/static/chunks/31676.f9401a3e4be938f7.js:12
+[     678ms] TypeError: Failed to execute 'observe' on 'IntersectionObserver': parameter 1 is not of type 'Element'.
+    at https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:267343
+    at https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:276419
+    at https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:276146
+    at Object.next (https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:276251)
+    at https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:275167
+    at new Promise (<anonymous>)
+    at a (https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:274915)
+    at https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/1.0.2038.1/5.load.js:2:276332
+    at ol (https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/load.online.js:2:164748)
+    at xc (https://bce.bdstatic.com/fe-static/baidu/bce-portal/portal-common/load.online.js:2:184712)
+[     684ms] [WARNING] document.domain mutation is ignored because the surrounding agent cluster is origin-keyed. @ https://console.bce.baidu.com/asset/monitor/bce_monitor_session.html:43
+[     821ms] Uncaught TypeError: c.match is not a function
+    at <anonymous> (https://bce.bdstatic.com/portal-cloud-server/online/_next/static/chunks/c6a528af.c31bbf70528ff589.js:0:77341)
+    at <anonymous> (https://bce.bdstatic.com/portal-cloud-server/online/_next/static/chunks/c6a528af.c31bbf70528ff589.js:0:79470)
+    at <anonymous> (https://bce.bdstatic.com/portal-cloud-server/online/_next/static/chunks/c6a528af.c31bbf70528ff589.js:0:79287)
+    at d (https://bce.bdstatic.com/portal-cloud-server/online/_next/static/chunks/c6a528af.c31bbf70528ff589.js:0:10883)

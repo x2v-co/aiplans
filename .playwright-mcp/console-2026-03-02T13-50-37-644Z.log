@@ -1,0 +1,35 @@
+[    3137ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://www.stepfun.com/unavailable-in-region:0
+[    3197ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.stepfun.com/api/capy.invitation.v1.InvitationService/GetDesktopBetaPermission:0
+[    3198ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.stepfun.com/api/agent/capy.knowledge.v1.KnowledgeService/GetPersonalBase:0
+[    3220ms] Uncaught (in promise) ConnectError: [permission_denied] need sign in
+    at j (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:65243)
+    at next (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:68263)
+[    3242ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://www.stepfun.com/unavailable-in-region:0
+[    3248ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.stepfun.com/api/agent/capy.knowledge.v1.KnowledgeService/GetPersonalBase:0
+[    3252ms] Uncaught (in promise) ConnectError: [permission_denied] need sign in
+    at j (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:65243)
+    at next (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:68263)
+[    3301ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.stepfun.com/api/agent/capy.knowledge.v1.KnowledgeService/GetPersonalBase:0
+[    3304ms] Uncaught (in promise) ConnectError: [permission_denied] need sign in
+    at j (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:65243)
+    at next (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:68263)
+[    3456ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://www.stepfun.com/unavailable-in-region:0
+[    3460ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.stepfun.com/api/agent/capy.memory.v1.MemoryService/GetMemoryConfig:0
+[    3464ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.stepfun.com/api/agent/capy.knowledge.v1.KnowledgeService/GetPersonalBase:0
+[    3465ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.stepfun.com/api/capy.invitation.v1.InvitationService/GetDesktopBetaPermission:0
+[    3466ms] Uncaught (in promise) ConnectError: [permission_denied] need sign in
+    at j (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:65243)
+    at next (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:68263)
+[    3466ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.stepfun.com/api/agent/capy.knowledge.v1.KnowledgeService/GetPersonalBase:0
+[    3469ms] Uncaught (in promise) ConnectError: [permission_denied] need sign in
+    at j (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:65243)
+    at next (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:68263)
+[    3470ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://www.stepfun.com/unavailable-in-region:0
+[    3804ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.stepfun.com/api/capy.notification.v1.NotificationService/GetFeatureReminder:0
+[    3806ms] Uncaught (in promise) ConnectError: [permission_denied] need sign in
+    at j (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:65243)
+    at next (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:68263)
+[    3961ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.stepfun.com/api/capy.notification.v1.NotificationService/GetFeatureReminder:0
+[    3963ms] Uncaught (in promise) ConnectError: [permission_denied] need sign in
+    at j (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:65243)
+    at next (https://static.stepfun.com/static/chat-web/_next/static/chunks/1361-7cf19389f3fd5455.js:4:68263)

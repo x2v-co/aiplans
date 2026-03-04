@@ -39,9 +39,9 @@ export default function LocaleLayout({
   return (
     <html lang={locale}>
       <head>
-        <link rel="alternate" hrefLang="en" href="https://planprice.ai/en" />
-        <link rel="alternate" hrefLang="zh" href="https://planprice.ai/zh" />
-        <link rel="alternate" hrefLang="x-default" href="https://planprice.ai" />
+        <link rel="alternate" hrefLang="en" href="https://aiplans.app/en" />
+        <link rel="alternate" hrefLang="zh" href="https://aiplans.app/zh" />
+        <link rel="alternate" hrefLang="x-default" href="https://aiplans.app" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <TranslationsProvider messages={messages}>

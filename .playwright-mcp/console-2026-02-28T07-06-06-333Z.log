@@ -1,0 +1,17 @@
+[     938ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://cdn.prod.website-files.com/6889473510b50328dbb70ae6/css/claude-brand.shared.bb618b726.min.css:0
+[    1150ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://cdn.prod.website-files.com/6889473510b50328dbb70ae6%2F689e5ba67671442434f3ca35%2F699e25b1680ad671d02001a2%2Ftutorial_table_spacing-1.0.0.js:0
+[    1164ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=6889473510b50328dbb70ae6:0
+[    1182ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.js:0
+[    1183ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://cdn.prod.website-files.com/gsap/3.14.2/gsap.min.js:0
+[    1184ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://cdn.prod.website-files.com/gsap/3.14.2/ScrollTrigger.min.js:0
+[    1184ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://cdn.prod.website-files.com/6889473510b50328dbb70ae6/js/claude-brand.aae4d081.328dfe450215a137.js:0
+[    1191ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css:0
+[    1191ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://unpkg.com/@popperjs/core@2:0
+[    1243ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://unpkg.com/tippy.js@6:0
+[    1282ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://www.anthropic.com/file/claude-animations:0
+[    1295ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://cdn.amplitude.com/libs/session-replay-browser-1.29.8-min.js.gz:0
+[    1374ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://www.anthropic.com/file/claude-privacy-banner:0
+[    1844ms] ReferenceError: gsap is not defined
+    at https://claude.com/pricing:4704:1317
+[    3840ms] [ERROR] GSAP not found @ https://claude.com/pricing:1272
+[    3841ms] [WARNING] GSAP is required for prompt menus. @ https://claude.com/pricing:4048

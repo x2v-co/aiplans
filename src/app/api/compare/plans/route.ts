@@ -1,0 +1,387 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import type { CurrencyCode } from '@/lib/currency';
+import {
+  convertToUSD,
+  convertPrice,
+  calculatePriceDifference,
+  getExchangeRateDisplay,
+} from '@/lib/currency-conversion';
+import { getExchangeRateSync } from '@/lib/exchange-rates';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const modelSlug = searchParams.get('model');
+  const displayCurrencyParam = searchParams.get('currency') || 'USD';
+  const displayCurrency = displayCurrencyParam as CurrencyCode;
+
+  if (!modelSlug) {
+    return NextResponse.json({ error: 'Model parameter is required' }, { status: 400 });
+  }
+
+  try {
+    // 1. Get product/model info first (needed for other queries)
+    const { data: product, error: productError } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        slug,
+        provider_id,
+        context_window,
+        providers (
+          name,
+          slug,
+          logo_url,
+          website,
+          invite_url
+        )
+      `)
+      .eq('slug', modelSlug)
+      .single();
+
+    if (productError || !product) {
+      return NextResponse.json({ error: 'Model not found' }, { status: 404 });
+    }
+
+    // 2. Run remaining queries in parallel for better performance
+    const [
+      { data: channelPrices },
+      { data: modelPlans },
+    ] = await Promise.all([
+      // Query 2: Get API pricing from channel_prices
+      supabase
+        .from('channel_prices')
+        .select(`
+          id,
+          input_price_per_1m,
+          output_price_per_1m,
+          cached_input_price_per_1m,
+          rate_limit,
+          last_verified,
+          is_available,
+          channels (
+            id,
+            name,
+            slug,
+            type,
+            region,
+            access_from_china,
+            website_url,
+            providers (
+              id,
+              name,
+              slug,
+              logo_url,
+              website,
+              invite_url
+            )
+          )
+        `)
+        .eq('product_id', product.id)
+        .eq('is_available', true)
+        .order('input_price_per_1m', { ascending: true }),
+      // Query 3: Get subscription plans that include this model
+      supabase
+        .from('models')
+        .select(`
+          plan_id,
+          is_available,
+          override_rpm,
+          override_qps,
+          override_input_price_per_1m,
+          override_output_price_per_1m,
+          max_output_tokens,
+          plans:plan_id (
+            id,
+            name,
+            slug,
+            tier,
+            pricing_model,
+            price,
+            annual_price,
+            price_unit,
+            currency,
+            daily_message_limit,
+            requests_per_minute,
+            qps,
+            tokens_per_minute,
+            features,
+            region,
+            access_from_china,
+            payment_methods,
+            is_official,
+            last_verified,
+            provider_id
+          )
+        `)
+        .eq('product_id', product.id)
+        .eq('is_available', true),
+    ]);
+
+    // 3. Get unique plan IDs and fetch full plan details in parallel with provider info
+    const planIds = [...new Set((modelPlans || []).map((m: any) => m.plans?.id).filter(Boolean))];
+
+    const [
+      { data: rawSubscriptionPlans },
+      { data: allProviders },
+    ] = planIds.length > 0 ? await Promise.all([
+      // Query 4: Get subscription plans
+      supabase
+        .from('plans')
+        .select(`
+          id,
+          name,
+          slug,
+          tier,
+          pricing_model,
+          price,
+          annual_price,
+          price_unit,
+          currency,
+          daily_message_limit,
+          requests_per_minute,
+          qps,
+          tokens_per_minute,
+          features,
+          region,
+          access_from_china,
+          payment_methods,
+          is_official,
+          last_verified,
+          provider_id
+        `)
+        .in('id', planIds)
+        .order('price', { ascending: true }),
+      // Query 5: Get all provider info at once
+      supabase
+        .from('providers')
+        .select('id, name, slug, logo_url, website, invite_url'),
+    ]) : [{ data: [] }, { data: [] }];
+
+    // Build provider map
+    const providerMap: Record<number, any> = {};
+    (allProviders || []).forEach((p: any) => {
+      providerMap[p.id] = p;
+    });
+
+    // Create a map of plan_id to model overrides
+    const modelOverridesMap = new Map();
+    (modelPlans || []).forEach((m: any) => {
+      if (m.plan_id && m.plans) {
+        modelOverridesMap.set(m.plan_id, {
+          overrideRpm: m.override_rpm,
+          overrideQps: m.override_qps,
+          overrideInputPricePer1m: m.override_input_price_per_1m,
+          overrideOutputPricePer1m: m.override_output_price_per_1m,
+          maxOutputTokens: m.max_output_tokens,
+        });
+      }
+    });
+
+    const subscriptionPlans = rawSubscriptionPlans || [];
+
+    // Separate official and third-party subscription plans
+    const officialPlans: any[] = [];
+    const thirdPartyPlans: any[] = [];
+
+    // Process subscription plans only (not API pricing)
+    if (subscriptionPlans) {
+      subscriptionPlans.forEach((plan: any) => {
+        // Same provider as the product = official, different provider = third-party
+        const isOfficial = plan.provider_id === product.provider_id;
+        const provider = providerMap[plan.provider_id];
+        // Get model-specific overrides if any
+        const overrides = modelOverridesMap.get(plan.id) || {};
+
+        const planData = {
+          plan: {
+            id: plan.id,
+            slug: plan.slug,
+            name: plan.name,
+            nameZh: plan.name,
+            planTier: plan.tier,
+            isOfficial,
+          },
+          channel: {
+            slug: provider?.slug || 'unknown',
+            name: provider?.name || 'Unknown',
+            nameZh: provider?.name || 'Unknown',
+            logo: provider?.logo_url || getProviderLogo(provider?.slug),
+            website: provider?.website || null,
+            inviteUrl: provider?.invite_url || null,
+            region: plan.region,
+            accessFromChina: plan.access_from_china,
+            paymentMethods: plan.payment_methods || getPaymentMethods(plan.region),
+          },
+          pricing: {
+            billingModel: plan.pricing_model || 'subscription',
+            billingUnit: plan.price_unit || 'per_month',
+            monthly: plan.price,
+            yearly: plan.annual_price,
+            yearlyMonthly: plan.annual_price ? plan.annual_price / 12 : null,
+            yearlyDiscountPercent: plan.annual_price && plan.price
+              ? ((1 - (plan.annual_price / 12) / plan.price) * 100)
+              : null,
+            currency: plan.currency || 'USD',
+            displayCurrency: displayCurrency,
+            convertedMonthly: plan.price ? getExchangeRateSync(plan.currency || 'USD', displayCurrency) * plan.price : null,
+            convertedYearly: plan.annual_price ? getExchangeRateSync(plan.currency || 'USD', displayCurrency) * plan.annual_price : null,
+            convertedYearlyMonthly: plan.annual_price ? convertPrice(plan.annual_price / 12, plan.currency || 'USD', displayCurrency) : null,
+            exchangeRate: getExchangeRateDisplay(plan.currency || 'USD'),
+            // Apply overrides if available
+            inputPer1m: overrides.overrideInputPricePer1m || null,
+            outputPer1m: overrides.overrideOutputPricePer1m || null,
+            cachedInputPer1m: null,
+            hasOverage: false,
+            overageInputPer1m: null,
+            overageOutputPer1m: null,
+          },
+          limits: {
+            // Apply overrides if available
+            rpm: overrides.overrideRpm || plan.requests_per_minute,
+            rpd: null,
+            rpm_display: (overrides.overrideRpm || plan.requests_per_minute) ? `${(overrides.overrideRpm || plan.requests_per_minute)} RPM` : null,
+            tpm: plan.tokens_per_minute,
+            tpd: null,
+            tpm_display: plan.tokens_per_minute ? `${plan.tokens_per_minute.toLocaleString()} TPM` : null,
+            monthlyRequests: null,
+            monthlyTokens: null,
+            maxTokensPerRequest: null,
+            maxInputTokens: null,
+            maxOutputTokens: overrides.maxOutputTokens || null,
+          },
+          performance: {
+            // Apply overrides if available
+            qps: overrides.overrideQps || plan.qps,
+            concurrentRequests: null,
+            qps_display: (overrides.overrideQps || plan.qps) ? `${(overrides.overrideQps || plan.qps)} QPS` : null,
+          },
+          vsOfficial: {
+            priceDiffPercent: null,
+            priceDiffLabel: isOfficial ? 'Official Price' : null,
+            rpmDiffPercent: null,
+            qpsDiffPercent: null,
+          },
+          lastVerified: plan.last_verified,
+          sourceUrl: null,
+          note: null,
+        };
+
+        if (isOfficial) {
+          officialPlans.push(planData);
+        } else {
+          thirdPartyPlans.push(planData);
+        }
+      });
+    }
+
+    // Build summary for subscription plans only
+    const allPlans = [...officialPlans, ...thirdPartyPlans];
+
+    // Find cheapest subscription plan (using converted prices)
+    const cheapestPlan = allPlans.length > 0
+      ? allPlans.reduce((min, p) => {
+          const priceToCompare = p.pricing.convertedYearlyMonthly || p.pricing.convertedMonthly || Infinity;
+          const minPriceToCompare = min.pricing.convertedYearlyMonthly || min.pricing.convertedMonthly || Infinity;
+          return priceToCompare < minPriceToCompare ? p : min;
+        })
+      : null;
+
+    // Calculate vsOfficial for third-party plans
+    const officialPlan = officialPlans[0];
+    if (officialPlan) {
+      thirdPartyPlans.forEach((plan: any) => {
+        if (plan.vsOfficial) {
+          const diff = getExchangeRateSync(plan.pricing.currency, plan.pricing.currency) *
+            getExchangeRateSync(officialPlan.pricing.currency, officialPlan.pricing.currency);
+          plan.vsOfficial.priceDiffPercent = ((diff - officialPlan.pricing.monthly) / officialPlan.pricing.monthly) * 100;
+          plan.vsOfficial.priceDiffLabel = Math.abs(plan.vsOfficial.priceDiffPercent).toFixed(0) + '%';
+        }
+      });
+    }
+
+    const response = NextResponse.json({
+      model: {
+        slug: product.slug,
+        name: product.name,
+        provider: {
+          slug: (product.providers as any)?.slug || 'unknown',
+          name: (product.providers as any)?.name || 'Unknown',
+          logo: (product.providers as any)?.logo_url || getProviderLogo((product.providers as any)?.slug),
+          website: (product.providers as any)?.website || null,
+          inviteUrl: (product.providers as any)?.invite_url || null,
+        },
+        contextWindow: product.context_window,
+        maxOutput: null,
+        benchmarkArena: null,
+        releaseDate: null,
+      },
+      officialPlans,
+      thirdPartyPlans,
+      summary: {
+        totalPlans: allPlans.length,
+        displayCurrency,
+        cheapestPlan: cheapestPlan ? {
+          name: cheapestPlan.plan.name,
+          channel: cheapestPlan.channel.name,
+          monthlyPrice: cheapestPlan.pricing.monthly,
+          currency: cheapestPlan.pricing.currency,
+          convertedMonthlyPrice: cheapestPlan.pricing.convertedMonthly,
+          displayMonthlyPrice: cheapestPlan.pricing.convertedMonthly,
+        } : null,
+        bestRpmPlan: null,
+        bestQpsPlan: null,
+      },
+    });
+
+    // Cache for 5 minutes (pricing data doesn't change frequently)
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+
+    return response;
+
+  } catch (error) {
+    console.error('Error fetching plan comparison:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+function getChannelLogo(slug: string): string {
+  const logos: Record<string, string> = {
+    'openai-api': '🤖',
+    'anthropic-api': '🧠',
+    'google-gemini-api': '✨',
+    'deepseek-api': '🔍',
+    'mistral-api': '🌪️',
+    'grok-api': '🤠',
+    'openrouter': '🔀',
+    'together-ai': '🤝',
+    'siliconflow': '🇨🇳',
+  };
+  return logos[slug] || '🔧';
+}
+
+function getProviderLogo(slug: string | undefined): string {
+  if (!slug) return '🤖';
+  const logos: Record<string, string> = {
+    'openai': '🤖',
+    'anthropic': '🧠',
+    'google': '✨',
+    'deepseek': '🔍',
+    'mistral': '🌪️',
+    'xai': '🤠',
+    'meta': '🦙',
+  };
+  return logos[slug] || '🤖';
+}
+
+function getPaymentMethods(region: string): string[] {
+  if (region === 'china') {
+    return ['alipay', 'wechat'];
+  }
+  return ['credit_card'];
+}

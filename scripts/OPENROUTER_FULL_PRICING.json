@@ -1,0 +1,3422 @@
+[
+  {
+    "modelId": "bytedance-seed/seed-2.0-mini",
+    "modelName": "ByteDance Seed: Seed-2.0-Mini",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-3.1-flash-image-preview",
+    "modelName": "Google: Nano Banana 2 (Gemini 3.1 Flash Image Preview)",
+    "inputPricePer1M": 0.25,
+    "outputPricePer1M": 1.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 65536,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3.5-35b-a3b",
+    "modelName": "Qwen: Qwen3.5-35B-A3B",
+    "inputPricePer1M": 0.25,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3.5-27b",
+    "modelName": "Qwen: Qwen3.5-27B",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 2.4,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3.5-122b-a10b",
+    "modelName": "Qwen: Qwen3.5-122B-A10B",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 3.1999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3.5-flash-02-23",
+    "modelName": "Qwen: Qwen3.5-Flash",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "liquid/lfm-2-24b-a2b",
+    "modelName": "LiquidAI: LFM2-24B-A2B",
+    "inputPricePer1M": 0.03,
+    "outputPricePer1M": 0.12,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-3.1-pro-preview-customtools",
+    "modelName": "Google: Gemini 3.1 Pro Preview Custom Tools",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 12,
+    "cachedInputPricePer1M": 0.19999999999999998,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5.3-codex",
+    "modelName": "OpenAI: GPT-5.3-Codex",
+    "inputPricePer1M": 1.75,
+    "outputPricePer1M": 14,
+    "cachedInputPricePer1M": 0.175,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "aion-labs/aion-2.0",
+    "modelName": "AionLabs: Aion-2.0",
+    "inputPricePer1M": 0.7999999999999999,
+    "outputPricePer1M": 1.5999999999999999,
+    "cachedInputPricePer1M": 0.19999999999999998,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-3.1-pro-preview",
+    "modelName": "Google: Gemini 3.1 Pro Preview",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 12,
+    "cachedInputPricePer1M": 0.19999999999999998,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-sonnet-4.6",
+    "modelName": "Anthropic: Claude Sonnet 4.6",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": 0.3,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3.5-plus-02-15",
+    "modelName": "Qwen: Qwen3.5 Plus 2026-02-15",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 2.4,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3.5-397b-a17b",
+    "modelName": "Qwen: Qwen3.5 397B A17B",
+    "inputPricePer1M": 0.55,
+    "outputPricePer1M": 3.5,
+    "cachedInputPricePer1M": 0.55,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "minimax/minimax-m2.5",
+    "modelName": "MiniMax: MiniMax M2.5",
+    "inputPricePer1M": 0.295,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": 0.03,
+    "contextWindow": 196608,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-5",
+    "modelName": "Z.ai: GLM 5",
+    "inputPricePer1M": 0.95,
+    "outputPricePer1M": 2.5500000000000003,
+    "cachedInputPricePer1M": 0.19999999999999998,
+    "contextWindow": 204800,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-max-thinking",
+    "modelName": "Qwen: Qwen3 Max Thinking",
+    "inputPricePer1M": 1.2,
+    "outputPricePer1M": 6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-opus-4.6",
+    "modelName": "Anthropic: Claude Opus 4.6",
+    "inputPricePer1M": 5,
+    "outputPricePer1M": 25,
+    "cachedInputPricePer1M": 0.5,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-coder-next",
+    "modelName": "Qwen: Qwen3 Coder Next",
+    "inputPricePer1M": 0.12,
+    "outputPricePer1M": 0.75,
+    "cachedInputPricePer1M": 0.06,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openrouter/free",
+    "modelName": "Free Models Router",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "stepfun/step-3.5-flash:free",
+    "modelName": "StepFun: Step 3.5 Flash (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "stepfun/step-3.5-flash",
+    "modelName": "StepFun: Step 3.5 Flash",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.3,
+    "cachedInputPricePer1M": 0.02,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "arcee-ai/trinity-large-preview:free",
+    "modelName": "Arcee AI: Trinity Large Preview (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "moonshotai/kimi-k2.5",
+    "modelName": "MoonshotAI: Kimi K2.5",
+    "inputPricePer1M": 0.44999999999999996,
+    "outputPricePer1M": 2.2,
+    "cachedInputPricePer1M": 0.22499999999999998,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "upstage/solar-pro-3:free",
+    "modelName": "Upstage: Solar Pro 3 (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "minimax/minimax-m2-her",
+    "modelName": "MiniMax: MiniMax M2-her",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": 0.03,
+    "contextWindow": 65536,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "writer/palmyra-x5",
+    "modelName": "Writer: Palmyra X5",
+    "inputPricePer1M": 0.6,
+    "outputPricePer1M": 6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 1040000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "liquid/lfm-2.5-1.2b-thinking:free",
+    "modelName": "LiquidAI: LFM2.5-1.2B-Thinking (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "liquid/lfm-2.5-1.2b-instruct:free",
+    "modelName": "LiquidAI: LFM2.5-1.2B-Instruct (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-audio",
+    "modelName": "OpenAI: GPT Audio",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-audio-mini",
+    "modelName": "OpenAI: GPT Audio Mini",
+    "inputPricePer1M": 0.6,
+    "outputPricePer1M": 2.4,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-4.7-flash",
+    "modelName": "Z.ai: GLM 4.7 Flash",
+    "inputPricePer1M": 0.06,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": 0.0100000002,
+    "contextWindow": 202752,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5.2-codex",
+    "modelName": "OpenAI: GPT-5.2-Codex",
+    "inputPricePer1M": 1.75,
+    "outputPricePer1M": 14,
+    "cachedInputPricePer1M": 0.175,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "allenai/molmo-2-8b",
+    "modelName": "AllenAI: Molmo2 8B",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 36864,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "allenai/olmo-3.1-32b-instruct",
+    "modelName": "AllenAI: Olmo 3.1 32B Instruct",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 65536,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "bytedance-seed/seed-1.6-flash",
+    "modelName": "ByteDance Seed: Seed 1.6 Flash",
+    "inputPricePer1M": 0.075,
+    "outputPricePer1M": 0.3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "bytedance-seed/seed-1.6",
+    "modelName": "ByteDance Seed: Seed 1.6",
+    "inputPricePer1M": 0.25,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "minimax/minimax-m2.1",
+    "modelName": "MiniMax: MiniMax M2.1",
+    "inputPricePer1M": 0.27,
+    "outputPricePer1M": 0.95,
+    "cachedInputPricePer1M": 0.0299999997,
+    "contextWindow": 196608,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-4.7",
+    "modelName": "Z.ai: GLM 4.7",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 1.4,
+    "cachedInputPricePer1M": 0.15,
+    "contextWindow": 202752,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-3-flash-preview",
+    "modelName": "Google: Gemini 3 Flash Preview",
+    "inputPricePer1M": 0.5,
+    "outputPricePer1M": 3,
+    "cachedInputPricePer1M": 0.049999999999999996,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-small-creative",
+    "modelName": "Mistral: Mistral Small Creative",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "xiaomi/mimo-v2-flash",
+    "modelName": "Xiaomi: MiMo-V2-Flash",
+    "inputPricePer1M": 0.09,
+    "outputPricePer1M": 0.29,
+    "cachedInputPricePer1M": 0.045,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nvidia/nemotron-3-nano-30b-a3b:free",
+    "modelName": "NVIDIA: Nemotron 3 Nano 30B A3B (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nvidia/nemotron-3-nano-30b-a3b",
+    "modelName": "NVIDIA: Nemotron 3 Nano 30B A3B",
+    "inputPricePer1M": 0.049999999999999996,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5.2-chat",
+    "modelName": "OpenAI: GPT-5.2 Chat",
+    "inputPricePer1M": 1.75,
+    "outputPricePer1M": 14,
+    "cachedInputPricePer1M": 0.175,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5.2-pro",
+    "modelName": "OpenAI: GPT-5.2 Pro",
+    "inputPricePer1M": 21,
+    "outputPricePer1M": 168,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5.2",
+    "modelName": "OpenAI: GPT-5.2",
+    "inputPricePer1M": 1.75,
+    "outputPricePer1M": 14,
+    "cachedInputPricePer1M": 0.175,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/devstral-2512",
+    "modelName": "Mistral: Devstral 2 2512",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "relace/relace-search",
+    "modelName": "Relace: Relace Search",
+    "inputPricePer1M": 1,
+    "outputPricePer1M": 3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-4.6v",
+    "modelName": "Z.ai: GLM 4.6V",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 0.8999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nex-agi/deepseek-v3.1-nex-n1",
+    "modelName": "Nex AGI: DeepSeek V3.1 Nex N1",
+    "inputPricePer1M": 0.27,
+    "outputPricePer1M": 1,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "essentialai/rnj-1-instruct",
+    "modelName": "EssentialAI: Rnj 1 Instruct",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 0.15,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openrouter/bodybuilder",
+    "modelName": "Body Builder (beta)",
+    "inputPricePer1M": -1000000,
+    "outputPricePer1M": -1000000,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5.1-codex-max",
+    "modelName": "OpenAI: GPT-5.1-Codex-Max",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "amazon/nova-2-lite-v1",
+    "modelName": "Amazon: Nova 2 Lite",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 2.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/ministral-14b-2512",
+    "modelName": "Mistral: Ministral 3 14B 2512",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/ministral-8b-2512",
+    "modelName": "Mistral: Ministral 3 8B 2512",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 0.15,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/ministral-3b-2512",
+    "modelName": "Mistral: Ministral 3 3B 2512",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.09999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-large-2512",
+    "modelName": "Mistral: Mistral Large 3 2512",
+    "inputPricePer1M": 0.5,
+    "outputPricePer1M": 1.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "arcee-ai/trinity-mini:free",
+    "modelName": "Arcee AI: Trinity Mini (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "arcee-ai/trinity-mini",
+    "modelName": "Arcee AI: Trinity Mini",
+    "inputPricePer1M": 0.045,
+    "outputPricePer1M": 0.15,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-v3.2-speciale",
+    "modelName": "DeepSeek: DeepSeek V3.2 Speciale",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": 0.19999999999999998,
+    "contextWindow": 163840,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-v3.2",
+    "modelName": "DeepSeek: DeepSeek V3.2",
+    "inputPricePer1M": 0.25,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 163840,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "prime-intellect/intellect-3",
+    "modelName": "Prime Intellect: INTELLECT-3",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 1.1,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-opus-4.5",
+    "modelName": "Anthropic: Claude Opus 4.5",
+    "inputPricePer1M": 5,
+    "outputPricePer1M": 25,
+    "cachedInputPricePer1M": 0.5,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "allenai/olmo-3-32b-think",
+    "modelName": "AllenAI: Olmo 3 32B Think",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 0.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 65536,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "allenai/olmo-3-7b-instruct",
+    "modelName": "AllenAI: Olmo 3 7B Instruct",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 65536,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "allenai/olmo-3-7b-think",
+    "modelName": "AllenAI: Olmo 3 7B Think",
+    "inputPricePer1M": 0.12,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 65536,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-3-pro-image-preview",
+    "modelName": "Google: Nano Banana Pro (Gemini 3 Pro Image Preview)",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 12,
+    "cachedInputPricePer1M": 0.19999999999999998,
+    "contextWindow": 65536,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "x-ai/grok-4.1-fast",
+    "modelName": "xAI: Grok 4.1 Fast",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.5,
+    "cachedInputPricePer1M": 0.049999999999999996,
+    "contextWindow": 2000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-3-pro-preview",
+    "modelName": "Google: Gemini 3 Pro Preview",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 12,
+    "cachedInputPricePer1M": 0.19999999999999998,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepcogito/cogito-v2.1-671b",
+    "modelName": "Deep Cogito: Cogito v2.1 671B",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 1.25,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5.1",
+    "modelName": "OpenAI: GPT-5.1",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5.1-chat",
+    "modelName": "OpenAI: GPT-5.1 Chat",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5.1-codex",
+    "modelName": "OpenAI: GPT-5.1-Codex",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5.1-codex-mini",
+    "modelName": "OpenAI: GPT-5.1-Codex-Mini",
+    "inputPricePer1M": 0.25,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": 0.024999999999999998,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "kwaipilot/kat-coder-pro",
+    "modelName": "Kwaipilot: KAT-Coder-Pro V1",
+    "inputPricePer1M": 0.207,
+    "outputPricePer1M": 0.828,
+    "cachedInputPricePer1M": 0.0414,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "moonshotai/kimi-k2-thinking",
+    "modelName": "MoonshotAI: Kimi K2 Thinking",
+    "inputPricePer1M": 0.47,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": 0.14100000000000001,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "amazon/nova-premier-v1",
+    "modelName": "Amazon: Nova Premier 1.0",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 12.5,
+    "cachedInputPricePer1M": 0.625,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "perplexity/sonar-pro-search",
+    "modelName": "Perplexity: Sonar Pro Search",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/voxtral-small-24b-2507",
+    "modelName": "Mistral: Voxtral Small 24B 2507",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-oss-safeguard-20b",
+    "modelName": "OpenAI: gpt-oss-safeguard-20b",
+    "inputPricePer1M": 0.075,
+    "outputPricePer1M": 0.3,
+    "cachedInputPricePer1M": 0.037,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nvidia/nemotron-nano-12b-v2-vl:free",
+    "modelName": "NVIDIA: Nemotron Nano 12B 2 VL (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nvidia/nemotron-nano-12b-v2-vl",
+    "modelName": "NVIDIA: Nemotron Nano 12B 2 VL",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "minimax/minimax-m2",
+    "modelName": "MiniMax: MiniMax M2",
+    "inputPricePer1M": 0.255,
+    "outputPricePer1M": 1,
+    "cachedInputPricePer1M": 0.03,
+    "contextWindow": 196608,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-vl-32b-instruct",
+    "modelName": "Qwen: Qwen3 VL 32B Instruct",
+    "inputPricePer1M": 0.10400000000000001,
+    "outputPricePer1M": 0.41600000000000004,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "liquid/lfm2-8b-a1b",
+    "modelName": "LiquidAI: LFM2-8B-A1B",
+    "inputPricePer1M": 0.01,
+    "outputPricePer1M": 0.02,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "liquid/lfm-2.2-6b",
+    "modelName": "LiquidAI: LFM2-2.6B",
+    "inputPricePer1M": 0.01,
+    "outputPricePer1M": 0.02,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "ibm-granite/granite-4.0-h-micro",
+    "modelName": "IBM: Granite 4.0 Micro",
+    "inputPricePer1M": 0.017,
+    "outputPricePer1M": 0.11,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5-image-mini",
+    "modelName": "OpenAI: GPT-5 Image Mini",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": 0.25,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-haiku-4.5",
+    "modelName": "Anthropic: Claude Haiku 4.5",
+    "inputPricePer1M": 1,
+    "outputPricePer1M": 5,
+    "cachedInputPricePer1M": 0.09999999999999999,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-vl-8b-thinking",
+    "modelName": "Qwen: Qwen3 VL 8B Thinking",
+    "inputPricePer1M": 0.117,
+    "outputPricePer1M": 1.365,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-vl-8b-instruct",
+    "modelName": "Qwen: Qwen3 VL 8B Instruct",
+    "inputPricePer1M": 0.08,
+    "outputPricePer1M": 0.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5-image",
+    "modelName": "OpenAI: GPT-5 Image",
+    "inputPricePer1M": 10,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 1.25,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/o3-deep-research",
+    "modelName": "OpenAI: o3 Deep Research",
+    "inputPricePer1M": 10,
+    "outputPricePer1M": 40,
+    "cachedInputPricePer1M": 2.5,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/o4-mini-deep-research",
+    "modelName": "OpenAI: o4 Mini Deep Research",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 8,
+    "cachedInputPricePer1M": 0.5,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "modelName": "NVIDIA: Llama 3.3 Nemotron Super 49B V1.5",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "baidu/ernie-4.5-21b-a3b-thinking",
+    "modelName": "Baidu: ERNIE 4.5 21B A3B Thinking",
+    "inputPricePer1M": 0.07,
+    "outputPricePer1M": 0.28,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-2.5-flash-image",
+    "modelName": "Google: Nano Banana (Gemini 2.5 Flash Image)",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 2.5,
+    "cachedInputPricePer1M": 0.03,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-vl-30b-a3b-thinking",
+    "modelName": "Qwen: Qwen3 VL 30B A3B Thinking",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-vl-30b-a3b-instruct",
+    "modelName": "Qwen: Qwen3 VL 30B A3B Instruct",
+    "inputPricePer1M": 0.13,
+    "outputPricePer1M": 0.52,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5-pro",
+    "modelName": "OpenAI: GPT-5 Pro",
+    "inputPricePer1M": 15,
+    "outputPricePer1M": 120,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-4.6",
+    "modelName": "Z.ai: GLM 4.6",
+    "inputPricePer1M": 0.35,
+    "outputPricePer1M": 1.71,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 202752,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-4.6:exacto",
+    "modelName": "Z.ai: GLM 4.6 (exacto)",
+    "inputPricePer1M": 0.44,
+    "outputPricePer1M": 1.76,
+    "cachedInputPricePer1M": 0.11,
+    "contextWindow": 204800,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-sonnet-4.5",
+    "modelName": "Anthropic: Claude Sonnet 4.5",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": 0.3,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-v3.2-exp",
+    "modelName": "DeepSeek: DeepSeek V3.2 Exp",
+    "inputPricePer1M": 0.27,
+    "outputPricePer1M": 0.41,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 163840,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "thedrummer/cydonia-24b-v4.1",
+    "modelName": "TheDrummer: Cydonia 24B V4.1",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 0.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "relace/relace-apply-3",
+    "modelName": "Relace: Relace Apply 3",
+    "inputPricePer1M": 0.85,
+    "outputPricePer1M": 1.25,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "modelName": "Google: Gemini 2.5 Flash Lite Preview 09-2025",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": 0.01,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-vl-235b-a22b-thinking",
+    "modelName": "Qwen: Qwen3 VL 235B A22B Thinking",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-vl-235b-a22b-instruct",
+    "modelName": "Qwen: Qwen3 VL 235B A22B Instruct",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.88,
+    "cachedInputPricePer1M": 0.11,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-max",
+    "modelName": "Qwen: Qwen3 Max",
+    "inputPricePer1M": 1.2,
+    "outputPricePer1M": 6,
+    "cachedInputPricePer1M": 0.24,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-coder-plus",
+    "modelName": "Qwen: Qwen3 Coder Plus",
+    "inputPricePer1M": 1,
+    "outputPricePer1M": 5,
+    "cachedInputPricePer1M": 0.19999999999999998,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5-codex",
+    "modelName": "OpenAI: GPT-5 Codex",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-v3.1-terminus:exacto",
+    "modelName": "DeepSeek: DeepSeek V3.1 Terminus (exacto)",
+    "inputPricePer1M": 0.21,
+    "outputPricePer1M": 0.7899999999999999,
+    "cachedInputPricePer1M": 0.16799999999999998,
+    "contextWindow": 163840,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-v3.1-terminus",
+    "modelName": "DeepSeek: DeepSeek V3.1 Terminus",
+    "inputPricePer1M": 0.21,
+    "outputPricePer1M": 0.7899999999999999,
+    "cachedInputPricePer1M": 0.1300000002,
+    "contextWindow": 163840,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "x-ai/grok-4-fast",
+    "modelName": "xAI: Grok 4 Fast",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.5,
+    "cachedInputPricePer1M": 0.049999999999999996,
+    "contextWindow": 2000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "alibaba/tongyi-deepresearch-30b-a3b",
+    "modelName": "Tongyi DeepResearch 30B A3B",
+    "inputPricePer1M": 0.09,
+    "outputPricePer1M": 0.44999999999999996,
+    "cachedInputPricePer1M": 0.09,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-coder-flash",
+    "modelName": "Qwen: Qwen3 Coder Flash",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 1.5,
+    "cachedInputPricePer1M": 0.06,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-next-80b-a3b-thinking",
+    "modelName": "Qwen: Qwen3 Next 80B A3B Thinking",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-next-80b-a3b-instruct:free",
+    "modelName": "Qwen: Qwen3 Next 80B A3B Instruct (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-next-80b-a3b-instruct",
+    "modelName": "Qwen: Qwen3 Next 80B A3B Instruct",
+    "inputPricePer1M": 0.09,
+    "outputPricePer1M": 1.1,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meituan/longcat-flash-chat",
+    "modelName": "Meituan: LongCat Flash Chat",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.7999999999999999,
+    "cachedInputPricePer1M": 0.19999999999999998,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-plus-2025-07-28:thinking",
+    "modelName": "Qwen: Qwen Plus 0728 (thinking)",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-plus-2025-07-28",
+    "modelName": "Qwen: Qwen Plus 0728",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nvidia/nemotron-nano-9b-v2:free",
+    "modelName": "NVIDIA: Nemotron Nano 9B V2 (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nvidia/nemotron-nano-9b-v2",
+    "modelName": "NVIDIA: Nemotron Nano 9B V2",
+    "inputPricePer1M": 0.04,
+    "outputPricePer1M": 0.16,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "moonshotai/kimi-k2-0905",
+    "modelName": "MoonshotAI: Kimi K2 0905",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": 0.15,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "moonshotai/kimi-k2-0905:exacto",
+    "modelName": "MoonshotAI: Kimi K2 0905 (exacto)",
+    "inputPricePer1M": 0.6,
+    "outputPricePer1M": 2.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-30b-a3b-thinking-2507",
+    "modelName": "Qwen: Qwen3 30B A3B Thinking 2507",
+    "inputPricePer1M": 0.051,
+    "outputPricePer1M": 0.33999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "x-ai/grok-code-fast-1",
+    "modelName": "xAI: Grok Code Fast 1",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 1.5,
+    "cachedInputPricePer1M": 0.02,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nousresearch/hermes-4-70b",
+    "modelName": "Nous: Hermes 4 70B",
+    "inputPricePer1M": 0.13,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nousresearch/hermes-4-405b",
+    "modelName": "Nous: Hermes 4 405B",
+    "inputPricePer1M": 1,
+    "outputPricePer1M": 3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-chat-v3.1",
+    "modelName": "DeepSeek: DeepSeek V3.1",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 0.75,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4o-audio-preview",
+    "modelName": "OpenAI: GPT-4o Audio",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-medium-3.1",
+    "modelName": "Mistral: Mistral Medium 3.1",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "baidu/ernie-4.5-21b-a3b",
+    "modelName": "Baidu: ERNIE 4.5 21B A3B",
+    "inputPricePer1M": 0.07,
+    "outputPricePer1M": 0.28,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 120000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "baidu/ernie-4.5-vl-28b-a3b",
+    "modelName": "Baidu: ERNIE 4.5 VL 28B A3B",
+    "inputPricePer1M": 0.14,
+    "outputPricePer1M": 0.56,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 30000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-4.5v",
+    "modelName": "Z.ai: GLM 4.5V",
+    "inputPricePer1M": 0.6,
+    "outputPricePer1M": 1.7999999999999998,
+    "cachedInputPricePer1M": 0.11,
+    "contextWindow": 65536,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "ai21/jamba-large-1.7",
+    "modelName": "AI21: Jamba Large 1.7",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 8,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5-chat",
+    "modelName": "OpenAI: GPT-5 Chat",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5",
+    "modelName": "OpenAI: GPT-5",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5-mini",
+    "modelName": "OpenAI: GPT-5 Mini",
+    "inputPricePer1M": 0.25,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": 0.024999999999999998,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-5-nano",
+    "modelName": "OpenAI: GPT-5 Nano",
+    "inputPricePer1M": 0.049999999999999996,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": 0.005,
+    "contextWindow": 400000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-oss-120b:free",
+    "modelName": "OpenAI: gpt-oss-120b (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-oss-120b",
+    "modelName": "OpenAI: gpt-oss-120b",
+    "inputPricePer1M": 0.039,
+    "outputPricePer1M": 0.19,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-oss-120b:exacto",
+    "modelName": "OpenAI: gpt-oss-120b (exacto)",
+    "inputPricePer1M": 0.039,
+    "outputPricePer1M": 0.19,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-oss-20b:free",
+    "modelName": "OpenAI: gpt-oss-20b (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-oss-20b",
+    "modelName": "OpenAI: gpt-oss-20b",
+    "inputPricePer1M": 0.03,
+    "outputPricePer1M": 0.14,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-opus-4.1",
+    "modelName": "Anthropic: Claude Opus 4.1",
+    "inputPricePer1M": 15,
+    "outputPricePer1M": 75,
+    "cachedInputPricePer1M": 1.5,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/codestral-2508",
+    "modelName": "Mistral: Codestral 2508",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 0.8999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-coder-30b-a3b-instruct",
+    "modelName": "Qwen: Qwen3 Coder 30B A3B Instruct",
+    "inputPricePer1M": 0.07,
+    "outputPricePer1M": 0.27,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 160000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-30b-a3b-instruct-2507",
+    "modelName": "Qwen: Qwen3 30B A3B Instruct 2507",
+    "inputPricePer1M": 0.09,
+    "outputPricePer1M": 0.3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-4.5",
+    "modelName": "Z.ai: GLM 4.5",
+    "inputPricePer1M": 0.55,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-4.5-air:free",
+    "modelName": "Z.ai: GLM 4.5 Air (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-4.5-air",
+    "modelName": "Z.ai: GLM 4.5 Air",
+    "inputPricePer1M": 0.13,
+    "outputPricePer1M": 0.85,
+    "cachedInputPricePer1M": 0.024999999999999998,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-235b-a22b-thinking-2507",
+    "modelName": "Qwen: Qwen3 235B A22B Thinking 2507",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "z-ai/glm-4-32b",
+    "modelName": "Z.ai: GLM 4 32B ",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.09999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-coder:free",
+    "modelName": "Qwen: Qwen3 Coder 480B A35B (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-coder",
+    "modelName": "Qwen: Qwen3 Coder 480B A35B",
+    "inputPricePer1M": 0.22,
+    "outputPricePer1M": 1,
+    "cachedInputPricePer1M": 0.022,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-coder:exacto",
+    "modelName": "Qwen: Qwen3 Coder 480B A35B (exacto)",
+    "inputPricePer1M": 0.22,
+    "outputPricePer1M": 1.7999999999999998,
+    "cachedInputPricePer1M": 0.022,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "bytedance/ui-tars-1.5-7b",
+    "modelName": "ByteDance: UI-TARS 7B ",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-2.5-flash-lite",
+    "modelName": "Google: Gemini 2.5 Flash Lite",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": 0.01,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-235b-a22b-2507",
+    "modelName": "Qwen: Qwen3 235B A22B Instruct 2507",
+    "inputPricePer1M": 0.071,
+    "outputPricePer1M": 0.09999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "switchpoint/router",
+    "modelName": "Switchpoint Router",
+    "inputPricePer1M": 0.85,
+    "outputPricePer1M": 3.4,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "moonshotai/kimi-k2",
+    "modelName": "MoonshotAI: Kimi K2 0711",
+    "inputPricePer1M": 0.55,
+    "outputPricePer1M": 2.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/devstral-medium",
+    "modelName": "Mistral: Devstral Medium",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/devstral-small",
+    "modelName": "Mistral: Devstral Small 1.1",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+    "modelName": "Venice: Uncensored (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "x-ai/grok-4",
+    "modelName": "xAI: Grok 4",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": 0.75,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-3n-e2b-it:free",
+    "modelName": "Google: Gemma 3n 2B (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "tencent/hunyuan-a13b-instruct",
+    "modelName": "Tencent: Hunyuan A13B Instruct",
+    "inputPricePer1M": 0.14,
+    "outputPricePer1M": 0.5700000000000001,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "tngtech/deepseek-r1t2-chimera",
+    "modelName": "TNG: DeepSeek R1T2 Chimera",
+    "inputPricePer1M": 0.25,
+    "outputPricePer1M": 0.85,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 163840,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "morph/morph-v3-large",
+    "modelName": "Morph: Morph V3 Large",
+    "inputPricePer1M": 0.8999999999999999,
+    "outputPricePer1M": 1.9,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 262144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "morph/morph-v3-fast",
+    "modelName": "Morph: Morph V3 Fast",
+    "inputPricePer1M": 0.7999999999999999,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 81920,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "baidu/ernie-4.5-vl-424b-a47b",
+    "modelName": "Baidu: ERNIE 4.5 VL 424B A47B ",
+    "inputPricePer1M": 0.42,
+    "outputPricePer1M": 1.25,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 123000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "baidu/ernie-4.5-300b-a47b",
+    "modelName": "Baidu: ERNIE 4.5 300B A47B ",
+    "inputPricePer1M": 0.28,
+    "outputPricePer1M": 1.1,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 123000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "inception/mercury",
+    "modelName": "Inception: Mercury",
+    "inputPricePer1M": 0.25,
+    "outputPricePer1M": 1,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-small-3.2-24b-instruct",
+    "modelName": "Mistral: Mistral Small 3.2 24B",
+    "inputPricePer1M": 0.06,
+    "outputPricePer1M": 0.18,
+    "cachedInputPricePer1M": 0.03,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "minimax/minimax-m1",
+    "modelName": "MiniMax: MiniMax M1",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 2.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-2.5-flash",
+    "modelName": "Google: Gemini 2.5 Flash",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 2.5,
+    "cachedInputPricePer1M": 0.03,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-2.5-pro",
+    "modelName": "Google: Gemini 2.5 Pro",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/o3-pro",
+    "modelName": "OpenAI: o3 Pro",
+    "inputPricePer1M": 20,
+    "outputPricePer1M": 80,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "x-ai/grok-3-mini",
+    "modelName": "xAI: Grok 3 Mini",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 0.5,
+    "cachedInputPricePer1M": 0.075,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "x-ai/grok-3",
+    "modelName": "xAI: Grok 3",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": 0.75,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-2.5-pro-preview",
+    "modelName": "Google: Gemini 2.5 Pro Preview 06-05",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-r1-0528",
+    "modelName": "DeepSeek: R1 0528",
+    "inputPricePer1M": 0.44999999999999996,
+    "outputPricePer1M": 2.1500000000000004,
+    "cachedInputPricePer1M": 0.22499999999999998,
+    "contextWindow": 163840,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-opus-4",
+    "modelName": "Anthropic: Claude Opus 4",
+    "inputPricePer1M": 15,
+    "outputPricePer1M": 75,
+    "cachedInputPricePer1M": 1.5,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-sonnet-4",
+    "modelName": "Anthropic: Claude Sonnet 4",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": 0.3,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-3n-e4b-it:free",
+    "modelName": "Google: Gemma 3n 4B (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-3n-e4b-it",
+    "modelName": "Google: Gemma 3n 4B",
+    "inputPricePer1M": 0.02,
+    "outputPricePer1M": 0.04,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-medium-3",
+    "modelName": "Mistral: Mistral Medium 3",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-2.5-pro-preview-05-06",
+    "modelName": "Google: Gemini 2.5 Pro Preview 05-06",
+    "inputPricePer1M": 1.25,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 0.125,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "arcee-ai/spotlight",
+    "modelName": "Arcee AI: Spotlight",
+    "inputPricePer1M": 0.18,
+    "outputPricePer1M": 0.18,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "arcee-ai/maestro-reasoning",
+    "modelName": "Arcee AI: Maestro Reasoning",
+    "inputPricePer1M": 0.8999999999999999,
+    "outputPricePer1M": 3.3000000000000003,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "arcee-ai/virtuoso-large",
+    "modelName": "Arcee AI: Virtuoso Large",
+    "inputPricePer1M": 0.75,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "arcee-ai/coder-large",
+    "modelName": "Arcee AI: Coder Large",
+    "inputPricePer1M": 0.5,
+    "outputPricePer1M": 0.7999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "inception/mercury-coder",
+    "modelName": "Inception: Mercury Coder",
+    "inputPricePer1M": 0.25,
+    "outputPricePer1M": 1,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-4b:free",
+    "modelName": "Qwen: Qwen3 4B (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 40960,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-guard-4-12b",
+    "modelName": "Meta: Llama Guard 4 12B",
+    "inputPricePer1M": 0.18,
+    "outputPricePer1M": 0.18,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 163840,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-30b-a3b",
+    "modelName": "Qwen: Qwen3 30B A3B",
+    "inputPricePer1M": 0.08,
+    "outputPricePer1M": 0.28,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 40960,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-8b",
+    "modelName": "Qwen: Qwen3 8B",
+    "inputPricePer1M": 0.049999999999999996,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": 0.049999999999999996,
+    "contextWindow": 40960,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-14b",
+    "modelName": "Qwen: Qwen3 14B",
+    "inputPricePer1M": 0.06,
+    "outputPricePer1M": 0.24,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 40960,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-32b",
+    "modelName": "Qwen: Qwen3 32B",
+    "inputPricePer1M": 0.08,
+    "outputPricePer1M": 0.24,
+    "cachedInputPricePer1M": 0.04,
+    "contextWindow": 40960,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen3-235b-a22b",
+    "modelName": "Qwen: Qwen3 235B A22B",
+    "inputPricePer1M": 0.45499999999999996,
+    "outputPricePer1M": 1.8199999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/o4-mini-high",
+    "modelName": "OpenAI: o4 Mini High",
+    "inputPricePer1M": 1.1,
+    "outputPricePer1M": 4.4,
+    "cachedInputPricePer1M": 0.275,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/o3",
+    "modelName": "OpenAI: o3",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 8,
+    "cachedInputPricePer1M": 0.5,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/o4-mini",
+    "modelName": "OpenAI: o4 Mini",
+    "inputPricePer1M": 1.1,
+    "outputPricePer1M": 4.4,
+    "cachedInputPricePer1M": 0.275,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen2.5-coder-7b-instruct",
+    "modelName": "Qwen: Qwen2.5 Coder 7B Instruct",
+    "inputPricePer1M": 0.03,
+    "outputPricePer1M": 0.09,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4.1",
+    "modelName": "OpenAI: GPT-4.1",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 8,
+    "cachedInputPricePer1M": 0.5,
+    "contextWindow": 1047576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4.1-mini",
+    "modelName": "OpenAI: GPT-4.1 Mini",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 1.5999999999999999,
+    "cachedInputPricePer1M": 0.09999999999999999,
+    "contextWindow": 1047576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4.1-nano",
+    "modelName": "OpenAI: GPT-4.1 Nano",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": 0.024999999999999998,
+    "contextWindow": 1047576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "eleutherai/llemma_7b",
+    "modelName": "EleutherAI: Llemma 7b",
+    "inputPricePer1M": 0.7999999999999999,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 4096,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "alfredpros/codellama-7b-instruct-solidity",
+    "modelName": "AlfredPros: CodeLLaMa 7B Instruct Solidity",
+    "inputPricePer1M": 0.7999999999999999,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 4096,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "x-ai/grok-3-mini-beta",
+    "modelName": "xAI: Grok 3 Mini Beta",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 0.5,
+    "cachedInputPricePer1M": 0.075,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "x-ai/grok-3-beta",
+    "modelName": "xAI: Grok 3 Beta",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": 0.75,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-4-maverick",
+    "modelName": "Meta: Llama 4 Maverick",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 0.6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-4-scout",
+    "modelName": "Meta: Llama 4 Scout",
+    "inputPricePer1M": 0.08,
+    "outputPricePer1M": 0.3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 327680,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen2.5-vl-32b-instruct",
+    "modelName": "Qwen: Qwen2.5 VL 32B Instruct",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-chat-v3-0324",
+    "modelName": "DeepSeek: DeepSeek V3 0324",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.77,
+    "cachedInputPricePer1M": 0.135,
+    "contextWindow": 163840,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/o1-pro",
+    "modelName": "OpenAI: o1-pro",
+    "inputPricePer1M": 150,
+    "outputPricePer1M": 600,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-small-3.1-24b-instruct:free",
+    "modelName": "Mistral: Mistral Small 3.1 24B (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-small-3.1-24b-instruct",
+    "modelName": "Mistral: Mistral Small 3.1 24B",
+    "inputPricePer1M": 0.35,
+    "outputPricePer1M": 0.56,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "allenai/olmo-2-0325-32b-instruct",
+    "modelName": "AllenAI: Olmo 2 32B Instruct",
+    "inputPricePer1M": 0.049999999999999996,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-3-4b-it:free",
+    "modelName": "Google: Gemma 3 4B (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-3-4b-it",
+    "modelName": "Google: Gemma 3 4B",
+    "inputPricePer1M": 0.04,
+    "outputPricePer1M": 0.08,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-3-12b-it:free",
+    "modelName": "Google: Gemma 3 12B (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-3-12b-it",
+    "modelName": "Google: Gemma 3 12B",
+    "inputPricePer1M": 0.04,
+    "outputPricePer1M": 0.13,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "cohere/command-a",
+    "modelName": "Cohere: Command A",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 256000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4o-mini-search-preview",
+    "modelName": "OpenAI: GPT-4o-mini Search Preview",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 0.6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4o-search-preview",
+    "modelName": "OpenAI: GPT-4o Search Preview",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-3-27b-it:free",
+    "modelName": "Google: Gemma 3 27B (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-3-27b-it",
+    "modelName": "Google: Gemma 3 27B",
+    "inputPricePer1M": 0.04,
+    "outputPricePer1M": 0.15,
+    "cachedInputPricePer1M": 0.02,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "thedrummer/skyfall-36b-v2",
+    "modelName": "TheDrummer: Skyfall 36B V2",
+    "inputPricePer1M": 0.55,
+    "outputPricePer1M": 0.7999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "perplexity/sonar-reasoning-pro",
+    "modelName": "Perplexity: Sonar Reasoning Pro",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 8,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "perplexity/sonar-pro",
+    "modelName": "Perplexity: Sonar Pro",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "perplexity/sonar-deep-research",
+    "modelName": "Perplexity: Sonar Deep Research",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 8,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwq-32b",
+    "modelName": "Qwen: QwQ 32B",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-2.0-flash-lite-001",
+    "modelName": "Google: Gemini 2.0 Flash Lite",
+    "inputPricePer1M": 0.075,
+    "outputPricePer1M": 0.3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-3.7-sonnet",
+    "modelName": "Anthropic: Claude 3.7 Sonnet",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": 0.3,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-3.7-sonnet:thinking",
+    "modelName": "Anthropic: Claude 3.7 Sonnet (thinking)",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": 0.3,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-saba",
+    "modelName": "Mistral: Saba",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-guard-3-8b",
+    "modelName": "Llama Guard 3 8B",
+    "inputPricePer1M": 0.02,
+    "outputPricePer1M": 0.06,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/o3-mini-high",
+    "modelName": "OpenAI: o3 Mini High",
+    "inputPricePer1M": 1.1,
+    "outputPricePer1M": 4.4,
+    "cachedInputPricePer1M": 0.55,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemini-2.0-flash-001",
+    "modelName": "Google: Gemini 2.0 Flash",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": 0.024999999999999998,
+    "contextWindow": 1048576,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-vl-plus",
+    "modelName": "Qwen: Qwen VL Plus",
+    "inputPricePer1M": 0.21,
+    "outputPricePer1M": 0.63,
+    "cachedInputPricePer1M": 0.041999999999999996,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "aion-labs/aion-1.0",
+    "modelName": "AionLabs: Aion-1.0",
+    "inputPricePer1M": 4,
+    "outputPricePer1M": 8,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "aion-labs/aion-1.0-mini",
+    "modelName": "AionLabs: Aion-1.0-Mini",
+    "inputPricePer1M": 0.7,
+    "outputPricePer1M": 1.4,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "aion-labs/aion-rp-llama-3.1-8b",
+    "modelName": "AionLabs: Aion-RP 1.0 (8B)",
+    "inputPricePer1M": 0.7999999999999999,
+    "outputPricePer1M": 1.5999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-vl-max",
+    "modelName": "Qwen: Qwen VL Max",
+    "inputPricePer1M": 0.7999999999999999,
+    "outputPricePer1M": 3.1999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-turbo",
+    "modelName": "Qwen: Qwen-Turbo",
+    "inputPricePer1M": 0.049999999999999996,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": 0.01,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen2.5-vl-72b-instruct",
+    "modelName": "Qwen: Qwen2.5 VL 72B Instruct",
+    "inputPricePer1M": 0.7999999999999999,
+    "outputPricePer1M": 0.7999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-plus",
+    "modelName": "Qwen: Qwen-Plus",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": 0.08,
+    "contextWindow": 1000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-max",
+    "modelName": "Qwen: Qwen-Max ",
+    "inputPricePer1M": 1.5999999999999999,
+    "outputPricePer1M": 6.3999999999999995,
+    "cachedInputPricePer1M": 0.32,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/o3-mini",
+    "modelName": "OpenAI: o3 Mini",
+    "inputPricePer1M": 1.1,
+    "outputPricePer1M": 4.4,
+    "cachedInputPricePer1M": 0.55,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-small-24b-instruct-2501",
+    "modelName": "Mistral: Mistral Small 3",
+    "inputPricePer1M": 0.049999999999999996,
+    "outputPricePer1M": 0.08,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-r1-distill-qwen-32b",
+    "modelName": "DeepSeek: R1 Distill Qwen 32B",
+    "inputPricePer1M": 0.29,
+    "outputPricePer1M": 0.29,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "perplexity/sonar",
+    "modelName": "Perplexity: Sonar",
+    "inputPricePer1M": 1,
+    "outputPricePer1M": 1,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 127072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-r1-distill-llama-70b",
+    "modelName": "DeepSeek: R1 Distill Llama 70B",
+    "inputPricePer1M": 0.7,
+    "outputPricePer1M": 0.7999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-r1",
+    "modelName": "DeepSeek: R1",
+    "inputPricePer1M": 0.7,
+    "outputPricePer1M": 2.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 64000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "minimax/minimax-01",
+    "modelName": "MiniMax: MiniMax-01",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 1.1,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 1000192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "microsoft/phi-4",
+    "modelName": "Microsoft: Phi 4",
+    "inputPricePer1M": 0.06,
+    "outputPricePer1M": 0.14,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 16384,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "sao10k/l3.1-70b-hanami-x1",
+    "modelName": "Sao10K: Llama 3.1 70B Hanami x1",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 16000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "deepseek/deepseek-chat",
+    "modelName": "DeepSeek: DeepSeek V3",
+    "inputPricePer1M": 0.32,
+    "outputPricePer1M": 0.8899999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 163840,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "sao10k/l3.3-euryale-70b",
+    "modelName": "Sao10K: Llama 3.3 Euryale 70B",
+    "inputPricePer1M": 0.65,
+    "outputPricePer1M": 0.75,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/o1",
+    "modelName": "OpenAI: o1",
+    "inputPricePer1M": 15,
+    "outputPricePer1M": 60,
+    "cachedInputPricePer1M": 7.5,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "cohere/command-r7b-12-2024",
+    "modelName": "Cohere: Command R7B (12-2024)",
+    "inputPricePer1M": 0.0375,
+    "outputPricePer1M": 0.15,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3.3-70b-instruct:free",
+    "modelName": "Meta: Llama 3.3 70B Instruct (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3.3-70b-instruct",
+    "modelName": "Meta: Llama 3.3 70B Instruct",
+    "inputPricePer1M": 0.09999999999999999,
+    "outputPricePer1M": 0.32,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "amazon/nova-lite-v1",
+    "modelName": "Amazon: Nova Lite 1.0",
+    "inputPricePer1M": 0.06,
+    "outputPricePer1M": 0.24,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 300000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "amazon/nova-micro-v1",
+    "modelName": "Amazon: Nova Micro 1.0",
+    "inputPricePer1M": 0.035,
+    "outputPricePer1M": 0.14,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "amazon/nova-pro-v1",
+    "modelName": "Amazon: Nova Pro 1.0",
+    "inputPricePer1M": 0.7999999999999999,
+    "outputPricePer1M": 3.1999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 300000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4o-2024-11-20",
+    "modelName": "OpenAI: GPT-4o (2024-11-20)",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 1.25,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-large-2411",
+    "modelName": "Mistral Large 2411",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-large-2407",
+    "modelName": "Mistral Large 2407",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/pixtral-large-2411",
+    "modelName": "Mistral: Pixtral Large 2411",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-2.5-coder-32b-instruct",
+    "modelName": "Qwen2.5 Coder 32B Instruct",
+    "inputPricePer1M": 0.2,
+    "outputPricePer1M": 0.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "raifle/sorcererlm-8x22b",
+    "modelName": "SorcererLM 8x22B",
+    "inputPricePer1M": 4.5,
+    "outputPricePer1M": 4.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 16000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "thedrummer/unslopnemo-12b",
+    "modelName": "TheDrummer: UnslopNemo 12B",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-3.5-haiku",
+    "modelName": "Anthropic: Claude 3.5 Haiku",
+    "inputPricePer1M": 0.7999999999999999,
+    "outputPricePer1M": 4,
+    "cachedInputPricePer1M": 0.08,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthracite-org/magnum-v4-72b",
+    "modelName": "Magnum v4 72B",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 16384,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-3.5-sonnet",
+    "modelName": "Anthropic: Claude 3.5 Sonnet",
+    "inputPricePer1M": 6,
+    "outputPricePer1M": 30,
+    "cachedInputPricePer1M": 0.6,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-2.5-7b-instruct",
+    "modelName": "Qwen: Qwen2.5 7B Instruct",
+    "inputPricePer1M": 0.04,
+    "outputPricePer1M": 0.09999999999999999,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nvidia/llama-3.1-nemotron-70b-instruct",
+    "modelName": "NVIDIA: Llama 3.1 Nemotron 70B Instruct",
+    "inputPricePer1M": 1.2,
+    "outputPricePer1M": 1.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "inflection/inflection-3-pi",
+    "modelName": "Inflection: Inflection 3 Pi",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "inflection/inflection-3-productivity",
+    "modelName": "Inflection: Inflection 3 Productivity",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "thedrummer/rocinante-12b",
+    "modelName": "TheDrummer: Rocinante 12B",
+    "inputPricePer1M": 0.16999999999999998,
+    "outputPricePer1M": 0.43,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3.2-3b-instruct:free",
+    "modelName": "Meta: Llama 3.2 3B Instruct (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3.2-3b-instruct",
+    "modelName": "Meta: Llama 3.2 3B Instruct",
+    "inputPricePer1M": 0.02,
+    "outputPricePer1M": 0.02,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3.2-1b-instruct",
+    "modelName": "Meta: Llama 3.2 1B Instruct",
+    "inputPricePer1M": 0.027,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 60000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3.2-11b-vision-instruct",
+    "modelName": "Meta: Llama 3.2 11B Vision Instruct",
+    "inputPricePer1M": 0.049,
+    "outputPricePer1M": 0.049,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-2.5-72b-instruct",
+    "modelName": "Qwen2.5 72B Instruct",
+    "inputPricePer1M": 0.12,
+    "outputPricePer1M": 0.39,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "neversleep/llama-3.1-lumimaid-8b",
+    "modelName": "NeverSleep: Lumimaid v0.2 8B",
+    "inputPricePer1M": 0.09,
+    "outputPricePer1M": 0.6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "cohere/command-r-08-2024",
+    "modelName": "Cohere: Command R (08-2024)",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 0.6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "cohere/command-r-plus-08-2024",
+    "modelName": "Cohere: Command R+ (08-2024)",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "sao10k/l3.1-euryale-70b",
+    "modelName": "Sao10K: Llama 3.1 Euryale 70B v2.2",
+    "inputPricePer1M": 0.65,
+    "outputPricePer1M": 0.75,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "qwen/qwen-2.5-vl-7b-instruct",
+    "modelName": "Qwen: Qwen2.5-VL 7B Instruct",
+    "inputPricePer1M": 0.2,
+    "outputPricePer1M": 0.2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nousresearch/hermes-3-llama-3.1-70b",
+    "modelName": "Nous: Hermes 3 70B Instruct",
+    "inputPricePer1M": 0.3,
+    "outputPricePer1M": 0.3,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 65536,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nousresearch/hermes-3-llama-3.1-405b:free",
+    "modelName": "Nous: Hermes 3 405B Instruct (free)",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nousresearch/hermes-3-llama-3.1-405b",
+    "modelName": "Nous: Hermes 3 405B Instruct",
+    "inputPricePer1M": 1,
+    "outputPricePer1M": 1,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "sao10k/l3-lunaris-8b",
+    "modelName": "Sao10K: Llama 3 8B Lunaris",
+    "inputPricePer1M": 0.04,
+    "outputPricePer1M": 0.049999999999999996,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4o-2024-08-06",
+    "modelName": "OpenAI: GPT-4o (2024-08-06)",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 1.25,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3.1-405b",
+    "modelName": "Meta: Llama 3.1 405B (base)",
+    "inputPricePer1M": 4,
+    "outputPricePer1M": 4,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3.1-8b-instruct",
+    "modelName": "Meta: Llama 3.1 8B Instruct",
+    "inputPricePer1M": 0.02,
+    "outputPricePer1M": 0.049999999999999996,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 16384,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3.1-405b-instruct",
+    "modelName": "Meta: Llama 3.1 405B Instruct",
+    "inputPricePer1M": 4,
+    "outputPricePer1M": 4,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3.1-70b-instruct",
+    "modelName": "Meta: Llama 3.1 70B Instruct",
+    "inputPricePer1M": 0.39999999999999997,
+    "outputPricePer1M": 0.39999999999999997,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-nemo",
+    "modelName": "Mistral: Mistral Nemo",
+    "inputPricePer1M": 0.02,
+    "outputPricePer1M": 0.04,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 131072,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4o-mini-2024-07-18",
+    "modelName": "OpenAI: GPT-4o-mini (2024-07-18)",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 0.6,
+    "cachedInputPricePer1M": 0.075,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4o-mini",
+    "modelName": "OpenAI: GPT-4o-mini",
+    "inputPricePer1M": 0.15,
+    "outputPricePer1M": 0.6,
+    "cachedInputPricePer1M": 0.075,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-2-27b-it",
+    "modelName": "Google: Gemma 2 27B",
+    "inputPricePer1M": 0.65,
+    "outputPricePer1M": 0.65,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "google/gemma-2-9b-it",
+    "modelName": "Google: Gemma 2 9B",
+    "inputPricePer1M": 0.03,
+    "outputPricePer1M": 0.09,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "sao10k/l3-euryale-70b",
+    "modelName": "Sao10k: Llama 3 Euryale 70B v2.1",
+    "inputPricePer1M": 1.48,
+    "outputPricePer1M": 1.48,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "nousresearch/hermes-2-pro-llama-3-8b",
+    "modelName": "NousResearch: Hermes 2 Pro - Llama-3 8B",
+    "inputPricePer1M": 0.14,
+    "outputPricePer1M": 0.14,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-7b-instruct",
+    "modelName": "Mistral: Mistral 7B Instruct",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-7b-instruct-v0.3",
+    "modelName": "Mistral: Mistral 7B Instruct v0.3",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-guard-2-8b",
+    "modelName": "Meta: LlamaGuard 2 8B",
+    "inputPricePer1M": 0.19999999999999998,
+    "outputPricePer1M": 0.19999999999999998,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4o-2024-05-13",
+    "modelName": "OpenAI: GPT-4o (2024-05-13)",
+    "inputPricePer1M": 5,
+    "outputPricePer1M": 15,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4o",
+    "modelName": "OpenAI: GPT-4o",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 10,
+    "cachedInputPricePer1M": 1.25,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4o:extended",
+    "modelName": "OpenAI: GPT-4o (extended)",
+    "inputPricePer1M": 6,
+    "outputPricePer1M": 18,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3-70b-instruct",
+    "modelName": "Meta: Llama 3 70B Instruct",
+    "inputPricePer1M": 0.51,
+    "outputPricePer1M": 0.74,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "meta-llama/llama-3-8b-instruct",
+    "modelName": "Meta: Llama 3 8B Instruct",
+    "inputPricePer1M": 0.03,
+    "outputPricePer1M": 0.04,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8192,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mixtral-8x22b-instruct",
+    "modelName": "Mistral: Mixtral 8x22B Instruct",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 65536,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "microsoft/wizardlm-2-8x22b",
+    "modelName": "WizardLM-2 8x22B",
+    "inputPricePer1M": 0.62,
+    "outputPricePer1M": 0.62,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 65535,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4-turbo",
+    "modelName": "OpenAI: GPT-4 Turbo",
+    "inputPricePer1M": 10,
+    "outputPricePer1M": 30,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "anthropic/claude-3-haiku",
+    "modelName": "Anthropic: Claude 3 Haiku",
+    "inputPricePer1M": 0.25,
+    "outputPricePer1M": 1.25,
+    "cachedInputPricePer1M": 0.03,
+    "contextWindow": 200000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-large",
+    "modelName": "Mistral Large",
+    "inputPricePer1M": 2,
+    "outputPricePer1M": 6,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-3.5-turbo-0613",
+    "modelName": "OpenAI: GPT-3.5 Turbo (older v0613)",
+    "inputPricePer1M": 1,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 4095,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4-turbo-preview",
+    "modelName": "OpenAI: GPT-4 Turbo Preview",
+    "inputPricePer1M": 10,
+    "outputPricePer1M": 30,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mixtral-8x7b-instruct",
+    "modelName": "Mistral: Mixtral 8x7B Instruct",
+    "inputPricePer1M": 0.54,
+    "outputPricePer1M": 0.54,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 32768,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "neversleep/noromaid-20b",
+    "modelName": "Noromaid 20B",
+    "inputPricePer1M": 1,
+    "outputPricePer1M": 1.75,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 4096,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "alpindale/goliath-120b",
+    "modelName": "Goliath 120B",
+    "inputPricePer1M": 3.75,
+    "outputPricePer1M": 7.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 6144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openrouter/auto",
+    "modelName": "Auto Router",
+    "inputPricePer1M": -1000000,
+    "outputPricePer1M": -1000000,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 2000000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4-1106-preview",
+    "modelName": "OpenAI: GPT-4 Turbo (older v1106)",
+    "inputPricePer1M": 10,
+    "outputPricePer1M": 30,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 128000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-3.5-turbo-instruct",
+    "modelName": "OpenAI: GPT-3.5 Turbo Instruct",
+    "inputPricePer1M": 1.5,
+    "outputPricePer1M": 2,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 4095,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mistralai/mistral-7b-instruct-v0.1",
+    "modelName": "Mistral: Mistral 7B Instruct v0.1",
+    "inputPricePer1M": 0.11,
+    "outputPricePer1M": 0.19,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 2824,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-3.5-turbo-16k",
+    "modelName": "OpenAI: GPT-3.5 Turbo 16k",
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 4,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 16385,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "mancer/weaver",
+    "modelName": "Mancer: Weaver (alpha)",
+    "inputPricePer1M": 0.75,
+    "outputPricePer1M": 1,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8000,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "undi95/remm-slerp-l2-13b",
+    "modelName": "ReMM SLERP 13B",
+    "inputPricePer1M": 0.44999999999999996,
+    "outputPricePer1M": 0.65,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 6144,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "gryphe/mythomax-l2-13b",
+    "modelName": "MythoMax 13B",
+    "inputPricePer1M": 0.06,
+    "outputPricePer1M": 0.06,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 4096,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4-0314",
+    "modelName": "OpenAI: GPT-4 (older v0314)",
+    "inputPricePer1M": 30,
+    "outputPricePer1M": 60,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8191,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-4",
+    "modelName": "OpenAI: GPT-4",
+    "inputPricePer1M": 30,
+    "outputPricePer1M": 60,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 8191,
+    "isAvailable": true,
+    "currency": "USD"
+  },
+  {
+    "modelId": "openai/gpt-3.5-turbo",
+    "modelName": "OpenAI: GPT-3.5 Turbo",
+    "inputPricePer1M": 0.5,
+    "outputPricePer1M": 1.5,
+    "cachedInputPricePer1M": null,
+    "contextWindow": 16385,
+    "isAvailable": true,
+    "currency": "USD"
+  }
+]

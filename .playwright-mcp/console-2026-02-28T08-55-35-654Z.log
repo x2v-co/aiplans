@@ -1,0 +1,269 @@
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      45ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      53ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      61ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      70ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      78ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      79ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      79ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      79ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      79ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      79ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      87ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[      95ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     103ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     104ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     104ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     104ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     104ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     104ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     104ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     112ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     120ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     128ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     128ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     128ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     128ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     128ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     128ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     128ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     128ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     128ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     128ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     129ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     129ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     129ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     129ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     129ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     129ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     129ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     129ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     137ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     145ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     153ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     153ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     153ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     153ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     153ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     153ms] [WARNING] WebGL: INVALID_OPERATION: uniform2f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     153ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: uniform1i: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: bindTexture: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     154ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no buffer is bound to enabled attribute @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     162ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     162ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: attempt to use a deleted object @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     162ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     162ms] [WARNING] WebGL: INVALID_OPERATION: uniform1f: location is not from the associated program @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[     162ms] [WARNING] WebGL: too many errors, no more errors will be reported to the console for this context. @ https://x.ai/_next/static/chunks/app/(main)/(home)/page-3396be295e5eec3d.js:0
+[    1527ms] Error: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rK (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:45833)
+    at rX (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:46866)
+    at https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:140585
+    at sp (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:145746)
+    at sc (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:137086)
+    at https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:131915
+    at u9 (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:132016)
+    at sV (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:158398)
+    at MessagePort.O (https://docs.x.ai/_next/static/chunks/0b4ef5640193c691.js:1:7358)
+[    2683ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://docs.x.ai/api/log:0
+[    2684ms] [ERROR] Client-side log proxy failed:  @ https://docs.x.ai/_next/static/chunks/749e18e0e9d03065.js:11
