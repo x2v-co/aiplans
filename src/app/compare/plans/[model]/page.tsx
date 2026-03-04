@@ -229,7 +229,7 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
           <h3 className="font-semibold mb-4">📝 Notes</h3>
           <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
             <li>• Prices last updated: {new Date().toLocaleDateString()}</li>
-            <li>• Exchange rate: 1 USD = 7.26 CNY (real-time)</li>
+            <li>• Exchange rate: 1 USD = 6.90 CNY (real-time)</li>
             <li>• Estimated costs are calculated based on your usage input</li>
             <li>• Actual costs may vary based on usage patterns, cache hit rates, and other factors</li>
             <li>

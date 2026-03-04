@@ -132,7 +132,7 @@ export function convertCurrency(
   // 简化汇率（实际应用中应该使用实时汇率API）
   const EXCHANGE_RATES: Record<CurrencyCode, number> = {
     USD: 1,
-    CNY: 7.2,
+    CNY: 6.90,
     EUR: 0.92,
     GBP: 0.79,
     JPY: 149.5,

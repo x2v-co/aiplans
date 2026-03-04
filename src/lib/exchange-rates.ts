@@ -21,14 +21,14 @@ export interface ExchangeRate {
 const FIXED_RATES: Record<string, Record<string, number>> = {
   // USD 基准
   'USD': {
-    'CNY': 7.2,
+    'CNY': 6.90,
     'EUR': 0.92,
     'GBP': 0.79,
     'JPY': 149.5,
     'KRW': 1320,
   },
   // 反向汇率
-  'CNY': { 'USD': 1 / 7.2 },
+  'CNY': { 'USD': 1 / 6.90 },
   'EUR': { 'USD': 1 / 0.92 },
   'GBP': { 'USD': 1 / 0.79 },
   'JPY': { 'USD': 1 / 149.5 },

@@ -148,7 +148,7 @@ export function formatPriceComparison(
  */
 export function getExchangeRateDisplay(currency: CurrencyCode): string {
   if (currency === 'USD') return '';
-  if (currency === 'CNY') return '(1 USD = ¥7.20)';
+  if (currency === 'CNY') return '(1 USD = ¥6.90)';
   if (currency === 'EUR') return '(1 USD = €0.92)';
   if (currency === 'GBP') return '(1 USD = £0.79)';
   if (currency === 'JPY') return '(1 USD = ¥149.50)';
