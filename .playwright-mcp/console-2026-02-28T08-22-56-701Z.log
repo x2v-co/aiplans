@@ -1,9 +1,0 @@
-[     797ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://cdn.prod.website-files.com/6889473510b50328dbb70ae6/css/claude-brand.shared.bb618b726.min.css:0
-[     802ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.js:0
-[     810ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://unpkg.com/@popperjs/core@2:0
-[     908ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css:0
-[     970ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://www.anthropic.com/file/claude-animations:0
-[    1116ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://www.anthropic.com/file/claude-privacy-banner:0
-[    1116ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://www.anthropic.com/file/claude-custom-tracking:0
-[    1157ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://api.intellimize.co/context-v2/117902971:0
-[   30048ms] [ERROR] Failed to load resource: net::ERR_TIMED_OUT @ https://unpkg.com/tippy.js@6:0

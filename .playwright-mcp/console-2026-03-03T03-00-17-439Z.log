@@ -1,6 +1,0 @@
-[      17ms] [WARNING] document.domain mutation is ignored because the surrounding agent cluster is origin-keyed. @ https://bailian.console.aliyun.com/?spm=4257a476.2ef5001f.0.0.40f73da28mSVQy&tab=doc:140
-[    1123ms] [WARNING] [AES] 未监测到Aplus SDK @ https://g.alicdn.com/aliyun-help/help-portal-fe/0.12.36/js/index.js:0
-[    1133ms] [WARNING] The provided value '*/*' is not a valid enum value of type XMLHttpRequestResponseType. @ https://g.alicdn.com/aliyun-help/help-portal-fe/0.12.36/js/vendor.js:7
-[    1255ms] [ERROR] Permissions policy violation: gyroscope is not allowed in this document. @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
-[    1255ms] [ERROR] Permissions policy violation: accelerometer is not allowed in this document. @ https://g.alicdn.com/aliyun-help/help-portal-fe/0.12.36/js/index.js:0
-[    1255ms] [WARNING] The deviceorientation events are blocked by permissions policy. See https://github.com/w3c/webappsec-permissions-policy/blob/master/features.md#sensor-features @ https://g.alicdn.com/aliyun-help/help-portal-fe/0.12.36/js/index.js:0

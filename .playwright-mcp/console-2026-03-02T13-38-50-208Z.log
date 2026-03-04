@@ -1,3 +1,0 @@
-[     997ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://docs.mistral.ai/openapi.yaml?_rsc=10sdc:0
-[    1164ms] [ERROR] Loading the stylesheet 'https://fonts.axept.io/fonts.googleapis.com/css?family=Source%20Sans%203:regular,500,600,700' violates the following Content Security Policy directive: "style-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://fonts.googleapis.com". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked. @ https://static.axept.io/sdk.js:1
-[    1174ms] [WARNING] [Axeptio SDK] fonts.axept.io blocked by CSP. Falling back to Google Fonts. @ https://static.axept.io/sdk.js:1

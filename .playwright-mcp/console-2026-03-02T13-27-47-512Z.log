@@ -1,2 +1,0 @@
-[    2642ms] [ERROR] Framing 'https://a.claude.ai/' violates the following Content Security Policy directive: "frame-ancestors https://claude.ai https://*.claude.ai https://anthropic.com https://*.anthropic.com https://*.ant.dev". The request has been blocked.
- @ :0

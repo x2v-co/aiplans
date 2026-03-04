@@ -1,3 +1,0 @@
-[     640ms] Uncaught TypeError: Cannot read properties of null (reading 'children')
-    at <anonymous> (https://bce.bdstatic.com/portal-server/common/header/portal-default.js?theme=transparent:0:813)
-[     718ms] [WARNING] Manifest: property 'start_url' ignored, should be same origin as document. @ https://now.bdstatic.com/store/v2/6a045a1/easy-landing/ea1db90/product/manifest.json:0

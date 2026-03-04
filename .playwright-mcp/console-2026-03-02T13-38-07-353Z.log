@@ -1,2 +1,0 @@
-[     100ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://api.deepseek.com/v1/models:0
-[     128ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://api.deepseek.com/favicon.ico:0
