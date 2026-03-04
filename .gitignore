@@ -48,3 +48,6 @@ next-env.d.ts
 
 # github
 .github/
+
+# pnpm
+pnpm-lock.yaml
