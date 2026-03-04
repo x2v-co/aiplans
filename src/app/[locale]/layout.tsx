@@ -3,6 +3,7 @@
 import '../globals.css';
 import { Geist, Geist_Mono } from "next/font/google";
 import { TranslationsProvider } from '@/lib/translations';
+import { Analytics } from "@vercel/analytics/next";
 import { use, useEffect, useState } from 'react';
 import enMessages from '@/../messages/en.json';
 import zhMessages from '@/../messages/zh.json';
@@ -44,6 +45,7 @@ export default function LocaleLayout({
         <link rel="alternate" hrefLang="x-default" href="https://aiplans.dev" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Analytics />
         <TranslationsProvider messages={messages}>
           {children}
         </TranslationsProvider>
