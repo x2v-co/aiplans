@@ -230,9 +230,15 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
             <li>• Actual costs may vary based on usage patterns, cache hit rates, and other factors</li>
             <li>
               • Data sources: Official pricing pages from each provider{" "}
-              <Link href={`/${locale}/api-pricing`} className="text-blue-600 hover:underline">
-                [View sources]
-              </Link>
+              {data?.model?.provider?.website ? (
+                <a href={data.model.provider.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  [View sources]
+                </a>
+              ) : (
+                <Link href={`/${locale}/api-pricing`} className="text-blue-600 hover:underline">
+                  [View sources]
+                </Link>
+              )}
             </li>
             <li>
               • Found a pricing error?{" "}
