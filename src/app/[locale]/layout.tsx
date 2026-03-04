@@ -53,6 +53,11 @@ export default function LocaleLayout({
         <meta name="theme-color" content="#2563eb" />
         <meta name="robots" content="index, follow" />
 
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+
         {/* Open Graph */}
         <meta property="og:title" content={defaultTitle} />
         <meta property="og:description" content={defaultDesc} />
@@ -60,11 +65,13 @@ export default function LocaleLayout({
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="aiplans.dev" />
         <meta property="og:locale" content={isZh ? 'zh_CN' : 'en_US'} />
+        <meta property="og:image" content="https://aiplans.dev/logo.png" />
 
         {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content={defaultTitle} />
         <meta name="twitter:description" content={defaultDesc} />
+        <meta name="twitter:image" content="https://aiplans.dev/logo.png" />
 
         {/* Alternate links */}
         <link rel="alternate" hrefLang="en" href="https://aiplans.dev/en" />
