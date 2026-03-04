@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- English URLs -->
+  <!-- Main Pages - English -->
   <url>
     <loc>https://aiplans.dev/en</loc>
     <changefreq>daily</changefreq>
@@ -21,7 +21,8 @@
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
-  <!-- Chinese URLs -->
+
+  <!-- Main Pages - Chinese -->
   <url>
     <loc>https://aiplans.dev/zh</loc>
     <changefreq>daily</changefreq>
@@ -42,7 +43,112 @@
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
-  <!-- Model Pages -->
+
+  <!-- Model Compare Pages - English -->
+  <url>
+    <loc>https://aiplans.dev/en/compare/plans/gpt-4o</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/plans/gpt-4o-mini</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/plans/claude-sonnet-4.6</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/plans/claude-opus-4.6</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/plans/deepseek-v3</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/plans/gemini-2.5-pro</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/plans/gemini-2.0-flash</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/plans/qwen-max</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/plans/glm-4</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/plans/kimi-k1.5</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Model Compare Pages - Chinese -->
+  <url>
+    <loc>https://aiplans.dev/zh/compare/plans/gpt-4o</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/plans/gpt-4o-mini</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/plans/claude-sonnet-4.6</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/plans/claude-opus-4.6</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/plans/deepseek-v3</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/plans/gemini-2.5-pro</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/plans/gemini-2.0-flash</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/plans/qwen-max</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/plans/glm-4</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/plans/kimi-k1.5</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- API Pricing Model Pages - English -->
   <url>
     <loc>https://aiplans.dev/en/models/gpt-4o</loc>
     <changefreq>weekly</changefreq>
@@ -63,6 +169,8 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+
+  <!-- API Pricing Model Pages - Chinese -->
   <url>
     <loc>https://aiplans.dev/zh/models/gpt-4o</loc>
     <changefreq>weekly</changefreq>
