@@ -10,7 +10,7 @@ import { ArrowLeft, Check, ExternalLink, TrendingDown, Zap, Globe } from "lucide
 import { supabase } from "@/lib/supabase";
 import { use } from "react";
 
-const baseUrl = 'https://aiplans.app';
+const baseUrl = 'https://aiplans.dev';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;

@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://aiplans.app/sitemap.xml
+Sitemap: https://aiplans.dev/sitemap.xml
 
 # Geo-targeting
 # English pages
