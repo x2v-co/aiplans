@@ -4,6 +4,7 @@ import '../globals.css';
 import { Geist, Geist_Mono } from "next/font/google";
 import { TranslationsProvider } from '@/lib/translations';
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { use, useEffect, useState } from 'react';
 import enMessages from '@/../messages/en.json';
 import zhMessages from '@/../messages/zh.json';
@@ -113,6 +114,7 @@ export default function LocaleLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Analytics />
+        <SpeedInsights />
         <TranslationsProvider messages={messages}>
           {children}
         </TranslationsProvider>
