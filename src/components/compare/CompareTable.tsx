@@ -4,6 +4,174 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 
+// Helper function to parse numbers with optional commas
+function parseNumberWithCommas(str: string): number | null {
+  const match = str.match(/[\d,]+/);
+  if (match) {
+    return parseInt(match[0].replace(/,/g, ''), 10);
+  }
+  return null;
+}
+
+// Parse features into structured data for comparison
+function parseFeatures(features: string[]): {
+  // Request/Message limits
+  requestsPer5Hours?: number;
+  requestsPerWeek?: number;
+  requestsPerMonth?: number;
+  hasHigherMessageLimits?: boolean;
+  hasLimitedMessageCapacity?: boolean;
+  hasUnlimitedMessages?: boolean;
+
+  // Pricing
+  firstMonthPrice?: number;
+  secondMonthPrice?: number;
+  thirdMonthPrice?: number;
+  yearlyDiscountPercent?: number;
+  quarterlyDiscountPercent?: number;
+
+  // Capabilities
+  hasExtendedContext?: boolean;
+  hasPriorityAccess?: boolean;
+  hasFileUpload?: boolean;
+  hasImageAnalysis?: boolean;
+  hasCodeGeneration?: boolean;
+  hasWebBrowsing?: boolean;
+  hasAPIAccess?: boolean;
+  hasSSO?: boolean;
+  hasEnterpriseSecurity?: boolean;
+  hasCustomModels?: boolean;
+  hasDataExclusion?: boolean;
+  hasSLA?: boolean;
+
+  // Model access
+  supportedModels?: string[];
+  supportedTools?: string[];
+
+  // Usage multiplier (for coding plans)
+  usageMultiplier?: string;
+} {
+  const result: any = {};
+
+  // === Parse Chinese request limits ===
+  const requestsPer5HoursMatch = features.find(f => f.match(/每5小时.*?[\d,]+/));
+  if (requestsPer5HoursMatch) {
+    result.requestsPer5Hours = parseNumberWithCommas(requestsPer5HoursMatch);
+  }
+
+  const requestsPerWeekMatch = features.find(f => f.match(/每周.*?[\d,]+/));
+  if (requestsPerWeekMatch) {
+    result.requestsPerWeek = parseNumberWithCommas(requestsPerWeekMatch);
+  }
+
+  const requestsPerMonthMatch = features.find(f => f.match(/每订阅月.*?[\d,]+/));
+  if (requestsPerMonthMatch) {
+    result.requestsPerMonth = parseNumberWithCommas(requestsPerMonthMatch);
+  }
+
+  // === Parse pricing ===
+  const firstMonthMatch = features.find(f => f.match(/首月特惠.*?(\d+\.?\d*)/));
+  if (firstMonthMatch) {
+    const match = firstMonthMatch.match(/(\d+\.?\d*)/);
+    if (match) result.firstMonthPrice = parseFloat(match[1]);
+  }
+
+  const secondMonthMatch = features.find(f => f.match(/次月.*?(\d+\.?\d*)/));
+  if (secondMonthMatch) {
+    const match = secondMonthMatch.match(/(\d+\.?\d*)/);
+    if (match) result.secondMonthPrice = parseFloat(match[1]);
+  }
+
+  const thirdMonthMatch = features.find(f => f.match(/第三月起.*?(\d+\.?\d*)/));
+  if (thirdMonthMatch) {
+    const match = thirdMonthMatch.match(/(\d+\.?\d*)/);
+    if (match) result.thirdMonthPrice = parseFloat(match[1]);
+  }
+
+  // Parse discount percentages
+  const yearlyMatch = features.find(f => f.match(/yearly.*?(\d+)%.*?off/i) || f.match(/年度.*?(\d+)%.*?折/i));
+  if (yearlyMatch) {
+    const match = yearlyMatch.match(/(\d+)%/);
+    if (match) result.yearlyDiscountPercent = parseInt(match[1]);
+  }
+
+  const quarterlyMatch = features.find(f => f.match(/quarterly.*?(\d+)%.*?off/i) || f.match(/季度.*?(\d+)%.*?折/i));
+  if (quarterlyMatch) {
+    const match = quarterlyMatch.match(/(\d+)%/);
+    if (match) result.quarterlyDiscountPercent = parseInt(match[1]);
+  }
+
+  // === Parse capabilities (English) ===
+  if (features.some(f => f.toLowerCase().includes("higher message limits") || f.includes("更高消息限制"))) {
+    result.hasHigherMessageLimits = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("limited message capacity") || f.includes("有限消息容量"))) {
+    result.hasLimitedMessageCapacity = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("unlimited") && f.toLowerCase().includes("message"))) {
+    result.hasUnlimitedMessages = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("extended context window") || f.includes("扩展上下文"))) {
+    result.hasExtendedContext = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("priority access") || f.includes("优先访问"))) {
+    result.hasPriorityAccess = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("file upload") || f.includes("文件上传"))) {
+    result.hasFileUpload = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("image analysis") || f.includes("图像分析"))) {
+    result.hasImageAnalysis = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("code generation") || f.toLowerCase().includes("coding assistance") || f.includes("代码生成"))) {
+    result.hasCodeGeneration = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("web browsing") || f.includes("网页浏览"))) {
+    result.hasWebBrowsing = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("api access") || f.includes("API访问"))) {
+    result.hasAPIAccess = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("sso"))) {
+    result.hasSSO = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("enterprise-grade security") || f.includes("企业级安全"))) {
+    result.hasEnterpriseSecurity = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("custom ai model") || f.includes("自定义模型"))) {
+    result.hasCustomModels = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("data exclusion from training") || f.includes("不参与训练"))) {
+    result.hasDataExclusion = true;
+  }
+  if (features.some(f => f.toLowerCase().includes("sla"))) {
+    result.hasSLA = true;
+  }
+
+  // === Parse usage multiplier ===
+  const multiplierMatch = features.find(f => f.match(/(\d+)x.*?usage/i) || f.match(/(\d+)倍.*?用量/i));
+  if (multiplierMatch) {
+    const match = multiplierMatch.match(/(\d+)x/i);
+    if (match) result.usageMultiplier = match[1];
+  }
+
+  // === Parse supported models (Chinese) ===
+  const modelsMatch = features.find(f => f.match(/支持模型:/));
+  if (modelsMatch) {
+    const match = modelsMatch.match(/支持模型:\s*([^\n]+)/);
+    if (match) result.supportedModels = match[1].split(/[,\s]+/).filter(Boolean);
+  }
+
+  // === Parse supported tools ===
+  const toolsMatch = features.find(f => f.match(/支持工具:/));
+  if (toolsMatch) {
+    const match = toolsMatch.match(/支持工具:\s*([^\n]+)/);
+    if (match) result.supportedTools = match[1].split(/[,\s]+/).filter(Boolean);
+  }
+
+  return result;
+}
+
 interface PlanComparison {
   plan: {
     id: number;
@@ -12,6 +180,7 @@ interface PlanComparison {
     nameZh: string;
     planTier: string;
     isOfficial: boolean;
+    features?: string[];
   };
   channel: {
     slug: string;
@@ -94,8 +263,8 @@ interface CompareTableProps {
 
 function formatDisplayPrice(value: number | null, currency: string): string {
   if (value === null) return "-";
-  // Format the number and add currency symbol
-  const currencySymbol = currency === "CNY" ? "¥" : "$";
+  // Use correct currency symbol based on currency code
+  const currencySymbol = getCurrencySymbol(currency);
   return currencySymbol + value.toFixed(2);
 }
 
@@ -134,12 +303,19 @@ function VsOfficialBadge({ diff }: { diff: number | null }) {
   );
 }
 
-function PlanRow({ plan, isBaseline, currency, showYearly }: {
+function PlanRow({ plan, isBaseline, currency: _currency, showYearly }: {
   plan: PlanComparison;
   isBaseline: boolean;
   currency: string;
   showYearly: boolean;
 }) {
+  const structuredFeatures = plan.plan.features ? parseFeatures(plan.plan.features) : {};
+  // Get the plan's original currency (not the display currency)
+  const planCurrency = plan.pricing.currency || 'USD';
+  const currencySymbol = getCurrencySymbol(planCurrency);
+  // Use plan's original currency for pricing display
+  const pricingCurrency = planCurrency;
+
   return (
     <div className={cn(
       "border rounded-lg p-6 mb-4",
@@ -194,7 +370,7 @@ function PlanRow({ plan, isBaseline, currency, showYearly }: {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid md:grid-cols-4 gap-6">
+      <div className="grid md:grid-cols-5 gap-6">
         {/* Column 1: Pricing */}
         <div>
           <h5 className="text-sm font-semibold text-zinc-500 mb-3">💰 Pricing</h5>
@@ -203,16 +379,16 @@ function PlanRow({ plan, isBaseline, currency, showYearly }: {
             <div className="space-y-2">
               <div>
                 <div className="text-xs text-zinc-500">Input</div>
-                <div className="font-semibold">{formatDisplayPrice(plan.pricing.inputPer1m, currency)}/1M</div>
+                <div className="font-semibold">{formatDisplayPrice(plan.pricing.inputPer1m, pricingCurrency)}/1M</div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500">Output</div>
-                <div className="font-semibold">{formatDisplayPrice(plan.pricing.outputPer1m, currency)}/1M</div>
+                <div className="font-semibold">{formatDisplayPrice(plan.pricing.outputPer1m, pricingCurrency)}/1M</div>
               </div>
               {plan.pricing.cachedInputPer1m && (
                 <div>
                   <div className="text-xs text-zinc-500">Cached Input</div>
-                  <div className="font-semibold text-sm">{formatDisplayPrice(plan.pricing.cachedInputPer1m, currency)}/1M</div>
+                  <div className="font-semibold text-sm">{formatDisplayPrice(plan.pricing.cachedInputPer1m, pricingCurrency)}/1M</div>
                 </div>
               )}
             </div>
@@ -224,7 +400,7 @@ function PlanRow({ plan, isBaseline, currency, showYearly }: {
                 <div className="text-xs text-zinc-500">
                   Monthly <span className="text-zinc-400">({plan.pricing.currency})</span>
                 </div>
-                <div className="font-semibold">{formatDisplayPrice(plan.pricing.monthly, currency)}</div>
+                <div className="font-semibold">{formatDisplayPrice(plan.pricing.monthly, pricingCurrency)}</div>
                 {/* Show converted price if different */}
                 {plan.pricing.currency !== plan.pricing.displayCurrency && plan.pricing.convertedMonthly && (
                   <div className="text-xs text-zinc-400">
@@ -236,7 +412,7 @@ function PlanRow({ plan, isBaseline, currency, showYearly }: {
               {showYearly && plan.pricing.yearlyMonthly && (
                 <div className="border-t border-dashed pt-2">
                   <div className="text-xs text-zinc-500">Yearly (per month)</div>
-                  <div className="font-semibold">{formatDisplayPrice(plan.pricing.yearlyMonthly, currency)}</div>
+                  <div className="font-semibold">{formatDisplayPrice(plan.pricing.yearlyMonthly, pricingCurrency)}</div>
                   {plan.pricing.currency !== plan.pricing.displayCurrency && plan.pricing.convertedYearlyMonthly && (
                     <div className="text-xs text-zinc-400">
                       ≈ {formatDisplayPrice(plan.pricing.convertedYearlyMonthly, plan.pricing.displayCurrency)}
@@ -249,8 +425,8 @@ function PlanRow({ plan, isBaseline, currency, showYearly }: {
               )}
               {plan.pricing.inputPer1m && (
                 <div className="text-xs text-zinc-500 pt-2">
-                  + Usage: {formatDisplayPrice(plan.pricing.inputPer1m, currency)}/1M in,{" "}
-                  {formatDisplayPrice(plan.pricing.outputPer1m, currency)}/1M out
+                  + Usage: {formatDisplayPrice(plan.pricing.inputPer1m, pricingCurrency)}/1M in,{" "}
+                  {formatDisplayPrice(plan.pricing.outputPer1m, pricingCurrency)}/1M out
                 </div>
               )}
             </div>
@@ -271,29 +447,46 @@ function PlanRow({ plan, isBaseline, currency, showYearly }: {
           )}
         </div>
 
-        {/* Column 2: Request Limits */}
+        {/* Column 2: Message/Request Limits */}
         <div>
-          <h5 className="text-sm font-semibold text-zinc-500 mb-3">🔢 Request Limits</h5>
+          <h5 className="text-sm font-semibold text-zinc-500 mb-3">💬 Messages</h5>
           <div className="space-y-2 text-sm">
-            <div>
-              <div className="text-xs text-zinc-500">RPM</div>
-              <div className="font-medium">{plan.limits.rpm_display}</div>
-              {!isBaseline && plan.vsOfficial.rpmDiffPercent !== null && plan.vsOfficial.rpmDiffPercent !== 0 && (
-                <div className="text-xs text-zinc-500">
-                  ({plan.vsOfficial.rpmDiffPercent > 0 ? "+" : ""}{plan.vsOfficial.rpmDiffPercent}% vs official)
+            {/* Show structured request limits for coding plans */}
+            {structuredFeatures.requestsPer5Hours && (
+              <>
+                <div>
+                  <div className="text-xs text-zinc-500">Per 5 Hours</div>
+                  <div className="font-medium">{structuredFeatures.requestsPer5Hours.toLocaleString()}</div>
                 </div>
-              )}
-            </div>
-            {plan.limits.rpd && (
-              <div>
-                <div className="text-xs text-zinc-500">Daily</div>
-                <div className="font-medium">{plan.limits.rpd.toLocaleString()}</div>
-              </div>
+                <div>
+                  <div className="text-xs text-zinc-500">Per Week</div>
+                  <div className="font-medium">{structuredFeatures.requestsPerWeek?.toLocaleString() || "-"}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-zinc-500">Per Month</div>
+                  <div className="font-medium">{structuredFeatures.requestsPerMonth?.toLocaleString() || "-"}</div>
+                </div>
+              </>
             )}
-            {plan.limits.monthlyRequests && (
+            {/* Show generic message limit status */}
+            {!structuredFeatures.requestsPer5Hours && (
+              <>
+                {structuredFeatures.hasUnlimitedMessages ? (
+                  <div className="font-medium text-green-600">✓ Unlimited</div>
+                ) : structuredFeatures.hasHigherMessageLimits ? (
+                  <div className="font-medium">✓ Higher limits</div>
+                ) : structuredFeatures.hasLimitedMessageCapacity ? (
+                  <div className="font-medium">○ Limited</div>
+                ) : (
+                  <div className="text-xs text-zinc-400">-</div>
+                )}
+              </>
+            )}
+            {/* Also show RPM if available */}
+            {plan.limits.rpm_display && plan.limits.rpm_display !== "-" && (
               <div>
-                <div className="text-xs text-zinc-500">Monthly</div>
-                <div className="font-medium">{plan.limits.monthlyRequests.toLocaleString()}</div>
+                <div className="text-xs text-zinc-500">RPM</div>
+                <div className="font-medium">{plan.limits.rpm_display}</div>
               </div>
             )}
           </div>
@@ -321,29 +514,132 @@ function PlanRow({ plan, isBaseline, currency, showYearly }: {
           </div>
         </div>
 
-        {/* Column 4: Token Limits */}
+        {/* Column 4: Capabilities */}
         <div>
-          <h5 className="text-sm font-semibold text-zinc-500 mb-3">📦 Token Limits</h5>
-          <div className="space-y-2 text-sm">
-            <div>
-              <div className="text-xs text-zinc-500">TPM</div>
-              <div className="font-medium">{plan.limits.tpm_display}</div>
-            </div>
-            {plan.limits.maxOutputTokens && (
-              <div>
-                <div className="text-xs text-zinc-500">Max Output</div>
-                <div className="font-medium">{plan.limits.maxOutputTokens.toLocaleString()}</div>
+          <h5 className="text-sm font-semibold text-zinc-500 mb-3">✨ Capabilities</h5>
+          <div className="space-y-1 text-sm">
+            {structuredFeatures.hasExtendedContext && (
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-green-600">✓</span> Extended Context
               </div>
             )}
-            {plan.limits.monthlyTokens && (
+            {structuredFeatures.hasPriorityAccess && (
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-green-600">✓</span> Priority Access
+              </div>
+            )}
+            {structuredFeatures.hasFileUpload && (
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-green-600">✓</span> File Upload
+              </div>
+            )}
+            {structuredFeatures.hasImageAnalysis && (
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-green-600">✓</span> Image Analysis
+              </div>
+            )}
+            {structuredFeatures.hasCodeGeneration && (
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-green-600">✓</span> Code Generation
+              </div>
+            )}
+            {structuredFeatures.hasWebBrowsing && (
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-green-600">✓</span> Web Browsing
+              </div>
+            )}
+            {structuredFeatures.hasAPIAccess && (
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-green-600">✓</span> API Access
+              </div>
+            )}
+            {structuredFeatures.hasDataExclusion && (
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-green-600">✓</span> No Training
+              </div>
+            )}
+            {structuredFeatures.usageMultiplier && (
+              <div className="flex items-center gap-1 text-xs font-medium text-blue-600">
+                {structuredFeatures.usageMultiplier}x Usage
+              </div>
+            )}
+            {/* Show TPM if available */}
+            {plan.limits.tpm_display && plan.limits.tpm_display !== "-" && (
               <div>
-                <div className="text-xs text-zinc-500">Monthly Quota</div>
-                <div className="font-medium">{(plan.limits.monthlyTokens / 1_000_000).toFixed(0)}M</div>
+                <div className="text-xs text-zinc-500">TPM</div>
+                <div className="font-medium">{plan.limits.tpm_display}</div>
               </div>
             )}
           </div>
         </div>
+
+        {/* Column 5: Structured Features (for coding plans, etc.) */}
+        {(structuredFeatures.requestsPer5Hours || structuredFeatures.firstMonthPrice) && (
+          <div>
+            <h5 className="text-sm font-semibold text-zinc-500 mb-3">🎯 Plan Details</h5>
+            <div className="space-y-2 text-sm">
+              {structuredFeatures.requestsPer5Hours && (
+                <div>
+                  <div className="text-xs text-zinc-500">Per 5 Hours</div>
+                  <div className="font-medium">{structuredFeatures.requestsPer5Hours.toLocaleString()} requests</div>
+                </div>
+              )}
+              {structuredFeatures.requestsPerWeek && (
+                <div>
+                  <div className="text-xs text-zinc-500">Per Week</div>
+                  <div className="font-medium">{structuredFeatures.requestsPerWeek.toLocaleString()} requests</div>
+                </div>
+              )}
+              {structuredFeatures.requestsPerMonth && (
+                <div>
+                  <div className="text-xs text-zinc-500">Per Month</div>
+                  <div className="font-medium">{structuredFeatures.requestsPerMonth.toLocaleString()} requests</div>
+                </div>
+              )}
+              {structuredFeatures.firstMonthPrice && (
+                <div className="pt-2 border-t">
+                  <div className="text-xs text-green-600 font-semibold">First Month</div>
+                  <div className="font-bold text-green-700">{currencySymbol}{structuredFeatures.firstMonthPrice}</div>
+                </div>
+              )}
+              {structuredFeatures.secondMonthPrice && (
+                <div>
+                  <div className="text-xs text-zinc-500">Second Month</div>
+                  <div className="font-medium">{currencySymbol}{structuredFeatures.secondMonthPrice} <span className="text-green-600 text-xs">(50% off)</span></div>
+                </div>
+              )}
+              {structuredFeatures.thirdMonthPrice && (
+                <div>
+                  <div className="text-xs text-zinc-500">Regular Price</div>
+                  <div className="font-medium">{currencySymbol}{structuredFeatures.thirdMonthPrice}/mo</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Features */}
+      {plan.plan.features && plan.plan.features.length > 0 && (
+        <div className="mt-4 pt-4 border-t">
+          <h5 className="text-sm font-semibold text-zinc-500 mb-2">✨ Features</h5>
+          <div className="flex flex-wrap gap-1">
+            {plan.plan.features.slice(0, 6).map((feature, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center px-2 py-1 bg-zinc-100 dark:bg-zinc-800 text-xs text-zinc-700 dark:text-zinc-300 rounded"
+              >
+                {feature}
+              </span>
+            ))}
+            {plan.plan.features.length > 6 && (
+              <span className="inline-flex items-center px-2 py-1 bg-zinc-100 dark:bg-zinc-800 text-xs text-zinc-500 rounded">
+                +{plan.plan.features.length - 6} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Footer: Payment Methods */}
       <div className="mt-4 pt-4 border-t flex items-center justify-between">

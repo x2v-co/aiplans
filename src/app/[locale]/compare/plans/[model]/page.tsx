@@ -1,11 +1,10 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import React, { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ModelInfoCard } from "@/components/compare/ModelInfoCard";
 import { CompareFilters } from "@/components/compare/CompareFilters";
-import { UsageEstimator } from "@/components/compare/UsageEstimator";
 import { CompareTable } from "@/components/compare/CompareTable";
 import { SmartRecommendation } from "@/components/compare/SmartRecommendation";
 
@@ -18,6 +17,7 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
   // Filter states
   const [region, setRegion] = useState("all");
@@ -25,7 +25,7 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
   const [sortBy, setSortBy] = useState("price_asc");
   const [currency, setCurrency] = useState("USD");
   const [showYearly, setShowYearly] = useState(true);
-  const [usageEstimate, setUsageEstimate] = useState<any>(null);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
   // Fetch data
   useEffect(() => {
@@ -44,10 +44,6 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
           showYearly: showYearly.toString(),
         });
 
-        if (usageEstimate) {
-          queryParams.append("usageEstimate", JSON.stringify(usageEstimate));
-        }
-
         const response = await fetch(`/api/compare/plans?${queryParams.toString()}`);
 
         if (!response.ok) {
@@ -64,10 +60,86 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
     };
 
     fetchData();
-  }, [modelSlug, region, billingType, sortBy, showYearly, usageEstimate]);
+  }, [modelSlug, region, billingType, sortBy, showYearly]);
 
-  const handleEstimateChange = (estimate: any) => {
-    setUsageEstimate(estimate);
+  // Extract all unique features from plans
+  const allFeatures = React.useMemo(() => {
+    if (!data) return [];
+    const features = new Set<string>();
+    const allPlans = [...(data.officialPlans || []), ...(data.thirdPartyPlans || [])];
+    allPlans.forEach((plan: any) => {
+      if (plan.plan.features) {
+        plan.plan.features.forEach((f: string) => features.add(f));
+      }
+    });
+    return Array.from(features).sort();
+  }, [data]);
+
+  // Filter plans by selected features
+  const filteredPlans = React.useMemo(() => {
+    if (!data || selectedFeatures.length === 0) return data;
+    const filtered = { ...data };
+    const filterByFeatures = (plans: any[]) => {
+      return plans.filter((plan: any) => {
+        if (!plan.plan.features) return false;
+        return selectedFeatures.every(f => plan.plan.features.includes(f));
+      });
+    };
+    filtered.officialPlans = filterByFeatures(data.officialPlans || []);
+    filtered.thirdPartyPlans = filterByFeatures(data.thirdPartyPlans || []);
+    filtered.summary = {
+      ...filtered.summary,
+      totalPlans: (filtered.officialPlans?.length || 0) + (filtered.thirdPartyPlans?.length || 0),
+    };
+    return filtered;
+  }, [data, selectedFeatures]);
+
+  // Share button - copy URL to clipboard
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  // Export to CSV
+  const handleExportCSV = () => {
+    if (!filteredPlans) return;
+    const { officialPlans, thirdPartyPlans, model } = filteredPlans;
+    const allPlans = [...(officialPlans || []), ...(thirdPartyPlans || [])];
+
+    const headers = ["Provider", "Plan", "Monthly Price", "Currency", "Region", "Features"];
+    const rows = allPlans.map((plan: any) => [
+      plan.channel.name,
+      plan.plan.name,
+      plan.pricing.monthly || "",
+      plan.pricing.currency || "",
+      plan.channel.region,
+      (plan.plan.features || []).join("; "),
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${model?.name || "plans"}-comparison.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const toggleFeature = (feature: string) => {
+    setSelectedFeatures(prev =>
+      prev.includes(feature)
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature]
+    );
   };
 
   if (loading) {
@@ -142,8 +214,8 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
     );
   }
 
-  const { model, officialPlans, thirdPartyPlans, summary } = data;
-  const allPlans = [...officialPlans, ...thirdPartyPlans];
+  const { model, officialPlans, thirdPartyPlans, summary } = filteredPlans || data;
+  const allPlans = [...(officialPlans || []), ...(thirdPartyPlans || [])];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
@@ -185,8 +257,8 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
         {/* Model Info */}
         <ModelInfoCard
           model={model}
-          planCount={summary.totalPlans}
-          lowestPrice={summary.cheapestPlan?.effectiveMonthly || 0}
+          planCount={filteredPlans?.summary?.totalPlans || summary?.totalPlans || 0}
+          lowestPrice={filteredPlans?.summary?.cheapestPlan?.effectiveMonthly || summary?.cheapestPlan?.effectiveMonthly || 0}
         />
 
         {/* Filters */}
@@ -203,20 +275,47 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
           onShowYearlyChange={setShowYearly}
         />
 
-        {/* Usage Estimator */}
-        <UsageEstimator onEstimateChange={handleEstimateChange} />
+        {/* Feature Filter */}
+        {allFeatures.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-sm font-semibold mb-2">Filter by Features</h4>
+            <div className="flex flex-wrap gap-2">
+              {allFeatures.slice(0, 12).map((feature: string) => (
+                <button
+                  key={feature}
+                  onClick={() => toggleFeature(feature)}
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                    selectedFeatures.includes(feature)
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                  }`}
+                >
+                  {feature}
+                </button>
+              ))}
+              {selectedFeatures.length > 0 && (
+                <button
+                  onClick={() => setSelectedFeatures([])}
+                  className="px-3 py-1 text-xs rounded-full border border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Comparison Table */}
         <CompareTable
-          officialPlans={officialPlans}
-          thirdPartyPlans={thirdPartyPlans}
+          officialPlans={officialPlans || []}
+          thirdPartyPlans={thirdPartyPlans || []}
           currency={currency}
           showYearly={showYearly}
         />
 
         {/* Smart Recommendations */}
         <SmartRecommendation
-          plans={allPlans}
+          plans={filteredPlans ? [...(filteredPlans.officialPlans || []), ...(filteredPlans.thirdPartyPlans || [])] : allPlans}
           region={region}
         />
 
@@ -226,7 +325,6 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
           <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
             <li>• Prices last updated: {new Date().toLocaleDateString()}</li>
             <li>• Exchange rate: 1 USD = 6.90 CNY (real-time)</li>
-            <li>• Estimated costs are calculated based on your usage input</li>
             <li>• Actual costs may vary based on usage patterns, cache hit rates, and other factors</li>
             <li>
               • Data sources: Official pricing pages from each provider{" "}
@@ -251,14 +349,23 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 justify-center">
-          <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            📤 Share this comparison
+          <button
+            onClick={handleShare}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
+            {shareCopied ? "✓ Copied!" : "📤 Share"}
           </button>
-          <button className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
-            📥 Export to CSV
+          <button
+            onClick={handleExportCSV}
+            className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+          >
+            📥 Export CSV
           </button>
-          <button className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
-            🔔 Price change alerts
+          <button
+            className="px-6 py-3 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-400 dark:text-zinc-500 cursor-not-allowed flex items-center gap-2"
+            disabled
+          >
+            🔔 Price alerts (coming soon)
           </button>
         </div>
       </main>

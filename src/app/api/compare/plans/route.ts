@@ -206,6 +206,7 @@ export async function GET(request: NextRequest) {
             nameZh: plan.name,
             planTier: plan.tier,
             isOfficial,
+            features: plan.features || [],
           },
           channel: {
             slug: provider?.slug || 'unknown',
