@@ -8,31 +8,8 @@ Sitemap: https://aiplans.dev/sitemap.xml
 # Crawl-delay (optional, for politeness)
 Crawl-delay: 1
 
-# Geo-targeting for Google
-User-agent: Googlebot
-Request-uri: /en/*
-Allow: /en/*
-
-User-agent: Googlebot
-Request-uri: /zh/*
-Allow: /zh/*
-
 # Block unnecessary paths
 Disallow: /api/
 Disallow: /_next/
 Disallow: /404
 Disallow: /500
-
-# Allow search engines to access static resources
-Allow: /public/
-Allow: /_next/static/
-
-# Chinese language
-Rel: zh-CN
-
-# Bidirectional support
-User-agent: *
-Dissallow: # Allow all
-
-# Sitemaps for each language
-Sitemap: https://aiplans.dev/sitemap.xml

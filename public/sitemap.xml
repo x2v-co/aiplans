@@ -1,25 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Main Pages - English -->
   <url>
     <loc>https://aiplans.dev/en</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en"/>
   </url>
   <url>
     <loc>https://aiplans.dev/en/compare/plans</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/compare/plans"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/compare/plans"/>
   </url>
   <url>
     <loc>https://aiplans.dev/en/api-pricing</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/api-pricing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/api-pricing"/>
   </url>
   <url>
     <loc>https://aiplans.dev/en/coupons</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/coupons"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/coupons"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/models</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/compare/models"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/compare/models"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/compare/api</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/compare/api"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/compare/api"/>
   </url>
 
   <!-- Main Pages - Chinese -->
@@ -27,168 +50,528 @@
     <loc>https://aiplans.dev/zh</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en"/>
   </url>
   <url>
     <loc>https://aiplans.dev/zh/compare/plans</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/compare/plans"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/compare/plans"/>
   </url>
   <url>
     <loc>https://aiplans.dev/zh/api-pricing</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/api-pricing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/api-pricing"/>
   </url>
   <url>
     <loc>https://aiplans.dev/zh/coupons</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/coupons"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/coupons"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/models</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/compare/models"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/compare/models"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/compare/api</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/compare/api"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/compare/api"/>
   </url>
 
-  <!-- Model Compare Pages - English -->
+  <!-- Non-locale routes (shared) -->
   <url>
-    <loc>https://aiplans.dev/en/compare/plans/gpt-4o</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://aiplans.dev/compare/plans</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/en/compare/plans/gpt-4o-mini</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://aiplans.dev/compare/models</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/en/compare/plans/claude-sonnet-4.6</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://aiplans.dev/compare/api</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/en/compare/plans/claude-opus-4.6</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://aiplans.dev/api-pricing</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/en/compare/plans/deepseek-v3</loc>
+    <loc>https://aiplans.dev/coupons</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aiplans.dev/en/compare/plans/gemini-2.5-pro</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aiplans.dev/en/compare/plans/gemini-2.0-flash</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aiplans.dev/en/compare/plans/qwen-max</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aiplans.dev/en/compare/plans/glm-4</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aiplans.dev/en/compare/plans/kimi-k1.5</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
 
-  <!-- Model Compare Pages - Chinese -->
+  <!-- Provider Plan Pages (from database) -->
   <url>
-    <loc>https://aiplans.dev/zh/compare/plans/gpt-4o</loc>
+    <loc>https://aiplans.dev/plans/openai</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/plans/anthropic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/plans/google</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/zh/compare/plans/gpt-4o-mini</loc>
+    <loc>https://aiplans.dev/plans/deepseek</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/zh/compare/plans/claude-sonnet-4.6</loc>
+    <loc>https://aiplans.dev/plans/mistral</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/plans/moonshot</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/zh/compare/plans/claude-opus-4.6</loc>
+    <loc>https://aiplans.dev/plans/qwen</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/zh/compare/plans/deepseek-v3</loc>
+    <loc>https://aiplans.dev/plans/zhipu</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/zh/compare/plans/gemini-2.5-pro</loc>
+    <loc>https://aiplans.dev/plans/hunyuan</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/zh/compare/plans/gemini-2.0-flash</loc>
+    <loc>https://aiplans.dev/plans/baidu</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/zh/compare/plans/qwen-max</loc>
+    <loc>https://aiplans.dev/plans/minimax</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/zh/compare/plans/glm-4</loc>
+    <loc>https://aiplans.dev/plans/seed</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aiplans.dev/zh/compare/plans/kimi-k1.5</loc>
+    <loc>https://aiplans.dev/plans/stepfun</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/plans/grok</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
 
-  <!-- API Pricing Model Pages - English -->
+  <!-- Model Channel Price Pages (from database) - English -->
+  <!-- Major AI Models -->
   <url>
     <loc>https://aiplans.dev/en/models/gpt-4o</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gpt-4o"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gpt-4o"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/gpt-4o-mini</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gpt-4o-mini"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gpt-4o-mini"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/gpt-5</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gpt-5"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gpt-5"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/o1</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/o1"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/o1"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/o3</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/o3"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/o3"/>
   </url>
   <url>
     <loc>https://aiplans.dev/en/models/claude-sonnet-4.6</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/claude-sonnet-4.6"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/claude-sonnet-4.6"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/claude-opus-4.6</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/claude-opus-4.6"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/claude-opus-4.6"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/claude-3.5-sonnet</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/claude-3.5-sonnet"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/claude-3.5-sonnet"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/claude-3.7-sonnet</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/claude-3.7-sonnet"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/claude-3.7-sonnet"/>
   </url>
   <url>
     <loc>https://aiplans.dev/en/models/deepseek-v3</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/deepseek-v3"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/deepseek-v3"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/deepseek-chat</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/deepseek-chat"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/deepseek-chat"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/deepseek-r1</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/deepseek-r1"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/deepseek-r1"/>
   </url>
   <url>
     <loc>https://aiplans.dev/en/models/gemini-2.5-pro</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gemini-2.5-pro"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gemini-2.5-pro"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/gemini-2.0-flash-exp</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gemini-2.0-flash-exp"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gemini-2.0-flash-exp"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/gemini-1.5-pro</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gemini-1.5-pro"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gemini-1.5-pro"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/gemini-1.5-flash</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gemini-1.5-flash"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gemini-1.5-flash"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/grok-3</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/grok-3"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/grok-3"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/grok-2</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/grok-2"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/grok-2"/>
   </url>
 
-  <!-- API Pricing Model Pages - Chinese -->
+  <!-- Chinese AI Models -->
+  <url>
+    <loc>https://aiplans.dev/en/models/qwen-max</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/qwen-max"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/qwen-max"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/qwen-plus</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/qwen-plus"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/qwen-plus"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/qwen-turbo</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/qwen-turbo"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/qwen-turbo"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/qwen3-max</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/qwen3-max"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/qwen3-max"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/glm-4</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/glm-4"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/glm-4"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/glm-4-flash</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/glm-4-flash"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/glm-4-flash"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/kimi-k2.5</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/kimi-k2.5"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/kimi-k2.5"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/hunyuan-pro</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/hunyuan-pro"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/hunyuan-pro"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/en/models/ernie-4.5-21b-a3b</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/ernie-4.5-21b-a3b"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/ernie-4.5-21b-a3b"/>
+  </url>
+
+  <!-- Model Channel Price Pages - Chinese -->
   <url>
     <loc>https://aiplans.dev/zh/models/gpt-4o</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gpt-4o"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gpt-4o"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/gpt-4o-mini</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gpt-4o-mini"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gpt-4o-mini"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/gpt-5</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gpt-5"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gpt-5"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/o1</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/o1"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/o1"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/o3</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/o3"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/o3"/>
   </url>
   <url>
     <loc>https://aiplans.dev/zh/models/claude-sonnet-4.6</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/claude-sonnet-4.6"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/claude-sonnet-4.6"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/claude-opus-4.6</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/claude-opus-4.6"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/claude-opus-4.6"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/claude-3.5-sonnet</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/claude-3.5-sonnet"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/claude-3.5-sonnet"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/claude-3.7-sonnet</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/claude-3.7-sonnet"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/claude-3.7-sonnet"/>
   </url>
   <url>
     <loc>https://aiplans.dev/zh/models/deepseek-v3</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/deepseek-v3"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/deepseek-v3"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/deepseek-chat</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/deepseek-chat"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/deepseek-chat"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/deepseek-r1</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/deepseek-r1"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/deepseek-r1"/>
   </url>
   <url>
     <loc>https://aiplans.dev/zh/models/gemini-2.5-pro</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gemini-2.5-pro"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gemini-2.5-pro"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/gemini-2.0-flash-exp</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gemini-2.0-flash-exp"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gemini-2.0-flash-exp"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/gemini-1.5-pro</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gemini-1.5-pro"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gemini-1.5-pro"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/gemini-1.5-flash</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/gemini-1.5-flash"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/gemini-1.5-flash"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/grok-3</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/grok-3"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/grok-3"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/grok-2</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/grok-2"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/grok-2"/>
+  </url>
+
+  <!-- Chinese AI Models - Chinese -->
+  <url>
+    <loc>https://aiplans.dev/zh/models/qwen-max</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/qwen-max"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/qwen-max"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/qwen-plus</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/qwen-plus"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/qwen-plus"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/qwen-turbo</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/qwen-turbo"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/qwen-turbo"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/qwen3-max</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/qwen3-max"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/qwen3-max"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/glm-4</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/glm-4"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/glm-4"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/glm-4-flash</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/glm-4-flash"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/glm-4-flash"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/kimi-k2.5</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/kimi-k2.5"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/kimi-k2.5"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/hunyuan-pro</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/hunyuan-pro"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/hunyuan-pro"/>
+  </url>
+  <url>
+    <loc>https://aiplans.dev/zh/models/ernie-4.5-21b-a3b</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://aiplans.dev/zh/models/ernie-4.5-21b-a3b"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aiplans.dev/en/models/ernie-4.5-21b-a3b"/>
   </url>
 </urlset>
