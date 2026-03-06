@@ -57,9 +57,9 @@ export default function ComparePlansIndexPage(props: {
         const providerMap = new Map();
         allProducts.forEach((product: any) => {
           if (product.planCount > 0) {
-            const providerId = product.provider?.id || product.provider_id;
-            const providerName = product.provider?.name || 'Unknown';
-            const providerLogo = product.provider?.logo_url || '';
+            const providerId = product.providers?.id || product.provider_id;
+            const providerName = product.providers?.name || 'Unknown';
+            const providerLogo = product.providers?.logo_url || '';
 
             if (!providerMap.has(providerId)) {
               providerMap.set(providerId, {

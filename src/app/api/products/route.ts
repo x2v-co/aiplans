@@ -80,7 +80,7 @@ export async function GET(request: Request) {
       // Keep only the highest ELO model per provider
       const providerTopModels = new Map();
       products.forEach((p: any) => {
-        const providerId = p.provider?.id || p.provider_id;
+        const providerId = p.providers?.id || p.provider_id;
         const currentTop = providerTopModels.get(providerId);
         const currentElo = currentTop?.benchmark_arena_elo || 0;
         const newElo = p.benchmark_arena_elo || 0;
