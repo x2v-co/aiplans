@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+// Enable ISR with 5 minute revalidation
+export const revalidate = 300;
+
 export async function GET() {
   try {
     const { data, error } = await supabase

@@ -49,23 +49,37 @@ export default function ComparePlansIndexPage(props: {
 
         setHotModelsList(sortedHotModels);
 
-        // 2. Load providers
-        const providersResponse = await fetch('/api/providers');
-        const providersData = await providersResponse.json();
+        // 2. Load ALL products in a single request (instead of N+1 requests per provider)
+        const allProductsResponse = await fetch('/api/products?include_plan_count=true&type=llm');
+        const allProducts = await allProductsResponse.json();
 
-        // 3. Load models grouped by provider
-        const grouped = await Promise.all(
-          providersData.map(async (provider: any) => {
-            const modelsResponse = await fetch(`/api/products?provider_id=${provider.id}&include_plan_count=true&type=llm`);
-            const models = await modelsResponse.json();
-            return {
-              provider,
-              models: models.filter((m: any) => m.planCount > 0), // Only show models with plans
-            };
-          })
-        );
+        // Group by provider on the client side
+        const providerMap = new Map();
+        allProducts.forEach((product: any) => {
+          if (product.planCount > 0) {
+            const providerId = product.provider?.id || product.provider_id;
+            const providerName = product.provider?.name || 'Unknown';
+            const providerLogo = product.provider?.logo_url || '';
 
-        setModelsByProvider(grouped.filter((item: any) => item.models.length > 0));
+            if (!providerMap.has(providerId)) {
+              providerMap.set(providerId, {
+                provider: {
+                  id: providerId,
+                  name: providerName,
+                  logo_url: providerLogo
+                },
+                models: []
+              });
+            }
+            providerMap.get(providerId).models.push(product);
+          }
+        });
+
+        // Sort providers by number of models (descending)
+        const grouped = Array.from(providerMap.values())
+          .sort((a: any, b: any) => b.models.length - a.models.length);
+
+        setModelsByProvider(grouped);
       } catch (error) {
         console.error('Failed to load data:', error);
       } finally {
