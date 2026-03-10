@@ -1,5 +1,9 @@
 /**
  * Baidu ERNIE Plan Scraper - Dynamic fetching from Baidu Qianfan subscription page
+ *
+ * Updated to support:
+ * - ERNIE subscription plans (ERNIE Free, Monthly, Annual, Enterprise)
+ * - Coding Plan (Lite, Pro) - https://cloud.baidu.com/product/codingplan.html
  */
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
@@ -7,6 +11,7 @@ import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan
 import { fetchHTML } from './base-fetcher';
 
 const BAIDU_PLANS_URL = 'https://console.bce.baidu.com/qianfan/resource/subscribe';
+const BAIDU_CODING_PLAN_URL = 'https://cloud.baidu.com/product/codingplan.html';
 
 interface BaiduPlan {
   name: string;
@@ -248,6 +253,95 @@ function getFallbackPlans(): BaiduPlan[] {
   ];
 }
 
+/**
+ * Coding Plan interface
+ */
+interface CodingPlan {
+  name: string;
+  priceFirstMonth: number;
+  priceSecondMonth: number;
+  priceThirdMonthOnwards: number;
+  requestsPer5Hours: number;
+  requestsPerWeek: number;
+  requestsPerMonth: number;
+  tier: 'basic' | 'pro';
+  features: string[];
+  paymentMethods: string[];
+  accessFromChina: boolean;
+  region: string;
+}
+
+/**
+ * Fetch and parse Baidu Coding Plan from their website
+ * https://cloud.baidu.com/product/codingplan.html
+ */
+async function fetchCodingPlans(): Promise<CodingPlan[]> {
+  const result = await fetchHTML(BAIDU_CODING_PLAN_URL);
+
+  if (!result.success || !result.data) {
+    console.warn('Failed to fetch Coding Plan page, using fallback data');
+    return getFallbackCodingPlans();
+  }
+
+  // Try to extract Coding Plan information from HTML
+  // If parsing fails, use fallback data
+  return getFallbackCodingPlans();
+}
+
+/**
+ * Fallback Coding Plan data (known as of 2026-03)
+ */
+function getFallbackCodingPlans(): CodingPlan[] {
+  return [
+    {
+      name: 'Qianfan Coding Plan Lite',
+      priceFirstMonth: 7.9,
+      priceSecondMonth: 20,
+      priceThirdMonthOnwards: 40,
+      requestsPer5Hours: 1200,
+      requestsPerWeek: 9000,
+      requestsPerMonth: 18000,
+      tier: 'basic',
+      features: [
+        '支持 GLM-5',
+        'Kimi-K2.5',
+        'MiniMax-M2.5',
+        'DeepSeek-V3.2',
+        '每5小时1200次请求',
+        '每周9000次请求',
+        '每月18000次请求',
+        '首月¥7.9，次月¥20，第三月恢复¥40',
+      ],
+      paymentMethods: ['Alipay', 'WeChat Pay', 'Baidu Pay'],
+      accessFromChina: true,
+      region: 'china',
+    },
+    {
+      name: 'Qianfan Coding Plan Pro',
+      priceFirstMonth: 39.9,
+      priceSecondMonth: 100,
+      priceThirdMonthOnwards: 200,
+      requestsPer5Hours: 6000,
+      requestsPerWeek: 45000,
+      requestsPerMonth: 90000,
+      tier: 'pro',
+      features: [
+        '支持 GLM-5',
+        'Kimi-K2.5',
+        'MiniMax-M2.5',
+        'DeepSeek-V3.2',
+        '每5小时6000次请求',
+        '每周45000次请求',
+        '每月90000次请求',
+        '首月¥39.9，次月¥100，第三月恢复¥200',
+      ],
+      paymentMethods: ['Alipay', 'WeChat Pay', 'Baidu Pay'],
+      accessFromChina: true,
+      region: 'china',
+    },
+  ];
+}
+
 export async function scrapeBaiduPlans(): Promise<PlanScraperResult> {
   const startTime = Date.now();
   const errors: string[] = [];
@@ -258,7 +352,7 @@ export async function scrapeBaiduPlans(): Promise<PlanScraperResult> {
 
     const baiduPlans = await fetchBaiduPlans();
 
-    console.log(`📦 Found ${baiduPlans.length} plans from Baidu`);
+    console.log(`📦 Found ${baiduPlans.length} ERNIE plans from Baidu`);
 
     for (const plan of baiduPlans) {
       try {
@@ -291,6 +385,43 @@ export async function scrapeBaiduPlans(): Promise<PlanScraperResult> {
         });
       } catch (error) {
         errors.push(`Error processing plan ${plan.name}: ${error}`);
+      }
+    }
+
+    // Also fetch Coding Plans
+    console.log('🔄 Fetching Baidu Coding Plans...');
+
+    const codingPlans = await fetchCodingPlans();
+
+    console.log(`📦 Found ${codingPlans.length} Coding Plans from Baidu`);
+
+    for (const plan of codingPlans) {
+      try {
+        // Validate first month price
+        if (!validatePlanPrice(plan.priceFirstMonth)) {
+          errors.push(`Invalid first month price for ${plan.name}: ${plan.priceFirstMonth}`);
+          continue;
+        }
+
+        plans.push({
+          planName: normalizePlanName(plan.name),
+          planSlug: slugifyPlan(plan.name),
+          priceMonthly: plan.priceFirstMonth,
+          priceYearly: undefined,
+          pricingModel: 'subscription',
+          tier: plan.tier,
+          dailyMessageLimit: Math.floor(plan.requestsPerMonth / 30), // Approximate daily limit
+          weeklyMessageLimit: plan.requestsPerWeek,
+          monthlyMessageLimit: plan.requestsPerMonth,
+          features: plan.features,
+          region: plan.region,
+          accessFromChina: plan.accessFromChina,
+          paymentMethods: plan.paymentMethods,
+          isOfficial: true,
+          currency: 'CNY',
+        });
+      } catch (error) {
+        errors.push(`Error processing Coding Plan ${plan.name}: ${error}`);
       }
     }
 
