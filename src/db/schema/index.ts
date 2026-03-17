@@ -6,7 +6,6 @@ export const providers = pgTable('providers', {
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   logo: text('logo'),
-  logoUrl: text('logo_url'),
   website: text('website'),
   inviteUrl: text('invite_url'),
   description: text('description'),
