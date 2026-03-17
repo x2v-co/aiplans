@@ -12,17 +12,16 @@ interface Product {
   name: string;
   slug: string;
   context_window: number;
-  benchmark_mmlu: number;
-  benchmark_arena_elo: number;
+  benchmark_arena_elo: number | null;
 }
 
 interface ChannelPrice {
   id: number;
-  product_id: number;
-  channel_id: number;
+  model_id: number;
+  provider_id: number;
   input_price_per_1m: number;
   output_price_per_1m: number;
-  channels: {
+  providers: {
     id: number;
     name: string;
     type: string;
@@ -62,16 +61,16 @@ export default function CompareApiPricingPage() {
     fetchData();
   }, []);
 
-  // Get cheapest price for a product
-  const getCheapestPrice = (productId: number) => {
-    const prices = channelPrices.filter(cp => cp.product_id === productId);
+  // Get cheapest price for a model
+  const getCheapestPrice = (modelId: number) => {
+    const prices = channelPrices.filter(cp => cp.model_id === modelId);
     return prices.sort((a, b) => a.input_price_per_1m - b.input_price_per_1m)[0];
   };
 
-  // Get official price for a product
-  const getOfficialPrice = (productId: number) => {
-    const prices = channelPrices.filter(cp => cp.product_id === productId);
-    return prices.find(cp => cp.channels.type === 'official');
+  // Get official price for a model
+  const getOfficialPrice = (modelId: number) => {
+    const prices = channelPrices.filter(cp => cp.model_id === modelId);
+    return prices.find(cp => cp.providers.type === 'official');
   };
 
   if (loading) {
@@ -169,7 +168,7 @@ export default function CompareApiPricingPage() {
                               <span className="font-mono font-medium text-green-600">
                                 ${cheapest.input_price_per_1m.toFixed(2)}
                               </span>
-                              <span className="text-xs text-zinc-500 block">{cheapest.channels.name}</span>
+                              <span className="text-xs text-zinc-500 block">{cheapest.providers.name}</span>
                             </div>
                           ) : '-'}
                         </td>
@@ -180,7 +179,7 @@ export default function CompareApiPricingPage() {
                           ${official?.output_price_per_1m?.toFixed(2) || '-'}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          {cheapest?.channels.access_from_china ? (
+                          {cheapest?.providers.access_from_china ? (
                             <Badge className="bg-green-100 text-green-800">✓</Badge>
                           ) : (
                             <span className="text-zinc-400">-</span>

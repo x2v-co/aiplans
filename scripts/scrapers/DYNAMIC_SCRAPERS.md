@@ -19,9 +19,10 @@ This directory contains the new dynamic scraper system for planprice.ai.
 
 #### Phase 1: API-Based (Priority ⭐⭐⭐)
 
-These scrapers fetch data directly from public API endpoints and fallback to hardcoded data when auth fails.
+These scrapers fetch data directly from public API endpoints. **NO FALLBACK DATA** - fail cleanly with errors when scraping fails.
 
-| Scraper | API Endpoint | Models with Fallback | Status |
+| Scraper | API Endpoint | Status |
+|---------|--------------|--------|
 |---------|--------------|----------------|--------|
 | DeepSeek | /v1/models | deepseek-chat, deepseek-reasoner (2 main models) | ✅ Working |
 | OpenRouter | /v1/models | 300+ models | ✅ Working |
@@ -32,10 +33,10 @@ These scrapers fetch data directly from public API endpoints and fallback to har
 
 #### Phase 2: HTML-Based (Priority ⭐⭐⭐)
 
-These scrapers parse pricing pages and fallback to hardcoded data when parsing fails.
+These scrapers parse pricing pages using Playwright. **NO FALLBACK DATA** - fail cleanly with errors when parsing fails.
 
-| Scraper | URL | Models | Status |
-|---------|------|--------|--------|
+| Scraper | URL | Status |
+|---------|------|--------|
 | OpenAI | api-pricing | GPT-5.2, GPT-5 mini, o4-mini, Sora-2 (15+ models) | ✅ Updated |
 | Google Gemini | ai.google.dev/pricing | Gemini 2.0/2.5/3.x series (17 models) | ✅ Updated |
 | AWS Bedrock | aws.amazon.com/bedrock | Claude 3.5 Sonnet/Haiku (via API) | ✅ Working |
@@ -457,8 +458,9 @@ tsx scripts/index-dynamic.ts
 
 ## Notes
 
-- API-based scrapers will fall back to hardcoded data when authentication fails (401/403)
-- HTML-based scrapers will fall back to hardcoded data when parsing fails
+- **NO FALLBACK DATA**: All scrapers fail cleanly with errors when scraping fails instead of returning hardcoded data
+- All scrapers use Playwright for real HTML parsing or fetch from real API endpoints
 - All scrapers include proper error handling and retry logic
 - Pricing data should be updated periodically from official provider websites
+- Scrapers return `isRealTime`, `confidence`, and `lastVerified` metadata for data traceability
 - **March 2026 Updates**: Major new model releases from OpenAI (GPT-5), Anthropic (Claude 4.6), Google (Gemini 2.0/2.5/3.x), xAI (Grok 4), Zhipu (GLM-5), and others

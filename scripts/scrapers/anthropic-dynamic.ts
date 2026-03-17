@@ -1,272 +1,151 @@
 /**
- * Anthropic API Scraper - Dynamic fetching from pricing page
+ * Anthropic API Scraper - Uses Playwright for real HTML parsing
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
 import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { fetchHTML } from './base-fetcher';
+import { PlaywrightScraper, PriceData } from './lib/playwright-scraper';
 
-const ANTHROPIC_PRICING_URL = 'https://claude.com/pricing#api';
+const ANTHROPIC_PRICING_URL = 'https://www.anthropic.com/pricing';
 
-interface AnthropicModelPrice {
-  model: string;
-  inputPrice: number;
-  outputPrice: number;
-  cachedPrice?: number;
-  contextWindow: number;
-}
-
-/**
- * Fallback pricing data (as of 2025-2026)
- */
-function getFallbackPricing(): AnthropicModelPrice[] {
-  return [
-    {
-      model: 'claude-3-5-sonnet',
-      inputPrice: 3.00,
-      outputPrice: 15.00,
-      cachedPrice: 0.10,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-5-haiku',
-      inputPrice: 0.80,
-      outputPrice: 4.00,
-      cachedPrice: 0.025,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-5-sonnet-20250207',
-      inputPrice: 3.00,
-      outputPrice: 15.00,
-      cachedPrice: 0.10,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-7-sonnet-20250210',
-      inputPrice: 15.00,
-      outputPrice: 75.00,
-      cachedPrice: 0.75,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-7-sonnet-20250210-thinking',
-      inputPrice: 15.00,
-      outputPrice: 75.00,
-      cachedPrice: 0.75,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-5-haiku-20250219',
-      inputPrice: 1.00,
-      outputPrice: 5.00,
-      cachedPrice: 0.05,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-opus-20250229',
-      inputPrice: 15.00,
-      outputPrice: 75.00,
-      cachedPrice: 0.75,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-7-sonnet-20250210-thinking',
-      inputPrice: 15.00,
-      outputPrice: 75.00,
-      cachedPrice: 0.75,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-5-haiku-20250219-thinking',
-      inputPrice: 0.80,
-      outputPrice: 4.00,
-      cachedPrice: 0.025,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-sonnet-20240229',
-      inputPrice: 3.00,
-      outputPrice: 15.00,
-      cachedPrice: 0.30,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-haiku-20240229',
-      inputPrice: 0.25,
-      outputPrice: 1.25,
-      cachedPrice: 0.10,
-      contextWindow: 200000,
-    },
-  ];
-}
-
-/**
- * Parse Anthropic pricing page to extract model prices
- */
-async function fetchAnthropicPricing(): Promise<AnthropicModelPrice[]> {
-  const result = await fetchHTML(ANTHROPIC_PRICING_URL);
-
-  if (!result.success || !result.data) {
-    throw new Error(result.error || 'Failed to fetch Anthropic pricing');
+class AnthropicScraper extends PlaywrightScraper {
+  getSourceName(): string {
+    return 'Anthropic-API';
   }
 
-  const html = result.data;
-  const models: AnthropicModelPrice[] = [];
-
-  // Parse pricing from the HTML
-  // Look for model names like "Claude 3.5 Sonnet", "Claude 3 Opus", etc.
-  const modelPatterns = [
-    {
-      name: 'Claude 3.5 Sonnet',
-      id: 'claude-3-5-sonnet',
-      inputPattern: /Claude\s*3\.5\s*Sonnet[^$]*?\$?([\d.]+)\s*per\s*million\s*input/i,
-      outputPattern: /Claude\s*3\.5\s*Sonnet[^$]*?\$?([\d.]+)\s*per\s*million\s*output/i,
-      cachedPattern: /Claude\s*3\.5\s*Sonnet[^$]*?\$?([\d.]+)\s*per\s*million\s*cached/i,
-      context: 200000,
-    },
-    {
-      name: 'Claude 3.5 Haiku',
-      id: 'claude-3-5-haiku',
-      inputPattern: /Claude\s*3\.5\s*Haiku[^$]*?\$?([\d.]+)\s*per\s*million\s*input/i,
-      outputPattern: /Claude\s*3\.5\s*Haiku[^$]*?\$?([\d.]+)\s*per\s*million\s*output/i,
-      cachedPattern: /Claude\s*3\.5\s*Haiku[^$]*?\$?([\d.]+)\s*per\s*million\s*cached/i,
-      context: 200000,
-    },
-    {
-      name: 'Claude 3 Opus',
-      id: 'claude-3-opus',
-      inputPattern: /Claude\s*3\s*Opus[^$]*?\$?([\d.]+)\s*per\s*million\s*input/i,
-      outputPattern: /Claude\s*3\s*Opus[^$]*?\$?([\d.]+)\s*per\s*million\s*output/i,
-      cachedPattern: /Claude\s*3\s*Opus[^$]*?\$?([\d.]+)\s*per\s*million\s*cached/i,
-      context: 200000,
-    },
-    {
-      name: 'Claude 3 Sonnet',
-      id: 'claude-3-sonnet',
-      inputPattern: /Claude\s*3\s*Sonnet[^$]*?\$?([\d.]+)\s*per\s*million\s*input/i,
-      outputPattern: /Claude\s*3\s*Sonnet[^$]*?\$?([\d.]+)\s*per\s*million\s*output/i,
-      cachedPattern: /Claude\s*3\s*Sonnet[^$]*?\$?([\d.]+)\s*per\s*million\s*cached/i,
-      context: 200000,
-    },
-    {
-      name: 'Claude 3 Haiku',
-      id: 'claude-3-haiku',
-      inputPattern: /Claude\s*3\s*Haiku[^$]*?\$?([\d.]+)\s*per\s*million\s*input/i,
-      outputPattern: /Claude\s*3\s*Haiku[^$]*?\$?([\d.]+)\s*per\s*million\s*output/i,
-      cachedPattern: /Claude\s*3\s*Haiku[^$]*?\$?([\d.]+)\s*per\s*million\s*cached/i,
-      context: 200000,
-    },
-  ];
-
-  for (const pattern of modelPatterns) {
-    const inputMatch = html.match(pattern.inputPattern);
-    const outputMatch = html.match(pattern.outputPattern);
-    const cachedMatch = html.match(pattern.cachedPattern);
-
-    if (inputMatch && outputMatch) {
-      const inputPrice = parseFloat(inputMatch[1]);
-      const outputPrice = parseFloat(outputMatch[1]);
-      const cachedPrice = cachedMatch ? parseFloat(cachedMatch[1]) : undefined;
-
-      if (!isNaN(inputPrice) && !isNaN(outputPrice)) {
-        models.push({
-          model: pattern.id,
-          inputPrice,
-          outputPrice,
-          cachedPrice,
-          contextWindow: pattern.context,
-        });
-      }
-    }
+  getSourceUrl(): string {
+    return ANTHROPIC_PRICING_URL;
   }
 
-  return models;
-}
+  async scrape(): Promise<ScraperResult> {
+    const errors: string[] = [];
+    const prices: PriceData[] = [];
 
-export async function scrapeAnthropicDynamic(): Promise<ScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const prices: ScrapedPrice[] = [];
+    await this.navigate(ANTHROPIC_PRICING_URL);
 
-  try {
-    console.log('🔄 Fetching Anthropic pricing...');
+    // Wait for pricing content to load
+    await this.page!.waitForTimeout(2000);
 
-    const models = await fetchAnthropicPricing();
+    // Get all text content from the page
+    const pageContent = await this.page!.textContent('body') || '';
 
-    // If no models found (HTML parsing failed), use fallback
-    if (models.length === 0) {
-      console.warn('⚠️ No models parsed from HTML, using fallback data');
-      const fallbackModels = getFallbackPricing();
+    // Known Claude model patterns
+    const models = [
+      { name: 'claude-3-5-sonnet', patterns: [/claude\s*3\.5\s*sonnet/i, /claude-3-5-sonnet/i] },
+      { name: 'claude-3-5-haiku', patterns: [/claude\s*3\.5\s*haiku/i, /claude-3-5-haiku/i] },
+      { name: 'claude-3-opus', patterns: [/claude\s*3\s*opus/i, /claude-3-opus/i] },
+      { name: 'claude-3-sonnet', patterns: [/claude\s*3\s*sonnet(?!\s*3\.5)/i, /claude-3-sonnet/i] },
+      { name: 'claude-3-haiku', patterns: [/claude\s*3\s*haiku(?!\s*3\.5)/i, /claude-3-haiku/i] },
+      { name: 'claude-3-7-sonnet', patterns: [/claude\s*3\.?7\s*sonnet/i, /claude-3-7-sonnet/i] },
+    ];
 
-      for (const model of fallbackModels) {
-        try {
-          if (!validatePrice(model.inputPrice) || !validatePrice(model.outputPrice)) {
-            errors.push(`Invalid price for ${model.model}`);
-            continue;
-          }
-
-          prices.push({
-            modelName: normalizeModelName(model.model),
-            modelSlug: slugify(model.model),
-            inputPricePer1M: model.inputPrice,
-            outputPricePer1M: model.outputPrice,
-            cachedInputPricePer1M: model.cachedPrice,
-            contextWindow: model.contextWindow,
-            isAvailable: true,
-            currency: 'USD',
-          });
-        } catch (error) {
-          errors.push(`Error processing ${model.model}: ${error}`);
-        }
-      }
-    } else {
-      console.log(`📦 Found ${models.length} models from Anthropic`);
-
-    for (const model of models) {
+    for (const modelInfo of models) {
       try {
-        // Validate prices
-        if (!validatePrice(model.inputPrice) || !validatePrice(model.outputPrice)) {
-          errors.push(`Invalid price for ${model.model}`);
-          continue;
+        // Find the section containing this model's pricing
+        let modelSection: string | null = null;
+
+        for (const pattern of modelInfo.patterns) {
+          const match = pageContent.match(pattern);
+          if (match && match.index !== undefined) {
+            // Extract surrounding context
+            const start = Math.max(0, match.index - 200);
+            const end = Math.min(pageContent.length, match.index + match[0].length + 300);
+            modelSection = pageContent.slice(start, end);
+            break;
+          }
         }
 
-        prices.push({
-          modelName: normalizeModelName(model.model),
-          modelSlug: slugify(model.model),
-          inputPricePer1M: model.inputPrice,
-          outputPricePer1M: model.outputPrice,
-          cachedInputPricePer1M: model.cachedPrice,
-          contextWindow: model.contextWindow,
-          isAvailable: true,
-          currency: 'USD', // Anthropic prices are in USD
-        });
+        if (!modelSection) continue;
+
+        // Extract prices from the section
+        // Look for patterns like "$3.00", "$15.00", etc.
+        const pricePattern = /\$([\d.]+)/g;
+        const priceMatches = [...modelSection.matchAll(pricePattern)];
+
+        if (priceMatches.length >= 2) {
+          const prices_found = priceMatches.map(m => parseFloat(m[1]));
+          const inputPrice = prices_found[0];
+          const outputPrice = prices_found[1];
+          const cachedPrice = prices_found.length >= 3 ? prices_found[2] : undefined;
+
+          if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+            prices.push({
+              modelName: normalizeModelName(modelInfo.name),
+              inputPricePer1M: inputPrice,
+              outputPricePer1M: outputPrice,
+              cachedInputPricePer1M: cachedPrice,
+              contextWindow: 200000,
+              isAvailable: true,
+              currency: 'USD',
+            });
+          }
+        }
       } catch (error) {
-        errors.push(`Error processing ${model.model}: ${error}`);
+        errors.push(`Failed to extract pricing for ${modelInfo.name}`);
       }
     }
+
+    // Try alternative approach: look for API pricing table
+    if (prices.length === 0) {
+      // Look for tables or structured pricing data
+      const tables = await this.page!.$$('table');
+      for (const table of tables) {
+        const rows = await table.$$('tr');
+        for (const row of rows) {
+          const text = await row.textContent();
+          if (!text) continue;
+
+          // Check if this row mentions a Claude model
+          if (/claude/i.test(text)) {
+            const priceMatches = [...text.matchAll(/\$([\d.]+)/g)];
+            if (priceMatches.length >= 2) {
+              const modelNameMatch = text.match(/claude[-\s]?\d\.?\d?\s*(sonnet|haiku|opus)/i);
+              if (modelNameMatch) {
+                const modelName = 'claude-' + modelNameMatch[0]
+                  .toLowerCase()
+                  .replace(/\s+/g, '-')
+                  .replace(/claude-?/, '');
+
+                const inputPrice = parseFloat(priceMatches[0][1]);
+                const outputPrice = parseFloat(priceMatches[1][1]);
+
+                if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+                  // Avoid duplicates
+                  if (!prices.some(p => p.modelName.toLowerCase().includes(modelName.toLowerCase()))) {
+                    prices.push({
+                      modelName: normalizeModelName(modelName),
+                      inputPricePer1M: inputPrice,
+                      outputPricePer1M: outputPrice,
+                      contextWindow: 200000,
+                      isAvailable: true,
+                      currency: 'USD',
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
 
-    const duration = Date.now() - startTime;
-    console.log(`✅ Anthropic scrape completed in ${duration}ms`);
-    console.log(`   - Models processed: ${prices.length}`);
-    console.log(`   - Errors: ${errors.length}`);
+    if (prices.length === 0) {
+      errors.push('No pricing data could be extracted from Anthropic pricing page. The page structure may have changed.');
+    }
 
     return {
-      source: 'Anthropic-API',
-      success: true,
+      success: errors.length === 0 && prices.length > 0,
+      source: this.getSourceName(),
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };
-  } catch (error) {
-    console.error('❌ Anthropic scrape failed:', error);
-    return {
-      source: 'Anthropic-API',
-      success: false,
-      prices: [],
-      errors: [String(error)],
-    };
   }
+}
+
+export async function scrapeAnthropicDynamic(): Promise<ScraperResult> {
+  const scraper = new AnthropicScraper();
+  return scraper.run();
 }
 
 // CLI test

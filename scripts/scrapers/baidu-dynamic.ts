@@ -1,5 +1,6 @@
 /**
  * Baidu ERNIE / 千帆 API Scraper - Dynamic fetching from pricing page
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
@@ -18,12 +19,12 @@ interface BaiduModel {
 /**
  * Fetch and parse Baidu pricing from their website
  */
-async function fetchBaiduPricing(): Promise<BaiduModel[]> {
+async function fetchBaiduPricing(): Promise<{ models: BaiduModel[], errors: string[] }> {
   const result = await fetchHTML(BAIDU_PRICING_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Baidu pricing page, using fallback data');
-    return getFallbackPricing();
+    return { models: [], errors: ['Failed to fetch Baidu pricing page'] };
   }
 
   const html = result.data;
@@ -78,58 +79,11 @@ async function fetchBaiduPricing(): Promise<BaiduModel[]> {
     }
   }
 
-  // If no models found, use fallback
   if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
+    errors.push('No models could be parsed from Baidu pricing page. The page structure may have changed.');
   }
 
-  return models;
-}
-
-/**
- * Fallback pricing data (as of 2026)
- * Prices in CNY per 1M tokens
- */
-function getFallbackPricing(): BaiduModel[] {
-  return [
-    {
-      model: 'ernie-4.0',
-      inputPrice: 8.00,
-      outputPrice: 8.00,
-      contextWindow: 128000,
-    },
-    {
-      model: 'ernie-3.5',
-      inputPrice: 6.00,
-      outputPrice: 6.00,
-      contextWindow: 128000,
-    },
-    {
-      model: 'ernie-speed',
-      inputPrice: 0.004,
-      outputPrice: 0.004,
-      contextWindow: 128000,
-    },
-    {
-      model: 'ernie-turbo',
-      inputPrice: 0.008,
-      outputPrice: 0.008,
-      contextWindow: 128000,
-    },
-    {
-      model: 'ernie-lite',
-      inputPrice: 0.003,
-      outputPrice: 0.003,
-      contextWindow: 128000,
-    },
-    {
-      model: 'ernie-4.0-turbo',
-      inputPrice: 0.05,
-      outputPrice: 0.05,
-      contextWindow: 128000,
-    },
-  ];
+  return { models, errors };
 }
 
 export async function scrapeBaiduDynamic(): Promise<ScraperResult> {
@@ -140,7 +94,8 @@ export async function scrapeBaiduDynamic(): Promise<ScraperResult> {
   try {
     console.log('🔄 Fetching Baidu pricing...');
 
-    const models = await fetchBaiduPricing();
+    const { models, errors: fetchErrors } = await fetchBaiduPricing();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${models.length} models from Baidu`);
 
@@ -159,7 +114,7 @@ export async function scrapeBaiduDynamic(): Promise<ScraperResult> {
           outputPricePer1M: model.outputPrice,
           contextWindow: model.contextWindow,
           isAvailable: true,
-          currency: 'CNY', // Baidu prices are in CNY
+          currency: 'CNY',
         });
       } catch (error) {
         errors.push(`Error processing ${model.model}: ${error}`);
@@ -173,7 +128,7 @@ export async function scrapeBaiduDynamic(): Promise<ScraperResult> {
 
     return {
       source: 'Baidu-ERNIE',
-      success: true,
+      success: prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };

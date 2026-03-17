@@ -25,15 +25,14 @@ interface GroupedProduct {
   id: number;
   name: string;
   slug: string;
-  provider_id: number;
+  provider_ids: number[];
   context_window: number;
-  benchmark_mmlu: number;
-  benchmark_arena_elo: number;
+  benchmark_arena_elo: number | null;
   providers?: {
     id: number;
     name: string;
     slug: string;
-    logo_url: string;
+    logo: string;
     region?: string;
   };
   baseName: string;
@@ -47,13 +46,13 @@ interface GroupedProduct {
 
 interface ChannelPrice {
   id: number;
-  product_id: number;
-  channel_id: number;
+  model_id: number;
+  provider_id: number;
   input_price_per_1m: number;
   output_price_per_1m: number;
   currency: CurrencyCode;
   price_unit: PriceUnit;
-  channels: {
+  providers: {
     id: number;
     name: string;
     slug: string;
@@ -129,7 +128,7 @@ export default function ApiPricingPage() {
 
   function getCheapestOfficialPrice(product: GroupedProduct): number | null {
     const officialPrices = product.versions.filter(cp =>
-      cp.channels.type === 'official'
+      cp.providers.type === 'official'
     );
     if (officialPrices.length === 0) return null;
     const prices = officialPrices.map(cp => cp.input_price_per_1m).filter((p): p is number => p != null);
@@ -155,7 +154,7 @@ export default function ApiPricingPage() {
   const pricesByVersion = new Map<string, ChannelPrice[]>();
   products.forEach(p => {
     p.versions.forEach(cp => {
-      const key = `${p.baseName}|${cp.channels.name}|${cp.channels.region}`;
+      const key = `${p.baseName}|${cp.providers.name}|${cp.providers.region}`;
       if (!pricesByVersion.has(key)) {
         pricesByVersion.set(key, []);
       }
@@ -270,7 +269,7 @@ export default function ApiPricingPage() {
                   // 按渠道名称分组版本
                   const versionsByChannel = new Map<string, ChannelPrice[]>();
                   product.versions.forEach(cp => {
-                    const key = cp.channels.name;
+                    const key = cp.providers.name;
                     if (!versionsByChannel.has(key)) {
                       versionsByChannel.set(key, []);
                     }
@@ -278,7 +277,7 @@ export default function ApiPricingPage() {
                   });
 
                   // 获取最便宜的官方价格（用于计算节省）
-                  const officialPrices = product.versions.filter(cp => cp.channels.type === 'official' && cp.input_price_per_1m != null);
+                  const officialPrices = product.versions.filter(cp => cp.providers.type === 'official' && cp.input_price_per_1m != null);
                   const cheapestOfficial = officialPrices.length > 0
                     ? officialPrices.reduce((min, cp) =>
                         (cp.input_price_per_1m || Infinity) < (min.input_price_per_1m || Infinity) ? cp : min
@@ -289,9 +288,9 @@ export default function ApiPricingPage() {
                     <div key={product.id} className="border-b pb-6 last:border-0">
                       {/* 模型名称和基本信息 */}
                       <div className="flex items-start gap-4 mb-4">
-                        {product.providers?.logo_url && (
+                        {product.providers?.logo && (
                           <img
-                            src={product.providers.logo_url}
+                            src={product.providers.logo}
                             alt={product.providers.name}
                             className="w-12 h-12 rounded-lg flex-shrink-0"
                           />
@@ -330,9 +329,9 @@ export default function ApiPricingPage() {
                         <TableBody>
                           {Array.from(versionsByChannel.entries()).map(([channelName, prices]) => {
                             // 按国内/国际版本分组
-                            const chinaVersion = prices.find(cp => cp.channels.region === 'china');
-                            const globalVersion = prices.find(cp => cp.channels.region === 'global');
-                            const isOfficial = prices.some(cp => cp.channels.type === 'official');
+                            const chinaVersion = prices.find(cp => cp.providers.region === 'china');
+                            const globalVersion = prices.find(cp => cp.providers.region === 'global');
+                            const isOfficial = prices.some(cp => cp.providers.type === 'official');
 
                             // 如果是官方渠道且同时有国内和国际版本，合并显示
                             if (isOfficial && chinaVersion && globalVersion) {
@@ -368,7 +367,7 @@ export default function ApiPricingPage() {
                                           <span className="text-sm font-medium">
                                             {channelName} {tChina()}
                                           </span>
-                                          {chinaVersion.channels.access_from_china && (
+                                          {chinaVersion.providers.access_from_china && (
                                             <Check className="w-3 h-3 text-green-600" />
                                           )}
                                         </div>
@@ -467,17 +466,17 @@ export default function ApiPricingPage() {
                                   <TableCell>
                                     <div className="flex items-center gap-2">
                                       <span className={cp === cheapestOfficial ? "font-medium" : ""}>
-                                        {cp.channels.name}
+                                        {cp.providers.name}
                                       </span>
-                                      {cp.channels.access_from_china && (
+                                      {cp.providers.access_from_china && (
                                         <Check className="w-3 h-3 text-green-600" />
                                       )}
-                                      {cp.channels.region === 'china' && (
+                                      {cp.providers.region === 'china' && (
                                         <Badge className="ml-2 text-xs" variant="outline">
                                           🇨🇳
                                         </Badge>
                                       )}
-                                      {cp.channels.region === 'global' && (
+                                      {cp.providers.region === 'global' && (
                                         <Badge className="ml-2 text-xs" variant="outline">
                                           🌍
                                         </Badge>
@@ -486,7 +485,7 @@ export default function ApiPricingPage() {
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <Badge variant="outline">
-                                      {t(`channelTypes.${cp.channels.type}` as any)}
+                                      {t(`channelTypes.${cp.providers.type}` as any)}
                                     </Badge>
                                   </TableCell>
                                   <TableCell className="text-right font-mono">

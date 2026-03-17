@@ -1,112 +1,77 @@
 #!/usr/bin/env tsx
 
-import { supabaseAdmin } from './db/queries';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+config({ path: resolve(process.cwd(), '.env.local') });
+const { createClient } = require('@supabase/supabase-js') as any;
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function queryTopModels() {
   console.log('\n📈 TOP MODELS BY ARENA ELO SCORE');
   console.log('='.repeat(70));
 
-  // Get all products with arena scores and their providers
-  const { data: allModels } = await supabaseAdmin
-    .from('products')
+  // Get all models with arena scores
+  const { data: benchmarkScores } = await supabase
+    .from('model_benchmark_scores')
     .select(`
-      id,
-      name,
-      slug,
-      benchmark_arena_elo,
-      benchmark_mmlu,
-      provider_id,
-      providers (
+      value,
+      models (
         id,
         name,
         slug,
-        type
+        provider_ids
       )
     `)
-    .not('benchmark_arena_elo', 'is', null)
-    .order('benchmark_arena_elo', { ascending: false, nullsFirst: false })
+    .order('value', { ascending: false })
     .limit(50);
 
-  if (!allModels || allModels.length === 0) {
+  if (!benchmarkScores || benchmarkScores.length === 0) {
     console.log('No models with arena scores found in database.');
     return;
   }
 
-  // Group models by base name (remove version suffixes)
-  const modelGroups = new Map<string, {
-    maxElo: number;
-    officialProviderId: number | null;
-    officialProviderName: string;
-    officialProviderType: string;
-    bestProviderId: number;
-    bestProviderName: string;
-    officialSlug: string;
-    bestSlug: string;
-    bestId: number;
-    bestModelName: string;
-    officialModelName: string;
-  }>();
+  // Get all providers
+  const allProviderIds = [...new Set(
+    benchmarkScores
+      .filter((bs: any) => bs.models?.provider_ids?.length > 0)
+      .flatMap((bs: any) => bs.models.provider_ids)
+  )];
 
-  for (const model of allModels) {
-    const provider = model.providers as any;
-    const baseSlug = model.slug.replace(/-thinking|-instant|-preview|-v2|-v3|-min|-high| \-?\d+$/gi, '');
-    const baseName = model.name.replace(/ Thinking| Instant| Preview| v2| v3| \d+\.\d+$/gi, '');
+  const { data: providers } = await supabase
+    .from('providers')
+    .select('id, name, slug, type')
+    .in('id', allProviderIds);
 
-    const existing = modelGroups.get(baseSlug);
+  const providerMap = new Map((providers || []).map((p: any) => [p.id, p]));
 
-    if (existing) {
-      // Found another version of the same model
-      if (model.benchmark_arena_elo! > existing.maxElo) {
-        existing.maxElo = model.benchmark_arena_elo!;
-        existing.bestProviderId = provider.id;
-        existing.bestProviderName = provider.name;
-        existing.bestSlug = model.slug;
-        existing.bestId = model.id;
-        existing.bestModelName = model.name;
-      }
-      // Track official provider
-      if (provider.type === 'official') {
-        existing.officialProviderId = provider.id;
-        existing.officialProviderName = provider.name;
-        existing.officialProviderType = provider.type;
-        existing.officialSlug = model.slug;
-        existing.officialModelName = model.name;
-      }
-    } else {
-      modelGroups.set(baseSlug, {
-        maxElo: model.benchmark_arena_elo!,
-        officialProviderId: provider.type === 'official' ? provider.id : null,
-        officialProviderName: provider.type === 'official' ? provider.name : '',
-        officialProviderType: provider.type || '',
-        officialSlug: model.slug,
-        officialModelName: model.name,
-        bestProviderId: provider.id,
-        bestProviderName: provider.name,
-        bestSlug: model.slug,
-        bestId: model.id,
-        bestModelName: model.name,
-      });
-    }
-  }
+  // Process and display
+  const models = benchmarkScores.map((bs: any) => {
+    const model = bs.models;
+    const provider = model?.provider_ids?.[0] ? providerMap.get(model.provider_ids[0]) : null;
+    return {
+      id: model?.id,
+      name: model?.name || 'Unknown',
+      slug: model?.slug || 'unknown',
+      elo: bs.value,
+      provider: provider?.name || '-',
+      providerType: provider?.type || '-',
+    };
+  });
 
-  // Convert to array and sort by ELO
-  const sortedModels = Array.from(modelGroups.values())
-    .sort((a, b) => b.maxElo - a.maxElo)
-    .slice(0, 20);
-
-  console.log(`Rank | ELO   | MMLU  | Model Name                    | Official Provider`);
+  console.log(`Rank | ELO   | Model Name                    | Provider`);
   console.log('-'.repeat(70));
 
-  for (let i = 0; i < sortedModels.length; i++) {
-    const model = sortedModels[i];
-    const elo = model.maxElo ? model.maxElo.toFixed(1) : 'N/A';
-    const mmlu = 'N/A';
+  for (let i = 0; i < models.length; i++) {
+    const model = models[i];
     const rank = i + 1;
-    // Use bestModelName (highest ELO) for display, but show if it differs from official
-    const displayName = model.bestModelName ? model.bestModelName.substring(0, 35) : '-';
-    const officialProvider = model.officialProviderName?.substring(0, 18) || '-';
+    const elo = model.elo ? model.elo.toFixed(0) : 'N/A';
+    const displayName = model.name.substring(0, 35);
+    const providerName = model.provider.substring(0, 18);
 
-    console.log(`${rank.toString().padStart(4)} | ${elo.padStart(6)} | ${mmlu.padStart(5)} | ${displayName.padEnd(35)} | ${officialProvider}`);
+    console.log(`${rank.toString().padStart(4)} | ${elo.padStart(6)} | ${displayName.padEnd(35)} | ${providerName}`);
   }
 
   console.log('='.repeat(70));

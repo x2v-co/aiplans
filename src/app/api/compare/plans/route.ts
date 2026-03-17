@@ -26,20 +26,13 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Get product/model info first (needed for other queries)
     const { data: product, error: productError } = await supabase
-      .from('products')
+      .from('models')
       .select(`
         id,
         name,
         slug,
-        provider_id,
-        context_window,
-        providers (
-          name,
-          slug,
-          logo_url,
-          website,
-          invite_url
-        )
+        provider_ids,
+        context_window
       `)
       .eq('slug', modelSlug)
       .single();
@@ -48,14 +41,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Model not found' }, { status: 404 });
     }
 
+    // Fetch the model's official providers separately (provider_ids is an integer array, not a foreign key)
+    let productProvider: any = null;
+    if (product.provider_ids && product.provider_ids.length > 0) {
+      const { data: providers } = await supabase
+        .from('providers')
+        .select('name, slug, logo, website, invite_url')
+        .eq('id', product.provider_ids[0])
+        .single();
+      productProvider = providers;
+    }
+
     // 2. Run remaining queries in parallel for better performance
     const [
       { data: channelPrices },
       { data: modelPlans },
     ] = await Promise.all([
-      // Query 2: Get API pricing from channel_prices
+      // Query 2: Get API pricing from api_channel_prices
       supabase
-        .from('channel_prices')
+        .from('api_channel_prices')
         .select(`
           id,
           input_price_per_1m,
@@ -64,67 +68,36 @@ export async function GET(request: NextRequest) {
           rate_limit,
           last_verified,
           is_available,
-          channels (
+          providers:provider_id (
             id,
             name,
             slug,
             type,
             region,
             access_from_china,
-            website_url,
-            providers (
-              id,
-              name,
-              slug,
-              logo_url,
-              website,
-              invite_url
-            )
+            logo,
+            website,
+            invite_url
           )
         `)
-        .eq('product_id', product.id)
+        .eq('model_id', product.id)
         .eq('is_available', true)
+        .not('provider_id', 'is', null)
         .order('input_price_per_1m', { ascending: true }),
-      // Query 3: Get subscription plans that include this model
+      // Query 3: Get subscription plans that include this model (via model_plan_mapping)
+      // Schema only has: model_id, plan_id, priority
       supabase
-        .from('models')
+        .from('model_plan_mapping')
         .select(`
           plan_id,
-          is_available,
-          override_rpm,
-          override_qps,
-          override_input_price_per_1m,
-          override_output_price_per_1m,
-          max_output_tokens,
-          plans:plan_id (
-            id,
-            name,
-            slug,
-            tier,
-            pricing_model,
-            price,
-            annual_price,
-            price_unit,
-            currency,
-            daily_message_limit,
-            requests_per_minute,
-            qps,
-            tokens_per_minute,
-            features,
-            region,
-            access_from_china,
-            payment_methods,
-            is_official,
-            last_verified,
-            provider_id
-          )
+          model_id,
+          priority
         `)
-        .eq('product_id', product.id)
-        .eq('is_available', true),
+        .eq('model_id', product.id),
     ]);
 
     // 3. Get unique plan IDs and fetch full plan details in parallel with provider info
-    const planIds = [...new Set((modelPlans || []).map((m: any) => m.plans?.id).filter(Boolean))];
+    const planIds = [...new Set((modelPlans || []).map((m: any) => m.plan_id).filter(Boolean))];
 
     const [
       { data: rawSubscriptionPlans },
@@ -160,27 +133,13 @@ export async function GET(request: NextRequest) {
       // Query 5: Get all provider info at once
       supabase
         .from('providers')
-        .select('id, name, slug, logo_url, website, invite_url'),
+        .select('id, name, slug, logo, website, invite_url'),
     ]) : [{ data: [] }, { data: [] }];
 
     // Build provider map
     const providerMap: Record<number, any> = {};
     (allProviders || []).forEach((p: any) => {
       providerMap[p.id] = p;
-    });
-
-    // Create a map of plan_id to model overrides
-    const modelOverridesMap = new Map();
-    (modelPlans || []).forEach((m: any) => {
-      if (m.plan_id && m.plans) {
-        modelOverridesMap.set(m.plan_id, {
-          overrideRpm: m.override_rpm,
-          overrideQps: m.override_qps,
-          overrideInputPricePer1m: m.override_input_price_per_1m,
-          overrideOutputPricePer1m: m.override_output_price_per_1m,
-          maxOutputTokens: m.max_output_tokens,
-        });
-      }
     });
 
     const subscriptionPlans = rawSubscriptionPlans || [];
@@ -193,10 +152,9 @@ export async function GET(request: NextRequest) {
     if (subscriptionPlans) {
       subscriptionPlans.forEach((plan: any) => {
         // Same provider as the product = official, different provider = third-party
-        const isOfficial = plan.provider_id === product.provider_id;
+        // product.provider_ids is an array, check if plan's provider is in it
+        const isOfficial = product.provider_ids?.includes(plan.provider_id);
         const provider = providerMap[plan.provider_id];
-        // Get model-specific overrides if any
-        const overrides = modelOverridesMap.get(plan.id) || {};
 
         const planData = {
           plan: {
@@ -212,7 +170,7 @@ export async function GET(request: NextRequest) {
             slug: provider?.slug || 'unknown',
             name: provider?.name || 'Unknown',
             nameZh: provider?.name || 'Unknown',
-            logo: provider?.logo_url || getProviderLogo(provider?.slug),
+            logo: provider?.logo || getProviderLogo(provider?.slug),
             website: provider?.website || null,
             inviteUrl: provider?.invite_url || null,
             region: plan.region,
@@ -234,19 +192,17 @@ export async function GET(request: NextRequest) {
             convertedYearly: plan.annual_price ? getExchangeRateSync(plan.currency || 'USD', displayCurrency) * plan.annual_price : null,
             convertedYearlyMonthly: plan.annual_price ? convertPrice(plan.annual_price / 12, plan.currency || 'USD', displayCurrency) : null,
             exchangeRate: getExchangeRateDisplay(plan.currency || 'USD'),
-            // Apply overrides if available
-            inputPer1m: overrides.overrideInputPricePer1m || null,
-            outputPer1m: overrides.overrideOutputPricePer1m || null,
+            inputPer1m: null,
+            outputPer1m: null,
             cachedInputPer1m: null,
             hasOverage: false,
             overageInputPer1m: null,
             overageOutputPer1m: null,
           },
           limits: {
-            // Apply overrides if available
-            rpm: overrides.overrideRpm || plan.requests_per_minute,
+            rpm: plan.requests_per_minute,
             rpd: null,
-            rpm_display: (overrides.overrideRpm || plan.requests_per_minute) ? `${(overrides.overrideRpm || plan.requests_per_minute)} RPM` : null,
+            rpm_display: plan.requests_per_minute ? `${plan.requests_per_minute} RPM` : null,
             tpm: plan.tokens_per_minute,
             tpd: null,
             tpm_display: plan.tokens_per_minute ? `${plan.tokens_per_minute.toLocaleString()} TPM` : null,
@@ -254,13 +210,12 @@ export async function GET(request: NextRequest) {
             monthlyTokens: null,
             maxTokensPerRequest: null,
             maxInputTokens: null,
-            maxOutputTokens: overrides.maxOutputTokens || null,
+            maxOutputTokens: null,
           },
           performance: {
-            // Apply overrides if available
-            qps: overrides.overrideQps || plan.qps,
+            qps: plan.qps,
             concurrentRequests: null,
-            qps_display: (overrides.overrideQps || plan.qps) ? `${(overrides.overrideQps || plan.qps)} QPS` : null,
+            qps_display: plan.qps ? `${plan.qps} QPS` : null,
           },
           vsOfficial: {
             priceDiffPercent: null,
@@ -311,11 +266,11 @@ export async function GET(request: NextRequest) {
         slug: product.slug,
         name: product.name,
         provider: {
-          slug: (product.providers as any)?.slug || 'unknown',
-          name: (product.providers as any)?.name || 'Unknown',
-          logo: (product.providers as any)?.logo_url || getProviderLogo((product.providers as any)?.slug),
-          website: (product.providers as any)?.website || null,
-          inviteUrl: (product.providers as any)?.invite_url || null,
+          slug: productProvider?.slug || 'unknown',
+          name: productProvider?.name || 'Unknown',
+          logo: productProvider?.logo || getProviderLogo(productProvider?.slug),
+          website: productProvider?.website || null,
+          inviteUrl: productProvider?.invite_url || null,
         },
         contextWindow: product.context_window,
         maxOutput: null,

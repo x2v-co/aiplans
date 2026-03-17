@@ -1,12 +1,21 @@
 #!/usr/bin/env tsx
 
-import { supabaseAdmin } from './db/queries';
+import { supabaseAdmin, getArenaBenchmarkTaskId, getOrCreateEloMetricId, upsertBenchmarkScore, getModelBySlug, createModel, getModelArenaElo } from './db/queries';
 
 const DEEPSEEK_PROVIDER_ID = 36;
 
 async function updateDeepSeekModels() {
   console.log('\n📊 UPDATING DEEPSEEK MODELS WITH ARENA ELO SCORES');
   console.log('='.repeat(70));
+
+  // Get benchmark task and metric IDs
+  const taskId = await getArenaBenchmarkTaskId();
+  const metricId = await getOrCreateEloMetricId();
+
+  if (!taskId || !metricId) {
+    console.log('❌ Could not get Arena benchmark task or metric.');
+    return;
+  }
 
   // Models to add/update from arena
   const arenaModels = [
@@ -18,70 +27,51 @@ async function updateDeepSeekModels() {
   for (const model of arenaModels) {
     console.log(`\nChecking: ${model.name} (${model.slug})`);
 
-    // Check if model exists
-    const { data: existing } = await supabaseAdmin
-      .from('products')
-      .select('id, name, slug, benchmark_arena_elo, provider_id')
-      .eq('slug', model.slug)
-      .single();
+    try {
+      // Check if model exists
+      const existing = await getModelBySlug(model.slug);
 
-    if (existing && existing.provider_id === DEEPSEEK_PROVIDER_ID) {
-      // Update existing model
-      console.log(`  ✅ Found: id=${existing.id}, current ELO=${existing.benchmark_arena_elo}`);
+      if (existing) {
+        const currentElo = await getModelArenaElo(existing.id);
+        console.log(`  ✅ Found: id=${existing.id}, current ELO=${currentElo || 'none'}`);
 
-      const { error } = await supabaseAdmin
-        .from('products')
-        .update({ benchmark_arena_elo: model.elo })
-        .eq('id', existing.id);
+        const result = await upsertBenchmarkScore({
+          model_id: existing.id,
+          benchmark_task_id: taskId,
+          metric_id: metricId,
+          value: model.elo,
+        });
 
-      if (!error) {
-        console.log(`  ✅ Updated ELO: ${existing.benchmark_arena_elo} → ${model.elo}`);
+        if (result.action === 'updated') {
+          console.log(`  ✅ Updated ELO: ${result.oldValue} → ${model.elo}`);
+        } else if (result.action === 'inserted') {
+          console.log(`  ✅ Inserted ELO: ${model.elo}`);
+        } else {
+          console.log(`  ⏭️  ELO already up to date: ${model.elo}`);
+        }
       } else {
-        console.log(`  ❌ Update failed:`, error);
-      }
-    } else if (existing && existing.provider_id !== DEEPSEEK_PROVIDER_ID) {
-      console.log(`  ⚠️  Found similar model with different provider: id=${existing.id}, provider_id=${existing.provider_id}`);
-      console.log(`  ➕ Adding official DeepSeek version with ELO ${model.elo}`);
+        // Add new model
+        console.log(`  ➕ Adding new model with ELO ${model.elo}`);
 
-      // Add official version
-      const { data: newModel, error } = await supabaseAdmin
-        .from('products')
-        .insert({
+        const newModel = await createModel({
           name: model.name,
           slug: model.slug,
-          provider_id: DEEPSEEK_PROVIDER_ID,
+          provider_ids: [DEEPSEEK_PROVIDER_ID],
           type: 'llm',
-          benchmark_arena_elo: model.elo,
-        })
-        .select()
-        .single();
+        });
 
-      if (!error && newModel) {
-        console.log(`  ✅ Added official: id=${newModel.id}, ${model.name}`);
-      } else {
-        console.log(`  ❌ Insert failed:`, error);
+        if (newModel) {
+          await upsertBenchmarkScore({
+            model_id: newModel.id,
+            benchmark_task_id: taskId,
+            metric_id: metricId,
+            value: model.elo,
+          });
+          console.log(`  ✅ Added: id=${newModel.id}, ${model.name} with ELO ${model.elo}`);
+        }
       }
-    } else {
-      // Add new model
-      console.log(`  ➕ Adding new model with ELO ${model.elo}`);
-
-      const { data: newModel, error } = await supabaseAdmin
-        .from('products')
-        .insert({
-          name: model.name,
-          slug: model.slug,
-          provider_id: DEEPSEEK_PROVIDER_ID,
-          type: 'llm',
-          benchmark_arena_elo: model.elo,
-        })
-        .select()
-        .single();
-
-      if (!error && newModel) {
-        console.log(`  ✅ Added: id=${newModel.id}, ${model.name}`);
-      } else {
-        console.log(`  ❌ Insert failed:`, error);
-      }
+    } catch (error: any) {
+      console.log(`  ❌ Error: ${error.message}`);
     }
   }
 

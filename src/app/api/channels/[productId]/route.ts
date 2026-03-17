@@ -10,39 +10,47 @@ export async function GET(
     const { productId } = await params;
     const productIdNum = parseInt(productId);
 
+    // First, get channel prices with provider info
     const { data, error } = await supabase
-      .from('channel_prices')
+      .from('api_channel_prices')
       .select(`
         *,
-        channels:channel_id (
+        providers:provider_id (
           id,
           name,
           slug,
           type,
           region,
           access_from_china,
-          provider_id,
-          providers:provider_id (
-            logo_url
-          )
+          logo
         ),
-        products:product_id (
+        models:model_id (
           id,
           name,
           slug,
-          providers:provider_id (
-            id,
-            name,
-            slug,
-            logo_url
-          )
+          provider_ids
         )
       `)
-      .eq('product_id', productIdNum)
+      .eq('model_id', productIdNum)
       .eq('is_available', true)
+      .not('provider_id', 'is', null)
       .order('input_price_per_1m', { ascending: true });
 
     if (error) throw error;
+
+    // If we have data, fetch the model's official providers separately
+    if (data && data.length > 0 && data[0].models?.provider_ids?.length > 0) {
+      const providerIds = data[0].models.provider_ids;
+      const { data: officialProviders } = await supabase
+        .from('providers')
+        .select('id, name, slug, logo')
+        .in('id', providerIds);
+
+      // Attach official providers to the model
+      if (officialProviders) {
+        data[0].models.providers = officialProviders;
+      }
+    }
 
     return NextResponse.json(data || []);
   } catch (error) {

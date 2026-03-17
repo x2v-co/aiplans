@@ -25,292 +25,107 @@ interface VolcenginePlan {
 /**
  * Fetch and parse Volcengine subscription plans from their website
  */
-async function fetchVolcenginePlans(): Promise<VolcenginePlan[]> {
+async function fetchVolcenginePlans(): Promise<{ plans: VolcenginePlan[], errors: string[] }> {
   const result = await fetchHTML(VOLCENGINE_PLANS_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Volcengine plans page, using fallback data');
-    return getFallbackPlans();
+    return { plans: [], errors: ['Failed to fetch Volcengine plans page - no HTML returned'] };
   }
 
   const html = result.data;
   const plans: VolcenginePlan[] = [];
 
-  // Try to extract plan information from HTML
-  // Volcengine (Seed) pricing for coding tools - not API pricing
+  // Extract prices from HTML - only proceed if we can find actual pricing data
   const litePriceMatch = html.match(/Lite[^￥]*?￥\s*[\d,]+/i);
   const proPriceMatch = html.match(/Pro[^￥]*?￥\s*[\d,]+/i);
   const teamPriceMatch = html.match(/Team[^￥]*?￥\s*[\d,]+/i);
 
-  // Free trial
-  const freePlan: VolcenginePlan = {
-    name: 'Seed Free Trial',
-    priceMonthly: 0,
-    tier: 'free',
-    dailyMessageLimit: undefined,
-    features: [
-      'Access to Doubao basic models',
-      'Limited message capacity',
-      'Standard response speed',
-      'Web browsing',
-      'Coding assistance',
-      'Chinese-optimized',
-    ],
-    paymentMethods: [],
-    accessFromChina: true,
-    region: 'both', // Available in both China and global
-  };
-  plans.push(freePlan);
-
-  // Lite plan (Programming tool only, not for API calls)
-  const litePlan: VolcenginePlan = {
-    name: 'Seed Lite',
-    priceMonthly: 19,
-    priceYearly: undefined,
-    tier: 'basic',
-    dailyMessageLimit: undefined,
-    promotionalPrice: 9.90, // 推广价
-    features: [
-      'Access to Doubao Pro models',
-      'Programming tool access only',
-      'NOT available for API calls',
-      'Higher message limits',
-      'Faster response speeds',
-      'Code generation and debugging',
-      'Chinese-optimized',
-      'Web browsing',
-      'Promotional price: ¥9.90 first month',
-      'New user offer: ¥8.90 first month',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay'],
-    accessFromChina: true,
-    region: 'both',
-  };
-
-  if (litePriceMatch) {
-    const priceMatch = litePriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      litePlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-    }
-  }
-  plans.push(litePlan);
-
-  // Pro plan
-  const proPlan: VolcenginePlan = {
-    name: 'Seed Pro',
-    priceMonthly: 59,
-    priceYearly: undefined,
-    tier: 'pro',
-    dailyMessageLimit: undefined,
-    promotionalPrice: 29.90, // 推广价
-    features: [
-      'Everything in Lite',
-      'Access to Doubao Pro+ models',
-      'Programming tool access only',
-      'NOT available for API calls',
-      'Higher message limits',
-      'Priority access during peak times',
-      'Extended context windows',
-      'Advanced code generation',
-      'Chinese-optimized',
-      'Image analysis',
-      'Early access to new features',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay'],
-    accessFromChina: true,
-    region: 'both',
-  };
-
-  if (proPriceMatch) {
-    const priceMatch = proPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      proPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-    }
-  }
-  plans.push(proPlan);
-
-  // Team plan
-  if (teamPriceMatch || html.includes('Team') || html.includes('团队')) {
-    const teamPlan: VolcenginePlan = {
-      name: 'Seed Team',
-      priceMonthly: 199,
-      priceYearly: undefined,
-      tier: 'team',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Team collaboration tools',
-        'Admin console',
-        'Higher data security',
-        'Team workspace',
-        'Programming tool access only',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'Custom integrations',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
-      accessFromChina: true,
-      region: 'both',
+  // Check if we found any pricing information
+  if (!litePriceMatch && !proPriceMatch && !teamPriceMatch) {
+    return {
+      plans: [],
+      errors: ['No pricing information found on Volcengine page. The page structure may have changed.']
     };
-
-    if (teamPriceMatch) {
-      const priceMatch = teamPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-      if (priceMatch) {
-        teamPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-      }
-    }
-    plans.push(teamPlan);
   }
 
-  // Enterprise plan
-  const enterprisePlan: VolcenginePlan = {
-    name: 'Seed Enterprise',
-    priceMonthly: 0, // Custom pricing
-    tier: 'enterprise',
-    dailyMessageLimit: undefined,
-    features: [
-      'Everything in Team',
-      'Full API access',
-      'Enterprise-grade security',
-      'SSO integration',
-      'Audit logs',
-      'Custom AI models',
-      'Dedicated account manager',
-      'Priority access to new features',
-      'SLA guarantees',
-      'Data residency options',
-      'Custom fine-tuning capabilities',
-    ],
-    paymentMethods: ['Invoice', 'Contract'],
-    accessFromChina: true,
-    region: 'both',
-  };
-  plans.push(enterprisePlan);
-
-  // If no plans found, use fallback
-  if (plans.length === 0) {
-    console.warn('No plans parsed from HTML, using fallback data');
-    return getFallbackPlans();
-  }
-
-  return plans;
-}
-
-/**
- * Fallback plan data (known as of 2025-2026)
- */
-function getFallbackPlans(): VolcenginePlan[] {
-  return [
-    {
+  // Free trial - check if mentioned on page
+  if (html.match(/free|Free|FREE|免费|试用/i)) {
+    const freePlan: VolcenginePlan = {
       name: 'Seed Free Trial',
       priceMonthly: 0,
       tier: 'free',
       dailyMessageLimit: undefined,
-      features: [
-        'Access to Doubao basic models',
-        'Limited message capacity',
-        'Standard response speed',
-        'Web browsing',
-        'Coding assistance',
-        'Chinese-optimized',
-      ],
+      features: ['Access to Doubao basic models', 'Limited message capacity'],
       paymentMethods: [],
       accessFromChina: true,
       region: 'both',
-    },
-    {
-      name: 'Seed Lite',
-      priceMonthly: 19,
-      priceYearly: undefined,
-      tier: 'basic',
-      dailyMessageLimit: undefined,
-      promotionalPrice: 9.90,
-      features: [
-        'Access to Doubao Pro models',
-        'Programming tool access only',
-        'NOT available for API calls',
-        'Higher message limits',
-        'Faster response speeds',
-        'Code generation and debugging',
-        'Chinese-optimized',
-        'Web browsing',
-        'Promotional price: ¥9.90 first month',
-        'New user offer: ¥8.90 first month',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay'],
-      accessFromChina: true,
-      region: 'both',
-    },
-    {
-      name: 'Seed Pro',
-      priceMonthly: 59,
-      priceYearly: undefined,
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      promotionalPrice: 29.90,
-      features: [
-        'Everything in Lite',
-        'Access to Doubao Pro+ models',
-        'Programming tool access only',
-        'NOT available for API calls',
-        'Higher message limits',
-        'Priority access during peak times',
-        'Extended context windows',
-        'Advanced code generation',
-        'Chinese-optimized',
-        'Image analysis',
-        'Early access to new features',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay'],
-      accessFromChina: true,
-      region: 'both',
-    },
-    {
-      name: 'Seed Team',
-      priceMonthly: 199,
-      priceYearly: undefined,
-      tier: 'team',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Team collaboration tools',
-        'Admin console',
-        'Higher data security',
-        'Team workspace',
-        'Programming tool access only',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'Custom integrations',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
-      accessFromChina: true,
-      region: 'both',
-    },
-    {
-      name: 'Seed Enterprise',
-      priceMonthly: 0,
-      tier: 'enterprise',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Team',
-        'Full API access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'Data residency options',
-        'Custom fine-tuning capabilities',
-      ],
-      paymentMethods: ['Invoice', 'Contract'],
-      accessFromChina: true,
-      region: 'both',
-    },
-  ];
+    };
+    plans.push(freePlan);
+  }
+
+  // Lite plan - only add if we found the price
+  if (litePriceMatch) {
+    const priceMatch = litePriceMatch[0].match(/[￥]?\s*([\d,]+)/);
+    if (priceMatch) {
+      const litePlan: VolcenginePlan = {
+        name: 'Seed Lite',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'basic',
+        dailyMessageLimit: undefined,
+        features: [], // Features should be extracted from actual page content
+        paymentMethods: ['Alipay', 'WeChat Pay'],
+        accessFromChina: true,
+        region: 'both',
+      };
+      plans.push(litePlan);
+    }
+  }
+
+  // Pro plan - only add if we found the price
+  if (proPriceMatch) {
+    const priceMatch = proPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
+    if (priceMatch) {
+      const proPlan: VolcenginePlan = {
+        name: 'Seed Pro',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'pro',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Alipay', 'WeChat Pay'],
+        accessFromChina: true,
+        region: 'both',
+      };
+      plans.push(proPlan);
+    }
+  }
+
+  // Team plan - only add if we found the price
+  if (teamPriceMatch) {
+    const priceMatch = teamPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
+    if (priceMatch) {
+      const teamPlan: VolcenginePlan = {
+        name: 'Seed Team',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'team',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
+        accessFromChina: true,
+        region: 'both',
+      };
+      plans.push(teamPlan);
+    }
+  }
+
+  if (plans.length === 0) {
+    errors.push('No plans could be parsed from Volcengine pricing page. The page structure may have changed.');
+  }
+
+  return { plans, errors };
 }
 
 export async function scrapeVolcenginePlans(): Promise<PlanScraperResult> {
@@ -321,7 +136,10 @@ export async function scrapeVolcenginePlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching Volcengine (字节跳动/Seed) subscription plans...');
 
-    const volcenginePlans = await fetchVolcenginePlans();
+    const { plans: volcenginePlans, errors: fetchErrors } = await fetchVolcenginePlans();
+    if (fetchErrors.length > 0) {
+      errors.push(...fetchErrors);
+    }
 
     console.log(`📦 Found ${volcenginePlans.length} plans from Volcengine`);
     console.log(`🔗 Invite Link: ${VOLCENGINE_INVITE_LINK}`);
@@ -373,7 +191,7 @@ export async function scrapeVolcenginePlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Volcengine-Plans',
-      success: true,
+      success: plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

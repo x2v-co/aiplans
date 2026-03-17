@@ -13,19 +13,17 @@ interface Model {
   id: number;
   name: string;
   slug: string;
-  provider_id: number;
+  provider_ids: number[];
   context_window: number;
-  benchmark_mmlu: number;
-  benchmark_human_eval: number;
-  benchmark_arena_elo: number;
+  benchmark_arena_elo: number | null;
 }
 
 interface ChannelPrice {
   id: number;
-  product_id: number;
+  model_id: number;
   input_price_per_1m: number;
   output_price_per_1m: number;
-  channels: {
+  providers: {
     type: string;
   };
 }
@@ -79,13 +77,13 @@ export default function CompareModelsPage() {
   }, []);
 
   const getModelPrice = (modelId: number) => {
-    const prices = channelPrices.filter(cp => cp.product_id === modelId);
+    const prices = channelPrices.filter(cp => cp.model_id === modelId);
     return prices.sort((a, b) => a.input_price_per_1m - b.input_price_per_1m)[0];
   };
 
   const getOfficialPrice = (modelId: number) => {
-    const prices = channelPrices.filter(cp => cp.product_id === modelId);
-    return prices.find(cp => cp.channels.type === 'official');
+    const prices = channelPrices.filter(cp => cp.model_id === modelId);
+    return prices.find(cp => cp.providers.type === 'official');
   };
 
   const handleModelSelect = (slug: string) => {
@@ -163,7 +161,7 @@ export default function CompareModelsPage() {
             <div className="flex flex-wrap gap-2 mb-4">
               {models.map((model) => {
                 const isSelected = selectedModels.includes(model.slug);
-                const provider = providerMeta[model.provider_id] || { name: "Unknown", logo: "🏢", color: "text-gray-600" };
+                const provider = providerMeta[model.provider_ids?.[0]] || { name: "Unknown", logo: "🏢", color: "text-gray-600" };
 
                 return (
                   <Button
@@ -197,7 +195,7 @@ export default function CompareModelsPage() {
             {/* Comparison Cards */}
             <div className={`grid gap-6 mb-8 ${selectedModelsData.length === 2 ? 'md:grid-cols-2' : selectedModelsData.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
               {selectedModelsData.map((model) => {
-                const provider = providerMeta[model.provider_id] || { name: "Unknown", logo: "🏢", color: "text-gray-600" };
+                const provider = providerMeta[model.provider_ids?.[0]] || { name: "Unknown", logo: "🏢", color: "text-gray-600" };
                 const price = getModelPrice(model.id);
                 const officialPrice = getOfficialPrice(model.id);
 
@@ -214,20 +212,10 @@ export default function CompareModelsPage() {
                     </div>
                     <CardContent className="p-4 space-y-3">
                       {/* Benchmarks */}
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="bg-zinc-50 rounded p-2">
+                      <div className="bg-zinc-50 rounded p-2 col-span-3">
                           <div className="text-lg font-bold">{model.benchmark_arena_elo || '-'}</div>
-                          <div className="text-xs text-zinc-500">ELO</div>
+                          <div className="text-xs text-zinc-500">Arena ELO</div>
                         </div>
-                        <div className="bg-zinc-50 rounded p-2">
-                          <div className="text-lg font-bold">{model.benchmark_mmlu ? `${model.benchmark_mmlu}%` : '-'}</div>
-                          <div className="text-xs text-zinc-500">MMLU</div>
-                        </div>
-                        <div className="bg-zinc-50 rounded p-2">
-                          <div className="text-lg font-bold">{model.benchmark_human_eval ? `${model.benchmark_human_eval}%` : '-'}</div>
-                          <div className="text-xs text-zinc-500">HE</div>
-                        </div>
-                      </div>
 
                       {/* Specs */}
                       <div className="space-y-2 text-sm">
@@ -268,7 +256,7 @@ export default function CompareModelsPage() {
                     <TableRow>
                       <TableHead className="w-1/4">Feature</TableHead>
                       {selectedModelsData.map((model) => {
-                        const provider = providerMeta[model.provider_id] || { name: "Unknown", logo: "🏢" };
+                        const provider = providerMeta[model.provider_ids?.[0]] || { name: "Unknown", logo: "🏢" };
                         return (
                           <TableHead key={model.id} className="text-center">
                             <span className={provider.color}>{provider.logo} {model.name}</span>
@@ -292,32 +280,6 @@ export default function CompareModelsPage() {
                         return (
                           <TableCell key={model.id} className="text-center font-medium">
                             {model.benchmark_arena_elo || '-'}
-                            {isMax && <Badge className="ml-1 bg-green-100 text-green-800 text-xs">Best</Badge>}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>MMLU</TableCell>
-                      {selectedModelsData.map((model) => {
-                        const maxMmlu = Math.max(...selectedModelsData.map(m => m.benchmark_mmlu || 0));
-                        const isMax = model.benchmark_mmlu === maxMmlu && maxMmlu > 0;
-                        return (
-                          <TableCell key={model.id} className="text-center">
-                            {model.benchmark_mmlu ? `${model.benchmark_mmlu}%` : '-'}
-                            {isMax && <Badge className="ml-1 bg-green-100 text-green-800 text-xs">Best</Badge>}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>HumanEval</TableCell>
-                      {selectedModelsData.map((model) => {
-                        const maxHe = Math.max(...selectedModelsData.map(m => m.benchmark_human_eval || 0));
-                        const isMax = model.benchmark_human_eval === maxHe && maxHe > 0;
-                        return (
-                          <TableCell key={model.id} className="text-center">
-                            {model.benchmark_human_eval ? `${model.benchmark_human_eval}%` : '-'}
                             {isMax && <Badge className="ml-1 bg-green-100 text-green-800 text-xs">Best</Badge>}
                           </TableCell>
                         );
@@ -429,7 +391,7 @@ export default function CompareModelsPage() {
                   <h3 className="font-bold text-lg mb-4">💡 Quick Recommendation</h3>
                   <div className="grid md:grid-cols-2 gap-4">
                     {selectedModelsData.slice(0, 2).map((model) => {
-                      const provider = providerMeta[model.provider_id] || { name: "Unknown", logo: "🏢" };
+                      const provider = providerMeta[model.provider_ids?.[0]] || { name: "Unknown", logo: "🏢" };
                       const price = getModelPrice(model.id);
                       const hasHighElo = (model.benchmark_arena_elo || 0) > 1300;
                       const hasLargeContext = (model.context_window || 0) > 100000;

@@ -1,261 +1,190 @@
 /**
- * AWS Bedrock API Scraper - Dynamic fetching from pricing page
+ * AWS Bedrock API Scraper - Uses Playwright for real HTML parsing
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
 import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { fetchHTML } from './base-fetcher';
+import { PlaywrightScraper, PriceData } from './lib/playwright-scraper';
 
 const AWS_PRICING_URL = 'https://aws.amazon.com/bedrock/pricing/';
 
-interface AWSModel {
-  model: string;
-  inputPrice: number;
-  outputPrice: number;
-  contextWindow: number;
-}
-
-/**
- * Fetch and parse AWS Bedrock pricing from their website
- */
-async function fetchAWSPricing(): Promise<AWSModel[]> {
-  const result = await fetchHTML(AWS_PRICING_URL);
-
-  if (!result.success || !result.data) {
-    console.warn('Failed to fetch AWS pricing page, using fallback data');
-    return getFallbackPricing();
+class AWSBedrockScraper extends PlaywrightScraper {
+  getSourceName(): string {
+    return 'AWS-Bedrock';
   }
 
-  const html = result.data;
-  const models: AWSModel[] = [];
-
-  // Known AWS Bedrock model patterns (2025)
-  // AWS prices are per 1K tokens for some models, per 1M for others
-  const modelPatterns = [
-    {
-      model: 'anthropic.claude-3-5-sonnet-v2:0',
-      baseModel: 'claude-3-5-sonnet',
-      inputPattern: /Claude\s*3\.5\s*Sonnet[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /Claude\s*3\.5\s*Sonnet[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      contextWindow: 200000,
-    },
-    {
-      model: 'anthropic.claude-3-5-haiku-v1:0',
-      baseModel: 'claude-3-5-haiku',
-      inputPattern: /Claude\s*3\.5\s*Haiku[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /Claude\s*3\.5\s*Haiku[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      contextWindow: 200000,
-    },
-    {
-      model: 'us.anthropic.claude-3-opus-v1:0',
-      baseModel: 'claude-3-opus',
-      inputPattern: /Claude\s*3\s*Opus[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /Claude\s*3\s*Opus[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      contextWindow: 200000,
-    },
-    {
-      model: 'us.anthropic.claude-3-sonnet-v2:0',
-      baseModel: 'claude-3-sonnet',
-      inputPattern: /Claude\s*3\s*Sonnet[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /Claude\s*3\s*Sonnet[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      contextWindow: 200000,
-    },
-    {
-      model: 'anthropic.claude-3-haiku-v1:0',
-      baseModel: 'claude-3-haiku',
-      inputPattern: /Claude\s*3\s*Haiku[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /Claude\s*3\s*Haiku[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      contextWindow: 200000,
-    },
-    {
-      model: 'meta.llama-3-1-405b-instruct-v1:0',
-      baseModel: 'llama-3-1-405b-instruct',
-      inputPattern: /Llama\s*3\.1\s*405B[^$]*?\$?([\d.]+)\s*per\s*1M\s*input/i,
-      outputPattern: /Llama\s*3\.1\s*405B[^$]*?\$?([\d.]+)\s*per\s*1M\s*output/i,
-      contextWindow: 131072,
-    },
-    {
-      model: 'meta.llama-3-1-70b-instruct-v1:0',
-      baseModel: 'llama-3-1-70b-instruct',
-      inputPattern: /Llama\s*3\.1\s*70B[^$]*?\$?([\d.]+)\s*per\s*1M\s*input/i,
-      outputPattern: /Llama\s*3\.1\s*70B[^$]*?\$?([\d.]+)\s*per\s*1M\s*output/i,
-      contextWindow: 131072,
-    },
-    {
-      model: 'us.meta.llama-3-8b-instruct-v1:0',
-      baseModel: 'llama-3-8b-instruct',
-      inputPattern: /Llama\s*3\s*8B[^$]*?\$?([\d.]+)\s*per\s*1M\s*input/i,
-      outputPattern: /Llama\s*3\s*8B[^$]*?\$?([\d.]+)\s*per\s*1M\s*output/i,
-      contextWindow: 131072,
-    },
-    {
-      model: 'mistral.mistral-large-v2:0',
-      baseModel: 'mistral-large',
-      inputPattern: /Mistral\s*Large[^$]*?\$?([\d.]+)\s*per\s*1M\s*input/i,
-      outputPattern: /Mistral\s*Large[^$]*?\$?([\d.]+)\s*per\s*1M\s*output/i,
-      contextWindow: 128000,
-    },
-    {
-      model: 'mistral.mixtral-8x7b-instruct-v0:1',
-      baseModel: 'mixtral-8x7b-instruct',
-      inputPattern: /Mixtral\s*8x7B[^$]*?\$?([\d.]+)\s*per\s*1M\s*input/i,
-      outputPattern: /Mixtral\s*8x7B[^$]*?\$?([\d.]+)\s*per\s*1M\s*output/i,
-      contextWindow: 32768,
-    },
-  ];
-
-  for (const pattern of modelPatterns) {
-    const inputMatch = html.match(pattern.inputPattern);
-    const outputMatch = html.match(pattern.outputPattern);
-
-    if (inputMatch && outputMatch) {
-      // Check if price is per 1K (common for Claude models on AWS)
-      const inputPriceStr = inputMatch[1];
-      const outputPriceStr = outputMatch[1];
-      const inputPrice = parseFloat(inputPriceStr);
-      const outputPrice = parseFloat(outputPriceStr);
-
-      // Convert from per 1K to per 1M if needed
-      const isPer1K = inputPriceStr.includes('.') || outputPriceStr.includes('.');
-      const finalInputPrice = isPer1K ? inputPrice * 1000 : inputPrice;
-      const finalOutputPrice = isPer1K ? outputPrice * 1000 : outputPrice;
-
-      if (!isNaN(finalInputPrice) && !isNaN(finalOutputPrice)) {
-        models.push({
-          model: pattern.baseModel,
-          inputPrice: finalInputPrice,
-          outputPrice: finalOutputPrice,
-          contextWindow: pattern.contextWindow,
-        });
-      }
-    }
+  getSourceUrl(): string {
+    return AWS_PRICING_URL;
   }
 
-  // If no models found, use fallback
-  if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
-  }
+  async scrape(): Promise<ScraperResult> {
+    const errors: string[] = [];
+    const prices: PriceData[] = [];
 
-  return models;
-}
+    await this.navigate(AWS_PRICING_URL);
 
-/**
- * Fallback pricing data (as of 2025-2026)
- */
-function getFallbackPricing(): AWSModel[] {
-  return [
-    {
-      model: 'claude-3-5-sonnet',
-      inputPrice: 3.00,
-      outputPrice: 15.00,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-5-sonnet-v2:0',
-      inputPrice: 3.00,
-      outputPrice: 15.00,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-5-haiku',
-      inputPrice: 0.25,
-      outputPrice: 1.25,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-opus',
-      inputPrice: 15.00,
-      outputPrice: 75.00,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-sonnet',
-      inputPrice: 3.00,
-      outputPrice: 15.00,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3-haiku',
-      inputPrice: 0.25,
-      outputPrice: 1.25,
-      contextWindow: 200000,
-    },
-    {
-      model: 'llama-3-1-405b-instruct-v2:0',
-      inputPrice: 2.70,
-      outputPrice: 2.70,
-      contextWindow: 131072,
-    },
-    {
-      model: 'llama-3-1-70b-instruct-v1:0',
-      inputPrice: 0.70,
-      outputPrice: 0.70,
-      contextWindow: 131072,
-    },
-    {
-      model: 'meta-llama-3-8b-instruct-v1:0',
-      inputPrice: 0.15,
-      outputPrice: 0.15,
-      contextWindow: 131072,
-    },
-  ];
-}
+    // Wait for pricing content to load
+    await this.page!.waitForTimeout(3000);
 
-export async function scrapeAWSBedrockDynamic(): Promise<ScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const prices: ScrapedPrice[] = [];
+    // Get all text content from the page
+    const pageContent = await this.page!.textContent('body') || '';
 
-  try {
-    console.log('🔄 Fetching AWS Bedrock pricing...');
+    // Known AWS Bedrock model patterns
+    // AWS prices are per 1K tokens for some models (Claude), per 1M for others (Llama)
+    const models = [
+      { name: 'claude-3-5-sonnet', patterns: [/claude\s*3\.5\s*sonnet/i, /claude-3-5-sonnet/i] },
+      { name: 'claude-3-5-haiku', patterns: [/claude\s*3\.5\s*haiku/i, /claude-3-5-haiku/i] },
+      { name: 'claude-3-opus', patterns: [/claude\s*3\s*opus/i, /claude-3-opus/i] },
+      { name: 'claude-3-sonnet', patterns: [/claude\s*3\s*sonnet(?!\s*3\.5)/i] },
+      { name: 'claude-3-haiku', patterns: [/claude\s*3\s*haiku(?!\s*3\.5)/i] },
+      { name: 'llama-3-1-405b', patterns: [/llama\s*3\.1\s*405b/i, /llama-3-1-405b/i] },
+      { name: 'llama-3-1-70b', patterns: [/llama\s*3\.1\s*70b/i, /llama-3-1-70b/i] },
+      { name: 'llama-3-8b', patterns: [/llama\s*3\s*8b/i, /llama-3-8b/i] },
+      { name: 'mistral-large', patterns: [/mistral\s*large/i, /mistral-large/i] },
+      { name: 'mixtral-8x7b', patterns: [/mixtral\s*8x7b/i, /mixtral-8x7b/i] },
+    ];
 
-    const models = await fetchAWSPricing();
-
-    console.log(`📦 Found ${models.length} models from AWS Bedrock`);
-
-    for (const model of models) {
+    for (const modelInfo of models) {
       try {
-        // Validate prices
-        if (!validatePrice(model.inputPrice) || !validatePrice(model.outputPrice)) {
-          errors.push(`Invalid price for ${model.model}`);
-          continue;
+        // Find the section containing this model's pricing
+        let modelSection: string | null = null;
+
+        for (const pattern of modelInfo.patterns) {
+          const match = pageContent.match(pattern);
+          if (match && match.index !== undefined) {
+            // Extract surrounding context
+            const start = Math.max(0, match.index - 200);
+            const end = Math.min(pageContent.length, match.index + match[0].length + 500);
+            modelSection = pageContent.slice(start, end);
+            break;
+          }
         }
 
-        prices.push({
-          modelName: normalizeModelName(model.model),
-          modelSlug: slugify(model.model),
-          inputPricePer1M: model.inputPrice,
-          outputPricePer1M: model.outputPrice,
-          contextWindow: model.contextWindow,
-          isAvailable: true,
-          currency: 'USD', // AWS prices are in USD
-        });
+        if (!modelSection) continue;
+
+        // Extract prices from the section
+        // AWS shows prices as per 1K or per 1M tokens
+        const isPer1K = /per\s*1K/i.test(modelSection) || /per\s*1,000/i.test(modelSection);
+
+        // Look for price patterns
+        const pricePattern = /\$?([\d.]+)\s*(?:per\s*)?(?:1K|1,000|1M|million)?/gi;
+        const priceMatches = [...modelSection.matchAll(pricePattern)];
+
+        const validPrices = priceMatches
+          .map(m => parseFloat(m[1]))
+          .filter(p => p > 0 && p < 100);
+
+        if (validPrices.length >= 2) {
+          let inputPrice = validPrices[0];
+          let outputPrice = validPrices[1];
+
+          // Convert per 1K to per 1M
+          if (isPer1K) {
+            inputPrice *= 1000;
+            outputPrice *= 1000;
+          }
+
+          if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+            prices.push({
+              modelName: normalizeModelName(modelInfo.name),
+              inputPricePer1M: inputPrice,
+              outputPricePer1M: outputPrice,
+              contextWindow: this.inferContextWindow(modelInfo.name),
+              isAvailable: true,
+              currency: 'USD',
+            });
+          }
+        }
       } catch (error) {
-        errors.push(`Error processing ${model.model}: ${error}`);
+        errors.push(`Failed to extract pricing for ${modelInfo.name}`);
       }
     }
 
-    const duration = Date.now() - startTime;
-    console.log(`✅ AWS Bedrock scrape completed in ${duration}ms`);
-    console.log(`   - Models processed: ${prices.length}`);
-    console.log(`   - Errors: ${errors.length}`);
+    // Try alternative approach: look for pricing tables
+    if (prices.length === 0) {
+      const tables = await this.page!.$$('table');
+      for (const table of tables) {
+        const rows = await table.$$('tr');
+        for (const row of rows) {
+          const text = await row.textContent();
+          if (!text) continue;
+
+          // Check if this row mentions a model
+          if (/claude|llama|mistral|mixtral/i.test(text)) {
+            const modelNameMatch = text.match(/(claude[-\s]?\d\.?\d?\s*(sonnet|haiku|opus)|llama[-\s]?\d\.?\d?\s*\d+b|mistral[-\s]?large|mixtral[-\s]?8x7b)/i);
+            if (modelNameMatch) {
+              const modelName = modelNameMatch[1].toLowerCase().replace(/\s+/g, '-');
+
+              const isPer1K = /per\s*1K/i.test(text) || /per\s*1,000/i.test(text);
+              const priceMatches = [...text.matchAll(/\$?([\d.]+)/g)];
+              const validPrices = priceMatches
+                .map(m => parseFloat(m[1]))
+                .filter(p => p > 0 && p < 100);
+
+              if (validPrices.length >= 2) {
+                let inputPrice = validPrices[0];
+                let outputPrice = validPrices[1];
+
+                if (isPer1K) {
+                  inputPrice *= 1000;
+                  outputPrice *= 1000;
+                }
+
+                if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+                  // Avoid duplicates
+                  if (!prices.some(p => p.modelName.toLowerCase().includes(modelName.toLowerCase()))) {
+                    prices.push({
+                      modelName: normalizeModelName(modelName),
+                      inputPricePer1M: inputPrice,
+                      outputPricePer1M: outputPrice,
+                      contextWindow: this.inferContextWindow(modelName),
+                      isAvailable: true,
+                      currency: 'USD',
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (prices.length === 0) {
+      errors.push('No pricing data could be extracted from AWS Bedrock pricing page. The page structure may have changed.');
+    }
 
     return {
-      source: 'AWS-Bedrock',
-      success: true,
+      success: errors.length === 0 && prices.length > 0,
+      source: this.getSourceName(),
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };
-  } catch (error) {
-    console.error('❌ AWS Bedrock scrape failed:', error);
-    return {
-      source: 'AWS-Bedrock',
-      success: false,
-      prices: [],
-      errors: [String(error)],
-    };
   }
+
+  private inferContextWindow(model: string): number {
+    const contextWindows: Record<string, number> = {
+      'claude-3': 200000,
+      'llama-3-1': 131072,
+      'llama-3': 131072,
+      'mistral-large': 128000,
+      'mixtral': 32768,
+    };
+
+    const normalizedModel = model.toLowerCase();
+    for (const [key, value] of Object.entries(contextWindows)) {
+      if (normalizedModel.includes(key)) {
+        return value;
+      }
+    }
+    return 128000;
+  }
+}
+
+export async function scrapeAWSBedrockDynamic(): Promise<ScraperResult> {
+  const scraper = new AWSBedrockScraper();
+  return scraper.run();
 }
 
 // CLI test

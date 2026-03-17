@@ -5,13 +5,11 @@
  * Uses provider-config.ts for metadata and prioritized execution
  */
 
-import { scrapeArenaLeaderboard } from './scrapers/benchmark-arena';
 import { scrapeOpenRouter } from './scrapers/openrouter';
 
 // Dynamic scrapers (Phase 1 - API-based, high priority ⭐⭐⭐)
 import { scrapeDeepSeekDynamic } from './scrapers/deepseek-dynamic';
 import { scrapeAnthropicDynamic } from './scrapers/anthropic-dynamic';
-import { scrapeGrokDynamic } from './scrapers/grok-dynamic';
 import { scrapeTogetherAIDynamic } from './scrapers/together-ai-dynamic';
 import { scrapeSiliconFlowDynamic } from './scrapers/siliconflow-dynamic';
 
@@ -24,9 +22,6 @@ import { scrapeVertexAIDynamic } from './scrapers/vertex-ai-dynamic';
 
 // Additional dynamic scrapers - Official providers
 import { scrapeMistralDynamic } from './scrapers/mistral-dynamic';
-import { scrapeMoonshotDynamic } from './scrapers/moonshot-dynamic';
-import { scrapeMinimaxDynamic } from './scrapers/minimax-dynamic';
-import { scrapeZhipuDynamic } from './scrapers/zhipu-dynamic';
 import { scrapeQwenDynamic } from './scrapers/qwen-dynamic';
 import { scrapeSeedDynamic } from './scrapers/seed-dynamic';
 import { scrapeHunyuanDynamic } from './scrapers/hunyuan-dynamic';
@@ -45,7 +40,6 @@ import {
   logPriceChange,
   logScrapeResult,
   getOrCreateProduct,
-  getOrCreateChannel,
   getOrCreateProvider,
   supabaseAdmin
 } from './db/queries';
@@ -75,13 +69,9 @@ const API_SCRAPERS: ScraperConfig[] = [
   { name: 'Anthropic', fn: scrapeAnthropicDynamic, priority: 1 },
   { name: 'DeepSeek', fn: scrapeDeepSeekDynamic, priority: 1 },
   { name: 'Google Gemini', fn: scrapeGoogleDynamic, priority: 1 },
-  { name: 'Grok/X.AI', fn: scrapeGrokDynamic, priority: 1 },
   { name: 'Together AI', fn: scrapeTogetherAIDynamic, priority: 1 },
   { name: 'SiliconFlow', fn: scrapeSiliconFlowDynamic, priority: 1 },
   { name: 'Mistral AI', fn: scrapeMistralDynamic, priority: 1 },
-  { name: 'Moonshot', fn: scrapeMoonshotDynamic, priority: 1 },
-  { name: 'Minimax', fn: scrapeMinimaxDynamic, priority: 1 },
-  { name: 'Zhipu AI', fn: scrapeZhipuDynamic, priority: 1 },
   { name: 'Qwen', fn: scrapeQwenDynamic, priority: 1 },
   { name: 'Seed', fn: scrapeSeedDynamic, priority: 1 },
 
@@ -145,18 +135,17 @@ async function processAPIScraper(result: ScraperResult, channelName: string) {
     return { updated: 0, errors: result.errors?.length || 0 };
   }
 
-  // Get or create channel
-  const channel = await getOrCreateChannel({
-    name: channelName,
-    slug: result.source.toLowerCase().replace(/\s+/g, '-'),
-    type: inferChannelType(result.source),
-    website_url: getChannelWebsite(result.source),
-    region: inferRegion(result.source),
-    access_from_china: isAccessibleFromChina(result.source),
-  });
+  // Get the channel's provider ID from the mapping
+  const channelProviderKey = getChannelProviderKey(result.source);
+  const channelProviderId = PROVIDER_IDS[channelProviderKey];
+
+  if (!channelProviderId) {
+    console.error(`❌ No provider ID found for channel: ${result.source}`);
+    return { updated: 0, errors: 1 };
+  }
 
   // Infer currency based on channel region
-  const currency = channel.region === 'china' ? 'CNY' : 'USD';
+  const currency = inferRegion(result.source) === 'china' ? 'CNY' : 'USD';
 
   let updatedCount = 0;
   let errorCount = 0;
@@ -177,10 +166,9 @@ async function processAPIScraper(result: ScraperResult, channelName: string) {
       let product;
       if (providerId === -1 || !OFFICIAL_PROVIDER_IDS.includes(providerId)) {
         const { data: existingProduct } = await supabaseAdmin
-          .from('products')
+          .from('models')
           .select('*')
           .eq('slug', normalizedSlug)
-          .in('provider_id', OFFICIAL_PROVIDER_IDS)
           .single();
 
         if (existingProduct) {
@@ -202,27 +190,25 @@ async function processAPIScraper(result: ScraperResult, channelName: string) {
 
       // Get existing price for comparison
       const { data: existingPrice } = await supabaseAdmin
-        .from('channel_prices')
+        .from('api_channel_prices')
         .select('*')
-        .eq('product_id', product.id)
-        .eq('channel_id', channel.id)
+        .eq('model_id', product.id)
+        .eq('provider_id', channelProviderId)
         .single();
 
       // Use currency from scraper if specified, otherwise infer from channel region
       const priceCurrency = price.currency || currency;
 
-      // Upsert channel price
+      // Upsert channel price - using channel's provider_id
       const newPrice = await upsertChannelPrice({
-        product_id: product.id,
-        channel_id: channel.id,
+        model_id: product.id,
+        provider_id: channelProviderId, // Channel is now a provider
         input_price_per_1m: price.inputPricePer1M,
         output_price_per_1m: price.outputPricePer1M,
         cached_input_price_per_1m: price.cachedInputPricePer1M,
         rate_limit: price.rateLimit,
         is_available: price.isAvailable,
         last_verified: new Date(),
-        currency: priceCurrency,
-        price_unit: 'per_1m_tokens',
       });
 
       // Log price change if significant
@@ -255,6 +241,48 @@ async function processAPIScraper(result: ScraperResult, channelName: string) {
 
   console.log(`✅ ${result.source} API: Updated ${updatedCount} prices, ${errorCount} errors`);
   return { updated: updatedCount, errors: errorCount };
+}
+
+// Map scraper source names to provider keys
+function getChannelProviderKey(source: string): string {
+  const mapping: Record<string, string> = {
+    'OpenRouter': 'OPENROUTER',
+    'OpenAI': 'OPENAI',
+    'OpenAI-API': 'OPENAI',
+    'Anthropic': 'ANTHROPIC',
+    'Anthropic-API': 'ANTHROPIC',
+    'DeepSeek': 'DEEPSEEK',
+    'DeepSeek-API': 'DEEPSEEK',
+    'Google Gemini': 'GOOGLE',
+    'Google-Gemini-API': 'GOOGLE',
+    'Together AI': 'TOGETHER_AI',
+    'Together-AI': 'TOGETHER_AI',
+    'SiliconFlow': 'SILICONFLOW',
+    'Mistral AI': 'MISTRAL',
+    'Mistral-AI': 'MISTRAL',
+    'Qwen': 'ALIBABA',
+    'Seed': 'BYTEDANCE',
+    'AWS Bedrock': 'AWS_BEDROCK',
+    'AWS-Bedrock': 'AWS_BEDROCK',
+    'Vertex AI': 'GOOGLE_VERTEX',
+    'Vertex-AI': 'GOOGLE_VERTEX',
+    'Azure OpenAI': 'AZURE_OPENAI',
+    'Azure-OpenAI': 'AZURE_OPENAI',
+    'Hunyuan': 'HUNYUAN',
+    'Baidu': 'BAIDU',
+    'Fireworks AI': 'FIREWORKS',
+    'Fireworks-AI': 'FIREWORKS',
+    'Replicate': 'REPLICATE',
+    'Anyscale': 'ANYSCALE',
+    'StepFun': 'STEPFUN',
+    'DMXAPI': 'DMXAPI',
+    'Grok': 'XAI',
+    'Grok-API': 'XAI',
+    'Moonshot': 'MOONSHOT_CHINA',
+    'Minimax': 'MINIMAX_CHINA',
+    'Zhipu-AI': 'ZHIPU_CHINA',
+  };
+  return mapping[source] || '';
 }
 
 function inferProviderId(modelName: string, channelName?: string): number {
@@ -398,14 +426,6 @@ function getChannelWebsite(source: string): string {
 async function main() {
   console.log('🚀 Starting pricing data scraper (Dynamic Mode)...\n');
   const startTime = Date.now();
-
-  // Benchmark Scrapers (run first to update model scores)
-  console.log('📊 Running benchmark scrapers...');
-  try {
-    await scrapeArenaLeaderboard();
-  } catch (error) {
-    console.error('❌ Arena benchmark scraper failed:', error);
-  }
 
   // Run API scrapers by priority order
   const priority1Scrapers = API_SCRAPERS.filter(s => s.priority === 1);

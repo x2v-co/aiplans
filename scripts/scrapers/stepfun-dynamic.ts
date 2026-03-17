@@ -1,5 +1,6 @@
 /**
  * StepFun / 阶跃星辰 API Scraper - Dynamic fetching from pricing page
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
@@ -20,12 +21,12 @@ interface StepFunModel {
 /**
  * Fetch and parse StepFun pricing from their website
  */
-async function fetchStepFunPricing(): Promise<StepFunModel[]> {
+async function fetchStepFunPricing(): Promise<{ models: StepFunModel[], errors: string[] }> {
   const result = await fetchHTML(STEPFUN_PRICING_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch StepFun pricing page, using fallback data');
-    return getFallbackPricing();
+    return { models: [], errors: ['Failed to fetch StepFun pricing page'] };
   }
 
   const html = result.data;
@@ -75,134 +76,11 @@ async function fetchStepFunPricing(): Promise<StepFunModel[]> {
     }
   }
 
-  // If no models found, use fallback
   if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
+    errors.push('No models could be parsed from StepFun pricing page. The page structure may have changed.');
   }
 
-  return models;
-}
-
-/**
- * Fallback pricing data (as of March 2026)
- * Prices in CNY per 1M tokens
- * Source: https://platform.stepfun.com/docs/zh/pricing/details
- */
-function getFallbackPricing(): StepFunModel[] {
-  return [
-    // Text Models
-    {
-      model: 'step-1-8k',
-      inputPrice: 1.0,
-      inputPriceUncached: 5.0,
-      outputPrice: 20.0,
-      contextWindow: 8000,
-    },
-    {
-      model: 'step-1-32k',
-      inputPrice: 3.0,
-      inputPriceUncached: 15.0,
-      outputPrice: 70.0,
-      contextWindow: 32000,
-    },
-    {
-      model: 'step-1-256k',
-      inputPrice: 19.0,
-      inputPriceUncached: 95.0,
-      outputPrice: 300.0,
-      contextWindow: 256000,
-    },
-    {
-      model: 'step-2-mini',
-      inputPrice: 0.2,
-      inputPriceUncached: 1.0,
-      outputPrice: 2.0,
-    },
-    {
-      model: 'step-2-16k',
-      inputPrice: 7.6,
-      inputPriceUncached: 38.0,
-      outputPrice: 120.0,
-      contextWindow: 16000,
-    },
-    {
-      model: 'step-2-16k-exp',
-      inputPrice: 7.6,
-      inputPriceUncached: 38.0,
-      outputPrice: 120.0,
-      contextWindow: 16000,
-    },
-    // Vision Models
-    {
-      model: 'step-1o-turbo-vision',
-      inputPrice: 0.5,
-      inputPriceUncached: 2.5,
-      outputPrice: 8.0,
-      type: 'vision',
-    },
-    {
-      model: 'step-1o-vision-32k',
-      inputPrice: 3.0,
-      inputPriceUncached: 15.0,
-      outputPrice: 0.6,
-      contextWindow: 32000,
-      type: 'vision',
-    },
-    {
-      model: 'step-1v-8k',
-      inputPrice: 1.0,
-      inputPriceUncached: 5.0,
-      outputPrice: 0.2,
-      contextWindow: 8000,
-      type: 'vision',
-    },
-    {
-      model: 'step-1v-32k',
-      inputPrice: 3.0,
-      inputPriceUncached: 15.0,
-      outputPrice: 0.6,
-      contextWindow: 32000,
-      type: 'vision',
-    },
-    // Reasoning Models
-    {
-      model: 'step-3.5-flash',
-      inputPrice: 0.14,
-      inputPriceUncached: 0.7,
-      outputPrice: 2.1,
-      type: 'reasoning',
-    },
-    {
-      model: 'step-r1-v-mini',
-      inputPrice: 0.5,
-      inputPriceUncached: 2.5,
-      outputPrice: 8.0,
-      type: 'reasoning',
-    },
-    {
-      model: 'step-3',
-      inputPrice: 0.3,
-      inputPriceUncached: 1.5,
-      outputPrice: 4.0,
-      type: 'reasoning',
-    },
-    // Audio Models
-    {
-      model: 'step-1o-audio',
-      inputPrice: 5.0,
-      inputPriceUncached: 25.0,
-      outputPrice: 60.0,
-      type: 'audio',
-    },
-    {
-      model: 'step-audio-2',
-      inputPrice: 2.0,
-      inputPriceUncached: 10.0,
-      outputPrice: 70.0,
-      type: 'audio',
-    },
-  ];
+  return { models, errors };
 }
 
 export async function scrapeStepFunDynamic(): Promise<ScraperResult> {
@@ -213,7 +91,8 @@ export async function scrapeStepFunDynamic(): Promise<ScraperResult> {
   try {
     console.log('🔄 Fetching StepFun pricing...');
 
-    const models = await fetchStepFunPricing();
+    const { models, errors: fetchErrors } = await fetchStepFunPricing();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${models.length} models from StepFun`);
 
@@ -233,7 +112,7 @@ export async function scrapeStepFunDynamic(): Promise<ScraperResult> {
           cachedInputPricePer1M: model.inputPrice, // Cached price is the lower one
           contextWindow: model.contextWindow,
           isAvailable: true,
-          currency: 'CNY', // StepFun prices are in CNY
+          currency: 'CNY',
         });
       } catch (error) {
         errors.push(`Error processing ${model.model}: ${error}`);
@@ -247,7 +126,7 @@ export async function scrapeStepFunDynamic(): Promise<ScraperResult> {
 
     return {
       source: 'StepFun',
-      success: true,
+      success: prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };

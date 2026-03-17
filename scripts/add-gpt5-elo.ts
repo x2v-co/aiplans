@@ -1,13 +1,6 @@
 #!/usr/bin/env tsx
 
-import { config } from 'dotenv';
-import { resolve } from 'path';
-config({ path: resolve(process.cwd(), '.env.local') });
-const { createClient } = require('@supabase/supabase-js') as any;
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabaseAdmin, getArenaBenchmarkTaskId, getOrCreateEloMetricId, upsertBenchmarkScore, getModelBySlug } from './db/queries';
 
 // Estimated Arena ELO scores for GPT-5 models (placeholder until official scores are available)
 const GPT5_ELO_SCORES: Record<string, number> = {
@@ -28,53 +21,57 @@ const GPT5_ELO_SCORES: Record<string, number> = {
 async function main() {
   console.log('🏆 Adding Arena ELO scores for GPT-5 models...\n');
 
+  // Get benchmark task and metric IDs
+  const taskId = await getArenaBenchmarkTaskId();
+  const metricId = await getOrCreateEloMetricId();
+
+  if (!taskId || !metricId) {
+    console.log('❌ Could not get Arena benchmark task or metric.');
+    return;
+  }
+
   let updatedCount = 0;
-  let errorCount = 0;
+  let skippedCount = 0;
+  let notFoundCount = 0;
 
   for (const [slug, elo] of Object.entries(GPT5_ELO_SCORES)) {
     try {
-      // Check if product exists
-      const { data: product } = await supabase
-        .from('products')
-        .select('id, name, slug, benchmark_arena_elo')
-        .eq('slug', slug)
-        .single();
+      // Check if model exists
+      const model = await getModelBySlug(slug);
 
-      if (!product) {
-        console.log(`⚠️  Product not found: ${slug}`);
+      if (!model) {
+        console.log(`⚠️  Model not found: ${slug}`);
+        notFoundCount++;
         continue;
       }
 
-      // Update ELO score if different or null
-      if (product.benchmark_arena_elo !== elo) {
-        const { error } = await supabase
-          .from('products')
-          .update({
-            benchmark_arena_elo: elo,
-            updated_at: new Date(),
-          })
-          .eq('id', product.id);
+      // Update ELO score
+      const result = await upsertBenchmarkScore({
+        model_id: model.id,
+        benchmark_task_id: taskId,
+        metric_id: metricId,
+        value: elo,
+      });
 
-        if (error) {
-          console.error(`❌ Failed to update ${product.name}:`, error);
-          errorCount++;
-        } else {
-          console.log(`✅ Updated ${product.name}: ${product.benchmark_arena_elo} → ${elo}`);
-          updatedCount++;
-        }
+      if (result.action === 'updated') {
+        console.log(`✅ Updated ${model.name}: ${result.oldValue} → ${elo}`);
+        updatedCount++;
+      } else if (result.action === 'inserted') {
+        console.log(`✅ Inserted ${model.name}: ELO ${elo}`);
+        updatedCount++;
       } else {
-        console.log(`⏭️  Skipped ${product.name}: already ${elo}`);
+        console.log(`⏭️  Skipped ${model.name}: already ${elo}`);
+        skippedCount++;
       }
     } catch (error: any) {
       console.error(`❌ Error processing ${slug}:`, error.message);
-      errorCount++;
     }
   }
 
   console.log(`\n📊 Summary:`);
   console.log(`✅ Updated: ${updatedCount}`);
-  console.log(`⏭️  Skipped: ${Object.entries(GPT5_ELO_SCORES).length - updatedCount}`);
-  console.log(`❌ Errors: ${errorCount}`);
+  console.log(`⏭️  Skipped: ${skippedCount}`);
+  console.log(`⚠️  Not found: ${notFoundCount}`);
 }
 
 main().catch(console.error);

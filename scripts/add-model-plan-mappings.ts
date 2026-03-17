@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { supabaseAdmin } from './db/queries';
+import { supabaseAdmin, getModelBySlug } from './db/queries';
 
 // Plan -> Models mapping
 // Each plan should be associated with models that are covered by that plan
@@ -74,7 +74,7 @@ async function main() {
   // Get all plans
   const { data: plans } = await supabaseAdmin
     .from('plans')
-    .select('id, slug, name, product_id')
+    .select('id, slug, name')
     .order('id');
 
   let added = 0;
@@ -94,12 +94,21 @@ async function main() {
     console.log(`\nProcessing plan: ${plan.name} (${planSlug})`);
 
     for (const modelSlug of modelSlugs) {
+      // Get model by slug
+      const model = await getModelBySlug(modelSlug);
+
+      if (!model) {
+        console.log(`    ⚠️  Model not found: ${modelSlug}`);
+        notFoundModel++;
+        continue;
+      }
+
       // Check if mapping already exists
       const { data: existing } = await supabaseAdmin
         .from('model_plan_mapping')
         .select('id')
         .eq('plan_id', plan.id)
-        .eq('product_id', (await supabaseAdmin.from('products').select('id').eq('slug', modelSlug).single()).data?.id);
+        .eq('model_id', model.id);
 
       if (existing && existing.length > 0) {
         console.log(`    ✓ Mapping exists: plan ${plan.id} -> ${modelSlug}`);
@@ -107,27 +116,12 @@ async function main() {
         continue;
       }
 
-      // Get product id by slug
-      const result = await supabaseAdmin
-        .from('products')
-        .select('id')
-        .eq('slug', modelSlug)
-        .single();
-
-      if (!result.data || result.error) {
-        console.log(`    ⚠️  Product not found: ${modelSlug}`);
-        notFoundModel++;
-        continue;
-      }
-
-      const product = result.data;
-
       // Create model-plan mapping
       const { error } = await supabaseAdmin
         .from('model_plan_mapping')
         .insert({
           plan_id: plan.id,
-          product_id: product.id,
+          model_id: model.id,
           is_available: true,
         });
 
@@ -143,7 +137,7 @@ async function main() {
   console.log(`\n📊 SUMMARY:`);
   console.log(`  ✅ Mappings added: ${added}`);
   console.log(`  ✓ Skipped (already exist): ${skipped}`);
-  console.log(`  ⚠️  Product not found: ${notFoundModel}`);
+  console.log(`  ⚠️  Model not found: ${notFoundModel}`);
   console.log(`  ⚠️  Plan not found: ${notFoundPlan}`);
 }
 

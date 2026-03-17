@@ -125,6 +125,13 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
     });
   }, [data, showYearly]);
 
+  // Check if any plan has yearly pricing
+  const hasYearlyPricing = React.useMemo(() => {
+    if (!data) return false;
+    const allPlans = [...(data.officialPlans || []), ...(data.thirdPartyPlans || [])];
+    return allPlans.some((plan: any) => plan.pricing.yearly > 0 || plan.pricing.yearlyMonthly > 0);
+  }, [data]);
+
   // Toggle provider expansion
   const toggleProvider = (providerId: string) => {
     setExpandedProviders((prev) => {
@@ -274,8 +281,8 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
-            {model.provider?.logo_url && (
-              <img src={model.provider.logo_url} alt={model.provider.name} className="w-12 h-12 object-contain" />
+            {model.provider?.logo && (
+              <img src={model.provider.logo} alt={model.provider.name} className="w-12 h-12 object-contain" />
             )}
             <h1 className="text-4xl font-bold">{model.name} Plans</h1>
           </div>
@@ -285,26 +292,28 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
               : `Compare ${model.name} subscription plans across different channels to find the best option for you`}
           </p>
 
-          {/* Billing Toggle */}
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <div className="flex items-center gap-2">
-              <span className={`text-sm ${!showYearly ? "font-semibold" : "text-zinc-500"}`}>
-                {locale === "zh" ? "月付" : "Monthly"}
-              </span>
-              <Switch
-                checked={showYearly}
-                onCheckedChange={setShowYearly}
-              />
-              <span className={`text-sm ${showYearly ? "font-semibold" : "text-zinc-500"}`}>
-                {locale === "zh" ? "年付" : "Yearly"}
-              </span>
-              {showYearly && (
-                <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
-                  Save 15-20%
-                </Badge>
-              )}
+          {/* Billing Toggle - only show if yearly pricing exists */}
+          {hasYearlyPricing && (
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm ${!showYearly ? "font-semibold" : "text-zinc-500"}`}>
+                  {locale === "zh" ? "月付" : "Monthly"}
+                </span>
+                <Switch
+                  checked={showYearly}
+                  onCheckedChange={setShowYearly}
+                />
+                <span className={`text-sm ${showYearly ? "font-semibold" : "text-zinc-500"}`}>
+                  {locale === "zh" ? "年付" : "Yearly"}
+                </span>
+                {showYearly && (
+                  <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                    Save {Math.max(0, ...[(data.officialPlans || []), (data.thirdPartyPlans || [])].flat().map((p: any) => p.pricing.yearlyDiscountPercent || 0)).toFixed(2)}%
+                  </Badge>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Stats */}
           <div className="flex items-center justify-center gap-8 text-sm text-zinc-500">
@@ -427,7 +436,7 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
                                   )}
                                   {showYearly && plan.pricing.yearlyDiscountPercent && (
                                     <div className="text-xs text-green-600 mt-1">
-                                      Save {plan.pricing.yearlyDiscountPercent}%
+                                      Save {plan.pricing.yearlyDiscountPercent.toFixed(2)}%
                                     </div>
                                   )}
                                 </div>

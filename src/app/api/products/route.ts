@@ -13,23 +13,16 @@ export async function GET(request: Request) {
     const includePlanCount = searchParams.get('include_plan_count');
 
     let query = supabase
-      .from('products')
-      .select(`
-        *,
-        providers (
-          id,
-          name,
-          slug,
-          logo_url
-        )
-      `)
+      .from('models')
+      .select('*')
       .order('name');
 
     if (type) {
       query = query.eq('type', type);
     }
     if (providerId) {
-      query = query.eq('provider_id', parseInt(providerId));
+      // Filter by provider_ids array containing the providerId
+      query = query.contains('provider_ids', [parseInt(providerId)]);
     }
 
     const { data, error } = await query;
@@ -38,17 +31,59 @@ export async function GET(request: Request) {
 
     let products = data || [];
 
+    // Fetch benchmark scores from model_benchmark_scores table
+    const modelIds = products.map((p: any) => p.id);
+    const { data: benchmarkData } = await supabase
+      .from('model_benchmark_scores')
+      .select('model_id, value')
+      .in('model_id', modelIds)
+      .order('value', { ascending: false });
+
+    // Create benchmark map: model_id -> highest value
+    const benchmarkMap = new Map<number, number>();
+    (benchmarkData || []).forEach((bs: any) => {
+      const modelId = bs.model_id;
+      const value = bs.value;
+      if (!benchmarkMap.has(modelId) || value > (benchmarkMap.get(modelId) || 0)) {
+        benchmarkMap.set(modelId, value);
+      }
+    });
+
+    // Attach benchmark_arena_elo to each product
+    products = products.map((p: any) => ({
+      ...p,
+      benchmark_arena_elo: benchmarkMap.get(p.id) || null,
+    }));
+
+    // Fetch all providers to map IDs to provider data
+    const allProviderIds = [...new Set(products.flatMap((p: any) => p.provider_ids || []))];
+    const { data: providersData } = await supabase
+      .from('providers')
+      .select('id, name, slug, logo')
+      .in('id', allProviderIds);
+
+    const providerMap = new Map((providersData || []).map((p: any) => [p.id, p]));
+
+    // Attach first provider to each product for display purposes
+    products = products.map((p: any) => ({
+      ...p,
+      providers: p.provider_ids?.[0] ? providerMap.get(p.provider_ids[0]) : null,
+    }));
+
     // Include plan count if requested (must do this before featured filtering)
     if (includePlanCount === 'true') {
-      const productIds = products.map((p: any) => p.id);
-      const { data: modelsData } = await supabase
-        .from('models')
-        .select('product_id, plan_id')
-        .in('product_id', productIds);
+      const modelIds = products.map((p: any) => p.id);
+      const { data: planMappings } = await supabase
+        .from('model_plan_mapping')
+        .select('model_id, plan_id')
+        .not('plan_id', 'is', null)
+        .in('model_id', modelIds);
 
       const planCountMap = new Map();
-      (modelsData || []).forEach((model: any) => {
-        planCountMap.set(model.product_id, (planCountMap.get(model.product_id) || 0) + 1);
+      (planMappings || []).forEach((m: any) => {
+        if (m.plan_id) {
+          planCountMap.set(m.model_id, (planCountMap.get(m.model_id) || 0) + 1);
+        }
       });
 
       products = products.map((product: any) => ({
@@ -80,7 +115,7 @@ export async function GET(request: Request) {
       // Keep only the highest ELO model per provider
       const providerTopModels = new Map();
       products.forEach((p: any) => {
-        const providerId = p.providers?.id || p.provider_id;
+        const providerId = p.providers?.id || p.provider_ids?.[0];
         const currentTop = providerTopModels.get(providerId);
         const currentElo = currentTop?.benchmark_arena_elo || 0;
         const newElo = p.benchmark_arena_elo || 0;

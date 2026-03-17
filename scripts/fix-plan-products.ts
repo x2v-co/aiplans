@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
 
-import { supabaseAdmin } from './db/queries';
+import { supabaseAdmin, getModelBySlug } from './db/queries';
 
-// Plan -> Product mapping for plans that need fix
-const PLAN_TO_PRODUCT: Record<string, string> = {
+// Plan -> Model mapping for plans that need fix
+const PLAN_TO_MODEL: Record<string, string> = {
   'gemini-free': 'gemini-1.5-pro',
   'gemini-advanced': 'gemini-3-pro',
   'minimax-free': 'minimax-m2.5',
@@ -37,17 +37,17 @@ const PLAN_TO_PRODUCT: Record<string, string> = {
 };
 
 async function main() {
-  console.log('Fixing plan product associations...');
+  console.log('Fixing plan model associations via model_plan_mapping...');
 
   let updated = 0;
   let skipped = 0;
   let notFound = 0;
 
-  for (const [planSlug, productSlug] of Object.entries(PLAN_TO_PRODUCT)) {
+  for (const [planSlug, modelSlug] of Object.entries(PLAN_TO_MODEL)) {
     // Get plan by slug
     const planResult = await supabaseAdmin
       .from('plans')
-      .select('id, name, product_id')
+      .select('id, name')
       .eq('slug', planSlug)
       .single();
 
@@ -58,45 +58,48 @@ async function main() {
       continue;
     }
 
-    if (plan && plan.product_id) {
-      console.log(`  ✓ Plan ${plan.name} already has product_id=${plan.product_id}`);
+    // Check if mapping already exists
+    const { data: existingMapping } = await supabaseAdmin
+      .from('model_plan_mapping')
+      .select('id')
+      .eq('plan_id', plan.id);
+
+    if (existingMapping && existingMapping.length > 0) {
+      console.log(`  ✓ Plan ${plan.name} already has model mappings`);
       skipped++;
       continue;
     }
 
-    // Get product by slug
-    const productsResult = await supabaseAdmin
-      .from('products')
-      .select('id, name, slug')
-      .eq('slug', productSlug)
-      .limit(1);
+    // Get model by slug
+    const model = await getModelBySlug(modelSlug);
 
-    if (!productsResult.data || productsResult.error) {
-      console.log(`  ⚠️  Product not found: ${productSlug}`);
+    if (!model) {
+      console.log(`  ⚠️  Model not found: ${modelSlug}`);
       notFound++;
       continue;
     }
 
-    const product = productsResult.data && productsResult.data[0];
-
-    // Update plan with product_id
+    // Create model-plan mapping
     const { error } = await supabaseAdmin
-      .from('plans')
-      .update({ product_id: product.id })
-      .eq('id', plan.id);
+      .from('model_plan_mapping')
+      .insert({
+        plan_id: plan.id,
+        model_id: model.id,
+        is_available: true,
+      });
 
-    if (!error && plan) {
+    if (!error) {
       updated++;
-      console.log(`  ✅ Plan ${plan.name} -> Product ${product.name} (${product.slug})`);
+      console.log(`  ✅ Plan ${plan.name} -> Model ${model.name} (${model.slug})`);
     } else {
-      console.log(`  ❌ Failed to update plan ${plan.name}:`, error);
+      console.log(`  ❌ Failed to create mapping for plan ${plan.name}:`, error);
     }
   }
 
   console.log(`\n📊 SUMMARY:`);
   console.log(`  ✅ Updated: ${updated}`);
   console.log(`  ✓ Skipped (already set): ${skipped}`);
-  console.log(`  ⚠️  Product not found: ${notFound}`);
+  console.log(`  ⚠️  Model not found: ${notFound}`);
 }
 
 main()

@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const isZh = locale === 'zh';
 
   // Get product name
-  const { data: product } = await supabase.from('products').select('name').eq('slug', slug).single();
+  const { data: product } = await supabase.from('models').select('name').eq('slug', slug).single();
   const productName = product?.name || slug;
 
   const title = isZh
@@ -53,104 +53,106 @@ const channelTypeLabels: Record<string, { label: string; color: string }> = {
 };
 
 async function getProductWithChannels(slug: string) {
-  // Get product with provider info
-  const { data: product } = await supabase
-    .from('products')
+  // Get model with provider info
+  const { data: model } = await supabase
+    .from('models')
     .select(`
-      *,
-      providers (
-        id,
-        name,
-        slug,
-        logo_url
-      )
+      id,
+      name,
+      slug,
+      type,
+      description,
+      context_window,
+      max_output_tokens,
+      provider_ids
     `)
     .eq('slug', slug)
     .single();
 
-  if (!product) return null;
+  if (!model) return null;
 
-  // Get channel prices
+  // Get the model's official providers
+  let modelProvider: any = null;
+  if (model.provider_ids && model.provider_ids.length > 0) {
+    const { data: providerData } = await supabase
+      .from('providers')
+      .select('id, name, slug, logo')
+      .eq('id', model.provider_ids[0])
+      .single();
+    modelProvider = providerData;
+  }
+
+  // Get API channel prices
   const { data: channelPrices } = await supabase
-    .from('channel_prices')
+    .from('api_channel_prices')
     .select(`
-      *,
-      channels:channel_id (
+      id,
+      input_price_per_1m,
+      output_price_per_1m,
+      cached_input_price_per_1m,
+      rate_limit,
+      is_available,
+      providers:provider_id (
         id,
         name,
         slug,
         type,
         logo,
-        website_url,
+        website,
         region,
         access_from_china,
         description
       )
     `)
-    .eq('product_id', product.id)
+    .eq('model_id', model.id)
     .eq('is_available', true)
     .order('input_price_per_1m', { ascending: true });
 
-  // Get plans that include this model via the models table
-  const { data: modelPlans } = await supabase
-    .from('models')
+  // Get plans that include this model via model_plan_mapping
+  const { data: modelPlanMappings } = await supabase
+    .from('model_plan_mapping')
     .select(`
       plan_id,
-      is_available,
-      override_rpm,
-      override_qps,
-      override_input_price_per_1m,
-      override_output_price_per_1m,
-      max_output_tokens,
-      plans:plan_id (
-        *,
-        providers:provider_id (
-          id,
-          name,
-          slug,
-          logo_url
-        )
-      )
+      model_id,
+      priority
     `)
-    .eq('product_id', product.id)
-    .eq('is_available', true)
-    .order('plans(price)', { ascending: true });
+    .eq('model_id', model.id);
 
-  // Get plan IDs for fetching
-  const planIds = (modelPlans || []).map((m: any) => m.plan_id);
+  // Get plan IDs and fetch full plan details
+  const planIds = (modelPlanMappings || []).map((m: any) => m.plan_id).filter(Boolean);
 
-  // Fetch full plan details for all matching plans
   const { data: plansData } = planIds.length > 0 ? await supabase
     .from('plans')
-    .select('*')
+    .select(`
+      id,
+      name,
+      slug,
+      tier,
+      price,
+      annual_price,
+      features,
+      access_from_china,
+      provider_id,
+      providers:provider_id (
+        id,
+        name,
+        slug,
+        logo
+      )
+    `)
     .in('id', planIds)
     .order('price', { ascending: true }) : { data: [] };
 
-  // Create a map of plan_id to model overrides
-  const modelOverridesMap = new Map();
-  (modelPlans || []).forEach((m: any) => {
-    if (m.plan_id && m.plans) {
-      modelOverridesMap.set(m.plan_id, {
-        overrideRpm: m.override_rpm,
-        overrideQps: m.override_qps,
-        overrideInputPricePer1m: m.override_input_price_per_1m,
-        overrideOutputPricePer1m: m.override_output_price_per_1m,
-        maxOutputTokens: m.max_output_tokens,
-      });
-    }
-  });
-
-  // Add overrides to plan data
-  const plansWithProvider = (plansData || []).map((plan: any) => ({
-    ...plan,
-    providers: product.providers,
-    overrides: modelOverridesMap.get(plan.id),
-  }));
+  // Return the model with provider attached
+  const product = {
+    ...model,
+    providers: modelProvider
+  };
 
   return {
     product,
     channelPrices: channelPrices || [],
-    plans: plansWithProvider || []
+    plans: plansData || []
   };
 }
 
@@ -169,8 +171,8 @@ export default async function ModelPage({
   const { product, channelPrices, plans } = data;
 
   // Find official and cheapest
-  const officialChannel = channelPrices.find((cp: any) => cp.channels.type === 'official');
-  const cheapestChannel = channelPrices[0];
+  const officialChannel = (channelPrices as any[]).find((cp) => cp.providers?.type === 'official');
+  const cheapestChannel = (channelPrices as any[])[0];
 
   // Calculate savings
   const calculateSavings = (price: number, officialPrice: number) => {
@@ -214,9 +216,9 @@ export default async function ModelPage({
         {/* Product Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
-            {product.providers?.logo_url && (
+            {product.providers?.logo && (
               <img
-                src={product.providers.logo_url}
+                src={product.providers.logo}
                 alt={product.providers.name}
                 className="w-16 h-16 object-contain"
               />
@@ -232,22 +234,7 @@ export default async function ModelPage({
                 📏 Context: {product.context_window.toLocaleString()} tokens
               </Badge>
             )}
-            {product.benchmark_arena_elo && (
-              <Badge variant="outline" className="text-sm">
-                🏆 Arena ELO: {Math.round(product.benchmark_arena_elo)}
-              </Badge>
-            )}
-            {product.benchmark_mmlu && (
-              <Badge variant="outline" className="text-sm">
-                📊 MMLU: {product.benchmark_mmlu}%
-              </Badge>
-            )}
-            {product.benchmark_human_eval && (
-              <Badge variant="outline" className="text-sm">
-                💻 HumanEval: {product.benchmark_human_eval}%
-              </Badge>
-            )}
-          </div>
+            </div>
         </div>
 
         {/* Quick Stats */}
@@ -260,7 +247,7 @@ export default async function ModelPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{cheapestChannel?.channels?.name || 'N/A'}</div>
+              <div className="text-2xl font-bold">{cheapestChannel?.providers?.name || 'N/A'}</div>
               <div className="text-3xl font-bold text-green-600 mt-1">
                 ${cheapestChannel?.input_price_per_1m?.toFixed(2)}
                 <span className="text-sm font-normal text-zinc-500">/1M input</span>
@@ -274,7 +261,7 @@ export default async function ModelPage({
                   💸 Save {calculateSavings(cheapestChannel?.input_price_per_1m, officialChannel?.input_price_per_1m)}% vs official
                 </div>
               )}
-              {cheapestChannel?.channels?.access_from_china && (
+              {cheapestChannel?.providers?.access_from_china && (
                 <Badge className="mt-2 bg-green-100 text-green-800">🇨🇳 China Available</Badge>
               )}
             </CardContent>
@@ -288,7 +275,7 @@ export default async function ModelPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{officialChannel?.channels?.name || 'N/A'}</div>
+              <div className="text-2xl font-bold">{officialChannel?.providers?.name || 'N/A'}</div>
               {officialChannel ? (
                 <>
                   <div className="text-3xl font-bold mt-1">
@@ -299,7 +286,7 @@ export default async function ModelPage({
                     ${officialChannel.output_price_per_1m?.toFixed(2)}
                     <span className="text-sm font-normal text-zinc-500">/1M output</span>
                   </div>
-                  {officialChannel.channels?.access_from_china ? (
+                  {officialChannel.providers?.access_from_china ? (
                     <Badge variant="outline" className="mt-2">🇨🇳 China Available</Badge>
                   ) : (
                     <Badge variant="outline" className="mt-2 bg-red-50 text-red-800">🚫 Not available in China</Badge>
@@ -320,11 +307,11 @@ export default async function ModelPage({
             </CardHeader>
             <CardContent>
               {(() => {
-                const chinaOptions = channelPrices.filter((cp: any) => cp.channels.access_from_china);
+                const chinaOptions = (channelPrices as any[]).filter((cp) => cp.providers?.access_from_china);
                 const cheapestChina = chinaOptions[0];
                 return cheapestChina ? (
                   <>
-                    <div className="text-2xl font-bold">{cheapestChina.channels.name}</div>
+                    <div className="text-2xl font-bold">{cheapestChina.providers?.name}</div>
                     <div className="text-3xl font-bold mt-1">
                       ${cheapestChina.input_price_per_1m?.toFixed(2)}
                       <span className="text-sm font-normal text-zinc-500">/1M input</span>
@@ -396,9 +383,9 @@ export default async function ModelPage({
 
                         <CardHeader className="pb-4">
                           <div className="flex items-center gap-2 mb-2">
-                            {plan.providers?.logo_url && (
+                            {plan.providers?.logo && (
                               <img
-                                src={plan.providers.logo_url}
+                                src={plan.providers.logo}
                                 alt={plan.providers.name}
                                 className="w-6 h-6 object-contain"
                               />
@@ -540,7 +527,7 @@ export default async function ModelPage({
                 </TableHeader>
                 <TableBody>
                   {channelPrices.map((cp: any, idx: number) => {
-                    const isOfficial = cp.channels.type === 'official';
+                    const isOfficial = cp.providers.type === 'official';
                     const isCheapest = idx === 0;
                     const savings = calculateSavings(cp.input_price_per_1m, officialChannel?.input_price_per_1m);
 
@@ -548,7 +535,7 @@ export default async function ModelPage({
                       <TableRow key={cp.id} className={isCheapest ? "bg-green-50 dark:bg-green-950/30" : ""}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                            {cp.channels.name}
+                            {cp.providers.name}
                             {isCheapest && (
                               <Badge className="bg-green-600 text-xs">💰 Best Price</Badge>
                             )}
@@ -558,8 +545,8 @@ export default async function ModelPage({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${channelTypeLabels[cp.channels.type]?.color || 'bg-gray-100'}`}>
-                            {channelTypeLabels[cp.channels.type]?.label || cp.channels.type}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${channelTypeLabels[cp.providers.type]?.color || 'bg-gray-100'}`}>
+                            {channelTypeLabels[cp.providers.type]?.label || cp.providers.type}
                           </span>
                         </TableCell>
                         <TableCell className="text-right font-mono">
@@ -572,7 +559,7 @@ export default async function ModelPage({
                           {cp.rate_limit || '-'}
                         </TableCell>
                         <TableCell className="text-center">
-                          {cp.channels.access_from_china ? (
+                          {cp.providers.access_from_china ? (
                             <Check className="w-4 h-4 text-green-600 mx-auto" />
                           ) : (
                             <span className="text-zinc-400">-</span>
@@ -590,9 +577,9 @@ export default async function ModelPage({
                           )}
                         </TableCell>
                         <TableCell>
-                          {cp.channels.website_url && (
+                          {cp.providers.website && (
                             <a
-                              href={cp.channels.website_url}
+                              href={cp.providers.website}
                               target="_blank"
                               rel="noopener noreferrer"
                             >
@@ -628,7 +615,7 @@ export default async function ModelPage({
                     <TableHead>Tokens/Month</TableHead>
                     {channelPrices.slice(0, 4).map((cp: any) => (
                       <TableHead key={cp.id} className="text-right">
-                        {cp.channels.name}
+                        {cp.providers.name}
                       </TableHead>
                     ))}
                   </TableRow>

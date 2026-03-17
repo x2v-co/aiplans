@@ -18,37 +18,61 @@ const hotModels = [
 ];
 
 async function getModelsWithPlanCounts() {
-  const { data: products } = await supabase
-    .from('products')
+  const { data: models } = await supabase
+    .from('models')
     .select(`
-      *,
-      providers:provider_id (
-        id,
-        name,
-        slug,
-        logo
-      )
+      id,
+      name,
+      slug,
+      type,
+      context_window,
+      provider_ids
     `)
     .eq('type', 'llm')
-    .order('benchmark_arena_elo', { ascending: false });
+    .order('name');
 
-  if (!products) return [];
+  if (!models) return [];
 
-  // Get plan counts for each product
+  // Get provider info for all models
+  const allProviderIds = [...new Set(models.flatMap((m: any) => m.provider_ids || []))];
+  const { data: providersData } = await supabase
+    .from('providers')
+    .select('id, name, slug, logo')
+    .in('id', allProviderIds);
+
+  const providerMap = new Map((providersData || []).map((p: any) => [p.id, p]));
+
+  // Get plan counts for each model via model_plan_mapping
   const { data: mappings } = await supabase
     .from('model_plan_mapping')
-    .select('product_id, plan_id')
-    .eq('is_available', true);
+    .select('model_id, plan_id');
 
   const planCounts = new Map<number, number>();
   (mappings || []).forEach((m: any) => {
-    planCounts.set(m.product_id, (planCounts.get(m.product_id) || 0) + 1);
+    planCounts.set(m.model_id, (planCounts.get(m.model_id) || 0) + 1);
   });
 
-  return products.map((p) => ({
-    ...p,
-    provider: p.providers,
-    planCount: planCounts.get(p.id) || 0,
+  // Get benchmark scores from model_benchmark_scores table
+  const { data: benchmarkData } = await supabase
+    .from('model_benchmark_scores')
+    .select('model_id, value')
+    .order('value', { ascending: false });
+
+  // Create benchmark map: model_id -> highest value
+  const benchmarkMap = new Map<number, number>();
+  (benchmarkData || []).forEach((bs: any) => {
+    const modelId = bs.model_id;
+    const value = bs.value;
+    if (!benchmarkMap.has(modelId) || value > (benchmarkMap.get(modelId) || 0)) {
+      benchmarkMap.set(modelId, value);
+    }
+  });
+
+  return models.map((m: any) => ({
+    ...m,
+    provider: m.provider_ids?.[0] ? providerMap.get(m.provider_ids[0]) : null,
+    planCount: planCounts.get(m.id) || 0,
+    benchmark_arena_elo: benchmarkMap.get(m.id) || null,
   }));
 }
 

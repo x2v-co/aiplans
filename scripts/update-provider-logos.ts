@@ -55,7 +55,7 @@ async function main() {
       // Check if provider exists
       const { data: provider } = await supabase
         .from('providers')
-        .select('id, name, slug, logo_url')
+        .select('id, name, slug, logo')
         .eq('slug', slug)
         .single();
 
@@ -65,16 +65,16 @@ async function main() {
       }
 
       // Update if logo is null or different
-      if (provider.logo_url === null || provider.logo_url !== logoUrl) {
+      if (provider.logo === null || provider.logo !== logoUrl) {
         const { error } = await supabase
           .from('providers')
-          .update({ logo_url })
+          .update({ logo: logoUrl, updated_at: new Date().toISOString() })
           .eq('id', provider.id);
 
         if (error) {
           console.error(`❌ Failed to update ${provider.name}:`, error);
         } else {
-          console.log(`✅ Updated ${provider.name}: ${provider.logo_url} → ${logoUrl}`);
+          console.log(`✅ Updated ${provider.name}: ${provider.logo} → ${logoUrl}`);
           updatedCount++;
         }
       } else {

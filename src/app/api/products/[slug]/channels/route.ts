@@ -9,21 +9,21 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    // 获取产品信息
+    // 获取模型信息
     const { data: product, error: productError } = await supabase
-      .from('products')
+      .from('models')
       .select('*')
       .eq('slug', slug)
       .single();
 
     if (productError) throw productError;
 
-    // 获取该产品在所有渠道的价格
+    // 获取该模型在所有渠道的价格
     const { data: channelPrices, error: pricesError } = await supabase
-      .from('channel_prices')
+      .from('api_channel_prices')
       .select(`
         *,
-        channels:channel_id (
+        providers:provider_id (
           id,
           name,
           slug,
@@ -35,8 +35,9 @@ export async function GET(
           description
         )
       `)
-      .eq('product_id', product.id)
+      .eq('model_id', product.id)
       .eq('is_available', true)
+      .not('provider_id', 'is', null)
       .order('input_price_per_1m', { ascending: true });
 
     if (pricesError) throw pricesError;
@@ -44,7 +45,7 @@ export async function GET(
     // 计算价格对比数据
     const enrichedPrices = channelPrices?.map((cp: any) => {
       const officialPrice = channelPrices?.find(
-        (p: any) => p.channels.type === 'official'
+        (p: any) => p.providers?.type === 'official'
       );
       const officialInputPrice = officialPrice?.input_price_per_1m || cp.input_price_per_1m;
       const officialOutputPrice = officialPrice?.output_price_per_1m || cp.output_price_per_1m;
@@ -72,7 +73,7 @@ export async function GET(
       product,
       channelPrices: enrichedPrices,
       cheapest: enrichedPrices?.[0],
-      officialChannel: channelPrices?.find((cp: any) => cp.channels.type === 'official'),
+      officialChannel: channelPrices?.find((cp: any) => cp.providers?.type === 'official'),
     });
   } catch (error) {
     console.error('Error fetching channel prices:', error);

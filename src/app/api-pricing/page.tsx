@@ -15,19 +15,23 @@ interface Product {
   id: number;
   name: string;
   slug: string;
-  provider_id: number;
+  provider_ids: number[];
   context_window: number;
-  benchmark_mmlu: number;
-  benchmark_arena_elo: number;
+  benchmark_arena_elo: number | null;
+  providers?: {
+    id: number;
+    name: string;
+    logo: string;
+  };
 }
 
 interface ChannelPrice {
   id: number;
-  product_id: number;
-  channel_id: number;
+  model_id: number;
+  provider_id: number;
   input_price_per_1m: number;
   output_price_per_1m: number;
-  channels: {
+  providers: {
     id: number;
     name: string;
     type: string;
@@ -106,8 +110,9 @@ export default function ApiPricingPage() {
   const providers = useMemo(() => {
     const unique = new Map<number, { name: string; logo: string }>();
     products.forEach(p => {
-      if (!unique.has(p.provider_id) && providerMeta[p.provider_id]) {
-        unique.set(p.provider_id, providerMeta[p.provider_id]);
+      const providerId = p.providers?.id || p.provider_ids?.[0];
+      if (providerId && !unique.has(providerId) && providerMeta[providerId]) {
+        unique.set(providerId, providerMeta[providerId]);
       }
     });
     return Array.from(unique.entries()).map(([id, data]) => ({ id, ...data }));
@@ -115,47 +120,48 @@ export default function ApiPricingPage() {
 
   // Get unique channel types
   const channelTypes = useMemo(() => {
-    const types = new Set(channelPrices.map(cp => cp.channels.type));
+    const types = new Set(channelPrices.map(cp => cp.providers.type));
     return Array.from(types);
   }, [channelPrices]);
 
   // Get unique regions
   const regions = useMemo(() => {
-    const r = new Set(channelPrices.map(cp => cp.channels.region).filter(Boolean));
+    const r = new Set(channelPrices.map(cp => cp.providers.region).filter(Boolean));
     return Array.from(r);
   }, [channelPrices]);
 
   // Filtered and sorted prices
   const filteredPrices = useMemo(() => {
     let filtered = channelPrices.filter(cp => {
-      const product = products.find(p => p.id === cp.product_id);
+      const product = products.find(p => p.id === cp.model_id);
       if (!product) return false;
 
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchProduct = product.name.toLowerCase().includes(query);
-        const matchChannel = cp.channels.name.toLowerCase().includes(query);
+        const matchChannel = cp.providers.name.toLowerCase().includes(query);
         if (!matchProduct && !matchChannel) return false;
       }
 
       // Provider filter
-      if (selectedProviders.length > 0 && product.provider_id) {
-        if (!selectedProviders.includes(product.provider_id.toString())) return false;
+      if (selectedProviders.length > 0) {
+        const providerId = product.providers?.id || product.provider_ids?.[0];
+        if (providerId && !selectedProviders.includes(providerId.toString())) return false;
       }
 
       // Channel type filter
       if (selectedChannelTypes.length > 0) {
-        if (!selectedChannelTypes.includes(cp.channels.type)) return false;
+        if (!selectedChannelTypes.includes(cp.providers.type)) return false;
       }
 
       // Region filter
-      if (selectedRegions.length > 0 && cp.channels.region) {
-        if (!selectedRegions.includes(cp.channels.region)) return false;
+      if (selectedRegions.length > 0 && cp.providers.region) {
+        if (!selectedRegions.includes(cp.providers.region)) return false;
       }
 
       // China only filter
-      if (showChinaOnly && !cp.channels.access_from_china) return false;
+      if (showChinaOnly && !cp.providers.access_from_china) return false;
 
       return true;
     });
@@ -168,12 +174,12 @@ export default function ApiPricingPage() {
             ? (a.input_price_per_1m || 0) - (b.input_price_per_1m || 0)
             : (b.input_price_per_1m || 0) - (a.input_price_per_1m || 0);
         case "name":
-          const nameA = products.find(p => p.id === a.product_id)?.name || "";
-          const nameB = products.find(p => p.id === b.product_id)?.name || "";
+          const nameA = products.find(p => p.id === a.model_id)?.name || "";
+          const nameB = products.find(p => p.id === b.model_id)?.name || "";
           return sortOrder === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
         case "elo":
-          const eloA = products.find(p => p.id === a.product_id)?.benchmark_arena_elo || 0;
-          const eloB = products.find(p => p.id === b.product_id)?.benchmark_arena_elo || 0;
+          const eloA = products.find(p => p.id === a.model_id)?.benchmark_arena_elo || 0;
+          const eloB = products.find(p => p.id === b.model_id)?.benchmark_arena_elo || 0;
           return sortOrder === "asc" ? eloA - eloB : eloB - eloA;
         default:
           return 0;
@@ -204,10 +210,10 @@ export default function ApiPricingPage() {
   // Group prices by product for display
   const pricesByProduct: Record<number, ChannelPrice[]> = {};
   for (const cp of filteredPrices) {
-    if (!pricesByProduct[cp.product_id]) {
-      pricesByProduct[cp.product_id] = [];
+    if (!pricesByProduct[cp.model_id]) {
+      pricesByProduct[cp.model_id] = [];
     }
-    pricesByProduct[cp.product_id].push(cp);
+    pricesByProduct[cp.model_id].push(cp);
   }
 
   const filteredProducts = products.filter(p => pricesByProduct[p.id]?.length > 0);
@@ -440,7 +446,7 @@ export default function ApiPricingPage() {
 
                     return prices.map((cp, idx) => {
                       const isCheapest = cp.id === cheapest?.id;
-                      const officialPrice = prices.find(p => p.channels.type === 'official');
+                      const officialPrice = prices.find(p => p.providers.type === 'official');
                       const savings = officialPrice && officialPrice.input_price_per_1m > cp.input_price_per_1m
                         ? (((officialPrice.input_price_per_1m - cp.input_price_per_1m) / officialPrice.input_price_per_1m) * 100).toFixed(0)
                         : '0';
@@ -453,14 +459,14 @@ export default function ApiPricingPage() {
                                 {product.name}
                               </Link>
                               <div className="text-xs text-zinc-500 mt-1">
-                                {providerMeta[product.provider_id]?.logo} {providerMeta[product.provider_id]?.name}
+                                {product.providers?.logo || providerMeta[product.provider_ids?.[0]]?.logo} {product.providers?.name || providerMeta[product.provider_ids?.[0]]?.name}
                               </div>
                             </TableCell>
                           )}
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <span className={isCheapest ? "font-medium" : ""}>
-                                {cp.channels.name}
+                                {cp.providers.name}
                               </span>
                               {isCheapest && (
                                 <Badge className="bg-green-600 text-xs">Cheapest</Badge>
@@ -469,7 +475,7 @@ export default function ApiPricingPage() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {channelTypeLabels[cp.channels.type] || cp.channels.type}
+                              {channelTypeLabels[cp.providers.type] || cp.providers.type}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-mono">
@@ -479,7 +485,7 @@ export default function ApiPricingPage() {
                             ${cp.output_price_per_1m?.toFixed(2)}
                           </TableCell>
                           <TableCell className="text-center">
-                            {cp.channels.access_from_china ? (
+                            {cp.providers.access_from_china ? (
                               <Check className="w-4 h-4 text-green-600 mx-auto" />
                             ) : (
                               <span className="text-zinc-400">-</span>

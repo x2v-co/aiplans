@@ -13,8 +13,8 @@ interface Provider {
   id: number;
   name: string;
   slug: string;
-  website_url: string | null;
-  logo_url: string | null;
+  website: string | null;
+  logo: string | null;
 }
 
 /**
@@ -93,9 +93,9 @@ async function getBestLogoUrl(provider: Provider): Promise<string> {
 
   // 尝试多个服务
   const urls = [
-    { service: 'Clearbit', url: getFaviconUrl(provider.website_url, provider.slug) },
-    { service: 'Icon Horse', url: getIconHorse(provider.website_url, provider.slug) },
-    { service: 'Google', url: getGoogleFavicon(provider.website_url, provider.slug) },
+    { service: 'Clearbit', url: getFaviconUrl(provider.website, provider.slug) },
+    { service: 'Icon Horse', url: getIconHorse(provider.website, provider.slug) },
+    { service: 'Google', url: getGoogleFavicon(provider.website, provider.slug) },
   ];
 
   for (const { service, url } of urls) {
@@ -109,7 +109,7 @@ async function getBestLogoUrl(provider: Provider): Promise<string> {
 
   // 如果都失败，返回 Google Favicon（最稳定）
   console.log(`  ⚠️  No valid logo found, using Google Favicon as fallback`);
-  return getGoogleFavicon(provider.website_url, provider.slug);
+  return getGoogleFavicon(provider.website, provider.slug);
 }
 
 /**
@@ -149,8 +149,8 @@ async function main() {
   // 2. 为每个 provider 获取 logo
   for (const provider of providers as Provider[]) {
     try {
-      // 如果已经有 logo_url，跳过（除非强制更新）
-      if (provider.logo_url && !process.argv.includes('--force')) {
+      // 如果已经有 logo，跳过（除非强制更新）
+      if (provider.logo && !process.argv.includes('--force')) {
         console.log(`⏭️  ${provider.name}: Already has logo, skipping`);
         skipped++;
         continue;
@@ -170,14 +170,14 @@ async function main() {
       // 3. 更新数据库
       const { error: updateError } = await supabase
         .from('providers')
-        .update({ logo_url: logoUrl })
+        .update({ logo: logoUrl })
         .eq('id', provider.id);
 
       if (updateError) {
         console.error(`❌ ${provider.name}: Update failed -`, updateError);
         failed++;
       } else {
-        console.log(`✅ ${provider.name}: Updated logo_url to ${logoUrl}`);
+        console.log(`✅ ${provider.name}: Updated logo to ${logoUrl}`);
         updated++;
       }
 
@@ -202,12 +202,12 @@ async function main() {
   console.log('\n📋 Current provider logos:');
   const { data: updatedProviders } = await supabase
     .from('providers')
-    .select('name, slug, logo_url')
+    .select('name, slug, logo')
     .order('id');
 
   if (updatedProviders) {
     updatedProviders.forEach((p: any) => {
-      console.log(`   ${p.name.padEnd(20)} → ${p.logo_url || 'No logo'}`);
+      console.log(`   ${p.name.padEnd(20)} → ${p.logo || 'No logo'}`);
     });
   }
 

@@ -13,13 +13,13 @@ export async function GET(request: Request) {
       .from('plans')
       .select(`
         *,
-        products:product_id (
+        models:product_id (
           id,
           name,
           slug,
-          provider_id,
+          provider_ids,
           type,
-          benchmark_arena_elo
+          context_window
         )
       `)
       .order('tier', { ascending: true })
@@ -41,10 +41,10 @@ export async function GET(request: Request) {
 
     let plans = data || [];
 
-    // Get all provider_ids - either from plan.provider_id or plan.products.provider_id
+    // Get all provider_ids - from plan.provider_id or from models' provider_ids
     const providerIdsFromPlans = plans.map((plan: any) => plan.provider_id).filter(Boolean);
-    const providerIdsFromProducts = plans.map((plan: any) => plan.products?.provider_id).filter(Boolean);
-    const providerIds = [...new Set([...providerIdsFromPlans, ...providerIdsFromProducts])];
+    const providerIdsFromModels = plans.flatMap((plan: any) => plan.models?.provider_ids || []).filter(Boolean);
+    const providerIds = [...new Set([...providerIdsFromPlans, ...providerIdsFromModels])];
 
     // Fetch providers
     const { data: providersData } = await supabase
@@ -58,36 +58,26 @@ export async function GET(request: Request) {
     if (includeModels === 'true') {
       const planIds = plans.map((p: any) => p.id);
 
-      // Get models for these plans
+      // Get models for these plans via model_plan_mapping
+      // Schema only has: model_id, plan_id, priority
       const { data: modelData } = await supabase
-        .from('models')
+        .from('model_plan_mapping')
         .select(`
           plan_id,
-          product_id,
-          provider_id,
-          is_available,
-          is_default,
-          display_order,
-          override_rpm,
-          override_qps,
-          override_tpm,
-          override_input_price_per_1m,
-          override_output_price_per_1m,
-          max_input_tokens,
-          max_output_tokens,
-          note,
-          display_name,
-          products:product_id (
-            id,
-            name,
-            slug,
-            provider_id,
-            type,
-            benchmark_arena_elo
-          )
+          model_id,
+          priority
         `)
         .in('plan_id', planIds)
-        .order('display_order', { ascending: true });
+        .order('priority', { ascending: true });
+
+      // Get unique model IDs and fetch model details
+      const modelIds = [...new Set((modelData || []).map((m: any) => m.model_id).filter(Boolean))];
+      const { data: modelsData } = await supabase
+        .from('models')
+        .select('id, name, slug, provider_ids, type, context_window')
+        .in('id', modelIds);
+
+      const modelsMap = new Map((modelsData || []).map(m => [m.id, m]));
 
       // Group models by plan
       const planModelsMap = new Map();
@@ -95,23 +85,10 @@ export async function GET(request: Request) {
         if (!planModelsMap.has(m.plan_id)) {
           planModelsMap.set(m.plan_id, []);
         }
-        planModelsMap.get(m.plan_id)!.push({
-          ...m.products,
-          mapping: {
-            overrideRpm: m.override_rpm,
-            overrideQps: m.override_qps,
-            overrideTpm: m.override_tpm,
-            overrideInputPricePer1m: m.override_input_price_per_1m,
-            overrideOutputPricePer1m: m.override_output_price_per_1m,
-            maxInputTokens: m.max_input_tokens,
-            maxOutputTokens: m.max_output_tokens,
-            isAvailable: m.is_available,
-            isDefault: m.is_default,
-            displayOrder: m.display_order,
-            displayName: m.display_name,
-            note: m.note,
-          }
-        });
+        const model = modelsMap.get(m.model_id);
+        if (model) {
+          planModelsMap.get(m.plan_id)!.push(model);
+        }
       });
 
       // Transform data to include models
@@ -126,8 +103,8 @@ export async function GET(request: Request) {
       ...plan,
       provider: plan.provider_id
         ? providerMap.get(plan.provider_id)
-        : (plan.products?.provider_id ? providerMap.get(plan.products.provider_id) : null),
-      product: plan.products,
+        : (plan.models?.provider_ids?.[0] ? providerMap.get(plan.models.provider_ids[0]) : null),
+      product: plan.models,
     }));
 
     return NextResponse.json(transformed);

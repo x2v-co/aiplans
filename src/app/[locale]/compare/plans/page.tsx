@@ -57,16 +57,16 @@ export default function ComparePlansIndexPage(props: {
         const providerMap = new Map();
         allProducts.forEach((product: any) => {
           if (product.planCount > 0) {
-            const providerId = product.providers?.id || product.provider_id;
+            const providerId = product.providers?.id || product.provider_ids?.[0];
             const providerName = product.providers?.name || 'Unknown';
-            const providerLogo = product.providers?.logo_url || '';
+            const providerLogo = product.providers?.logo || '';
 
             if (!providerMap.has(providerId)) {
               providerMap.set(providerId, {
                 provider: {
                   id: providerId,
                   name: providerName,
-                  logo_url: providerLogo
+                  logo: providerLogo
                 },
                 models: []
               });
@@ -164,9 +164,9 @@ export default function ComparePlansIndexPage(props: {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        {model.providers?.logo_url ? (
+                        {model.providers?.logo ? (
                           <img
-                            src={model.providers.logo_url}
+                            src={model.providers.logo}
                             alt={model.providers.name}
                             className="w-8 h-8 object-contain"
                           />
@@ -217,9 +217,9 @@ export default function ComparePlansIndexPage(props: {
                 <Card key={item.provider.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      {item.provider.logo_url ? (
+                      {item.provider.logo ? (
                         <img
-                          src={item.provider.logo_url}
+                          src={item.provider.logo}
                           alt={item.provider.name}
                           className="w-12 h-12 object-contain"
                         />

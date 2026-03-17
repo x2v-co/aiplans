@@ -12,20 +12,20 @@ async function clearData() {
   // Clear in order to respect foreign key constraints
   // Start with child tables, then parent tables
 
-  // Clear models table (plan-model relationships)
-  const { error: modelsError } = await supabaseAdmin.from('models').delete().neq('id', 0);
-  if (modelsError) {
-    console.error('❌ Error clearing models:', modelsError);
+  // Clear model_plan_mapping table (plan-model relationships)
+  const { error: mappingError } = await supabaseAdmin.from('model_plan_mapping').delete().neq('id', 0);
+  if (mappingError) {
+    console.error('❌ Error clearing model_plan_mapping:', mappingError);
   } else {
-    console.log('✅ Cleared models table');
+    console.log('✅ Cleared model_plan_mapping table');
   }
 
-  // Clear channel_prices table
-  const { error: pricesError } = await supabaseAdmin.from('channel_prices').delete().neq('id', 0);
+  // Clear api_channel_prices table
+  const { error: pricesError } = await supabaseAdmin.from('api_channel_prices').delete().neq('id', 0);
   if (pricesError) {
-    console.error('❌ Error clearing channel_prices:', pricesError);
+    console.error('❌ Error clearing api_channel_prices:', pricesError);
   } else {
-    console.log('✅ Cleared channel_prices table');
+    console.log('✅ Cleared api_channel_prices table');
   }
 
   // Clear price_history table
@@ -36,12 +36,12 @@ async function clearData() {
     console.log('✅ Cleared price_history table');
   }
 
-  // Clear old_model_plan_mapping table (backup)
-  const { error: mappingError } = await supabaseAdmin.from('old_model_plan_mapping').delete().neq('id', 0);
-  if (mappingError) {
-    console.error('❌ Error clearing old_model_plan_mapping:', mappingError);
+  // Clear model_benchmark_scores table
+  const { error: scoresError } = await supabaseAdmin.from('model_benchmark_scores').delete().neq('id', 0);
+  if (scoresError) {
+    console.error('❌ Error clearing model_benchmark_scores:', scoresError);
   } else {
-    console.log('✅ Cleared old_model_plan_mapping table');
+    console.log('✅ Cleared model_benchmark_scores table');
   }
 
   // Clear plans table (after model tables are cleared)
@@ -52,12 +52,12 @@ async function clearData() {
     console.log('✅ Cleared plans table');
   }
 
-  // Clear products table (after dependent tables are cleared)
-  const { error: productsError } = await supabaseAdmin.from('products').delete().neq('id', 0);
-  if (productsError) {
-    console.error('❌ Error clearing products:', productsError);
+  // Clear models table (after dependent tables are cleared)
+  const { error: modelsError } = await supabaseAdmin.from('models').delete().neq('id', 0);
+  if (modelsError) {
+    console.error('❌ Error clearing models:', modelsError);
   } else {
-    console.log('✅ Cleared products table');
+    console.log('✅ Cleared models table');
   }
 
   // Clear channels table

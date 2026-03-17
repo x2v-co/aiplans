@@ -28,242 +28,107 @@ interface QwenPlan {
 /**
  * Fetch and parse Qwen pricing from Alibaba Cloud
  */
-async function fetchQwenPlans(): Promise<QwenPlan[]> {
+async function fetchQwenPlans(): Promise<{ plans: QwenPlan[], errors: string[] }> {
   const result = await fetchHTML(QWEN_PRICING_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Qwen pricing page, using fallback data');
-    return getFallbackPlans();
+    return { plans: [], errors: ['Failed to fetch Qwen pricing page - no HTML returned'] };
   }
 
   const html = result.data;
   const plans: QwenPlan[] = [];
 
-  // Qwen Coding Plan Subscription Tiers (from official page)
-  // https://help.aliyun.com/zh/model-studio/coding-plan
+  // Extract prices from HTML - only proceed if we can find actual pricing data
+  const litePriceMatch = html.match(/Lite[^￥]*?￥\s*([\d,.]+)/i) || html.match(/轻量[^￥]*?￥\s*([\d,.]+)/i);
+  const proPriceMatch = html.match(/Pro[^￥]*?￥\s*([\d,.]+)/i) || html.match(/专业[^￥]*?￥\s*([\d,.]+)/i);
+  const enterpriseMatch = html.match(/Enterprise|企业/i);
 
-  // Qwen Free Trial
-  const freePlan: QwenPlan = {
-    name: 'Qwen Free Trial',
-    priceMonthly: 0,
-    tier: 'free',
-    dailyMessageLimit: undefined,
-    features: [
-      'Free trial tokens',
-      'Access to Qwen models for testing',
-      'Standard response speed',
-      'Chinese-optimized',
-    ],
-    paymentMethods: [],
-    accessFromChina: true,
-    region: 'both',
-    pricingModel: 'pay_as_you_go',
-  };
-  plans.push(freePlan);
-
-  // Qwen Lite - ¥7.9/month
-  const litePlan: QwenPlan = {
-    name: 'Qwen Lite',
-    priceMonthly: 7.9,
-    priceYearly: 7.9 * 12,
-    tier: 'basic',
-    dailyMessageLimit: undefined,
-    features: [
-      '¥7.9/month subscription',
-      'Supports: qwen-plus, qwen-max',
-      'Basic coding features',
-      'Standard response speed',
-      'Chinese-optimized',
-      'Alipay, WeChat Pay, Credit Card',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay', 'Credit Card'],
-    accessFromChina: true,
-    region: 'both',
-    pricingModel: 'subscription',
-  };
-  plans.push(litePlan);
-
-  // Qwen Pro - ¥39.9/month
-  const proPlan: QwenPlan = {
-    name: 'Qwen Pro',
-    priceMonthly: 39.9,
-    priceYearly: 39.9 * 12,
-    tier: 'pro',
-    dailyMessageLimit: undefined,
-    features: [
-      '¥39.9/month subscription',
-      'Supports: qwen-3.5-plus, qwen-max, kimi-k2.5, MiniMax-M2.5, glm-5',
-      'Advanced coding features',
-      'Faster response speed',
-      'More models available',
-      'Chinese-optimized',
-      'Alipay, WeChat Pay, Credit Card',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay', 'Credit Card'],
-    accessFromChina: true,
-    region: 'both',
-    pricingModel: 'subscription',
-  };
-  plans.push(proPlan);
-
-  // Token Pack options (if available)
-  const tokenPackPlan: QwenPlan = {
-    name: 'Qwen Token Pack',
-    priceMonthly: 0, // Variable pricing based on pack size
-    tier: 'basic',
-    dailyMessageLimit: undefined,
-    features: [
-      'Pre-purchased token packs',
-      'Discount vs pay-as-you-go',
-      'Valid for 12 months',
-      'Access to all Qwen models',
-      'Chinese-optimized',
-      'Cost-effective for regular users',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay', 'Credit Card'],
-    accessFromChina: true,
-    region: 'both',
-    pricingModel: 'token_pack',
-  };
-  plans.push(tokenPackPlan);
-
-  // Enterprise plan
-  const enterprisePlan: QwenPlan = {
-    name: 'Qwen Enterprise',
-    priceMonthly: 0, // Custom pricing
-    tier: 'enterprise',
-    dailyMessageLimit: undefined,
-    features: [
-      'Volume discounts',
-      'Custom model deployment',
-      'Dedicated infrastructure',
-      'Enterprise-grade security',
-      'SSO integration',
-      'Audit logs',
-      'Dedicated account manager',
-      'Priority access to new features',
-      'SLA guarantees',
-      'Data residency options',
-      'Custom fine-tuning capabilities',
-    ],
-    paymentMethods: ['Invoice', 'Contract'],
-    accessFromChina: true,
-    region: 'both',
-    pricingModel: 'pay_as_you_go',
-  };
-  plans.push(enterprisePlan);
-
-  // If no plans found, use fallback
-  if (plans.length === 0) {
-    console.warn('No plans parsed from HTML, using fallback data');
-    return getFallbackPlans();
+  // Check if we found any pricing information
+  if (!litePriceMatch && !proPriceMatch && !enterpriseMatch) {
+    return {
+      plans: [],
+      errors: ['No pricing information found on Qwen page. The page structure may have changed.']
+    };
   }
 
-  return plans;
-}
-
-/**
- * Fallback plan data (known as of 2025-2026)
- */
-function getFallbackPlans(): QwenPlan[] {
-  return [
-    {
+  // Free plan - check if mentioned on page
+  if (html.match(/free|Free|FREE|免费/i)) {
+    const freePlan: QwenPlan = {
       name: 'Qwen Free Trial',
       priceMonthly: 0,
       tier: 'free',
       dailyMessageLimit: undefined,
-      features: [
-        'Free trial tokens',
-        'Access to Qwen models for testing',
-        'Standard response speed',
-        'Chinese-optimized',
-      ],
+      features: ['Free trial tokens', 'Access to Qwen models for testing'],
       paymentMethods: [],
       accessFromChina: true,
       region: 'both',
       pricingModel: 'pay_as_you_go',
-    },
-    {
-      name: 'Qwen Lite',
-      priceMonthly: 7.9,
-      priceYearly: 7.9 * 12,
-      tier: 'basic',
-      dailyMessageLimit: undefined,
-      features: [
-        '¥7.9/month subscription',
-        'Supports: qwen-plus, qwen-max',
-        'Basic coding features',
-        'Standard response speed',
-        'Chinese-optimized',
-        'Alipay, WeChat Pay, Credit Card',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay', 'Credit Card'],
-      accessFromChina: true,
-      region: 'both',
-      pricingModel: 'subscription',
-    },
-    {
-      name: 'Qwen Pro',
-      priceMonthly: 39.9,
-      priceYearly: 39.9 * 12,
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      features: [
-        '¥39.9/month subscription',
-        'Supports: qwen-3.5-plus, qwen-max, kimi-k2.5, MiniMax-M2.5, glm-5',
-        'Advanced coding features',
-        'Faster response speed',
-        'More models available',
-        'Chinese-optimized',
-        'Alipay, WeChat Pay, Credit Card',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay', 'Credit Card'],
-      accessFromChina: true,
-      region: 'both',
-      pricingModel: 'subscription',
-    },
-    {
-      name: 'Qwen Token Pack',
-      priceMonthly: 0,
-      tier: 'basic',
-      dailyMessageLimit: undefined,
-      features: [
-        'Pre-purchased token packs',
-        'Discount vs pay-as-you-go',
-        'Valid for 12 months',
-        'Access to all Qwen models',
-        'Chinese-optimized',
-        'Cost-effective for regular users',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay', 'Credit Card'],
-      accessFromChina: true,
-      region: 'both',
-      pricingModel: 'token_pack',
-    },
-    {
+    };
+    plans.push(freePlan);
+  }
+
+  // Lite plan - only add if we found the price
+  if (litePriceMatch) {
+    const priceMatch = litePriceMatch[0].match(/[￥]?\s*([\d,.]+)/);
+    if (priceMatch) {
+      const litePlan: QwenPlan = {
+        name: 'Qwen Lite',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'basic',
+        dailyMessageLimit: undefined,
+        features: [], // Features should be extracted from actual page content
+        paymentMethods: ['Alipay', 'WeChat Pay', 'Credit Card'],
+        accessFromChina: true,
+        region: 'both',
+        pricingModel: 'subscription',
+      };
+      plans.push(litePlan);
+    }
+  }
+
+  // Pro plan - only add if we found the price
+  if (proPriceMatch) {
+    const priceMatch = proPriceMatch[0].match(/[￥]?\s*([\d,.]+)/);
+    if (priceMatch) {
+      const proPlan: QwenPlan = {
+        name: 'Qwen Pro',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'pro',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Alipay', 'WeChat Pay', 'Credit Card'],
+        accessFromChina: true,
+        region: 'both',
+        pricingModel: 'subscription',
+      };
+      plans.push(proPlan);
+    }
+  }
+
+  // Enterprise plan - only add if mentioned (custom pricing)
+  if (enterpriseMatch) {
+    const enterprisePlan: QwenPlan = {
       name: 'Qwen Enterprise',
-      priceMonthly: 0,
+      priceMonthly: 0, // Custom pricing
       tier: 'enterprise',
       dailyMessageLimit: undefined,
-      features: [
-        'Volume discounts',
-        'Custom model deployment',
-        'Dedicated infrastructure',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'Data residency options',
-        'Custom fine-tuning capabilities',
-      ],
+      features: [],
       paymentMethods: ['Invoice', 'Contract'],
       accessFromChina: true,
       region: 'both',
       pricingModel: 'pay_as_you_go',
-    },
-  ];
+    };
+    plans.push(enterprisePlan);
+  }
+
+  if (plans.length === 0) {
+    errors.push('No plans could be parsed from Qwen pricing page. The page structure may have changed.');
+  }
+
+  return { plans, errors };
 }
 
 export async function scrapeQwenPlans(): Promise<PlanScraperResult> {
@@ -274,7 +139,10 @@ export async function scrapeQwenPlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching Alibaba Qwen subscription plans...');
 
-    const qwenPlans = await fetchQwenPlans();
+    const { plans: qwenPlans, errors: fetchErrors } = await fetchQwenPlans();
+    if (fetchErrors.length > 0) {
+      errors.push(...fetchErrors);
+    }
 
     console.log(`📦 Found ${qwenPlans.length} plans from Alibaba Qwen`);
     console.log(`🔗 Invite Link: ${QWEN_INVITE_LINK}`);
@@ -320,7 +188,7 @@ export async function scrapeQwenPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Qwen-Plans',
-      success: true,
+      success: plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

@@ -1,5 +1,6 @@
 /**
  * DMXAPI / 大模型API Scraper - Dynamic fetching from pricing page
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
@@ -18,12 +19,12 @@ interface DMXAPIModel {
 /**
  * Fetch and parse DMXAPI pricing from their website
  */
-async function fetchDMXAPIPricing(): Promise<DMXAPIModel[]> {
+async function fetchDMXAPIPricing(): Promise<{ models: DMXAPIModel[], errors: string[] }> {
   const result = await fetchHTML(DMXAPI_PRICING_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch DMXAPI pricing page, using fallback data');
-    return getFallbackPricing();
+    return { models: [], errors: ['Failed to fetch DMXAPI pricing page'] };
   }
 
   const html = result.data;
@@ -80,65 +81,11 @@ async function fetchDMXAPIPricing(): Promise<DMXAPIModel[]> {
     }
   }
 
-  // If no models found, use fallback
   if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
+    errors.push('No models could be parsed from DMXAPI pricing page. The page structure may have changed.');
   }
 
-  return models;
-}
-
-/**
- * Fallback pricing data (as of 2026)
- * DMXAPI is a reseller with competitive pricing
- * Prices in CNY per 1M tokens
- */
-function getFallbackPricing(): DMXAPIModel[] {
-  return [
-    {
-      model: 'gpt-4o',
-      inputPrice: 15.00,
-      outputPrice: 15.00,
-      contextWindow: 128000,
-    },
-    {
-      model: 'gpt-4o-mini',
-      inputPrice: 0.90,
-      outputPrice: 0.90,
-      contextWindow: 128000,
-    },
-    {
-      model: 'claude-3.5-sonnet',
-      inputPrice: 18.00,
-      outputPrice: 18.00,
-      contextWindow: 200000,
-    },
-    {
-      model: 'claude-3.5-haiku',
-      inputPrice: 4.50,
-      outputPrice: 4.50,
-      contextWindow: 200000,
-    },
-    {
-      model: 'deepseek-chat',
-      inputPrice: 1.50,
-      outputPrice: 1.50,
-      contextWindow: 128000,
-    },
-    {
-      model: 'gemini-1.5-pro',
-      inputPrice: 8.00,
-      outputPrice: 8.00,
-      contextWindow: 2000000,
-    },
-    {
-      model: 'gemini-1.5-flash',
-      inputPrice: 0.50,
-      outputPrice: 0.50,
-      contextWindow: 1000000,
-    },
-  ];
+  return { models, errors };
 }
 
 export async function scrapeDMXAPIDynamic(): Promise<ScraperResult> {
@@ -149,7 +96,8 @@ export async function scrapeDMXAPIDynamic(): Promise<ScraperResult> {
   try {
     console.log('🔄 Fetching DMXAPI pricing...');
 
-    const models = await fetchDMXAPIPricing();
+    const { models, errors: fetchErrors } = await fetchDMXAPIPricing();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${models.length} models from DMXAPI`);
 
@@ -168,7 +116,7 @@ export async function scrapeDMXAPIDynamic(): Promise<ScraperResult> {
           outputPricePer1M: model.outputPrice,
           contextWindow: model.contextWindow,
           isAvailable: true,
-          currency: 'CNY', // DMXAPI prices are in CNY
+          currency: 'CNY',
         });
       } catch (error) {
         errors.push(`Error processing ${model.model}: ${error}`);
@@ -182,7 +130,7 @@ export async function scrapeDMXAPIDynamic(): Promise<ScraperResult> {
 
     return {
       source: 'DMXAPI',
-      success: true,
+      success: prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };

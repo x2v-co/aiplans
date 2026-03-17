@@ -1,5 +1,6 @@
 /**
  * Hunyuan / 腾讯混元 API Scraper - Dynamic fetching from pricing page
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
@@ -18,12 +19,12 @@ interface HunyuanModel {
 /**
  * Fetch and parse Hunyuan pricing from their website
  */
-async function fetchHunyuanPricing(): Promise<HunyuanModel[]> {
+async function fetchHunyuanPricing(): Promise<{ models: HunyuanModel[], errors: string[] }> {
   const result = await fetchHTML(HUNYUAN_PRICING_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Hunyuan pricing page, using fallback data');
-    return getFallbackPricing();
+    return { models: [], errors: ['Failed to fetch Hunyuan pricing page'] };
   }
 
   const html = result.data;
@@ -73,52 +74,11 @@ async function fetchHunyuanPricing(): Promise<HunyuanModel[]> {
     }
   }
 
-  // If no models found, use fallback
   if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
+    errors.push('No models could be parsed from Hunyuan pricing page. The page structure may have changed.');
   }
 
-  return models;
-}
-
-/**
- * Fallback pricing data (as of 2026)
- * Prices in CNY per 1M tokens
- */
-function getFallbackPricing(): HunyuanModel[] {
-  return [
-    {
-      model: 'hunyuan-pro',
-      inputPrice: 15.00,
-      outputPrice: 15.00,
-      contextWindow: 128000,
-    },
-    {
-      model: 'hunyuan-lite',
-      inputPrice: 3.00,
-      outputPrice: 3.00,
-      contextWindow: 128000,
-    },
-    {
-      model: 'hunyuan-standard',
-      inputPrice: 6.00,
-      outputPrice: 6.00,
-      contextWindow: 128000,
-    },
-    {
-      model: 'hunyuan-turbo',
-      inputPrice: 1.50,
-      outputPrice: 1.50,
-      contextWindow: 128000,
-    },
-    {
-      model: 'hunyuan-vision',
-      inputPrice: 15.00,
-      outputPrice: 15.00,
-      contextWindow: 8192,
-    },
-  ];
+  return { models, errors };
 }
 
 export async function scrapeHunyuanDynamic(): Promise<ScraperResult> {
@@ -129,7 +89,8 @@ export async function scrapeHunyuanDynamic(): Promise<ScraperResult> {
   try {
     console.log('🔄 Fetching Hunyuan pricing...');
 
-    const models = await fetchHunyuanPricing();
+    const { models, errors: fetchErrors } = await fetchHunyuanPricing();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${models.length} models from Hunyuan`);
 
@@ -148,7 +109,7 @@ export async function scrapeHunyuanDynamic(): Promise<ScraperResult> {
           outputPricePer1M: model.outputPrice,
           contextWindow: model.contextWindow,
           isAvailable: true,
-          currency: 'CNY', // Hunyuan prices are in CNY
+          currency: 'CNY',
         });
       } catch (error) {
         errors.push(`Error processing ${model.model}: ${error}`);
@@ -162,7 +123,7 @@ export async function scrapeHunyuanDynamic(): Promise<ScraperResult> {
 
     return {
       source: 'Hunyuan-Tencent',
-      success: true,
+      success: prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };

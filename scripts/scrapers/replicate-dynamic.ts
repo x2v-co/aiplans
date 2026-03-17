@@ -1,5 +1,6 @@
 /**
  * Replicate API Scraper - Dynamic fetching from pricing page
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
@@ -18,12 +19,12 @@ interface ReplicateModel {
 /**
  * Fetch and parse Replicate pricing from their website
  */
-async function fetchReplicatePricing(): Promise<ReplicateModel[]> {
+async function fetchReplicatePricing(): Promise<{ models: ReplicateModel[], errors: string[] }> {
   const result = await fetchHTML(REPLICATE_PRICING_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Replicate pricing page, using fallback data');
-    return getFallbackPricing();
+    return { models: [], errors: ['Failed to fetch Replicate pricing page'] };
   }
 
   const html = result.data;
@@ -68,46 +69,11 @@ async function fetchReplicatePricing(): Promise<ReplicateModel[]> {
     }
   }
 
-  // If no models found, use fallback
   if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
+    errors.push('No models could be parsed from Replicate pricing page. The page structure may have changed.');
   }
 
-  return models;
-}
-
-/**
- * Fallback pricing data (as of 2025-2026)
- * Prices in USD per 1M tokens (estimated)
- */
-function getFallbackPricing(): ReplicateModel[] {
-  return [
-    {
-      model: 'meta-llama-3.1-405b-instruct',
-      inputPrice: 1.20,
-      outputPrice: 1.20,
-      contextWindow: 131072,
-    },
-    {
-      model: 'meta-llama-3.1-70b-instruct',
-      inputPrice: 0.85,
-      outputPrice: 0.85,
-      contextWindow: 131072,
-    },
-    {
-      model: 'meta-llama-3-8b-instruct',
-      inputPrice: 0.15,
-      outputPrice: 0.15,
-      contextWindow: 131072,
-    },
-    {
-      model: 'meta-llama-3.1-8b-instruct',
-      inputPrice: 0.15,
-      outputPrice: 0.15,
-      contextWindow: 131072,
-    },
-  ];
+  return { models, errors };
 }
 
 export async function scrapeReplicateDynamic(): Promise<ScraperResult> {
@@ -118,7 +84,8 @@ export async function scrapeReplicateDynamic(): Promise<ScraperResult> {
   try {
     console.log('🔄 Fetching Replicate pricing...');
 
-    const models = await fetchReplicatePricing();
+    const { models, errors: fetchErrors } = await fetchReplicatePricing();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${models.length} models from Replicate`);
 
@@ -137,7 +104,7 @@ export async function scrapeReplicateDynamic(): Promise<ScraperResult> {
           outputPricePer1M: model.outputPrice,
           contextWindow: model.contextWindow,
           isAvailable: true,
-          currency: 'USD', // Replicate prices are in USD
+          currency: 'USD',
         });
       } catch (error) {
         errors.push(`Error processing ${model.model}: ${error}`);
@@ -151,7 +118,7 @@ export async function scrapeReplicateDynamic(): Promise<ScraperResult> {
 
     return {
       source: 'Replicate',
-      success: true,
+      success: prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };

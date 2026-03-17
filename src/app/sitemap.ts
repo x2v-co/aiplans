@@ -86,7 +86,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Try to fetch additional models from database
   try {
     const { data: products } = await supabase
-      .from('products')
+      .from('models')
       .select('slug')
       .eq('type', 'llm')
       .limit(100);

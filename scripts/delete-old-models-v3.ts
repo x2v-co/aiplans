@@ -1,15 +1,15 @@
 #!/usr/bin/env tsx
 
-import { supabaseAdmin } from './db/queries';
+import { supabaseAdmin, getModelBySlug } from './db/queries';
 
-async function deleteModel(productId: number, modelName: string) {
-  console.log(`\n=== Deleting ${modelName} (id=${productId}) ===`);
+async function deleteModel(modelId: number, modelName: string) {
+  console.log(`\n=== Deleting ${modelName} (id=${modelId}) ===`);
 
-  // Check channel price references
+  // Check channel price references (note: table is api_channel_prices)
   const { data: channelPrices } = await supabaseAdmin
-    .from('channel_prices')
-    .select('id, product_id')
-    .eq('product_id', productId);
+    .from('api_channel_prices')
+    .select('id, model_id')
+    .eq('model_id', modelId);
 
   console.log(`Channel price references: ${channelPrices?.length || 0}`);
 
@@ -17,7 +17,7 @@ async function deleteModel(productId: number, modelName: string) {
   if (channelPrices && channelPrices.length > 0) {
     for (const ref of channelPrices) {
       const { error } = await supabaseAdmin
-        .from('channel_prices')
+        .from('api_channel_prices')
         .delete()
         .eq('id', ref.id);
 
@@ -29,18 +29,35 @@ async function deleteModel(productId: number, modelName: string) {
     }
   }
 
-  // Delete the product
-  console.log(`Deleting product ${productId}...`);
+  // Delete benchmark scores
+  const { data: benchmarkScores } = await supabaseAdmin
+    .from('model_benchmark_scores')
+    .select('id')
+    .eq('model_id', modelId);
+
+  if (benchmarkScores && benchmarkScores.length > 0) {
+    const { error } = await supabaseAdmin
+      .from('model_benchmark_scores')
+      .delete()
+      .eq('model_id', modelId);
+
+    if (!error) {
+      console.log(`  Deleted ${benchmarkScores.length} benchmark score references`);
+    }
+  }
+
+  // Delete the model
+  console.log(`Deleting model ${modelId}...`);
   const { error } = await supabaseAdmin
-    .from('products')
+    .from('models')
     .delete()
-    .eq('id', productId);
+    .eq('id', modelId);
 
   if (!error) {
-    console.log(`✅ Deleted product ${productId}`);
+    console.log(`✅ Deleted model ${modelId}`);
     return true;
   } else {
-    console.log(`❌ Delete product error:`, error);
+    console.log(`❌ Delete model error:`, error);
     return false;
   }
 }
@@ -48,10 +65,22 @@ async function deleteModel(productId: number, modelName: string) {
 async function main() {
   console.log('Deleting old models: GPT-4o and gemini-1.5-pro\n');
 
-  const gpt4o = await deleteModel(2007, 'GPT-4o');
-  const gemini = await deleteModel(2570, 'gemini-1.5-pro');
+  // Find models by slug first
+  const gpt4o = await getModelBySlug('gpt-4o');
+  const gemini = await getModelBySlug('gemini-1.5-pro');
 
-  if (gpt4o && gemini) {
+  if (!gpt4o) {
+    console.log('⚠️  GPT-4o model not found by slug, skipping');
+  }
+
+  if (!gemini) {
+    console.log('⚠️  gemini-1.5-pro model not found by slug, skipping');
+  }
+
+  const gpt4oDeleted = gpt4o ? await deleteModel(gpt4o.id, 'GPT-4o') : true;
+  const geminiDeleted = gemini ? await deleteModel(gemini.id, 'gemini-1.5-pro') : true;
+
+  if (gpt4oDeleted && geminiDeleted) {
     console.log('\n✅ All old models deleted successfully');
   } else {
     console.log('\n⚠️  Some deletions failed');

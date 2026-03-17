@@ -23,160 +23,111 @@ interface MoonshotPlan {
 /**
  * Fetch and parse Moonshot subscription plans from their website
  */
-async function fetchMoonshotPlans(): Promise<MoonshotPlan[]> {
+async function fetchMoonshotPlans(): Promise<{ plans: MoonshotPlan[], errors: string[] }> {
   const result = await fetchHTML(MOONSHOT_PLANS_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Moonshot plans page, using fallback data');
-    return getFallbackPlans();
+    return { plans: [], errors: ['Failed to fetch Moonshot plans page - no HTML returned'] };
   }
 
   const html = result.data;
   const plans: MoonshotPlan[] = [];
 
-  // Try to extract plan information from HTML
-  // Look for pricing patterns in CNY for Kimi subscription
+  // Extract prices from HTML - only proceed if we can find actual pricing data
   const basicPriceMatch = html.match(/Basic[^￥]*?￥\s*[\d,]+/i);
   const proPriceMatch = html.match(/Pro[^￥]*?￥\s*[\d,]+/i);
   const teamPriceMatch = html.match(/Team[^￥]*?￥\s*[\d,]+/i);
   const enterpriseMatch = html.match(/Enterprise|企业/i);
 
-  // Free plan (Kimi Free)
-  const freePlan: MoonshotPlan = {
-    name: 'Kimi Free',
-    priceMonthly: 0,
-    tier: 'free',
-    dailyMessageLimit: undefined,
-    features: [
-      'Access to Moonshot basic models',
-      'Limited message capacity',
-      'Standard response speed',
-      'Web browsing',
-      'File upload support (limited)',
-      'Chinese-optimized',
-    ],
-    paymentMethods: [],
-    accessFromChina: true,
-    region: 'china',
-  };
-  plans.push(freePlan);
-
-  // Basic plan
-  const basicPlan: MoonshotPlan = {
-    name: 'Kimi Basic',
-    priceMonthly: 12,
-    priceYearly: undefined,
-    tier: 'basic',
-    dailyMessageLimit: undefined,
-    features: [
-      'Access to Moonshot v1 models',
-      'Higher message limits',
-      'Faster response speeds',
-      'Extended context windows',
-      'File upload support',
-      'Web browsing',
-      'Chinese-optimized',
-      'Code generation support',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay'],
-    accessFromChina: true,
-    region: 'china',
-  };
-
-  if (basicPriceMatch) {
-    const priceMatch = basicPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      basicPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-    }
+  // Check if we found any pricing information
+  if (!basicPriceMatch && !proPriceMatch && !teamPriceMatch && !enterpriseMatch) {
+    return {
+      plans: [],
+      errors: ['No pricing information found on Moonshot page. The page structure may have changed.']
+    };
   }
-  plans.push(basicPlan);
 
-  // Pro plan
-  const proPlan: MoonshotPlan = {
-    name: 'Kimi Pro',
-    priceMonthly: 68,
-    priceYearly: undefined,
-    tier: 'pro',
-    dailyMessageLimit: undefined,
-    features: [
-      'Everything in Basic',
-      'Access to Moonshot v1-128k and v1-256k',
-      'Higher message limits',
-      'Priority access during peak times',
-      'Extended context windows (up to 256k)',
-      'Advanced file analysis',
-      'Chinese-optimized',
-      'Advanced code generation',
-      'Image analysis',
-      'Early access to new features',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay'],
-    accessFromChina: true,
-    region: 'china',
-  };
-
-  if (proPriceMatch) {
-    const priceMatch = proPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      proPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-    }
-  }
-  plans.push(proPlan);
-
-  // Team plan
-  if (teamPriceMatch || html.includes('Team') || html.includes('团队')) {
-    const teamPlan: MoonshotPlan = {
-      name: 'Kimi Team',
-      priceMonthly: 198,
-      priceYearly: undefined,
-      tier: 'team',
+  // Free plan - check if mentioned on page
+  if (html.match(/free|Free|FREE|免费/i)) {
+    const freePlan: MoonshotPlan = {
+      name: 'Kimi Free',
+      priceMonthly: 0,
+      tier: 'free',
       dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Team collaboration tools',
-        'Admin console',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'Custom integrations',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
+      features: ['Access to Moonshot basic models', 'Limited message capacity'],
+      paymentMethods: [],
       accessFromChina: true,
       region: 'china',
     };
-
-    if (teamPriceMatch) {
-      const priceMatch = teamPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-      if (priceMatch) {
-        teamPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-      }
-    }
-    plans.push(teamPlan);
+    plans.push(freePlan);
   }
 
-  // Enterprise plan
+  // Basic plan - only add if we found the price
+  if (basicPriceMatch) {
+    const priceMatch = basicPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
+    if (priceMatch) {
+      const basicPlan: MoonshotPlan = {
+        name: 'Kimi Basic',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'basic',
+        dailyMessageLimit: undefined,
+        features: [], // Features should be extracted from actual page content
+        paymentMethods: ['Alipay', 'WeChat Pay'],
+        accessFromChina: true,
+        region: 'china',
+      };
+      plans.push(basicPlan);
+    }
+  }
+
+  // Pro plan - only add if we found the price
+  if (proPriceMatch) {
+    const priceMatch = proPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
+    if (priceMatch) {
+      const proPlan: MoonshotPlan = {
+        name: 'Kimi Pro',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'pro',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Alipay', 'WeChat Pay'],
+        accessFromChina: true,
+        region: 'china',
+      };
+      plans.push(proPlan);
+    }
+  }
+
+  // Team plan - only add if we found the price
+  if (teamPriceMatch) {
+    const priceMatch = teamPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
+    if (priceMatch) {
+      const teamPlan: MoonshotPlan = {
+        name: 'Kimi Team',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'team',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
+        accessFromChina: true,
+        region: 'china',
+      };
+      plans.push(teamPlan);
+    }
+  }
+
+  // Enterprise plan - only add if mentioned (custom pricing)
   if (enterpriseMatch) {
     const enterprisePlan: MoonshotPlan = {
       name: 'Kimi Enterprise',
       priceMonthly: 0, // Custom pricing
       tier: 'enterprise',
       dailyMessageLimit: undefined,
-      features: [
-        'Everything in Team',
-        'Full API access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'Data residency options',
-        'Custom fine-tuning capabilities',
-      ],
+      features: [],
       paymentMethods: ['Invoice', 'Contract'],
       accessFromChina: true,
       region: 'china',
@@ -184,124 +135,11 @@ async function fetchMoonshotPlans(): Promise<MoonshotPlan[]> {
     plans.push(enterprisePlan);
   }
 
-  // If no plans found, use fallback
   if (plans.length === 0) {
-    console.warn('No plans parsed from HTML, using fallback data');
-    return getFallbackPlans();
+    errors.push('No plans could be parsed from Moonshot pricing page. The page structure may have changed.');
   }
 
-  return plans;
-}
-
-/**
- * Fallback plan data (known as of 2025-2026)
- */
-function getFallbackPlans(): MoonshotPlan[] {
-  return [
-    {
-      name: 'Kimi Free',
-      priceMonthly: 0,
-      tier: 'free',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to Moonshot basic models',
-        'Limited message capacity',
-        'Standard response speed',
-        'Web browsing',
-        'File upload support (limited)',
-        'Chinese-optimized',
-      ],
-      paymentMethods: [],
-      accessFromChina: true,
-      region: 'china',
-    },
-    {
-      name: 'Kimi Basic',
-      priceMonthly: 12,
-      priceYearly: undefined,
-      tier: 'basic',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to Moonshot v1 models',
-        'Higher message limits',
-        'Faster response speeds',
-        'Extended context windows',
-        'File upload support',
-        'Web browsing',
-        'Chinese-optimized',
-        'Code generation support',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay'],
-      accessFromChina: true,
-      region: 'china',
-    },
-    {
-      name: 'Kimi Pro',
-      priceMonthly: 68,
-      priceYearly: undefined,
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Basic',
-        'Access to Moonshot v1-128k and v1-256k',
-        'Higher message limits',
-        'Priority access during peak times',
-        'Extended context windows (up to 256k)',
-        'Advanced file analysis',
-        'Chinese-optimized',
-        'Advanced code generation',
-        'Image analysis',
-        'Early access to new features',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay'],
-      accessFromChina: true,
-      region: 'china',
-    },
-    {
-      name: 'Kimi Team',
-      priceMonthly: 198,
-      priceYearly: undefined,
-      tier: 'team',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Team collaboration tools',
-        'Admin console',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'Custom integrations',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
-      accessFromChina: true,
-      region: 'china',
-    },
-    {
-      name: 'Kimi Enterprise',
-      priceMonthly: 0,
-      tier: 'enterprise',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Team',
-        'Full API access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'Data residency options',
-        'Custom fine-tuning capabilities',
-      ],
-      paymentMethods: ['Invoice', 'Contract'],
-      accessFromChina: true,
-      region: 'china',
-    },
-  ];
+  return { plans, errors };
 }
 
 export async function scrapeMoonshotPlans(): Promise<PlanScraperResult> {
@@ -312,7 +150,8 @@ export async function scrapeMoonshotPlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching Moonshot (Kimi) subscription plans...');
 
-    const moonshotPlans = await fetchMoonshotPlans();
+    const { plans: moonshotPlans, errors: fetchErrors } = await fetchMoonshotPlans();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${moonshotPlans.length} plans from Moonshot`);
 
@@ -357,7 +196,7 @@ export async function scrapeMoonshotPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Moonshot-Plans',
-      success: true,
+      success: plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

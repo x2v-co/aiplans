@@ -1,129 +1,171 @@
 /**
- * DeepSeek API Scraper - Dynamic fetching from /v1/models
+ * DeepSeek API Scraper - Scrapes pricing documentation page
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
 import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { fetchJSON } from './base-fetcher';
+import { PlaywrightScraper, PriceData } from './lib/playwright-scraper';
 
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/models';
+const DEEPSEEK_PRICING_URL = 'https://api-docs.deepseek.com/quick_start/pricing';
 
-interface DeepSeekModel {
-  id: string;
-  object: string;
-  created: number;
-  owned_by: string;
-}
+class DeepSeekScraper extends PlaywrightScraper {
+  getSourceName(): string {
+    return 'DeepSeek-API';
+  }
 
-/**
- * DeepSeek pricing (as of 2026-02)
- * Used as fallback when API is not accessible
- */
-const DEEPSEEK_PRICING: Record<string, { input: number; output: number; context: number }> = {
-  'deepseek-chat': { input: 0.20, output: 2.00, context: 128000 }, // 缓存命中: 0.2元/M
-  'deepseek-coder': { input: 0.20, output: 2.00, context: 128000 },
-  'deepseek-reasoner': { input: 0.55, output: 2.19, context: 128000 },
-  'deepseek-v3': { input: 0.20, output: 2.00, context: 128000 },
-  'deepseek-r1-lite': { input: 0.14, output: 0.28, context: 128000 }, // 新增
-  'deepseek-v3-lite': { input: 0.14, output: 0.28, context: 128000 }, // 新增
-};
+  getSourceUrl(): string {
+    return DEEPSEEK_PRICING_URL;
+  }
 
-/**
- * Get fallback pricing data
- */
-function getFallbackPricing(): ScrapedPrice[] {
-  return Object.entries(DEEPSEEK_PRICING).map(([modelId, pricing]) => ({
-    modelName: normalizeModelName(modelId),
-    modelSlug: slugify(modelId),
-    inputPricePer1M: pricing.input,
-    outputPricePer1M: pricing.output,
-    contextWindow: pricing.context,
-    isAvailable: true,
-    currency: 'CNY',
-  }));
-}
+  async scrape(): Promise<ScraperResult> {
+    const errors: string[] = [];
+    const prices: PriceData[] = [];
 
-export async function scrapeDeepSeekDynamic(): Promise<ScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const prices: ScrapedPrice[] = [];
+    await this.navigate(DEEPSEEK_PRICING_URL);
 
-  try {
-    console.log('🔄 Fetching DeepSeek models...');
+    // Wait for pricing content to load
+    await this.page!.waitForTimeout(2000);
 
-    const result = await fetchJSON<{ data: DeepSeekModel[] }>(DEEPSEEK_API_URL);
+    // Get all text content from the page
+    const pageContent = await this.page!.textContent('body') || '';
 
-    // Handle auth failure gracefully with fallback
-    if (!result.success || !result.data) {
-      if (result.status === 401 || result.status === 403) {
-        console.warn('⚠️ DeepSeek API requires authentication, using fallback data');
-        return {
-          source: 'DeepSeek-API',
-          success: true,
-          prices: getFallbackPricing(),
-        };
-      }
-      throw new Error(result.error || 'Failed to fetch DeepSeek models');
-    }
+    // Known DeepSeek model patterns
+    const models = [
+      { name: 'deepseek-chat', patterns: [/deepseek[-\s]?chat/i] },
+      { name: 'deepseek-coder', patterns: [/deepseek[-\s]?coder/i] },
+      { name: 'deepseek-reasoner', patterns: [/deepseek[-\s]?reasoner/i] },
+      { name: 'deepseek-v3', patterns: [/deepseek[-\s]?v3/i] },
+      { name: 'deepseek-r1', patterns: [/deepseek[-\s]?r1/i] },
+    ];
 
-    const models = result.data.data || [];
-    console.log(`📦 Found ${models.length} models from DeepSeek`);
-
-    for (const model of models) {
+    for (const modelInfo of models) {
       try {
-        // Get pricing from our mapping
-        const pricing = DEEPSEEK_PRICING[model.id];
+        // Find the section containing this model's pricing
+        let modelSection: string | null = null;
 
-        if (!pricing) {
-          console.log(`⚠️ No pricing found for ${model.id}, skipping`);
-          continue;
+        for (const pattern of modelInfo.patterns) {
+          const match = pageContent.match(pattern);
+          if (match && match.index !== undefined) {
+            // Extract surrounding context
+            const start = Math.max(0, match.index - 100);
+            const end = Math.min(pageContent.length, match.index + match[0].length + 400);
+            modelSection = pageContent.slice(start, end);
+            break;
+          }
         }
 
-        const inputPrice = pricing.input;
-        const outputPrice = pricing.output;
+        if (!modelSection) continue;
 
-        // Validate prices
-        if (!validatePrice(inputPrice) || !validatePrice(outputPrice)) {
-          errors.push(`Invalid price for ${model.id}`);
-          continue;
+        // Extract prices from the section
+        // DeepSeek shows prices in CNY (¥) or USD ($)
+        // Look for patterns like "¥0.2", "$0.03", "0.20/M", etc.
+        const cnyPattern = /[¥￥]?\s*([\d.]+)\s*(?:\u5143|CNY)?\s*(?:per\s*)?(?:million|1M)?/gi;
+        const usdPattern = /\$?\s*([\d.]+)\s*(?:USD)?\s*(?:per\s*)?(?:million|1M)?/gi;
+
+        const cnyMatches = [...modelSection.matchAll(cnyPattern)];
+        const usdMatches = [...modelSection.matchAll(usdPattern)];
+
+        const validPrices: number[] = [];
+
+        // Process CNY prices (DeepSeek primary currency)
+        for (const match of cnyMatches) {
+          const price = parseFloat(match[1]);
+          if (price > 0 && price < 1000) {
+            validPrices.push(price);
+          }
         }
 
-        prices.push({
-          modelName: normalizeModelName(model.id),
-          modelSlug: slugify(model.id),
-          inputPricePer1M: inputPrice,
-          outputPricePer1M: outputPrice,
-          contextWindow: pricing.context,
-          isAvailable: true,
-          currency: 'CNY', // DeepSeek uses CNY
-        });
+        // Fallback to USD prices if no CNY found
+        if (validPrices.length < 2) {
+          for (const match of usdMatches) {
+            const price = parseFloat(match[1]);
+            if (price > 0 && price < 1000) {
+              validPrices.push(price);
+            }
+          }
+        }
+
+        if (validPrices.length >= 2) {
+          const inputPrice = validPrices[0];
+          const outputPrice = validPrices[1];
+
+          if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+            prices.push({
+              modelName: normalizeModelName(modelInfo.name),
+              inputPricePer1M: inputPrice,
+              outputPricePer1M: outputPrice,
+              contextWindow: 128000,
+              isAvailable: true,
+              currency: 'CNY', // DeepSeek uses CNY
+            });
+          }
+        }
       } catch (error) {
-        errors.push(`Error processing ${model.id}: ${error}`);
+        errors.push(`Failed to extract pricing for ${modelInfo.name}`);
       }
     }
 
-    const duration = Date.now() - startTime;
-    console.log(`✅ DeepSeek scrape completed in ${duration}ms`);
-    console.log(`   - Models processed: ${prices.length}`);
-    console.log(`   - Errors: ${errors.length}`);
+    // Try alternative approach: look for pricing tables
+    if (prices.length === 0) {
+      const tables = await this.page!.$$('table');
+      for (const table of tables) {
+        const rows = await table.$$('tr');
+        for (const row of rows) {
+          const text = await row.textContent();
+          if (!text) continue;
+
+          // Check if this row mentions a DeepSeek model
+          if (/deepseek/i.test(text)) {
+            const priceMatches = [...text.matchAll(/[¥￥$]?\s*([\d.]+)/g)];
+            const validPrices = priceMatches
+              .map(m => parseFloat(m[1]))
+              .filter(p => p > 0 && p < 1000);
+
+            if (validPrices.length >= 2) {
+              const modelNameMatch = text.match(/deepseek[-\s]?(chat|coder|reasoner|v3|r1)/i);
+              if (modelNameMatch) {
+                const modelName = 'deepseek-' + modelNameMatch[1].toLowerCase();
+
+                const inputPrice = validPrices[0];
+                const outputPrice = validPrices[1];
+
+                if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+                  // Avoid duplicates
+                  if (!prices.some(p => p.modelName.toLowerCase().includes(modelName.toLowerCase()))) {
+                    prices.push({
+                      modelName: normalizeModelName(modelName),
+                      inputPricePer1M: inputPrice,
+                      outputPricePer1M: outputPrice,
+                      contextWindow: 128000,
+                      isAvailable: true,
+                      currency: 'CNY',
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (prices.length === 0) {
+      errors.push('No pricing data could be extracted from DeepSeek pricing page. The page structure may have changed.');
+    }
 
     return {
-      source: 'DeepSeek-API',
-      success: true,
+      success: errors.length === 0 && prices.length > 0,
+      source: this.getSourceName(),
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };
-  } catch (error) {
-    console.error('❌ DeepSeek scrape failed:', error);
-    // On any error, use fallback data
-    console.warn('⚠️ Using fallback pricing data');
-    return {
-      source: 'DeepSeek-API',
-      success: true,
-      prices: getFallbackPricing(),
-      errors: [String(error)],
-    };
   }
+}
+
+export async function scrapeDeepSeekDynamic(): Promise<ScraperResult> {
+  const scraper = new DeepSeekScraper();
+  return scraper.run();
 }
 
 // CLI test

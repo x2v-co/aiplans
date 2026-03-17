@@ -5,24 +5,25 @@ import { supabaseAdmin } from './db/queries';
 async function checkAndDelete() {
   console.log('Checking for Claude 3 Opus (id=2013)');
 
-  const productsResult = await supabaseAdmin
-    .from('products')
-    .select('id, name, slug, benchmark_arena_elo')
+  const modelsResult = await supabaseAdmin
+    .from('models')
+    .select('id, name, slug')
     .eq('id', 2013)
     .single();
 
-  if (!productsResult.data || productsResult.error) {
-    console.log('  Product 2013 not found');
+  if (!modelsResult.data || modelsResult.error) {
+    console.log('  Model 2013 not found');
     process.exit(0);
   }
 
-  const products = productsResult.data;
-  console.log('Found:', products);
+  const model = modelsResult.data;
+  console.log('Found:', model);
 
+  // Check api_channel_prices references (note: correct table name)
   const channelPricesResult = await supabaseAdmin
-    .from('channel_prices')
-    .select('id, product_id')
-    .eq('product_id', 2013);
+    .from('api_channel_prices')
+    .select('id, model_id')
+    .eq('model_id', 2013);
 
   const channelPrices = channelPricesResult.data;
   console.log('Channel price references:', channelPrices?.length || 0);
@@ -30,8 +31,8 @@ async function checkAndDelete() {
   // Delete channel price references
   if (channelPrices && channelPrices.length > 0) {
     for (const ref of channelPrices) {
-      const error = await supabaseAdmin
-        .from('channel_prices')
+      const { error } = await supabaseAdmin
+        .from('api_channel_prices')
         .delete()
         .eq('id', ref.id);
 
@@ -41,17 +42,34 @@ async function checkAndDelete() {
     }
   }
 
-  // Delete the product
-  console.log('Deleting product 2013...');
-  const error = await supabaseAdmin
-    .from('products')
+  // Delete benchmark scores
+  const benchmarkScoresResult = await supabaseAdmin
+    .from('model_benchmark_scores')
+    .select('id')
+    .eq('model_id', 2013);
+
+  if (benchmarkScoresResult.data && benchmarkScoresResult.data.length > 0) {
+    const { error } = await supabaseAdmin
+      .from('model_benchmark_scores')
+      .delete()
+      .eq('model_id', 2013);
+
+    if (!error) {
+      console.log('Deleted benchmark score references');
+    }
+  }
+
+  // Delete the model
+  console.log('Deleting model 2013...');
+  const { error } = await supabaseAdmin
+    .from('models')
     .delete()
     .eq('id', 2013);
 
   if (!error) {
-    console.log('Deleted product 2013');
+    console.log('Deleted model 2013');
   } else {
-    console.log('Delete product error:', error);
+    console.log('Delete model error:', error);
     process.exit(1);
   }
 }

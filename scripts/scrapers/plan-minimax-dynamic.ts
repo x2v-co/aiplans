@@ -24,157 +24,111 @@ interface MinimaxPlan {
 /**
  * Fetch and parse Minimax China subscription plans from their website
  */
-async function fetchMinimaxPlans(): Promise<MinimaxPlan[]> {
+async function fetchMinimaxPlans(): Promise<{ plans: MinimaxPlan[], errors: string[] }> {
   const result = await fetchHTML(MINIMAX_CHINA_PLANS_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Minimax China plans page, using fallback data');
-    return getFallbackPlans();
+    return { plans: [], errors: ['Failed to fetch Minimax China plans page - no HTML returned'] };
   }
 
   const html = result.data;
   const plans: MinimaxPlan[] = [];
 
-  // Try to extract plan information from HTML
-  // Look for pricing patterns in CNY
+  // Extract prices from HTML - only proceed if we can find actual pricing data
   const litePriceMatch = html.match(/Lite[^￥]*?￥\s*[\d,]+/i);
   const proPriceMatch = html.match(/Pro[^￥]*?￥\s*[\d,]+/i);
   const teamPriceMatch = html.match(/Team[^￥]*?￥\s*[\d,]+/i);
   const enterpriseMatch = html.match(/Enterprise|企业版/i);
 
-  // Free plan
-  const freePlan: MinimaxPlan = {
-    name: 'Minimax Free',
-    priceMonthly: 0,
-    tier: 'free',
-    dailyMessageLimit: undefined,
-    features: [
-      'Access to Minimax basic models',
-      'Limited message capacity',
-      'Standard response speed',
-      'Web browsing',
-      'Basic coding assistance',
-    ],
-    paymentMethods: [],
-    accessFromChina: true,
-    region: 'china',
-  };
-  plans.push(freePlan);
-
-  // Lite plan
-  const litePlan: MinimaxPlan = {
-    name: 'Minimax Lite',
-    priceMonthly: 29,
-    priceYearly: undefined,
-    tier: 'basic',
-    dailyMessageLimit: undefined,
-    features: [
-      'Access to Minimax Lite models',
-      'Higher message limits',
-      'Faster response speeds',
-      'Extended context windows',
-      'Code generation and debugging',
-      'File upload support',
-      'Priority access',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay'],
-    accessFromChina: true,
-    region: 'china',
-  };
-
-  if (litePriceMatch) {
-    const priceMatch = litePriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      litePlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-    }
+  // Check if we found any pricing information
+  if (!litePriceMatch && !proPriceMatch && !teamPriceMatch && !enterpriseMatch) {
+    return {
+      plans: [],
+      errors: ['No pricing information found on Minimax China page. The page structure may have changed.']
+    };
   }
-  plans.push(litePlan);
 
-  // Pro plan
-  const proPlan: MinimaxPlan = {
-    name: 'Minimax Pro',
-    priceMonthly: 99,
-    priceYearly: undefined,
-    tier: 'pro',
-    dailyMessageLimit: undefined,
-    features: [
-      'Everything in Lite',
-      'Access to Minimax Pro models',
-      'Higher message limits',
-      'Priority access during peak times',
-      'Extended context windows',
-      'Advanced code generation',
-      'Image analysis',
-      'Data analysis capabilities',
-      'Early access to new features',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay'],
-    accessFromChina: true,
-    region: 'china',
-  };
-
-  if (proPriceMatch) {
-    const priceMatch = proPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      proPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-    }
-  }
-  plans.push(proPlan);
-
-  // Team plan
-  if (teamPriceMatch || html.includes('Team')) {
-    const teamPlan: MinimaxPlan = {
-      name: 'Minimax Team',
-      priceMonthly: 299,
-      priceYearly: undefined,
-      tier: 'team',
+  // Free plan - check if mentioned on page
+  if (html.match(/free|Free|FREE|免费/i)) {
+    const freePlan: MinimaxPlan = {
+      name: 'Minimax Free',
+      priceMonthly: 0,
+      tier: 'free',
       dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Team collaboration tools',
-        'Admin console',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'Custom integrations',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
+      features: ['Access to Minimax basic models', 'Limited message capacity'],
+      paymentMethods: [],
       accessFromChina: true,
       region: 'china',
     };
-
-    if (teamPriceMatch) {
-      const priceMatch = teamPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-      if (priceMatch) {
-        teamPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-      }
-    }
-    plans.push(teamPlan);
+    plans.push(freePlan);
   }
 
-  // Enterprise plan
+  // Lite plan - only add if we found the price
+  if (litePriceMatch) {
+    const priceMatch = litePriceMatch[0].match(/[￥]?\s*([\d,]+)/);
+    if (priceMatch) {
+      const litePlan: MinimaxPlan = {
+        name: 'Minimax Lite',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'basic',
+        dailyMessageLimit: undefined,
+        features: [], // Features should be extracted from actual page content
+        paymentMethods: ['Alipay', 'WeChat Pay'],
+        accessFromChina: true,
+        region: 'china',
+      };
+      plans.push(litePlan);
+    }
+  }
+
+  // Pro plan - only add if we found the price
+  if (proPriceMatch) {
+    const priceMatch = proPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
+    if (priceMatch) {
+      const proPlan: MinimaxPlan = {
+        name: 'Minimax Pro',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'pro',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Alipay', 'WeChat Pay'],
+        accessFromChina: true,
+        region: 'china',
+      };
+      plans.push(proPlan);
+    }
+  }
+
+  // Team plan - only add if we found the price
+  if (teamPriceMatch) {
+    const priceMatch = teamPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
+    if (priceMatch) {
+      const teamPlan: MinimaxPlan = {
+        name: 'Minimax Team',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'team',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
+        accessFromChina: true,
+        region: 'china',
+      };
+      plans.push(teamPlan);
+    }
+  }
+
+  // Enterprise plan - only add if mentioned (custom pricing)
   if (enterpriseMatch) {
     const enterprisePlan: MinimaxPlan = {
       name: 'Minimax Enterprise',
       priceMonthly: 0, // Custom pricing
       tier: 'enterprise',
       dailyMessageLimit: undefined,
-      features: [
-        'Everything in Team',
-        'Full API access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'Data residency options',
-        'Custom fine-tuning capabilities',
-      ],
+      features: [],
       paymentMethods: ['Invoice', 'Contract'],
       accessFromChina: true,
       region: 'china',
@@ -182,121 +136,11 @@ async function fetchMinimaxPlans(): Promise<MinimaxPlan[]> {
     plans.push(enterprisePlan);
   }
 
-  // If no plans found, use fallback
   if (plans.length === 0) {
-    console.warn('No plans parsed from HTML, using fallback data');
-    return getFallbackPlans();
+    errors.push('No plans could be parsed from Minimax China pricing page. The page structure may have changed.');
   }
 
-  return plans;
-}
-
-/**
- * Fallback plan data (known as of 2025-2026)
- */
-function getFallbackPlans(): MinimaxPlan[] {
-  return [
-    {
-      name: 'Minimax Free',
-      priceMonthly: 0,
-      tier: 'free',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to Minimax basic models',
-        'Limited message capacity',
-        'Standard response speed',
-        'Web browsing',
-        'Basic coding assistance',
-      ],
-      paymentMethods: [],
-      accessFromChina: true,
-      region: 'china',
-    },
-    {
-      name: 'Minimax Lite',
-      priceMonthly: 29,
-      priceYearly: undefined,
-      tier: 'basic',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to Minimax Lite models',
-        'Higher message limits',
-        'Faster response speeds',
-        'Extended context windows',
-        'Code generation and debugging',
-        'File upload support',
-        'Priority access',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay'],
-      accessFromChina: true,
-      region: 'china',
-    },
-    {
-      name: 'Minimax Pro',
-      priceMonthly: 99,
-      priceYearly: undefined,
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Lite',
-        'Access to Minimax Pro models',
-        'Higher message limits',
-        'Priority access during peak times',
-        'Extended context windows',
-        'Advanced code generation',
-        'Image analysis',
-        'Data analysis capabilities',
-        'Early access to new features',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay'],
-      accessFromChina: true,
-      region: 'china',
-    },
-    {
-      name: 'Minimax Team',
-      priceMonthly: 299,
-      priceYearly: undefined,
-      tier: 'team',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Team collaboration tools',
-        'Admin console',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'Custom integrations',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
-      accessFromChina: true,
-      region: 'china',
-    },
-    {
-      name: 'Minimax Enterprise',
-      priceMonthly: 0,
-      tier: 'enterprise',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Team',
-        'Full API access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'Data residency options',
-        'Custom fine-tuning capabilities',
-      ],
-      paymentMethods: ['Invoice', 'Contract'],
-      accessFromChina: true,
-      region: 'china',
-    },
-  ];
+  return { plans, errors };
 }
 
 export async function scrapeMinimaxPlans(): Promise<PlanScraperResult> {
@@ -307,7 +151,8 @@ export async function scrapeMinimaxPlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching Minimax China subscription plans...');
 
-    const minimaxPlans = await fetchMinimaxPlans();
+    const { plans: minimaxPlans, errors: fetchErrors } = await fetchMinimaxPlans();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${minimaxPlans.length} plans from Minimax China`);
     console.log(`🔗 Invite Link: ${MINIMAX_CHINA_INVITE_LINK}`);
@@ -353,7 +198,7 @@ export async function scrapeMinimaxPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Minimax-Plans',
-      success: true,
+      success: plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

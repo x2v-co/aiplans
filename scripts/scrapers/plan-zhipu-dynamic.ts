@@ -26,245 +26,112 @@ interface ZhipuChinaPlan {
 /**
  * Fetch and parse Zhipu AI China subscription plans from their website
  */
-async function fetchZhipuChinaPlans(): Promise<ZhipuChinaPlan[]> {
+async function fetchZhipuChinaPlans(): Promise<{ plans: ZhipuChinaPlan[], errors: string[] }> {
   const result = await fetchHTML(ZHIPU_CHINA_PLANS_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Zhipu China plans page, using fallback data');
-    return getFallbackPlans();
+    return { plans: [], errors: ['Failed to fetch Zhipu China plans page - no HTML returned'] };
   }
 
   const html = result.data;
   const plans: ZhipuChinaPlan[] = [];
 
-  // Try to extract plan information from HTML
-  // Look for pricing patterns in CNY (GLM Coding Lite/Pro/Max)
+  // Extract prices from HTML - only proceed if we can find actual pricing data
   const litePriceMatch = html.match(/Lite[^￥]*?￥\s*[\d,]+/i);
   const proPriceMatch = html.match(/Pro[^￥]*?￥\s*[\d,]+/i);
   const maxPriceMatch = html.match(/Max[^￥]*?￥\s*[\d,]+/i);
   const teamPriceMatch = html.match(/Team[^￥]*?￥\s*[\d,]+/i);
 
-  // GLM Coding Lite plan
-  const litePlan: ZhipuChinaPlan = {
-    name: 'GLM Coding Lite',
-    priceMonthly: 44,
-    priceYearly: undefined,
-    tier: 'basic',
-    dailyMessageLimit: undefined,
-    features: [
-      '3x Claude Pro equivalent usage',
-      'Access to GLM-4.7 models',
-      'Access to GLM-4.5-Air',
-      'Code generation and debugging',
-      'Extended context windows',
-      'Priority access',
-      'Chinese-optimized',
-      'Quarterly discount: 10% off',
-      'Yearly discount: 30% off',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay'],
-    accessFromChina: true,
-    region: 'china',
-    quarterlyDiscount: 0.10, // 9折
-    yearlyDiscount: 0.30, // 7折
-  };
+  // Check if we found any pricing information
+  if (!litePriceMatch && !proPriceMatch && !maxPriceMatch && !teamPriceMatch) {
+    return {
+      plans: [],
+      errors: ['No pricing information found on Zhipu China page. The page structure may have changed.']
+    };
+  }
 
+  // GLM Coding Lite plan - only add if we found the price
   if (litePriceMatch) {
     const priceMatch = litePriceMatch[0].match(/[￥]?\s*([\d,]+)/);
     if (priceMatch) {
-      litePlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
+      const litePlan: ZhipuChinaPlan = {
+        name: 'GLM Coding Lite',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'basic',
+        dailyMessageLimit: undefined,
+        features: [], // Features should be extracted from actual page content
+        paymentMethods: ['Alipay', 'WeChat Pay'],
+        accessFromChina: true,
+        region: 'china',
+      };
+      plans.push(litePlan);
     }
   }
-  plans.push(litePlan);
 
-  // GLM Coding Pro plan
-  const proPlan: ZhipuChinaPlan = {
-    name: 'GLM Coding Pro',
-    priceMonthly: 134,
-    priceYearly: undefined,
-    tier: 'pro',
-    dailyMessageLimit: undefined,
-    features: [
-      '5x GLM Coding Lite usage',
-      'Access to GLM-4.7 models',
-      'Access to GLM-4.5-Air',
-      'Higher message limits',
-      'Priority access during peak times',
-      'Extended context windows',
-      'Advanced code generation',
-      'Chinese-optimized',
-      'Quarterly discount: 10% off',
-      'Yearly discount: 30% off',
-      'Early access to new models',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay'],
-    accessFromChina: true,
-    region: 'china',
-    quarterlyDiscount: 0.10,
-    yearlyDiscount: 0.30,
-  };
-
+  // GLM Coding Pro plan - only add if we found the price
   if (proPriceMatch) {
     const priceMatch = proPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
     if (priceMatch) {
-      proPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
+      const proPlan: ZhipuChinaPlan = {
+        name: 'GLM Coding Pro',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'pro',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Alipay', 'WeChat Pay'],
+        accessFromChina: true,
+        region: 'china',
+      };
+      plans.push(proPlan);
     }
   }
-  plans.push(proPlan);
 
-  // GLM Coding Max plan
-  const maxPlan: ZhipuChinaPlan = {
-    name: 'GLM Coding Max',
-    priceMonthly: 422,
-    priceYearly: undefined,
-    tier: 'team',
-    dailyMessageLimit: undefined,
-    features: [
-      '4x GLM Coding Pro usage',
-      'Access to GLM-5 models',
-      'Access to GLM-4.7 models',
-      'Access to GLM-4.5-Air',
-      'Highest message limits',
-      'Priority access during peak times',
-      'Extended context windows',
-      'Advanced code generation and debugging',
-      'Chinese-optimized',
-      'Quarterly discount: 10% off',
-      'Yearly discount: 30% off',
-      'Early access to new models',
-      'Priority support',
-    ],
-    paymentMethods: ['Alipay', 'WeChat Pay'],
-    accessFromChina: true,
-    region: 'china',
-    quarterlyDiscount: 0.10,
-    yearlyDiscount: 0.30,
-  };
-
+  // GLM Coding Max plan - only add if we found the price
   if (maxPriceMatch) {
     const priceMatch = maxPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
     if (priceMatch) {
-      maxPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
+      const maxPlan: ZhipuChinaPlan = {
+        name: 'GLM Coding Max',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'team',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Alipay', 'WeChat Pay'],
+        accessFromChina: true,
+        region: 'china',
+      };
+      plans.push(maxPlan);
     }
   }
-  plans.push(maxPlan);
 
-  // Team plan (if available)
-  if (teamPriceMatch || html.includes('Team') || html.includes('企业')) {
-    const teamPlan: ZhipuChinaPlan = {
-      name: 'GLM Coding Team',
-      priceMonthly: 0, // Custom pricing
-      tier: 'team',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Max',
-        'Team collaboration tools',
-        'Admin console',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'Custom integrations',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
-      accessFromChina: true,
-      region: 'china',
-    };
-    plans.push(teamPlan);
+  // Team plan - only add if we found the price or explicit mention
+  if (teamPriceMatch) {
+    const priceMatch = teamPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
+    if (priceMatch) {
+      const teamPlan: ZhipuChinaPlan = {
+        name: 'GLM Coding Team',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'team',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
+        accessFromChina: true,
+        region: 'china',
+      };
+      plans.push(teamPlan);
+    }
   }
 
-  // If no plans found, use fallback
   if (plans.length === 0) {
-    console.warn('No plans parsed from HTML, using fallback data');
-    return getFallbackPlans();
+    errors.push('No plans could be parsed from Zhipu China pricing page. The page structure may have changed.');
   }
 
-  return plans;
-}
-
-/**
- * Fallback plan data (known as of 2025-2026)
- */
-function getFallbackPlans(): ZhipuChinaPlan[] {
-  return [
-    {
-      name: 'GLM Coding Lite',
-      priceMonthly: 44,
-      priceYearly: undefined,
-      tier: 'basic',
-      dailyMessageLimit: undefined,
-      features: [
-        '3x Claude Pro equivalent usage',
-        'Access to GLM-4.7 models',
-        'Access to GLM-4.5-Air',
-        'Code generation and debugging',
-        'Extended context windows',
-        'Priority access',
-        'Chinese-optimized',
-        'Quarterly discount: 10% off',
-        'Yearly discount: 30% off',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay'],
-      accessFromChina: true,
-      region: 'china',
-      quarterlyDiscount: 0.10,
-      yearlyDiscount: 0.30,
-    },
-    {
-      name: 'GLM Coding Pro',
-      priceMonthly: 134,
-      priceYearly: undefined,
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      features: [
-        '5x GLM Coding Lite usage',
-        'Access to GLM-4.7 models',
-        'Access to GLM-4.5-Air',
-        'Higher message limits',
-        'Priority access during peak times',
-        'Extended context windows',
-        'Advanced code generation',
-        'Chinese-optimized',
-        'Quarterly discount: 10% off',
-        'Yearly discount: 30% off',
-        'Early access to new models',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay'],
-      accessFromChina: true,
-      region: 'china',
-      quarterlyDiscount: 0.10,
-      yearlyDiscount: 0.30,
-    },
-    {
-      name: 'GLM Coding Max',
-      priceMonthly: 422,
-      priceYearly: undefined,
-      tier: 'team',
-      dailyMessageLimit: undefined,
-      features: [
-        '4x GLM Coding Pro usage',
-        'Access to GLM-5 models',
-        'Access to GLM-4.7 models',
-        'Access to GLM-4.5-Air',
-        'Highest message limits',
-        'Priority access during peak times',
-        'Extended context windows',
-        'Advanced code generation and debugging',
-        'Chinese-optimized',
-        'Quarterly discount: 10% off',
-        'Yearly discount: 30% off',
-        'Early access to new models',
-        'Priority support',
-      ],
-      paymentMethods: ['Alipay', 'WeChat Pay'],
-      accessFromChina: true,
-      region: 'china',
-      quarterlyDiscount: 0.10,
-      yearlyDiscount: 0.30,
-    },
-  ];
+  return { plans, errors };
 }
 
 export async function scrapeZhipuPlans(): Promise<PlanScraperResult> {
@@ -275,7 +142,10 @@ export async function scrapeZhipuPlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching Zhipu AI China subscription plans...');
 
-    const zhipuPlans = await fetchZhipuChinaPlans();
+    const { plans: zhipuPlans, errors: fetchErrors } = await fetchZhipuChinaPlans();
+    if (fetchErrors.length > 0) {
+      errors.push(...fetchErrors);
+    }
 
     console.log(`📦 Found ${zhipuPlans.length} plans from Zhipu AI China`);
     console.log(`🔗 Invite Link: ${ZHIPU_CHINA_INVITE_LINK}`);
@@ -321,7 +191,7 @@ export async function scrapeZhipuPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Zhipu-Plans',
-      success: true,
+      success: plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

@@ -23,118 +23,76 @@ interface AnthropicPlan {
 /**
  * Fetch and parse Anthropic subscription plans from their website
  */
-async function fetchAnthropicPlans(): Promise<AnthropicPlan[]> {
+async function fetchAnthropicPlans(): Promise<{ plans: AnthropicPlan[], errors: string[] }> {
   const result = await fetchHTML(ANTHROPIC_PLANS_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Anthropic plans page, using fallback data');
-    return getFallbackPlans();
+    return { plans: [], errors: ['Failed to fetch Anthropic plans page - no HTML returned'] };
   }
 
   const html = result.data;
   const plans: AnthropicPlan[] = [];
 
-  // Try to extract plan information from HTML
-  // Look for Claude Pro pricing patterns
-  const proPriceMatch = html.match(/\$\s*20/i) || html.match(/20\s*\$/i);
-  const teamPriceMatch = html.match(/\$\s*25/i) || html.match(/25\s*\$/i);
+  // Extract prices from HTML - only proceed if we can find actual pricing data
+  const proPriceMatch = html.match(/Claude\s*Pro[^$]*?\$\s*([\d.]+)/i) || html.match(/Pro[^$]*?\$\s*20/i);
+  const teamPriceMatch = html.match(/Claude\s*Team[^$]*?\$\s*([\d.]+)/i) || html.match(/Team[^$]*?\$\s*25/i);
   const enterpriseMatch = html.match(/Enterprise/i);
-  const hasPro = html.includes('Pro') || html.includes('Pro ') || html.includes('Claude Pro');
-  const hasTeam = html.includes('Team') || html.includes('Claude Team');
 
-  // Claude Pro plan
-  if (hasPro || proPriceMatch) {
-    const proPlan: AnthropicPlan = {
-      name: 'Claude Pro',
-      priceMonthly: 20,
-      priceYearly: undefined,
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to Claude 3.5 Sonnet',
-        'Access to Claude 3 Opus',
-        'Higher message limits',
-        'Priority access during peak times',
-        'Faster response speeds',
-        'Extended context windows',
-        'File upload support',
-        'Image analysis',
-        'Early access to new features',
-      ],
-      paymentMethods: ['Credit Card', 'Debit Card', 'Apple Pay', 'Google Pay'],
-      accessFromChina: false,
-      region: 'global',
+  // Check if we found any pricing information
+  if (!proPriceMatch && !teamPriceMatch && !enterpriseMatch) {
+    return {
+      plans: [],
+      errors: ['No pricing information found on Anthropic page. The page structure may have changed.']
     };
-
-    if (proPriceMatch) {
-      const priceMatch = proPriceMatch[0].match(/[\d.]+/);
-      if (priceMatch) {
-        const parsedPrice = parseFloat(priceMatch[0]);
-        if (!isNaN(parsedPrice)) {
-          proPlan.priceMonthly = parsedPrice;
-        }
-      }
-    }
-    plans.push(proPlan);
   }
 
-  // Claude Team plan
-  if (hasTeam || teamPriceMatch) {
-    const teamPlan: AnthropicPlan = {
-      name: 'Claude Team',
-      priceMonthly: 25,
-      priceYearly: undefined,
-      tier: 'team',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Admin console for team management',
-        'Collaborative tools',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training by default',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'SSO integration',
-      ],
-      paymentMethods: ['Credit Card', 'Invoice'],
-      accessFromChina: false,
-      region: 'global',
-    };
-
-    if (teamPriceMatch) {
-      const priceMatch = teamPriceMatch[0].match(/[\d.]+/);
-      if (priceMatch) {
-        const parsedPrice = parseFloat(priceMatch[0]);
-        if (!isNaN(parsedPrice)) {
-          teamPlan.priceMonthly = parsedPrice;
-        }
-      }
+  // Pro plan - only add if we found the price
+  if (proPriceMatch) {
+    const priceMatch = proPriceMatch[0].match(/\$?\s*([\d.]+)/);
+    if (priceMatch) {
+      const proPlan: AnthropicPlan = {
+        name: 'Claude Pro',
+        priceMonthly: parseFloat(priceMatch[1]),
+        priceYearly: undefined,
+        tier: 'pro',
+        dailyMessageLimit: undefined,
+        features: [], // Features should be extracted from actual page content
+        paymentMethods: ['Credit Card', 'Debit Card', 'Apple Pay', 'Google Pay'],
+        accessFromChina: false,
+        region: 'global',
+      };
+      plans.push(proPlan);
     }
-    plans.push(teamPlan);
   }
 
-  // Claude Enterprise plan
+  // Team plan - only add if we found the price
+  if (teamPriceMatch) {
+    const priceMatch = teamPriceMatch[0].match(/\$?\s*([\d.]+)/);
+    if (priceMatch) {
+      const teamPlan: AnthropicPlan = {
+        name: 'Claude Team',
+        priceMonthly: parseFloat(priceMatch[1]),
+        priceYearly: undefined,
+        tier: 'team',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Credit Card', 'Invoice'],
+        accessFromChina: false,
+        region: 'global',
+      };
+      plans.push(teamPlan);
+    }
+  }
+
+  // Enterprise plan - only add if mentioned (custom pricing)
   if (enterpriseMatch) {
     const enterprisePlan: AnthropicPlan = {
       name: 'Claude Enterprise',
       priceMonthly: 0, // Custom pricing
       tier: 'enterprise',
       dailyMessageLimit: undefined,
-      features: [
-        'Everything in Team',
-        'Unlimited Claude 3.5 Sonnet access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'SOC 2 and GDPR compliance',
-        'Data residency options',
-      ],
+      features: [],
       paymentMethods: ['Invoice', 'Contract'],
       accessFromChina: false,
       region: 'global',
@@ -142,86 +100,11 @@ async function fetchAnthropicPlans(): Promise<AnthropicPlan[]> {
     plans.push(enterprisePlan);
   }
 
-  // If no plans found, use fallback
   if (plans.length === 0) {
-    console.warn('No plans parsed from HTML, using fallback data');
-    return getFallbackPlans();
+    errors.push('No plans could be parsed from Anthropic pricing page. The page structure may have changed.');
   }
 
-  return plans;
-}
-
-/**
- * Fallback plan data (known as of 2025-2026)
- */
-function getFallbackPlans(): AnthropicPlan[] {
-  return [
-    {
-      name: 'Claude Pro',
-      priceMonthly: 20,
-      priceYearly: undefined,
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to Claude 3.5 Sonnet',
-        'Access to Claude 3 Opus',
-        'Higher message limits',
-        'Priority access during peak times',
-        'Faster response speeds',
-        'Extended context windows',
-        'File upload support',
-        'Image analysis',
-        'Early access to new features',
-      ],
-      paymentMethods: ['Credit Card', 'Debit Card', 'Apple Pay', 'Google Pay'],
-      accessFromChina: false,
-      region: 'global',
-    },
-    {
-      name: 'Claude Team',
-      priceMonthly: 25,
-      priceYearly: undefined,
-      tier: 'team',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Admin console for team management',
-        'Collaborative tools',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training by default',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'SSO integration',
-      ],
-      paymentMethods: ['Credit Card', 'Invoice'],
-      accessFromChina: false,
-      region: 'global',
-    },
-    {
-      name: 'Claude Enterprise',
-      priceMonthly: 0,
-      tier: 'enterprise',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Team',
-        'Unlimited Claude 3.5 Sonnet access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'SOC 2 and GDPR compliance',
-        'Data residency options',
-      ],
-      paymentMethods: ['Invoice', 'Contract'],
-      accessFromChina: false,
-      region: 'global',
-    },
-  ];
+  return { plans, errors };
 }
 
 export async function scrapeAnthropicPlans(): Promise<PlanScraperResult> {
@@ -232,7 +115,8 @@ export async function scrapeAnthropicPlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching Anthropic Claude subscription plans...');
 
-    const anthropicPlans = await fetchAnthropicPlans();
+    const { plans: anthropicPlans, errors: fetchErrors } = await fetchAnthropicPlans();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${anthropicPlans.length} plans from Anthropic`);
 
@@ -277,7 +161,7 @@ export async function scrapeAnthropicPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Anthropic-Plans',
-      success: true,
+      success: plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

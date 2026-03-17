@@ -1,5 +1,6 @@
 /**
  * Fireworks AI API Scraper - Dynamic fetching from pricing page
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
@@ -18,12 +19,12 @@ interface FireworksModel {
 /**
  * Fetch and parse Fireworks pricing from their website
  */
-async function fetchFireworksPricing(): Promise<FireworksModel[]> {
+async function fetchFireworksPricing(): Promise<{ models: FireworksModel[], errors: string[] }> {
   const result = await fetchHTML(FIREWORKS_PRICING_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Fireworks pricing page, using fallback data');
-    return getFallbackPricing();
+    return { models: [], errors: ['Failed to fetch Fireworks pricing page'] };
   }
 
   const html = result.data;
@@ -73,52 +74,11 @@ async function fetchFireworksPricing(): Promise<FireworksModel[]> {
     }
   }
 
-  // If no models found, use fallback
   if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
+    errors.push('No models could be parsed from Fireworks pricing page. The page structure may have changed.');
   }
 
-  return models;
-}
-
-/**
- * Fallback pricing data (as of 2025-2026)
- * Prices in USD per 1M tokens
- */
-function getFallbackPricing(): FireworksModel[] {
-  return [
-    {
-      model: 'llama-3.1-405b-instruct',
-      inputPrice: 0.90,
-      outputPrice: 0.90,
-      contextWindow: 131072,
-    },
-    {
-      model: 'llama-3.1-70b-instruct',
-      inputPrice: 0.65,
-      outputPrice: 0.65,
-      contextWindow: 131072,
-    },
-    {
-      model: 'llama-3-8b-instruct',
-      inputPrice: 0.10,
-      outputPrice: 0.10,
-      contextWindow: 131072,
-    },
-    {
-      model: 'llama-3-70b-instruct',
-      inputPrice: 0.40,
-      outputPrice: 0.40,
-      contextWindow: 8192,
-    },
-    {
-      model: 'mixtral-8x22b',
-      inputPrice: 0.60,
-      outputPrice: 0.60,
-      contextWindow: 64000,
-    },
-  ];
+  return { models, errors };
 }
 
 export async function scrapeFireworksDynamic(): Promise<ScraperResult> {
@@ -129,7 +89,8 @@ export async function scrapeFireworksDynamic(): Promise<ScraperResult> {
   try {
     console.log('🔄 Fetching Fireworks pricing...');
 
-    const models = await fetchFireworksPricing();
+    const { models, errors: fetchErrors } = await fetchFireworksPricing();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${models.length} models from Fireworks`);
 
@@ -148,7 +109,7 @@ export async function scrapeFireworksDynamic(): Promise<ScraperResult> {
           outputPricePer1M: model.outputPrice,
           contextWindow: model.contextWindow,
           isAvailable: true,
-          currency: 'USD', // Fireworks prices are in USD
+          currency: 'USD',
         });
       } catch (error) {
         errors.push(`Error processing ${model.model}: ${error}`);
@@ -162,7 +123,7 @@ export async function scrapeFireworksDynamic(): Promise<ScraperResult> {
 
     return {
       source: 'Fireworks-AI',
-      success: true,
+      success: prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };

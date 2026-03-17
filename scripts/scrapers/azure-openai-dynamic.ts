@@ -1,197 +1,189 @@
 /**
- * Azure OpenAI API Scraper - Dynamic fetching from pricing page
+ * Azure OpenAI API Scraper - Uses Playwright for real HTML parsing
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
 import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { fetchHTML } from './base-fetcher';
+import { PlaywrightScraper, PriceData } from './lib/playwright-scraper';
 
 const AZURE_PRICING_URL = 'https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/';
 
-interface AzureModel {
-  model: string;
-  inputPrice: number;
-  outputPrice: number;
-  contextWindow: number;
-}
-
-/**
- * Fetch and parse Azure OpenAI pricing from their website
- */
-async function fetchAzurePricing(): Promise<AzureModel[]> {
-  const result = await fetchHTML(AZURE_PRICING_URL);
-
-  if (!result.success || !result.data) {
-    console.warn('Failed to fetch Azure pricing page, using fallback data');
-    return getFallbackPricing();
+class AzureOpenAIScraper extends PlaywrightScraper {
+  getSourceName(): string {
+    return 'Azure-OpenAI';
   }
 
-  const html = result.data;
-  const models: AzureModel[] = [];
-
-  // Known Azure OpenAI model patterns (2025)
-  // Azure prices are typically per 1K tokens, so we need to convert to per 1M
-  const modelPatterns = [
-    {
-      model: 'gpt-4o',
-      azureId: 'GPT-4o',
-      inputPattern: /GPT-4o[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /GPT-4o[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      context: 128000,
-    },
-    {
-      model: 'gpt-4o-mini',
-      azureId: 'GPT-4o-mini',
-      inputPattern: /GPT-4o-mini[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /GPT-4o-mini[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      context: 128000,
-    },
-    {
-      model: 'gpt-4-turbo',
-      azureId: 'GPT-4-Turbo',
-      inputPattern: /GPT-4-Turbo[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /GPT-4-Turbo[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      context: 128000,
-    },
-    {
-      model: 'gpt-35-turbo',
-      azureId: 'GPT-35-Turbo',
-      inputPattern: /GPT-3\.5-Turbo[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /GPT-3\.5-Turbo[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      context: 16385,
-    },
-    {
-      model: 'claude-3-5-sonnet',
-      azureId: 'Claude-3.5-Sonnet',
-      inputPattern: /Claude-3\.5-Sonnet[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /Claude-3\.5-Sonnet[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      context: 200000,
-    },
-    {
-      model: 'claude-3-5-haiku',
-      azureId: 'Claude-3.5-Haiku',
-      inputPattern: /Claude-3\.5-Haiku[^$]*?\$?([\d.]+)\s*per\s*1K\s*input/i,
-      outputPattern: /Claude-3\.5-Haiku[^$]*?\$?([\d.]+)\s*per\s*1K\s*output/i,
-      context: 200000,
-    },
-  ];
-
-  for (const pattern of modelPatterns) {
-    const inputMatch = html.match(pattern.inputPattern);
-    const outputMatch = html.match(pattern.outputPattern);
-
-    if (inputMatch && outputMatch) {
-      // Convert from per 1K to per 1M
-      const inputPrice = parseFloat(inputMatch[1]) * 1000;
-      const outputPrice = parseFloat(outputMatch[1]) * 1000;
-
-      if (!isNaN(inputPrice) && !isNaN(outputPrice)) {
-        models.push({
-          model: pattern.model,
-          inputPrice,
-          outputPrice,
-          contextWindow: pattern.context,
-        });
-      }
-    }
+  getSourceUrl(): string {
+    return AZURE_PRICING_URL;
   }
 
-  // If no models found, use fallback
-  if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
-  }
+  async scrape(): Promise<ScraperResult> {
+    const errors: string[] = [];
+    const prices: PriceData[] = [];
 
-  return models;
-}
+    await this.navigate(AZURE_PRICING_URL);
 
-/**
- * Fallback pricing data (known as of 2025)
- * Azure prices are typically 2-3x higher than OpenAI direct
- */
-function getFallbackPricing(): AzureModel[] {
-  return [
-    {
-      model: 'gpt-4o',
-      inputPrice: 5.00,
-      outputPrice: 20.00,
-      contextWindow: 128000,
-    },
-    {
-      model: 'gpt-4o-mini',
-      inputPrice: 0.30,
-      outputPrice: 1.20,
-      contextWindow: 128000,
-    },
-    {
-      model: 'gpt-4-turbo',
-      inputPrice: 20.00,
-      outputPrice: 60.00,
-      contextWindow: 128000,
-    },
-    {
-      model: 'gpt-35-turbo',
-      inputPrice: 1.00,
-      outputPrice: 3.00,
-      contextWindow: 16385,
-    },
-  ];
-}
+    // Wait for pricing content to load
+    await this.page!.waitForTimeout(3000);
 
-export async function scrapeAzureOpenAIDynamic(): Promise<ScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const prices: ScrapedPrice[] = [];
+    // Get all text content from the page
+    const pageContent = await this.page!.textContent('body') || '';
 
-  try {
-    console.log('🔄 Fetching Azure OpenAI pricing...');
+    // Known Azure OpenAI model patterns
+    // Azure prices are typically per 1K tokens, so we need to convert to per 1M
+    const models = [
+      { name: 'gpt-4o', patterns: [/gpt-4o/i] },
+      { name: 'gpt-4o-mini', patterns: [/gpt-4o-mini/i] },
+      { name: 'gpt-4-turbo', patterns: [/gpt-4-turbo/i, /gpt-4\.\d-turbo/i] },
+      { name: 'gpt-35-turbo', patterns: [/gpt-3\.5-turbo/i, /gpt-35-turbo/i] },
+      { name: 'o1', patterns: [/o1(?!-mini)/i] },
+      { name: 'o1-mini', patterns: [/o1-mini/i] },
+      { name: 'claude-3-5-sonnet', patterns: [/claude\s*3\.5\s*sonnet/i] },
+      { name: 'claude-3-5-haiku', patterns: [/claude\s*3\.5\s*haiku/i] },
+    ];
 
-    const models = await fetchAzurePricing();
-
-    console.log(`📦 Found ${models.length} models from Azure OpenAI`);
-
-    for (const model of models) {
+    for (const modelInfo of models) {
       try {
-        // Validate prices
-        if (!validatePrice(model.inputPrice) || !validatePrice(model.outputPrice)) {
-          errors.push(`Invalid price for ${model.model}`);
-          continue;
+        // Find the section containing this model's pricing
+        let modelSection: string | null = null;
+
+        for (const pattern of modelInfo.patterns) {
+          const match = pageContent.match(pattern);
+          if (match && match.index !== undefined) {
+            // Extract surrounding context
+            const start = Math.max(0, match.index - 200);
+            const end = Math.min(pageContent.length, match.index + match[0].length + 500);
+            modelSection = pageContent.slice(start, end);
+            break;
+          }
         }
 
-        prices.push({
-          modelName: normalizeModelName(model.model),
-          modelSlug: slugify(model.model),
-          inputPricePer1M: model.inputPrice,
-          outputPricePer1M: model.outputPrice,
-          contextWindow: model.contextWindow,
-          isAvailable: true,
-          currency: 'USD', // Azure prices are in USD
-        });
+        if (!modelSection) continue;
+
+        // Azure prices are typically per 1K tokens
+        const isPer1K = /per\s*1K/i.test(modelSection) || /per\s*1,000/i.test(modelSection);
+
+        // Extract prices from the section
+        const pricePattern = /\$?([\d.]+)\s*(?:per\s*)?(?:1K|1,000|1M|million)?/gi;
+        const priceMatches = [...modelSection.matchAll(pricePattern)];
+
+        const validPrices = priceMatches
+          .map(m => parseFloat(m[1]))
+          .filter(p => p > 0 && p < 100);
+
+        if (validPrices.length >= 2) {
+          let inputPrice = validPrices[0];
+          let outputPrice = validPrices[1];
+
+          // Convert per 1K to per 1M
+          if (isPer1K) {
+            inputPrice *= 1000;
+            outputPrice *= 1000;
+          }
+
+          if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+            prices.push({
+              modelName: normalizeModelName(modelInfo.name),
+              inputPricePer1M: inputPrice,
+              outputPricePer1M: outputPrice,
+              contextWindow: this.inferContextWindow(modelInfo.name),
+              isAvailable: true,
+              currency: 'USD',
+            });
+          }
+        }
       } catch (error) {
-        errors.push(`Error processing ${model.model}: ${error}`);
+        errors.push(`Failed to extract pricing for ${modelInfo.name}`);
       }
     }
 
-    const duration = Date.now() - startTime;
-    console.log(`✅ Azure OpenAI scrape completed in ${duration}ms`);
-    console.log(`   - Models processed: ${prices.length}`);
-    console.log(`   - Errors: ${errors.length}`);
+    // Try alternative approach: look for pricing tables
+    if (prices.length === 0) {
+      const tables = await this.page!.$$('table');
+      for (const table of tables) {
+        const rows = await table.$$('tr');
+        for (const row of rows) {
+          const text = await row.textContent();
+          if (!text) continue;
+
+          // Check if this row mentions a model
+          if (/gpt|claude|o1/i.test(text)) {
+            const modelNameMatch = text.match(/(gpt-4o(?:-mini)?|gpt-4-turbo|gpt-3\.5-turbo|gpt-35-turbo|o1(?:-mini)?|claude-3\.5-(?:sonnet|haiku))/i);
+            if (modelNameMatch) {
+              const modelName = modelNameMatch[1].toLowerCase();
+
+              const isPer1K = /per\s*1K/i.test(text) || /per\s*1,000/i.test(text);
+              const priceMatches = [...text.matchAll(/\$?([\d.]+)/g)];
+              const validPrices = priceMatches
+                .map(m => parseFloat(m[1]))
+                .filter(p => p > 0 && p < 100);
+
+              if (validPrices.length >= 2) {
+                let inputPrice = validPrices[0];
+                let outputPrice = validPrices[1];
+
+                if (isPer1K) {
+                  inputPrice *= 1000;
+                  outputPrice *= 1000;
+                }
+
+                if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+                  // Avoid duplicates
+                  if (!prices.some(p => p.modelName.toLowerCase().includes(modelName.toLowerCase()))) {
+                    prices.push({
+                      modelName: normalizeModelName(modelName),
+                      inputPricePer1M: inputPrice,
+                      outputPricePer1M: outputPrice,
+                      contextWindow: this.inferContextWindow(modelName),
+                      isAvailable: true,
+                      currency: 'USD',
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (prices.length === 0) {
+      errors.push('No pricing data could be extracted from Azure OpenAI pricing page. The page structure may have changed.');
+    }
 
     return {
-      source: 'Azure-OpenAI',
-      success: true,
+      success: errors.length === 0 && prices.length > 0,
+      source: this.getSourceName(),
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };
-  } catch (error) {
-    console.error('❌ Azure OpenAI scrape failed:', error);
-    return {
-      source: 'Azure-OpenAI',
-      success: false,
-      prices: [],
-      errors: [String(error)],
-    };
   }
+
+  private inferContextWindow(model: string): number {
+    const contextWindows: Record<string, number> = {
+      'gpt-4o': 128000,
+      'gpt-4o-mini': 128000,
+      'gpt-4-turbo': 128000,
+      'gpt-35-turbo': 16385,
+      'o1': 200000,
+      'o1-mini': 128000,
+      'claude-3': 200000,
+    };
+
+    const normalizedModel = model.toLowerCase();
+    for (const [key, value] of Object.entries(contextWindows)) {
+      if (normalizedModel.includes(key)) {
+        return value;
+      }
+    }
+    return 128000;
+  }
+}
+
+export async function scrapeAzureOpenAIDynamic(): Promise<ScraperResult> {
+  const scraper = new AzureOpenAIScraper();
+  return scraper.run();
 }
 
 // CLI test

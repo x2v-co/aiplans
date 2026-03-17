@@ -1,5 +1,6 @@
 /**
  * Qwen / 通义千问 API Scraper - Dynamic fetching from pricing page
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
@@ -18,12 +19,12 @@ interface QwenModel {
 /**
  * Fetch and parse Qwen pricing from their website
  */
-async function fetchQwenPricing(): Promise<QwenModel[]> {
+async function fetchQwenPricing(): Promise<{ models: QwenModel[], errors: string[] }> {
   const result = await fetchHTML(QWEN_PRICING_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Qwen pricing page, using fallback data');
-    return getFallbackPricing();
+    return { models: [], errors: ['Failed to fetch Qwen pricing page'] };
   }
 
   const html = result.data;
@@ -118,86 +119,11 @@ async function fetchQwenPricing(): Promise<QwenModel[]> {
     }
   }
 
-  // If no models found, use fallback
   if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
+    errors.push('No models could be parsed from Qwen pricing page. The page structure may have changed.');
   }
 
-  return models;
-}
-
-/**
- * Fallback pricing data (as of 2026)
- * Prices in CNY per 1M tokens
- */
-function getFallbackPricing(): QwenModel[] {
-  return [
-    // Qwen 3 Series (Flagship)
-    {
-      model: 'qwen3-max',
-      inputPrice: 32.00,
-      outputPrice: 32.00,
-      contextWindow: 32000,
-    },
-    {
-      model: 'qwen3-plus',
-      inputPrice: 4.00,
-      outputPrice: 4.00,
-      contextWindow: 32000,
-    },
-    {
-      model: 'qwen3-turbo',
-      inputPrice: 0.40,
-      outputPrice: 0.40,
-      contextWindow: 8000,
-    },
-    {
-      model: 'qwen3-max-longcontext',
-      inputPrice: 40.00,
-      outputPrice: 40.00,
-      contextWindow: 28000,
-    },
-    // Qwen 2.5 Series (Open Source)
-    {
-      model: 'qwen2.5-72b-instruct',
-      inputPrice: 2.50,
-      outputPrice: 2.50,
-      contextWindow: 131072,
-    },
-    {
-      model: 'qwen2.5-7b-instruct',
-      inputPrice: 0.15,
-      outputPrice: 0.15,
-      contextWindow: 131072,
-    },
-    // Vision Models
-    {
-      model: 'qwen3-vl-max',
-      inputPrice: 12.00,
-      outputPrice: 12.00,
-      contextWindow: 8192,
-    },
-    {
-      model: 'qwen-vl-max',
-      inputPrice: 12.00,
-      outputPrice: 12.00,
-      contextWindow: 8192,
-    },
-    // Code Models
-    {
-      model: 'qwen3-coder-plus',
-      inputPrice: 4.00,
-      outputPrice: 4.00,
-      contextWindow: 32000,
-    },
-    {
-      model: 'qwen2.5-coder-32b-instruct',
-      inputPrice: 2.50,
-      outputPrice: 2.50,
-      contextWindow: 131072,
-    },
-  ];
+  return { models, errors };
 }
 
 export async function scrapeQwenDynamic(): Promise<ScraperResult> {
@@ -208,7 +134,8 @@ export async function scrapeQwenDynamic(): Promise<ScraperResult> {
   try {
     console.log('🔄 Fetching Qwen pricing...');
 
-    const models = await fetchQwenPricing();
+    const { models, errors: fetchErrors } = await fetchQwenPricing();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${models.length} models from Qwen`);
 
@@ -227,7 +154,7 @@ export async function scrapeQwenDynamic(): Promise<ScraperResult> {
           outputPricePer1M: model.outputPrice,
           contextWindow: model.contextWindow,
           isAvailable: true,
-          currency: 'CNY', // Qwen prices are in CNY
+          currency: 'CNY',
         });
       } catch (error) {
         errors.push(`Error processing ${model.model}: ${error}`);
@@ -241,7 +168,7 @@ export async function scrapeQwenDynamic(): Promise<ScraperResult> {
 
     return {
       source: 'Qwen',
-      success: true,
+      success: prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };

@@ -23,94 +23,71 @@ interface MistralPlan {
 /**
  * Fetch and parse Mistral AI subscription plans from their website
  */
-async function fetchMistralPlans(): Promise<MistralPlan[]> {
+async function fetchMistralPlans(): Promise<{ plans: MistralPlan[], errors: string[] }> {
   const result = await fetchHTML(MISTRAL_PLANS_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Mistral plans page, using fallback data');
-    return getFallbackPlans();
+    return { plans: [], errors: ['Failed to fetch Mistral plans page - no HTML returned'] };
   }
 
   const html = result.data;
   const plans: MistralPlan[] = [];
 
-  // Try to extract plan information from HTML
-  // Look for Le Chat pricing patterns
+  // Extract prices from HTML - look for Le Chat pricing patterns
+  const proPriceMatch = html.match(/Le Chat\s*Pro[^€$]*?[€$]\s*[\d.]+|Pro[^€$]*?[€$]\s*[\d.]+/i);
+  const enterpriseMatch = html.match(/Enterprise|business/i);
 
-  // Le Chat Free plan
-  const freePlan: MistralPlan = {
-    name: 'Le Chat Free',
-    priceMonthly: 0,
-    tier: 'free',
-    dailyMessageLimit: undefined,
-    features: [
-      'Access to Mistral 7B',
-      'Access to Mixtral 8x7B',
-      'Limited message capacity',
-      'Standard response speed',
-      'Web browsing',
-    ],
-    paymentMethods: [],
-    accessFromChina: false,
-    region: 'global',
-  };
-  plans.push(freePlan);
+  // Check if we found any pricing information
+  if (!proPriceMatch && !enterpriseMatch) {
+    return {
+      plans: [],
+      errors: ['No pricing information found on Mistral page. The page structure may have changed.']
+    };
+  }
 
-  // Le Chat Pro plan
-  const proPlan: MistralPlan = {
-    name: 'Le Chat Pro',
-    priceMonthly: 15,
-    priceYearly: undefined,
-    tier: 'pro',
-    dailyMessageLimit: undefined,
-    features: [
-      'Access to Mistral Medium',
-      'Access to Mistral Small',
-      'Access to Mixtral 8x7B',
-      'Higher message limits',
-      'Priority access during peak times',
-      'Faster response speeds',
-      'Extended context windows',
-      'File upload support',
-      'Image analysis (Pixtral)',
-      'Code generation and debugging',
-    ],
-    paymentMethods: ['Credit Card', 'Debit Card'],
-    accessFromChina: false,
-    region: 'global',
-  };
+  // Free plan - check if mentioned on page
+  if (html.match(/free|Free|FREE/i)) {
+    const freePlan: MistralPlan = {
+      name: 'Le Chat Free',
+      priceMonthly: 0,
+      tier: 'free',
+      dailyMessageLimit: undefined,
+      features: ['Access to Mistral basic models', 'Limited message capacity'],
+      paymentMethods: [],
+      accessFromChina: false,
+      region: 'global',
+    };
+    plans.push(freePlan);
+  }
 
-  // Try to extract Pro price from HTML
-  const proPriceMatch = html.match(/Pro[^$]*?€?\s*15|Le Chat[^$]*?€?\s*15/i);
+  // Pro plan - only add if we found the price
   if (proPriceMatch) {
-    const priceMatch = proPriceMatch[0].match(/[€$]?\s*([\d.]+)/);
+    const priceMatch = proPriceMatch[0].match(/[€$]\s*([\d.]+)/);
     if (priceMatch) {
-      proPlan.priceMonthly = parseFloat(priceMatch[1]);
+      const proPlan: MistralPlan = {
+        name: 'Le Chat Pro',
+        priceMonthly: parseFloat(priceMatch[1]),
+        priceYearly: undefined,
+        tier: 'pro',
+        dailyMessageLimit: undefined,
+        features: [], // Features should be extracted from actual page content
+        paymentMethods: ['Credit Card', 'Debit Card'],
+        accessFromChina: false,
+        region: 'global',
+      };
+      plans.push(proPlan);
     }
   }
-  plans.push(proPlan);
 
-  // Le Chat Enterprise plan
-  if (html.includes('Enterprise') || html.includes('business')) {
+  // Enterprise plan - only add if mentioned (custom pricing)
+  if (enterpriseMatch) {
     const enterprisePlan: MistralPlan = {
       name: 'Le Chat Enterprise',
       priceMonthly: 0, // Custom pricing
       tier: 'enterprise',
       dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Full API access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'SOC 2 and GDPR compliance',
-        'Data residency options',
-        'Custom fine-tuning capabilities',
-      ],
+      features: [],
       paymentMethods: ['Invoice', 'Contract'],
       accessFromChina: false,
       region: 'global',
@@ -118,82 +95,11 @@ async function fetchMistralPlans(): Promise<MistralPlan[]> {
     plans.push(enterprisePlan);
   }
 
-  // If no plans found, use fallback
   if (plans.length === 0) {
-    console.warn('No plans parsed from HTML, using fallback data');
-    return getFallbackPlans();
+    errors.push('No plans could be parsed from Mistral pricing page. The page structure may have changed.');
   }
 
-  return plans;
-}
-
-/**
- * Fallback plan data (known as of 2025-2026)
- */
-function getFallbackPlans(): MistralPlan[] {
-  return [
-    {
-      name: 'Le Chat Free',
-      priceMonthly: 0,
-      tier: 'free',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to Mistral 7B',
-        'Access to Mixtral 8x7B',
-        'Limited message capacity',
-        'Standard response speed',
-        'Web browsing',
-      ],
-      paymentMethods: [],
-      accessFromChina: false,
-      region: 'global',
-    },
-    {
-      name: 'Le Chat Pro',
-      priceMonthly: 15,
-      priceYearly: undefined,
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to Mistral Medium',
-        'Access to Mistral Small',
-        'Access to Mixtral 8x7B',
-        'Higher message limits',
-        'Priority access during peak times',
-        'Faster response speeds',
-        'Extended context windows',
-        'File upload support',
-        'Image analysis (Pixtral)',
-        'Code generation and debugging',
-      ],
-      paymentMethods: ['Credit Card', 'Debit Card'],
-      accessFromChina: false,
-      region: 'global',
-    },
-    {
-      name: 'Le Chat Enterprise',
-      priceMonthly: 0,
-      tier: 'enterprise',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Full API access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'SOC 2 and GDPR compliance',
-        'Data residency options',
-        'Custom fine-tuning capabilities',
-      ],
-      paymentMethods: ['Invoice', 'Contract'],
-      accessFromChina: false,
-      region: 'global',
-    },
-  ];
+  return { plans, errors };
 }
 
 export async function scrapeMistralPlans(): Promise<PlanScraperResult> {
@@ -204,7 +110,8 @@ export async function scrapeMistralPlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching Mistral AI subscription plans...');
 
-    const mistralPlans = await fetchMistralPlans();
+    const { plans: mistralPlans, errors: fetchErrors } = await fetchMistralPlans();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${mistralPlans.length} plans from Mistral AI`);
 
@@ -249,7 +156,7 @@ export async function scrapeMistralPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Mistral-Plans',
-      success: true,
+      success: plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

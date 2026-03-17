@@ -9,23 +9,26 @@ import { supabaseAdmin } from './db/queries';
 async function main() {
   console.log('📊 Checking database state...\n');
 
-  // Get counts
-  const [productsResult, plansResult, modelsResult, channelPricesResult] = await Promise.all([
-    supabaseAdmin.from('products').select('*', { count: 'exact', head: false }).single(),
-    supabaseAdmin.from('plans').select('*', { count: 'exact', head: false }).single(),
-    supabaseAdmin.from('models').select('*', { count: 'exact', head: false }).single(),
-    supabaseAdmin.from('channel_prices').select('*', { count: 'exact', head: false }).single(),
+  // Get counts from correct tables
+  const [
+    modelsResult,
+    plansResult,
+    modelPlanMappingResult,
+    channelPricesResult,
+    benchmarkScoresResult
+  ] = await Promise.all([
+    supabaseAdmin.from('models').select('id', { count: 'exact', head: true }),
+    supabaseAdmin.from('plans').select('id', { count: 'exact', head: true }),
+    supabaseAdmin.from('model_plan_mapping').select('id', { count: 'exact', head: true }),
+    supabaseAdmin.from('api_channel_prices').select('id', { count: 'exact', head: true }),
+    supabaseAdmin.from('model_benchmark_scores').select('id', { count: 'exact', head: true }),
   ]);
 
-  const productsCount = productsResult.data ? productsResult.data.count : 0;
-  const plansCount = plansResult.data ? plansResult.data.count : 0;
-  const modelsCount = modelsResult.data ? modelsResult.data.count : 0;
-  const channelPricesCount = channelPricesResult.data ? channelPricesResult.data.count : 0;
-
-  console.log(`📦 Products: ${productsCount}`);
-  console.log(`📋 Plans: ${plansCount}`);
-  console.log(`🔗 Models (plan-product relations): ${modelsCount}`);
-  console.log(`💰 Channel Prices: ${channelPricesCount}`);
+  console.log(`📦 Models: ${modelsResult.count || 0}`);
+  console.log(`📋 Plans: ${plansResult.count || 0}`);
+  console.log(`🔗 Model-Plan Relations: ${modelPlanMappingResult.count || 0}`);
+  console.log(`💰 API Channel Prices: ${channelPricesResult.count || 0}`);
+  console.log(`📊 Benchmark Scores: ${benchmarkScoresResult.count || 0}`);
   console.log();
 }
 

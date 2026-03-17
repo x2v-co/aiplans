@@ -12,33 +12,24 @@ export async function GET(request: Request) {
     const type = searchParams.get('type');
 
     // 获取所有 LLM 产品及其渠道价格
-    const [productsRes, channelPricesRes] = await Promise.all([
+    const [modelsRes, channelPricesRes, benchmarkRes] = await Promise.all([
       supabase
-        .from('products')
+        .from('models')
         .select(`
           id,
           name,
           slug,
-          provider_id,
-          context_window,
-          benchmark_mmlu,
-          benchmark_arena_elo,
-          providers!inner (
-            id,
-            name,
-            slug,
-            logo_url,
-            region
-          )
+          provider_ids,
+          context_window
         `)
         .eq('type', 'llm')
         .order('name'),
       supabase
-        .from('channel_prices')
+        .from('api_channel_prices')
         .select(`
           id,
-          product_id,
-          channel_id,
+          model_id,
+          provider_id,
           input_price_per_1m,
           output_price_per_1m,
           cached_input_price_per_1m,
@@ -46,40 +37,69 @@ export async function GET(request: Request) {
           price_unit,
           rate_limit,
           is_available,
-          channels!inner (
+          providers:provider_id (
             id,
             name,
             slug,
             type,
             region,
-            access_from_china,
-            provider_id
+            access_from_china
           )
         `)
-        .eq('is_available', true),
+        .eq('is_available', true)
+        .not('provider_id', 'is', null),
+      // Fetch benchmark scores from model_benchmark_scores table
+      supabase
+        .from('model_benchmark_scores')
+        .select('model_id, value, benchmark_tasks!inner(benchmark_id)')
+        .order('value', { ascending: false }),
     ]);
 
-    if (productsRes.error || !productsRes.data) {
-      return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    if (modelsRes.error || !modelsRes.data) {
+      return NextResponse.json({ error: 'Failed to fetch models' }, { status: 500 });
     }
 
-    const products = productsRes.data || [];
+    const products = modelsRes.data || [];
     const channelPrices = (channelPricesRes.data || []) as any[];
+    const benchmarkScores = (benchmarkRes.data || []) as any[];
+
+    // Create benchmark map: model_id -> highest value (for arena elo)
+    const benchmarkMap = new Map<number, number>();
+    benchmarkScores.forEach((bs: any) => {
+      const modelId = bs.model_id;
+      const value = bs.value;
+      if (!benchmarkMap.has(modelId) || value > (benchmarkMap.get(modelId) || 0)) {
+        benchmarkMap.set(modelId, value);
+      }
+    });
+
+    // Fetch providers for all models
+    const allProviderIds = [...new Set(products.flatMap((p: any) => p.provider_ids || []))];
+    const { data: providersData } = await supabase
+      .from('providers')
+      .select('id, name, slug, logo, region')
+      .in('id', allProviderIds);
+
+    const providerMap = new Map((providersData || []).map((p: any) => [p.id, p]));
+
+    // Attach first provider to each product
+    products.forEach((p: any) => {
+      p.providers = p.provider_ids?.[0] ? providerMap.get(p.provider_ids[0]) : null;
+    });
 
     // 按模型基础名称分组
     const modelGroups = new Map<string, {
       id: number;
       name: string;
       slug: string;
-      provider_id: number;
+      provider_ids: number[];
       context_window: number | null;
-      benchmark_mmlu: number | null;
       benchmark_arena_elo: number | null;
       providers: {
         id: number;
         name: string;
         slug: string;
-        logo_url: string | null;
+        logo: string | null;
         region?: string;
       } | null;
       baseName: string;
@@ -99,10 +119,10 @@ export async function GET(request: Request) {
 
       if (!modelGroups.has(baseName)) {
         // 添加该产品的渠道价格
-        const productPrices = channelPrices.filter(cp => cp.product_id === product.id);
+        const productPrices = channelPrices.filter(cp => cp.model_id === product.id);
 
-        const hasChinaVersion = productPrices.some(cp => (cp as any).channels?.region === 'china');
-        const hasGlobalVersion = productPrices.some(cp => (cp as any).channels?.region === 'global');
+        const hasChinaVersion = productPrices.some(cp => (cp as any).providers?.region === 'china');
+        const hasGlobalVersion = productPrices.some(cp => (cp as any).providers?.region === 'global');
 
         // 按价格排序找到最便宜的
         const sortedByPrice = [...productPrices].sort((a, b) =>
@@ -113,11 +133,10 @@ export async function GET(request: Request) {
           id: product.id,
           name: product.name,
           slug: product.slug,
-          provider_id: product.provider_id,
+          provider_ids: product.provider_ids,
           context_window: product.context_window,
-          benchmark_mmlu: product.benchmark_mmlu,
-          benchmark_arena_elo: product.benchmark_arena_elo,
-          providers: product.providers as any,
+          benchmark_arena_elo: benchmarkMap.get(product.id) || null,
+          providers: (product as any).providers,
           baseName,
           versions: productPrices as any,
           hasChinaVersion,
@@ -127,14 +146,14 @@ export async function GET(request: Request) {
       } else {
         // 合并到现有组
         const group = modelGroups.get(baseName)!;
-        const productPrices = channelPrices.filter(cp => cp.product_id === product.id);
+        const productPrices = channelPrices.filter(cp => cp.model_id === product.id);
         group.versions.push(...productPrices);
         group.versionCounts += productPrices.length;
 
-        if (!group.hasChinaVersion && productPrices.some(cp => cp.channels.region === 'china')) {
+        if (!group.hasChinaVersion && productPrices.some(cp => cp.providers.region === 'china')) {
           group.hasChinaVersion = true;
         }
-        if (!group.hasGlobalVersion && productPrices.some(cp => cp.channels.region === 'global')) {
+        if (!group.hasGlobalVersion && productPrices.some(cp => cp.providers.region === 'global')) {
           group.hasGlobalVersion = true;
         }
       }

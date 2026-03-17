@@ -23,8 +23,8 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
 // Query helpers
 export async function upsertChannelPrice(data: {
-  product_id: number;
-  channel_id: number;
+  model_id: number;
+  provider_id: number;
   input_price_per_1m: number;
   output_price_per_1m: number;
   cached_input_price_per_1m?: number;
@@ -42,11 +42,17 @@ export async function upsertChannelPrice(data: {
     : undefined;
 
   const { data: result, error } = await supabaseAdmin
-    .from('channel_prices')
+    .from('api_channel_prices')
     .upsert({
-      ...data,
+      model_id: data.model_id,
+      provider_id: data.provider_id,
+      input_price_per_1m: data.input_price_per_1m,
+      output_price_per_1m: data.output_price_per_1m,
+      cached_input_price_per_1m: data.cached_input_price_per_1m,
       rate_limit: rateLimit,
-    }, { onConflict: 'product_id,channel_id' })
+      is_available: data.is_available,
+      last_verified: data.last_verified,
+    }, { onConflict: 'model_id,provider_id' })
     .select()
     .single();
 
@@ -101,7 +107,7 @@ export async function getOrCreateProduct(data: {
 }) {
   // First: try to find by exact slug match
   const { data: existingBySlug } = await supabaseAdmin
-    .from('products')
+    .from('models')
     .select('*')
     .eq('slug', data.slug)
     .single();
@@ -110,7 +116,7 @@ export async function getOrCreateProduct(data: {
     // Update slug if different
     if (existingBySlug.slug !== data.slug) {
       await supabaseAdmin
-        .from('products')
+        .from('models')
         .update({ slug: data.slug })
         .eq('id', existingBySlug.id);
       existingBySlug.slug = data.slug;
@@ -118,13 +124,12 @@ export async function getOrCreateProduct(data: {
     return existingBySlug;
   }
 
-  // Second: try to find by name + provider_id (should return at most one)
+  // Second: try to find by name (models table doesn't have provider_id column for products)
   // But there might be duplicates, so we order by id and take the first
   const { data: existingByName } = await supabaseAdmin
-    .from('products')
+    .from('models')
     .select('*')
     .eq('name', data.name)
-    .eq('provider_id', data.provider_id)
     .order('id')
     .limit(1);
 
@@ -132,7 +137,7 @@ export async function getOrCreateProduct(data: {
     // Update the slug to match the normalized version
     if (existingByName[0].slug !== data.slug) {
       await supabaseAdmin
-        .from('products')
+        .from('models')
         .update({ slug: data.slug })
         .eq('id', existingByName[0].id);
       existingByName[0].slug = data.slug;
@@ -142,7 +147,7 @@ export async function getOrCreateProduct(data: {
 
   // Third: create new
   const { data: newProduct, error } = await supabaseAdmin
-    .from('products')
+    .from('models')
     .insert(data)
     .select()
     .single();
@@ -151,7 +156,7 @@ export async function getOrCreateProduct(data: {
     // If unique constraint error, find existing
     if (error.code === '23505') {
       const { data: retry } = await supabaseAdmin
-        .from('products')
+        .from('models')
         .select('*')
         .eq('slug', data.slug)
         .single();
@@ -160,34 +165,6 @@ export async function getOrCreateProduct(data: {
     throw error;
   }
   return newProduct;
-}
-
-export async function getOrCreateChannel(data: {
-  name: string;
-  slug: string;
-  type: string;
-  website_url?: string;
-  region?: string;
-  access_from_china?: boolean;
-}) {
-  // Try to find existing
-  const { data: existing } = await supabaseAdmin
-    .from('channels')
-    .select('*')
-    .eq('slug', data.slug)
-    .single();
-
-  if (existing) return existing;
-
-  // Create new
-  const { data: newChannel, error } = await supabaseAdmin
-    .from('channels')
-    .insert(data)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return newChannel;
 }
 
 // Plan-related functions
@@ -348,48 +325,6 @@ export async function getProviderBySlug(slug: string) {
 }
 
 /**
- * Get channel by name and type
- */
-export async function getOrCreateChannelWithType(data: {
-  name: string;
-  slug: string;
-  type: string;
-  website?: string;
-  region?: string;
-  access_from_china?: boolean;
-  provider_id?: number;
-}) {
-  // Try to find existing by slug
-  const { data: existing } = await supabaseAdmin
-    .from('channels')
-    .select('*')
-    .eq('slug', data.slug)
-    .single();
-
-  if (existing) return existing;
-
-  // Create new
-  const { data: newChannel, error } = await supabaseAdmin
-    .from('channels')
-    .insert({
-      name: data.name,
-      slug: data.slug,
-      provider_id: data.provider_id,
-      type: data.type,
-      logo: data.website,
-      website: data.website,
-      region: data.region,
-      access_from_china: data.access_from_china,
-      description: `${data.type} channel for ${data.name}`,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return newChannel;
-}
-
-/**
  * Legacy function for backward compatibility
  */
 export async function getOrCreateProvider(data: {
@@ -540,7 +475,7 @@ export async function getPlanByProviderSlug(providerId: number, slug: string) {
  */
 export async function upsertModelPlanRelation(data: {
   plan_id: number;
-  product_id: number;
+  model_id: number;
   provider_id: number;
   is_available?: boolean;
   is_default?: boolean;
@@ -553,8 +488,8 @@ export async function upsertModelPlanRelation(data: {
   note?: string;
 }) {
   const { data: result, error } = await supabaseAdmin
-    .from('models')
-    .upsert(data, { onConflict: 'plan_id,product_id' })
+    .from('model_plan_mapping')
+    .upsert(data, { onConflict: 'model_id,plan_id' })
     .select()
     .single();
 
@@ -567,10 +502,10 @@ export async function upsertModelPlanRelation(data: {
  */
 export async function getModelsForPlan(planId: number) {
   const { data, error } = await supabaseAdmin
-    .from('models')
+    .from('model_plan_mapping')
     .select(`
       *,
-      products:product_id (
+      models:model_id (
         id,
         name,
         slug
@@ -586,9 +521,9 @@ export async function getModelsForPlan(planId: number) {
 /**
  * Get plans for a model (product)
  */
-export async function getPlansForModel(productId: number, isAvailable = true) {
+export async function getPlansForModel(modelId: number, isAvailable = true) {
   const { data, error } = await supabaseAdmin
-    .from('models')
+    .from('model_plan_mapping')
     .select(`
       plan_id,
       is_available,
@@ -603,11 +538,11 @@ export async function getPlansForModel(productId: number, isAvailable = true) {
           id,
           name,
           slug,
-          logo_url
+          logo
         )
       )
     `)
-    .eq('product_id', productId)
+    .eq('model_id', modelId)
     .eq('is_available', isAvailable);
 
   if (error) throw error;
@@ -637,4 +572,181 @@ export async function deleteModelsForPlan(planId: number) {
     .eq('plan_id', planId);
 
   if (error) throw error;
+}
+
+/**
+ * Get or create Arena benchmark task ID
+ */
+export async function getArenaBenchmarkTaskId(): Promise<number | null> {
+  // Get the benchmark ID for Arena
+  const { data: benchmark } = await supabaseAdmin
+    .from('benchmarks')
+    .select('id')
+    .eq('slug', 'arena')
+    .single();
+
+  if (!benchmark) return null;
+
+  // Get the benchmark version
+  const { data: version } = await supabaseAdmin
+    .from('benchmark_versions')
+    .select('id')
+    .eq('benchmark_id', benchmark.id)
+    .eq('is_current', true)
+    .single();
+
+  if (!version) return null;
+
+  // Get the task
+  const { data: task } = await supabaseAdmin
+    .from('benchmark_tasks')
+    .select('id')
+    .eq('benchmark_version_id', version.id)
+    .single();
+
+  return task?.id || null;
+}
+
+/**
+ * Get or create ELO metric ID
+ */
+export async function getOrCreateEloMetricId(): Promise<number | null> {
+  const { data: existingMetric } = await supabaseAdmin
+    .from('benchmark_metrics')
+    .select('id')
+    .eq('name', 'ELO')
+    .single();
+
+  if (existingMetric) return existingMetric.id;
+
+  // Create the metric
+  const { data: newMetric, error } = await supabaseAdmin
+    .from('benchmark_metrics')
+    .insert({
+      name: 'ELO',
+      unit: 'score',
+      description: 'Chatbot Arena ELO score',
+      higher_better: true,
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('Failed to create ELO metric:', error.message);
+    return null;
+  }
+
+  return newMetric?.id || null;
+}
+
+/**
+ * Upsert benchmark score for a model
+ */
+export async function upsertBenchmarkScore(data: {
+  model_id: number;
+  benchmark_task_id: number;
+  metric_id: number;
+  value: number;
+  release_date?: string;
+}) {
+  // Check if score exists
+  const { data: existing } = await supabaseAdmin
+    .from('model_benchmark_scores')
+    .select('id, value')
+    .eq('model_id', data.model_id)
+    .eq('benchmark_task_id', data.benchmark_task_id)
+    .single();
+
+  if (existing) {
+    // Update if different
+    if (existing.value !== data.value) {
+      const { error } = await supabaseAdmin
+        .from('model_benchmark_scores')
+        .update({
+          value: data.value,
+          release_date: data.release_date || new Date().toISOString().split('T')[0],
+        })
+        .eq('id', existing.id);
+
+      if (error) throw error;
+      return { action: 'updated' as const, oldValue: existing.value };
+    }
+    return { action: 'skipped' as const, oldValue: existing.value };
+  }
+
+  // Insert new
+  const { error } = await supabaseAdmin
+    .from('model_benchmark_scores')
+    .insert({
+      model_id: data.model_id,
+      benchmark_task_id: data.benchmark_task_id,
+      metric_id: data.metric_id,
+      value: data.value,
+      release_date: data.release_date || new Date().toISOString().split('T')[0],
+    });
+
+  if (error) throw error;
+  return { action: 'inserted' as const, oldValue: null };
+}
+
+/**
+ * Get model by slug
+ */
+export async function getModelBySlug(slug: string) {
+  const { data, error } = await supabaseAdmin
+    .from('models')
+    .select('id, name, slug, provider_ids, context_window, type')
+    .eq('slug', slug)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw error;
+  }
+  return data;
+}
+
+/**
+ * Create a new model
+ */
+export async function createModel(data: {
+  name: string;
+  slug: string;
+  provider_ids?: number[];
+  type?: string;
+  description?: string;
+  context_window?: number;
+}) {
+  const { data: newModel, error } = await supabaseAdmin
+    .from('models')
+    .insert({
+      name: data.name,
+      slug: data.slug,
+      provider_ids: data.provider_ids || [],
+      type: data.type || 'llm',
+      description: data.description,
+      context_window: data.context_window,
+    })
+    .select('id, name, slug, provider_ids, context_window, type')
+    .single();
+
+  if (error) throw error;
+  return newModel;
+}
+
+/**
+ * Get model's current Arena ELO score
+ */
+export async function getModelArenaElo(modelId: number): Promise<number | null> {
+  const taskId = await getArenaBenchmarkTaskId();
+  if (!taskId) return null;
+
+  const { data } = await supabaseAdmin
+    .from('model_benchmark_scores')
+    .select('value')
+    .eq('model_id', modelId)
+    .eq('benchmark_task_id', taskId)
+    .single();
+
+  return data?.value || null;
 }

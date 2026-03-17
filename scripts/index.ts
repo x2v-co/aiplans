@@ -1,5 +1,16 @@
 #!/usr/bin/env tsx
 
+/**
+ * ⚠️ DEPRECATED - DO NOT USE
+ *
+ * This scraper uses the old schema with `channels` table which no longer exists.
+ * Use `tsx scripts/index-dynamic.ts` instead.
+ *
+ * The new schema uses `providers` table with `type` field to distinguish
+ * between official providers, cloud providers, aggregators, and resellers.
+ * All pricing data is stored in `api_channel_prices` with `provider_id` (not `channel_id`).
+ */
+
 import { scrapeOpenRouter } from './scrapers/openrouter';
 import { scrapeOpenAIDynamic } from './scrapers/openai-dynamic';
 import { scrapeAnthropicDynamic } from './scrapers/anthropic-dynamic';
@@ -31,7 +42,7 @@ import {
   upsertPlan,
   logPriceChange,
   logScrapeResult,
-  getOrCreateProduct,
+  getOrCreateModel,
   getOrCreateChannel,
   getOrCreateProvider,
   supabaseAdmin
@@ -114,74 +125,72 @@ async function processAPIScraper(result: ScraperResult, channelName: string) {
       // Infer provider from model name AND channel name (to distinguish China vs Global)
       const providerId = inferProviderId(price.modelName, channelName);
 
-      // Normalize the model name for consistent product identification
+      // Normalize the model name for consistent model identification
       const normalizedName = normalizeModelName(price.modelName);
       const normalizedSlug = normalizeSlug(price.modelName);
 
-      // 官方提供商 ID 列表 - 只有这些才能创建产品
+      // 官方提供商 ID 列表 - 只有这些才能创建模型
       // Official model providers (1-25)
       const OFFICIAL_PROVIDER_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
 
-      // 如果不是官方提供商，尝试找到已有的官方产品
-      let product;
+      // 如果不是官方提供商，尝试找到已有的官方模型
+      let model;
       // Unknown provider (returned -1)
       if (providerId === -1) {
-        // 查找已有的官方产品
-        const { data: existingProduct } = await supabaseAdmin
-          .from('products')
+        // 查找已有的官方模型
+        const { data: existingModel } = await supabaseAdmin
+          .from('models')
           .select('*')
           .eq('slug', normalizedSlug)
-          .in('provider_id', OFFICIAL_PROVIDER_IDS)
           .single();
 
-        if (existingProduct) {
-          product = existingProduct;
+        if (existingModel) {
+          model = existingModel;
         } else {
-          // 如果没有官方产品，跳过这个价格
+          // 如果没有官方模型，跳过这个价格
           console.log(`⚠️ Skipping ${normalizedName} - unknown provider`);
           continue;
         }
       } else if (!OFFICIAL_PROVIDER_IDS.includes(providerId)) {
-        // 查找已有的官方产品
-        const { data: existingProduct } = await supabaseAdmin
-          .from('products')
+        // 查找已有的官方模型
+        const { data: existingModel } = await supabaseAdmin
+          .from('models')
           .select('*')
           .eq('slug', normalizedSlug)
-          .in('provider_id', OFFICIAL_PROVIDER_IDS)
           .single();
 
-        if (existingProduct) {
-          product = existingProduct;
+        if (existingModel) {
+          model = existingModel;
         } else {
-          // 如果没有官方产品，跳过这个价格
-          console.log(`⚠️ Skipping ${normalizedName} - no official product found`);
+          // 如果没有官方模型，跳过这个价格
+          console.log(`⚠️ Skipping ${normalizedName} - no official model found`);
           continue;
         }
       } else {
-        // 官方提供商 - 正常获取或创建产品
-        product = await getOrCreateProduct({
+        // 官方提供商 - 正常获取或创建模型
+        model = await getOrCreateModel({
           name: normalizedName,
           slug: normalizedSlug,
-          provider_id: providerId,
+          provider_ids: [providerId],
           type: 'llm',
           context_window: price.contextWindow,
         });
       }
 
-      // Get existing price for comparison
+      // Get existing price for comparison (using api_channel_prices table)
       const { data: existingPrice } = await supabaseAdmin
-        .from('channel_prices')
+        .from('api_channel_prices')
         .select('*')
-        .eq('product_id', product.id)
+        .eq('model_id', model.id)
         .eq('channel_id', channel.id)
         .single();
 
       // Use currency from scraper if specified, otherwise infer from channel region
       const priceCurrency = price.currency || currency;
 
-      // Upsert channel price
+      // Upsert channel price (using api_channel_prices table)
       const newPrice = await upsertChannelPrice({
-        product_id: product.id,
+        model_id: model.id,
         channel_id: channel.id,
         input_price_per_1m: price.inputPricePer1M,
         output_price_per_1m: price.outputPricePer1M,
@@ -290,8 +299,8 @@ function inferProviderId(modelName: string, channelName?: string): number {
   const channel = channelName?.toLowerCase() || '';
 
   // For third-party channels (AWS Bedrock, Vertex AI, Azure, Fireworks, Replicate, etc.),
-  // the product provider should still be the ORIGINAL model provider (OpenAI, Anthropic, Meta, etc.)
-  // NOT the channel provider. The channel is stored separately in channel_prices.
+  // the model provider should still be the ORIGINAL model provider (OpenAI, Anthropic, Meta, etc.)
+  // NOT the channel provider. The channel is stored separately in api_channel_prices.
 
   // OpenAI models
   if (name.includes('gpt') || name.includes('openai') || name.startsWith('o1') || name.startsWith('o3') || name.startsWith('o4')) {
@@ -362,7 +371,7 @@ function inferProviderId(modelName: string, channelName?: string): number {
   // Amazon models
   if (name.includes('amazon') || name.includes('titan')) return 22; // Amazon
 
-  // Return -1 for unknown providers - these products should not be created
+  // Return -1 for unknown providers - these models should not be created
   return -1;
 }
 

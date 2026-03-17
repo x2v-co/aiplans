@@ -23,157 +23,111 @@ interface MinimaxGlobalPlan {
 /**
  * Fetch and parse Minimax Global subscription plans from their website
  */
-async function fetchMinimaxGlobalPlans(): Promise<MinimaxGlobalPlan[]> {
+async function fetchMinimaxGlobalPlans(): Promise<{ plans: MinimaxGlobalPlan[], errors: string[] }> {
   const result = await fetchHTML(MINIMAX_GLOBAL_PLANS_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Minimax Global plans page, using fallback data');
-    return getFallbackPlans();
+    return { plans: [], errors: ['Failed to fetch Minimax Global plans page - no HTML returned'] };
   }
 
   const html = result.data;
   const plans: MinimaxGlobalPlan[] = [];
 
-  // Try to extract plan information from HTML
-  // Look for pricing patterns in USD
+  // Extract prices from HTML - only proceed if we can find actual pricing data
   const litePriceMatch = html.match(/Lite[^$]*?\$\s*[\d,]+/i);
   const proPriceMatch = html.match(/Pro[^$]*?\$\s*[\d,]+/i);
   const teamPriceMatch = html.match(/Team[^$]*?\$\s*[\d,]+/i);
   const enterpriseMatch = html.match(/Enterprise/i);
 
-  // Free plan
-  const freePlan: MinimaxGlobalPlan = {
-    name: 'Minimax Global Free',
-    priceMonthly: 0,
-    tier: 'free',
-    dailyMessageLimit: undefined,
-    features: [
-      'Access to Minimax basic models',
-      'Limited message capacity',
-      'Standard response speed',
-      'Web browsing',
-      'Basic coding assistance',
-    ],
-    paymentMethods: [],
-    accessFromChina: true, // Minimax Global is accessible from China
-    region: 'global',
-  };
-  plans.push(freePlan);
-
-  // Lite plan
-  const litePlan: MinimaxGlobalPlan = {
-    name: 'Minimax Global Lite',
-    priceMonthly: 5,
-    priceYearly: undefined,
-    tier: 'basic',
-    dailyMessageLimit: undefined,
-    features: [
-      'Access to Minimax Lite models',
-      'Higher message limits',
-      'Faster response speeds',
-      'Extended context windows',
-      'Code generation and debugging',
-      'File upload support',
-      'Priority access',
-    ],
-    paymentMethods: ['Credit Card', 'PayPal', 'Alipay'],
-    accessFromChina: true,
-    region: 'global',
-  };
-
-  if (litePriceMatch) {
-    const priceMatch = litePriceMatch[0].match(/\$?\s*([\d,]+)/);
-    if (priceMatch) {
-      litePlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-    }
+  // Check if we found any pricing information
+  if (!litePriceMatch && !proPriceMatch && !teamPriceMatch && !enterpriseMatch) {
+    return {
+      plans: [],
+      errors: ['No pricing information found on Minimax Global page. The page structure may have changed.']
+    };
   }
-  plans.push(litePlan);
 
-  // Pro plan
-  const proPlan: MinimaxGlobalPlan = {
-    name: 'Minimax Global Pro',
-    priceMonthly: 15,
-    priceYearly: undefined,
-    tier: 'pro',
-    dailyMessageLimit: undefined,
-    features: [
-      'Everything in Lite',
-      'Access to Minimax Pro models',
-      'Higher message limits',
-      'Priority access during peak times',
-      'Extended context windows',
-      'Advanced code generation',
-      'Image analysis',
-      'Data analysis capabilities',
-      'Early access to new features',
-    ],
-    paymentMethods: ['Credit Card', 'PayPal', 'Alipay'],
-    accessFromChina: true,
-    region: 'global',
-  };
-
-  if (proPriceMatch) {
-    const priceMatch = proPriceMatch[0].match(/\$?\s*([\d,]+)/);
-    if (priceMatch) {
-      proPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-    }
-  }
-  plans.push(proPlan);
-
-  // Team plan
-  if (teamPriceMatch || html.includes('Team')) {
-    const teamPlan: MinimaxGlobalPlan = {
-      name: 'Minimax Global Team',
-      priceMonthly: 45,
-      priceYearly: undefined,
-      tier: 'team',
+  // Free plan - check if mentioned on page
+  if (html.match(/free|Free|FREE/i)) {
+    const freePlan: MinimaxGlobalPlan = {
+      name: 'Minimax Global Free',
+      priceMonthly: 0,
+      tier: 'free',
       dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Team collaboration tools',
-        'Admin console',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'Custom integrations',
-      ],
-      paymentMethods: ['Credit Card', 'PayPal', 'Alipay', 'Invoice'],
+      features: ['Access to Minimax basic models', 'Limited message capacity'],
+      paymentMethods: [],
       accessFromChina: true,
       region: 'global',
     };
-
-    if (teamPriceMatch) {
-      const priceMatch = teamPriceMatch[0].match(/\$?\s*([\d,]+)/);
-      if (priceMatch) {
-        teamPlan.priceMonthly = parseFloat(priceMatch[1].replace(',', ''));
-      }
-    }
-    plans.push(teamPlan);
+    plans.push(freePlan);
   }
 
-  // Enterprise plan
+  // Lite plan - only add if we found the price
+  if (litePriceMatch) {
+    const priceMatch = litePriceMatch[0].match(/\$?\s*([\d,]+)/);
+    if (priceMatch) {
+      const litePlan: MinimaxGlobalPlan = {
+        name: 'Minimax Global Lite',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'basic',
+        dailyMessageLimit: undefined,
+        features: [], // Features should be extracted from actual page content
+        paymentMethods: ['Credit Card', 'PayPal', 'Alipay'],
+        accessFromChina: true,
+        region: 'global',
+      };
+      plans.push(litePlan);
+    }
+  }
+
+  // Pro plan - only add if we found the price
+  if (proPriceMatch) {
+    const priceMatch = proPriceMatch[0].match(/\$?\s*([\d,]+)/);
+    if (priceMatch) {
+      const proPlan: MinimaxGlobalPlan = {
+        name: 'Minimax Global Pro',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'pro',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Credit Card', 'PayPal', 'Alipay'],
+        accessFromChina: true,
+        region: 'global',
+      };
+      plans.push(proPlan);
+    }
+  }
+
+  // Team plan - only add if we found the price
+  if (teamPriceMatch) {
+    const priceMatch = teamPriceMatch[0].match(/\$?\s*([\d,]+)/);
+    if (priceMatch) {
+      const teamPlan: MinimaxGlobalPlan = {
+        name: 'Minimax Global Team',
+        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
+        priceYearly: undefined,
+        tier: 'team',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Credit Card', 'PayPal', 'Alipay', 'Invoice'],
+        accessFromChina: true,
+        region: 'global',
+      };
+      plans.push(teamPlan);
+    }
+  }
+
+  // Enterprise plan - only add if mentioned (custom pricing)
   if (enterpriseMatch) {
     const enterprisePlan: MinimaxGlobalPlan = {
       name: 'Minimax Global Enterprise',
       priceMonthly: 0, // Custom pricing
       tier: 'enterprise',
       dailyMessageLimit: undefined,
-      features: [
-        'Everything in Team',
-        'Full API access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'Data residency options',
-        'Custom fine-tuning capabilities',
-      ],
+      features: [],
       paymentMethods: ['Invoice', 'Contract'],
       accessFromChina: true,
       region: 'global',
@@ -181,121 +135,11 @@ async function fetchMinimaxGlobalPlans(): Promise<MinimaxGlobalPlan[]> {
     plans.push(enterprisePlan);
   }
 
-  // If no plans found, use fallback
   if (plans.length === 0) {
-    console.warn('No plans parsed from HTML, using fallback data');
-    return getFallbackPlans();
+    errors.push('No plans could be parsed from Minimax Global pricing page. The page structure may have changed.');
   }
 
-  return plans;
-}
-
-/**
- * Fallback plan data (known as of 2025-2026)
- */
-function getFallbackPlans(): MinimaxGlobalPlan[] {
-  return [
-    {
-      name: 'Minimax Global Free',
-      priceMonthly: 0,
-      tier: 'free',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to Minimax basic models',
-        'Limited message capacity',
-        'Standard response speed',
-        'Web browsing',
-        'Basic coding assistance',
-      ],
-      paymentMethods: [],
-      accessFromChina: true,
-      region: 'global',
-    },
-    {
-      name: 'Minimax Global Lite',
-      priceMonthly: 5,
-      priceYearly: undefined,
-      tier: 'basic',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to Minimax Lite models',
-        'Higher message limits',
-        'Faster response speeds',
-        'Extended context windows',
-        'Code generation and debugging',
-        'File upload support',
-        'Priority access',
-      ],
-      paymentMethods: ['Credit Card', 'PayPal', 'Alipay'],
-      accessFromChina: true,
-      region: 'global',
-    },
-    {
-      name: 'Minimax Global Pro',
-      priceMonthly: 15,
-      priceYearly: undefined,
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Lite',
-        'Access to Minimax Pro models',
-        'Higher message limits',
-        'Priority access during peak times',
-        'Extended context windows',
-        'Advanced code generation',
-        'Image analysis',
-        'Data analysis capabilities',
-        'Early access to new features',
-      ],
-      paymentMethods: ['Credit Card', 'PayPal', 'Alipay'],
-      accessFromChina: true,
-      region: 'global',
-    },
-    {
-      name: 'Minimax Global Team',
-      priceMonthly: 45,
-      priceYearly: undefined,
-      tier: 'team',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Pro',
-        'Team collaboration tools',
-        'Admin console',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-        'Custom integrations',
-      ],
-      paymentMethods: ['Credit Card', 'PayPal', 'Alipay', 'Invoice'],
-      accessFromChina: true,
-      region: 'global',
-    },
-    {
-      name: 'Minimax Global Enterprise',
-      priceMonthly: 0,
-      tier: 'enterprise',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Team',
-        'Full API access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'Data residency options',
-        'Custom fine-tuning capabilities',
-      ],
-      paymentMethods: ['Invoice', 'Contract'],
-      accessFromChina: true,
-      region: 'global',
-    },
-  ];
+  return { plans, errors };
 }
 
 export async function scrapeMinimaxGlobalPlans(): Promise<PlanScraperResult> {
@@ -306,7 +150,10 @@ export async function scrapeMinimaxGlobalPlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching Minimax Global subscription plans...');
 
-    const minimaxGlobalPlans = await fetchMinimaxGlobalPlans();
+    const { plans: minimaxGlobalPlans, errors: fetchErrors } = await fetchMinimaxGlobalPlans();
+    if (fetchErrors.length > 0) {
+      errors.push(...fetchErrors);
+    }
 
     console.log(`📦 Found ${minimaxGlobalPlans.length} plans from Minimax Global`);
 
@@ -351,7 +198,7 @@ export async function scrapeMinimaxGlobalPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'MinimaxGlobal-Plans',
-      success: true,
+      success: plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

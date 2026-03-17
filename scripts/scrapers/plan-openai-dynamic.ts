@@ -1,5 +1,6 @@
 /**
  * OpenAI Plan Scraper - Dynamic fetching from ChatGPT pricing page
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
@@ -23,255 +24,125 @@ interface OpenAIPlan {
 /**
  * Fetch and parse OpenAI subscription plans from their website
  */
-async function fetchOpenAIPlans(): Promise<OpenAIPlan[]> {
+async function fetchOpenAIPlans(): Promise<{ plans: OpenAIPlan[], errors: string[] }> {
   const result = await fetchHTML(OPENAI_PLANS_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch OpenAI plans page, using fallback data');
-    // Return known plan data as fallback
-    return getFallbackPlans();
+    return { plans: [], errors: ['Failed to fetch OpenAI plans page - no HTML returned'] };
   }
 
   const html = result.data;
   const plans: OpenAIPlan[] = [];
 
-  // Try to extract plan information from HTML
-  // Look for plan names like "Free", "Plus", "Team", "Enterprise"
-  const planPatterns = [
-    {
-      name: 'ChatGPT Free',
-      tier: 'free' as const,
-      monthlyPattern: /Free[^$]*?\$?0/i,
-      features: [
-        'Access to GPT-4o mini',
-        'Limited message capacity',
-        'Standard response speed',
-        'Web browsing (limited)',
-        'Image generation (limited)',
-      ],
-    },
-    {
-      name: 'ChatGPT Plus',
-      tier: 'pro' as const,
-      monthlyPattern: /Plus[^$]*?\$?20/i,
-      yearlyPattern: /Plus[^$]*?\$?200?\s*\/\s*year/i,
-      features: [
-        'Access to GPT-4o',
-        'Access to GPT-4o mini',
-        'Higher message limits',
-        'Faster response speeds',
-        'Priority access during peak times',
-        'Advanced data analysis',
-        'Web browsing',
-        'Image and video generation (DALL-E)',
-        'Create and use custom GPTs',
-        'Access to o1 models (limited)',
-      ],
-    },
-    {
-      name: 'ChatGPT Team',
-      tier: 'team' as const,
-      monthlyPattern: /Team[^$]*?\$?25/i,
-      yearlyPattern: /Team[^$]*?\$?30/i,
-      features: [
-        'Everything in Plus',
-        'Admin console for team management',
-        'Collaborative tools',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training by default',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-      ],
-    },
-    {
-      name: 'ChatGPT Enterprise',
-      tier: 'enterprise' as const,
-      features: [
-        'Everything in Team',
-        'Unlimited GPT-4o access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'Compliance (SOC 2, GDPR)',
-      ],
-    },
-    {
-      name: 'ChatGPT Pro',
-      tier: 'pro' as const,
-      monthlyPattern: /Pro[^$]*?\$?200/i,
-      features: [
-        'Everything in Plus',
-        'Unlimited access to o1 and o1-mini',
-        'Higher rate limits',
-        'Priority access during high demand',
-        'Extended context windows',
-        'Early access to new features',
-      ],
-    },
-  ];
+  // Extract prices from HTML - only proceed if we can find actual pricing data
+  // Look for plan names like "Free", "Plus", "Team", "Enterprise", "Pro"
+  const freeMatch = html.match(/Free/i);
+  const plusPriceMatch = html.match(/Plus[^$]*?\$\s*20|ChatGPT\s*Plus[^$]*?\$\s*20/i);
+  const teamPriceMatch = html.match(/Team[^$]*?\$\s*25|ChatGPT\s*Team[^$]*?\$\s*25/i);
+  const proPriceMatch = html.match(/ChatGPT\s*Pro[^$]*?\$\s*200/i);
+  const enterpriseMatch = html.match(/Enterprise/i);
 
-  for (const pattern of planPatterns) {
-    const plan: OpenAIPlan = {
-      name: pattern.name,
-      priceMonthly: 0,
-      tier: pattern.tier,
-      features: pattern.features,
-      paymentMethods: ['Credit Card', 'Debit Card', 'Apple Pay', 'Google Pay'],
-      accessFromChina: false, // OpenAI plans are not available in China
-      region: 'global',
+  // Check if we found any pricing information
+  if (!freeMatch && !plusPriceMatch && !teamPriceMatch && !proPriceMatch && !enterpriseMatch) {
+    return {
+      plans: [],
+      errors: ['No pricing information found on OpenAI page. The page structure may have changed.']
     };
-
-    if (pattern.monthlyPattern) {
-      const monthlyMatch = html.match(pattern.monthlyPattern);
-      if (monthlyMatch) {
-        // Extract price number from pattern
-        const priceMatch = monthlyMatch[0].match(/\$?([\d.]+)/);
-        if (priceMatch) {
-          plan.priceMonthly = parseFloat(priceMatch[1]);
-        }
-      }
-    }
-
-    if (pattern.yearlyPattern) {
-      const yearlyMatch = html.match(pattern.yearlyPattern);
-      if (yearlyMatch) {
-        const priceMatch = yearlyMatch[0].match(/\$?([\d.]+)/);
-        if (priceMatch) {
-          plan.priceYearly = parseFloat(priceMatch[1]);
-        }
-      }
-    }
-
-    // Set message limits based on tier
-    if (pattern.tier === 'free') {
-      plan.dailyMessageLimit = 10;
-    } else if (pattern.tier === 'pro' && pattern.name.includes('Pro')) {
-      plan.dailyMessageLimit = undefined; // Unlimited for Pro
-    } else if (pattern.tier === 'team') {
-      plan.dailyMessageLimit = undefined; // Higher limits for teams
-    }
-
-    plans.push(plan);
   }
 
-  // If no plans found, use fallback
-  if (plans.length === 0) {
-    console.warn('No plans parsed from HTML, using fallback data');
-    return getFallbackPlans();
-  }
-
-  return plans;
-}
-
-/**
- * Fallback plan data (known as of 2025-2026)
- */
-function getFallbackPlans(): OpenAIPlan[] {
-  return [
-    {
+  // Free plan - only add if mentioned
+  if (freeMatch) {
+    const freePlan: OpenAIPlan = {
       name: 'ChatGPT Free',
       priceMonthly: 0,
       tier: 'free',
-      dailyMessageLimit: 10,
-      features: [
-        'Access to GPT-4o mini',
-        'Limited message capacity',
-        'Standard response speed',
-        'Web browsing (limited)',
-        'Image generation (limited)',
-      ],
+      dailyMessageLimit: undefined,
+      features: [], // Features should be extracted from actual page content
       paymentMethods: [],
       accessFromChina: false,
       region: 'global',
-    },
-    {
-      name: 'ChatGPT Plus',
-      priceMonthly: 20,
-      priceYearly: undefined, // No yearly option for Plus
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      features: [
-        'Access to GPT-4o',
-        'Access to GPT-4o mini',
-        'Higher message limits',
-        'Faster response speeds',
-        'Priority access during peak times',
-        'Advanced data analysis',
-        'Web browsing',
-        'Image and video generation (DALL-E)',
-        'Create and use custom GPTs',
-        'Limited access to o1 models',
-      ],
-      paymentMethods: ['Credit Card', 'Debit Card', 'Apple Pay', 'Google Pay'],
-      accessFromChina: false,
-      region: 'global',
-    },
-    {
-      name: 'ChatGPT Team',
-      priceMonthly: 25,
-      priceYearly: 30,
-      tier: 'team',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Plus',
-        'Admin console for team management',
-        'Collaborative tools',
-        'Higher data security',
-        'Team workspace',
-        'Data exclusion from training by default',
-        'Extended context windows',
-        'Higher rate limits',
-        'Priority support',
-      ],
-      paymentMethods: ['Credit Card', 'Invoice'],
-      accessFromChina: false,
-      region: 'global',
-    },
-    {
+    };
+    plans.push(freePlan);
+  }
+
+  // Plus plan - only add if we found the price
+  if (plusPriceMatch) {
+    const priceMatch = plusPriceMatch[0].match(/\$?\s*([\d.]+)/);
+    if (priceMatch) {
+      const plusPlan: OpenAIPlan = {
+        name: 'ChatGPT Plus',
+        priceMonthly: parseFloat(priceMatch[1]),
+        priceYearly: undefined,
+        tier: 'pro',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Credit Card', 'Debit Card', 'Apple Pay', 'Google Pay'],
+        accessFromChina: false,
+        region: 'global',
+      };
+      plans.push(plusPlan);
+    }
+  }
+
+  // Team plan - only add if we found the price
+  if (teamPriceMatch) {
+    const priceMatch = teamPriceMatch[0].match(/\$?\s*([\d.]+)/);
+    if (priceMatch) {
+      const teamPlan: OpenAIPlan = {
+        name: 'ChatGPT Team',
+        priceMonthly: parseFloat(priceMatch[1]),
+        priceYearly: undefined,
+        tier: 'team',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Credit Card', 'Invoice'],
+        accessFromChina: false,
+        region: 'global',
+      };
+      plans.push(teamPlan);
+    }
+  }
+
+  // Pro plan - only add if we found the price
+  if (proPriceMatch) {
+    const priceMatch = proPriceMatch[0].match(/\$?\s*([\d.]+)/);
+    if (priceMatch) {
+      const proPlan: OpenAIPlan = {
+        name: 'ChatGPT Pro',
+        priceMonthly: parseFloat(priceMatch[1]),
+        priceYearly: undefined,
+        tier: 'pro',
+        dailyMessageLimit: undefined,
+        features: [],
+        paymentMethods: ['Credit Card', 'Debit Card', 'Apple Pay', 'Google Pay'],
+        accessFromChina: false,
+        region: 'global',
+      };
+      plans.push(proPlan);
+    }
+  }
+
+  // Enterprise plan - only add if mentioned (custom pricing)
+  if (enterpriseMatch) {
+    const enterprisePlan: OpenAIPlan = {
       name: 'ChatGPT Enterprise',
       priceMonthly: 0, // Custom pricing
       tier: 'enterprise',
       dailyMessageLimit: undefined,
-      features: [
-        'Everything in Team',
-        'Unlimited GPT-4o access',
-        'Enterprise-grade security',
-        'SSO integration',
-        'Audit logs',
-        'Custom AI models',
-        'Dedicated account manager',
-        'Priority access to new features',
-        'SLA guarantees',
-        'SOC 2 and GDPR compliance',
-      ],
+      features: [],
       paymentMethods: ['Invoice', 'Contract'],
       accessFromChina: false,
       region: 'global',
-    },
-    {
-      name: 'ChatGPT Pro',
-      priceMonthly: 200,
-      tier: 'pro',
-      dailyMessageLimit: undefined,
-      features: [
-        'Everything in Plus',
-        'Unlimited access to o1 and o1-mini',
-        'Higher rate limits',
-        'Priority access during high demand',
-        'Extended context windows',
-        'Early access to new features',
-      ],
-      paymentMethods: ['Credit Card', 'Debit Card', 'Apple Pay', 'Google Pay'],
-      accessFromChina: false,
-      region: 'global',
-    },
-  ];
+    };
+    plans.push(enterprisePlan);
+  }
+
+  if (plans.length === 0) {
+    errors.push('No plans could be parsed from OpenAI pricing page. The page structure may have changed.');
+  }
+
+  return { plans, errors };
 }
 
 export async function scrapeOpenAIPlans(): Promise<PlanScraperResult> {
@@ -282,7 +153,8 @@ export async function scrapeOpenAIPlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching OpenAI subscription plans...');
 
-    const openaiPlans = await fetchOpenAIPlans();
+    const { plans: openaiPlans, errors: fetchErrors } = await fetchOpenAIPlans();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${openaiPlans.length} plans from OpenAI`);
 
@@ -327,7 +199,7 @@ export async function scrapeOpenAIPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'OpenAI-Plans',
-      success: true,
+      success: plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

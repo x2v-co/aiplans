@@ -327,17 +327,17 @@ async function savePlansToDatabase(
         for (let i = 0; i < productSlugs.length; i++) {
           const productSlug = productSlugs[i];
           try {
-            // Get product by slug
-            const { data: product } = await (await import('./db/queries')).supabaseAdmin
-              .from('products')
+            // Get model by slug
+            const { data: model } = await (await import('./db/queries')).supabaseAdmin
+              .from('models')
               .select('id')
               .eq('slug', productSlug)
               .single();
 
-            if (product) {
+            if (model) {
               await upsertModelPlanRelation({
                 plan_id: savedPlan.id,
-                product_id: product.id,
+                model_id: model.id,
                 provider_id: provider.id,
                 is_available: true,
                 is_default: i === 0, // First product is default

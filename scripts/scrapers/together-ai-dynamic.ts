@@ -1,5 +1,6 @@
 /**
  * Together AI API Scraper - Dynamic fetching from /v1/models
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
@@ -20,15 +21,6 @@ interface TogetherModel {
   description?: string;
 }
 
-/**
- * Get fallback pricing data (Together AI has many models, so we return empty)
- */
-function getFallbackPricing(): ScrapedPrice[] {
-  // Together AI has hundreds of models, fallback is not practical
-  // Users would need to use an API key to fetch all models
-  return [];
-}
-
 export async function scrapeTogetherAIDynamic(): Promise<ScraperResult> {
   const startTime = Date.now();
   const errors: string[] = [];
@@ -39,18 +31,21 @@ export async function scrapeTogetherAIDynamic(): Promise<ScraperResult> {
 
     const result = await fetchJSON<{ data?: TogetherModel[] }>(TOGETHER_AI_API_URL);
 
-    // Handle auth failure gracefully with fallback
     if (!result.success || !result.data) {
       if (result.status === 401 || result.status === 403) {
-        console.warn('⚠️ Together AI API requires authentication, using fallback data');
         return {
           source: 'Together-AI',
-          success: true,
-          prices: getFallbackPricing(),
+          success: false,
+          prices: [],
           errors: ['API key required - set TOGETHER_AI_API_KEY env var'],
         };
       }
-      throw new Error(result.error || 'Failed to fetch Together AI models');
+      return {
+        source: 'Together-AI',
+        success: false,
+        prices: [],
+        errors: [result.error || 'Failed to fetch Together AI models'],
+      };
     }
 
     const models = result.data.data || [];
@@ -75,7 +70,7 @@ export async function scrapeTogetherAIDynamic(): Promise<ScraperResult> {
           outputPricePer1M: outputPrice,
           contextWindow: model.context_length,
           isAvailable: true,
-          currency: 'USD', // Together AI prices are in USD
+          currency: 'USD',
         });
       } catch (error) {
         errors.push(`Error processing ${model.id}: ${error}`);
@@ -89,18 +84,16 @@ export async function scrapeTogetherAIDynamic(): Promise<ScraperResult> {
 
     return {
       source: 'Together-AI',
-      success: true,
+      success: prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };
   } catch (error) {
     console.error('❌ Together AI scrape failed:', error);
-    // On any error, use fallback data
-    console.warn('⚠️ Using fallback pricing data');
     return {
       source: 'Together-AI',
-      success: true,
-      prices: getFallbackPricing(),
+      success: false,
+      prices: [],
       errors: [String(error)],
     };
   }

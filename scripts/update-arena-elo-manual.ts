@@ -51,42 +51,150 @@ const ARENA_ELO_SCORES: Record<string, number> = {
   'moonshot-v1-8k': 1240,
 };
 
+async function getArenaBenchmarkTaskId(): Promise<number | null> {
+  // Get the Arena benchmark task ID
+  // First get the benchmark ID for Arena
+  const { data: benchmark } = await supabase
+    .from('benchmarks')
+    .select('id')
+    .eq('slug', 'arena')
+    .single();
+
+  if (!benchmark) {
+    console.log('⚠️  Arena benchmark not found. Creating...');
+    return null;
+  }
+
+  // Get the benchmark version
+  const { data: version } = await supabase
+    .from('benchmark_versions')
+    .select('id')
+    .eq('benchmark_id', benchmark.id)
+    .eq('is_current', true)
+    .single();
+
+  if (!version) {
+    console.log('⚠️  Arena benchmark version not found.');
+    return null;
+  }
+
+  // Get the task
+  const { data: task } = await supabase
+    .from('benchmark_tasks')
+    .select('id')
+    .eq('benchmark_version_id', version.id)
+    .single();
+
+  return task?.id || null;
+}
+
+async function getOrCreateArenaMetricId(): Promise<number | null> {
+  const { data: existingMetric } = await supabase
+    .from('benchmark_metrics')
+    .select('id')
+    .eq('name', 'ELO')
+    .single();
+
+  if (existingMetric) {
+    return existingMetric.id;
+  }
+
+  // Create the metric
+  const { data: newMetric, error } = await supabase
+    .from('benchmark_metrics')
+    .insert({
+      name: 'ELO',
+      unit: 'score',
+      description: 'Chatbot Arena ELO score',
+      higher_better: true,
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.log('⚠️  Failed to create ELO metric:', error.message);
+    return null;
+  }
+
+  return newMetric?.id || null;
+}
+
 async function main() {
-  console.log('🏆 Updating Arena ELO scores from arena.ai data...\n');
+  console.log('🏆 Updating Arena ELO scores...\n');
+
+  // Get or create Arena benchmark task
+  const taskId = await getArenaBenchmarkTaskId();
+  const metricId = await getOrCreateArenaMetricId();
+
+  if (!taskId || !metricId) {
+    console.log('❌ Could not get Arena benchmark task or metric. Please set up benchmark tables first.');
+    console.log('   Run setup-benchmark-tables.ts to create the required entries.');
+    return;
+  }
 
   let updatedCount = 0;
   let errorCount = 0;
+  let insertedCount = 0;
 
   for (const [slug, elo] of Object.entries(ARENA_ELO_SCORES)) {
     try {
-      // Check if product exists
-      const { data: product } = await supabase
-        .from('products')
-        .select('id, name, slug, benchmark_arena_elo')
+      // Check if model exists
+      const { data: model } = await supabase
+        .from('models')
+        .select('id, name, slug')
         .eq('slug', slug)
         .single();
 
-      if (!product) {
-        console.log(`⚠️  Product not found: ${slug}`);
+      if (!model) {
+        console.log(`⚠️  Model not found: ${slug}`);
         continue;
       }
 
-      // Update ELO score if different
-      if (product.benchmark_arena_elo !== elo) {
+      // Check if benchmark score already exists
+      const { data: existingScore } = await supabase
+        .from('model_benchmark_scores')
+        .select('id, value')
+        .eq('model_id', model.id)
+        .eq('benchmark_task_id', taskId)
+        .single();
+
+      if (existingScore) {
+        // Update if different
+        if (existingScore.value !== elo) {
+          const { error } = await supabase
+            .from('model_benchmark_scores')
+            .update({
+              value: elo,
+              release_date: new Date().toISOString().split('T')[0],
+            })
+            .eq('id', existingScore.id);
+
+          if (error) {
+            console.error(`❌ Failed to update ${model.name}:`, error);
+            errorCount++;
+          } else {
+            console.log(`✅ Updated ${model.name}: ${existingScore.value} → ${elo}`);
+            updatedCount++;
+          }
+        }
+      } else {
+        // Insert new score
         const { error } = await supabase
-          .from('products')
-          .update({
-            benchmark_arena_elo: elo,
-            updated_at: new Date(),
-          })
-          .eq('id', product.id);
+          .from('model_benchmark_scores')
+          .insert({
+            model_id: model.id,
+            benchmark_task_id: taskId,
+            metric_id: metricId,
+            value: elo,
+            release_date: new Date().toISOString().split('T')[0],
+          });
 
         if (error) {
-          console.error(`❌ Failed to update ${product.name}:`, error);
+          console.error(`❌ Failed to insert ${model.name}:`, error);
           errorCount++;
         } else {
-          console.log(`✅ Updated ${product.name}: ${product.benchmark_arena_elo} → ${elo}`);
-          updatedCount++;
+          console.log(`✅ Inserted ${model.name}: ELO ${elo}`);
+          insertedCount++;
         }
       }
     } catch (error: any) {
@@ -96,6 +204,7 @@ async function main() {
   }
 
   console.log(`\n📊 Summary:`);
+  console.log(`✅ Inserted: ${insertedCount}`);
   console.log(`✅ Updated: ${updatedCount}`);
   console.log(`❌ Errors: ${errorCount}`);
 }

@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Check, ExternalLink, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatPrice, CurrencyCode } from "@/lib/currency";
 
@@ -47,7 +46,7 @@ export default async function ProviderPlansPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ provider: string }>;
+  params: Promise<{ locale: string; provider: string }>;
   searchParams: Promise<{ period?: string }>;
 }) {
   const { provider: providerSlug } = await params;

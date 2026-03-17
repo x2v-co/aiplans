@@ -1,5 +1,6 @@
 /**
  * Anyscale API Scraper - Dynamic fetching from pricing page
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
@@ -18,12 +19,12 @@ interface AnyscaleModel {
 /**
  * Fetch and parse Anyscale pricing from their website
  */
-async function fetchAnyscalePricing(): Promise<AnyscaleModel[]> {
+async function fetchAnyscalePricing(): Promise<{ models: AnyscaleModel[], errors: string[] }> {
   const result = await fetchHTML(ANYSCALE_PRICING_URL);
+  const errors: string[] = [];
 
   if (!result.success || !result.data) {
-    console.warn('Failed to fetch Anyscale pricing page, using fallback data');
-    return getFallbackPricing();
+    return { models: [], errors: ['Failed to fetch Anyscale pricing page'] };
   }
 
   const html = result.data;
@@ -68,46 +69,11 @@ async function fetchAnyscalePricing(): Promise<AnyscaleModel[]> {
     }
   }
 
-  // If no models found, use fallback
   if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
+    errors.push('No models could be parsed from Anyscale pricing page. The page structure may have changed.');
   }
 
-  return models;
-}
-
-/**
- * Fallback pricing data (as of 2025-2026)
- * Prices in USD per 1M tokens
- */
-function getFallbackPricing(): AnyscaleModel[] {
-  return [
-    {
-      model: 'llama-3.1-405b-instruct',
-      inputPrice: 0.80,
-      outputPrice: 0.80,
-      contextWindow: 131072,
-    },
-    {
-      model: 'llama-3.1-70b-instruct',
-      inputPrice: 0.55,
-      outputPrice: 0.55,
-      contextWindow: 131072,
-    },
-    {
-      model: 'mixtral-8x7b-instruct',
-      inputPrice: 0.30,
-      outputPrice: 0.30,
-      contextWindow: 32000,
-    },
-    {
-      model: 'llama-3-8b-instruct',
-      inputPrice: 0.08,
-      outputPrice: 0.08,
-      contextWindow: 131072,
-    },
-  ];
+  return { models, errors };
 }
 
 export async function scrapeAnyscaleDynamic(): Promise<ScraperResult> {
@@ -118,7 +84,8 @@ export async function scrapeAnyscaleDynamic(): Promise<ScraperResult> {
   try {
     console.log('🔄 Fetching Anyscale pricing...');
 
-    const models = await fetchAnyscalePricing();
+    const { models, errors: fetchErrors } = await fetchAnyscalePricing();
+    errors.push(...fetchErrors);
 
     console.log(`📦 Found ${models.length} models from Anyscale`);
 
@@ -137,7 +104,7 @@ export async function scrapeAnyscaleDynamic(): Promise<ScraperResult> {
           outputPricePer1M: model.outputPrice,
           contextWindow: model.contextWindow,
           isAvailable: true,
-          currency: 'USD', // Anyscale prices are in USD
+          currency: 'USD',
         });
       } catch (error) {
         errors.push(`Error processing ${model.model}: ${error}`);
@@ -151,7 +118,7 @@ export async function scrapeAnyscaleDynamic(): Promise<ScraperResult> {
 
     return {
       source: 'Anyscale',
-      success: true,
+      success: prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };

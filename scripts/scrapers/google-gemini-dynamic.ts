@@ -1,204 +1,173 @@
 /**
- * Google Gemini API Scraper - Dynamic fetching from pricing page
+ * Google Gemini API Scraper - Uses Playwright for real HTML parsing
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
 import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { fetchHTML } from './base-fetcher';
+import { PlaywrightScraper, PriceData } from './lib/playwright-scraper';
 
 const GOOGLE_PRICING_URL = 'https://ai.google.dev/pricing';
 
-interface GoogleModel {
-  model: string;
-  inputPrice: number;
-  outputPrice: number;
-  contextWindow: number;
-}
-
-/**
- * Fetch and parse Google pricing from their website
- */
-async function fetchGooglePricing(): Promise<GoogleModel[]> {
-  const result = await fetchHTML(GOOGLE_PRICING_URL);
-
-  if (!result.success || !result.data) {
-    console.warn('Failed to fetch Google pricing page, using fallback data');
-    return getFallbackPricing();
+class GeminiScraper extends PlaywrightScraper {
+  getSourceName(): string {
+    return 'Google-Gemini-API';
   }
 
-  const html = result.data;
-  const models: GoogleModel[] = [];
-
-  // Known Google model patterns (2025)
-  const modelPatterns = [
-    {
-      model: 'gemini-2.0-flash-exp',
-      namePattern: /Gemini\s*2\.0\s*Flash/i,
-      inputPattern: /Gemini\s*2\.0\s*Flash[^$]*?\$?([\d.]+)\s*per\s*million\s*input/i,
-      outputPattern: /Gemini\s*2\.0\s*Flash[^$]*?\$?([\d.]+)\s*per\s*million\s*output/i,
-      context: 1000000,
-    },
-    {
-      model: 'gemini-1.5-pro',
-      namePattern: /Gemini\s*1\.5\s*Pro/i,
-      inputPattern: /Gemini\s*1\.5\s*Pro[^$]*?\$?([\d.]+)\s*per\s*million\s*input/i,
-      outputPattern: /Gemini\s*1\.5\s*Pro[^$]*?\$?([\d.]+)\s*per\s*million\s*output/i,
-      context: 2000000,
-    },
-    {
-      model: 'gemini-1.5-flash',
-      namePattern: /Gemini\s*1\.5\s*Flash/i,
-      inputPattern: /Gemini\s*1\.5\s*Flash[^$]*?\$?([\d.]+)\s*per\s*million\s*input/i,
-      outputPattern: /Gemini\s*1\.5\s*Flash[^$]*?\$?([\d.]+)\s*per\s*million\s*output/i,
-      context: 1000000,
-    },
-    {
-      model: 'gemini-1.0-pro',
-      namePattern: /Gemini\s*1\.0\s*Pro/i,
-      inputPattern: /Gemini\s*1\.0\s*Pro[^$]*?\$?([\d.]+)\s*per\s*million\s*input/i,
-      outputPattern: /Gemini\s*1\.0\s*Pro[^$]*?\$?([\d.]+)\s*per\s*million\s*output/i,
-      context: 2800000,
-    },
-  ];
-
-  for (const pattern of modelPatterns) {
-    const inputMatch = html.match(pattern.inputPattern);
-    const outputMatch = html.match(pattern.outputPattern);
-
-    if (inputMatch && outputMatch) {
-      const inputPrice = parseFloat(inputMatch[1]);
-      const outputPrice = parseFloat(outputMatch[1]);
-
-      if (!isNaN(inputPrice) && !isNaN(outputPrice)) {
-        models.push({
-          model: pattern.model,
-          inputPrice,
-          outputPrice,
-          contextWindow: pattern.context,
-        });
-      }
-    }
+  getSourceUrl(): string {
+    return GOOGLE_PRICING_URL;
   }
 
-  // If no models found, use fallback
-  if (models.length === 0) {
-    console.warn('No models parsed from HTML, using fallback data');
-    return getFallbackPricing();
-  }
+  async scrape(): Promise<ScraperResult> {
+    const errors: string[] = [];
+    const prices: PriceData[] = [];
 
-  return models;
-}
+    await this.navigate(GOOGLE_PRICING_URL);
 
-/**
- * Fallback pricing data (known as of 2025-2026)
- */
-function getFallbackPricing(): GoogleModel[] {
-  return [
-    {
-      model: 'gemini-2.0-flash-exp',
-      inputPrice: 0.075,
-      outputPrice: 0.30,
-      contextWindow: 1000000,
-    },
-    {
-      model: 'gemini-2.0-flash-thinking-exp',
-      inputPrice: 0.075,
-      outputPrice: 0.30,
-      contextWindow: 1000000,
-    },
-    {
-      model: 'gemini-1.5-pro',
-      inputPrice: 1.25,
-      outputPrice: 5.00,
-      contextWindow: 2000000,
-    },
-    {
-      model: 'gemini-1.5-flash',
-      inputPrice: 0.075,
-      outputPrice: 0.30,
-      contextWindow: 1000000,
-    },
-    {
-      model: 'gemini-1.5-flash-002',
-      inputPrice: 0.075,
-      outputPrice: 0.30,
-      contextWindow: 28000000,
-    },
-    {
-      model: 'gemini-1.5-pro-001',
-      inputPrice: 1.25,
-      outputPrice: 5.00,
-      contextWindow: 2000000,
-    },
-    {
-      model: 'gemini-1.0-pro',
-      inputPrice: 0.50,
-      outputPrice: 1.50,
-      contextWindow: 2800000,
-    },
-    {
-      model: 'gemini-exp-1206',
-      inputPrice: 0.125,
-      outputPrice: 0.375,
-      contextWindow: 2000000,
-    },
-  ];
-}
+    // Wait for pricing content to load
+    await this.page!.waitForTimeout(2000);
 
-export async function scrapeGoogleDynamic(): Promise<ScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const prices: ScrapedPrice[] = [];
+    // Get all text content from the page
+    const pageContent = await this.page!.textContent('body') || '';
 
-  try {
-    console.log('🔄 Fetching Google Gemini pricing...');
+    // Known Gemini model patterns
+    const models = [
+      { name: 'gemini-2.0-flash', patterns: [/gemini\s*2\.?0\s*flash/i] },
+      { name: 'gemini-2.0-flash-thinking', patterns: [/gemini\s*2\.?0\s*flash.*thinking/i] },
+      { name: 'gemini-1.5-pro', patterns: [/gemini\s*1\.5\s*pro/i] },
+      { name: 'gemini-1.5-flash', patterns: [/gemini\s*1\.5\s*flash/i] },
+      { name: 'gemini-1.0-pro', patterns: [/gemini\s*1\.?0\s*pro/i] },
+      { name: 'gemini-exp', patterns: [/gemini\s*exp/i] },
+    ];
 
-    const models = await fetchGooglePricing();
-
-    console.log(`📦 Found ${models.length} models from Google`);
-
-    for (const model of models) {
+    for (const modelInfo of models) {
       try {
-        // Validate prices
-        if (!validatePrice(model.inputPrice) || !validatePrice(model.outputPrice)) {
-          errors.push(`Invalid price for ${model.model}`);
-          continue;
+        // Find the section containing this model's pricing
+        let modelSection: string | null = null;
+
+        for (const pattern of modelInfo.patterns) {
+          const match = pageContent.match(pattern);
+          if (match && match.index !== undefined) {
+            // Extract surrounding context
+            const start = Math.max(0, match.index - 200);
+            const end = Math.min(pageContent.length, match.index + match[0].length + 400);
+            modelSection = pageContent.slice(start, end);
+            break;
+          }
         }
 
-        prices.push({
-          modelName: normalizeModelName(model.model),
-          modelSlug: slugify(model.model),
-          inputPricePer1M: model.inputPrice,
-          outputPricePer1M: model.outputPrice,
-          contextWindow: model.contextWindow,
-          isAvailable: true,
-          currency: 'USD', // Google prices are in USD
-        });
+        if (!modelSection) continue;
+
+        // Extract prices from the section
+        // Look for patterns like "$0.075", "$1.25", etc.
+        const pricePattern = /\$?([\d.]+)\s*(?:per\s*)?(?:million|1M)?/gi;
+        const priceMatches = [...modelSection.matchAll(pricePattern)];
+
+        // Filter out very small numbers (likely not prices) and very large numbers
+        const validPrices = priceMatches
+          .map(m => parseFloat(m[1]))
+          .filter(p => p > 0.01 && p < 1000);
+
+        if (validPrices.length >= 2) {
+          const inputPrice = validPrices[0];
+          const outputPrice = validPrices[1];
+
+          if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+            prices.push({
+              modelName: normalizeModelName(modelInfo.name),
+              inputPricePer1M: inputPrice,
+              outputPricePer1M: outputPrice,
+              contextWindow: this.inferContextWindow(modelInfo.name),
+              isAvailable: true,
+              currency: 'USD',
+            });
+          }
+        }
       } catch (error) {
-        errors.push(`Error processing ${model.model}: ${error}`);
+        errors.push(`Failed to extract pricing for ${modelInfo.name}`);
       }
     }
 
-    const duration = Date.now() - startTime;
-    console.log(`✅ Google scrape completed in ${duration}ms`);
-    console.log(`   - Models processed: ${prices.length}`);
-    console.log(`   - Errors: ${errors.length}`);
+    // Try alternative approach: look for pricing tables
+    if (prices.length === 0) {
+      const tables = await this.page!.$$('table');
+      for (const table of tables) {
+        const rows = await table.$$('tr');
+        for (const row of rows) {
+          const text = await row.textContent();
+          if (!text) continue;
+
+          // Check if this row mentions a Gemini model
+          if (/gemini/i.test(text)) {
+            const priceMatches = [...text.matchAll(/\$?([\d.]+)/g)];
+            const validPrices = priceMatches
+              .map(m => parseFloat(m[1]))
+              .filter(p => p > 0.01 && p < 1000);
+
+            if (validPrices.length >= 2) {
+              const modelNameMatch = text.match(/gemini[-\s]?\d\.?\d?\s*(pro|flash|exp)?/i);
+              if (modelNameMatch) {
+                const modelName = modelNameMatch[0]
+                  .toLowerCase()
+                  .replace(/\s+/g, '-')
+                  .replace(/[^a-z0-9-]/g, '');
+
+                const inputPrice = validPrices[0];
+                const outputPrice = validPrices[1];
+
+                if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+                  // Avoid duplicates
+                  if (!prices.some(p => p.modelName.toLowerCase().includes(modelName.toLowerCase()))) {
+                    prices.push({
+                      modelName: normalizeModelName(modelName),
+                      inputPricePer1M: inputPrice,
+                      outputPricePer1M: outputPrice,
+                      contextWindow: this.inferContextWindow(modelName),
+                      isAvailable: true,
+                      currency: 'USD',
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (prices.length === 0) {
+      errors.push('No pricing data could be extracted from Google pricing page. The page structure may have changed.');
+    }
 
     return {
-      source: 'Google-Gemini-API',
-      success: true,
+      success: errors.length === 0 && prices.length > 0,
+      source: this.getSourceName(),
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };
-  } catch (error) {
-    console.error('❌ Google scrape failed:', error);
-    return {
-      source: 'Google-Gemini-API',
-      success: false,
-      prices: [],
-      errors: [String(error)],
-    };
   }
+
+  private inferContextWindow(model: string): number {
+    const contextWindows: Record<string, number> = {
+      'gemini-2.0-flash': 1000000,
+      'gemini-1.5-pro': 2000000,
+      'gemini-1.5-flash': 1000000,
+      'gemini-1.0-pro': 2800000,
+    };
+
+    const normalizedModel = model.toLowerCase();
+    for (const [key, value] of Object.entries(contextWindows)) {
+      if (normalizedModel.includes(key)) {
+        return value;
+      }
+    }
+    return 1000000; // Default
+  }
+}
+
+export async function scrapeGoogleDynamic(): Promise<ScraperResult> {
+  const scraper = new GeminiScraper();
+  return scraper.run();
 }
 
 // CLI test
