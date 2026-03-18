@@ -1,7 +1,7 @@
 'use client';
 
 import '../globals.css';
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { TranslationsProvider } from '@/lib/translations';
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -9,14 +9,21 @@ import { use, useEffect, useState } from 'react';
 import enMessages from '@/../messages/en.json';
 import zhMessages from '@/../messages/zh.json';
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: [
+    { path: "../../../public/fonts/Geist-Regular.woff2", weight: "400" },
+    { path: "../../../public/fonts/Geist-Medium.woff2", weight: "500" },
+    { path: "../../../public/fonts/Geist-Bold.woff2", weight: "700" },
+  ],
   variable: "--font-geist-sans",
-  subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: [
+    { path: "../../../public/fonts/GeistMono-Regular.woff2", weight: "400" },
+    { path: "../../../public/fonts/GeistMono-Medium.woff2", weight: "500" },
+  ],
   variable: "--font-geist-mono",
-  subsets: ["latin"],
 });
 
 const messagesMap: Record<string, any> = {
