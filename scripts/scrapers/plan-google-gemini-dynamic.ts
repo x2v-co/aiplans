@@ -34,11 +34,11 @@ async function fetchGoogleGeminiPlans(): Promise<{ plans: GoogleGeminiPlan[], er
   const html = result.data;
   const plans: GoogleGeminiPlan[] = [];
 
-  // Extract prices from HTML - only proceed if we can find actual pricing data
-  const advancedPriceMatch = html.match(/Gemini\s*Advanced[^$]*?\$\s*([\d.]+)/i) || html.match(/Advanced[^$]*?\$\s*19/i);
+  // Extract prices from HTML - only use actual scraped prices
+  const advancedPriceMatch = html.match(/Gemini\s*Advanced[^$]*?\$\s*([\d.]+)/i);
   const enterpriseMatch = html.match(/Enterprise|Workspace/i);
 
-  // Check if we found any pricing information
+  // Check if we found any pricing information - NO HARDCODED FALLBACKS
   if (!advancedPriceMatch && !enterpriseMatch) {
     return {
       plans: [],

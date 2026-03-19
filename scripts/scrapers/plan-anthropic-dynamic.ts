@@ -34,12 +34,12 @@ async function fetchAnthropicPlans(): Promise<{ plans: AnthropicPlan[], errors: 
   const html = result.data;
   const plans: AnthropicPlan[] = [];
 
-  // Extract prices from HTML - only proceed if we can find actual pricing data
-  const proPriceMatch = html.match(/Claude\s*Pro[^$]*?\$\s*([\d.]+)/i) || html.match(/Pro[^$]*?\$\s*20/i);
-  const teamPriceMatch = html.match(/Claude\s*Team[^$]*?\$\s*([\d.]+)/i) || html.match(/Team[^$]*?\$\s*25/i);
+  // Extract prices from HTML - only use actual scraped prices
+  const proPriceMatch = html.match(/Claude\s*Pro[^$]*?\$\s*([\d.]+)/i);
+  const teamPriceMatch = html.match(/Claude\s*Team[^$]*?\$\s*([\d.]+)/i);
   const enterpriseMatch = html.match(/Enterprise/i);
 
-  // Check if we found any pricing information
+  // Check if we found any pricing information - NO HARDCODED FALLBACKS
   if (!proPriceMatch && !teamPriceMatch && !enterpriseMatch) {
     return {
       plans: [],
