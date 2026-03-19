@@ -4,35 +4,26 @@ import { supabase } from '@/lib/supabase';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const productId = searchParams.get('product_id');
     const tier = searchParams.get('tier');
     const pricingModel = searchParams.get('pricing_model');
+    const providerId = searchParams.get('provider_id');
     const includeModels = searchParams.get('include_models');
 
+    // Build base query for plans
     let query = supabase
       .from('plans')
-      .select(`
-        *,
-        models:product_id (
-          id,
-          name,
-          slug,
-          provider_ids,
-          type,
-          context_window
-        )
-      `)
+      .select('*')
       .order('tier', { ascending: true })
       .order('price', { ascending: true });
 
-    if (productId) {
-      query = query.eq('product_id', parseInt(productId));
-    }
     if (tier) {
       query = query.eq('tier', tier);
     }
     if (pricingModel) {
       query = query.eq('pricing_model', pricingModel);
+    }
+    if (providerId) {
+      query = query.eq('provider_id', parseInt(providerId));
     }
 
     const { data, error } = await query;
@@ -41,10 +32,8 @@ export async function GET(request: Request) {
 
     let plans = data || [];
 
-    // Get all provider_ids - from plan.provider_id or from models' provider_ids
-    const providerIdsFromPlans = plans.map((plan: any) => plan.provider_id).filter(Boolean);
-    const providerIdsFromModels = plans.flatMap((plan: any) => plan.models?.provider_ids || []).filter(Boolean);
-    const providerIds = [...new Set([...providerIdsFromPlans, ...providerIdsFromModels])];
+    // Get all provider_ids from plans
+    const providerIds = [...new Set(plans.map((plan: any) => plan.provider_id).filter(Boolean))];
 
     // Fetch providers
     const { data: providersData } = await supabase
@@ -59,7 +48,7 @@ export async function GET(request: Request) {
       const planIds = plans.map((p: any) => p.id);
 
       // Get models for these plans via model_plan_mapping
-      // Schema only has: model_id, plan_id, priority
+      // Schema: model_id, plan_id, priority
       const { data: modelData } = await supabase
         .from('model_plan_mapping')
         .select(`
@@ -101,10 +90,7 @@ export async function GET(request: Request) {
     // Transform data to include provider info
     const transformed = plans.map((plan: any) => ({
       ...plan,
-      provider: plan.provider_id
-        ? providerMap.get(plan.provider_id)
-        : (plan.models?.provider_ids?.[0] ? providerMap.get(plan.models.provider_ids[0]) : null),
-      product: plan.models,
+      provider: plan.provider_id ? providerMap.get(plan.provider_id) : null,
     }));
 
     return NextResponse.json(transformed);

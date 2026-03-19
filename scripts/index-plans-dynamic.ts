@@ -338,10 +338,7 @@ async function savePlansToDatabase(
               await upsertModelPlanRelation({
                 plan_id: savedPlan.id,
                 model_id: model.id,
-                provider_id: provider.id,
-                is_available: true,
-                is_default: i === 0, // First product is default
-                display_order: i,
+                priority: i, // Use index as priority for ordering
               });
             } else {
               console.warn(`⚠️  Product not found for slug: ${productSlug}`);

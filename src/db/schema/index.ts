@@ -6,6 +6,7 @@ export const providers = pgTable('providers', {
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   logo: text('logo'),
+  logoUrl: text('logo_url'), // Alternative logo URL field
   website: text('website'),
   inviteUrl: text('invite_url'),
   description: text('description'),
@@ -75,8 +76,8 @@ export const plans = pgTable('plans', {
 
   // Token quota
   tokensPerMinute: integer('tokens_per_minute'), // TPM
-  tokensPerDay: integer('tokens_per_day'),
-  tokensPerMonth: integer('tokens_per_month'),
+  tokensPerDay: bigint('tokens_per_day', { mode: 'number' }),
+  tokensPerMonth: bigint('tokens_per_month', { mode: 'number' }),
   maxTokensPerRequest: integer('max_tokens_per_request'),
   contextWindow: integer('context_window'),
 
@@ -124,10 +125,11 @@ export const apiChannelPrices = pgTable('api_channel_prices', {
 });
 
 // Model-Plan Mapping - Junction table between models and plans
+// Schema verified: only has id, model_id, plan_id, priority, created_at
 export const modelPlanMapping = pgTable('model_plan_mapping', {
   id: serial('id').primaryKey(),
-  modelId: integer('model_id').references(() => models.id).notNull(),
-  planId: integer('plan_id').references(() => plans.id).notNull(),
+  modelId: integer('model_id').references(() => models.id),
+  planId: integer('plan_id').references(() => plans.id),
   priority: integer('priority').default(0),
   createdAt: timestamp('created_at').defaultNow(),
 });

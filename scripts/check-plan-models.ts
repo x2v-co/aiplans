@@ -20,17 +20,25 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function main() {
   console.log('📋 查看计划包含的模型\n');
 
-  // 获取所有带有关联模型的计划
-  const { data: modelRelations } = await supabase
-    .from('models')
+  // Query through model_plan_mapping junction table
+  const { data: modelRelations, error } = await supabase
+    .from('model_plan_mapping')
     .select(`
       plan_id,
-      plans:plan_id (name, slug, price, tier, provider_id),
-      product_id,
-      products:product_id (name, slug),
-      providers:plans!inner(provider_id) (name, slug)
+      model_id,
+      priority,
+      plans:plan_id (
+        name, slug, price, tier, provider_id,
+        providers:provider_id (name, slug)
+      ),
+      models:model_id (name, slug)
     `)
-    .order('plan_id, display_order');
+    .order('plan_id, priority');
+
+  if (error) {
+    console.error('Error:', error);
+    return;
+  }
 
   // 按计划分组
   const planGroups: Record<number, any[]> = {};
@@ -40,13 +48,14 @@ async function main() {
       planGroups[planId] = [];
     }
     planGroups[planId].push({
-      productName: rel.products?.name,
-      productSlug: rel.products?.slug,
+      modelName: rel.models?.name,
+      modelSlug: rel.models?.slug,
       planName: rel.plans?.name,
       planSlug: rel.plans?.slug,
       planPrice: rel.plans?.price,
       planTier: rel.plans?.tier,
-      providerName: rel.providers?.name,
+      providerName: rel.plans?.providers?.name,
+      priority: rel.priority,
     });
   }
 
@@ -62,7 +71,7 @@ async function main() {
     console.log(`  包含模型 (${relations.length} 个):`);
 
     relations.forEach((r, i) => {
-      console.log(`    ${i + 1}. ${r.productName} (${r.productSlug})`);
+      console.log(`    ${i + 1}. ${r.modelName} (${r.modelSlug})`);
     });
   }
 

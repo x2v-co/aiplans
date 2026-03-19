@@ -101,7 +101,8 @@ export async function logScrapeResult(data: {
 export async function getOrCreateProduct(data: {
   name: string;
   slug: string;
-  provider_id: number;
+  provider_id?: number;  // Optional, will be added to provider_ids array
+  provider_ids?: number[];  // Preferred: array of provider IDs
   type: string;
   context_window?: number;
 }) {
@@ -145,10 +146,24 @@ export async function getOrCreateProduct(data: {
     return existingByName[0];
   }
 
-  // Third: create new
+  // Build provider_ids array from input
+  let providerIdsArray: number[] = [];
+  if (data.provider_ids && data.provider_ids.length > 0) {
+    providerIdsArray = data.provider_ids;
+  } else if (data.provider_id !== undefined) {
+    providerIdsArray = [data.provider_id];
+  }
+
+  // Third: create new - use provider_ids array field
   const { data: newProduct, error } = await supabaseAdmin
     .from('models')
-    .insert(data)
+    .insert({
+      name: data.name,
+      slug: data.slug,
+      provider_ids: providerIdsArray,
+      type: data.type,
+      context_window: data.context_window,
+    })
     .select()
     .single();
 
@@ -472,24 +487,20 @@ export async function getPlanByProviderSlug(providerId: number, slug: string) {
 
 /**
  * Upsert model-plan relationship
+ * Note: model_plan_mapping table only has model_id, plan_id, and priority fields
  */
 export async function upsertModelPlanRelation(data: {
   plan_id: number;
   model_id: number;
-  provider_id: number;
-  is_available?: boolean;
-  is_default?: boolean;
-  display_order?: number;
-  override_rpm?: number;
-  override_qps?: number;
-  override_input_price_per_1m?: number;
-  override_output_price_per_1m?: number;
-  max_output_tokens?: number;
-  note?: string;
+  priority?: number;
 }) {
   const { data: result, error } = await supabaseAdmin
     .from('model_plan_mapping')
-    .upsert(data, { onConflict: 'model_id,plan_id' })
+    .upsert({
+      plan_id: data.plan_id,
+      model_id: data.model_id,
+      priority: data.priority || 0,
+    }, { onConflict: 'model_id,plan_id' })
     .select()
     .single();
 
@@ -504,7 +515,8 @@ export async function getModelsForPlan(planId: number) {
   const { data, error } = await supabaseAdmin
     .from('model_plan_mapping')
     .select(`
-      *,
+      model_id,
+      priority,
       models:model_id (
         id,
         name,
@@ -512,7 +524,7 @@ export async function getModelsForPlan(planId: number) {
       )
     `)
     .eq('plan_id', planId)
-    .order('display_order', { ascending: true });
+    .order('priority', { ascending: true });
 
   if (error) throw error;
   return data || [];
@@ -520,18 +532,14 @@ export async function getModelsForPlan(planId: number) {
 
 /**
  * Get plans for a model (product)
+ * Note: model_plan_mapping only has model_id, plan_id, priority fields
  */
-export async function getPlansForModel(modelId: number, isAvailable = true) {
+export async function getPlansForModel(modelId: number) {
   const { data, error } = await supabaseAdmin
     .from('model_plan_mapping')
     .select(`
       plan_id,
-      is_available,
-      override_rpm,
-      override_qps,
-      override_input_price_per_1m,
-      override_output_price_per_1m,
-      max_output_tokens,
+      priority,
       plans:plan_id (
         *,
         providers:provider_id (
@@ -542,32 +550,31 @@ export async function getPlansForModel(modelId: number, isAvailable = true) {
         )
       )
     `)
-    .eq('model_id', modelId)
-    .eq('is_available', isAvailable);
+    .eq('model_id', modelId);
 
   if (error) throw error;
-  return (data || []).map((m: any) => ({ ...m.plans, overrides: m }));
+  return (data || []).map((m: any) => ({ ...m.plans, mappingPriority: m.priority }));
 }
 
 /**
- * Delete model-plan relationship
+ * Delete model-plan relationship from model_plan_mapping table
  */
-export async function deleteModelPlanRelation(planId: number, productId: number) {
+export async function deleteModelPlanRelation(planId: number, modelId: number) {
   const { error } = await supabaseAdmin
-    .from('models')
+    .from('model_plan_mapping')
     .delete()
     .eq('plan_id', planId)
-    .eq('product_id', productId);
+    .eq('model_id', modelId);
 
   if (error) throw error;
 }
 
 /**
- * Delete all models for a plan
+ * Delete all model-plan relationships for a plan from model_plan_mapping table
  */
 export async function deleteModelsForPlan(planId: number) {
   const { error } = await supabaseAdmin
-    .from('models')
+    .from('model_plan_mapping')
     .delete()
     .eq('plan_id', planId);
 

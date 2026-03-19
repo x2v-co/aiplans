@@ -27,17 +27,18 @@ async function main() {
     }
   }
 
-  // Query with models
-  console.log('\nQuery with models:');
+  // Query with models through model_plan_mapping junction table
+  console.log('\nQuery with models (via model_plan_mapping):');
   const { data: plansWithModels, error: error2 } = await supabase
     .from('plans')
     .select(`
       id, name, slug, price, tier,
-      models (
-        product_id,
-        is_available,
-        is_default,
-        products (name, slug)
+      model_plan_mapping (
+        model_id,
+        priority,
+        models (
+          id, name, slug
+        )
       )
     `)
     .eq('provider_id', 33)
@@ -47,30 +48,58 @@ async function main() {
   console.log('Error:', error2);
 
   if (plansWithModels) {
-    plansWithModels.forEach(plan => {
+    plansWithModels.forEach((plan: any) => {
       console.log(`\n${plan.name} ($${plan.price})`);
-      console.log(`  Models array length: ${plan.models?.length || 0}`);
-      if (plan.models && plan.models.length > 0) {
-        plan.models.forEach((m: any) => {
-          console.log(`    - ${m.products?.name || m.product_id}`);
+      console.log(`  Models array length: ${plan.model_plan_mapping?.length || 0}`);
+      if (plan.model_plan_mapping && plan.model_plan_mapping.length > 0) {
+        plan.model_plan_mapping.forEach((m: any) => {
+          console.log(`    - ${m.models?.name || m.model_id}`);
         });
       }
     });
   }
 
-  // Check models table directly
-  console.log('\nModels table for OpenAI:');
-  const { data: models } = await supabase
-    .from('models')
-    .select('*')
+  // Check model_plan_mapping table directly
+  console.log('\nModel_plan_mapping entries for plans of provider 33:');
+  const { data: planIds } = await supabase
+    .from('plans')
+    .select('id')
     .eq('provider_id', 33);
 
-  console.log('Total models:', models?.length);
-  if (models) {
-    models.forEach(m => {
-      console.log(`  Plan:${m.plan_id} -> Product:${m.product_id} [Available:${m.is_available}, Default:${m.is_default}]`);
-    });
+  if (planIds && planIds.length > 0) {
+    const ids = planIds.map(p => p.id);
+    const { data: mappings } = await supabase
+      .from('model_plan_mapping')
+      .select(`
+        plan_id,
+        model_id,
+        priority,
+        models (name, slug),
+        plans (name)
+      `)
+      .in('plan_id', ids);
+
+    console.log('Total mappings:', mappings?.length);
+    if (mappings) {
+      mappings.forEach((m: any) => {
+        console.log(`  Plan:${m.plans?.name} -> Model:${m.models?.name}`);
+      });
+    }
   }
+
+  // Check models table - using provider_ids array
+  console.log('\nModels table with provider_ids containing 33:');
+  const { data: models } = await supabase
+    .from('models')
+    .select('id, name, slug, provider_ids');
+
+  // Filter in JS since we're querying an array
+  const openaiModels = models?.filter(m => m.provider_ids?.includes(33)) || [];
+
+  console.log('Total models with provider_ids containing 33:', openaiModels.length);
+  openaiModels.slice(0, 10).forEach(m => {
+    console.log(`  ${m.name} (provider_ids: ${JSON.stringify(m.provider_ids)})`);
+  });
 }
 
 main().catch(console.error);

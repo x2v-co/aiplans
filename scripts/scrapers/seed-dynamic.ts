@@ -32,6 +32,7 @@ async function fetchSeedPricing(): Promise<{ models: SeedModel[], errors: string
   const models: SeedModel[] = [];
 
   // Seed/Volcengine model patterns (2026) - Doubao 2.0 Series
+  // NO FALLBACK DATA - All prices must be scraped from the website
   const modelPatterns = [
     // Doubao 2.0 Pro - Flagship model
     {
@@ -40,8 +41,6 @@ async function fetchSeedPricing(): Promise<{ models: SeedModel[], errors: string
       outputPattern: /doubao-seed-2\.0-pro[^¥]*?输入[^¥]*?输出[^¥]*?([¥￥]\s*[\d.]+)/i,
       cachedInputPattern: /doubao-seed-2\.0-pro[^¥]*?缓存[^¥]*?([¥￥]\s*[\d.]+)/i,
       context: 256000,
-      defaultOutput: 16.00,
-      defaultCachedInput: 0.64,
       description: 'Flagship model with tiered pricing (0-32K/32-128K/128-256K)',
     },
     // Doubao 2.0 Lite - Budget-friendly model
@@ -51,8 +50,6 @@ async function fetchSeedPricing(): Promise<{ models: SeedModel[], errors: string
       outputPattern: /doubao-seed-2\.0-lite[^¥]*?输入[^¥]*?输出[^¥]*?([¥￥]\s*[\d.]+)/i,
       cachedInputPattern: /doubao-seed-2\.0-lite[^¥]*?缓存[^¥]*?([¥￥]\s*[\d.]+)/i,
       context: 256000,
-      defaultOutput: 3.60,
-      defaultCachedInput: 0.12,
       description: 'Budget-friendly model with tiered pricing',
     },
     // Doubao 2.0 Mini - Compact model
@@ -62,8 +59,6 @@ async function fetchSeedPricing(): Promise<{ models: SeedModel[], errors: string
       outputPattern: /doubao-seed-2\.0-mini[^¥]*?输入[^¥]*?输出[^¥]*?([¥￥]\s*[\d.]+)/i,
       cachedInputPattern: /doubao-seed-2\.0-mini[^¥]*?缓存[^¥]*?([¥￥]\s*[\d.]+)/i,
       context: 256000,
-      defaultOutput: 2.00,
-      defaultCachedInput: 0.04,
       description: 'Compact model for efficient deployment',
     },
     // Doubao 2.0 Code - Code generation model
@@ -73,8 +68,6 @@ async function fetchSeedPricing(): Promise<{ models: SeedModel[], errors: string
       outputPattern: /doubao-seed-2\.0-code[^¥]*?输入[^¥]*?输出[^¥]*?([¥￥]\s*[\d.]+)/i,
       cachedInputPattern: /doubao-seed-2\.0-code[^¥]*?缓存[^¥]*?([¥￥]\s*[\d.]+)/i,
       context: 256000,
-      defaultOutput: 16.00,
-      defaultCachedInput: 0.64,
       description: 'Code generation model',
     },
     // GLM-4.7 - Third-party model
@@ -84,8 +77,6 @@ async function fetchSeedPricing(): Promise<{ models: SeedModel[], errors: string
       outputPattern: /glm-4\.7[^¥]*?输入[^¥]*?输出[^¥]*?([¥￥]\s*[\d.]+)/i,
       cachedInputPattern: /glm-4\.7[^¥]*?缓存[^¥]*?([¥￥]\s*[\d.]+)/i,
       context: 200000,
-      defaultOutput: 8.00,
-      defaultCachedInput: 0.40,
       description: 'GLM-4.7 model (third-party)',
     },
     // DeepSeek V3 - Third-party model
@@ -95,8 +86,6 @@ async function fetchSeedPricing(): Promise<{ models: SeedModel[], errors: string
       outputPattern: /deepseek-v3[^¥]*?输入[^¥]*?输出[^¥]*?([¥￥]\s*[\d.]+)/i,
       cachedInputPattern: /deepseek-v3[^¥]*?缓存[^¥]*?([¥￥]\s*[\d.]+)/i,
       context: 128000,
-      defaultOutput: 8.00,
-      defaultCachedInput: 0.40,
       description: 'DeepSeek V3 model (third-party)',
     },
   ];
@@ -109,8 +98,8 @@ async function fetchSeedPricing(): Promise<{ models: SeedModel[], errors: string
 
     if (inputMatch) {
       const inputPrice = parseFloat(inputMatch[1].replace(/[¥￥\s]/g, ''));
-      const outputPrice = outputMatch ? parseFloat(outputMatch[1].replace(/[¥￥\s]/g, '')) : pattern.defaultOutput;
-      const cachedInputPrice = cachedInputMatch ? parseFloat(cachedInputMatch[1].replace(/[¥￥\s]/g, '')) : pattern.defaultCachedInput;
+      const outputPrice = outputMatch ? parseFloat(outputMatch[1].replace(/[¥￥\s]/g, '')) : undefined;
+      const cachedInputPrice = cachedInputMatch ? parseFloat(cachedInputMatch[1].replace(/[¥￥\s]/g, '')) : undefined;
 
       if (!isNaN(inputPrice)) {
         models.push({

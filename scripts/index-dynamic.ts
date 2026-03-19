@@ -90,41 +90,49 @@ const API_SCRAPERS: ScraperConfig[] = [
   { name: 'DMXAPI', fn: scrapeDMXAPIDynamic, priority: 2 },
 ];
 
-// Provider IDs (synced with database - needs to be updated if providers are reset)
+// Provider IDs (synced with database - providers table)
+// Verified: 2026-03-18
 const PROVIDER_IDS: Record<string, number> = {
+  // Producers (official AI model creators)
   'OPENAI': 33,
   'ANTHROPIC': 34,
-  'DEEPSEEK': 36,
   'GOOGLE': 35,
-  'META': 55,
-  'MISTRAL': 38,
-  'ALIBABA': 46,
-  'BYTEDANCE': 47,
-  'MOONSHOT_CHINA': 39,
-  'ZHIPU_CHINA': 43,
-  'MINIMAX_CHINA': 41,
-  'STEPFUN': 45,
-  'SEED': 47,
-  'HUNYUAN': 48,
-  'BAIDU': 49,
+  'DEEPSEEK': 36,
   'XAI': 37,
-  'ZHIPU_GLOBAL': 44,
+  'MISTRAL': 38,
+  'MOONSHOT_CHINA': 39,
   'MOONSHOT_GLOBAL': 40,
+  'MINIMAX_CHINA': 41,
   'MINIMAX_GLOBAL': 42,
-  'COHERE': 0,
-  'NVIDIA': 0,
-  'MICROSOFT': 0,
-  'AMAZON': 50,
+  'ZHIPU_CHINA': 43,
+  'ZHIPU_GLOBAL': 44,
+  'STEPFUN': 45,
+  'ALIBABA': 46,  // Qwen
+  'SEED': 47,     // ByteDance
+  'HUNYUAN': 48,  // Tencent
+  'BAIDU': 49,
+
+  // Cloud providers
   'AWS_BEDROCK': 50,
   'GOOGLE_VERTEX': 51,
   'AZURE_OPENAI': 52,
+
+  // Aggregators
   'TOGETHER_AI': 53,
   'SILICONFLOW': 54,
-  'OPENROUTER': 56,
   'FIREWORKS': 55,
   'REPLICATE': 56,
   'ANYSCALE': 57,
+
+  // Resellers
   'DMXAPI': 58,
+
+  // Official routing
+  'OPENROUTER': 59,
+
+  // Legacy aliases (for backward compatibility)
+  'BYTEDANCE': 47,  // Same as SEED
+  'AMAZON': 50,     // Same as AWS_BEDROCK
 };
 
 async function processAPIScraper(result: ScraperResult, channelName: string) {
@@ -303,8 +311,11 @@ function inferProviderId(modelName: string, channelName?: string): number {
   // Google models
   if (name.includes('gemini') || name.includes('palm') || name.includes('gemma')) return PROVIDER_IDS['GOOGLE'];
 
-  // Meta models
-  if (name.includes('llama') || name.includes('meta') || name.includes('llamaguard')) return PROVIDER_IDS['META'];
+  // Meta models - No official provider in database, will be skipped
+  // Models from Meta (Llama, etc.) are provided through aggregators/cloud providers
+  if (name.includes('llama') || name.includes('meta') || name.includes('llamaguard')) {
+    return -1; // No official Meta provider ID in database
+  }
 
   // Mistral models
   if (name.includes('mistral') || name.includes('mixtral') || name.includes('codestral')) return PROVIDER_IDS['MISTRAL'];

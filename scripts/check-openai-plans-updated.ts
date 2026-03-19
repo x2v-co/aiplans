@@ -10,28 +10,37 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function main() {
-  // Get OpenAI plans with models
-  const { data: plans } = await supabase
+  // Get OpenAI plans with models via model_plan_mapping junction table
+  const { data: plans, error } = await supabase
     .from('plans')
     .select(`
-      id, name, slug, price_monthly, tier,
-      models (
-        product_id,
-        is_available,
-        is_default,
-        products (name, slug)
+      id, name, slug, price, tier,
+      model_plan_mapping (
+        model_id,
+        priority,
+        models (
+          id, name, slug
+        )
       )
     `)
     .eq('provider_id', 33)
-    .order('price_monthly');
+    .order('price');
+
+  if (error) {
+    console.error('Error:', error);
+    return;
+  }
 
   console.log('OpenAI Plans with associated models:\n');
-  plans?.forEach(plan => {
-    console.log(`${plan.name} ($${plan.price_monthly}/month) [Tier: ${plan.tier}]`);
-    plan.models.forEach((m: any, i: number) => {
-      const marker = m.is_default ? '→ ' : '  ';
-      console.log(`  ${marker}${i + 1}. ${m.products?.name} (${m.products?.slug}) [Default: ${m.is_default}]`);
-    });
+  plans?.forEach((plan: any) => {
+    console.log(`${plan.name} ($${plan.price}/month) [Tier: ${plan.tier}]`);
+    if (plan.model_plan_mapping && plan.model_plan_mapping.length > 0) {
+      plan.model_plan_mapping.forEach((m: any, i: number) => {
+        console.log(`  ${i + 1}. ${m.models?.name} (${m.models?.slug})`);
+      });
+    } else {
+      console.log('  No models associated');
+    }
     console.log('');
   });
 }

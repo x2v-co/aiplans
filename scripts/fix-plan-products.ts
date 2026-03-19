@@ -85,7 +85,6 @@ async function main() {
       .insert({
         plan_id: plan.id,
         model_id: model.id,
-        is_available: true,
       });
 
     if (!error) {

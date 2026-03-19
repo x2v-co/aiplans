@@ -12,33 +12,61 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function GET(request: NextRequest) {
   try {
-    // 当前使用固定汇率（数据库表创建后将使用实时汇率）
-    const FIXED_RATES = {
-      'USD': {
-        'CNY': 7.2,
-        'EUR': 0.92,
-        'GBP': 0.79,
-        'JPY': 149.5,
-        'KRW': 1320,
-      },
-      'CNY': { 'USD': 1 / 7.2 },
-      'EUR': { 'USD': 1 / 0.92 },
-      'GBP': { 'USD': 1 / 0.79 },
-      'JPY': { 'USD': 1 / 149.5 },
-      'KRW': { 'USD': 1 / 1320 },
-      };
+    // Query exchange rates from database
+    const { data: rates, error } = await supabase
+      .from('exchange_rates')
+      .select('*')
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Database query error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch exchange rates from database', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    if (!rates || rates.length === 0) {
+      return NextResponse.json(
+        {
+          error: 'No exchange rates found in database',
+          hint: 'Use PUT /api/exchange-rates with authorization to fetch rates from Open Exchange Rates API',
+        },
+        { status: 503 }
+      );
+    }
+
+    // Transform database rows into rates object
+    // Group by from_currency
+    const ratesMap: Record<string, Record<string, number>> = {};
+
+    for (const row of rates) {
+      const from = row.from_currency;
+      const to = row.to_currency;
+      const rate = parseFloat(row.rate);
+
+      if (!ratesMap[from]) {
+        ratesMap[from] = {};
+      }
+      ratesMap[from][to] = rate;
+    }
+
+    // Get the most recent update time
+    const lastUpdated = rates[0]?.updated_at || new Date().toISOString();
+
+    // Get unique sources
+    const sources = [...new Set(rates.map(r => r.source))];
 
     return NextResponse.json({
-      rates: FIXED_RATES.USD,
-      lastUpdated: new Date().toISOString(),
-      sources: {
-        fixed: 'hardcoded fallback values (database table setup pending)',
-        manualUpdateUrl: '/api/admin/refresh-rates',
-        openExchangeRatesUrl: 'https://openexchangerates.org/api/latest.json',
-        adminKeyRequired: false,
-        enabled: true,
-        reason: 'Using ON CONFLICT DO NOTHING to handle constraints',
-      },
+      rates: ratesMap['USD'] || {}, // Default to USD base rates
+      allRates: ratesMap, // Include all currency pairs
+      lastUpdated,
+      count: rates.length,
+      sources: sources.reduce((acc, src) => {
+        acc[src] = `Data from ${src}`;
+        return acc;
+      }, {} as Record<string, string>),
     });
   } catch (error) {
     console.error('Exchange rates API error:', error);

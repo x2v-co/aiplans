@@ -10,25 +10,32 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function main() {
-  // Get volcengine plans with models
-  const { data: plans } = await supabase
+  // Get volcengine plans with models via model_plan_mapping junction table
+  const { data: plans, error } = await supabase
     .from('plans')
     .select(`
       id, name, slug,
-      models (
-        product_id,
-        products (name, slug)
+      model_plan_mapping (
+        model_id,
+        models (
+          id, name, slug
+        )
       )
     `)
     .eq('provider_id', 64)
     .order('price');
 
+  if (error) {
+    console.error('Error:', error);
+    return;
+  }
+
   console.log('Volcengine plans with models:\n');
-  plans?.forEach(p => {
+  plans?.forEach((p: any) => {
     console.log(`${p.name}:`);
-    if (p.models && p.models.length > 0) {
-      p.models.forEach((m: any) => {
-        console.log(`  - ${m.products?.name} (${m.products?.slug})`);
+    if (p.model_plan_mapping && p.model_plan_mapping.length > 0) {
+      p.model_plan_mapping.forEach((m: any) => {
+        console.log(`  - ${m.models?.name} (${m.models?.slug})`);
       });
     } else {
       console.log('  No models');
