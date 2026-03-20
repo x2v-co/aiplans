@@ -34,13 +34,41 @@ async function getPlansByProvider(providerSlug: string) {
     .eq('provider_id', provider.id)
     .order('price', { ascending: true });
 
-  // Get models for this provider (via provider_ids array)
+  // Get models for this provider (via provider_ids array - use snake_case for Supabase)
   const { data: models } = await supabase
     .from('models')
     .select('id, name, slug, provider_ids')
     .contains('provider_ids', [provider.id]);
 
-  return { provider, models: models || [], plans: plans || [] };
+  // Also get models via model_plan_mapping junction table
+  const planIds = (plans || []).map(p => p.id);
+  let modelIdsFromPlans: number[] = [];
+
+  if (planIds.length > 0) {
+    const { data: mappings } = await supabase
+      .from('model_plan_mapping')
+      .select('model_id')
+      .in('plan_id', planIds);
+    modelIdsFromPlans = (mappings || []).map(m => m.model_id);
+  }
+
+  // Fetch additional models from mapping
+  let additionalModels: any[] = [];
+  if (modelIdsFromPlans.length > 0) {
+    const { data: mappedModels } = await supabase
+      .from('models')
+      .select('id, name, slug, provider_ids')
+      .in('id', modelIdsFromPlans);
+    additionalModels = mappedModels || [];
+  }
+
+  // Merge and deduplicate models
+  const allModels = [...(models || []), ...additionalModels];
+  const uniqueModels = allModels.filter((model, index, self) =>
+    index === self.findIndex(m => m.id === model.id)
+  );
+
+  return { provider, models: uniqueModels, plans: plans || [] };
 }
 
 export default async function ProviderPlansPage({

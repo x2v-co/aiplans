@@ -33,13 +33,41 @@ async function getPlansByProvider(providerSlug: string) {
     .eq('provider_id', provider.id)
     .order('price', { ascending: true });
 
-  // Get models for this provider (via provider_ids array)
+  // Get models for this provider (via provider_ids array - use snake_case for Supabase)
   const { data: models } = await supabase
     .from('models')
     .select('id, name, slug, provider_ids')
     .contains('provider_ids', [provider.id]);
 
-  return { provider, models: models || [], plans: plans || [] };
+  // Also get models via model_plan_mapping junction table
+  const planIds = (plans || []).map(p => p.id);
+  let modelIdsFromPlans: number[] = [];
+
+  if (planIds.length > 0) {
+    const { data: mappings } = await supabase
+      .from('model_plan_mapping')
+      .select('model_id')
+      .in('plan_id', planIds);
+    modelIdsFromPlans = (mappings || []).map(m => m.model_id);
+  }
+
+  // Fetch additional models from mapping
+  let additionalModels: any[] = [];
+  if (modelIdsFromPlans.length > 0) {
+    const { data: mappedModels } = await supabase
+      .from('models')
+      .select('id, name, slug, provider_ids')
+      .in('id', modelIdsFromPlans);
+    additionalModels = mappedModels || [];
+  }
+
+  // Merge and deduplicate models
+  const allModels = [...(models || []), ...additionalModels];
+  const uniqueModels = allModels.filter((model, index, self) =>
+    index === self.findIndex(m => m.id === model.id)
+  );
+
+  return { provider, models: uniqueModels, plans: plans || [] };
 }
 
 export default async function ProviderPlansPage({
@@ -49,7 +77,7 @@ export default async function ProviderPlansPage({
   params: Promise<{ locale: string; provider: string }>;
   searchParams: Promise<{ period?: string }>;
 }) {
-  const { provider: providerSlug } = await params;
+  const { locale, provider: providerSlug } = await params;
   const { period } = await searchParams;
   const showYearly = period === 'yearly';
   const data = await getPlansByProvider(providerSlug);
@@ -69,21 +97,21 @@ export default async function ProviderPlansPage({
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={`/${locale}`} className="flex items-center gap-2">
             <span className="text-2xl">💰</span>
             <span className="text-xl font-bold">aiplans.dev</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/compare/plans" className="text-sm font-medium hover:text-blue-600">
+            <Link href={`/${locale}/compare/plans`} className="text-sm font-medium hover:text-blue-600">
               Compare Plans
             </Link>
-            <Link href="/compare/models" className="text-sm font-medium hover:text-blue-600">
+            <Link href={`/${locale}/compare/models`} className="text-sm font-medium hover:text-blue-600">
               Model Compare
             </Link>
-            <Link href="/coupons" className="text-sm font-medium hover:text-blue-600">
+            <Link href={`/${locale}/coupons`} className="text-sm font-medium hover:text-blue-600">
               Coupons
             </Link>
-            <Link href="/api-pricing" className="text-sm font-medium hover:text-blue-600">
+            <Link href={`/${locale}/api-pricing`} className="text-sm font-medium hover:text-blue-600">
               API Pricing
             </Link>
           </nav>
@@ -94,7 +122,7 @@ export default async function ProviderPlansPage({
       <main className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
-          <Link href="/" className="flex items-center gap-1 hover:text-blue-600">
+          <Link href={`/${locale}`} className="flex items-center gap-1 hover:text-blue-600">
             <ArrowLeft className="w-4 h-4" /> Back
           </Link>
         </div>
@@ -116,7 +144,7 @@ export default async function ProviderPlansPage({
             {/* Period Toggle */}
             <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
               <Link
-                href={`/plans/${providerSlug}`}
+                href={`/${locale}/plans/${providerSlug}`}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   !showYearly ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'text-zinc-500'
                 }`}
@@ -124,7 +152,7 @@ export default async function ProviderPlansPage({
                 Monthly
               </Link>
               <Link
-                href={`/plans/${providerSlug}?period=yearly`}
+                href={`/${locale}/plans/${providerSlug}?period=yearly`}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   showYearly ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'text-zinc-500'
                 }`}
@@ -233,7 +261,7 @@ export default async function ProviderPlansPage({
             </h2>
             <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
               {models.map((model: any) => (
-                <Link key={model.id} href={`/models/${model.slug}`}>
+                <Link key={model.id} href={`/${locale}/models/${model.slug}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="py-4">
                       <h3 className="font-medium">{model.name}</h3>
