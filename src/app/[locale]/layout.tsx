@@ -1,30 +1,9 @@
-'use client';
-
 import '../globals.css';
-import localFont from "next/font/local";
-import { TranslationsProvider } from '@/lib/translations';
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { use, useEffect, useState } from 'react';
+import LocaleClientWrapper from '@/components/locale-client-wrapper';
 import enMessages from '@/../messages/en.json';
 import zhMessages from '@/../messages/zh.json';
-
-const geistSans = localFont({
-  src: [
-    { path: "../../../public/fonts/Geist-Regular.woff2", weight: "400" },
-    { path: "../../../public/fonts/Geist-Medium.woff2", weight: "500" },
-    { path: "../../../public/fonts/Geist-Bold.woff2", weight: "700" },
-  ],
-  variable: "--font-geist-sans",
-});
-
-const geistMono = localFont({
-  src: [
-    { path: "../../../public/fonts/GeistMono-Regular.woff2", weight: "400" },
-    { path: "../../../public/fonts/GeistMono-Medium.woff2", weight: "500" },
-  ],
-  variable: "--font-geist-mono",
-});
 
 const messagesMap: Record<string, any> = {
   en: enMessages,
@@ -114,21 +93,22 @@ export default function LocaleLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = use(params);
-  const [messages, setMessages] = useState<any>({});
-  const [pathname, setPathname] = useState('/');
+  return <LocaleLayoutContent params={params}>{children}</LocaleLayoutContent>;
+}
 
-  useEffect(() => {
-    setMessages(messagesMap[locale] || enMessages);
-    // Get current pathname for metadata
-    if (typeof window !== 'undefined') {
-      setPathname(window.location.pathname.replace(`/${locale}`, '') || '/');
-    }
-  }, [locale]);
+async function LocaleLayoutContent({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const messages = messagesMap[locale] || enMessages;
 
   const isZh = locale === 'zh';
-  const { title, description } = generateMetadata(locale, pathname);
-  const canonicalUrl = `https://aiplans.dev/${locale}${pathname === '/' ? '' : pathname}`;
+  const { title, description } = generateMetadata(locale, '/');
+  const canonicalUrl = `https://aiplans.dev/${locale}`;
 
   return (
     <html lang={locale}>
@@ -161,9 +141,9 @@ export default function LocaleLayout({
         <meta name="twitter:image" content="https://aiplans.dev/logo.png" />
 
         {/* Alternate links - Hreflang for i18n SEO */}
-        <link rel="alternate" hrefLang="en" href={`https://aiplans.dev/en${pathname === '/' ? '' : pathname}`} />
-        <link rel="alternate" hrefLang="zh" href={`https://aiplans.dev/zh${pathname === '/' ? '' : pathname}`} />
-        <link rel="alternate" hrefLang="x-default" href={`https://aiplans.dev${pathname === '/' ? '' : pathname}`} />
+        <link rel="alternate" hrefLang="en" href="https://aiplans.dev/en" />
+        <link rel="alternate" hrefLang="zh" href="https://aiplans.dev/zh" />
+        <link rel="alternate" hrefLang="x-default" href="https://aiplans.dev" />
 
         {/* Canonical */}
         <link rel="canonical" href={canonicalUrl} />
@@ -212,78 +192,13 @@ export default function LocaleLayout({
             })
           }}
         />
-
-        {/* FAQ Structured Data for key pages */}
-        {pathname.includes('api-pricing') && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "FAQPage",
-                "mainEntity": (faqData['api-pricing']?.[isZh ? 'zh' : 'en'] || []).map(faq => ({
-                  "@type": "Question",
-                  "name": faq.question,
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": faq.answer
-                  }
-                }))
-              })
-            }}
-          />
-        )}
-        {pathname.includes('compare/plans') && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "FAQPage",
-                "mainEntity": (faqData['compare/plans']?.[isZh ? 'zh' : 'en'] || []).map(faq => ({
-                  "@type": "Question",
-                  "name": faq.question,
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": faq.answer
-                  }
-                }))
-              })
-            }}
-          />
-        )}
-
-        {/* BreadcrumbList Structured Data */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "BreadcrumbList",
-              "itemListElement": [
-                {
-                  "@type": "ListItem",
-                  "position": 1,
-                  "name": isZh ? "首页" : "Home",
-                  "item": "https://aiplans.dev"
-                },
-                ...(pathname !== `/${locale}` ? [{
-                  "@type": "ListItem",
-                  "position": 2,
-                  "name": pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || (isZh ? "首页" : "Home"),
-                  "item": `https://aiplans.dev${pathname}`
-                }] : [])
-              ]
-            })
-          }}
-        />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className="font-sans antialiased">
         <Analytics />
         <SpeedInsights />
-        <TranslationsProvider messages={messages}>
+        <LocaleClientWrapper locale={locale} messages={messages}>
           {children}
-        </TranslationsProvider>
+        </LocaleClientWrapper>
       </body>
     </html>
   );

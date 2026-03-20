@@ -58,6 +58,9 @@ export default function ComparePlansIndexPage(props: {
         allProducts.forEach((product: any) => {
           if (product.planCount > 0) {
             const providerId = product.providers?.id || product.provider_ids?.[0];
+            // Skip products without a valid provider ID
+            if (!providerId) return;
+
             const providerName = product.providers?.name || 'Unknown';
             const providerLogo = product.providers?.logo || '';
 
