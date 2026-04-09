@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { attachPrimaryProvidersToModels } from '@/lib/schema-adapters';
 
 /**
  * 获取按模型基础名称分组的 API 定价
@@ -41,6 +42,8 @@ export async function GET(request: Request) {
             id,
             name,
             slug,
+            logo,
+            logo_url,
             type,
             region,
             access_from_china
@@ -59,7 +62,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch models' }, { status: 500 });
     }
 
-    const products = modelsRes.data || [];
+    const products = await attachPrimaryProvidersToModels((modelsRes.data || []) as any[]);
     const channelPrices = (channelPricesRes.data || []) as any[];
     const benchmarkScores = (benchmarkRes.data || []) as any[];
 
@@ -71,20 +74,6 @@ export async function GET(request: Request) {
       if (!benchmarkMap.has(modelId) || value > (benchmarkMap.get(modelId) || 0)) {
         benchmarkMap.set(modelId, value);
       }
-    });
-
-    // Fetch providers for all models
-    const allProviderIds = [...new Set(products.flatMap((p: any) => p.provider_ids || []))];
-    const { data: providersData } = await supabase
-      .from('providers')
-      .select('id, name, slug, logo, region')
-      .in('id', allProviderIds);
-
-    const providerMap = new Map((providersData || []).map((p: any) => [p.id, p]));
-
-    // Attach first provider to each product
-    products.forEach((p: any) => {
-      p.providers = p.provider_ids?.[0] ? providerMap.get(p.provider_ids[0]) : null;
     });
 
     // 按模型基础名称分组
@@ -117,10 +106,14 @@ export async function GET(request: Request) {
         .replace(/-\d+$/, '')
         .replace(/-\d+-$/, '');
 
-      if (!modelGroups.has(baseName)) {
-        // 添加该产品的渠道价格
-        const productPrices = channelPrices.filter(cp => cp.model_id === product.id);
+      const productPrices = channelPrices.filter(cp => cp.model_id === product.id);
+      const officialProducer =
+        productPrices.find(cp => cp.providers?.type === 'producer') ||
+        productPrices.find(cp => cp.providers?.type === 'official') ||
+        null;
+      const displayProvider = (product as any).providers || officialProducer?.providers || null;
 
+      if (!modelGroups.has(baseName)) {
         const hasChinaVersion = productPrices.some(cp => (cp as any).providers?.region === 'china');
         const hasGlobalVersion = productPrices.some(cp => (cp as any).providers?.region === 'global');
 
@@ -136,7 +129,7 @@ export async function GET(request: Request) {
           provider_ids: product.provider_ids,
           context_window: product.context_window,
           benchmark_arena_elo: benchmarkMap.get(product.id) || null,
-          providers: (product as any).providers,
+          providers: displayProvider,
           baseName,
           versions: productPrices as any,
           hasChinaVersion,

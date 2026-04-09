@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatPrice, CurrencyCode } from "@/lib/currency";
+import { getAllModelIdsForProvider, getPlanYearlyMonthly } from "@/lib/schema-adapters";
+import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 
 // Provider info map
 const providerInfo: Record<string, { name: string; logo: string; description: string }> = {
@@ -33,41 +35,16 @@ async function getPlansByProvider(providerSlug: string) {
     .eq('provider_id', provider.id)
     .order('price', { ascending: true });
 
-  // Get models for this provider (via provider_ids array - use snake_case for Supabase)
-  const { data: models } = await supabase
-    .from('models')
-    .select('id, name, slug, provider_ids')
-    .contains('provider_ids', [provider.id]);
-
-  // Also get models via model_plan_mapping junction table
   const planIds = (plans || []).map(p => p.id);
-  let modelIdsFromPlans: number[] = [];
+  const modelIds = await getAllModelIdsForProvider(provider.id, planIds);
+  const { data: uniqueModels } = modelIds.length > 0
+    ? await supabase
+        .from('models')
+        .select('id, name, slug, provider_ids')
+        .in('id', modelIds)
+    : { data: [] };
 
-  if (planIds.length > 0) {
-    const { data: mappings } = await supabase
-      .from('model_plan_mapping')
-      .select('model_id')
-      .in('plan_id', planIds);
-    modelIdsFromPlans = (mappings || []).map(m => m.model_id);
-  }
-
-  // Fetch additional models from mapping
-  let additionalModels: any[] = [];
-  if (modelIdsFromPlans.length > 0) {
-    const { data: mappedModels } = await supabase
-      .from('models')
-      .select('id, name, slug, provider_ids')
-      .in('id', modelIdsFromPlans);
-    additionalModels = mappedModels || [];
-  }
-
-  // Merge and deduplicate models
-  const allModels = [...(models || []), ...additionalModels];
-  const uniqueModels = allModels.filter((model, index, self) =>
-    index === self.findIndex(m => m.id === model.id)
-  );
-
-  return { provider, models: uniqueModels, plans: plans || [] };
+  return { provider, models: uniqueModels || [], plans: plans || [] };
 }
 
 export default async function ProviderPlansPage({
@@ -131,10 +108,10 @@ export default async function ProviderPlansPage({
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              {provider.logo ? (
-                  <img src={provider.logo} alt={provider.name} className="w-16 h-16 object-contain" />
+              {getProviderLogoSrc(provider) ? (
+                  <img src={getProviderLogoSrc(provider)!} alt={provider.name} className="w-16 h-16 object-contain" />
                 ) : (
-                  <span className="text-5xl">{providerInfo[providerSlug]?.logo || "🏢"}</span>
+                  <span className="text-5xl">{getProviderLogoFallback(provider, providerInfo[providerSlug]?.logo || "🏢")}</span>
                 )}
               <div>
                 <h1 className="text-3xl font-bold">{providerData.name} Plans</h1>
@@ -191,8 +168,8 @@ export default async function ProviderPlansPage({
                       <span className="text-3xl font-bold">
                         {plan.price === 0
                           ? 'Free'
-                          : showYearly && plan.price_yearly_monthly
-                            ? formatPrice(plan.price_yearly_monthly * 12, currency)
+                          : showYearly && getPlanYearlyMonthly(plan)
+                            ? formatPrice(getPlanYearlyMonthly(plan)! * 12, currency)
                             : formatPrice(plan.price, currency)}
                       </span>
                       {plan.price_unit && plan.price !== 0 && (

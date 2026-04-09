@@ -16,6 +16,11 @@ interface Model {
   provider_ids: number[];
   context_window: number;
   benchmark_arena_elo: number | null;
+  providers?: {
+    id: number;
+    name: string;
+    logo?: string | null;
+  } | null;
 }
 
 interface ChannelPrice {
@@ -36,6 +41,13 @@ const providerMeta: Record<number, { name: string; logo: string; color: string }
   4: { name: "Google", logo: "🌐", color: "text-blue-600" },
   5: { name: "Meta", logo: "🦙", color: "text-indigo-600" },
 };
+
+function getProviderDisplay(model: Model) {
+  if (model.providers?.id && providerMeta[model.providers.id]) {
+    return providerMeta[model.providers.id];
+  }
+  return providerMeta[model.provider_ids?.[0]] || { name: model.providers?.name || "Unknown", logo: model.providers?.logo || "🏢", color: "text-gray-600" };
+}
 
 export default function CompareModelsPage() {
   const [models, setModels] = useState<Model[]>([]);
@@ -83,7 +95,7 @@ export default function CompareModelsPage() {
 
   const getOfficialPrice = (modelId: number) => {
     const prices = channelPrices.filter(cp => cp.model_id === modelId);
-    return prices.find(cp => cp.providers.type === 'official');
+    return prices.find(cp => cp.providers.type === 'official' || cp.providers.type === 'producer');
   };
 
   const handleModelSelect = (slug: string) => {
@@ -161,7 +173,7 @@ export default function CompareModelsPage() {
             <div className="flex flex-wrap gap-2 mb-4">
               {models.map((model) => {
                 const isSelected = selectedModels.includes(model.slug);
-                const provider = providerMeta[model.provider_ids?.[0]] || { name: "Unknown", logo: "🏢", color: "text-gray-600" };
+                const provider = getProviderDisplay(model);
 
                 return (
                   <Button
@@ -195,7 +207,7 @@ export default function CompareModelsPage() {
             {/* Comparison Cards */}
             <div className={`grid gap-6 mb-8 ${selectedModelsData.length === 2 ? 'md:grid-cols-2' : selectedModelsData.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
               {selectedModelsData.map((model) => {
-                const provider = providerMeta[model.provider_ids?.[0]] || { name: "Unknown", logo: "🏢", color: "text-gray-600" };
+                const provider = getProviderDisplay(model);
                 const price = getModelPrice(model.id);
                 const officialPrice = getOfficialPrice(model.id);
 
@@ -256,7 +268,7 @@ export default function CompareModelsPage() {
                     <TableRow>
                       <TableHead className="w-1/4">Feature</TableHead>
                       {selectedModelsData.map((model) => {
-                        const provider = providerMeta[model.provider_ids?.[0]] || { name: "Unknown", logo: "🏢" };
+                        const provider = getProviderDisplay(model);
                         return (
                           <TableHead key={model.id} className="text-center">
                             <span className={provider.color}>{provider.logo} {model.name}</span>
@@ -391,7 +403,7 @@ export default function CompareModelsPage() {
                   <h3 className="font-bold text-lg mb-4">💡 Quick Recommendation</h3>
                   <div className="grid md:grid-cols-2 gap-4">
                     {selectedModelsData.slice(0, 2).map((model) => {
-                      const provider = providerMeta[model.provider_ids?.[0]] || { name: "Unknown", logo: "🏢" };
+                      const provider = getProviderDisplay(model);
                       const price = getModelPrice(model.id);
                       const hasHighElo = (model.benchmark_arena_elo || 0) > 1300;
                       const hasLargeContext = (model.context_window || 0) > 100000;

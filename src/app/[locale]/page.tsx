@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, GitCompare, DollarSign, Globe } from "lucide-react";
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/lib/translations';
+import { HOME_HOT_MODEL_SLUGS } from '@/lib/hot-models';
 
 export default function HomePage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = use(props.params);
@@ -132,7 +133,7 @@ export default function HomePage(props: { params: Promise<{ locale: string }> })
             {locale === 'zh' ? '🔥 热门模型对比' : '🔥 Popular Models'}
           </h2>
           <div className="grid md:grid-cols-4 gap-4">
-            {['claude-opus-4.6', 'gpt-5.2-high', 'gemini-3.1-pro', 'glm-5'].map((slug) => (
+            {HOME_HOT_MODEL_SLUGS.map((slug) => (
               <Link key={slug} href={`/${locale}/compare/plans/${slug}`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-6 text-center">

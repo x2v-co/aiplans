@@ -8,6 +8,8 @@ import {
   getExchangeRateDisplay,
 } from '@/lib/currency-conversion';
 import { getExchangeRateSync } from '@/lib/exchange-rates';
+import { getPrimaryProvidersForModels, getPlanYearlyMonthly } from '@/lib/schema-adapters';
+import { getProviderLogoFallback, getProviderLogoSrc } from '@/lib/provider-branding';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -24,8 +26,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const slugCandidates = getModelSlugCandidates(modelSlug);
+
     // 1. Get product/model info first (needed for other queries)
-    const { data: product, error: productError } = await supabase
+    const { data: products, error: productError } = await supabase
       .from('models')
       .select(`
         id,
@@ -34,23 +38,18 @@ export async function GET(request: NextRequest) {
         provider_ids,
         context_window
       `)
-      .eq('slug', modelSlug)
-      .single();
+      .in('slug', slugCandidates);
 
-    if (productError || !product) {
+    if (productError || !products || products.length === 0) {
       return NextResponse.json({ error: 'Model not found' }, { status: 404 });
     }
 
-    // Fetch the model's official providers separately (provider_ids is an integer array, not a foreign key)
-    let productProvider: any = null;
-    if (product.provider_ids && product.provider_ids.length > 0) {
-      const { data: providers } = await supabase
-        .from('providers')
-        .select('name, slug, logo, website, invite_url')
-        .eq('id', product.provider_ids[0])
-        .single();
-      productProvider = providers;
-    }
+    const product = products.find((item) => item.slug === modelSlug) || products[0];
+    const relatedModelIds = products.map((item) => item.id);
+
+    // Fetch the model's primary provider from the normalized relation first, then fallback.
+    const modelProviders = await getPrimaryProvidersForModels([product as any]);
+    const productProvider = modelProviders.get(product.id);
 
     // 2. Run remaining queries in parallel for better performance
     const [
@@ -76,6 +75,7 @@ export async function GET(request: NextRequest) {
             region,
             access_from_china,
             logo,
+            logo_url,
             website,
             invite_url
           )
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
           model_id,
           priority
         `)
-        .eq('model_id', product.id),
+        .in('model_id', relatedModelIds),
     ]);
 
     // 3. Get unique plan IDs and fetch full plan details in parallel with provider info
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
       // Query 5: Get all provider info at once
       supabase
         .from('providers')
-        .select('id, name, slug, logo, website, invite_url'),
+        .select('id, name, slug, logo, logo_url, website, invite_url'),
     ]) : [{ data: [] }, { data: [] }];
 
     // Build provider map
@@ -153,8 +153,11 @@ export async function GET(request: NextRequest) {
       subscriptionPlans.forEach((plan: any) => {
         // Same provider as the product = official, different provider = third-party
         // product.provider_ids is an array, check if plan's provider is in it
-        const isOfficial = product.provider_ids?.includes(plan.provider_id);
+        const isOfficial = productProvider
+          ? productProvider.id === plan.provider_id
+          : product.provider_ids?.includes(plan.provider_id);
         const provider = providerMap[plan.provider_id];
+        const yearlyMonthly = getPlanYearlyMonthly(plan);
 
         const planData = {
           plan: {
@@ -170,7 +173,8 @@ export async function GET(request: NextRequest) {
             slug: provider?.slug || 'unknown',
             name: provider?.name || 'Unknown',
             nameZh: provider?.name || 'Unknown',
-            logo: provider?.logo || getProviderLogo(provider?.slug),
+            logo: getProviderLogoSrc(provider),
+            logoFallback: getProviderLogoFallback(provider, getProviderLogo(provider?.slug)),
             website: provider?.website || null,
             inviteUrl: provider?.invite_url || null,
             region: plan.region,
@@ -182,7 +186,7 @@ export async function GET(request: NextRequest) {
             billingUnit: plan.price_unit || 'per_month',
             monthly: plan.price,
             yearly: plan.annual_price,
-            yearlyMonthly: plan.annual_price ? plan.annual_price / 12 : null,
+            yearlyMonthly,
             yearlyDiscountPercent: plan.annual_price && plan.price
               ? ((1 - (plan.annual_price / 12) / plan.price) * 100)
               : null,
@@ -190,7 +194,7 @@ export async function GET(request: NextRequest) {
             displayCurrency: displayCurrency,
             convertedMonthly: plan.price ? getExchangeRateSync(plan.currency || 'USD', displayCurrency) * plan.price : null,
             convertedYearly: plan.annual_price ? getExchangeRateSync(plan.currency || 'USD', displayCurrency) * plan.annual_price : null,
-            convertedYearlyMonthly: plan.annual_price ? convertPrice(plan.annual_price / 12, plan.currency || 'USD', displayCurrency) : null,
+            convertedYearlyMonthly: yearlyMonthly ? convertPrice(yearlyMonthly, plan.currency || 'USD', displayCurrency) : null,
             exchangeRate: getExchangeRateDisplay(plan.currency || 'USD'),
             inputPer1m: null,
             outputPer1m: null,
@@ -268,7 +272,8 @@ export async function GET(request: NextRequest) {
         provider: {
           slug: productProvider?.slug || 'unknown',
           name: productProvider?.name || 'Unknown',
-          logo: productProvider?.logo || getProviderLogo(productProvider?.slug),
+          logo: getProviderLogoSrc(productProvider),
+          logoFallback: getProviderLogoFallback(productProvider, getProviderLogo(productProvider?.slug)),
           website: productProvider?.website || null,
           inviteUrl: productProvider?.invite_url || null,
         },
@@ -340,4 +345,14 @@ function getPaymentMethods(region: string): string[] {
     return ['alipay', 'wechat'];
   }
   return ['credit_card'];
+}
+
+function getModelSlugCandidates(slug: string): string[] {
+  const candidates = new Set<string>([slug]);
+
+  // Support historical slug variants such as claude-opus-4.6 <-> claude-opus-4-6.
+  candidates.add(slug.replace(/(\d)\.(\d)/g, '$1-$2'));
+  candidates.add(slug.replace(/(\d)-(\d)(?=-|$)/g, '$1.$2'));
+
+  return Array.from(candidates);
 }

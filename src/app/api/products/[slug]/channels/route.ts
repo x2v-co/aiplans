@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { getPrimaryProvidersForModels } from '@/lib/schema-adapters';
 
 // GET /api/products/[slug]/channels - 核心API: 同一模型各渠道价格对比
 export async function GET(
@@ -17,6 +18,12 @@ export async function GET(
       .single();
 
     if (productError) throw productError;
+
+    const modelProviders = await getPrimaryProvidersForModels([product as any]);
+    const productWithProvider = {
+      ...product,
+      providers: modelProviders.get(product.id) || null,
+    };
 
     // 获取该模型在所有渠道的价格
     const { data: channelPrices, error: pricesError } = await supabase
@@ -45,7 +52,7 @@ export async function GET(
     // 计算价格对比数据
     const enrichedPrices = channelPrices?.map((cp: any) => {
       const officialPrice = channelPrices?.find(
-        (p: any) => p.providers?.type === 'official'
+        (p: any) => p.providers?.type === 'official' || p.providers?.type === 'producer'
       );
       const officialInputPrice = officialPrice?.input_price_per_1m || cp.input_price_per_1m;
       const officialOutputPrice = officialPrice?.output_price_per_1m || cp.output_price_per_1m;
@@ -70,10 +77,10 @@ export async function GET(
     });
 
     return NextResponse.json({
-      product,
+      product: productWithProvider,
       channelPrices: enrichedPrices,
       cheapest: enrichedPrices?.[0],
-      officialChannel: channelPrices?.find((cp: any) => cp.providers?.type === 'official'),
+      officialChannel: channelPrices?.find((cp: any) => cp.providers?.type === 'official' || cp.providers?.type === 'producer'),
     });
   } catch (error) {
     console.error('Error fetching channel prices:', error);

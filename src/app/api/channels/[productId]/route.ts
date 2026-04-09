@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { getPrimaryProvidersForModels, getProvidersByIds } from '@/lib/schema-adapters';
 
 // GET /api/channels/[productId] - 某模型渠道价格
 export async function GET(
@@ -39,17 +40,14 @@ export async function GET(
     if (error) throw error;
 
     // If we have data, fetch the model's official providers separately
-    if (data && data.length > 0 && data[0].models?.provider_ids?.length > 0) {
-      const providerIds = data[0].models.provider_ids;
-      const { data: officialProviders } = await supabase
-        .from('providers')
-        .select('id, name, slug, logo')
-        .in('id', providerIds);
-
-      // Attach official providers to the model
-      if (officialProviders) {
-        data[0].models.providers = officialProviders;
-      }
+    if (data && data.length > 0 && data[0].models) {
+      const primaryProviders = await getPrimaryProvidersForModels([data[0].models as any]);
+      const providerIds = data[0].models.provider_ids || [];
+      const providersById = await getProvidersByIds(providerIds);
+      data[0].models.provider = primaryProviders.get(data[0].models.id) || null;
+      data[0].models.providers = providerIds
+        .map((id: number) => providersById.get(id))
+        .filter(Boolean);
     }
 
     return NextResponse.json(data || []);

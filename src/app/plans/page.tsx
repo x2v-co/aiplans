@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 
 async function getProvidersWithPlans() {
   // Get all providers
@@ -91,15 +92,15 @@ export default async function PlansIndexPage() {
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                     <CardContent className="p-6">
                       <div className="flex items-center gap-4 mb-4">
-                        {provider.logo ? (
+                        {getProviderLogoSrc(provider) ? (
                           <img
-                            src={provider.logo}
+                            src={getProviderLogoSrc(provider)!}
                             alt={provider.name}
                             className="w-14 h-14 object-contain"
                           />
                         ) : (
                           <div className="w-14 h-14 bg-zinc-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center">
-                            <span className="text-2xl">🏢</span>
+                            <span className="text-2xl">{getProviderLogoFallback(provider, "🏢")}</span>
                           </div>
                         )}
                         <div className="flex-1">

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Check, HelpCircle, ArrowRight, Star, ChevronDown, ChevronUp } from "lucide-react";
+import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 
 interface ComparePageProps {
   params: Promise<{ locale: string; model: string }>;
@@ -16,6 +17,7 @@ interface PlanGroup {
   providerId: string;
   providerName: string;
   providerLogo: string;
+  providerLogoFallback?: string;
   isOfficial: boolean;
   plans: any[];
 }
@@ -95,7 +97,8 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
         groups.set(providerId, {
           providerId,
           providerName,
-          providerLogo: plan.channel?.logo || "",
+          providerLogo: getProviderLogoSrc(plan.channel) || "",
+          providerLogoFallback: plan.channel?.logoFallback || getProviderLogoFallback(plan.channel),
           isOfficial: plan.plan.isOfficial || false,
           plans: [],
         });
@@ -281,8 +284,10 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
-            {model.provider?.logo && (
-              <img src={model.provider.logo} alt={model.provider.name} className="w-12 h-12 object-contain" />
+            {getProviderLogoSrc(model.provider) ? (
+              <img src={getProviderLogoSrc(model.provider)!} alt={model.provider.name} className="w-12 h-12 object-contain" />
+            ) : (
+              <span className="text-4xl">{model.provider?.logoFallback || getProviderLogoFallback(model.provider)}</span>
             )}
             <h1 className="text-4xl font-bold">{model.name} Plans</h1>
           </div>
@@ -353,8 +358,10 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
                     className="w-full flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      {group.providerLogo && (
+                      {group.providerLogo ? (
                         <img src={group.providerLogo} alt={group.providerName} className="w-8 h-8 object-contain" />
+                      ) : (
+                        <span className="text-3xl">{group.providerLogoFallback || "🏢"}</span>
                       )}
                       <div className="text-left">
                         <div className="flex items-center gap-2">

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Gift, Copy, Check, ExternalLink, Sparkles, Shield, Clock, Tag } from "lucide-react";
+import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 
 interface Coupon {
   id: number;
@@ -22,6 +23,7 @@ interface Coupon {
     name: string;
     slug: string;
     logo: string;
+    logo_url?: string;
   };
 }
 
@@ -172,6 +174,8 @@ export default function CouponsPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {verifiedCoupons.map((coupon) => {
               const provider = providerMeta[coupon.provider_id] || { name: "Unknown", logo: "🏢", color: "bg-gray-600", website: "#" };
+              const providerLogoSrc = getProviderLogoSrc(coupon.providers);
+              const providerLogoFallback = getProviderLogoFallback(coupon.providers, provider.logo);
               const daysLeft = getDaysLeft(coupon.expires_at);
 
               return (
@@ -180,7 +184,11 @@ export default function CouponsPage() {
                     <div className="flex">
                       {/* Provider Logo */}
                       <div className={`${provider.color} w-24 flex items-center justify-center rounded-l-lg`}>
-                        <span className="text-3xl">{provider.logo}</span>
+                        {providerLogoSrc ? (
+                          <img src={providerLogoSrc} alt={coupon.providers?.name || provider.name} className="w-12 h-12 object-contain" />
+                        ) : (
+                          <span className="text-3xl">{providerLogoFallback}</span>
+                        )}
                       </div>
 
                       {/* Coupon Details */}

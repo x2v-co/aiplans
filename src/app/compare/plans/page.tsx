@@ -4,18 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, TrendingUp, Building2, Zap, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-
-// Hot models for quick access
-const hotModels = [
-  "gpt-4o",
-  "claude-3-5-sonnet",
-  "deepseek-v3",
-  "gemini-1-5-pro",
-  "claude-3-opus",
-  "gpt-4o-mini",
-  "llama-3-1-405b",
-  "qwen-max",
-];
+import { attachPrimaryProvidersToModels } from "@/lib/schema-adapters";
+import { COMPARE_HOT_MODEL_SLUGS } from "@/lib/hot-models";
 
 async function getModelsWithPlanCounts() {
   const { data: models } = await supabase
@@ -33,14 +23,7 @@ async function getModelsWithPlanCounts() {
 
   if (!models) return [];
 
-  // Get provider info for all models
-  const allProviderIds = [...new Set(models.flatMap((m: any) => m.provider_ids || []))];
-  const { data: providersData } = await supabase
-    .from('providers')
-    .select('id, name, slug, logo')
-    .in('id', allProviderIds);
-
-  const providerMap = new Map((providersData || []).map((p: any) => [p.id, p]));
+  const modelsWithProviders = await attachPrimaryProvidersToModels(models as any[]);
 
   // Get plan counts for each model via model_plan_mapping
   const { data: mappings } = await supabase
@@ -68,9 +51,9 @@ async function getModelsWithPlanCounts() {
     }
   });
 
-  return models.map((m: any) => ({
+  return modelsWithProviders.map((m: any) => ({
     ...m,
-    provider: m.provider_ids?.[0] ? providerMap.get(m.provider_ids[0]) : null,
+    provider: m.providers || null,
     planCount: planCounts.get(m.id) || 0,
     benchmark_arena_elo: benchmarkMap.get(m.id) || null,
   }));
@@ -89,7 +72,7 @@ export default async function ComparePlansIndexPage() {
   const providers = await getProviders();
 
   // Filter hot models
-  const hotModelsList = models.filter((m) => hotModels.includes(m.slug));
+  const hotModelsList = models.filter((m) => COMPARE_HOT_MODEL_SLUGS.includes(m.slug));
 
   // Group models by provider
   const modelsByProvider = providers.map((provider) => ({

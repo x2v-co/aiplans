@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
+import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 
 interface ModelInfoCardProps {
   model: {
@@ -11,30 +12,37 @@ interface ModelInfoCardProps {
     provider: {
       slug: string;
       name: string;
-      logo: string;
+      logo: string | null;
+      logoFallback?: string | null;
       website: string | null;
       inviteUrl: string | null;
     };
     contextWindow: number;
     maxOutput: number;
     benchmarkArena: number;
-    releaseDate: string | null;
-  };
+      releaseDate: string | null;
+      logoFallback?: string | null;
+    };
   planCount: number;
   lowestPrice: number;
 }
 
 export function ModelInfoCard({ model, planCount, lowestPrice }: ModelInfoCardProps) {
+  const providerLogoSrc = getProviderLogoSrc(model.provider);
+  const providerLogoFallback = model.provider.logoFallback || getProviderLogoFallback(model.provider);
+
   return (
     <Card className="mb-8">
       <CardHeader>
         <div className="flex items-center gap-4">
-          {model.provider.logo && (
+          {providerLogoSrc ? (
             <img
-              src={model.provider.logo}
+              src={providerLogoSrc}
               alt={model.provider.name}
               className="w-16 h-16 object-contain"
             />
+          ) : (
+            <span className="text-5xl">{providerLogoFallback}</span>
           )}
           <div className="flex-1">
             <CardTitle className="text-3xl mb-2">{model.name}</CardTitle>

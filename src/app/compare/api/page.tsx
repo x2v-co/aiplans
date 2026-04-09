@@ -70,7 +70,7 @@ export default function CompareApiPricingPage() {
   // Get official price for a model
   const getOfficialPrice = (modelId: number) => {
     const prices = channelPrices.filter(cp => cp.model_id === modelId);
-    return prices.find(cp => cp.providers.type === 'official');
+    return prices.find(cp => cp.providers.type === 'official' || cp.providers.type === 'producer');
   };
 
   if (loading) {

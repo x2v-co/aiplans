@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowRight, Check, Globe, DollarSign, Filter, X, Search } from "lucide-react";
+import { getProviderLogoFallback } from "@/lib/provider-branding";
 
 interface Product {
   id: number;
@@ -293,7 +294,7 @@ export default function ApiPricingPage() {
                   <SelectItem value="all">All Providers</SelectItem>
                   {providers.map(p => (
                     <SelectItem key={p.id} value={p.id.toString()}>
-                      {p.logo} {p.name}
+                      {p.logo || getProviderLogoFallback({ slug: p.name?.toLowerCase?.() }, "🏢")} {p.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -373,7 +374,7 @@ export default function ApiPricingPage() {
                   const provider = providerMeta[parseInt(id)];
                   return provider ? (
                     <Badge key={id} variant="secondary" className="gap-1 pr-1">
-                      {provider.logo} {provider.name}
+                      {provider.logo || "🏢"} {provider.name}
                       <button onClick={() => setSelectedProviders(prev => prev.filter(p => p !== id))} className="ml-1 hover:text-red-500">
                         <X className="w-3 h-3" />
                       </button>
@@ -446,7 +447,7 @@ export default function ApiPricingPage() {
 
                     return prices.map((cp, idx) => {
                       const isCheapest = cp.id === cheapest?.id;
-                      const officialPrice = prices.find(p => p.providers.type === 'official');
+                      const officialPrice = prices.find(p => p.providers.type === 'official' || p.providers.type === 'producer');
                       const savings = officialPrice && officialPrice.input_price_per_1m > cp.input_price_per_1m
                         ? (((officialPrice.input_price_per_1m - cp.input_price_per_1m) / officialPrice.input_price_per_1m) * 100).toFixed(0)
                         : '0';
@@ -459,7 +460,7 @@ export default function ApiPricingPage() {
                                 {product.name}
                               </Link>
                               <div className="text-xs text-zinc-500 mt-1">
-                                {product.providers?.logo || providerMeta[product.provider_ids?.[0]]?.logo} {product.providers?.name || providerMeta[product.provider_ids?.[0]]?.name}
+                                {product.providers?.name || providerMeta[product.provider_ids?.[0]]?.name}
                               </div>
                             </TableCell>
                           )}

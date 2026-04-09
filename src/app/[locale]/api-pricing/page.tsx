@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
 import { useTranslations } from '@/lib/translations';
 import { useParams, useSearchParams } from 'next/navigation';
@@ -20,6 +20,7 @@ import {
   type PriceUnit,
 } from "@/lib/currency";
 import { convertToUSD } from "@/lib/currency-conversion";
+import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 
 interface GroupedProduct {
   id: number;
@@ -33,6 +34,7 @@ interface GroupedProduct {
     name: string;
     slug: string;
     logo: string;
+    logo_url?: string;
     region?: string;
   };
   baseName: string;
@@ -78,6 +80,7 @@ export default function ApiPricingPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"price" | "name" | "elo">("elo");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   useEffect(() => {
     async function fetchData() {
@@ -95,10 +98,20 @@ export default function ApiPricingPage() {
   }, []);
 
   const filteredProducts = useMemo(() => {
+    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
     let filtered = products.filter(p => {
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return p.name.toLowerCase().includes(query) || p.baseName.toLowerCase().includes(query);
+      if (normalizedQuery) {
+        const searchValues = [
+          p.name,
+          p.slug,
+          p.baseName,
+          p.providers?.name,
+          ...p.versions.flatMap((cp) => [cp.providers?.name, cp.providers?.slug]),
+        ]
+          .filter(Boolean)
+          .map((value) => String(value).toLowerCase());
+
+        return searchValues.some((value) => value.includes(normalizedQuery));
       }
       return true;
     });
@@ -106,9 +119,8 @@ export default function ApiPricingPage() {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "price":
-          // 使用最便宜的官方价格比较
-          const priceA = getCheapestOfficialPrice(a);
-          const priceB = getCheapestOfficialPrice(b);
+          const priceA = getLowestDisplayedPrice(a);
+          const priceB = getLowestDisplayedPrice(b);
           return sortOrder === "asc"
             ? (priceA || Infinity) - (priceB || Infinity)
             : (priceB || Infinity) - (priceA || Infinity);
@@ -124,15 +136,24 @@ export default function ApiPricingPage() {
     });
 
     return filtered;
-  }, [products, searchQuery, sortBy, sortOrder]);
+  }, [products, deferredSearchQuery, sortBy, sortOrder]);
 
   function getCheapestOfficialPrice(product: GroupedProduct): number | null {
     const officialPrices = product.versions.filter(cp =>
-      cp.providers.type === 'official'
+      cp.providers.type === 'official' || cp.providers.type === 'producer'
     );
     if (officialPrices.length === 0) return null;
     const prices = officialPrices.map(cp => cp.input_price_per_1m).filter((p): p is number => p != null);
     if (prices.length === 0) return null;
+    return Math.min(...prices);
+  }
+
+  function getLowestDisplayedPrice(product: GroupedProduct): number | null {
+    const prices = product.versions
+      .map((cp) => cp.input_price_per_1m)
+      .filter((price): price is number => price != null);
+
+    if (prices.length === 0) return getCheapestOfficialPrice(product);
     return Math.min(...prices);
   }
 
@@ -149,18 +170,6 @@ export default function ApiPricingPage() {
       </div>
     );
   }
-
-  // 对价格进行分组（按同一模型的同一版本）
-  const pricesByVersion = new Map<string, ChannelPrice[]>();
-  products.forEach(p => {
-    p.versions.forEach(cp => {
-      const key = `${p.baseName}|${cp.providers.name}|${cp.providers.region}`;
-      if (!pricesByVersion.has(key)) {
-        pricesByVersion.set(key, []);
-      }
-      pricesByVersion.get(key)!.push(cp);
-    });
-  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
@@ -246,10 +255,15 @@ export default function ApiPricingPage() {
                     <SelectItem value="price-desc">{t('priceHighToLow')}</SelectItem>
                     <SelectItem value="name-asc">{t('nameAZ')}</SelectItem>
                     <SelectItem value="name-desc">{t('nameZA')}</SelectItem>
+                    <SelectItem value="elo-asc">{locale === 'zh' ? '性能从低到高' : 'Performance (Low to High)'}</SelectItem>
                     <SelectItem value="elo-desc">{t('performanceHighToLow')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="mt-4 text-sm text-zinc-500">
+              {filteredProducts.length} {filteredProducts.length === 1 ? 'model' : 'models'}
+              {deferredSearchQuery.trim() ? ` matched "${deferredSearchQuery}"` : ''}
             </div>
           </CardContent>
         </Card>
@@ -277,7 +291,7 @@ export default function ApiPricingPage() {
                   });
 
                   // 获取最便宜的官方价格（用于计算节省）
-                  const officialPrices = product.versions.filter(cp => cp.providers.type === 'official' && cp.input_price_per_1m != null);
+                  const officialPrices = product.versions.filter(cp => (cp.providers.type === 'official' || cp.providers.type === 'producer' || cp.providers.type === 'producer') && cp.input_price_per_1m != null);
                   const cheapestOfficial = officialPrices.length > 0
                     ? officialPrices.reduce((min, cp) =>
                         (cp.input_price_per_1m || Infinity) < (min.input_price_per_1m || Infinity) ? cp : min
@@ -288,12 +302,14 @@ export default function ApiPricingPage() {
                     <div key={product.id} className="border-b pb-6 last:border-0">
                       {/* 模型名称和基本信息 */}
                       <div className="flex items-start gap-4 mb-4">
-                        {product.providers?.logo && (
+                        {getProviderLogoSrc(product.providers) ? (
                           <img
-                            src={product.providers.logo}
-                            alt={product.providers.name}
+                            src={getProviderLogoSrc(product.providers)!}
+                            alt={product.providers?.name || product.name}
                             className="w-12 h-12 rounded-lg flex-shrink-0"
                           />
+                        ) : (
+                          <span className="text-4xl flex-shrink-0">{getProviderLogoFallback(product.providers, "🤖")}</span>
                         )}
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -331,7 +347,7 @@ export default function ApiPricingPage() {
                             // 按国内/国际版本分组
                             const chinaVersion = prices.find(cp => cp.providers.region === 'china');
                             const globalVersion = prices.find(cp => cp.providers.region === 'global');
-                            const isOfficial = prices.some(cp => cp.providers.type === 'official');
+                            const isOfficial = prices.some(cp => cp.providers.type === 'official' || cp.providers.type === 'producer' || cp.providers.type === 'producer');
 
                             // 如果是官方渠道且同时有国内和国际版本，合并显示
                             if (isOfficial && chinaVersion && globalVersion) {

@@ -7,10 +7,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Check, ExternalLink, TrendingDown, Zap, Globe } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { getPrimaryProvidersForModels, normalizeProviderRecord } from "@/lib/schema-adapters";
+import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 
 // Channel type labels
 const channelTypeLabels: Record<string, { label: string; color: string }> = {
   official: { label: "官方", color: "bg-blue-100 text-blue-800" },
+  producer: { label: "官方", color: "bg-blue-100 text-blue-800" },
   cloud: { label: "云厂商", color: "bg-purple-100 text-purple-800" },
   aggregator: { label: "聚合平台", color: "bg-green-100 text-green-800" },
   reseller: { label: "转售商", color: "bg-orange-100 text-orange-800" },
@@ -35,16 +38,8 @@ async function getProductWithChannels(slug: string) {
 
   if (!model) return null;
 
-  // Get the model's official providers
-  let modelProvider: any = null;
-  if (model.provider_ids && model.provider_ids.length > 0) {
-    const { data: providerData } = await supabase
-      .from('providers')
-      .select('id, name, slug, logo')
-      .eq('id', model.provider_ids[0])
-      .single();
-    modelProvider = providerData;
-  }
+  const modelProviders = await getPrimaryProvidersForModels([model as any]);
+  const modelProvider = modelProviders.get(model.id) || null;
 
   // Get API channel prices
   const { data: channelPrices } = await supabase
@@ -62,6 +57,7 @@ async function getProductWithChannels(slug: string) {
         slug,
         type,
         logo,
+        logo_url,
         website,
         region,
         access_from_china,
@@ -72,13 +68,23 @@ async function getProductWithChannels(slug: string) {
     .eq('is_available', true)
     .order('input_price_per_1m', { ascending: true });
 
+  const normalizedChannelPrices = (channelPrices || []).map((channel: any) => ({
+    ...channel,
+    providers: normalizeProviderRecord(channel.providers),
+  }));
+
+  const derivedProvider =
+    normalizedChannelPrices.find((channel: any) => channel.providers?.type === 'producer')?.providers ||
+    normalizedChannelPrices.find((channel: any) => channel.providers?.type === 'official')?.providers ||
+    null;
+
   // Return the model with provider attached
   const product = {
     ...model,
-    providers: modelProvider
+    providers: modelProvider || derivedProvider
   };
 
-  return { product, channelPrices: channelPrices || [] };
+  return { product, channelPrices: normalizedChannelPrices };
 }
 
 export default async function ModelPage({
@@ -96,7 +102,7 @@ export default async function ModelPage({
   const { product, channelPrices } = data;
 
   // Find official and cheapest
-  const officialChannel = (channelPrices as any[]).find((cp) => cp.providers?.type === 'official');
+  const officialChannel = (channelPrices as any[]).find((cp) => cp.providers?.type === 'official' || cp.providers?.type === 'producer');
   const cheapestChannel = (channelPrices as any[])[0];
 
   // Calculate savings
@@ -141,12 +147,14 @@ export default async function ModelPage({
         {/* Product Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
-            {product.providers?.logo && (
+            {getProviderLogoSrc(product.providers) ? (
               <img
-                src={product.providers.logo}
-                alt={product.providers.name}
+                src={getProviderLogoSrc(product.providers)!}
+                alt={product.providers?.name || product.name}
                 className="w-16 h-16 object-contain"
               />
+            ) : (
+              <span className="text-5xl">{getProviderLogoFallback(product.providers)}</span>
             )}
             <div>
               <h1 className="text-3xl font-bold">{product.name}</h1>
@@ -284,7 +292,7 @@ export default async function ModelPage({
                 </TableHeader>
                 <TableBody>
                   {channelPrices.map((cp: any, idx: number) => {
-                    const isOfficial = cp.providers.type === 'official';
+                    const isOfficial = cp.providers.type === 'official' || cp.providers.type === 'producer';
                     const isCheapest = idx === 0;
                     const savings = calculateSavings(cp.input_price_per_1m, officialChannel?.input_price_per_1m);
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { attachPrimaryProvidersToModels, getAllModelIdsForProvider } from '@/lib/schema-adapters';
 
 // Enable ISR with 5 minute revalidation
 export const revalidate = 300;
@@ -21,8 +22,11 @@ export async function GET(request: Request) {
       query = query.eq('type', type);
     }
     if (providerId) {
-      // Filter by provider_ids array containing the providerId
-      query = query.contains('provider_ids', [parseInt(providerId)]);
+      const matchedModelIds = await getAllModelIdsForProvider(parseInt(providerId));
+      if (matchedModelIds.length === 0) {
+        return NextResponse.json([]);
+      }
+      query = query.in('id', matchedModelIds);
     }
 
     const { data, error } = await query;
@@ -55,20 +59,7 @@ export async function GET(request: Request) {
       benchmark_arena_elo: benchmarkMap.get(p.id) || null,
     }));
 
-    // Fetch all providers to map IDs to provider data
-    const allProviderIds = [...new Set(products.flatMap((p: any) => p.provider_ids || []))];
-    const { data: providersData } = await supabase
-      .from('providers')
-      .select('id, name, slug, logo')
-      .in('id', allProviderIds);
-
-    const providerMap = new Map((providersData || []).map((p: any) => [p.id, p]));
-
-    // Attach first provider to each product for display purposes
-    products = products.map((p: any) => ({
-      ...p,
-      providers: p.provider_ids?.[0] ? providerMap.get(p.provider_ids[0]) : null,
-    }));
+    products = await attachPrimaryProvidersToModels(products as any[]);
 
     // Include plan count if requested (must do this before featured filtering)
     if (includePlanCount === 'true') {
