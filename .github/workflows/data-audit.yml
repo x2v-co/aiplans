@@ -1,0 +1,76 @@
+name: Data Accuracy Audit
+
+on:
+  schedule:
+    # Daily at 02:00 UTC (after the hourly scrape-pricing runs settle)
+    - cron: '0 2 * * *'
+  workflow_dispatch:   # manual trigger
+  pull_request:
+    paths:
+      - 'scripts/db/queries.ts'
+      - 'scripts/scrapers/**'
+      - 'scripts/audit-data.ts'
+      - 'scripts/fix-data-audit.ts'
+      - 'scripts/fix-plans-audit.ts'
+      - 'src/db/schema/**'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run data accuracy audit
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        # Exit codes: 0 clean, 1 critical findings (fail), 2 warnings only (pass)
+        run: |
+          set +e
+          npx tsx scripts/audit-data.ts | tee audit-output.txt
+          code=${PIPESTATUS[0]}
+          echo "AUDIT_EXIT=$code" >> "$GITHUB_ENV"
+          if [ "$code" = "1" ]; then
+            echo "::error::Critical data-accuracy findings detected — see audit-output.txt"
+            exit 1
+          fi
+          exit 0
+
+      - name: Upload audit output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-output-${{ github.run_number }}
+          path: audit-output.txt
+          retention-days: 30
+
+      - name: Generate JSON snapshot
+        if: always()
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          npx tsx scripts/audit-data.ts --json > audit-snapshot.json || true
+
+      - name: Upload JSON snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-snapshot-${{ github.run_number }}
+          path: audit-snapshot.json
+          retention-days: 30
