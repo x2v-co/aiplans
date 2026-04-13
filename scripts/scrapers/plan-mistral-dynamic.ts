@@ -156,7 +156,7 @@ export async function scrapeMistralPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Mistral-Plans',
-      success: plans.length > 0,
+      success: errors.length === 0 && plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

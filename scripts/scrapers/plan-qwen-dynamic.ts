@@ -188,7 +188,7 @@ export async function scrapeQwenPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Qwen-Plans',
-      success: plans.length > 0,
+      success: errors.length === 0 && plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

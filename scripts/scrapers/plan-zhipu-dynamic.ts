@@ -191,7 +191,7 @@ export async function scrapeZhipuPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Zhipu-Plans',
-      success: plans.length > 0,
+      success: errors.length === 0 && plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

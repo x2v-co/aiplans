@@ -47,6 +47,7 @@ import { calculateChangePercent, isSignificantChange } from './utils/validator';
 import type { ScraperResult } from './utils/validator';
 import type { PlanScraperResult } from './utils/plan-validator';
 import { normalizeModelName, normalizeSlug } from './utils/model-normalizer';
+import { closeBrowser } from './scrapers/base-fetcher';
 
 /**
  * Dynamic scraper configuration
@@ -217,6 +218,8 @@ async function processAPIScraper(result: ScraperResult, channelName: string) {
         rate_limit: price.rateLimit,
         is_available: price.isAvailable,
         last_verified: new Date(),
+        currency: priceCurrency,
+        price_unit: 'per_1m_tokens',
       });
 
       // Log price change if significant
@@ -277,7 +280,9 @@ function getChannelProviderKey(source: string): string {
     'Azure OpenAI': 'AZURE_OPENAI',
     'Azure-OpenAI': 'AZURE_OPENAI',
     'Hunyuan': 'HUNYUAN',
+    'Hunyuan-Tencent': 'HUNYUAN',
     'Baidu': 'BAIDU',
+    'Baidu-ERNIE': 'BAIDU',
     'Fireworks AI': 'FIREWORKS',
     'Fireworks-AI': 'FIREWORKS',
     'Replicate': 'REPLICATE',
@@ -503,6 +508,9 @@ async function main() {
   console.log(`\n✅ Scraping completed in ${duration}s`);
   console.log(`   - Total items updated: ${totalUpdated}`);
   console.log(`   - Total errors: ${totalErrors}`);
+
+  // Close Playwright browser
+  await closeBrowser();
 }
 
 // Run if called directly

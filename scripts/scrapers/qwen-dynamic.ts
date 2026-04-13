@@ -1,189 +1,72 @@
 /**
- * Qwen / 通义千问 API Scraper - Dynamic fetching from pricing page
- * NO FALLBACK DATA - Fails cleanly when scraping fails
+ * Qwen / 通义千问 API Scraper — Alibaba Cloud Model Studio pricing page.
+ * NO FALLBACK DATA — fails cleanly when scraping fails.
+ *
+ * Migrated 2026-04-13 to use KnownModelsExtractor base class.
+ * Original was ~214 lines; this is ~70 lines.
+ *
+ * Prices on this page are CNY (¥/元 per 1M tokens).
  */
+import type { ScraperResult } from '../utils/validator';
+import { KnownModelsExtractor, NUMBER_REGEX, type KnownModel } from './lib/known-models-extractor';
 
-import type { ScrapedPrice, ScraperResult } from '../utils/validator';
-import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { fetchHTML } from './base-fetcher';
+const QWEN_PRICING_URL = 'https://help.aliyun.com/zh/model-studio/billing-for-model-studio';
 
-const QWEN_PRICING_URL = 'https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=2987148';
+const KNOWN_MODELS: KnownModel[] = [
+  // Qwen3 Max series (flagship)
+  { pattern: /qwen3-max/i,            name: 'qwen3-max',         minInput: 2.0,  maxInput: 3.0,  minOutput: 8,    maxOutput: 12,   contextWindow: 32_000 },
+  { pattern: /qwen-max(?!-long|-vl)/i, name: 'qwen-max',          minInput: 2.0,  maxInput: 3.0,  minOutput: 8,    maxOutput: 12,   contextWindow: 32_000 },
 
-interface QwenModel {
-  model: string;
-  inputPrice: number;
-  outputPrice: number;
-  contextWindow: number;
-}
+  // Qwen3.5 Plus / Plus
+  { pattern: /qwen3\.5-plus/i,        name: 'qwen3.5-plus',      minInput: 0.5,  maxInput: 1.2,  minOutput: 1.5,  maxOutput: 3,    contextWindow: 128_000 },
+  { pattern: /qwen-plus(?!-long|-coder)/i, name: 'qwen-plus',     minInput: 0.5,  maxInput: 1.2,  minOutput: 1.5,  maxOutput: 3,    contextWindow: 128_000 },
 
-/**
- * Fetch and parse Qwen pricing from their website
- */
-async function fetchQwenPricing(): Promise<{ models: QwenModel[], errors: string[] }> {
-  const result = await fetchHTML(QWEN_PRICING_URL);
-  const errors: string[] = [];
+  // Qwen3.5 Flash / Flash
+  { pattern: /qwen3\.5-flash/i,       name: 'qwen3.5-flash',     minInput: 0.1,  maxInput: 0.3,  minOutput: 1.5,  maxOutput: 3,    contextWindow: 128_000 },
+  { pattern: /qwen-flash/i,           name: 'qwen-flash',        minInput: 0.1,  maxInput: 0.25, minOutput: 1,    maxOutput: 2,    contextWindow: 128_000 },
 
-  if (!result.success || !result.data) {
-    return { models: [], errors: ['Failed to fetch Qwen pricing page'] };
-  }
+  // Turbo
+  { pattern: /qwen-turbo/i,           name: 'qwen-turbo',        minInput: 0.2,  maxInput: 0.5,  minOutput: 0.4,  maxOutput: 1,    contextWindow: 8192 },
 
-  const html = result.data;
-  const models: QwenModel[] = [];
+  // Coder series
+  { pattern: /qwen3-coder-plus/i,     name: 'qwen3-coder-plus',  minInput: 3,    maxInput: 5,    minOutput: 12,   maxOutput: 20,   contextWindow: 32_000 },
+  { pattern: /qwen3-coder-flash/i,    name: 'qwen3-coder-flash', minInput: 0.5,  maxInput: 1.5,  minOutput: 3,    maxOutput: 5,    contextWindow: 32_000 },
+  { pattern: /qwen-coder-plus/i,      name: 'qwen-coder-plus',   minInput: 2.5,  maxInput: 4.5,  minOutput: 5,    maxOutput: 9,    contextWindow: 32_000 },
 
-  // Known Qwen model patterns (2025-2026)
-  const modelPatterns = [
-    // Qwen 3 Series (Flagship)
-    {
-      model: 'qwen3-max',
-      inputPattern: /qwen3-max[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 32000,
-    },
-    {
-      model: 'qwen3-plus',
-      inputPattern: /qwen3-plus[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 32000,
-    },
-    {
-      model: 'qwen3-turbo',
-      inputPattern: /qwen3-turbo[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 8000,
-    },
-    {
-      model: 'qwen3-max-longcontext',
-      inputPattern: /qwen3-max[^$]*?long[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 28000,
-    },
-    // Qwen 2.5 Series (Open Source)
-    {
-      model: 'qwen2.5-72b-instruct',
-      inputPattern: /qwen2\.5[^$]*?72b[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 131072,
-    },
-    {
-      model: 'qwen2.5-7b-instruct',
-      inputPattern: /qwen2\.5[^$]*?7b[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 131072,
-    },
-    // Vision Models
-    {
-      model: 'qwen3-vl-max',
-      inputPattern: /qwen3-vl-max[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 8192,
-    },
-    {
-      model: 'qwen-vl-max',
-      inputPattern: /qwen-vl-max[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 8192,
-    },
-    // Code Models
-    {
-      model: 'qwen3-coder-plus',
-      inputPattern: /qwen3-coder-plus[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 32000,
-    },
-    {
-      model: 'qwen2.5-coder-32b-instruct',
-      inputPattern: /qwen2\.5-coder-32b[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 131072,
-    },
-  ];
+  // VL (vision)
+  { pattern: /qwen3-vl-plus/i,        name: 'qwen3-vl-plus',     minInput: 0.5,  maxInput: 1.5,  minOutput: 8,    maxOutput: 12,   contextWindow: 32_000 },
+  { pattern: /qwen3-vl-flash/i,       name: 'qwen3-vl-flash',    minInput: 0.1,  maxInput: 0.25, minOutput: 0.5,  maxOutput: 2,    contextWindow: 32_000 },
+  { pattern: /qwen-vl-max/i,          name: 'qwen-vl-max',       minInput: 1,    maxInput: 2,    minOutput: 3,    maxOutput: 5,    contextWindow: 8192 },
 
-  for (const pattern of modelPatterns) {
-    const priceMatch = html.match(pattern.inputPattern);
+  // Reasoning
+  { pattern: /qwq-plus/i,             name: 'qwq-plus',          minInput: 1,    maxInput: 2,    minOutput: 3,    maxOutput: 5,    contextWindow: 128_000 },
+  { pattern: /qvq-max/i,              name: 'qvq-max',           minInput: 5,    maxInput: 10,   minOutput: 25,   maxOutput: 40,   contextWindow: 32_000 },
 
-    if (priceMatch) {
-      const price = parseFloat(priceMatch[1].replace(/[¥￥\s]/g, ''));
-      // Qwen charges different rates for input/output
-      const inputPattern = new RegExp(`${pattern.model}[^0-9¥￥]*?输入[^0-9¥￥]*?([¥￥]\\s*[\\d.]+)`, 'i');
-      const outputPattern = new RegExp(`${pattern.model}[^0-9¥￥]*?输出[^0-9¥￥]*?([¥￥]\\s*[\\d.]+)`, 'i');
+  // Long context
+  { pattern: /qwen-long/i,            name: 'qwen-long',         minInput: 0.3,  maxInput: 0.7,  minOutput: 1.5,  maxOutput: 3,    contextWindow: 1_000_000 },
 
-      const inputMatch = html.match(inputPattern);
-      const outputMatch = html.match(outputPattern);
+  // Math
+  { pattern: /qwen-math-plus/i,       name: 'qwen-math-plus',    minInput: 3,    maxInput: 5,    minOutput: 10,   maxOutput: 15,   contextWindow: 32_000 },
 
-      let inputPrice = price;
-      let outputPrice = price;
+  // OCR
+  { pattern: /qwen-vl-ocr/i,          name: 'qwen-vl-ocr',       minInput: 0.2,  maxInput: 0.4,  minOutput: 0.3,  maxOutput: 0.7,  contextWindow: 8192 },
+];
 
-      if (inputMatch && outputMatch) {
-        inputPrice = parseFloat(inputMatch[1].replace(/[¥￥\s]/g, ''));
-        outputPrice = parseFloat(outputMatch[1].replace(/[¥￥\s]/g, ''));
-      }
-
-      if (!isNaN(inputPrice) && !isNaN(outputPrice)) {
-        models.push({
-          model: pattern.model,
-          inputPrice,
-          outputPrice,
-          contextWindow: pattern.context,
-        });
-      }
-    }
-  }
-
-  if (models.length === 0) {
-    errors.push('No models could be parsed from Qwen pricing page. The page structure may have changed.');
-  }
-
-  return { models, errors };
+class QwenScraper extends KnownModelsExtractor {
+  getSourceName(): string { return 'Qwen'; }
+  getSourceUrl(): string { return QWEN_PRICING_URL; }
+  models(): KnownModel[] { return KNOWN_MODELS; }
+  extractMode() { return 'positional' as const; }
+  currency(): string { return 'CNY'; }
+  numberRegex(): RegExp { return new RegExp(NUMBER_REGEX.cny.source, 'g'); }
+  modelHeaderRegex(): RegExp { return /qwen[0-9.\-]/i; }
+  contextWindowLines(): number { return 5; }
 }
 
 export async function scrapeQwenDynamic(): Promise<ScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const prices: ScrapedPrice[] = [];
-
-  try {
-    console.log('🔄 Fetching Qwen pricing...');
-
-    const { models, errors: fetchErrors } = await fetchQwenPricing();
-    errors.push(...fetchErrors);
-
-    console.log(`📦 Found ${models.length} models from Qwen`);
-
-    for (const model of models) {
-      try {
-        // Validate prices
-        if (!validatePrice(model.inputPrice) || !validatePrice(model.outputPrice)) {
-          errors.push(`Invalid price for ${model.model}`);
-          continue;
-        }
-
-        prices.push({
-          modelName: normalizeModelName(model.model),
-          modelSlug: slugify(model.model),
-          inputPricePer1M: model.inputPrice,
-          outputPricePer1M: model.outputPrice,
-          contextWindow: model.contextWindow,
-          isAvailable: true,
-          currency: 'CNY',
-        });
-      } catch (error) {
-        errors.push(`Error processing ${model.model}: ${error}`);
-      }
-    }
-
-    const duration = Date.now() - startTime;
-    console.log(`✅ Qwen scrape completed in ${duration}ms`);
-    console.log(`   - Models processed: ${prices.length}`);
-    console.log(`   - Errors: ${errors.length}`);
-
-    return {
-      source: 'Qwen',
-      success: prices.length > 0,
-      prices,
-      errors: errors.length > 0 ? errors : undefined,
-    };
-  } catch (error) {
-    console.error('❌ Qwen scrape failed:', error);
-    return {
-      source: 'Qwen',
-      success: false,
-      prices: [],
-      errors: [String(error)],
-    };
-  }
+  return new QwenScraper().run();
 }
 
-// CLI test
 if (require.main === module) {
   scrapeQwenDynamic().then(result => {
     console.log('\n📊 Scrape Result:');

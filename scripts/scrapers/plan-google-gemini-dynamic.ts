@@ -1,10 +1,11 @@
 /**
- * Google Gemini Advanced Plan Scraper - Dynamic fetching from Gemini subscription page
+ * Google Gemini Plan Scraper - Dynamic fetching from Gemini subscription page
+ * Uses Playwright for JavaScript-rendered content
  */
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { fetchHTML } from './base-fetcher';
+import { chromium, Browser } from 'playwright';
 
 const GOOGLE_GEMINI_PLANS_URL = 'https://gemini.google/subscriptions';
 
@@ -20,83 +21,147 @@ interface GoogleGeminiPlan {
   region: string;
 }
 
+let _browser: Browser | null = null;
+
+async function getBrowser(): Promise<Browser> {
+  if (!_browser) {
+    _browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
+    });
+  }
+  return _browser;
+}
+
+export async function closeBrowser(): Promise<void> {
+  if (_browser) {
+    await _browser.close();
+    _browser = null;
+  }
+}
+
 /**
- * Fetch and parse Google Gemini subscription plans from their website
+ * Parse price from various formats (USD, JPY, etc.)
+ */
+function parsePrice(text: string): { amount: number; currency: string } | null {
+  // USD format: $20 or $19.99
+  const usdMatch = text.match(/\$\s*(\d+(?:\.\d+)?)/);
+  if (usdMatch) {
+    return { amount: parseFloat(usdMatch[1]), currency: 'USD' };
+  }
+
+  // JPY format: ¥1,200 or ￥1,200 JPY
+  const jpyMatch = text.match(/[￥¥]\s*([\d,]+)/);
+  if (jpyMatch) {
+    return { amount: parseFloat(jpyMatch[1].replace(/,/g, '')), currency: 'JPY' };
+  }
+
+  return null;
+}
+
+/**
+ * Fetch and parse Google Gemini subscription plans using Playwright
  */
 async function fetchGoogleGeminiPlans(): Promise<{ plans: GoogleGeminiPlan[], errors: string[] }> {
-  const result = await fetchHTML(GOOGLE_GEMINI_PLANS_URL);
   const errors: string[] = [];
-
-  if (!result.success || !result.data) {
-    return { plans: [], errors: ['Failed to fetch Google Gemini plans page - no HTML returned'] };
-  }
-
-  const html = result.data;
   const plans: GoogleGeminiPlan[] = [];
 
-  // Extract prices from HTML - only use actual scraped prices
-  const advancedPriceMatch = html.match(/Gemini\s*Advanced[^$]*?\$\s*([\d.]+)/i);
-  const enterpriseMatch = html.match(/Enterprise|Workspace/i);
+  try {
+    const browser = await getBrowser();
+    const page = await browser.newPage();
 
-  // Check if we found any pricing information - NO HARDCODED FALLBACKS
-  if (!advancedPriceMatch && !enterpriseMatch) {
-    return {
-      plans: [],
-      errors: ['No pricing information found on Google Gemini page. The page structure may have changed.']
-    };
-  }
+    // Set locale to English to get consistent pricing
+    await page.setExtraHTTPHeaders({
+      'Accept-Language': 'en-US,en;q=0.9',
+    });
 
-  // Free plan - check if mentioned on page
-  if (html.match(/free|Free|FREE/i)) {
-    const freePlan: GoogleGeminiPlan = {
-      name: 'Gemini Free',
-      priceMonthly: 0,
-      tier: 'free',
-      dailyMessageLimit: undefined,
-      features: ['Access to Gemini models', 'Limited message capacity'],
-      paymentMethods: [],
-      accessFromChina: false,
-      region: 'global',
-    };
-    plans.push(freePlan);
-  }
+    console.log('📄 Navigating to Google Gemini subscriptions page...');
+    await page.goto(GOOGLE_GEMINI_PLANS_URL, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.waitForTimeout(3000);
 
-  // Advanced plan - only add if we found the price
-  if (advancedPriceMatch) {
-    const priceMatch = advancedPriceMatch[0].match(/\$?\s*([\d.]+)/);
-    if (priceMatch) {
-      const advancedPlan: GoogleGeminiPlan = {
-        name: 'Gemini Advanced',
-        priceMonthly: parseFloat(priceMatch[1]),
-        priceYearly: undefined,
-        tier: 'pro',
-        dailyMessageLimit: undefined,
-        features: [], // Features should be extracted from actual page content
-        paymentMethods: ['Credit Card', 'Debit Card', 'Google Pay', 'PayPal'],
-        accessFromChina: false,
-        region: 'global',
-      };
-      plans.push(advancedPlan);
+    // Get body text for parsing
+    const bodyText = await page.evaluate(() => document.body.innerText);
+    console.log('📄 Body text preview:', bodyText.substring(0, 1000));
+
+    await page.close();
+
+    // Parse from body text
+    const lines = bodyText.split('\n').map(l => l.trim()).filter(l => l);
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const searchArea = lines.slice(i, i + 5).join(' ');
+
+      // Look for Gemini Advanced / Google AI Plus (different names in different locales)
+      if (/Gemini\s*Advanced|Google\s*AI\s*Plus|AI\s*Plus/i.test(line) || /Advanced/i.test(line) && /gemini|google/i.test(searchArea)) {
+        // Look for price in nearby lines
+        const priceInfo = parsePrice(searchArea);
+
+        if (priceInfo) {
+          const price = priceInfo.amount;
+
+          // Convert JPY to USD if needed (approximate rate)
+          const priceUSD = priceInfo.currency === 'JPY' ? Math.round(price / 150) : price;
+
+          // Check if this plan already exists
+          if (!plans.find(p => p.name === 'Gemini Advanced')) {
+            plans.push({
+              name: 'Gemini Advanced',
+              priceMonthly: priceUSD,
+              tier: 'pro',
+              dailyMessageLimit: undefined,
+              features: [],
+              paymentMethods: ['Credit Card', 'Debit Card', 'Google Pay', 'PayPal'],
+              accessFromChina: false,
+              region: 'global',
+            });
+            console.log(`  ✅ Extracted: Gemini Advanced - $${priceUSD}/month (from ${priceInfo.currency} ${price})`);
+          }
+        }
+      }
+
+      // Look for Free plan (English: "Free", Japanese: "無料")
+      if (/^(Free|無料)$/i.test(line) || /free\s*(plan|tier)/i.test(line)) {
+        const searchAreaLower = searchArea.toLowerCase();
+        if ((searchAreaLower.includes('gemini') || searchAreaLower.includes('google ai')) && !plans.find(p => p.name === 'Gemini Free')) {
+          plans.push({
+            name: 'Gemini Free',
+            priceMonthly: 0,
+            tier: 'free',
+            dailyMessageLimit: undefined,
+            features: [],
+            paymentMethods: [],
+            accessFromChina: false,
+            region: 'global',
+          });
+          console.log(`  ✅ Extracted: Gemini Free - $0/month`);
+        }
+      }
+
+      // Look for Enterprise/Workspace
+      if (/Enterprise|Google\s*Workspace/i.test(line)) {
+        if (!plans.find(p => p.name === 'Gemini Enterprise')) {
+          plans.push({
+            name: 'Gemini Enterprise',
+            priceMonthly: 0, // Custom pricing
+            tier: 'enterprise',
+            dailyMessageLimit: undefined,
+            features: [],
+            paymentMethods: ['Invoice', 'Contract'],
+            accessFromChina: false,
+            region: 'global',
+          });
+          console.log(`  ✅ Extracted: Gemini Enterprise (custom pricing)`);
+        }
+      }
     }
-  }
 
-  // Enterprise plan - only add if mentioned (custom pricing)
-  if (enterpriseMatch) {
-    const enterprisePlan: GoogleGeminiPlan = {
-      name: 'Gemini Enterprise',
-      priceMonthly: 0, // Custom pricing via Google Workspace
-      tier: 'enterprise',
-      dailyMessageLimit: undefined,
-      features: [],
-      paymentMethods: ['Invoice', 'Contract'],
-      accessFromChina: false,
-      region: 'global',
-    };
-    plans.push(enterprisePlan);
-  }
+    if (plans.length === 0) {
+      errors.push('No plans could be extracted from Google Gemini page. The page structure may have changed.');
+    }
 
-  if (plans.length === 0) {
-    errors.push('No plans could be parsed from Google Gemini pricing page. The page structure may have changed.');
+  } catch (error) {
+    errors.push(`Failed to fetch Google Gemini plans: ${error}`);
   }
 
   return { plans, errors };
@@ -117,16 +182,10 @@ export async function scrapeGoogleGeminiPlans(): Promise<PlanScraperResult> {
 
     for (const plan of googleGeminiPlans) {
       try {
-        // Validate monthly price
-        if (!validatePlanPrice(plan.priceMonthly)) {
+        // Validate monthly price (0 is valid for free/enterprise)
+        if (plan.priceMonthly < 0) {
           errors.push(`Invalid monthly price for ${plan.name}: ${plan.priceMonthly}`);
           continue;
-        }
-
-        // Validate yearly price if present
-        if (plan.priceYearly !== null && plan.priceYearly !== undefined && !validatePlanPrice(plan.priceYearly)) {
-          errors.push(`Invalid yearly price for ${plan.name}: ${plan.priceYearly}`);
-          plan.priceYearly = undefined;
         }
 
         plans.push({
@@ -156,7 +215,7 @@ export async function scrapeGoogleGeminiPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'GoogleGemini-Plans',
-      success: plans.length > 0,
+      success: errors.length === 0 && plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };
@@ -173,8 +232,10 @@ export async function scrapeGoogleGeminiPlans(): Promise<PlanScraperResult> {
 
 // CLI test
 if (require.main === module) {
-  scrapeGoogleGeminiPlans().then(result => {
-    console.log('\n📊 Scrape Result:');
-    console.log(JSON.stringify(result, null, 2));
-  });
+  scrapeGoogleGeminiPlans()
+    .then(result => {
+      console.log('\n📊 Scrape Result:');
+      console.log(JSON.stringify(result, null, 2));
+    })
+    .finally(() => closeBrowser());
 }

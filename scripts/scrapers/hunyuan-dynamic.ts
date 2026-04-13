@@ -1,144 +1,61 @@
 /**
- * Hunyuan / 腾讯混元 API Scraper - Dynamic fetching from pricing page
- * NO FALLBACK DATA - Fails cleanly when scraping fails
+ * Hunyuan / 腾讯混元 API Scraper — Tencent Cloud pricing docs.
+ * NO FALLBACK DATA — fails cleanly when scraping fails.
+ *
+ * Migrated 2026-04-13 to use KnownModelsExtractor base class.
+ * Original was ~270 lines; this is ~55 lines.
+ *
+ * Prices on this page are CNY (¥/元 per 1M tokens).
  */
-
-import type { ScrapedPrice, ScraperResult } from '../utils/validator';
-import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { fetchHTML } from './base-fetcher';
+import type { ScraperResult } from '../utils/validator';
+import { KnownModelsExtractor, NUMBER_REGEX, type KnownModel } from './lib/known-models-extractor';
 
 const HUNYUAN_PRICING_URL = 'https://cloud.tencent.com/document/product/1729/97731';
 
-interface HunyuanModel {
-  model: string;
-  inputPrice: number;
-  outputPrice: number;
-  contextWindow: number;
-}
+const KNOWN_MODELS: KnownModel[] = [
+  // HY 2.0 (Tencent's current flagship)
+  { pattern: /tencent.*hy.*2\.0.*think|hy.*2\.0.*think/i,    name: 'hy-2.0-think',     minInput: 3,   maxInput: 5,   minOutput: 14,  maxOutput: 18, contextWindow: 128_000 },
+  { pattern: /tencent.*hy.*2\.0.*instruct|hy.*2\.0.*instruct/i, name: 'hy-2.0-instruct', minInput: 2,   maxInput: 5,   minOutput: 6,   maxOutput: 12, contextWindow: 128_000 },
 
-/**
- * Fetch and parse Hunyuan pricing from their website
- */
-async function fetchHunyuanPricing(): Promise<{ models: HunyuanModel[], errors: string[] }> {
-  const result = await fetchHTML(HUNYUAN_PRICING_URL);
-  const errors: string[] = [];
+  // Hunyuan-T1 / TurboS
+  { pattern: /hunyuan-t1(?!-vision)/i,              name: 'hunyuan-t1',                minInput: 0.5, maxInput: 2,   minOutput: 2,   maxOutput: 6,  contextWindow: 128_000 },
+  { pattern: /hunyuan-turbos(?!-vision)/i,          name: 'hunyuan-turbos',            minInput: 0.5, maxInput: 1.5, minOutput: 1,   maxOutput: 3,  contextWindow: 128_000 },
+  { pattern: /hunyuan-a13b/i,                       name: 'hunyuan-a13b',              minInput: 0.3, maxInput: 1,   minOutput: 1,   maxOutput: 3,  contextWindow: 128_000 },
 
-  if (!result.success || !result.data) {
-    return { models: [], errors: ['Failed to fetch Hunyuan pricing page'] };
-  }
+  // Specialized
+  { pattern: /hunyuan-large-role/i,                 name: 'hunyuan-large-role',        minInput: 1,   maxInput: 4,   minOutput: 6,   maxOutput: 12, contextWindow: 128_000 },
+  { pattern: /hunyuan-translation-lite/i,           name: 'hunyuan-translation-lite',  minInput: 0.5, maxInput: 2,   minOutput: 2,   maxOutput: 4,  contextWindow: 128_000 },
+  { pattern: /hunyuan-translation(?!-lite)/i,       name: 'hunyuan-translation',       minInput: 0.5, maxInput: 2,   minOutput: 2,   maxOutput: 5,  contextWindow: 128_000 },
 
-  const html = result.data;
-  const models: HunyuanModel[] = [];
+  // Vision
+  { pattern: /tencent.*hy.*vision.*1\.5/i,          name: 'hy-vision-1.5-instruct',    minInput: 2,   maxInput: 4,   minOutput: 6,   maxOutput: 12, contextWindow: 32_000 },
+  { pattern: /hunyuan-turbos-vision-video/i,        name: 'hunyuan-turbos-vision-video', minInput: 2, maxInput: 4,   minOutput: 6,   maxOutput: 12, contextWindow: 32_000 },
+  { pattern: /hunyuan-turbos-vision(?!-video)/i,    name: 'hunyuan-turbos-vision',     minInput: 2,   maxInput: 4,   minOutput: 6,   maxOutput: 12, contextWindow: 32_000 },
+  { pattern: /hunyuan-t1-vision(?!-video)/i,        name: 'hunyuan-t1-vision',         minInput: 2,   maxInput: 4,   minOutput: 6,   maxOutput: 12, contextWindow: 32_000 },
 
-  // Known Hunyuan model patterns (2025-2026)
-  const modelPatterns = [
-    {
-      model: 'hunyuan-pro',
-      inputPattern: /hunyuan-pro[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-    {
-      model: 'hunyuan-lite',
-      inputPattern: /hunyuan-lite[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-    {
-      model: 'hunyuan-standard',
-      inputPattern: /hunyuan-standard[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-    {
-      model: 'hunyuan-turbo',
-      inputPattern: /hunyuan-turbo[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-  ];
+  // Embedding
+  { pattern: /hunyuan-embedding/i,                  name: 'hunyuan-embedding',         minInput: 0.3, maxInput: 1,   minOutput: 0.3, maxOutput: 1,  contextWindow: 8192 },
 
-  for (const pattern of modelPatterns) {
-    const priceMatch = html.match(pattern.inputPattern);
+  // Legacy
+  { pattern: /hunyuan-pro(?!-role)/i,               name: 'hunyuan-pro',               minInput: 3,   maxInput: 8,   minOutput: 8,   maxOutput: 20, contextWindow: 128_000 },
+  { pattern: /hunyuan-standard/i,                   name: 'hunyuan-standard',          minInput: 2,   maxInput: 5,   minOutput: 5,   maxOutput: 12, contextWindow: 128_000 },
+  { pattern: /hunyuan-turbo(?!s)/i,                 name: 'hunyuan-turbo',             minInput: 1,   maxInput: 3,   minOutput: 3,   maxOutput: 8,  contextWindow: 128_000 },
+];
 
-    if (priceMatch) {
-      const price = parseFloat(priceMatch[1].replace(/[¥￥\s]/g, ''));
-      // Hunyuan charges same rate for input/output
-      const inputPrice = price;
-      const outputPrice = price;
-
-      if (!isNaN(inputPrice)) {
-        models.push({
-          model: pattern.model,
-          inputPrice,
-          outputPrice,
-          contextWindow: pattern.context,
-        });
-      }
-    }
-  }
-
-  if (models.length === 0) {
-    errors.push('No models could be parsed from Hunyuan pricing page. The page structure may have changed.');
-  }
-
-  return { models, errors };
+class HunyuanScraper extends KnownModelsExtractor {
+  getSourceName(): string { return 'Hunyuan-Tencent'; }
+  getSourceUrl(): string { return HUNYUAN_PRICING_URL; }
+  models(): KnownModel[] { return KNOWN_MODELS; }
+  extractMode() { return 'positional' as const; }
+  currency(): string { return 'CNY'; }
+  numberRegex(): RegExp { return new RegExp(NUMBER_REGEX.cny.source, 'g'); }
+  modelHeaderRegex(): RegExp { return /(hunyuan|tencent.*hy)/i; }
 }
 
 export async function scrapeHunyuanDynamic(): Promise<ScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const prices: ScrapedPrice[] = [];
-
-  try {
-    console.log('🔄 Fetching Hunyuan pricing...');
-
-    const { models, errors: fetchErrors } = await fetchHunyuanPricing();
-    errors.push(...fetchErrors);
-
-    console.log(`📦 Found ${models.length} models from Hunyuan`);
-
-    for (const model of models) {
-      try {
-        // Validate prices
-        if (!validatePrice(model.inputPrice) || !validatePrice(model.outputPrice)) {
-          errors.push(`Invalid price for ${model.model}`);
-          continue;
-        }
-
-        prices.push({
-          modelName: normalizeModelName(model.model),
-          modelSlug: slugify(model.model),
-          inputPricePer1M: model.inputPrice,
-          outputPricePer1M: model.outputPrice,
-          contextWindow: model.contextWindow,
-          isAvailable: true,
-          currency: 'CNY',
-        });
-      } catch (error) {
-        errors.push(`Error processing ${model.model}: ${error}`);
-      }
-    }
-
-    const duration = Date.now() - startTime;
-    console.log(`✅ Hunyuan scrape completed in ${duration}ms`);
-    console.log(`   - Models processed: ${prices.length}`);
-    console.log(`   - Errors: ${errors.length}`);
-
-    return {
-      source: 'Hunyuan-Tencent',
-      success: prices.length > 0,
-      prices,
-      errors: errors.length > 0 ? errors : undefined,
-    };
-  } catch (error) {
-    console.error('❌ Hunyuan scrape failed:', error);
-    return {
-      source: 'Hunyuan-Tencent',
-      success: false,
-      prices: [],
-      errors: [String(error)],
-    };
-  }
+  return new HunyuanScraper().run();
 }
 
-// CLI test
 if (require.main === module) {
   scrapeHunyuanDynamic().then(result => {
     console.log('\n📊 Scrape Result:');

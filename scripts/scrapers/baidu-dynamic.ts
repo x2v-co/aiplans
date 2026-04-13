@@ -128,7 +128,7 @@ export async function scrapeBaiduDynamic(): Promise<ScraperResult> {
 
     return {
       source: 'Baidu-ERNIE',
-      success: prices.length > 0,
+      success: errors.length === 0 && prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };

@@ -1,3 +1,8 @@
+/**
+ * OpenRouter API Scraper - Fetches pricing from OpenRouter /v1/models API
+ * NO FALLBACK DATA - Fails cleanly when scraping fails
+ */
+
 import type { ScrapedPrice, ScraperResult } from '../utils/validator';
 import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
 
@@ -166,7 +171,7 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
 
     return {
       source: 'OpenRouter',
-      success: true,
+      success: errors.length === 0 && prices.length > 0,
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };

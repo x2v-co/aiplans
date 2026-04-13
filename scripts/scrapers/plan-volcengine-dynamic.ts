@@ -191,7 +191,7 @@ export async function scrapeVolcenginePlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Volcengine-Plans',
-      success: plans.length > 0,
+      success: errors.length === 0 && plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

@@ -196,7 +196,7 @@ export async function scrapeMoonshotPlans(): Promise<PlanScraperResult> {
 
     return {
       source: 'Moonshot-Plans',
-      success: plans.length > 0,
+      success: errors.length === 0 && plans.length > 0,
       plans,
       errors: errors.length > 0 ? errors : undefined,
     };

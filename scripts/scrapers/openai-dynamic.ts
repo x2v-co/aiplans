@@ -1,149 +1,62 @@
 /**
- * OpenAI API Scraper - Uses Playwright for real HTML parsing
- * NO FALLBACK DATA - Fails cleanly when scraping fails
+ * OpenAI API Scraper — uses Playwright to parse https://openai.com/api/pricing/.
+ * NO FALLBACK DATA — fails cleanly when scraping fails.
+ *
+ * Migrated 2026-04-13 to use KnownModelsExtractor base class.
+ * Original was ~270 lines; this is ~50 lines.
+ *
+ * Each KNOWN_MODELS entry defines:
+ *   - pattern: regex matching the model header on the pricing page
+ *   - name: canonical slug
+ *   - min/maxInput, min/maxOutput: validation range (rejects parsed prices outside)
  */
-
-import type { ScrapedPrice, ScraperResult } from '../utils/validator';
-import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { PlaywrightScraper, PriceData } from './lib/playwright-scraper';
+import type { ScraperResult } from '../utils/validator';
+import { KnownModelsExtractor, type KnownModel } from './lib/known-models-extractor';
 
 const OPENAI_PRICING_URL = 'https://openai.com/api/pricing/';
 
-class OpenAIScraper extends PlaywrightScraper {
-  getSourceName(): string {
-    return 'OpenAI-API';
-  }
+const KNOWN_MODELS: KnownModel[] = [
+  // GPT-5.4 series (current flagship as of 2026-03)
+  { pattern: /GPT-5\.4\s+nano/i, name: 'gpt-5.4-nano', minInput: 0.18, maxInput: 0.22, minOutput: 1.2, maxOutput: 1.3, contextWindow: 128_000 },
+  { pattern: /GPT-5\.4\s+mini/i, name: 'gpt-5.4-mini', minInput: 0.65, maxInput: 0.75, minOutput: 4.5, maxOutput: 5.5, contextWindow: 128_000 },
+  { pattern: /GPT-5\.4(?!\s*(mini|nano))/i, name: 'gpt-5.4', minInput: 2.5, maxInput: 3.0, minOutput: 14.5, maxOutput: 15.5, contextWindow: 128_000 },
 
-  getSourceUrl(): string {
-    return OPENAI_PRICING_URL;
-  }
+  // GPT-4o series
+  { pattern: /GPT-4o\s+mini/i, name: 'gpt-4o-mini', minInput: 0.12, maxInput: 0.18, minOutput: 0.45, maxOutput: 0.55, contextWindow: 128_000 },
+  { pattern: /GPT-4o(?!\s*mini)/i, name: 'gpt-4o', minInput: 2.0, maxInput: 2.75, minOutput: 7.5, maxOutput: 10.5, contextWindow: 128_000 },
 
-  async scrape(): Promise<ScraperResult> {
-    const errors: string[] = [];
-    const prices: PriceData[] = [];
+  // GPT-4.1 series (launched 2025-04-14)
+  { pattern: /GPT-4\.1\s+nano/i, name: 'gpt-4.1-nano', minInput: 0.08, maxInput: 0.12, minOutput: 0.35, maxOutput: 0.45, contextWindow: 1_000_000 },
+  { pattern: /GPT-4\.1\s+mini/i, name: 'gpt-4.1-mini', minInput: 0.35, maxInput: 0.45, minOutput: 1.5, maxOutput: 1.7, contextWindow: 1_000_000 },
+  { pattern: /GPT-4\.1(?!\s*(mini|nano))/i, name: 'gpt-4.1', minInput: 1.8, maxInput: 2.2, minOutput: 7.5, maxOutput: 8.5, contextWindow: 1_000_000 },
 
-    await this.navigate(OPENAI_PRICING_URL);
+  // GPT-4 legacy
+  { pattern: /GPT-4\s+turbo/i, name: 'gpt-4-turbo', minInput: 9, maxInput: 11, minOutput: 29, maxOutput: 31, contextWindow: 128_000 },
+  { pattern: /GPT-4(?!\s*[.o])/i, name: 'gpt-4', minInput: 29, maxInput: 31, minOutput: 59, maxOutput: 61, contextWindow: 8_192 },
 
-    // Wait for pricing tables to load
-    await this.page!.waitForTimeout(2000);
+  // GPT-3.5
+  { pattern: /GPT-3\.5\s+turbo/i, name: 'gpt-3.5-turbo', minInput: 0.45, maxInput: 0.55, minOutput: 1.4, maxOutput: 1.6, contextWindow: 16_385 },
 
-    // Try to extract pricing from the page
-    // OpenAI's pricing page structure may vary, so we try multiple approaches
+  // o-series reasoning models
+  { pattern: /o1\s+mini/i, name: 'o1-mini', minInput: 1.8, maxInput: 2.2, minOutput: 7, maxOutput: 9, contextWindow: 128_000 },
+  { pattern: /o1\s+preview/i, name: 'o1-preview', minInput: 14, maxInput: 16, minOutput: 55, maxOutput: 65, contextWindow: 128_000 },
+  { pattern: /o3\s+mini/i, name: 'o3-mini', minInput: 0.9, maxInput: 1.2, minOutput: 3.5, maxOutput: 4.5, contextWindow: 200_000 },
+  { pattern: /o3\s+pro/i, name: 'o3-pro', minInput: 19, maxInput: 21, minOutput: 79, maxOutput: 81, contextWindow: 200_000 },
+  { pattern: /o4\s+mini/i, name: 'o4-mini', minInput: 0.9, maxInput: 1.2, minOutput: 3.5, maxOutput: 4.5, contextWindow: 128_000 },
+  { pattern: /o3(?!\s*(mini|pro))/i, name: 'o3', minInput: 1.8, maxInput: 2.2, minOutput: 7.5, maxOutput: 8.5, contextWindow: 200_000 },
+  { pattern: /o1(?!\s*(mini|preview))/i, name: 'o1', minInput: 14, maxInput: 16, minOutput: 55, maxOutput: 65, contextWindow: 200_000 },
+];
 
-    // Approach 1: Look for pricing tables
-    const pricingRows = await this.page!.$$('[class*="pricing"] tr, [class*="PricingTable"] tr, table tbody tr');
-
-    if (pricingRows.length > 0) {
-      for (const row of pricingRows) {
-        try {
-          const text = await row.textContent();
-          if (!text) continue;
-
-          // Extract model name and prices from row text
-          const modelMatch = text.match(/(gpt-4[\w.-]*|gpt-3\.5[\w.-]*|o[1-9][\w.-]*|chatgpt-4[\w.-]*)/i);
-          if (!modelMatch) continue;
-
-          const modelName = modelMatch[1].toLowerCase();
-
-          // Extract prices - look for $X.XX patterns
-          const priceMatches = text.matchAll(/\$([\d.]+)/g);
-          const priceValues = Array.from(priceMatches).map(m => parseFloat(m[1]));
-
-          if (priceValues.length >= 2) {
-            const inputPrice = priceValues[0];
-            const outputPrice = priceValues[1];
-
-            if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
-              prices.push({
-                modelName: normalizeModelName(modelName),
-                inputPricePer1M: inputPrice,
-                outputPricePer1M: outputPrice,
-                contextWindow: this.inferContextWindow(modelName),
-                isAvailable: true,
-                currency: 'USD',
-              });
-            }
-          }
-        } catch (error) {
-          // Skip rows that fail to parse
-        }
-      }
-    }
-
-    // Approach 2: Look for structured data or specific selectors
-    if (prices.length === 0) {
-      const allText = await this.page!.textContent('body') || '';
-
-      // Try to find model names and their associated prices
-      const models = [
-        'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo',
-        'o1', 'o1-mini', 'o1-preview', 'o3-mini', 'gpt-4.1', 'gpt-4.1-mini'
-      ];
-
-      for (const model of models) {
-        // Look for price patterns near model name
-        const modelSection = this.extractSectionAroundModel(allText, model);
-        if (!modelSection) continue;
-
-        const priceMatches = modelSection.matchAll(/\$?([\d.]+)\s*(?:per\s*)?(?:million|1M)/gi);
-        const priceValues = Array.from(priceMatches).map(m => parseFloat(m[1]));
-
-        if (priceValues.length >= 2) {
-          prices.push({
-            modelName: normalizeModelName(model),
-            inputPricePer1M: priceValues[0],
-            outputPricePer1M: priceValues[1],
-            contextWindow: this.inferContextWindow(model),
-            isAvailable: true,
-            currency: 'USD',
-          });
-        }
-      }
-    }
-
-    if (prices.length === 0) {
-      errors.push('No pricing data could be extracted from the page. The page structure may have changed.');
-    }
-
-    return {
-      success: errors.length === 0 && prices.length > 0,
-      source: this.getSourceName(),
-      prices,
-      errors: errors.length > 0 ? errors : undefined,
-    };
-  }
-
-  private extractSectionAroundModel(text: string, model: string): string | null {
-    const index = text.toLowerCase().indexOf(model.toLowerCase());
-    if (index === -1) return null;
-
-    // Extract 500 chars before and after
-    const start = Math.max(0, index - 500);
-    const end = Math.min(text.length, index + model.length + 500);
-    return text.slice(start, end);
-  }
-
-  private inferContextWindow(model: string): number {
-    const contextWindows: Record<string, number> = {
-      'gpt-4o': 128000,
-      'gpt-4o-mini': 128000,
-      'gpt-4-turbo': 128000,
-      'gpt-4': 8192,
-      'gpt-3.5-turbo': 16385,
-      'o1': 200000,
-      'o1-mini': 128000,
-      'o1-preview': 128000,
-      'o3-mini': 200000,
-      'gpt-4.1': 128000,
-      'gpt-4.1-mini': 128000,
-    };
-    return contextWindows[model.toLowerCase()] || 128000;
-  }
+class OpenAIScraper extends KnownModelsExtractor {
+  getSourceName(): string { return 'OpenAI-API'; }
+  getSourceUrl(): string { return OPENAI_PRICING_URL; }
+  models(): KnownModel[] { return KNOWN_MODELS; }
+  // OpenAI's page is heavy JS + occasional Cloudflare challenge
+  waitAfterNav(): number { return 8000; }
 }
 
 export async function scrapeOpenAIDynamic(): Promise<ScraperResult> {
-  const scraper = new OpenAIScraper();
-  return scraper.run();
+  return new OpenAIScraper().run();
 }
 
 // CLI test
