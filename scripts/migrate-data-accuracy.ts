@@ -80,6 +80,41 @@ const MIGRATIONS: Migration[] = [
        WHERE features ? 'notes' OR features ? 'contactSales';
     `,
   },
+  {
+    name: '004_add_plans_source_column',
+    sql: `
+      -- Source of truth for each plan row:
+      --   'scraper' = inserted/maintained by a plan-*-dynamic.ts scraper
+      --   'manual'  = inserted by hand or fix-plans-audit.ts (web-verified
+      --               ground truth that may not appear on the vendor's
+      --               public marketing page, e.g. claude-team-premium)
+      -- cleanupOutdatedPlans() must only delete source='scraper' rows so
+      -- that scrapers can never wipe out manually-curated entries.
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS source text DEFAULT 'scraper';
+
+      -- Backfill: any plan whose slug matches a NEW_PLANS entry from
+      -- fix-plans-audit.ts is manual. Listed explicitly so the migration
+      -- doesn't accidentally re-classify legitimate scraper rows.
+      UPDATE plans SET source = 'manual'
+       WHERE slug IN (
+         -- MiniMax 6 official Token Plan tiers
+         'minimax-standard-starter', 'minimax-standard-plus',
+         'minimax-standard-max', 'minimax-highspeed-plus',
+         'minimax-highspeed-max', 'minimax-highspeed-ultra',
+         -- OpenAI plans referenced by config but not always on pricing page
+         'chatgpt-team', 'chatgpt-enterprise',
+         -- Anthropic plans (Max 5x/20x and Team Premium are not on the
+         -- main marketing page)
+         'claude-free', 'claude-max', 'claude-max-5x', 'claude-max-20x',
+         'claude-team', 'claude-team-premium', 'claude-enterprise',
+         -- Google AI tiers (Plus and Ultra are post-Gemini-Advanced rebrand)
+         'gemini-advanced', 'google-ai-plus', 'google-ai-ultra',
+         -- Mistral Le Chat tiers
+         'le-chat-pro', 'le-chat-team'
+       )
+         AND source IS DISTINCT FROM 'manual';
+    `,
+  },
 ];
 
 async function main() {

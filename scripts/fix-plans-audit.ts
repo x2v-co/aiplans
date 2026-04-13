@@ -414,6 +414,9 @@ async function runNewPlans() {
         is_official: true,
         last_verified: new Date().toISOString(),
         features: Object.keys(featuresJson).length > 0 ? featuresJson : null,
+        // Mark as manually curated so cleanupOutdatedPlans won't wipe these
+        // when a plan scraper runs and doesn't see them on the public page.
+        source: 'manual',
       };
       const { error } = await supabaseAdmin.from('plans').insert(insertRow);
       if (error) {

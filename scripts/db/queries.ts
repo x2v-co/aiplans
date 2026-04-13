@@ -529,33 +529,46 @@ export async function deletePlan(planId: number) {
 }
 
 /**
- * Cleanup outdated plans for a provider
- * Deletes plans that are not in the current slug list
+ * Cleanup outdated plans for a provider.
+ *
+ * Only deletes rows where source='scraper' (the default). Manually-curated
+ * plans inserted via fix-plans-audit.ts have source='manual' and are
+ * preserved across scraper runs even when their slug isn't in the
+ * scraper's current output. This protects ground-truth tiers like
+ * Claude Max 5x/20x and Google AI Plus that aren't on every vendor's
+ * marketing page but still exist as real subscriptions.
  */
 export async function cleanupOutdatedPlans(providerId: number, currentSlugs: string[]) {
-  // Get all existing plans for this provider
-  const existingPlans = await getPlansByProviderId(providerId);
+  // Get all existing scraper-managed plans for this provider. Manual rows
+  // are intentionally excluded so they cannot be deleted by a scraper run.
+  const { data: existingPlans, error } = await supabaseAdmin
+    .from('plans')
+    .select('id, name, slug, source')
+    .eq('provider_id', providerId)
+    .or('source.eq.scraper,source.is.null');
+
+  if (error) throw error;
 
   // Find plans to delete (slugs not in current list)
-  const plansToDelete = existingPlans.filter(plan => !currentSlugs.includes(plan.slug));
+  const plansToDelete = (existingPlans ?? []).filter(plan => !currentSlugs.includes(plan.slug));
 
   if (plansToDelete.length > 0) {
-    console.log(`🗑️  Deleting ${plansToDelete.length} outdated plans for provider ${providerId}`);
+    console.log(`🗑️  Deleting ${plansToDelete.length} outdated scraper plans for provider ${providerId}`);
     for (const plan of plansToDelete) {
       try {
         await deletePlan(plan.id);
         console.log(`   - Deleted: ${plan.name} (${plan.slug})`);
-      } catch (error) {
-        console.error(`   - Failed to delete plan ${plan.name}:`, error);
+      } catch (e) {
+        console.error(`   - Failed to delete plan ${plan.name}:`, e);
       }
     }
   } else {
-    console.log(`✅ No outdated plans to delete for provider ${providerId}`);
+    console.log(`✅ No outdated scraper plans to delete for provider ${providerId}`);
   }
 
   return {
     deleted: plansToDelete.length,
-    remaining: existingPlans.length - plansToDelete.length,
+    remaining: (existingPlans?.length ?? 0) - plansToDelete.length,
   };
 }
 
