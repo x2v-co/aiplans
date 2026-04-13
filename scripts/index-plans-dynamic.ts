@@ -21,6 +21,8 @@ import {
   deleteModelsForPlan,
 } from './db/queries';
 import type { PlanScraperResult, ScrapedPlan } from './utils/plan-validator';
+import { normalizeSlug } from './utils/model-normalizer';
+import { PROVIDER_PLAN_MODEL_SLUGS } from './config/plan-model-slugs';
 
 // Type definition for provider config
 interface ProviderConfig {
@@ -33,78 +35,6 @@ interface ProviderConfig {
   region: string;
   access_from_china: boolean;
 }
-
-// Product slugs for each provider (from API scrapers)
-// These are the models/products available in subscription plans
-const PRODUCT_SLUGS: Record<string, Record<string, string[]>> = {
-  openai: {
-    'chatgpt-free': ['gpt-4o-mini'],
-    'chatgpt-plus': ['gpt-4o', 'gpt-4o-mini'],
-    'chatgpt-team': ['gpt-4o', 'gpt-4o-mini', 'o4', 'o4-mini-high', 'gpt-4-turbo', 'gpt-5.2-high'],
-    'chatgpt-enterprise': ['gpt-4o', 'gpt-4o-mini', 'o4', 'o4-mini-high', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-5.2-high', 'gpt-5.2'],
-    'chatgpt-pro': ['o4', 'o4-mini-high', 'gpt-4o', 'gpt-4o-mini', 'gpt-5.2-high', 'gpt-5.2', 'o3', 'o3-pro'],
-  },
-  anthropic: {
-    'claude-free': ['claude-3-haiku-4-5'],
-    'claude-pro': ['claude-3-7-sonnet', 'claude-sonnet-4.6', 'claude-opus-4.6', 'claude-3-5-sonnet', 'claude-3-5-haiku'],
-    'claude-team': ['claude-3-7-sonnet', 'claude-sonnet-4.6', 'claude-opus-4.6'],
-  },
-  google: {
-    'gemini-free': ['gemini-1.5-flash', 'gemini-2.5-flash-lite', 'gemini-3-flash'],
-    'gemini-advanced': ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash-exp', 'gemini-2.5-pro', 'gemini-3-pro', 'gemini-3.1-pro', 'gemini-3.1-pro-preview-custom-tools'],
-  },
-  mistral: {
-    'mistral-free': ['mistral-small', 'mistral-7b'],
-    'mistral-pro': ['mistral-large', 'mistral-small', 'mistral-7b'],
-    'mistral-team': ['mistral-large', 'mistral-small', 'mistral-7b'],
-  },
-  minimax: {
-    'minimax-free': ['minimax-m2.5'],
-    'minimax-pro': ['minimax-m2.5'],
-    'minimax-team': ['minimax-m2.5'],
-  },
-  'minimax-global': {
-    'minimax-global-free': ['minimax-m2.5'],
-    'minimax-global-pro': ['minimax-m2.5'],
-    'minimax-global-team': ['minimax-m2.5'],
-  },
-  zhipu: {
-    'glm-coding-team': ['glm-4-flash'],
-    'glm-coding-lite': ['glm-4', 'glm-4-flash', 'glm-5'],
-    'glm-coding-pro': ['glm-4', 'glm-4-flash', 'glm-4-air', 'glm-4.5-air', 'glm-5'],
-    'glm-coding-max': ['glm-4', 'glm-4-flash', 'glm-4-air', 'glm-4.5-air', 'glm-4.7-flash', 'glm-5'],
-  },
-  'zhipu-global': {
-    'glm-global-free': ['glm-4-flash', 'glm-4-flashx'],
-    'glm-global-pro': ['glm-4', 'glm-4-plus', 'glm-5'],
-    'glm-global-team': ['glm-4', 'glm-4-plus', 'glm-4-long', 'glm-5'],
-  },
-  moonshot: {
-    'kimi-free': ['moonshot-v1-8k'],
-    'kimi-pro': ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
-    'kimi-team': ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
-    'kimi-enterprise': ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
-    'kimi-coding-pro': ['moonshot-v1-8k', 'moonshot-v1-32k'],
-  },
-  baidu: {
-    'ernie-free': ['ernie-speed-128k'],
-    'ernie-pro': ['ernie-speed-128k', 'ernie-lite-8k', 'ernie-turbo-8k'],
-    'ernie-team': ['ernie-speed-128k', 'ernie-lite-8k', 'ernie-turbo-8k'],
-  },
-  volcengine: {
-    'seed-free-trial': ['doubao-seed-2.0-lite', 'doubao-seed-2.0'],
-    'seed-lite': ['doubao-seed-2.0-code', 'doubao-seed-2.0', 'glm-4.7-flash', 'deepseek-v3.2', 'kimi-k2.5'],
-    'seed-pro': ['doubao-seed-2.0-code', 'doubao-seed-2.0', 'glm-4.7-flash', 'deepseek-v3.2', 'kimi-k2.5'],
-    'seed-enterprise': ['doubao-seed-2.0-code', 'doubao-seed-2.0', 'glm-4.7-flash', 'deepseek-v3.2', 'kimi-k2.5'],
-  },
-  qwen: {
-    'qwen-free-trial': [],  // Free trial - no specific model restrictions
-    'qwen-lite': ['qwen-plus', 'qwen-max'],  // ¥7.9/month
-    'qwen-pro': ['qwen3.5-plus-2026-02-15', 'qwen-max', 'qwen-plus', 'kimi-k2.5', 'minimax-m2.5', 'glm-5'],  // ¥39.9/month - includes cross-provider models
-    'qwen-token-pack': [],  // Token pack - no specific model restrictions
-    'qwen-enterprise': ['qwen-turbo', 'qwen-plus', 'qwen-max'],  // Enterprise - all core models
-  },
-};
 
 // Provider configuration with invite links and metadata
 const PROVIDER_CONFIG: Record<string, ProviderConfig> = {
@@ -318,7 +248,9 @@ async function savePlansToDatabase(
       });
 
       // Handle model-plan relations
-      const productSlugs = plan.productSlugs || PRODUCT_SLUGS[providerKey]?.[plan.planSlug] || [];
+      const productSlugs = normalizeProductSlugs(
+        plan.productSlugs || PROVIDER_PLAN_MODEL_SLUGS[providerKey]?.[plan.planSlug] || []
+      );
       if (productSlugs.length > 0) {
         // First, delete existing model relations for this plan
         await deleteModelsForPlan(savedPlan.id);
@@ -359,6 +291,17 @@ async function savePlansToDatabase(
   if (currentSlugs.length > 0) {
     await cleanupOutdatedPlans(provider.id, currentSlugs);
   }
+}
+
+function normalizeProductSlugs(productSlugs: string[]): string[] {
+  const normalized = new Set<string>();
+
+  for (const productSlug of productSlugs) {
+    if (!productSlug) continue;
+    normalized.add(normalizeSlug(productSlug));
+  }
+
+  return Array.from(normalized);
 }
 
 /**

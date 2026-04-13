@@ -1,72 +1,8 @@
 #!/usr/bin/env tsx
 
 import { supabaseAdmin, getModelBySlug } from './db/queries';
-
-// Plan -> Models mapping
-// Each plan should be associated with models that are covered by that plan
-const PLAN_MODELS: Record<string, string[]> = {
-  // ChatGPT plans -> ChatGPT models
-  'chatgpt-free': ['gpt-4o-mini', 'gpt-4o'],
-  'chatgpt-plus': ['gpt-4o-mini', 'gpt-4o'],
-  'chatgpt-pro': ['gpt-4o-mini', 'gpt-4o'],
-  'chatgpt-team': ['gpt-4o-mini', 'gpt-4o'],
-  'chatgpt-enterprise': ['gpt-4o-mini', 'gpt-4o'],
-
-  // Claude plans -> Claude models
-  'claude-pro': ['claude-sonnet-4.6'],
-  'claude-team': ['claude-sonnet-4.6'],
-  'claude-enterprise': ['claude-sonnet-4.6'],
-
-  // Gemini plans -> Gemini models
-  'gemini-free': ['gemini-1.5-pro', 'gemini-1.5-flash'],
-  'gemini-advanced': ['gemini-3-pro', 'gemini-3-flash'],
-
-  // Google One AI -> Google models
-  'google-one-ai-premium': ['gemini-3-pro', 'gemini-3-flash'],
-
-  // Minimax plans -> Minimax models
-  'minimax-free': ['minimax-m2.5'],
-  'minimax-lite': ['minimax-m2.1'],
-  'minimax-pro': ['minimax-m2.5'],
-  'minimax-global-free': ['minimax-m2.5'],
-  'minimax-global-lite': ['minimax-m2.1'],
-  'minimax-global-pro': ['minimax-m2.5'],
-
-  // GLM Coding plans -> GLM models
-  'glm-coding-lite': ['glm-4.7'],
-  'glm-coding-pro': ['glm-5'],
-  'glm-coding-max': ['glm-4.7'],
-  'glm-coding-team': ['glm-5'],
-
-  // Z.AI plans -> GLM models (Z.ai is Zhipu)
-  'z-ai-free': ['glm-4.7'],
-  'z-ai-lite': ['glm-5'],
-  'z-ai-pro': ['glm-4.7'],
-
-  // Kimi plans -> Kimi models
-  'kimi-free': ['kimi-k2.5-thinking'],
-  'kimi-basic': ['kimi-k2.5-instant'],
-  'kimi-pro': ['kimi-k2.5-thinking'],
-  'kimi-team': ['kimi-k2.5-thinking'],
-  'kimi-enterprise': ['kimi-k2.5-thinking'],
-
-  // ERNIE plans -> ERNIE models
-  'ernie-free': ['ernie-bot-4-turbo'],
-  'ernie-monthly': ['ernie-bot-4-turbo'],
-  'ernie-annual': ['ernie-bot-4-turbo'],
-
-  // Seed plans -> Seed models
-  'seed-free-trial': ['seed-2.0'],
-  'seed-lite': ['seed-2.0'],
-  'seed-pro': ['seed-2.0'],
-  'seed-enterprise': ['seed-2.0'],
-
-  // Qwen plans -> Qwen models
-  'qwen-free-trial': ['qwen3.5-397b'],
-  'qwen-pay-as-you-go': ['qwen-max'],
-  'qwen-token-pack': ['qwen-max'],
-  'qwen-enterprise': ['qwen-max'],
-};
+import { normalizeSlug } from './utils/model-normalizer';
+import { PLAN_MODEL_SLUGS } from './config/plan-model-slugs';
 
 async function main() {
   console.log('Adding model-plan mappings...');
@@ -84,7 +20,7 @@ async function main() {
 
   for (const plan of plans || []) {
     const planSlug = plan.slug;
-    const modelSlugs = PLAN_MODELS[planSlug];
+    const modelSlugs = PLAN_MODEL_SLUGS[planSlug];
 
     if (!modelSlugs) {
       console.log(`  ⚠️  No models defined for plan: ${planSlug}`);
@@ -93,7 +29,9 @@ async function main() {
 
     console.log(`\nProcessing plan: ${plan.name} (${planSlug})`);
 
-    for (const modelSlug of modelSlugs) {
+    for (const rawModelSlug of modelSlugs) {
+      const modelSlug = normalizeSlug(rawModelSlug);
+
       // Get model by slug
       const model = await getModelBySlug(modelSlug);
 

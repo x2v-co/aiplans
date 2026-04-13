@@ -1,148 +1,151 @@
 /**
- * DMXAPI / 大模型API Scraper - Dynamic fetching from pricing page
+ * DMXAPI / 大模型API Scraper - Dynamic fetching from API endpoint
  * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
-import type { ScrapedPrice, ScraperResult } from '../utils/validator';
-import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { fetchHTML } from './base-fetcher';
+import { normalizeModelName } from '../utils/validator';
+import { PlaywrightScraper, PriceData, ScraperResult } from './lib/playwright-scraper';
 
 const DMXAPI_PRICING_URL = 'https://www.dmxapi.cn/rmb';
-
-interface DMXAPIModel {
-  model: string;
-  inputPrice: number;
-  outputPrice: number;
-  contextWindow: number;
-}
+const DMXAPI_API_URL = 'https://www.dmxapi.cn/api/pricing';
 
 /**
- * Fetch and parse DMXAPI pricing from their website
+ * Base price per ratio unit in CNY
+ * Based on analysis: gpt-4o has model_ratio=6.25 and official price ~¥15/1M input
+ * So base ≈ ¥2.4 per ratio unit
  */
-async function fetchDMXAPIPricing(): Promise<{ models: DMXAPIModel[], errors: string[] }> {
-  const result = await fetchHTML(DMXAPI_PRICING_URL);
-  const errors: string[] = [];
+const BASE_PRICE_CNY = 2.4;
 
-  if (!result.success || !result.data) {
-    return { models: [], errors: ['Failed to fetch DMXAPI pricing page'] };
+/**
+ * Model name mappings for normalization
+ */
+const MODEL_MAPPINGS: Record<string, { name: string; context: number }> = {
+  'gpt-4o': { name: 'gpt-4o', context: 128000 },
+  'gpt-4o-mini': { name: 'gpt-4o-mini', context: 128000 },
+  'gpt-4.1': { name: 'gpt-4.1', context: 128000 },
+  'gpt-4.1-mini': { name: 'gpt-4.1-mini', context: 128000 },
+  'gpt-4.1-nano': { name: 'gpt-4.1-nano', context: 128000 },
+  'o3-mini': { name: 'o3-mini', context: 200000 },
+  'o4-mini': { name: 'o4-mini', context: 128000 },
+  'claude-3-5-sonnet-20241022': { name: 'claude-3.5-sonnet', context: 200000 },
+  'claude-3-5-sonnet-20240620': { name: 'claude-3.5-sonnet', context: 200000 },
+  'claude-3-5-haiku-20241022': { name: 'claude-3.5-haiku', context: 200000 },
+  'claude-3-opus-20240229': { name: 'claude-3-opus', context: 200000 },
+  'claude-3-7-sonnet-20250219': { name: 'claude-3.7-sonnet', context: 200000 },
+  'deepseek-chat': { name: 'deepseek-chat', context: 128000 },
+  'deepseek-reasoner': { name: 'deepseek-r1', context: 128000 },
+  'gemini-2.5-pro-preview-05-06': { name: 'gemini-2.5-pro', context: 200000 },
+  'gemini-2.5-flash-preview-04-17': { name: 'gemini-2.5-flash', context: 200000 },
+  'qwen-max': { name: 'qwen-max', context: 128000 },
+  'qwen-plus': { name: 'qwen-plus', context: 128000 },
+};
+
+class DMXAPIScraper extends PlaywrightScraper {
+  getSourceName(): string {
+    return 'DMXAPI';
   }
 
-  const html = result.data;
-  const models: DMXAPIModel[] = [];
+  getSourceUrl(): string {
+    return DMXAPI_PRICING_URL;
+  }
 
-  // DMXAPI is a reseller, pricing varies by model
-  // Common models they offer with competitive pricing
-  const modelPatterns = [
-    {
-      model: 'gpt-4o',
-      inputPattern: /gpt-4o[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-    {
-      model: 'claude-3.5-sonnet',
-      inputPattern: /claude.*3.5[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 200000,
-    },
-    {
-      model: 'deepseek-chat',
-      inputPattern: /deepseek[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-  ];
+  async scrape(): Promise<ScraperResult> {
+    const errors: string[] = [];
+    const prices: PriceData[] = [];
 
-  for (const pattern of modelPatterns) {
-    const priceMatch = html.match(pattern.inputPattern);
+    // Navigate to the main page first to establish context
+    await this.navigate(DMXAPI_PRICING_URL);
+    await this.page!.waitForTimeout(2000);
 
-    if (priceMatch) {
-      const price = parseFloat(priceMatch[1].replace(/[¥￥\s]/g, ''));
-      // DMXAPI charges different rates for input/output
-      const inputPattern = new RegExp(`${pattern.model}[^0-9¥￥]*?输入[^0-9¥￥]*?([¥￥]\\s*[\\d.]+)`, 'i');
-      const outputPattern = new RegExp(`${pattern.model}[^0-9¥￥]*?输出[^0-9¥￥]*?([¥￥]\\s*[\\d.]+)`, 'i');
-
-      const inputMatch = html.match(inputPattern);
-      const outputMatch = html.match(outputPattern);
-
-      let inputPrice = price;
-      let outputPrice = price;
-
-      if (inputMatch && outputMatch) {
-        inputPrice = parseFloat(inputMatch[1].replace(/[¥￥\s]/g, ''));
-        outputPrice = parseFloat(outputMatch[1].replace(/[¥￥\s]/g, ''));
-      }
-
-      if (!isNaN(inputPrice) && !isNaN(outputPrice)) {
-        models.push({
-          model: pattern.model,
-          inputPrice,
-          outputPrice,
-          contextWindow: pattern.context,
-        });
-      }
+    // Use the API endpoint to get pricing data
+    let response;
+    try {
+      const apiResponse = await this.page!.context().request.fetch(DMXAPI_API_URL);
+      response = await apiResponse.json();
+    } catch (error) {
+      errors.push(`Failed to fetch pricing data from DMXAPI API endpoint: ${error}`);
+      return {
+        success: false,
+        source: this.getSourceName(),
+        prices: [],
+        errors,
+      };
     }
-  }
 
-  if (models.length === 0) {
-    errors.push('No models could be parsed from DMXAPI pricing page. The page structure may have changed.');
-  }
+    if (!response?.data?.model_info) {
+      errors.push('Failed to fetch pricing data from DMXAPI API endpoint');
+      return {
+        success: false,
+        source: this.getSourceName(),
+        prices: [],
+        errors,
+      };
+    }
 
-  return { models, errors };
-}
+    const models = response.data.model_info as Array<{
+      model_name: string;
+      price_info: {
+        default: {
+          default: {
+            quota_type: number;
+            model_price: number;
+            model_ratio: number;
+            model_completion_ratio: number;
+          };
+        };
+      };
+    }>;
 
-export async function scrapeDMXAPIDynamic(): Promise<ScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const prices: ScrapedPrice[] = [];
-
-  try {
-    console.log('🔄 Fetching DMXAPI pricing...');
-
-    const { models, errors: fetchErrors } = await fetchDMXAPIPricing();
-    errors.push(...fetchErrors);
-
-    console.log(`📦 Found ${models.length} models from DMXAPI`);
+    console.log(`📊 Found ${models.length} models in API response`);
 
     for (const model of models) {
-      try {
-        // Validate prices
-        if (!validatePrice(model.inputPrice) || !validatePrice(model.outputPrice)) {
-          errors.push(`Invalid price for ${model.model}`);
-          continue;
-        }
+      const priceInfo = model.price_info?.default?.default;
+      if (!priceInfo || priceInfo.quota_type !== 1) continue; // Skip non-token-based models
 
+      const mapping = MODEL_MAPPINGS[model.model_name];
+      if (!mapping) continue; // Skip unknown models
+
+      const inputRatio = priceInfo.model_ratio || 0;
+      const completionRatio = priceInfo.model_completion_ratio || 1;
+
+      if (inputRatio <= 0) continue;
+
+      // model_ratio is the input price ratio
+      // model_completion_ratio is the output/input price ratio
+      // So output = input_ratio * completion_ratio * base
+      const inputPrice = Math.round(inputRatio * BASE_PRICE_CNY * 100) / 100;
+      const outputPrice = Math.round(inputRatio * completionRatio * BASE_PRICE_CNY * 100) / 100;
+
+      // Avoid duplicates (some models have multiple versions)
+      if (!prices.some(p => p.modelName === normalizeModelName(mapping.name))) {
         prices.push({
-          modelName: normalizeModelName(model.model),
-          modelSlug: slugify(model.model),
-          inputPricePer1M: model.inputPrice,
-          outputPricePer1M: model.outputPrice,
-          contextWindow: model.contextWindow,
+          modelName: normalizeModelName(mapping.name),
+          inputPricePer1M: inputPrice,
+          outputPricePer1M: outputPrice,
+          contextWindow: mapping.context,
           isAvailable: true,
           currency: 'CNY',
         });
-      } catch (error) {
-        errors.push(`Error processing ${model.model}: ${error}`);
+        console.log(`  ✅ Found: ${model.model_name} -> ${mapping.name} - ¥${inputPrice}/¥${outputPrice} per 1M tokens`);
       }
     }
 
-    const duration = Date.now() - startTime;
-    console.log(`✅ DMXAPI scrape completed in ${duration}ms`);
-    console.log(`   - Models processed: ${prices.length}`);
-    console.log(`   - Errors: ${errors.length}`);
+    if (prices.length === 0) {
+      errors.push('No pricing data could be extracted from DMXAPI API endpoint');
+    }
 
     return {
-      source: 'DMXAPI',
-      success: prices.length > 0,
+      success: errors.length === 0 && prices.length > 0,
+      source: this.getSourceName(),
       prices,
       errors: errors.length > 0 ? errors : undefined,
     };
-  } catch (error) {
-    console.error('❌ DMXAPI scrape failed:', error);
-    return {
-      source: 'DMXAPI',
-      success: false,
-      prices: [],
-      errors: [String(error)],
-    };
   }
+}
+
+export async function scrapeDMXAPIDynamic(): Promise<ScraperResult> {
+  const scraper = new DMXAPIScraper();
+  return scraper.run();
 }
 
 // CLI test

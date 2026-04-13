@@ -25,7 +25,7 @@ class SiliconFlowScraper extends PlaywrightScraper {
     await this.navigate(SILICONFLOW_PRICING_URL);
 
     // Wait for pricing content to load
-    await this.page!.waitForTimeout(2000);
+    await this.page!.waitForTimeout(3000);
 
     // Get all text content from the page
     const pageContent = await this.page!.textContent('body') || '';
@@ -38,33 +38,38 @@ class SiliconFlowScraper extends PlaywrightScraper {
         const text = await row.textContent();
         if (!text) continue;
 
-        // Extract model name from row
-        const modelNameMatch = text.match(/([a-zA-Z][\w.-]*(?:gpt|claude|deepseek|qwen|llama|glm|mistral|mixtral|codestral)[\w.-]*)/i);
+        // Extract model name - support Provider/Model format
+        const modelNameMatch = text.match(/([a-zA-Z][\w.-]+\/[a-zA-Z][\w.-]+)/);
         if (!modelNameMatch) continue;
 
-        const modelName = modelNameMatch[1].toLowerCase();
+        const modelName = modelNameMatch[1];
 
-        // Extract prices - look for CNY patterns
-        const priceMatches = [...text.matchAll(/[¥￥]?\s*([\d.]+)\s*(?:元)?(?:\/)?(?:万|M|百万)?/g)];
-        const validPrices = priceMatches
-          .map(m => parseFloat(m[1]))
-          .filter(p => p > 0 && p < 1000);
+        // Extract prices - look for numbers in the row
+        // Format: 输入 (元 / M tokens) and 输出 (元 / M tokens)
+        const cells = await row.$$('td');
+        if (cells.length >= 2) {
+          const inputText = await cells[cells.length - 2].textContent() || '';
+          const outputText = await cells[cells.length - 1].textContent() || '';
 
-        if (validPrices.length >= 2) {
-          const inputPrice = validPrices[0];
-          const outputPrice = validPrices[1];
+          const inputMatch = inputText.match(/([\d.]+)/);
+          const outputMatch = outputText.match(/([\d.]+)/);
 
-          if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
-            // Avoid duplicates
-            if (!prices.some(p => p.modelName.toLowerCase().includes(modelName.toLowerCase()))) {
-              prices.push({
-                modelName: normalizeModelName(modelName),
-                inputPricePer1M: inputPrice,
-                outputPricePer1M: outputPrice,
-                contextWindow: this.inferContextWindow(modelName),
-                isAvailable: true,
-                currency: 'CNY', // SiliconFlow uses CNY
-              });
+          if (inputMatch && outputMatch) {
+            const inputPrice = parseFloat(inputMatch[1]);
+            const outputPrice = parseFloat(outputMatch[1]);
+
+            if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
+              // Avoid duplicates
+              if (!prices.some(p => p.modelName === modelName)) {
+                prices.push({
+                  modelName: normalizeModelName(modelName.split('/')[1] || modelName),
+                  inputPricePer1M: inputPrice,
+                  outputPricePer1M: outputPrice,
+                  contextWindow: this.inferContextWindow(modelName),
+                  isAvailable: true,
+                  currency: 'CNY',
+                });
+              }
             }
           }
         }
@@ -78,12 +83,14 @@ class SiliconFlowScraper extends PlaywrightScraper {
         const text = await card.textContent();
         if (!text) continue;
 
-        const modelNameMatch = text.match(/([a-zA-Z][\w.-]*(?:gpt|claude|deepseek|qwen|llama|glm|mistral|mixtral|codestral)[\w.-]*)/i);
+        // Support Provider/Model format
+        const modelNameMatch = text.match(/([a-zA-Z][\w.-]+\/[a-zA-Z][\w.-]+)/);
         if (!modelNameMatch) continue;
 
-        const modelName = modelNameMatch[1].toLowerCase();
+        const modelName = modelNameMatch[1];
 
-        const priceMatches = [...text.matchAll(/[¥￥]?\s*([\d.]+)\s*(?:元)?/g)];
+        // Look for price patterns: 数字 followed by 元/M tokens context
+        const priceMatches = [...text.matchAll(/([\d.]+)\s*(?:元)?/g)];
         const validPrices = priceMatches
           .map(m => parseFloat(m[1]))
           .filter(p => p > 0 && p < 1000);
@@ -93,9 +100,9 @@ class SiliconFlowScraper extends PlaywrightScraper {
           const outputPrice = validPrices[1];
 
           if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
-            if (!prices.some(p => p.modelName.toLowerCase().includes(modelName.toLowerCase()))) {
+            if (!prices.some(p => p.modelName === modelName)) {
               prices.push({
-                modelName: normalizeModelName(modelName),
+                modelName: normalizeModelName(modelName.split('/')[1] || modelName),
                 inputPricePer1M: inputPrice,
                 outputPricePer1M: outputPrice,
                 contextWindow: this.inferContextWindow(modelName),
@@ -103,6 +110,39 @@ class SiliconFlowScraper extends PlaywrightScraper {
                 currency: 'CNY',
               });
             }
+          }
+        }
+      }
+    }
+
+    // Third attempt: Parse from body text
+    if (prices.length === 0) {
+      // Look for patterns like: "deepseek-ai/DeepSeek-V3 2.00 8.00"
+      const lines = pageContent.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const modelMatch = line.match(/([a-zA-Z][\w.-]+\/[a-zA-Z][\w.-]+)/);
+        if (!modelMatch) continue;
+
+        const modelName = modelMatch[1];
+        const contextLines = lines.slice(i, i + 3).join(' ');
+
+        // Look for price patterns nearby
+        const priceMatches = [...contextLines.matchAll(/([\d.]+)\s*(?:元)?/g)];
+        const validPrices = priceMatches
+          .map(m => parseFloat(m[1]))
+          .filter(p => p > 0 && p < 100);
+
+        if (validPrices.length >= 2) {
+          if (!prices.some(p => p.modelName === modelName)) {
+            prices.push({
+              modelName: normalizeModelName(modelName.split('/')[1] || modelName),
+              inputPricePer1M: validPrices[0],
+              outputPricePer1M: validPrices[1],
+              contextWindow: this.inferContextWindow(modelName),
+              isAvailable: true,
+              currency: 'CNY',
+            });
           }
         }
       }

@@ -3,134 +3,198 @@
  * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
-import type { ScrapedPrice, ScraperResult } from '../utils/validator';
-import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { fetchHTML } from './base-fetcher';
+import { normalizeModelName } from '../utils/validator';
+import { PlaywrightScraper, PriceData, ScraperResult } from './lib/playwright-scraper';
 
 const REPLICATE_PRICING_URL = 'https://replicate.com/pricing';
 
-interface ReplicateModel {
-  model: string;
-  inputPrice: number;
-  outputPrice: number;
-  contextWindow: number;
-}
-
 /**
- * Fetch and parse Replicate pricing from their website
+ * Known Replicate models with their characteristics
+ * Replicate charges per token for LLMs
+ * Updated 2026-03-19
  */
-async function fetchReplicatePricing(): Promise<{ models: ReplicateModel[], errors: string[] }> {
-  const result = await fetchHTML(REPLICATE_PRICING_URL);
-  const errors: string[] = [];
+const KNOWN_MODELS = [
+  // Llama 4 series
+  { pattern: /llama-4.*maverick/i, name: 'llama-4-maverick', minInput: 0.1, maxInput: 0.4, minOutput: 0.3, maxOutput: 1, context: 128000 },
+  { pattern: /llama-4.*scout/i, name: 'llama-4-scout', minInput: 0.03, maxInput: 0.15, minOutput: 0.1, maxOutput: 0.5, context: 128000 },
 
-  if (!result.success || !result.data) {
-    return { models: [], errors: ['Failed to fetch Replicate pricing page'] };
+  // Llama 3.3 series
+  { pattern: /llama-3\.3.*70b/i, name: 'llama-3.3-70b-instruct', minInput: 0.4, maxInput: 1, minOutput: 0.4, maxOutput: 1, context: 128000 },
+
+  // Llama 3.1 series
+  { pattern: /llama-3\.1.*405b/i, name: 'llama-3.1-405b-instruct', minInput: 1.5, maxInput: 3, minOutput: 1.5, maxOutput: 3, context: 131072 },
+  { pattern: /llama-3\.1.*70b/i, name: 'llama-3.1-70b-instruct', minInput: 0.4, maxInput: 1, minOutput: 0.4, maxOutput: 1, context: 131072 },
+  { pattern: /llama-3\.1.*8b/i, name: 'llama-3.1-8b-instruct', minInput: 0.02, maxInput: 0.1, minOutput: 0.02, maxOutput: 0.1, context: 131072 },
+
+  // Llama 3 series
+  { pattern: /llama-3.*70b(?!-b)/i, name: 'llama-3-70b-instruct', minInput: 0.4, maxInput: 1, minOutput: 0.4, maxOutput: 1, context: 8192 },
+  { pattern: /llama-3.*8b/i, name: 'llama-3-8b-instruct', minInput: 0.02, maxInput: 0.1, minOutput: 0.02, maxOutput: 0.1, context: 8192 },
+
+  // Mixtral series
+  { pattern: /mixtral.*8x22b/i, name: 'mixtral-8x22b-instruct', minInput: 0.6, maxInput: 1.5, minOutput: 0.6, maxOutput: 1.5, context: 65536 },
+  { pattern: /mixtral.*8x7b/i, name: 'mixtral-8x7b-instruct', minInput: 0.3, maxInput: 0.7, minOutput: 0.3, maxOutput: 0.7, context: 32768 },
+
+  // Mistral series
+  { pattern: /mistral.*7b/i, name: 'mistral-7b-instruct', minInput: 0.02, maxInput: 0.1, minOutput: 0.02, maxOutput: 0.1, context: 32768 },
+
+  // Qwen series
+  { pattern: /qwen2\.5.*72b/i, name: 'qwen2.5-72b-instruct', minInput: 0.2, maxInput: 0.6, minOutput: 0.2, maxOutput: 0.6, context: 32768 },
+  { pattern: /qwen2\.5.*7b/i, name: 'qwen2.5-7b-instruct', minInput: 0.01, maxInput: 0.05, minOutput: 0.01, maxOutput: 0.05, context: 32768 },
+
+  // DeepSeek series
+  { pattern: /deepseek-r1/i, name: 'deepseek-r1', minInput: 2, maxInput: 5, minOutput: 2, maxOutput: 12, context: 128000 },
+  { pattern: /deepseek-v3/i, name: 'deepseek-v3', minInput: 0.3, maxInput: 1, minOutput: 0.3, maxOutput: 1, context: 128000 },
+
+  // Claude (via Anthropic on Replicate)
+  { pattern: /claude.*3\.7.*sonnet/i, name: 'claude-3.7-sonnet', minInput: 2, maxInput: 4, minOutput: 8, maxOutput: 18, context: 200000 },
+  { pattern: /claude.*3\.5.*sonnet/i, name: 'claude-3.5-sonnet', minInput: 2, maxInput: 4, minOutput: 8, maxOutput: 18, context: 200000 },
+];
+
+class ReplicateScraper extends PlaywrightScraper {
+  getSourceName(): string {
+    return 'Replicate';
   }
 
-  const html = result.data;
-  const models: ReplicateModel[] = [];
+  getSourceUrl(): string {
+    return REPLICATE_PRICING_URL;
+  }
 
-  // Known Replicate model patterns (2025-2026)
-  const modelPatterns = [
-    {
-      model: 'meta-llama-3.1-405b-instruct',
-      inputPattern: /llama.*405b[^$]*?\$?([\d.]+)\s*per/i,
-      context: 131072,
-    },
-    {
-      model: 'meta-llama-3.1-70b-instruct',
-      inputPattern: /llama.*70b[^$]*?\$?([\d.]+)\s*per/i,
-      context: 131072,
-    },
-    {
-      model: 'meta-llama-3-8b-instruct',
-      inputPattern: /llama.*8b[^$]*?\$?([\d.]+)\s*per/i,
-      context: 131072,
-    },
-  ];
+  async scrape(): Promise<ScraperResult> {
+    const errors: string[] = [];
+    const prices: PriceData[] = [];
 
-  for (const pattern of modelPatterns) {
-    const priceMatch = html.match(pattern.inputPattern);
+    await this.navigate(REPLICATE_PRICING_URL);
 
-    if (priceMatch) {
-      const price = parseFloat(priceMatch[1]);
-      // Replicate charges per second or per token
-      const inputPrice = price;
-      const outputPrice = price;
+    // Wait for page to fully load
+    await this.page!.waitForTimeout(5000);
 
-      if (!isNaN(inputPrice)) {
-        models.push({
-          model: pattern.model,
-          inputPrice,
-          outputPrice,
-          contextWindow: pattern.context,
-        });
+    // Get all text content from the page
+    const bodyText = await this.page!.textContent('body') || '';
+    console.log('📝 Body text length:', bodyText.length);
+
+    // Debug: Print first 3000 chars
+    console.log('📄 First 3000 chars of body text:');
+    console.log(bodyText.substring(0, 3000));
+
+    // Split text into lines for analysis
+    const lines = bodyText.split('\n').map(l => l.trim()).filter(l => l);
+
+    // Extract prices for each known model
+    for (const modelInfo of KNOWN_MODELS) {
+      const found = this.extractModelPrice(lines, modelInfo);
+      if (found) {
+        // Avoid duplicates
+        if (!prices.some(p => p.modelName === found.modelName)) {
+          prices.push(found);
+          console.log(`  ✅ Found: ${found.modelName} - $${found.inputPricePer1M}/$${found.outputPricePer1M} per 1M tokens`);
+        }
       }
     }
+
+    // Deduplicate by model name
+    const uniquePrices = prices.filter((price, index, self) =>
+      index === self.findIndex(p => p.modelName === price.modelName)
+    );
+
+    if (uniquePrices.length === 0) {
+      errors.push('No pricing data could be extracted from Replicate pricing page. The page structure may have changed.');
+    }
+
+    return {
+      success: errors.length === 0 && uniquePrices.length > 0,
+      source: this.getSourceName(),
+      prices: uniquePrices,
+      errors: errors.length > 0 ? errors : undefined,
+    };
   }
 
-  if (models.length === 0) {
-    errors.push('No models could be parsed from Replicate pricing page. The page structure may have changed.');
-  }
+  /**
+   * Extract price for a specific model from text lines
+   * Parses format: "Llama 3.1 70B $0.60 per 1M tokens"
+   */
+  private extractModelPrice(
+    lines: string[],
+    modelInfo: { pattern: RegExp; name: string; minInput: number; maxInput: number; minOutput: number; maxOutput: number; context: number }
+  ): PriceData | null {
+    // Find lines containing this model name
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
 
-  return { models, errors };
+      // Check if this line matches the model pattern
+      if (modelInfo.pattern.test(line)) {
+        // Use context window of 5 lines to find prices
+        const contextStart = i;
+        const contextEnd = Math.min(lines.length, i + 5);
+        const contextLines = lines.slice(contextStart, contextEnd);
+
+        let inputPrice: number | null = null;
+        let outputPrice: number | null = null;
+
+        // Look for prices in the context
+        // Pattern: "$0.60" or "0.60"
+        for (const ctxLine of contextLines) {
+          // Stop if we hit another model section
+          if (/(llama|mixtral|mistral|qwen|deepseek|claude)/i.test(ctxLine) && !modelInfo.pattern.test(ctxLine)) {
+            break;
+          }
+
+          // Extract all prices from the line
+          const priceMatches = [...ctxLine.matchAll(/\$?(\d+\.?\d+)/g)];
+          const allPrices = priceMatches.map(m => parseFloat(m[1])).filter(p => p > 0 && p < 50);
+
+          if (allPrices.length >= 1) {
+            // Find input and output prices in expected ranges
+            const inpPrice = allPrices.find(p => p >= modelInfo.minInput && p <= modelInfo.maxInput);
+            const outPrice = allPrices.find(p => p >= modelInfo.minOutput && p <= modelInfo.maxOutput);
+
+            if (inpPrice) {
+              inputPrice = inpPrice;
+              outputPrice = outPrice || inpPrice;
+              break;
+            }
+          }
+        }
+
+        if (inputPrice && outputPrice) {
+          return {
+            modelName: normalizeModelName(modelInfo.name),
+            inputPricePer1M: inputPrice,
+            outputPricePer1M: outputPrice,
+            contextWindow: modelInfo.context,
+            isAvailable: true,
+            currency: 'USD',
+          };
+        }
+
+        // Fallback: Try to extract from the line itself
+        const linePrices = [...line.matchAll(/\$?(\d+\.?\d+)/g)];
+        const prices = linePrices.map(m => parseFloat(m[1])).filter(p => p > 0 && p < 50);
+
+        if (prices.length >= 1) {
+          const inpPrice = prices.find(p => p >= modelInfo.minInput && p <= modelInfo.maxInput);
+          const outPrice = prices.find(p => p >= modelInfo.minOutput && p <= modelInfo.maxOutput);
+
+          if (inpPrice) {
+            return {
+              modelName: normalizeModelName(modelInfo.name),
+              inputPricePer1M: inpPrice,
+              outputPricePer1M: outPrice || inpPrice,
+              contextWindow: modelInfo.context,
+              isAvailable: true,
+              currency: 'USD',
+            };
+          }
+        }
+      }
+    }
+
+    return null;
+  }
 }
 
 export async function scrapeReplicateDynamic(): Promise<ScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const prices: ScrapedPrice[] = [];
-
-  try {
-    console.log('🔄 Fetching Replicate pricing...');
-
-    const { models, errors: fetchErrors } = await fetchReplicatePricing();
-    errors.push(...fetchErrors);
-
-    console.log(`📦 Found ${models.length} models from Replicate`);
-
-    for (const model of models) {
-      try {
-        // Validate prices
-        if (!validatePrice(model.inputPrice) || !validatePrice(model.outputPrice)) {
-          errors.push(`Invalid price for ${model.model}`);
-          continue;
-        }
-
-        prices.push({
-          modelName: normalizeModelName(model.model),
-          modelSlug: slugify(model.model),
-          inputPricePer1M: model.inputPrice,
-          outputPricePer1M: model.outputPrice,
-          contextWindow: model.contextWindow,
-          isAvailable: true,
-          currency: 'USD',
-        });
-      } catch (error) {
-        errors.push(`Error processing ${model.model}: ${error}`);
-      }
-    }
-
-    const duration = Date.now() - startTime;
-    console.log(`✅ Replicate scrape completed in ${duration}ms`);
-    console.log(`   - Models processed: ${prices.length}`);
-    console.log(`   - Errors: ${errors.length}`);
-
-    return {
-      source: 'Replicate',
-      success: prices.length > 0,
-      prices,
-      errors: errors.length > 0 ? errors : undefined,
-    };
-  } catch (error) {
-    console.error('❌ Replicate scrape failed:', error);
-    return {
-      source: 'Replicate',
-      success: false,
-      prices: [],
-      errors: [String(error)],
-    };
-  }
+  const scraper = new ReplicateScraper();
+  return scraper.run();
 }
 
 // CLI test
