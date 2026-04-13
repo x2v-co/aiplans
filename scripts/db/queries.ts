@@ -34,6 +34,29 @@ export async function upsertChannelPrice(data: {
   currency?: string;
   price_unit?: string;
 }) {
+  // Defensive validation — reject obvious bad data at the write boundary so
+  // scraper bugs fail loudly instead of silently overwriting good rows.
+  // Free tiers with price 0 are allowed; negative or null are not.
+  if (data.input_price_per_1m == null || data.output_price_per_1m == null) {
+    throw new Error(
+      `upsertChannelPrice: null price rejected (model_id=${data.model_id} provider_id=${data.provider_id} in=${data.input_price_per_1m} out=${data.output_price_per_1m})`
+    );
+  }
+  if (data.input_price_per_1m < 0 || data.output_price_per_1m < 0) {
+    throw new Error(
+      `upsertChannelPrice: negative price rejected (model_id=${data.model_id} provider_id=${data.provider_id} in=${data.input_price_per_1m} out=${data.output_price_per_1m})`
+    );
+  }
+  if (
+    data.input_price_per_1m > 0 &&
+    data.output_price_per_1m > 0 &&
+    data.output_price_per_1m < data.input_price_per_1m
+  ) {
+    throw new Error(
+      `upsertChannelPrice: output ($${data.output_price_per_1m}) < input ($${data.input_price_per_1m}) is physically impossible for LLM per-token pricing (model_id=${data.model_id} provider_id=${data.provider_id}) — likely parser bug`
+    );
+  }
+
   // Convert rate_limit to string if it's a number
   const rateLimit = data.rate_limit !== undefined
     ? typeof data.rate_limit === 'number'
@@ -41,9 +64,46 @@ export async function upsertChannelPrice(data: {
       : data.rate_limit
     : undefined;
 
-  const { data: result, error } = await supabaseAdmin
+  // First, check if a record exists
+  const { data: existing, error: selectError } = await supabaseAdmin
     .from('api_channel_prices')
-    .upsert({
+    .select('id')
+    .eq('model_id', data.model_id)
+    .eq('provider_id', data.provider_id)
+    .single();
+
+  if (selectError && selectError.code !== 'PGRST116') {
+    // PGRST116 means no rows found, which is expected for new records
+    throw selectError;
+  }
+
+  if (existing) {
+    // Update existing record
+    const { data: result, error: updateError } = await supabaseAdmin
+      .from('api_channel_prices')
+      .update({
+        input_price_per_1m: data.input_price_per_1m,
+        output_price_per_1m: data.output_price_per_1m,
+        cached_input_price_per_1m: data.cached_input_price_per_1m,
+        rate_limit: rateLimit,
+        is_available: data.is_available,
+        last_verified: data.last_verified,
+        currency: data.currency ?? 'USD',
+        price_unit: data.price_unit ?? 'per_1m_tokens',
+        updated_at: new Date(),
+      })
+      .eq('id', existing.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+    return result;
+  }
+
+  // Insert new record
+  const { data: result, error: insertError } = await supabaseAdmin
+    .from('api_channel_prices')
+    .insert({
       model_id: data.model_id,
       provider_id: data.provider_id,
       input_price_per_1m: data.input_price_per_1m,
@@ -52,11 +112,13 @@ export async function upsertChannelPrice(data: {
       rate_limit: rateLimit,
       is_available: data.is_available,
       last_verified: data.last_verified,
-    }, { onConflict: 'model_id,provider_id' })
+      currency: data.currency ?? 'USD',
+      price_unit: data.price_unit ?? 'per_1m_tokens',
+    })
     .select()
     .single();
 
-  if (error) throw error;
+  if (insertError) throw insertError;
   return result;
 }
 
@@ -67,19 +129,26 @@ export async function logPriceChange(data: {
   old_output_price: number;
   new_output_price: number;
   change_percent: number;
+  currency?: string;
+  source?: string;
 }) {
-  // Temporarily disabled due to price_history table schema issues
-  // TODO: Re-enable after proper table structure is set up
-  console.log('📝 Price change logging disabled temporarily');
-  return;
-
-  /* Original code (disabled for now):
   const { error } = await supabaseAdmin
     .from('price_history')
-    .insert(data);
+    .insert({
+      channel_price_id: data.channel_price_id,
+      old_input_price: data.old_input_price,
+      new_input_price: data.new_input_price,
+      old_output_price: data.old_output_price,
+      new_output_price: data.new_output_price,
+      change_percent: data.change_percent,
+      currency: data.currency ?? 'USD',
+      source: data.source,
+    });
 
-  if (error) throw error;
-  */
+  // Soft-fail: don't break the scrape pipeline if logging fails
+  if (error) {
+    console.error('⚠ logPriceChange failed:', error.message);
+  }
 }
 
 export async function logScrapeResult(data: {
@@ -223,13 +292,39 @@ export async function upsertPlan(data: {
     price_unit: data.price_unit || 'per_month',
   };
 
-  const { data: result, error } = await supabaseAdmin
+  // First, check if a record exists
+  const { data: existing, error: selectError } = await supabaseAdmin
     .from('plans')
-    .upsert(dbData, { onConflict: 'provider_id,slug' })
+    .select('id')
+    .eq('provider_id', data.provider_id)
+    .eq('slug', data.slug)
+    .single();
+
+  if (selectError && selectError.code !== 'PGRST116') {
+    throw selectError;
+  }
+
+  if (existing) {
+    // Update existing record
+    const { data: result, error: updateError } = await supabaseAdmin
+      .from('plans')
+      .update(dbData)
+      .eq('id', existing.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+    return result;
+  }
+
+  // Insert new record
+  const { data: result, error: insertError } = await supabaseAdmin
+    .from('plans')
+    .insert(dbData)
     .select()
     .single();
 
-  if (error) throw error;
+  if (insertError) throw insertError;
   return result;
 }
 
@@ -494,17 +589,45 @@ export async function upsertModelPlanRelation(data: {
   model_id: number;
   priority?: number;
 }) {
-  const { data: result, error } = await supabaseAdmin
+  // First, check if a record exists
+  const { data: existing, error: selectError } = await supabaseAdmin
     .from('model_plan_mapping')
-    .upsert({
+    .select('id')
+    .eq('model_id', data.model_id)
+    .eq('plan_id', data.plan_id)
+    .single();
+
+  if (selectError && selectError.code !== 'PGRST116') {
+    throw selectError;
+  }
+
+  if (existing) {
+    // Update existing record
+    const { data: result, error: updateError } = await supabaseAdmin
+      .from('model_plan_mapping')
+      .update({
+        priority: data.priority || 0,
+      })
+      .eq('id', existing.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+    return result;
+  }
+
+  // Insert new record
+  const { data: result, error: insertError } = await supabaseAdmin
+    .from('model_plan_mapping')
+    .insert({
       plan_id: data.plan_id,
       model_id: data.model_id,
       priority: data.priority || 0,
-    }, { onConflict: 'model_id,plan_id' })
+    })
     .select()
     .single();
 
-  if (error) throw error;
+  if (insertError) throw insertError;
   return result;
 }
 
