@@ -124,6 +124,11 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
 
     for (const model of models) {
       try {
+        // Skip OpenRouter's own meta/routing pseudo-models — they have no
+        // per-token price (openrouter/auto, openrouter/bodybuilder, etc.)
+        // These would otherwise fail validation and poison the success flag.
+        if (model.id.startsWith('openrouter/')) continue;
+
         // Convert price per token ($/token) to price per 1M tokens
         // OpenRouter prices are in USD per token
         const inputPrice = parseFloat(model.pricing.prompt) * 1_000_000;
