@@ -2,108 +2,97 @@ import { MetadataRoute } from 'next';
 import { supabase } from '@/lib/supabase';
 
 const BASE_URL = 'https://aiplans.dev';
+const LOCALES = ['en', 'zh'] as const;
 
-// Provider slugs from database
-const PROVIDER_SLUGS = [
-  'openai', 'anthropic', 'google', 'deepseek', 'mistral',
-  'moonshot', 'qwen', 'zhipu', 'hunyuan', 'baidu',
-  'minimax', 'seed', 'stepfun', 'grok'
-];
+interface UrlEntry {
+  url: string;
+  lastModified: Date;
+  changeFrequency: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  priority: number;
+}
 
-// Major model slugs - these are the most popular models
-const MODEL_SLUGS = [
-  // OpenAI
-  'gpt-4o', 'gpt-4o-mini', 'gpt-5', 'o1', 'o1-mini', 'o3', 'o3-mini',
-  // Anthropic
-  'claude-sonnet-4.6', 'claude-opus-4.6', 'claude-3.5-sonnet', 'claude-3.7-sonnet', 'claude-haiku-4-5',
-  // DeepSeek
-  'deepseek-v3', 'deepseek-chat', 'deepseek-r1', 'deepseek-reasoner',
-  // Google
-  'gemini-2.5-pro', 'gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash',
-  // Grok
-  'grok-3', 'grok-2', 'grok-3-mini',
-  // Qwen
-  'qwen-max', 'qwen-plus', 'qwen-turbo', 'qwen3-max', 'qwen3-plus',
-  // GLM
-  'glm-4', 'glm-4-flash', 'glm-5',
-  // Kimi
-  'kimi-k2.5', 'kimi-k2',
-  // Hunyuan
-  'hunyuan-pro', 'hunyuan-lite',
-  // ERNIE
-  'ernie-4.5-21b-a3b', 'ernie-lite'
+const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['changeFrequency'] }[] = [
+  { path: '', priority: 1.0, changefreq: 'daily' },
+  { path: '/api-pricing', priority: 0.9, changefreq: 'daily' },
+  { path: '/compare/plans', priority: 0.9, changefreq: 'daily' },
+  { path: '/compare/models', priority: 0.9, changefreq: 'daily' },
+  { path: '/compare/api', priority: 0.9, changefreq: 'daily' },
+  { path: '/plans', priority: 0.85, changefreq: 'daily' },
+  { path: '/coupons', priority: 0.7, changefreq: 'weekly' },
+  { path: '/calculator', priority: 0.7, changefreq: 'monthly' },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const urls: MetadataRoute.Sitemap = [];
+  const urls: UrlEntry[] = [];
+  const now = new Date();
 
-  // Helper to create URL entry
-  const createUrl = (loc: string, priority: number, changefreq: string = 'weekly') => ({
-    url: loc,
-    lastModified: new Date(),
-    changeFrequency: changefreq as any,
-    priority,
-  });
+  const push = (path: string, priority: number, changeFrequency: UrlEntry['changeFrequency']) => {
+    urls.push({ url: `${BASE_URL}${path}`, lastModified: now, changeFrequency, priority });
+  };
 
-  // Main pages - English
-  urls.push(createUrl(`${BASE_URL}/en`, 1.0, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/en/compare/plans`, 0.9, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/en/api-pricing`, 0.9, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/en/coupons`, 0.7, 'weekly'));
-  urls.push(createUrl(`${BASE_URL}/en/compare/models`, 0.9, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/en/compare/api`, 0.9, 'daily'));
-
-  // Main pages - Chinese
-  urls.push(createUrl(`${BASE_URL}/zh`, 1.0, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/zh/compare/plans`, 0.9, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/zh/api-pricing`, 0.9, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/zh/coupons`, 0.7, 'weekly'));
-  urls.push(createUrl(`${BASE_URL}/zh/compare/models`, 0.9, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/zh/compare/api`, 0.9, 'daily'));
-
-  // Non-locale routes
-  urls.push(createUrl(`${BASE_URL}/compare/plans`, 0.9, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/compare/models`, 0.9, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/compare/api`, 0.9, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/api-pricing`, 0.9, 'daily'));
-  urls.push(createUrl(`${BASE_URL}/coupons`, 0.7, 'weekly'));
-
-  // Provider plan pages
-  for (const provider of PROVIDER_SLUGS) {
-    urls.push(createUrl(`${BASE_URL}/plans/${provider}`, 0.8, 'weekly'));
+  // Locale roots and static paths × all locales
+  for (const locale of LOCALES) {
+    for (const { path, priority, changefreq } of STATIC_PATHS) {
+      push(`/${locale}${path}`, priority, changefreq);
+    }
+  }
+  // Non-locale convenience paths (mostly redirect to /en)
+  for (const { path, priority, changefreq } of STATIC_PATHS) {
+    if (path) push(path, Math.max(priority - 0.1, 0.5), changefreq);
   }
 
-  // Model channel price pages - English
-  for (const model of MODEL_SLUGS) {
-    urls.push(createUrl(`${BASE_URL}/en/models/${model}`, 0.8, 'weekly'));
-  }
-
-  // Model channel price pages - Chinese
-  for (const model of MODEL_SLUGS) {
-    urls.push(createUrl(`${BASE_URL}/zh/models/${model}`, 0.8, 'weekly'));
-  }
-
-  // Try to fetch additional models from database
+  // Dynamic: every provider in DB → /plans/[provider]
   try {
-    const { data: products } = await supabase
-      .from('models')
-      .select('slug')
-      .eq('type', 'llm')
-      .limit(100);
+    const { data: providers } = await supabase
+      .from('providers')
+      .select('slug, updated_at')
+      .order('priority', { ascending: true });
+    for (const p of providers ?? []) {
+      if (!p.slug) continue;
+      const lastMod = p.updated_at ? new Date(p.updated_at) : now;
+      for (const locale of LOCALES) {
+        urls.push({
+          url: `${BASE_URL}/${locale}/plans/${p.slug}`,
+          lastModified: lastMod,
+          changeFrequency: 'weekly',
+          priority: 0.8,
+        });
+      }
+      urls.push({
+        url: `${BASE_URL}/plans/${p.slug}`,
+        lastModified: lastMod,
+        changeFrequency: 'weekly',
+        priority: 0.7,
+      });
+    }
+  } catch (err) {
+    console.error('sitemap: failed to query providers', err);
+  }
 
-    if (products && products.length > 0) {
-      // Add any additional models not in our manual list
-      const existingSlugs = new Set(MODEL_SLUGS);
-      for (const product of products) {
-        if (product.slug && !existingSlugs.has(product.slug)) {
-          urls.push(createUrl(`${BASE_URL}/models/${product.slug}`, 0.6, 'weekly'));
-          urls.push(createUrl(`${BASE_URL}/en/models/${product.slug}`, 0.6, 'weekly'));
-          urls.push(createUrl(`${BASE_URL}/zh/models/${product.slug}`, 0.6, 'weekly'));
-        }
+  // Dynamic: every LLM model in DB → /[locale]/models/[slug]
+  try {
+    const { data: models } = await supabase
+      .from('models')
+      .select('slug, updated_at')
+      .eq('type', 'llm')
+      .order('updated_at', { ascending: false })
+      .limit(500);
+    const seen = new Set<string>();
+    for (const m of models ?? []) {
+      if (!m.slug || seen.has(m.slug)) continue;
+      seen.add(m.slug);
+      const lastMod = m.updated_at ? new Date(m.updated_at) : now;
+      for (const locale of LOCALES) {
+        urls.push({
+          url: `${BASE_URL}/${locale}/models/${m.slug}`,
+          lastModified: lastMod,
+          changeFrequency: 'weekly',
+          priority: 0.7,
+        });
       }
     }
-  } catch (error) {
-    console.error('Error fetching products for sitemap:', error);
+  } catch (err) {
+    console.error('sitemap: failed to query models', err);
   }
 
   return urls;

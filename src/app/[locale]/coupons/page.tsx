@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslations } from '@/lib/translations';
 import { useParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -193,7 +194,7 @@ export default function CouponsPage() {
                       {/* Provider Logo */}
                       <div className={`${provider.color} w-24 flex items-center justify-center rounded-l-lg`}>
                         {providerLogoSrc ? (
-                          <img src={providerLogoSrc} alt={coupon.providers?.name || provider.name} className="w-12 h-12 object-contain" />
+                          <Image src={providerLogoSrc} alt={coupon.providers?.name || provider.name} width={48} height={48} className="w-12 h-12 object-contain" unoptimized />
                         ) : (
                           <span className="text-3xl">{providerLogoFallback}</span>
                         )}

@@ -1,9 +1,31 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
+import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
+    path: '/plans',
+    title: {
+      en: 'AI Subscription Plans by Provider | aiplans.dev',
+      zh: 'AI 服务供应商订阅套餐总览 | aiplans.dev',
+    },
+    description: {
+      en: 'Browse all subscription plans from OpenAI, Anthropic, Google, Mistral, MiniMax, Moonshot Kimi, Zhipu GLM and more. Pricing audited daily.',
+      zh: '浏览 OpenAI、Anthropic、Google、Mistral、MiniMax、Kimi、智谱 GLM 等所有 AI 服务订阅套餐。价格每日审计。',
+    },
+  });
+}
 
 async function getProvidersWithPlans() {
   // Get all providers
@@ -47,8 +69,27 @@ export default async function PlansIndexPage({
 
   const isZh = locale === 'zh';
 
+  // Structured data: breadcrumb + ItemList of providers
+  const breadcrumbJson = breadcrumbList([
+    { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
+    { name: isZh ? '套餐总览' : 'Plans', url: `${SITE_URL}/${locale}/plans` },
+  ]);
+  const itemListJson = jsonLd({
+    '@type': 'ItemList',
+    name: isZh ? 'AI 服务供应商订阅套餐' : 'AI Provider Subscription Plans',
+    numberOfItems: providers.length,
+    itemListElement: providers.slice(0, 50).map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${SITE_URL}/${locale}/plans/${p.slug}`,
+      name: p.name,
+    })),
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJson }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: itemListJson }} />
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">

@@ -2,6 +2,7 @@
 
 import React, { use, useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -285,7 +286,7 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
             {getProviderLogoSrc(model.provider) ? (
-              <img src={getProviderLogoSrc(model.provider)!} alt={model.provider.name} className="w-12 h-12 object-contain" />
+              <Image src={getProviderLogoSrc(model.provider)!} alt={model.provider.name} width={48} height={48} className="w-12 h-12 object-contain" unoptimized />
             ) : (
               <span className="text-4xl">{model.provider?.logoFallback || getProviderLogoFallback(model.provider)}</span>
             )}
@@ -359,7 +360,7 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
                   >
                     <div className="flex items-center gap-3">
                       {group.providerLogo ? (
-                        <img src={group.providerLogo} alt={group.providerName} className="w-8 h-8 object-contain" />
+                        <Image src={group.providerLogo} alt={group.providerName} width={32} height={32} className="w-8 h-8 object-contain" unoptimized />
                       ) : (
                         <span className="text-3xl">{group.providerLogoFallback || "🏢"}</span>
                       )}

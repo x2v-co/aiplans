@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +10,33 @@ import { supabase } from "@/lib/supabase";
 import { formatPrice, CurrencyCode } from "@/lib/currency";
 import { getAllModelIdsForProvider, getPlanYearlyMonthly } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
+import { buildMetadata, breadcrumbList, productOffer, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; provider: string }>;
+}): Promise<Metadata> {
+  const { locale, provider: providerSlug } = await params;
+  const { data: provider } = await supabase
+    .from('providers')
+    .select('name, description, region')
+    .eq('slug', providerSlug)
+    .single();
+  const providerName = provider?.name ?? providerSlug;
+  return buildMetadata({
+    locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
+    path: `/plans/${providerSlug}`,
+    title: {
+      en: `${providerName} Subscription Plans & API Pricing | aiplans.dev`,
+      zh: `${providerName} 订阅套餐与 API 价格 | aiplans.dev`,
+    },
+    description: {
+      en: `Compare every ${providerName} subscription tier — free, pro, team, enterprise — including monthly + annual pricing, model access, rate limits and regional availability. Verified daily.`,
+      zh: `对比 ${providerName} 全部订阅档位（免费/Pro/团队/企业），含月付/年付价格、模型权限、速率限制和区域可用性。每日审计。`,
+    },
+  });
+}
 
 // Provider info map
 const providerInfo: Record<string, { name: string; logo: string; description: string }> = {
@@ -69,8 +98,30 @@ export default async function ProviderPlansPage({
   // Determine currency based on provider region (china providers use CNY)
   const currency: CurrencyCode = provider.region === 'china' ? 'CNY' : 'USD';
 
+  // Structured data: breadcrumb + Product/Offer per plan
+  const isZh = locale === 'zh';
+  const breadcrumbJson = breadcrumbList([
+    { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
+    { name: isZh ? '套餐总览' : 'Plans', url: `${SITE_URL}/${locale}/plans` },
+    { name: provider.name, url: `${SITE_URL}/${locale}/plans/${providerSlug}` },
+  ]);
+  const planJsonLdItems = plans
+    .filter(p => p.price != null || p.is_contact_sales)
+    .map(p => productOffer({
+      name: `${provider.name} ${p.name}`,
+      price: p.price ?? null,
+      currency: p.currency ?? currency,
+      url: `${SITE_URL}/${locale}/plans/${providerSlug}#${p.slug}`,
+      description: p.notes ?? `${provider.name} ${p.name} subscription plan`,
+      category: 'AI Subscription',
+    }));
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJson }} />
+      {planJsonLdItems.map((ld, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />
+      ))}
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -109,7 +160,7 @@ export default async function ProviderPlansPage({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               {getProviderLogoSrc(provider) ? (
-                  <img src={getProviderLogoSrc(provider)!} alt={provider.name} className="w-16 h-16 object-contain" />
+                  <Image src={getProviderLogoSrc(provider)!} alt={provider.name} width={64} height={64} className="w-16 h-16 object-contain" unoptimized />
                 ) : (
                   <span className="text-5xl">{getProviderLogoFallback(provider, providerInfo[providerSlug]?.logo || "🏢")}</span>
                 )}
