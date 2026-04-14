@@ -51,10 +51,17 @@ export async function GET(request: Request) {
         `)
         .eq('is_available', true)
         .not('provider_id', 'is', null),
-      // Fetch benchmark scores from model_benchmark_scores table
+      // Fetch Arena ELO scores specifically. Older version of this query
+      // tried to join through `benchmark_tasks.benchmark_id` which doesn't
+      // exist (the column is `benchmark_version_id`), so the whole query
+      // silently returned 0 rows — meaning every product had
+      // `benchmark_arena_elo: null` and "sort by performance" was a no-op
+      // for all 271 products. Join through benchmark_metrics and filter
+      // on name='ELO' so we get actual Chatbot Arena ratings.
       supabase
         .from('model_benchmark_scores')
-        .select('model_id, value, benchmark_tasks!inner(benchmark_id)')
+        .select('model_id, value, benchmark_metrics!inner(name)')
+        .eq('benchmark_metrics.name', 'ELO')
         .order('value', { ascending: false }),
     ]);
 
