@@ -152,8 +152,13 @@ export async function GET(request: Request) {
       }
     });
 
-    // 转换为数组
+    // Filter out models that have no channel prices at all. These show up
+    // with a provider name in the card header but an empty comparison table
+    // underneath — confusing for /api-pricing viewers who expect price
+    // data. Such models still exist and are reachable via /models/[slug]
+    // (which reads from a different API), so nothing is lost.
     const groupedData = Array.from(modelGroups.values())
+      .filter((group) => group.versions.length > 0)
       .sort((a, b) => a.name.localeCompare(b.name));
 
     return NextResponse.json(groupedData);
