@@ -24,6 +24,12 @@ interface PageMetaInput {
   path: string;          // e.g. '/api-pricing' (without locale prefix)
   title: { en: string; zh: string };
   description: { en: string; zh: string };
+  /**
+   * Explicit OG/Twitter image URL. Leave unset to let Next.js auto-discover
+   * the route's opengraph-image.tsx file — that's the preferred path for
+   * dynamic per-page cards. Only set this for pages that don't have a
+   * dynamic opengraph-image.tsx.
+   */
   image?: string;
   noindex?: boolean;
 }
@@ -35,6 +41,12 @@ interface PageMetaInput {
  * hreflang: we emit the same /zh URL under both `zh-CN` (BCP-47 regional)
  * and `zh-Hans` (script subtag) so both Google and Baidu pick it up
  * regardless of locale preference. `x-default` points to /en.
+ *
+ * IMPORTANT: openGraph.images and twitter.images are NOT set unless the
+ * caller passed an explicit `image`. Setting them unconditionally would
+ * override Next.js's auto-detection of opengraph-image.tsx files inside
+ * each route segment, which is exactly what happened in Round 2 — every
+ * page's og:image ended up as /logo.png instead of the dynamic card.
  */
 export function buildMetadata(input: PageMetaInput): Metadata {
   const isZh = input.locale === 'zh';
@@ -42,7 +54,25 @@ export function buildMetadata(input: PageMetaInput): Metadata {
   const description = isZh ? input.description.zh : input.description.en;
   const path = input.path.startsWith('/') ? input.path : `/${input.path}`;
   const canonical = `${SITE_URL}/${input.locale}${path}`;
-  const image = input.image ?? DEFAULT_OG_IMAGE;
+
+  const openGraph: Metadata['openGraph'] = {
+    title,
+    description,
+    url: canonical,
+    siteName: SITE_NAME,
+    type: 'website',
+    locale: isZh ? 'zh_CN' : 'en_US',
+    alternateLocale: isZh ? ['en_US'] : ['zh_CN'],
+  };
+  const twitter: Metadata['twitter'] = {
+    card: 'summary_large_image',
+    title,
+    description,
+  };
+  if (input.image) {
+    openGraph.images = [{ url: input.image }];
+    twitter.images = [input.image];
+  }
 
   return {
     title,
@@ -57,22 +87,8 @@ export function buildMetadata(input: PageMetaInput): Metadata {
         'x-default': `${SITE_URL}/en${path}`,
       },
     },
-    openGraph: {
-      title,
-      description,
-      url: canonical,
-      siteName: SITE_NAME,
-      type: 'website',
-      locale: isZh ? 'zh_CN' : 'en_US',
-      alternateLocale: isZh ? ['en_US'] : ['zh_CN'],
-      images: [{ url: image }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [image],
-    },
+    openGraph,
+    twitter,
     robots: input.noindex
       ? { index: false, follow: false }
       : {
