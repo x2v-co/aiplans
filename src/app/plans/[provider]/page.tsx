@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -110,7 +111,7 @@ export default async function ProviderPlansPage({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               {getProviderLogoSrc(provider) ? (
-                  <img src={getProviderLogoSrc(provider)!} alt={provider.name} className="w-16 h-16 object-contain" />
+                  <Image src={getProviderLogoSrc(provider)!} alt={provider.name} width={64} height={64} className="w-16 h-16 object-contain" unoptimized />
                 ) : (
                   <span className="text-5xl">{getProviderLogoFallback(provider, providerInfo[providerSlug]?.logo || "🏢")}</span>
                 )}

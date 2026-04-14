@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -140,7 +141,7 @@ export default async function ComparePlansIndexPage() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         {model.provider?.logo && (
-                          <img src={model.provider.logo} alt={model.provider.name} className="w-10 h-10 object-contain" />
+                          <Image src={model.provider.logo} alt={model.provider.name} width={40} height={40} className="w-10 h-10 object-contain" unoptimized />
                         )}
                         <div>
                           <h3 className="font-bold text-lg leading-tight">{model.name}</h3>
@@ -187,7 +188,7 @@ export default async function ComparePlansIndexPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                       {item.provider.logo && (
-                        <img src={item.provider.logo} alt={item.provider.name} className="w-12 h-12 object-contain" />
+                        <Image src={item.provider.logo} alt={item.provider.name} width={48} height={48} className="w-12 h-12 object-contain" unoptimized />
                       )}
                       <div>
                         <h3 className="font-bold text-xl">{item.provider.name}</h3>
