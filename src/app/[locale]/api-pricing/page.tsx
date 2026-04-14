@@ -427,13 +427,25 @@ export default function ApiPricingPage() {
                               {product.name}
                             </Link>
                             {product.benchmark_arena_elo && (
-                              <Badge variant="outline" className="ml-2">
+                              <Badge variant="outline" className="ml-2" title="Chatbot Arena ELO">
                                 ⭐ {product.benchmark_arena_elo}
                               </Badge>
                             )}
                           </div>
                           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                            {product.providers?.name} • {product.context_window ? product.context_window.toLocaleString() : 'N/A'} tokens
+                            {product.providers?.slug ? (
+                              <Link href={`/${locale}/plans/${product.providers.slug}`} className="hover:text-blue-600 hover:underline">
+                                {product.providers.name}
+                              </Link>
+                            ) : (
+                              product.providers?.name
+                            )}
+                            {' • '}
+                            {product.context_window ? `${product.context_window.toLocaleString()} tokens` : 'N/A'}
+                            {' • '}
+                            <Link href={`/${locale}/compare/plans/${product.slug}`} className="text-blue-600 hover:underline">
+                              {locale === 'zh' ? '对比订阅计划' : 'Compare plans'}
+                            </Link>
                           </p>
                         </div>
                       </div>

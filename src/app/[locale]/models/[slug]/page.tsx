@@ -11,39 +11,29 @@ import { supabase } from "@/lib/supabase";
 import { use } from "react";
 import { getPrimaryProvidersForModels, normalizeProviderRecord } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
+import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 
-const baseUrl = 'https://aiplans.dev';
+const baseUrl = SITE_URL;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
-  const isZh = locale === 'zh';
 
   // Get product name
   const { data: product } = await supabase.from('models').select('name').eq('slug', slug).single();
   const productName = product?.name || slug;
 
-  const title = isZh
-    ? `${productName} API 价格对比 - ${productName} 各渠道价格 | aiplans.dev`
-    : `${productName} API Price Comparison - All Channels | aiplans.dev`;
-
-  const description = isZh
-    ? `对比 ${productName} 在官方、Azure、OpenRouter、硅基流动等渠道的 API 价格。找到最便宜的 ${productName} API 供应商。`
-    : `Compare ${productName} API prices across official, Azure, OpenRouter, SiliconFlow and other channels. Find the cheapest ${productName} API provider.`;
-
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `${baseUrl}/${locale}/models/${slug}`,
-      languages: { en: `${baseUrl}/en/models/${slug}`, zh: `${baseUrl}/zh/models/${slug}` },
+  return buildMetadata({
+    locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
+    path: `/models/${slug}`,
+    title: {
+      en: `${productName} API Price Comparison · All Channels | aiplans.dev`,
+      zh: `${productName} API 价格对比 · 各渠道价格 | aiplans.dev`,
     },
-    openGraph: {
-      title,
-      description,
-      url: `${baseUrl}/${locale}/models/${slug}`,
-      type: 'website',
+    description: {
+      en: `Compare ${productName} API prices across official, Azure, AWS Bedrock, Vertex AI, OpenRouter, SiliconFlow and other channels. Find the cheapest ${productName} API provider. Updated hourly.`,
+      zh: `对比 ${productName} 在官方、Azure、AWS Bedrock、Vertex AI、OpenRouter、硅基流动等渠道的 API 价格。找到最便宜的 ${productName} API 供应商。每小时更新。`,
     },
-  };
+  });
 }
 
 // Channel type labels
@@ -109,6 +99,16 @@ async function getProductWithChannels(slug: string) {
     providers: normalizeProviderRecord(channel.providers),
   }));
 
+  // Fetch Arena ELO score for this model (used in JSON-LD + visible badge)
+  const { data: arenaScores } = await supabase
+    .from('model_benchmark_scores')
+    .select('value, benchmark_metrics!inner(name)')
+    .eq('model_id', model.id)
+    .eq('benchmark_metrics.name', 'ELO')
+    .order('value', { ascending: false })
+    .limit(1);
+  const arenaElo = arenaScores?.[0]?.value ?? null;
+
   const derivedProvider =
     normalizedChannelPrices.find((channel: any) => channel.providers?.type === 'producer')?.providers ||
     normalizedChannelPrices.find((channel: any) => channel.providers?.type === 'official')?.providers ||
@@ -158,7 +158,8 @@ async function getProductWithChannels(slug: string) {
   return {
     product,
     channelPrices: normalizedChannelPrices,
-    plans: plansData || []
+    plans: plansData || [],
+    arenaElo,
   };
 }
 
@@ -174,11 +175,69 @@ export default async function ModelPage({
     notFound();
   }
 
-  const { product, channelPrices, plans } = data;
+  const { product, channelPrices, plans, arenaElo } = data;
+  const isZh = locale === 'zh';
 
   // Find official and cheapest
   const officialChannel = (channelPrices as any[]).find((cp) => cp.providers?.type === 'official' || cp.providers?.type === 'producer');
   const cheapestChannel = (channelPrices as any[])[0];
+
+  // JSON-LD: Product + AggregateOffer + BreadcrumbList
+  // AggregateOffer packages every channel's input_price_per_1m so Google
+  // can show a price range in the SERP snippet. Channel currencies get
+  // normalized to USD at display time on the page but for SEO we only
+  // advertise the USD prices (channels with USD currency).
+  const usdPrices = (channelPrices as any[])
+    .filter((cp) => (cp.currency ?? 'USD') === 'USD' && typeof cp.input_price_per_1m === 'number')
+    .map((cp) => cp.input_price_per_1m as number)
+    .filter((p) => p > 0)
+    .sort((a, b) => a - b);
+
+  const productJsonLd = jsonLd({
+    '@type': 'Product',
+    name: product.name,
+    description: product.description ?? `${product.name} — ${product.context_window?.toLocaleString() ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
+    brand: product.providers?.name
+      ? { '@type': 'Brand', name: product.providers.name }
+      : undefined,
+    category: 'AI Model API',
+    ...(usdPrices.length > 0
+      ? {
+          offers: {
+            '@type': 'AggregateOffer',
+            priceCurrency: 'USD',
+            lowPrice: String(usdPrices[0]),
+            highPrice: String(usdPrices[usdPrices.length - 1]),
+            offerCount: usdPrices.length,
+            priceSpecification: {
+              '@type': 'UnitPriceSpecification',
+              priceCurrency: 'USD',
+              unitText: 'per 1M input tokens',
+            },
+          },
+        }
+      : {}),
+    // Arena ELO as an additional property (Google accepts custom numeric
+    // metrics; we don't use AggregateRating because ELO isn't a 1-5 scale)
+    ...(arenaElo != null
+      ? {
+          additionalProperty: [
+            {
+              '@type': 'PropertyValue',
+              name: 'Chatbot Arena ELO',
+              value: arenaElo,
+              unitText: 'ELO',
+            },
+          ],
+        }
+      : {}),
+  });
+
+  const breadcrumbJsonLd = breadcrumbList([
+    { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
+    { name: isZh ? 'API 价格' : 'API Pricing', url: `${SITE_URL}/${locale}/api-pricing` },
+    { name: product.name, url: `${SITE_URL}/${locale}/models/${product.slug}` },
+  ]);
 
   // Calculate savings
   const calculateSavings = (price: number, officialPrice: number) => {
@@ -189,6 +248,8 @@ export default async function ModelPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">

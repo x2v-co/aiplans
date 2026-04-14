@@ -11,6 +11,14 @@ export const DEFAULT_OG_IMAGE = `${SITE_URL}/logo.png`;
 
 export type Locale = 'en' | 'zh';
 
+/** BCP-47 language tags for hreflang. More specific is better for SEO. */
+export const HREFLANG_TAGS = {
+  en: 'en',
+  'en-US': 'en-US',
+  zh: 'zh-CN',      // simplified Chinese, mainland
+  'zh-Hans': 'zh-Hans',
+} as const;
+
 interface PageMetaInput {
   locale: Locale;
   path: string;          // e.g. '/api-pricing' (without locale prefix)
@@ -23,6 +31,10 @@ interface PageMetaInput {
 /**
  * Build a Next.js Metadata object with title, description, OG, Twitter,
  * canonical, and per-route hreflang alternates for en/zh.
+ *
+ * hreflang: we emit the same /zh URL under both `zh-CN` (BCP-47 regional)
+ * and `zh-Hans` (script subtag) so both Google and Baidu pick it up
+ * regardless of locale preference. `x-default` points to /en.
  */
 export function buildMetadata(input: PageMetaInput): Metadata {
   const isZh = input.locale === 'zh';
@@ -38,8 +50,10 @@ export function buildMetadata(input: PageMetaInput): Metadata {
     alternates: {
       canonical,
       languages: {
-        en: `${SITE_URL}/en${path}`,
-        zh: `${SITE_URL}/zh${path}`,
+        'en': `${SITE_URL}/en${path}`,
+        'en-US': `${SITE_URL}/en${path}`,
+        'zh-CN': `${SITE_URL}/zh${path}`,
+        'zh-Hans': `${SITE_URL}/zh${path}`,
         'x-default': `${SITE_URL}/en${path}`,
       },
     },
@@ -50,6 +64,7 @@ export function buildMetadata(input: PageMetaInput): Metadata {
       siteName: SITE_NAME,
       type: 'website',
       locale: isZh ? 'zh_CN' : 'en_US',
+      alternateLocale: isZh ? ['en_US'] : ['zh_CN'],
       images: [{ url: image }],
     },
     twitter: {
@@ -58,7 +73,13 @@ export function buildMetadata(input: PageMetaInput): Metadata {
       description,
       images: [image],
     },
-    robots: input.noindex ? { index: false, follow: false } : { index: true, follow: true },
+    robots: input.noindex
+      ? { index: false, follow: false }
+      : {
+          index: true,
+          follow: true,
+          googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+        },
   };
 }
 

@@ -107,18 +107,29 @@ async function LocaleLayoutContent({
   const messages = messagesMap[locale] || enMessages;
 
   const isZh = locale === 'zh';
+  // BCP-47 language tag — `zh-CN` is more specific than `zh`, which matters
+  // for Baidu and regional search preference.
+  const htmlLang = isZh ? 'zh-CN' : 'en-US';
   const { title, description } = generateMetadata(locale, '/');
   const canonicalUrl = `https://aiplans.dev/${locale}`;
 
   return (
-    <html lang={locale}>
+    <html lang={htmlLang}>
       <head>
         <title>{title}</title>
         <meta name="description" content={description} />
         <meta name="keywords" content={isZh ? 'AI价格,ChatGPT Plus,Claude Pro,DeepSeek API,GPT-4价格对比,API价格对比' : 'AI pricing,ChatGPT Plus,Claude Pro,DeepSeek API,GPT-4 price comparison,API pricing comparison'} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#2563eb" />
-        <meta name="robots" content="index, follow" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+
+        {/* Baidu / Chinese search engine hints */}
+        <meta name="applicable-device" content="pc,mobile" />
+        <meta name="MobileOptimized" content="width" />
+        <meta name="HandheldFriendly" content="true" />
+        {/* Baidu site verification placeholder — replace the value once
+            the property is verified in https://ziyuan.baidu.com/ */}
+        {/* <meta name="baidu-site-verification" content="TODO" /> */}
 
         {/* Favicon */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -132,7 +143,10 @@ async function LocaleLayoutContent({
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="aiplans.dev" />
         <meta property="og:locale" content={isZh ? 'zh_CN' : 'en_US'} />
+        <meta property="og:locale:alternate" content={isZh ? 'en_US' : 'zh_CN'} />
         <meta property="og:image" content="https://aiplans.dev/logo.png" />
+        <meta property="og:image:width" content="512" />
+        <meta property="og:image:height" content="512" />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary" />
@@ -140,10 +154,14 @@ async function LocaleLayoutContent({
         <meta name="twitter:description" content={description} />
         <meta name="twitter:image" content="https://aiplans.dev/logo.png" />
 
-        {/* Alternate links - Hreflang for i18n SEO */}
+        {/* Alternate links — BCP-47 hreflang. Emitting both `zh-CN` (region)
+            and `zh-Hans` (script) lets Google/Baidu resolve the right
+            variant regardless of the user's locale preference. */}
         <link rel="alternate" hrefLang="en" href="https://aiplans.dev/en" />
-        <link rel="alternate" hrefLang="zh" href="https://aiplans.dev/zh" />
-        <link rel="alternate" hrefLang="x-default" href="https://aiplans.dev" />
+        <link rel="alternate" hrefLang="en-US" href="https://aiplans.dev/en" />
+        <link rel="alternate" hrefLang="zh-CN" href="https://aiplans.dev/zh" />
+        <link rel="alternate" hrefLang="zh-Hans" href="https://aiplans.dev/zh" />
+        <link rel="alternate" hrefLang="x-default" href="https://aiplans.dev/en" />
 
         {/* Canonical */}
         <link rel="canonical" href={canonicalUrl} />
@@ -156,11 +174,16 @@ async function LocaleLayoutContent({
               "@context": "https://schema.org",
               "@type": "Organization",
               "name": "aiplans.dev",
+              "alternateName": isZh ? "AI Plans 价格对比" : "AI Plans",
               "url": "https://aiplans.dev",
               "logo": "https://aiplans.dev/logo.png",
               "description": isZh
                 ? "全网最专业的 AI 价格对比平台"
-                : "The most comprehensive AI pricing comparison platform"
+                : "The most comprehensive AI pricing comparison platform",
+              "foundingDate": "2025",
+              "sameAs": [
+                "https://github.com/x2v-co/aiplans"
+              ]
             })
           }}
         />
@@ -171,6 +194,7 @@ async function LocaleLayoutContent({
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": isZh ? "aiplans.dev - 全网AI价格对比" : "aiplans.dev - AI Pricing Comparison",
+              "alternateName": isZh ? "AI 价格对比" : "AI Pricing Comparison",
               "description": isZh
                 ? "对比 GPT-4、Claude、DeepSeek、通义千问等 AI 模型价格"
                 : "Compare AI model pricing across providers",
@@ -179,7 +203,7 @@ async function LocaleLayoutContent({
                 "@type": "SearchAction",
                 "target": {
                   "@type": "EntryPoint",
-                  "urlTemplate": "https://aiplans.dev/{search_term_string}"
+                  "urlTemplate": `https://aiplans.dev/${locale}/api-pricing?q={search_term_string}`
                 },
                 "query-input": "required name=search_term_string"
               },
@@ -187,7 +211,11 @@ async function LocaleLayoutContent({
               "publisher": {
                 "@type": "Organization",
                 "name": "aiplans.dev",
-                "url": "https://aiplans.dev"
+                "url": "https://aiplans.dev",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://aiplans.dev/logo.png"
+                }
               }
             })
           }}
