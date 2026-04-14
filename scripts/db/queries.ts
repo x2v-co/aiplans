@@ -529,46 +529,44 @@ export async function deletePlan(planId: number) {
 }
 
 /**
- * Cleanup outdated plans for a provider.
+ * Cleanup outdated plans for a provider — LOG-ONLY as of 2026-04-14.
  *
- * Only deletes rows where source='scraper' (the default). Manually-curated
- * plans inserted via fix-plans-audit.ts have source='manual' and are
- * preserved across scraper runs even when their slug isn't in the
- * scraper's current output. This protects ground-truth tiers like
- * Claude Max 5x/20x and Google AI Plus that aren't on every vendor's
- * marketing page but still exist as real subscriptions.
+ * Previous behavior deleted any scraper row whose slug wasn't in the current
+ * scrape output. That turned out to be dangerous: if a plan scraper's regex
+ * temporarily fails to match one plan (common when a vendor tweaks their
+ * pricing page DOM), the cleanup wipes a real plan that we then have to
+ * re-curate by hand. It wiped chatgpt-pro, chatgpt-business and chatgpt-go
+ * in one run.
+ *
+ * New behavior: never delete from the scraper path. Instead, log the plans
+ * that the scraper didn't see in this run — `scripts/audit-data.ts` will
+ * flag them as `plans.stale` (no `last_verified` update) after 30 days so
+ * the user can decide whether to delete. Manual rows are never considered
+ * stale by scraper cleanup; they're assumed ground-truth until explicitly
+ * removed.
  */
 export async function cleanupOutdatedPlans(providerId: number, currentSlugs: string[]) {
-  // Get all existing scraper-managed plans for this provider. Manual rows
-  // are intentionally excluded so they cannot be deleted by a scraper run.
   const { data: existingPlans, error } = await supabaseAdmin
     .from('plans')
     .select('id, name, slug, source')
     .eq('provider_id', providerId)
     .or('source.eq.scraper,source.is.null');
-
   if (error) throw error;
 
-  // Find plans to delete (slugs not in current list)
-  const plansToDelete = (existingPlans ?? []).filter(plan => !currentSlugs.includes(plan.slug));
-
-  if (plansToDelete.length > 0) {
-    console.log(`🗑️  Deleting ${plansToDelete.length} outdated scraper plans for provider ${providerId}`);
-    for (const plan of plansToDelete) {
-      try {
-        await deletePlan(plan.id);
-        console.log(`   - Deleted: ${plan.name} (${plan.slug})`);
-      } catch (e) {
-        console.error(`   - Failed to delete plan ${plan.name}:`, e);
-      }
+  const unseen = (existingPlans ?? []).filter(plan => !currentSlugs.includes(plan.slug));
+  if (unseen.length > 0) {
+    console.log(`⚠️  ${unseen.length} existing scraper plans not seen in this run for provider ${providerId}:`);
+    for (const plan of unseen) {
+      console.log(`   - ${plan.name} (${plan.slug}) — kept; audit-data.ts will flag as stale if >30d`);
     }
   } else {
-    console.log(`✅ No outdated scraper plans to delete for provider ${providerId}`);
+    console.log(`✅ All scraper plans accounted for, provider ${providerId}`);
   }
 
   return {
-    deleted: plansToDelete.length,
-    remaining: (existingPlans?.length ?? 0) - plansToDelete.length,
+    deleted: 0, // log-only mode
+    unseen: unseen.length,
+    remaining: existingPlans?.length ?? 0,
   };
 }
 

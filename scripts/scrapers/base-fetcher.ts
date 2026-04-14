@@ -231,9 +231,13 @@ export async function fetchDynamicHTML(
       await page.setExtraHTTPHeaders(headers);
     }
 
-    // Navigate to the page
+    // Navigate to the page. 'domcontentloaded' is faster and more reliable
+    // than 'networkidle' for pages that keep pinging analytics forever
+    // (e.g. openai.com never reaches networkidle within 25s).
+    // Callers that need the full async hydration should pass waitForSelector
+    // or bump waitForTimeout.
     const response = await page.goto(url, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
       timeout,
     });
 
