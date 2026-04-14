@@ -148,8 +148,9 @@ async function LocaleLayoutContent({
         <meta property="og:image:width" content="512" />
         <meta property="og:image:height" content="512" />
 
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary" />
+        {/* Twitter — summary_large_image lets per-page opengraph-image.tsx
+            output show as a full-width card instead of a tiny square icon. */}
+        <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
         <meta name="twitter:image" content="https://aiplans.dev/logo.png" />

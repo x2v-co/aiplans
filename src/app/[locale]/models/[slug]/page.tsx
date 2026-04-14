@@ -193,6 +193,36 @@ export default async function ModelPage({
     .filter((p) => p > 0)
     .sort((a, b) => a - b);
 
+  // Build individual Offer entries per channel. AggregateOffer alone can't
+  // tell Google which seller has which price — the per-channel Offer array
+  // is what lets the SERP show "OpenAI $2.50 / SiliconFlow $1.08 / Azure
+  // $2.50" style breakdown.
+  const individualOffers = (channelPrices as any[])
+    .filter((cp) => typeof cp.input_price_per_1m === 'number' && cp.input_price_per_1m > 0)
+    .map((cp) => ({
+      '@type': 'Offer',
+      priceCurrency: cp.currency ?? 'USD',
+      price: String(cp.input_price_per_1m),
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        priceCurrency: cp.currency ?? 'USD',
+        price: String(cp.input_price_per_1m),
+        unitText: 'per 1M input tokens',
+      },
+      availability: cp.is_available !== false
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/Discontinued',
+      seller: cp.providers?.name
+        ? {
+            '@type': 'Organization',
+            name: cp.providers.name,
+            url: cp.providers.website ?? undefined,
+          }
+        : undefined,
+      url: `${baseUrl}/${locale}/models/${product.slug}`,
+      category: cp.providers?.type ?? undefined,
+    }));
+
   const productJsonLd = jsonLd({
     '@type': 'Product',
     name: product.name,
@@ -214,6 +244,7 @@ export default async function ModelPage({
               priceCurrency: 'USD',
               unitText: 'per 1M input tokens',
             },
+            offers: individualOffers,
           },
         }
       : {}),
