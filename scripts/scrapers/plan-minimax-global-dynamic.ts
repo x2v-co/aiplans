@@ -6,7 +6,8 @@ import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
 import { fetchHTMLSmart } from './base-fetcher';
 
-const MINIMAX_GLOBAL_PLANS_URL = 'https://platform.minimax.io/docs/guides/pricing-coding-plan';
+// Same rename as the CN product — pricing-coding-plan → pricing-token-plan.
+const MINIMAX_GLOBAL_PLANS_URL = 'https://platform.minimax.io/docs/guides/pricing-token-plan';
 
 interface MinimaxGlobalPlan {
   name: string;

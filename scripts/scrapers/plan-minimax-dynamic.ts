@@ -1,195 +1,159 @@
 /**
- * Minimax China Plan Scraper - Dynamic fetching from Minimax coding plan page
+ * Minimax China Plan Scraper — platform.minimaxi.com Token Plan page.
+ *
+ * Rewritten 2026-04-14: the old parser targeted a Lite/Pro/Team/Enterprise
+ * layout that no longer matches MiniMax's pricing page. The new page presents
+ * two product lines (标准版 + 极速版), each with three tiers (Starter/Plus/
+ * Max or Plus/Max/Ultra), priced in monthly + annual columns.
+ *
+ * This parser extracts the 3 monthly + 3 annual prices from each line by
+ * positional regex anchored on the unique tier-group markers, validates
+ * each extracted number is in a sane range, and emits 6 ScrapedPlan rows
+ * matching the slugs in the DB (minimax-standard-starter, etc.).
+ *
+ * Slugs intentionally match the fix-plans-audit.ts NEW_PLANS list so
+ * upsertPlan updates the existing rows (source='manual' is preserved).
  */
-
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
-import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
 import { fetchHTMLSmart } from './base-fetcher';
 
-const MINIMAX_CHINA_PLANS_URL = 'https://platform.minimaxi.com/docs/guides/pricing-coding-plan';
+// MiniMax renamed the page from /pricing-coding-plan to /pricing-token-plan
+// sometime before 2026-04. The old URL 404s.
+const MINIMAX_CHINA_PLANS_URL = 'https://platform.minimaxi.com/docs/guides/pricing-token-plan';
 const MINIMAX_CHINA_INVITE_LINK = 'https://platform.minimaxi.com/subscribe/coding-plan?code=GOCSHm96x2&source=link';
 
-interface MinimaxPlan {
+interface TierRef {
+  slug: string;
   name: string;
-  priceMonthly: number;
-  priceYearly?: number;
   tier: 'free' | 'basic' | 'pro' | 'team' | 'enterprise';
-  dailyMessageLimit?: number;
-  features: string[];
-  paymentMethods: string[];
-  accessFromChina: boolean;
-  region: string;
 }
 
-/**
- * Fetch and parse Minimax China subscription plans from their website
- */
-async function fetchMinimaxPlans(): Promise<{ plans: MinimaxPlan[], errors: string[] }> {
-  const result = await fetchHTMLSmart(MINIMAX_CHINA_PLANS_URL);
-  const errors: string[] = [];
+const STANDARD_TIERS: TierRef[] = [
+  { slug: 'minimax-standard-starter', name: 'MiniMax 标准版 Starter', tier: 'basic' },
+  { slug: 'minimax-standard-plus',    name: 'MiniMax 标准版 Plus',    tier: 'pro' },
+  { slug: 'minimax-standard-max',     name: 'MiniMax 标准版 Max',     tier: 'team' },
+];
 
-  if (!result.success || !result.data) {
-    return { plans: [], errors: ['Failed to fetch Minimax China plans page - no HTML returned'] };
+const HIGHSPEED_TIERS: TierRef[] = [
+  { slug: 'minimax-highspeed-plus',   name: 'MiniMax 极速版 Plus',    tier: 'pro' },
+  { slug: 'minimax-highspeed-max',    name: 'MiniMax 极速版 Max',     tier: 'team' },
+  { slug: 'minimax-highspeed-ultra',  name: 'MiniMax 极速版 Ultra',   tier: 'enterprise' },
+];
+
+// Extract unique prices (in order of first appearance) matching ¥NN /<unit>
+// from the raw HTML. Parsing raw HTML (not stripped text) is critical because
+// MiniMax's Next.js page stores the annual-tab prices only in React hydration
+// JSON embedded in <script> tags — stripping scripts wipes them out.
+function extractUniquePrices(html: string, priceUnit: '月' | '年', min: number, max: number): number[] {
+  const re = new RegExp(`¥\\s*(\\d{1,5})\\s*\\/${priceUnit}`, 'g');
+  const seen = new Set<number>();
+  const ordered: number[] = [];
+  for (const m of html.matchAll(re)) {
+    const v = parseInt(m[1], 10);
+    if (v < min || v > max) continue;
+    if (seen.has(v)) continue;
+    seen.add(v);
+    ordered.push(v);
   }
-
-  const html = result.data;
-  const plans: MinimaxPlan[] = [];
-
-  // Extract prices from HTML - only proceed if we can find actual pricing data
-  const litePriceMatch = html.match(/Lite[^￥]*?￥\s*[\d,]+/i);
-  const proPriceMatch = html.match(/Pro[^￥]*?￥\s*[\d,]+/i);
-  const teamPriceMatch = html.match(/Team[^￥]*?￥\s*[\d,]+/i);
-  const enterpriseMatch = html.match(/Enterprise|企业版/i);
-
-  // Check if we found any pricing information
-  if (!litePriceMatch && !proPriceMatch && !teamPriceMatch && !enterpriseMatch) {
-    return {
-      plans: [],
-      errors: ['No pricing information found on Minimax China page. The page structure may have changed.']
-    };
-  }
-
-  // Free plan - check if mentioned on page
-  if (html.match(/free|Free|FREE|免费/i)) {
-    const freePlan: MinimaxPlan = {
-      name: 'Minimax Free',
-      priceMonthly: 0,
-      tier: 'free',
-      dailyMessageLimit: undefined,
-      features: ['Access to Minimax basic models', 'Limited message capacity'],
-      paymentMethods: [],
-      accessFromChina: true,
-      region: 'china',
-    };
-    plans.push(freePlan);
-  }
-
-  // Lite plan - only add if we found the price
-  if (litePriceMatch) {
-    const priceMatch = litePriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      const litePlan: MinimaxPlan = {
-        name: 'Minimax Lite',
-        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
-        priceYearly: undefined,
-        tier: 'basic',
-        dailyMessageLimit: undefined,
-        features: [], // Features should be extracted from actual page content
-        paymentMethods: ['Alipay', 'WeChat Pay'],
-        accessFromChina: true,
-        region: 'china',
-      };
-      plans.push(litePlan);
-    }
-  }
-
-  // Pro plan - only add if we found the price
-  if (proPriceMatch) {
-    const priceMatch = proPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      const proPlan: MinimaxPlan = {
-        name: 'Minimax Pro',
-        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
-        priceYearly: undefined,
-        tier: 'pro',
-        dailyMessageLimit: undefined,
-        features: [],
-        paymentMethods: ['Alipay', 'WeChat Pay'],
-        accessFromChina: true,
-        region: 'china',
-      };
-      plans.push(proPlan);
-    }
-  }
-
-  // Team plan - only add if we found the price
-  if (teamPriceMatch) {
-    const priceMatch = teamPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      const teamPlan: MinimaxPlan = {
-        name: 'Minimax Team',
-        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
-        priceYearly: undefined,
-        tier: 'team',
-        dailyMessageLimit: undefined,
-        features: [],
-        paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
-        accessFromChina: true,
-        region: 'china',
-      };
-      plans.push(teamPlan);
-    }
-  }
-
-  // Enterprise plan - only add if mentioned (custom pricing)
-  if (enterpriseMatch) {
-    const enterprisePlan: MinimaxPlan = {
-      name: 'Minimax Enterprise',
-      priceMonthly: 0, // Custom pricing
-      tier: 'enterprise',
-      dailyMessageLimit: undefined,
-      features: [],
-      paymentMethods: ['Invoice', 'Contract'],
-      accessFromChina: true,
-      region: 'china',
-    };
-    plans.push(enterprisePlan);
-  }
-
-  if (plans.length === 0) {
-    errors.push('No plans could be parsed from Minimax China pricing page. The page structure may have changed.');
-  }
-
-  return { plans, errors };
+  return ordered;
 }
 
-export async function scrapeMinimaxPlans(): Promise<PlanScraperResult> {
+// Extract [standard, highspeed] price triples using positional logic:
+// page renders 6 unique tiers in DOM order — 3 standard followed by 3
+// high-speed (both for monthly and annual). We just take first 6 unique.
+function extractTriples(
+  html: string,
+  priceUnit: '月' | '年',
+  min: number,
+  max: number,
+): { standard: [number, number, number] | null; highspeed: [number, number, number] | null } {
+  const unique = extractUniquePrices(html, priceUnit, min, max);
+  if (unique.length < 6) return { standard: null, highspeed: null };
+  return {
+    standard: [unique[0], unique[1], unique[2]],
+    highspeed: [unique[3], unique[4], unique[5]],
+  };
+}
+
+async function scrapeMinimaxPlans(): Promise<PlanScraperResult> {
   const startTime = Date.now();
   const errors: string[] = [];
   const plans: ScrapedPlan[] = [];
 
   try {
     console.log('🔄 Fetching Minimax China subscription plans...');
+    const result = await fetchHTMLSmart(MINIMAX_CHINA_PLANS_URL, { waitForTimeout: 3000 });
+    if (!result.success || !result.data) {
+      return {
+        source: 'Minimax-Plans',
+        success: false,
+        plans: [],
+        errors: [`Failed to fetch MiniMax plans page: ${result.error ?? 'no HTML returned'}`],
+      };
+    }
+    console.log(`📦 fetched ${result.data.length} bytes, parsing raw HTML...`);
 
-    const { plans: minimaxPlans, errors: fetchErrors } = await fetchMinimaxPlans();
-    errors.push(...fetchErrors);
+    // Parse raw HTML — MiniMax ships annual prices only in React hydration
+    // JSON inside <script> tags, so we cannot strip them.
+    const monthly = extractTriples(result.data, '月', 10, 2000);
+    const annual  = extractTriples(result.data, '年', 100, 20000);
 
-    console.log(`📦 Found ${minimaxPlans.length} plans from Minimax China`);
-    console.log(`🔗 Invite Link: ${MINIMAX_CHINA_INVITE_LINK}`);
+    const stdMonthly = monthly.standard;
+    const stdAnnual  = annual.standard;
 
-    for (const plan of minimaxPlans) {
-      try {
-        // Validate monthly price
-        if (!validatePlanPrice(plan.priceMonthly)) {
-          errors.push(`Invalid monthly price for ${plan.name}: ${plan.priceMonthly}`);
-          continue;
-        }
+    if (!stdMonthly) errors.push('standard-tier monthly prices not found on Minimax page');
+    if (!stdAnnual)  errors.push('standard-tier annual prices not found on Minimax page');
 
-        // Validate yearly price if present
-        if (plan.priceYearly !== null && plan.priceYearly !== undefined && !validatePlanPrice(plan.priceYearly)) {
-          errors.push(`Invalid yearly price for ${plan.name}: ${plan.priceYearly}`);
-          plan.priceYearly = undefined;
-        }
-
+    if (stdMonthly && stdAnnual) {
+      for (let i = 0; i < STANDARD_TIERS.length; i++) {
+        const t = STANDARD_TIERS[i];
         plans.push({
-          planName: normalizePlanName(plan.name),
-          planSlug: slugifyPlan(plan.name),
-          priceMonthly: plan.priceMonthly,
-          priceYearly: plan.priceYearly,
+          planName: t.name,
+          planSlug: t.slug,
+          priceMonthly: stdMonthly[i],
+          priceYearly: stdAnnual[i],
           pricingModel: 'subscription',
-          tier: plan.tier,
-          dailyMessageLimit: plan.dailyMessageLimit,
-          features: plan.features,
-          region: plan.region,
-          accessFromChina: plan.accessFromChina,
-          paymentMethods: plan.paymentMethods,
+          tier: t.tier,
+          dailyMessageLimit: undefined,
+          features: [],
+          region: 'china',
+          accessFromChina: true,
+          paymentMethods: ['Alipay', 'WeChat Pay'],
           isOfficial: true,
           currency: 'CNY',
         });
-      } catch (error) {
-        errors.push(`Error processing plan ${plan.name}: ${error}`);
       }
     }
+
+    const hsMonthly = monthly.highspeed;
+    const hsAnnual  = annual.highspeed;
+
+    if (!hsMonthly) errors.push('highspeed-tier monthly prices not found on Minimax page');
+    if (!hsAnnual)  errors.push('highspeed-tier annual prices not found on Minimax page');
+
+    if (hsMonthly && hsAnnual) {
+      for (let i = 0; i < HIGHSPEED_TIERS.length; i++) {
+        const t = HIGHSPEED_TIERS[i];
+        plans.push({
+          planName: t.name,
+          planSlug: t.slug,
+          priceMonthly: hsMonthly[i],
+          priceYearly: hsAnnual[i],
+          pricingModel: 'subscription',
+          tier: t.tier,
+          dailyMessageLimit: undefined,
+          features: [],
+          region: 'china',
+          accessFromChina: true,
+          paymentMethods: ['Alipay', 'WeChat Pay'],
+          isOfficial: true,
+          currency: 'CNY',
+        });
+      }
+    }
+
+    console.log(`📦 Found ${plans.length} plans from Minimax China`);
+    console.log(`🔗 Invite Link: ${MINIMAX_CHINA_INVITE_LINK}`);
 
     const duration = Date.now() - startTime;
     console.log(`✅ Minimax China plans scrape completed in ${duration}ms`);
@@ -212,6 +176,8 @@ export async function scrapeMinimaxPlans(): Promise<PlanScraperResult> {
     };
   }
 }
+
+export { scrapeMinimaxPlans };
 
 // CLI test
 if (require.main === module) {
