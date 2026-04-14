@@ -1,7 +1,0 @@
-import { redirect } from 'next/navigation';
-
-export default function RootPage() {
-  // Redirect root to English locale
-  // The middleware will detect user's locale preference automatically
-  redirect('/en');
-}
