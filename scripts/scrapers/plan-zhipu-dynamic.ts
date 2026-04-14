@@ -4,7 +4,7 @@
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { fetchHTML } from './base-fetcher';
+import { fetchHTMLSmart } from './base-fetcher';
 
 const ZHIPU_CHINA_PLANS_URL = 'https://bigmodel.cn/glm-coding';
 const ZHIPU_CHINA_INVITE_LINK = 'https://www.bigmodel.cn/glm-coding?ic=U2SFC0L765';
@@ -27,7 +27,7 @@ interface ZhipuChinaPlan {
  * Fetch and parse Zhipu AI China subscription plans from their website
  */
 async function fetchZhipuChinaPlans(): Promise<{ plans: ZhipuChinaPlan[], errors: string[] }> {
-  const result = await fetchHTML(ZHIPU_CHINA_PLANS_URL);
+  const result = await fetchHTMLSmart(ZHIPU_CHINA_PLANS_URL);
   const errors: string[] = [];
 
   if (!result.success || !result.data) {

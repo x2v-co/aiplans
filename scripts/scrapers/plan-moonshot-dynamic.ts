@@ -4,7 +4,7 @@
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { fetchHTML } from './base-fetcher';
+import { fetchHTMLSmart } from './base-fetcher';
 
 const MOONSHOT_PLANS_URL = 'https://platform.moonshot.cn/pricing/chat';
 
@@ -24,7 +24,7 @@ interface MoonshotPlan {
  * Fetch and parse Moonshot subscription plans from their website
  */
 async function fetchMoonshotPlans(): Promise<{ plans: MoonshotPlan[], errors: string[] }> {
-  const result = await fetchHTML(MOONSHOT_PLANS_URL);
+  const result = await fetchHTMLSmart(MOONSHOT_PLANS_URL);
   const errors: string[] = [];
 
   if (!result.success || !result.data) {

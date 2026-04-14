@@ -295,6 +295,24 @@ const JS_HEAVY_DOMAINS = [
   'openai.com',
   'chat.openai.com',
   'chatgpt.com',
+  // Added 2026-04-13 — these all returned empty HTML to fetchHTML during
+  // production plan scraper runs because they're React/Vue SPAs.
+  'platform.minimaxi.com',
+  'minimaxi.com',
+  'platform.minimax.io',
+  'minimax.io',
+  'platform.moonshot.cn',
+  'moonshot.cn',
+  'kimi.com',
+  'platform.kimi.com',
+  'bigmodel.cn',
+  'open.bigmodel.cn',
+  'z.ai',
+  'docs.z.ai',
+  'console.bce.baidu.com',
+  'cloud.baidu.com',
+  'volcengine.com',
+  'www.volcengine.com',
 ];
 
 export async function fetchHTMLSmart(

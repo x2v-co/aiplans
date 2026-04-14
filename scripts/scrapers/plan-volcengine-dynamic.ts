@@ -4,7 +4,7 @@
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { fetchHTML } from './base-fetcher';
+import { fetchHTMLSmart } from './base-fetcher';
 
 const VOLCENGINE_PLANS_URL = 'https://www.volcengine.com/docs/82379/1925114';
 const VOLCENGINE_INVITE_LINK = 'https://volcengine.com/L/_uDpCXoFKP0/';
@@ -26,7 +26,7 @@ interface VolcenginePlan {
  * Fetch and parse Volcengine subscription plans from their website
  */
 async function fetchVolcenginePlans(): Promise<{ plans: VolcenginePlan[], errors: string[] }> {
-  const result = await fetchHTML(VOLCENGINE_PLANS_URL);
+  const result = await fetchHTMLSmart(VOLCENGINE_PLANS_URL);
   const errors: string[] = [];
 
   if (!result.success || !result.data) {

@@ -5,7 +5,7 @@
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { fetchHTML } from './base-fetcher';
+import { fetchHTMLSmart } from './base-fetcher';
 
 const OPENAI_PLANS_URL = 'https://openai.com/chatgpt/pricing/';
 
@@ -25,7 +25,7 @@ interface OpenAIPlan {
  * Fetch and parse OpenAI subscription plans from their website
  */
 async function fetchOpenAIPlans(): Promise<{ plans: OpenAIPlan[], errors: string[] }> {
-  const result = await fetchHTML(OPENAI_PLANS_URL);
+  const result = await fetchHTMLSmart(OPENAI_PLANS_URL);
   const errors: string[] = [];
 
   if (!result.success || !result.data) {

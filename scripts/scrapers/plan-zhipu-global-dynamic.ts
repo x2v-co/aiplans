@@ -4,7 +4,7 @@
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { fetchHTML } from './base-fetcher';
+import { fetchHTMLSmart } from './base-fetcher';
 
 const ZHIPU_GLOBAL_PLANS_URL = 'https://z.ai/subscribe';
 const ZHIPU_GLOBAL_INVITE_LINK = 'https://z.ai/subscribe?ic=HFGTURQAPY';
@@ -25,7 +25,7 @@ interface ZhipuGlobalPlan {
  * Fetch and parse Zhipu AI Global subscription plans from their website
  */
 async function fetchZhipuGlobalPlans(): Promise<{ plans: ZhipuGlobalPlan[], errors: string[] }> {
-  const result = await fetchHTML(ZHIPU_GLOBAL_PLANS_URL);
+  const result = await fetchHTMLSmart(ZHIPU_GLOBAL_PLANS_URL);
   const errors: string[] = [];
 
   if (!result.success || !result.data) {

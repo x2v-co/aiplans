@@ -8,7 +8,7 @@
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { fetchHTML } from './base-fetcher';
+import { fetchHTMLSmart } from './base-fetcher';
 
 const BAIDU_PLANS_URL = 'https://console.bce.baidu.com/qianfan/resource/subscribe';
 const BAIDU_CODING_PLAN_URL = 'https://cloud.baidu.com/product/codingplan.html';
@@ -29,7 +29,7 @@ interface BaiduPlan {
  * Fetch and parse Baidu ERNIE subscription plans from their website
  */
 async function fetchBaiduPlans(): Promise<{ plans: BaiduPlan[], errors: string[] }> {
-  const result = await fetchHTML(BAIDU_PLANS_URL);
+  const result = await fetchHTMLSmart(BAIDU_PLANS_URL);
   const errors: string[] = [];
 
   if (!result.success || !result.data) {
@@ -151,7 +151,7 @@ interface CodingPlan {
  * https://cloud.baidu.com/product/codingplan.html
  */
 async function fetchCodingPlans(): Promise<{ plans: CodingPlan[], errors: string[] }> {
-  const result = await fetchHTML(BAIDU_CODING_PLAN_URL);
+  const result = await fetchHTMLSmart(BAIDU_CODING_PLAN_URL);
 
   if (!result.success || !result.data) {
     return { plans: [], errors: ['Failed to fetch Baidu Coding Plan page'] };

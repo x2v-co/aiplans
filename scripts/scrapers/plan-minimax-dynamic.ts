@@ -4,7 +4,7 @@
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { fetchHTML } from './base-fetcher';
+import { fetchHTMLSmart } from './base-fetcher';
 
 const MINIMAX_CHINA_PLANS_URL = 'https://platform.minimaxi.com/docs/guides/pricing-coding-plan';
 const MINIMAX_CHINA_INVITE_LINK = 'https://platform.minimaxi.com/subscribe/coding-plan?code=GOCSHm96x2&source=link';
@@ -25,7 +25,7 @@ interface MinimaxPlan {
  * Fetch and parse Minimax China subscription plans from their website
  */
 async function fetchMinimaxPlans(): Promise<{ plans: MinimaxPlan[], errors: string[] }> {
-  const result = await fetchHTML(MINIMAX_CHINA_PLANS_URL);
+  const result = await fetchHTMLSmart(MINIMAX_CHINA_PLANS_URL);
   const errors: string[] = [];
 
   if (!result.success || !result.data) {

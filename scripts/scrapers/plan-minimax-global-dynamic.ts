@@ -4,7 +4,7 @@
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { fetchHTML } from './base-fetcher';
+import { fetchHTMLSmart } from './base-fetcher';
 
 const MINIMAX_GLOBAL_PLANS_URL = 'https://platform.minimax.io/docs/guides/pricing-coding-plan';
 
@@ -24,7 +24,7 @@ interface MinimaxGlobalPlan {
  * Fetch and parse Minimax Global subscription plans from their website
  */
 async function fetchMinimaxGlobalPlans(): Promise<{ plans: MinimaxGlobalPlan[], errors: string[] }> {
-  const result = await fetchHTML(MINIMAX_GLOBAL_PLANS_URL);
+  const result = await fetchHTMLSmart(MINIMAX_GLOBAL_PLANS_URL);
   const errors: string[] = [];
 
   if (!result.success || !result.data) {
