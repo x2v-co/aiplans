@@ -179,6 +179,25 @@ export default function ApiPricingPage() {
     return Math.min(...prices);
   }
 
+  // Normalize legacy DB channel type values to the canonical set that has
+  // i18n entries. 'producer' is an older name for 'official' (the company
+  // that makes the model) — without this mapping the Badge renders the raw
+  // key `apiPricing.channelTypes.producer`. Any other unknown value falls
+  // back to 'aggregator'.
+  function normalizeChannelType(type: string | null | undefined): 'official' | 'cloud' | 'aggregator' | 'reseller' {
+    switch (type) {
+      case 'official':
+      case 'producer':
+        return 'official';
+      case 'cloud':
+      case 'aggregator':
+      case 'reseller':
+        return type;
+      default:
+        return 'aggregator';
+    }
+  }
+
   function getLowestDisplayedPrice(product: GroupedProduct): number | null {
     const prices = product.versions
       .map((cp) => cp.input_price_per_1m)
@@ -580,7 +599,7 @@ export default function ApiPricingPage() {
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <Badge variant="outline">
-                                      {t(`channelTypes.${cp.providers.type}` as any)}
+                                      {t(`channelTypes.${normalizeChannelType(cp.providers.type)}` as any)}
                                     </Badge>
                                   </TableCell>
                                   <TableCell className="text-right font-mono">
