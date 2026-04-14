@@ -43,19 +43,23 @@ npm run build
 npm run start
 ```
 
-### Data Scraping
+### Data scraping and accuracy
 
 ```bash
-# Run all dynamic scrapers (28+ providers)
-tsx scripts/index-dynamic.ts
+npm run scrape              # all API price scrapers (~20 providers)
+npm run scrape:plans        # all plan scrapers (~12 providers)
 
-# Individual scrapers
-tsx scripts/scrapers/openai-dynamic.ts
-tsx scripts/scrapers/anthropic-dynamic.ts
-tsx scripts/scrapers/deepseek-dynamic.ts
+npm run audit               # read-only data accuracy check
+npm run fix:data:dry-run    # preview api_channel_prices fixes
+npm run fix:plans:dry-run   # preview plan fixes
+npm run migrate             # apply idempotent DB migrations
 ```
 
-### Environment Variables
+See `scripts/README.md` and `CLAUDE.md` for the full data-layer
+architecture (write-boundary validation, NO FALLBACK principle,
+`plans.source` protection, Chatbot Arena ELO ingestion).
+
+### Environment variables
 
 Create `.env.local`:
 
@@ -63,6 +67,7 @@ Create `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 DATABASE_URL=your_supabase_connection_string
+SUPABASE_SERVICE_KEY=optional_service_role_key
 ```
 
 ### Supported Providers

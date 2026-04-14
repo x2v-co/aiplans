@@ -1,220 +1,172 @@
-# 🤖 数据抓取系统
+# scripts/
 
-自动抓取和更新 AI 模型定价数据的系统。
+All data-side tooling for aiplans.dev: scrapers, audits, one-shot fixes,
+migrations. See `../CLAUDE.md` for the full system overview.
 
-## 🚀 快速开始
-
-### 1. 安装依赖
+## Setup
 
 ```bash
 npm install
-npm install -g tsx  # TypeScript 执行器
+cp .env.example .env.local   # or create it manually
+# .env.local needs:
+#   NEXT_PUBLIC_SUPABASE_URL
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY
+#   DATABASE_URL               (for raw SQL migrations)
+#   SUPABASE_SERVICE_KEY       (optional, needed for catalog writes)
 ```
 
-### 2. 配置环境变量
-
-创建 `.env.local` 文件：
+## Routine commands
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_KEY=your_service_key
+npm run scrape             # all API-price scrapers, ~1 min
+npm run scrape:plans       # all plan scrapers, ~2 min
+npm run audit              # read-only accuracy audit
 ```
 
-### 3. 运行数据库迁移
+Add `:dry-run` to `scrape:plans` to preview without writes.
 
-```bash
-# 在 Supabase SQL Editor 中执行
-cat scripts/db/migrations/add_scraper_tables.sql
+## Data accuracy tools
+
+The 2026-04 cleanup introduced a full feedback loop:
+
+```
+                 scraper → upsertChannelPrice (hardened) → DB
+                                  │
+                                  └── logPriceChange → price_history
+                                                           │
+                                                           ▼
+                                     audit-data.ts (daily GH Action)
+                                                           │
+                                     ┌─────────────────────┤
+                                     ▼                     ▼
+                        fix-data-audit.ts       fix-plans-audit.ts
+                        (surgical UPDATES)      (REASSIGN + UPDATE +
+                                                 DELETE + NEW_PLANS)
 ```
 
-### 4. 测试单个爬虫
+- **`audit-data.ts`** — 13 read-only checks (zero/null, output<input,
+  input==output, cross-channel outliers with USD normalization,
+  staleness, orphan mappings, missing producer channel, etc.). Exit
+  code 1 on critical findings, 2 on warnings.
 
-```bash
-# 测试 OpenRouter 爬虫
-tsx scripts/scrapers/openrouter.ts
-```
+- **`fix-data-audit.ts`** — idempotent surgery on `api_channel_prices`.
+  Three sections: UPDATES (ground truth from web research),
+  DISABLES (`is_available=false` for unfixable rows), NEW_MODELS
+  (create missing core models + their producer prices).
 
-### 5. 运行完整抓取
+- **`fix-plans-audit.ts`** — same idea for `plans`:
+  REASSIGN orphan `provider_id`, UPDATE prices, DELETE obsolete rows,
+  INSERT new plans with `source='manual'` protection.
 
-```bash
-# 本地测试
-tsx scripts/index.ts
+Both fix scripts support `--dry-run`.
 
-# 或者通过 npm script
-npm run scrape
-```
+## Migrations
 
-## 📦 已实现的数据源
+`migrate-data-accuracy.ts` runs four idempotent DDL migrations against
+`DATABASE_URL` via the `postgres` client:
 
-- ✅ **OpenRouter** - 聚合平台，200+ 模型
-- ⏳ **OpenAI** - 官方定价
-- ⏳ **Anthropic** - 官方定价
-- ⏳ **硅基流动** - 国内渠道
-- ⏳ **DeepSeek** - 官方定价
+1. `price_history` table (was referenced but never existed)
+2. `plans.notes` + `plans.is_contact_sales` columns
+3. Backfill `plans.notes` from `features.notes`
+4. `plans.source` column + backfill of manual slugs
 
-## 🏗️ 架构
+Re-run any time; all steps use `IF NOT EXISTS` / no-op guards.
+
+## Arena leaderboard
+
+`ingest-arena-leaderboard.ts` ingests a hand-curated top-60 snapshot of
+Chatbot Arena ELO scores into `model_benchmark_scores`. Requires
+`SUPABASE_SERVICE_KEY` because it writes to `benchmark_metrics` which
+has RLS. The snapshot is embedded as a TS const so the script is
+reproducible without re-hitting arena.ai; update the const and re-run
+when you want fresh data.
+
+Companion: `add-arena-missing-models.ts` creates stub `models` rows
+for top-60 entries that don't exist in DB yet, so the ingestion's
+slug matcher can link them.
+
+## File layout
 
 ```
 scripts/
-├── index.ts              # 主入口，协调所有爬虫
-├── scrapers/             # 各个数据源的爬虫
-│   └── openrouter.ts     # OpenRouter 爬虫
-├── db/                   # 数据库操作
-│   ├── queries.ts        # 查询和更新函数
-│   └── migrations/       # SQL 迁移文件
-└── utils/                # 工具函数
-    └── validator.ts      # 数据验证
-
-.github/workflows/
-└── scrape-pricing.yml    # GitHub Actions 定时任务
+├── audit-data.ts                 # read-only 13-check audit
+├── migrate-data-accuracy.ts      # idempotent schema migrations
+├── fix-data-audit.ts             # api_channel_prices fixes
+├── fix-plans-audit.ts            # plans fixes
+├── fix-provider-regions.ts       # one-shot provider region classification
+├── fix-cn-producer-channels.ts   # GLM/Kimi direct-channel seeds
+├── fix-siliconflow-currency.ts   # historical CNY currency repair
+├── fix-currency-on-patched-rows.ts  # historical currency alignment
+├── ingest-arena-leaderboard.ts   # top-60 ELO ingestion
+├── add-arena-missing-models.ts   # arena stub creation
+├── add-model-plan-mappings.ts    # model_plan_mapping populator
+├── debug-core-snapshot.ts        # ops snapshot of hot models + channels
+├── debug-plans-snapshot.ts       # ops snapshot of plans table
+├── fetch-provider-logos.ts       # logo sync
+├── index-dynamic.ts              # scraper runner for api_channel_prices
+├── index-plans-dynamic.ts        # scraper runner for plans
+├── config/
+│   └── plan-model-slugs.ts       # plan → [model slugs] registry
+├── db/
+│   └── queries.ts                # upsertChannelPrice + logPriceChange
+├── scrapers/
+│   ├── base-fetcher.ts           # HTTP + Playwright + JS_HEAVY_DOMAINS
+│   ├── base-parser.ts            # HTML parsing helpers
+│   ├── lib/
+│   │   ├── playwright-scraper.ts       # Playwright wrapper base
+│   │   └── known-models-extractor.ts   # refactored base for 5 scrapers
+│   ├── openrouter.ts             # OpenRouter API scraper
+│   ├── *-dynamic.ts              # per-provider API price scrapers
+│   └── plan-*-dynamic.ts         # per-provider plan scrapers
+└── utils/
+    ├── validator.ts              # ScrapedPrice + validatePrice
+    ├── plan-validator.ts
+    └── model-normalizer.ts
 ```
 
-## ⏰ 自动化执行
+## Write boundary contract
 
-### GitHub Actions (推荐)
+`scripts/db/queries.ts` `upsertChannelPrice()` validates every write:
 
-项目配置了 GitHub Actions，每小时自动执行一次：
-
-1. 在 GitHub 仓库设置中添加 Secrets：
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `SUPABASE_SERVICE_KEY`
-
-2. 推送代码到 GitHub，Action 会自动运行
-
-3. 查看执行日志：
-   - GitHub → Actions → Scrape Pricing Data
-
-### 手动触发
-
-在 GitHub Actions 页面点击 "Run workflow" 按钮。
-
-## 📊 数据表
-
-### `price_history`
-记录所有价格变化：
-- `channel_price_id`: 关联的价格记录
-- `old_*/new_*`: 变化前后的价格
-- `change_percent`: 变化百分比
-- `detected_at`: 检测时间
-
-### `scrape_logs`
-抓取执行日志：
-- `source`: 数据源名称
-- `status`: success/failed/partial
-- `models_found`: 发现的模型数量
-- `prices_updated`: 更新的价格数量
-- `duration_ms`: 执行耗时
-
-## 🔍 监控
-
-### 查看最近的抓取记录
-
-```sql
-SELECT * FROM scrape_logs
-ORDER BY completed_at DESC
-LIMIT 10;
+```ts
+if (input == null || output == null)        throw
+if (input < 0 || output < 0)                 throw
+if (output > 0 && output < input)             throw  // physically impossible
+write({ currency, price_unit, ... })          // actually persists currency
 ```
 
-### 查看价格变化
+If your scraper gets a legitimate `output < input` case (some image /
+audio models), handle it explicitly in the scraper instead of bypassing
+the check.
 
-```sql
-SELECT
-  ph.*,
-  p.name as model_name,
-  c.name as channel_name
-FROM price_history ph
-JOIN channel_prices cp ON ph.channel_price_id = cp.id
-JOIN products p ON cp.product_id = p.id
-JOIN channels c ON cp.channel_id = c.id
-WHERE ABS(ph.change_percent) > 20
-ORDER BY ph.detected_at DESC;
-```
+`logPriceChange()` writes to `price_history` on >20% changes. It
+soft-fails so logging errors don't break the pipeline.
 
-### 查看数据新鲜度
+## Writing a new scraper
 
-```sql
-SELECT
-  c.name as channel,
-  COUNT(*) as total_prices,
-  MAX(cp.last_verified) as last_update,
-  NOW() - MAX(cp.last_verified) as time_since_update
-FROM channel_prices cp
-JOIN channels c ON cp.channel_id = c.id
-GROUP BY c.name
-ORDER BY last_update DESC;
-```
+Preferred: extend `KnownModelsExtractor` from
+`scripts/scrapers/lib/known-models-extractor.ts`. You supply a
+`KNOWN_MODELS: KnownModel[]` with regex + min/max price ranges and
+override `getSourceName()`, `getSourceUrl()`, `models()`, and
+optionally `extractMode()`, `currency()`, `numberRegex()`, `labels()`,
+`modelHeaderRegex()`, `waitAfterNav()`. See `openai-dynamic.ts` (68
+lines, labeled mode, USD) or `qwen-dynamic.ts` (75 lines, positional
+mode, CNY) for minimal examples.
 
-## 🚨 告警
+Register your new scraper in `scripts/index-dynamic.ts`.
 
-系统会自动检测：
-- 价格异常变化（>20%）
-- 抓取连续失败
-- 数据超过 24 小时未更新
+**NO FALLBACK DATA**: return `success: errors.length === 0 && prices.length > 0`.
+Never ship a hardcoded `prices` fallback — `audit-data.ts` is what
+surfaces staleness, not in-scraper defaults.
 
-## 🛠️ 添加新数据源
+## GitHub Actions
 
-1. 创建新的爬虫文件：
+Two workflows in `.github/workflows/`:
 
-```typescript
-// scripts/scrapers/your-source.ts
-import type { ScraperResult } from '../utils/validator';
+- **`scrape-pricing.yml`** — hourly cron, runs `npm run scrape`
+- **`data-audit.yml`** — daily at 02:00 UTC + on PR, runs
+  `audit-data.ts`, fails the check on critical findings, uploads
+  output + JSON snapshot as artifacts
 
-export async function scrapeYourSource(): Promise<ScraperResult> {
-  // 实现抓取逻辑
-  return {
-    source: 'YourSource',
-    success: true,
-    prices: [/* ... */],
-  };
-}
-```
-
-2. 在 `scripts/index.ts` 中注册：
-
-```typescript
-const scrapers = [
-  { fn: scrapeOpenRouter, name: 'OpenRouter' },
-  { fn: scrapeYourSource, name: 'YourSource' }, // 添加这行
-];
-```
-
-3. 测试：
-
-```bash
-tsx scripts/scrapers/your-source.ts
-```
-
-## 📝 开发计划
-
-### Phase 1: 基础功能 (已完成)
-- [x] 抓取框架
-- [x] OpenRouter 爬虫
-- [x] 数据库集成
-- [x] GitHub Actions 自动化
-
-### Phase 2: 扩展数据源 (进行中)
-- [ ] OpenAI 官方定价
-- [ ] Anthropic 官方定价
-- [ ] 硅基流动
-- [ ] DeepSeek 官方
-
-### Phase 3: 增强功能
-- [ ] 价格预测
-- [ ] 告警通知（邮件/Webhook）
-- [ ] 数据质量监控
-- [ ] API 端点提供历史数据
-
-## 💡 注意事项
-
-1. **频率控制**: 不要过于频繁地抓取，尊重目标网站的服务条款
-2. **错误处理**: 单个爬虫失败不应影响其他爬虫
-3. **数据验证**: 始终验证抓取的数据是否合理
-4. **增量更新**: 只在价格真正变化时记录历史
-
-## 🤝 贡献
-
-欢迎贡献新的数据源爬虫！请确保：
-- 遵循现有代码风格
-- 添加适当的错误处理
-- 编写测试用例
-- 更新文档
+Required repo secrets: `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`.

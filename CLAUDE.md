@@ -1,300 +1,407 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code working in this repo.
 
 ## Project Overview
 
-**aiplans.dev** is an AI pricing comparison platform that helps users compare AI subscription plans and API token prices across providers. The core value proposition is comparing similar-tier AI plans and same-model pricing across different channels/vendors.
+**aiplans.dev** is an AI pricing comparison platform. Two core value props:
+
+1. **API Token Price Comparison** — same model across many channels (OpenAI
+   official vs Azure vs AWS Bedrock vs OpenRouter vs SiliconFlow vs 火山引擎)
+2. **Subscription Plan Comparison** — ChatGPT Plus vs Claude Pro vs Gemini
+   Advanced, including free/pro/team/enterprise tiers and annual savings
+
+Everything is keyed off three tables: `providers`, `models`, `plans`, with
+`api_channel_prices` joining models × providers and `model_plan_mapping`
+joining models × plans.
 
 ## Development Commands
 
 ```bash
-# Development
-npm run dev          # Start Next.js dev server on localhost:3000
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
+# Frontend
+npm run dev              # next dev (localhost:3000)
+npm run build            # production build (webpack)
+npm run start            # serve prod build
+npm run lint             # eslint
 
-# Data Scraping - Dynamic Scrapers (recommended)
-tsx scripts/index-dynamic.ts  # Run all dynamic scrapers (28+ providers)
+# Data scraping (writes to production Supabase)
+npm run scrape              # all API price scrapers (~20 providers, ~1 min)
+npm run scrape:plans        # all plan scrapers (~12 providers, ~2 min)
+npm run scrape:plans:dry-run
 
-# Individual Dynamic Scrapers
-tsx scripts/scrapers/deepseek-dynamic.ts
-tsx scripts/scrapers/openai-dynamic.ts
-tsx scripts/scrapers/anthropic-dynamic.ts
-tsx scripts/scrapers/google-gemini-dynamic.ts
-tsx scripts/scrapers/grok-dynamic.ts
-tsx scripts/scrapers/mistral-dynamic.ts
-tsx scripts/scrapers/moonshot-dynamic.ts
-tsx scripts/scrapers/minimax-dynamic.ts
-tsx scripts/scrapers/zhipu-dynamic.ts
-tsx scripts/scrapers/qwen-dynamic.ts
-tsx scripts/scrapers/seed-dynamic.ts
-tsx scripts/scrapers/hunyuan-dynamic.ts
-tsx scripts/scrapers/baidu-dynamic.ts
-tsx scripts/scrapers/siliconflow-dynamic.ts
-tsx scripts/scrapers/fireworks-dynamic.ts
-tsx scripts/scrapers/replicate-dynamic.ts
-tsx scripts/scrapers/anyscale-dynamic.ts
-tsx scripts/scrapers/stepfun-dynamic.ts
-tsx scripts/scrapers/dmxapi-dynamic.ts
-tsx scripts/scrapers/aws-bedrock-dynamic.ts
-tsx scripts/scrapers/azure-openai-dynamic.ts
-tsx scripts/scrapers/vertex-ai-dynamic.ts
-tsx scripts/scrapers/together-ai-dynamic.ts
+# Data accuracy — read-only audit, safe
+npm run audit               # 13 checks, exits 1 on critical, 2 on warnings
+npm run audit:verbose       # show all findings (not just first 8 per check)
+npm run audit:json > out.json
 
-# Legacy Scrapers (deprecated, use dynamic scrapers instead)
-npm run scrape       # Run all legacy scrapers
-npm run scrape:arena        # Scrape Chatbot Arena benchmarks
-npm run scrape:openrouter   # Scrape OpenRouter pricing
-npm run scrape:openai-api   # Scrape OpenAI API pricing
-npm run scrape:openai-plan  # Scrape OpenAI subscription plans
-npm run scrape:anthropic-api # Scrape Anthropic API pricing
-npm run scrape:deepseek     # Scrape DeepSeek pricing
-npm run scrape:grok         # Scrape Grok pricing
-npm run scrape:mistral      # Scrape Mistral pricing
-npm run scrape:together     # Scrape Together AI pricing
-npm run scrape:siliconflow  # Scrape SiliconFlow pricing
-npm run scrape:gemini-api   # Scrape Google Gemini API pricing
-npm run scrape:gemini-plan  # Scrape Google Gemini subscription plans
+# Data accuracy — surgical fixes
+npm run fix:data:dry-run    # preview api_channel_prices fixes
+npm run fix:data            # apply them (idempotent)
+npm run fix:plans:dry-run   # preview plan fixes (reassign/update/delete/insert)
+npm run fix:plans           # apply
 
-# Logos
-npm run fetch-logos   # Fetch provider logos
-npm run fetch-logos:force  # Force re-download all logos
+# Schema migrations (idempotent postgres DDL)
+npm run migrate             # adds price_history, plans.notes, plans.source, etc.
 
-# Database (Drizzle ORM)
-npx drizzle-kit generate  # Generate SQL migrations from schema
-npx drizzle-kit push      # Push schema changes to database
-npx drizzle-kit studio    # Open Drizzle Studio (DB GUI)
+# Arena leaderboard ingestion (requires SUPABASE_SERVICE_KEY)
+npm run ingest:arena        # writes top-60 ELO into model_benchmark_scores
+
+# Provider logos
+npm run fetch-logos
+npm run fetch-logos:force
+
+# Drizzle ORM (schema only — we don't use drizzle for queries)
+npx drizzle-kit generate    # emit SQL migrations from schema
+npx drizzle-kit studio      # DB GUI
 ```
 
 ## Technology Stack
 
-```
-Frontend:     Next.js 16 (App Router + SSG/ISR), TypeScript, TailwindCSS v4, Shadcn/UI
-               Recharts (price charts), Zustand (state management)
+- **Frontend**: Next.js 16 (App Router, webpack), TypeScript, TailwindCSS v4,
+  Shadcn/UI, Recharts (price charts), Zustand (state), next-intl (i18n)
+- **Backend**: Next.js API Routes + Supabase JS client (direct queries, not
+  Drizzle — we only use drizzle-orm for its schema DSL)
+- **Database**: PostgreSQL on Supabase
+- **Deployment**: Vercel (with data-audit.yml + scrape-pricing.yml GitHub Actions)
 
-Backend:      Next.js API Routes, Drizzle ORM, Zod (validation)
-
-Database:     PostgreSQL (Supabase), Drizzle ORM, Supabase JS Client
-
-Deployment:  Vercel (frontend + API), Supabase (database)
-
-Analytics:   Plausible/Umami (privacy-friendly), Google Search Console, 百度搜索资源平台
-```
-
-## Database Schema (Core Entities)
+## Database Schema (Core)
 
 ```
-Provider ──────< Product ──────< Plan
-    │                           │
-    └────< Channel ──────< ChannelPrice
-                              │
-                              └─< PriceHistory
+providers ──┬── api_channel_prices ── models
+            │                             │
+            └── plans ── model_plan_mapping
+                                          │
+           price_history ────── (audit trail, tied to api_channel_prices.id)
 
-Coupon ──────< User ──────< PriceAlert
-    │
-    └─< CouponVote
-
-Comparison (user-saved comparisons with SEO content)
+benchmarks ── benchmark_versions ── benchmark_tasks ── model_benchmark_scores
+                                                              │
+                                                         models ┘
 ```
 
 Key tables:
-- **providers**: AI service vendors (OpenAI, Anthropic, DeepSeek, etc.)
-- **products**: Models/products (GPT-4o, Claude Sonnet, etc.) with benchmark scores
-- **plans**: Subscription plans and token packs (includes RPM/QPS limits, yearly pricing, overage)
-- **channels**: Third-party渠道/aggregators (OpenRouter, Azure, 硅基流动, etc.)
-- **channel_prices**: Token prices per channel for each model
-- **price_history**: Price change tracking
-- **coupons**: Community-submitted discount codes
-- **model_plan_mapping**: Many-to-many relationship between products (models) and plans with model-specific overrides
-  - overrideRpm, overrideQps: RPM/QPS limits specific to a model
-  - overrideInputPricePer1m, overrideOutputPricePer1m: Token prices for this model under the plan
-  - overrideMaxOutputTokens: Output token limit for this model
 
-Database config: `drizzle.config.ts`, schema in `src/db/schema/index.ts`
-Use Supabase MCP plugin for migrations: `mcp__plugin_supabase_supabase__apply_migration`
+- **providers** — OpenAI / Anthropic / aggregators / cloud / resellers.
+  `type ∈ (official | producer | cloud | aggregator | reseller)`.
+  `region ∈ (china | global)`, `access_from_china boolean`.
+- **models** — GPT-4o, Claude Opus 4.6, etc. `provider_ids integer[]`.
+- **api_channel_prices** — `(model_id, provider_id) → input/output_price_per_1m`.
+  `currency`, `price_unit`, `is_available`, `last_verified`, `notes`.
+- **plans** — subscription tiers. `source ∈ (scraper | manual)` — `manual` rows
+  are protected from scraper cleanup (see "Plan safety" below).
+- **model_plan_mapping** — `(model_id, plan_id)` junction with `priority`.
+- **price_history** — audit trail from `logPriceChange()` in `queries.ts`.
+- **model_benchmark_scores** — Arena ELO and other benchmark values, joined
+  via `benchmark_tasks` + `benchmark_metrics` (filter `name='ELO'` for Arena).
+
+Schema source of truth: `src/db/schema/index.ts` (Drizzle). Migrations
+applied via `scripts/migrate-data-accuracy.ts` using raw SQL + `postgres`
+client. Supabase MCP plugin is NOT required.
 
 ## Environment Variables
 
-Required environment variables (create `.env.local` for development):
+Required (in `.env.local`):
 
 ```
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-DATABASE_URL=your_supabase_connection_string
-
-# (Optional) Scraper-specific keys
-OPENROUTER_API_KEY=your_key
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+DATABASE_URL                   # for direct postgres migrations
+SUPABASE_SERVICE_KEY           # optional — required for catalog writes
+                               # (benchmark_metrics, etc. — RLS restricted)
 ```
 
-## Core API Routes
+## Page Routes (all under `/[locale]/` with `en` and `zh`)
+
+| Route | Purpose |
+|---|---|
+| `/[locale]` | Landing page |
+| `/[locale]/api-pricing` | **Core SEO** — API token price comparison across channels |
+| `/[locale]/models/[slug]` | **Core SEO** — one page per model, all channels, Arena ELO |
+| `/[locale]/plans` | All providers with plans (index) |
+| `/[locale]/plans/[provider]` | One provider's full plan lineup |
+| `/[locale]/compare/plans` | Plan comparison landing + FAQ |
+| `/[locale]/compare/plans/[model]` | All plans that include a specific model |
+| `/[locale]/coupons` | Community discount codes |
+
+`src/proxy.ts` middleware redirects any non-locale path `/foo` → `/{locale}/foo`
+where `{locale}` is from the `NEXT_LOCALE` cookie or defaults to `en`.
+
+There are **no** non-locale fallback routes (`src/app/api-pricing`,
+`src/app/plans`, etc.) — they were deleted in the 2026-04 cleanup because
+middleware made them unreachable anyway.
+
+## Core API Routes (used by frontend)
 
 ```
-/api/plans              - Plan listing with filters (type, tier, region, provider)
-/api/products           - Product listing with benchmark data
-/api/products/:slug/channels - 同一开源模型API在不同供应商的价格对比 (核心)
-/api/compare/plans     - Compare multiple subscription plans
-/api/compare/api-pricing - 同一模型API跨渠道价格对比 (核心)
-/api/compare/open-model/:model - 相同开源模型在不同供应商的价格对比
-/api/channels/:productId - 某模型的所有渠道价格列表
-/api/coupons           - Discount codes with voting
-/api/calculator/estimate - Cost estimation based on usage patterns
-/api/search            - Global search
-/api/alerts            - Price drop notifications
-/api/admin/*           - Admin CRUD operations
+/api/products/grouped          # /api-pricing reads this — models + all channels, grouped
+/api/products                  # full model listing with benchmarks
+/api/products/[slug]/channels  # per-model channel prices (fallback route)
+/api/channels/[productId]      # legacy alias of above
+/api/compare/plans             # /compare/plans/[model] reads this
+/api/plans                     # plan listing
+/api/coupons                   # discount codes
+/api/exchange-rates            # currency conversion data
+/api/providers                 # provider metadata (static, 5m revalidate)
 ```
 
-## Page Routes (SEO Optimized)
+## Dynamic Scraper Architecture
 
-```
-/                           - AI Plan comparison homepage
-/api-pricing               - API Token 价格总表 (核心 SEO 页面)
-/open-model/:model         - 同一开源模型API各供应商价格对比页 (核心)
-/open-model/:model/channels - 具体某模型渠道价格的所有对比
-/plans/chatgpt            - ChatGPT all plans
-/plans/claude             - Claude all plans
-/plans/deepseek           - DeepSeek plans
-/compare/chatgpt-vs-claude - Subscription plan comparison
-/compare/api/gpt4o-vs-claude-sonnet - API price comparison
-/channels/:model          - Model channel price comparison
-/calculator               - AI cost calculator
-/rankings/cheapest-api   - Cheapest API ranking
-/rankings/best-value-plan - Best value plan ranking
-/coupons                  - Discount code center
-/guides/buy-openai-in-china - China purchase guide
-```
+### Write boundary — `scripts/db/queries.ts`
 
-## Key Features
+`upsertChannelPrice()` validates every write:
+- rejects null / negative prices
+- rejects `output < input` (physically impossible for LLM per-token pricing)
+- writes `currency` + `price_unit` (long-standing bug pre-2026-04 was that
+  these params were accepted but never written, so siliconflow CNY values
+  ended up tagged as USD)
 
-1. **Plan Comparison**: Compare subscription plans across providers (ChatGPT Plus vs Claude Pro)
-2. **API Price Comparison** (核心): Same open-source model API prices across different vendors
-   - Example: Claude 3.5 Sonnet via OpenAI official vs AWS Bedrock vs Google Vertex vs OpenRouter vs 硅基流动 vs 火山引擎
-   - Show input/output per-1M token prices, rate limits, availability
-3. **Cost Calculator**: Estimate monthly costs based on usage patterns
-4. **Price History**: Track price changes over time
-5. **Coupon Community**: Submit and vote on discount codes
-6. **Benchmark Integration**: Combine pricing with model performance rankings (Chatbot Arena ELO)
-7. **China-Optimized**: Track domestic payment methods and accessibility
+`logPriceChange()` writes to `price_history` on every significant change
+(>20%) during a scrape run. Soft-fails so logging errors don't break the
+pipeline.
 
-## Development Notes
+### NO FALLBACK DATA principle
 
-- Use SSG/ISR for SEO-critical pages (pricing tables, plan comparisons)
-- i18n: English (en) and Chinese (zh) via `next-intl`, configs in `src/i18n.ts`, messages in `messages/*.json`
-- Routes follow `/[locale]/` pattern (e.g., `/en/compare/plans`, `/zh/api-pricing`)
-- `proxy.ts` middleware handles locale-based routing - redirects `/` to `/{locale}` for non-API paths
-- `lib/currency.ts` and `lib/currency-conversion.ts` handle multi-currency price display (USD/CNY)
-- Price data requires regular updates via scheduled scraping tasks
-- Include benchmark scores (MMLU, HumanEval, Chatbot Arena ELO) in product data
-- Track regional availability and payment methods (支付宝/微信 for China)
+Every scraper returns `success: errors.length === 0 && prices.length > 0`.
+No hardcoded price arrays, no fallback to stale data. If the source page
+changes, the scraper fails loud and `audit-data.ts` surfaces the staleness.
+
+### `KnownModelsExtractor` base class (`scripts/scrapers/lib/known-models-extractor.ts`)
+
+5 core scrapers (openai, deepseek, qwen, hunyuan, mistral) use a shared
+base that handles:
+- KNOWN_MODELS list with regex pattern + min/max price ranges
+- Playwright navigation + `domcontentloaded` wait
+- Two extraction modes:
+  - `labeled` — `Input:$X / Output:$X` style (OpenAI, Anthropic)
+  - `positional` — find all numbers, match by range (CN vendors, Mistral)
+- Currency tagging (USD / CNY)
+- Collision dedupe (when multiple arena rows map to same DB slug)
+
+Each subclass supplies: `getSourceName()`, `getSourceUrl()`, `models()`,
+optionally `extractMode()`, `currency()`, `numberRegex()`, `labels()`,
+`modelHeaderRegex()`, `waitAfterNav()`.
+
+Adding a new scraper:
+1. Extend `KnownModelsExtractor` (preferred) or `PlaywrightScraper`
+2. Define KNOWN_MODELS with regex + price ranges
+3. Register in `scripts/index-dynamic.ts` (or `index-plans-dynamic.ts`)
+
+### `plan-*-dynamic.ts` scrapers
+
+Plan scrapers use `fetchHTMLSmart` which auto-routes to Playwright for
+JS-heavy domains (whitelist in `base-fetcher.ts` JS_HEAVY_DOMAINS).
+`cleanupOutdatedPlans()` in queries.ts is **log-only** as of 2026-04 —
+scraper misses never delete existing rows; the audit's `plans.stale`
+check surfaces them after 30 days instead.
+
+Disabled plan scrapers (return `{ success: true, plans: [] }`):
+- `plan-moonshot-dynamic.ts` — API docs page, not subscription; Kimi+
+  member center is auth-walled
+- `plan-baidu-dynamic.ts` — ERNIE went fully free 2025-04-01
+- `plan-volcengine-dynamic.ts` — prices load via JSON API post-hydration
+
+## Plan safety: `source` column
+
+The `plans.source` column was added to stop a destructive pattern: when a
+plan scraper's regex failed to match a plan, `cleanupOutdatedPlans()` would
+delete that row. It wiped 9 legit plans in one run (chatgpt-pro, claude-max,
+etc.) before we caught it.
+
+Now: every row is `source='scraper'` by default, and manually-curated rows
+(via `fix-plans-audit.ts NEW_PLANS`) are `source='manual'`. Manual rows are
+immune to `cleanupOutdatedPlans`. To add a new manual plan, put it in the
+`NEW_PLANS` array in `fix-plans-audit.ts` and run `npm run fix:plans`.
+
+## Data Accuracy Infrastructure
+
+Three scripts form the feedback loop:
+
+1. `scripts/audit-data.ts` — 13 read-only checks:
+   `prices.zero_or_null`, `prices.output_lt_input`, `prices.input_eq_output`,
+   `prices.cross_channel_outlier` (USD-normalized), `prices.stale`,
+   `models.no_channel_price`, `models.no_producer_channel`,
+   `models.unknown_provider_id`, `plans.stale`, `plans.missing_verified`,
+   `providers.unknown_ref`, `mapping.orphan_model`, `mapping.orphan_plan`.
+   Exit code 0 = clean, 1 = critical, 2 = warnings only.
+
+2. `scripts/fix-data-audit.ts` — idempotent UPDATES / DISABLES /
+   NEW_MODELS for api_channel_prices, from web-verified ground truth.
+
+3. `scripts/fix-plans-audit.ts` — same pattern for `plans`:
+   REASSIGN orphan `provider_id`, UPDATE prices, DELETE obsolete,
+   INSERT missing (all `source='manual'`).
+
+Fourth helper for CN-producer channels that aren't scraped directly:
+`scripts/fix-cn-producer-channels.ts` — seeds GLM / Kimi direct-channel
+rows from web ground truth so `/api-pricing` filter "🇨🇳 China" shows them.
+
+### GitHub Actions
+
+- `.github/workflows/scrape-pricing.yml` — hourly cron, runs `npm run scrape`
+- `.github/workflows/data-audit.yml` — daily 02:00 UTC + PR-triggered,
+  runs `audit-data.ts`; fails on critical; uploads output + JSON snapshot
+  as artifacts
+
+Both need these repo secrets: `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`.
+
+## SEO / GEO (done in 2026-04 session)
+
+- Per-page `generateMetadata` via `buildMetadata()` in `src/lib/seo.ts`
+  (canonical, hreflang `en`/`en-US`/`zh-CN`/`zh-Hans`/`x-default`, OG, Twitter)
+- Root `/[locale]/layout.tsx` uses `generateMetadata({ params })` so `/en`
+  and `/zh` roots get per-locale canonical + Chinese titles
+- Per-route dynamic OG images via `opengraph-image.tsx` (next/og):
+  `/[locale]`, `/[locale]/api-pricing`, `/[locale]/models/[slug]`,
+  `/[locale]/plans`, `/[locale]/plans/[provider]`, `/[locale]/compare/plans`,
+  `/[locale]/compare/plans/[model]` — each fetches real data (model name,
+  ELO, lowest price, channel count) and renders a 1200×630 card
+- JSON-LD on `/[locale]/models/[slug]`: `Product` + `AggregateOffer` +
+  per-channel `Offer[]` (seller, price, currency) + Arena ELO as
+  `additionalProperty` + `BreadcrumbList`
+- JSON-LD on `/[locale]/plans/[provider]`: `BreadcrumbList` +
+  `Product/Offer` per plan (with `is_contact_sales` for enterprise tiers)
+- Baidu / 360 / Sogou rendering hints in layout.tsx `metadata.other`
+  (`applicable-device`, `MobileOptimized`, `HandheldFriendly`). Baidu site
+  verification is a placeholder in `metadata.other` comment — uncomment and
+  add the token once the site is registered at https://ziyuan.baidu.com/
+- Sitemap (`src/app/sitemap.ts`) fully DB-driven: every provider
+  (`/plans/[provider]`) + up to 500 LLM models (`/models/[slug]`)
+
+## Performance tuning (next.config.ts)
+
+- `experimental.optimizePackageImports` for `lucide-react` + 12 Radix
+  packages — saves ~150KB pre-gzip on every client bundle
+- `compiler.removeConsole` in production (keeps error/warn)
+- `images.remotePatterns` whitelists Supabase + vendor logo hosts so
+  `next/image` can serve AVIF/WebP with Vercel's image CDN
+- `poweredByHeader: false`
 
 ## Project Structure
 
 ```
 src/
-├── app/[locale]/         # Next.js App Router with i18n locale segment
-│   ├── api/             # API routes
-│   │   ├── products/[slug]/channels/  # Core: same model across channels
-│   │   ├── compare/plans/            # Subscription plan comparison
-│   │   ├── channels/:productId        # All channels for a model
-│   │   └── exchange-rates/            # Currency conversion data
-│   └── compare/plans/   # Plan comparison UI pages
-├── components/          # React components (Shadcn/UI)
-├── db/
-│   └── schema/index.ts  # Drizzle ORM schema definitions
+├── app/[locale]/              # all user-facing routes (i18n)
+│   ├── layout.tsx             # root layout with generateMetadata
+│   ├── page.tsx               # landing
+│   ├── api-pricing/           # token price comparison
+│   ├── compare/plans/[model]/ # plan comparison per model
+│   ├── coupons/
+│   ├── models/[slug]/         # core model detail page
+│   ├── plans/[provider]/      # provider plan lineup
+│   └── opengraph-image.tsx    # per-route OG card generator
+├── app/api/                   # API routes
+├── app/sitemap.ts             # DB-driven sitemap
+├── components/                # shadcn/ui
+├── db/schema/index.ts         # Drizzle schema (source of truth)
 ├── lib/
-│   ├── db.ts            # Drizzle connection
-│   ├── supabase.ts      # Supabase client for API routes
-│   ├── currency.ts      # Currency utilities
-│   └── exchange-rates.ts # Exchange rate fetching/caching
-├── i18n.ts              # next-intl config
+│   ├── db.ts                  # postgres + drizzle client
+│   ├── supabase.ts            # anon-key client for API routes
+│   ├── currency.ts            # format helpers
+│   ├── currency-conversion.ts # exchange-rate cache
+│   ├── schema-adapters.ts     # provider attachment helpers
+│   ├── seo.ts                 # buildMetadata + JSON-LD builders
+│   └── og-template.tsx        # shared OG image React template
+├── proxy.ts                   # next-intl locale redirect middleware
+└── i18n.ts                    # next-intl config
+
 scripts/
-├── scrapers/            # Provider-specific pricing scrapers
-│   ├── base-scraper.ts  # Base scraper class
-│   ├── base-fetcher.ts  # HTTP client with retry logic
-│   ├── base-parser.ts   # HTML parsing utilities
-│   ├── benchmark-arena.ts # Chatbot Arena scores
-│   ├── *-dynamic.ts     # Dynamic scrapers (28+ providers)
-│   └── openrouter.ts    # OpenRouter aggregator pricing
-├── index-dynamic.ts     # Runs all dynamic scrapers
-└── fetch-provider-logos.ts # Download provider logos
+├── index-dynamic.ts           # all API price scrapers
+├── index-plans-dynamic.ts     # all plan scrapers
+├── audit-data.ts              # read-only accuracy audit
+├── migrate-data-accuracy.ts   # idempotent schema migrations
+├── fix-data-audit.ts          # surgical fixes for api_channel_prices
+├── fix-plans-audit.ts         # surgical fixes for plans
+├── fix-provider-regions.ts    # one-shot region classification
+├── fix-cn-producer-channels.ts # GLM/Kimi direct channel seeds
+├── fix-siliconflow-currency.ts # one-shot historical repair
+├── fix-currency-on-patched-rows.ts # one-shot currency alignment
+├── ingest-arena-leaderboard.ts # ingest top-60 Arena scores
+├── add-arena-missing-models.ts # stub models for arena coverage
+├── add-model-plan-mappings.ts  # populate model_plan_mapping from config
+├── debug-core-snapshot.ts      # ops snapshot
+├── debug-plans-snapshot.ts     # ops snapshot
+├── fetch-provider-logos.ts     # provider logo sync
+├── config/plan-model-slugs.ts  # plan → [model slugs] registry
+├── db/queries.ts               # shared upsertChannelPrice / logPriceChange
+├── scrapers/
+│   ├── base-fetcher.ts         # HTTP + Playwright + JS_HEAVY_DOMAINS
+│   ├── base-parser.ts          # shared parsing utilities
+│   ├── lib/
+│   │   ├── playwright-scraper.ts    # Playwright wrapper base class
+│   │   └── known-models-extractor.ts # refactored base (5 scrapers use it)
+│   ├── {openai,deepseek,qwen,hunyuan,mistral}-dynamic.ts  # uses KnownModelsExtractor
+│   ├── {anthropic,google-gemini,grok,seed,siliconflow,…}-dynamic.ts
+│   ├── plan-{openai,anthropic,mistral,qwen,...}-dynamic.ts
+│   └── openrouter.ts           # separate API-based scraper
+└── utils/                      # model-normalizer, validator, plan-validator
+
 messages/
-├── en.json              # English translations
-└── zh.json              # Chinese translations
+├── en.json
+└── zh.json
 ```
 
-## Dynamic Scraper Architecture
+## Channel Types (taxonomy)
 
-The scraper system uses a base class pattern with built-in fallback to hardcoded data:
+- **official / producer** — model creator's own API (OpenAI, Anthropic,
+  DeepSeek). `producer` is the legacy spelling; both are normalized to
+  `official` at render time.
+- **cloud** — Azure OpenAI, AWS Bedrock, Google Vertex AI
+- **aggregator** — OpenRouter, SiliconFlow, Together AI, Fireworks,
+  Replicate, Anyscale
+- **reseller** — DMXAPI, 阿里云百炼 (via seed provider), etc.
 
-```
-base-fetcher.ts     # HTTP client with retry logic and exponential backoff
-base-parser.ts      # HTML parsing utilities (price parsing, card parsing, rate limiting)
-base-scraper.ts     # Base scraper class for all provider scrapers
-```
+## Key Comparison Flows
 
-Scraper types:
-- **API-based**: Fetch from `/v1/models` endpoints with auth, fallback to hardcoded data on 401/403
-  - DeepSeek, OpenRouter, SiliconFlow, Together AI
-- **HTML-based**: Parse pricing pages, fallback to hardcoded data on parse failure
-  - OpenAI, Google Gemini, AWS Bedrock, Azure OpenAI, Vertex AI
-- **Official providers**: Direct provider pricing pages
-  - Anthropic, Mistral, Moonshot, Minimax, Zhipu, Qwen, Hunyuan, Baidu ERNIE, StepFun
+1. **Same model across channels** (core SEO):
+   - `/api/products/grouped` → rollup by base slug → frontend table
+2. **Subscription plan comparison**:
+   - `/api/compare/plans?model=X` → model_plan_mapping join → tiers
+3. **Provider plan lineup**:
+   - `/[locale]/plans/[provider]` server component directly queries Supabase
 
-To add a new scraper:
-1. Extend `BaseScraper` from `base-scraper.ts`
-2. Implement `fetchData()` method
-3. Add fallback data for when fetch fails
-4. Register in `scripts/index-dynamic.ts`
+## China-specific behaviour
 
-For detailed scraper documentation, see `scripts/scrapers/DYNAMIC_SCRAPERS.md`.
+- `providers.region` classifies each provider as `china` or `global`.
+  `fix-provider-regions.ts` has the curated list.
+- `providers.access_from_china` reflects whether a user physically in
+  mainland China can reach the API. The "China Access Only" filter on
+  `/api-pricing` also falls back to the model's primary producer region,
+  so GLM / Kimi surface even when only aggregator channels are tracked.
+- `formatPrice()` in `src/lib/currency.ts` handles CNY ⇄ USD conversion
+  using `lib/exchange-rates.ts`'s cached rates.
 
-### 核心对比场景 (Same Open-Source Model API Comparison)
+## When adding new entities
 
-```
-场景1: "我想用 Claude Sonnet，哪个渠道最便宜？"
-  → 官方 API vs AWS Bedrock vs Google Vertex vs OpenRouter vs 硅基流动 vs 火山引擎
+- **New model**: insert into `models`, set `provider_ids: [producerId]`.
+  If you know its ELO, also insert into `model_benchmark_scores` with
+  `metric_id = ELO metric id` and `benchmark_task_id = Arena Text task id`.
+- **New provider**: insert into `providers`, classify `region` and
+  `access_from_china`, add to `fix-provider-regions.ts` if it should be
+  curated going forward.
+- **New plan**: add the slug + model list to `scripts/config/plan-model-slugs.ts`
+  AND to `fix-plans-audit.ts NEW_PLANS`, then run `npm run fix:plans`.
 
-场景2: "DeepSeek V3 API 价格"
-  → 官方 vs 硅基流动 vs 火山引擎 vs OpenRouter 价格对比
+## Common gotchas
 
-场景3: "Llama 3.1 405B 哪个渠道最便宜？"
-  → 官方 vs Together AI vs Fireworks vs 硅基流动 vs OpenRouter
+- **`upsertChannelPrice` rejects `output < input`** — if a scraper's regex
+  accidentally swaps columns, the write fails and you see it in logs. Fix
+  the scraper, don't work around the check.
+- **`model_plan_mapping` has only `(id, model_id, plan_id, priority)`** —
+  no override columns. Plan-level overrides were never materialized.
+- **`provider_ids` is a PostgreSQL integer array** on `models`, not a
+  foreign-key scalar. Use `provider_ids?.[0]` in TS and `contains` in SQL.
+- **The `model_offical` table is misspelled** in the schema (`offical` not
+  `official`). Don't "fix" it — the Supabase client queries it by name.
+- **`api_channel_prices.model_id`**, not `product_id`. Older code may still
+  reference `product_id`; it's a legacy alias.
+- **Arena ELO lives in `model_benchmark_scores`**, joined via
+  `benchmark_metrics!inner(name).eq('name','ELO')`. Don't join through
+  `benchmark_tasks.benchmark_id` — that column doesn't exist.
 
-场景4: "国内有没有便宜的 GPT-4 级别 API？"
-  → DeepSeek V3 / 通义千问 Qwen-Max 等国内平替方案 vs 硅基流动/火山引擎
-```
+## Memory for future sessions
 
-### 供应商渠道类型 (Channel Types)
+`~/.claude/projects/-Users-kl-workspace-x2v-planprice/memory/` contains
+persistent notes from prior sessions. Load them when picking up work:
 
-- **official**: 官方直连 (OpenAI, Anthropic, DeepSeek 官方)
-- **cloud**: 云厂商 (Azure OpenAI, AWS Bedrock, Google Vertex AI)
-- **aggregator**: 聚合平台 (OpenRouter, 硅基流动)
-- **reseller**: 转售商 (火山引擎, 阿里百炼)
-
-## Data Fields
-
-Important entity fields to maintain:
-
-- **Plans**: pricingModel (subscription/token_pack/pay_as_you_go), tier (free/basic/pro/team/enterprise), dailyMessageLimit, rateLimit, accessFromChina, paymentMethods
-- **Products**: type (llm/subscription/coding_tool), contextWindow, benchmark scores
-- **Channels**: type (official/cloud/aggregator/reseller), accessFromChina, region (global/china)
-- **ChannelPrices**: inputPricePer1m, outputPricePer1m, cachedInputPricePer1m, rateLimit, isAvailable, lastVerified
-  - 核心对比字段：同一模型在不同渠道的 input/output 价格对比
-  - 计算字段：estimatedCost (轻度/中度/重度使用预估), savingsVsOfficial (比官方便宜%)
-
-## Key Comparison Architecture
-
-The core "same model across channels" comparison spans multiple layers:
-1. **Scrapers** (`scripts/scrapers/*-dynamic.ts`) fetch pricing from provider APIs/websites with fallback to hardcoded data
-2. **Database** stores `product_id` ↔ `channel_id` ↔ pricing via `channel_prices` table
-3. **API** (`/api/products/[slug]/channels`) queries all channels for a given model slug
-4. **Frontend** (`src/app/[locale]/api-pricing/page.tsx`) displays comparison table with:
-   - Input/output per-1M prices
-   - Rate limits (RPM, QPS)
-   - Channel type badges (official/cloud/aggregator)
-   - Savings vs official pricing
-   - Regional availability (China access)
-
-For API pricing queries, always check `channel_prices` table filtered by `productId` and `channel.isAvailable = true`.
+- `data_accuracy_audit.md` — audit infrastructure, known scraper bugs
+- `MEMORY.md` — index
