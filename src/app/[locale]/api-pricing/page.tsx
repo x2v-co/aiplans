@@ -36,6 +36,7 @@ interface GroupedProduct {
     logo: string;
     logo_url?: string;
     region?: string;
+    access_from_china?: boolean;
   };
   baseName: string;
   versions: ChannelPrice[];
@@ -118,12 +119,16 @@ export default function ApiPricingPage() {
         if (!searchValues.some((value) => value.includes(normalizedQuery))) return false;
       }
 
-      // Region filter: keep the product only if at least one of its channels
-      // is in the selected region (so "China" shows models that have at
-      // least one China-accessible channel, etc.)
+      // Region filter: match if the product's primary producer is in the
+      // selected region, OR at least one of its tracked channels is. The
+      // producer fallback is important for models like GLM / Kimi where we
+      // haven't imported the official CN platform's channel prices yet —
+      // Zhipu and Moonshot are CN producers, so their models should still
+      // surface under "🇨🇳 China" even if we only track aggregator channels.
       if (regionFilter !== "all") {
-        const hasRegion = p.versions.some((cp) => cp.providers?.region === regionFilter);
-        if (!hasRegion) return false;
+        const producerMatch = p.providers?.region === regionFilter;
+        const channelMatch = p.versions.some((cp) => cp.providers?.region === regionFilter);
+        if (!producerMatch && !channelMatch) return false;
       }
 
       // Channel type filter: keep if any channel matches the selected type.
@@ -137,11 +142,15 @@ export default function ApiPricingPage() {
         if (!hasType) return false;
       }
 
-      // China-access-only toggle: only models with at least one
-      // China-accessible channel
+      // China-access-only toggle: the product is CN-usable if either its
+      // primary producer is China-accessible (e.g. Zhipu, Moonshot, Qwen)
+      // or at least one tracked channel is. Producer-side check handles
+      // the data gap where official CN platform prices aren't in DB yet.
       if (chinaAccessOnly) {
-        const hasChinaAccess = p.versions.some((cp) => cp.providers?.access_from_china === true);
-        if (!hasChinaAccess) return false;
+        const producerAccess =
+          p.providers?.access_from_china === true || p.providers?.region === 'china';
+        const channelAccess = p.versions.some((cp) => cp.providers?.access_from_china === true);
+        if (!producerAccess && !channelAccess) return false;
       }
 
       return true;
