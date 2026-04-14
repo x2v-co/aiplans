@@ -19,56 +19,86 @@ const messagesMap: Record<string, any> = {
  * 2× og:image, etc.). Child pages / nested layouts override fields
  * individually via their own generateMetadata — Next.js merges the tree.
  *
+ * Dynamic (not static `metadata` const) so it can see the locale and set
+ * a per-locale canonical + per-locale hreflang alternates. That way the
+ * /en root page inherits canonical=https://aiplans.dev/en even though
+ * page.tsx itself is "use client" and can't export its own metadata.
+ *
  * IMPORTANT: keep `openGraph.images` and `twitter.images` UNSET here so
  * per-route opengraph-image.tsx files can populate the OG image slot
  * for each page. Setting a default here would override them.
  */
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: 'aiplans.dev — Compare AI Pricing',
-    template: '%s',
-  },
-  description:
-    'Compare GPT-4, Claude, DeepSeek, Gemini pricing across official and aggregator channels. Find the cheapest AI API.',
-  applicationName: SITE_NAME,
-  authors: [{ name: 'aiplans.dev' }],
-  keywords: [
-    'AI pricing', 'ChatGPT Plus', 'Claude Pro', 'DeepSeek API',
-    'GPT-4 price comparison', 'API pricing comparison',
-    'AI价格', 'AI价格对比', 'API价格对比',
-  ],
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
-  },
-  // Baidu / 360 / Sogou rendering hints. Next.js Metadata API doesn't
-  // have typed fields for these so we fall through to the 'other' map.
-  other: {
-    'applicable-device': 'pc,mobile',
-    'MobileOptimized': 'width',
-    'HandheldFriendly': 'true',
-    // Uncomment after registering the site at https://ziyuan.baidu.com/
-    // 'baidu-site-verification': 'TODO',
-  },
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/logo.png', type: 'image/png' },
-    ],
-    apple: '/logo.png',
-  },
-  openGraph: {
-    type: 'website',
-    siteName: SITE_NAME,
-    // images intentionally omitted — per-route opengraph-image.tsx
-    // supplies the right picture per page.
-  },
-  twitter: {
-    card: 'summary_large_image',
-  },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const isZh = locale === 'zh';
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: isZh
+        ? 'aiplans.dev — 全网 AI 价格对比'
+        : 'aiplans.dev — Compare AI Pricing',
+      template: '%s',
+    },
+    description: isZh
+      ? '对比 GPT-4、Claude、DeepSeek、Gemini 等 AI 模型在官方与聚合渠道的价格，找到最便宜的 API。'
+      : 'Compare GPT-4, Claude, DeepSeek, Gemini pricing across official and aggregator channels. Find the cheapest AI API.',
+    applicationName: SITE_NAME,
+    authors: [{ name: 'aiplans.dev' }],
+    keywords: isZh
+      ? ['AI价格', 'ChatGPT Plus', 'Claude Pro', 'DeepSeek API', 'GPT-4 价格对比', 'API价格对比']
+      : ['AI pricing', 'ChatGPT Plus', 'Claude Pro', 'DeepSeek API', 'GPT-4 price comparison', 'API pricing comparison'],
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+    },
+    // Default canonical + hreflang for the /{locale} root. Child pages
+    // override these via their own generateMetadata (seo.ts buildMetadata
+    // is what sets per-page canonicals).
+    alternates: {
+      canonical: `${SITE_URL}/${locale}`,
+      languages: {
+        'en': `${SITE_URL}/en`,
+        'en-US': `${SITE_URL}/en`,
+        'zh-CN': `${SITE_URL}/zh`,
+        'zh-Hans': `${SITE_URL}/zh`,
+        'x-default': `${SITE_URL}/en`,
+      },
+    },
+    // Baidu / 360 / Sogou rendering hints. Next.js Metadata API doesn't
+    // have typed fields for these so we fall through to the 'other' map.
+    other: {
+      'applicable-device': 'pc,mobile',
+      'MobileOptimized': 'width',
+      'HandheldFriendly': 'true',
+      // Uncomment after registering the site at https://ziyuan.baidu.com/
+      // 'baidu-site-verification': 'TODO',
+    },
+    icons: {
+      icon: [
+        { url: '/favicon.ico', sizes: 'any' },
+        { url: '/logo.png', type: 'image/png' },
+      ],
+      apple: '/logo.png',
+    },
+    openGraph: {
+      type: 'website',
+      siteName: SITE_NAME,
+      locale: isZh ? 'zh_CN' : 'en_US',
+      alternateLocale: isZh ? ['en_US'] : ['zh_CN'],
+      // images intentionally omitted — per-route opengraph-image.tsx
+      // supplies the right picture per page.
+    },
+    twitter: {
+      card: 'summary_large_image',
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
