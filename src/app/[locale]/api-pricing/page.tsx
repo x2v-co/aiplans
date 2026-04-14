@@ -80,6 +80,9 @@ export default function ApiPricingPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"price" | "name" | "elo">("elo");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [regionFilter, setRegionFilter] = useState<"all" | "global" | "china">("all");
+  const [channelTypeFilter, setChannelTypeFilter] = useState<"all" | "official" | "cloud" | "aggregator" | "reseller">("all");
+  const [chinaAccessOnly, setChinaAccessOnly] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   useEffect(() => {
@@ -100,6 +103,7 @@ export default function ApiPricingPage() {
   const filteredProducts = useMemo(() => {
     const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
     let filtered = products.filter(p => {
+      // Search across model name + all channel provider names
       if (normalizedQuery) {
         const searchValues = [
           p.name,
@@ -111,8 +115,35 @@ export default function ApiPricingPage() {
           .filter(Boolean)
           .map((value) => String(value).toLowerCase());
 
-        return searchValues.some((value) => value.includes(normalizedQuery));
+        if (!searchValues.some((value) => value.includes(normalizedQuery))) return false;
       }
+
+      // Region filter: keep the product only if at least one of its channels
+      // is in the selected region (so "China" shows models that have at
+      // least one China-accessible channel, etc.)
+      if (regionFilter !== "all") {
+        const hasRegion = p.versions.some((cp) => cp.providers?.region === regionFilter);
+        if (!hasRegion) return false;
+      }
+
+      // Channel type filter: keep if any channel matches the selected type.
+      // "official" also matches "producer" for backward-compat with older rows.
+      if (channelTypeFilter !== "all") {
+        const hasType = p.versions.some((cp) => {
+          const t = cp.providers?.type;
+          if (channelTypeFilter === "official") return t === "official" || t === "producer";
+          return t === channelTypeFilter;
+        });
+        if (!hasType) return false;
+      }
+
+      // China-access-only toggle: only models with at least one
+      // China-accessible channel
+      if (chinaAccessOnly) {
+        const hasChinaAccess = p.versions.some((cp) => cp.providers?.access_from_china === true);
+        if (!hasChinaAccess) return false;
+      }
+
       return true;
     });
 
@@ -136,7 +167,7 @@ export default function ApiPricingPage() {
     });
 
     return filtered;
-  }, [products, deferredSearchQuery, sortBy, sortOrder]);
+  }, [products, deferredSearchQuery, sortBy, sortOrder, regionFilter, channelTypeFilter, chinaAccessOnly]);
 
   function getCheapestOfficialPrice(product: GroupedProduct): number | null {
     const officialPrices = product.versions.filter(cp =>
@@ -159,9 +190,16 @@ export default function ApiPricingPage() {
 
   const clearFilters = () => {
     setSearchQuery("");
+    setRegionFilter("all");
+    setChannelTypeFilter("all");
+    setChinaAccessOnly(false);
   };
 
-  const hasActiveFilters = searchQuery !== "";
+  const hasActiveFilters =
+    searchQuery !== "" ||
+    regionFilter !== "all" ||
+    channelTypeFilter !== "all" ||
+    chinaAccessOnly;
 
   if (loading) {
     return (
@@ -227,8 +265,8 @@ export default function ApiPricingPage() {
               )}
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="relative">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                 <Input
                   placeholder={t('searchPlaceholder')}
@@ -239,6 +277,34 @@ export default function ApiPricingPage() {
               </div>
 
               <div>
+                <Select value={regionFilter} onValueChange={(v) => setRegionFilter(v as typeof regionFilter)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('region')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('allRegions')}</SelectItem>
+                    <SelectItem value="global">{t('global')}</SelectItem>
+                    <SelectItem value="china">{t('china')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Select value={channelTypeFilter} onValueChange={(v) => setChannelTypeFilter(v as typeof channelTypeFilter)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('channelType')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('allTypes')}</SelectItem>
+                    <SelectItem value="official">{t('channelTypes.official' as any)}</SelectItem>
+                    <SelectItem value="cloud">{t('channelTypes.cloud' as any)}</SelectItem>
+                    <SelectItem value="aggregator">{t('channelTypes.aggregator' as any)}</SelectItem>
+                    <SelectItem value="reseller">{t('channelTypes.reseller' as any)}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="lg:col-span-2">
                 <Select
                   value={`${sortBy}-${sortOrder}`}
                   onValueChange={(value) => {
@@ -251,14 +317,27 @@ export default function ApiPricingPage() {
                     <SelectValue placeholder={t('sortBy')} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="elo-desc">{t('performanceHighToLow')}</SelectItem>
+                    <SelectItem value="elo-asc">{locale === 'zh' ? '⭐ 性能从低到高' : '⭐ Performance (Low to High)'}</SelectItem>
                     <SelectItem value="price-asc">{t('priceLowToHigh')}</SelectItem>
                     <SelectItem value="price-desc">{t('priceHighToLow')}</SelectItem>
                     <SelectItem value="name-asc">{t('nameAZ')}</SelectItem>
                     <SelectItem value="name-desc">{t('nameZA')}</SelectItem>
-                    <SelectItem value="elo-asc">{locale === 'zh' ? '性能从低到高' : 'Performance (Low to High)'}</SelectItem>
-                    <SelectItem value="elo-desc">{t('performanceHighToLow')}</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="lg:col-span-2 flex items-center gap-2">
+                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={chinaAccessOnly}
+                    onChange={(e) => setChinaAccessOnly(e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <MapPin className="w-4 h-4 text-zinc-400" />
+                  {t('chinaAccessOnly')}
+                </label>
               </div>
             </div>
             <div className="mt-4 text-sm text-zinc-500">
