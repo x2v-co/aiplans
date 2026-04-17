@@ -23,12 +23,14 @@ export async function GET(
   }
 
   if (sql) {
-    sql`
-      INSERT INTO clicks (utm_source, utm_campaign, product)
-      VALUES (${source}, ${campaign}, ${product})
-    `.catch((err) => {
+    try {
+      await sql`
+        INSERT INTO clicks (utm_source, utm_campaign, product)
+        VALUES (${source}, ${campaign}, ${product})
+      `;
+    } catch (err) {
       console.error('[/go] click insert failed:', err);
-    });
+    }
   }
 
   return NextResponse.redirect(dest, 302);
