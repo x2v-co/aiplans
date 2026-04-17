@@ -115,6 +115,26 @@ const MIGRATIONS: Migration[] = [
          AND source IS DISTINCT FROM 'manual';
     `,
   },
+  {
+    name: '005_create_clicks',
+    sql: `
+      -- Click tracking for affiliate short-links under /go/:source/:campaign/:product
+      -- Schema kept minimal per office-hours 2026-04-15 design doc:
+      -- no ip_hash / ua_hash (Vercel logs have those) and no converted column
+      -- (conversions read from each vendor's affiliate dashboard).
+      CREATE TABLE IF NOT EXISTS clicks (
+        id              bigserial PRIMARY KEY,
+        utm_source      text NOT NULL,
+        utm_campaign    text NOT NULL,
+        product         text NOT NULL,
+        ts              timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS idx_clicks_campaign_ts
+        ON clicks (utm_campaign, ts DESC);
+      CREATE INDEX IF NOT EXISTS idx_clicks_product_ts
+        ON clicks (product, ts DESC);
+    `,
+  },
 ];
 
 async function main() {
