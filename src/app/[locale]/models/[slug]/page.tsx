@@ -12,6 +12,7 @@ import { use } from "react";
 import { getPrimaryProvidersForModels, normalizeProviderRecord } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
+import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
 
 const baseUrl = SITE_URL;
 
@@ -155,11 +156,49 @@ async function getProductWithChannels(slug: string) {
     providers: modelProvider || derivedProvider
   };
 
+  // Fetch price history for all channels of this model (latest 500 events,
+  // typically ~90 days worth). Join to api_channel_prices → providers.
+  const channelIds = normalizedChannelPrices.map((cp: any) => cp.id);
+  const priceHistory: PriceHistoryPoint[] = [];
+  if (channelIds.length > 0) {
+    const { data: historyRows } = await supabase
+      .from('price_history')
+      .select('channel_price_id, new_input_price, new_output_price, currency, recorded_at')
+      .in('channel_price_id', channelIds)
+      .order('recorded_at', { ascending: true })
+      .limit(500);
+
+    const providerByChannelId = new Map<number, { slug: string; name: string }>();
+    for (const cp of normalizedChannelPrices) {
+      if (cp.providers?.slug) {
+        providerByChannelId.set(cp.id, {
+          slug: cp.providers.slug,
+          name: cp.providers.name,
+        });
+      }
+    }
+
+    for (const h of historyRows ?? []) {
+      const prov = providerByChannelId.get(h.channel_price_id);
+      if (!prov) continue;
+      priceHistory.push({
+        channelPriceId: h.channel_price_id,
+        providerSlug: prov.slug,
+        providerName: prov.name,
+        recordedAt: h.recorded_at,
+        newInputPrice: h.new_input_price,
+        newOutputPrice: h.new_output_price,
+        currency: h.currency,
+      });
+    }
+  }
+
   return {
     product,
     channelPrices: normalizedChannelPrices,
     plans: plansData || [],
     arenaElo,
+    priceHistory,
   };
 }
 
@@ -175,7 +214,7 @@ export default async function ModelPage({
     notFound();
   }
 
-  const { product, channelPrices, plans, arenaElo } = data;
+  const { product, channelPrices, plans, arenaElo, priceHistory } = data;
   const isZh = locale === 'zh';
 
   // Find official and cheapest
@@ -695,6 +734,21 @@ export default async function ModelPage({
                 </TableBody>
               </Table>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Price History Chart */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>{isZh ? '📈 历史价格曲线' : '📈 Price History'}</CardTitle>
+            <CardDescription>
+              {isZh
+                ? '每次 scraper 检测到价格变动都会入库。相同日期的多次变动会取最后一次；未变动的渠道用最近一次价格平铺。'
+                : 'Every scraper-detected price change is recorded. Same-day multiple changes take the last value; unchanged channels carry the last observed price forward.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PriceHistoryChart history={priceHistory} locale={isZh ? 'zh' : 'en'} />
           </CardContent>
         </Card>
 
