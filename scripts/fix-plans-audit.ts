@@ -101,6 +101,21 @@ const PLAN_UPDATES: PlanUpdate[] = [
   { providerSlug: 'mistral', planSlug: 'le-chat-enterprise',
     price: null, annual: null, currency: 'EUR',
     reason: 'Le Chat Enterprise is contact-sales (no public price); DB had €0 which implied free' },
+
+  // ─ Zhipu 国内 GLM Coding Pro — scraper collision with Lite ────────
+  // DB had glm-coding-pro at ¥49 (same as Lite), clearly a scraper misparse.
+  // Official tiers after 2026-02 GLM-5 repricing: Lite ¥49 / Pro ¥149 / Max ¥469.
+  // Legacy old-user pricing (pre-2026-02-12) was Lite ¥40 / Pro ¥200 / Max ¥400.
+  { providerSlug: 'zhipu-china', planSlug: 'glm-coding-pro',
+    price: 149, annual: null, currency: 'CNY',
+    reason: 'Zhipu 国内 GLM Coding Pro is ¥149/mo post-GLM-5 repricing; DB had ¥49 (scraper collision with Lite tier)' },
+
+  // ─ OpenAI ChatGPT Plus — standard US pricing is $20, not $5 ──────
+  // DB likely caught a regional promo or Go-tier row mis-tagged as Plus.
+  // Plus has been $20/mo since Feb 2023 launch; no official change.
+  { providerSlug: 'openai', planSlug: 'chatgpt-plus',
+    price: 20, annual: null, currency: 'USD',
+    reason: 'ChatGPT Plus is $20/mo standard US pricing (unchanged since 2023); DB had $5 which looks like a regional Go-tier bleed-through' },
 ];
 
 // ─── 3. Delete obsolete / non-existent plans ──────────────────────────────
@@ -280,6 +295,54 @@ const NEW_PLANS: NewPlan[] = [
     price: 24.99, annual: null, currency: 'EUR',
     notes: 'Per-user. Excludes taxes. 30 GB storage/user, domain verification, data export.',
     reason: 'Mistral Le Chat Team tier' },
+
+  // ─── Google Gemini Code Assist (distinct from Gemini Advanced) ──────────
+  // Per https://codeassist.google/ on 2026-04-17. This is the developer-
+  // facing coding product, not the consumer chat subscription.
+  { providerSlug: 'google', slug: 'gemini-code-assist-individual',
+    name: 'Gemini Code Assist Individual', tier: 'free', pricingModel: 'subscription',
+    price: 0, annual: null, currency: 'USD',
+    notes: 'Free. 6000 code completions + 240 chats/day. Gemini 2.5 now, Gemini 3 waitlist. IDE plugin (VSCode/JetBrains/Android Studio).',
+    reason: 'Gemini Code Assist free individual tier — largest stable free coding quota in 2026-04' },
+  { providerSlug: 'google', slug: 'gemini-code-assist-standard',
+    name: 'Gemini Code Assist Standard', tier: 'pro', pricingModel: 'subscription',
+    price: 22.80, annual: 228, currency: 'USD',
+    notes: 'Per-user. $22.80/mo month-to-month or $19/mo annual. 1500 model requests/day shared CLI+Agent. Gemini 2.5 + Gemini 3 waitlist.',
+    reason: 'Gemini Code Assist Standard (paid developer tier)' },
+  { providerSlug: 'google', slug: 'gemini-code-assist-enterprise',
+    name: 'Gemini Code Assist Enterprise', tier: 'enterprise', pricingModel: 'subscription',
+    price: 54, annual: 540, currency: 'USD',
+    notes: 'Per-user. $54/mo month-to-month or $45/mo annual. 2000 model requests/day. Private repo customization (GitHub/GitLab/Bitbucket) + Apigee.',
+    reason: 'Gemini Code Assist Enterprise tier' },
+
+  // ─── Alibaba 通义灵码 (Lingma) IDE plugin ──────────────────────────────
+  // Per https://lingma.aliyun.com/pricing on 2026-04-17. Separate product
+  // from Aliyun Bailian Coding Plan (below) — this is the IDE completion
+  // plugin, not the API subscription.
+  { providerSlug: 'qwen', slug: 'lingma-personal',
+    name: '通义灵码 个人版', tier: 'free', pricingModel: 'subscription',
+    price: 0, annual: null, currency: 'CNY',
+    notes: 'Free with Aliyun account. VSCode/JetBrains plugin. Qwen3-Coder. ~200 completions + 50 chats/day (observed).',
+    reason: '通义灵码 个人版 — free IDE plugin, 2026-04 standard offering' },
+  { providerSlug: 'qwen', slug: 'lingma-professional',
+    name: '通义灵码 专业版', tier: 'pro', pricingModel: 'subscription',
+    price: 29, annual: 290, currency: 'CNY',
+    notes: '¥29/mo. Unlocks Qwen3-Coder-Plus, larger context, private repo connection.',
+    reason: '通义灵码 专业版 — paid IDE plugin tier' },
+
+  // ─── Alibaba 百炼 Coding Plan Pro ───────────────────────────────────────
+  // Per https://help.aliyun.com/zh/model-studio/coding-plan on 2026-04-17.
+  // Launched 2026-02 as an aggregator subscription. Lite tier was
+  // discontinued 2026-03-20 (handled in PLAN_DELETIONS above as
+  // baidu/qianfan-coding-plan-lite). Pro is currently the only live tier.
+  // Distinct from baidu/qianfan-coding-plan-pro (the pre-existing DB row
+  // mis-attributed to baidu provider — that record's price update already
+  // lives in PLAN_UPDATES section above).
+  { providerSlug: 'qwen', slug: 'aliyun-bailian-coding-pro',
+    name: '阿里云百炼 Coding Plan Pro', tier: 'pro', pricingModel: 'subscription',
+    price: 200, annual: null, currency: 'CNY',
+    notes: 'Aggregator subscription: GLM-5, Qwen3.5-Plus, Qwen3-Max, Qwen3-Coder-Plus/Next, Kimi-K2.5, MiniMax-M2.5. Quota: 6k req/5h · 45k/week · 90k/month. First-month promo ¥39.9.',
+    reason: '阿里云百炼 Coding Plan Pro — 2026-02 launched aggregator subscription (GLM-5 + Qwen3.5 + Kimi + MiniMax) correctly attributed to qwen provider' },
 ];
 
 // ────────────────────────────────────────────────────────────────────────────
