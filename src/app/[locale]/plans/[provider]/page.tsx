@@ -246,27 +246,40 @@ export default async function ProviderPlansPage({
                     <div className="space-y-2 text-sm">
                       {plan.monthly_message_limit !== null && (
                         <div className="flex justify-between">
-                          <span className="text-zinc-500">Messages</span>
-                          <span>{plan.monthly_message_limit === 0 ? 'Unlimited' : `${plan.monthly_message_limit}/month`}</span>
+                          <span className="text-zinc-500">{isZh ? '消息数' : 'Messages'}</span>
+                          <span>{plan.monthly_message_limit === 0 ? (isZh ? '无限' : 'Unlimited') : `${plan.monthly_message_limit}${isZh ? '/月' : '/month'}`}</span>
                         </div>
                       )}
                       {plan.context_window && (
                         <div className="flex justify-between">
-                          <span className="text-zinc-500">Context</span>
+                          <span className="text-zinc-500">{isZh ? '上下文' : 'Context'}</span>
                           <span>{plan.context_window.toLocaleString()} tokens</span>
                         </div>
                       )}
                       {plan.rate_limit && (
                         <div className="flex justify-between">
-                          <span className="text-zinc-500">Rate Limit</span>
+                          <span className="text-zinc-500">{isZh ? '速率限制' : 'Rate Limit'}</span>
                           <span>{plan.rate_limit}/min</span>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <span className="text-zinc-500">China Access</span>
-                        <span>{plan.access_from_china ? '✓ Available' : '✗ Not available'}</span>
+                        <span className="text-zinc-500">{isZh ? '中国直连' : 'China Access'}</span>
+                        <span>{plan.access_from_china ? (isZh ? '✓ 可用' : '✓ Available') : (isZh ? '✗ 不可用' : '✗ Not available')}</span>
                       </div>
                     </div>
+
+                    {(provider.pricing_url || provider.website || provider.invite_url) && (
+                      <a
+                        href={provider.pricing_url || provider.invite_url || provider.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 block w-full text-center rounded-md bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        {plan.is_contact_sales
+                          ? (isZh ? '联系销售 →' : 'Contact Sales →')
+                          : (isZh ? '去订阅 →' : 'Subscribe →')}
+                      </a>
+                    )}
                   </CardContent>
                 </Card>
               ))}
