@@ -30,7 +30,7 @@ npm run scrape:plans        # all plan scrapers (~12 providers, ~2 min)
 npm run scrape:plans:dry-run
 
 # Data accuracy — read-only audit, safe
-npm run audit               # 13 checks, exits 1 on critical, 2 on warnings
+npm run audit               # 17 checks, exits 1 on critical, 2 on warnings
 npm run audit:verbose       # show all findings (not just first 8 per check)
 npm run audit:json > out.json
 
@@ -220,13 +220,17 @@ immune to `cleanupOutdatedPlans`. To add a new manual plan, put it in the
 
 Three scripts form the feedback loop:
 
-1. `scripts/audit-data.ts` — 13 read-only checks:
+1. `scripts/audit-data.ts` — 17 read-only checks:
    `prices.zero_or_null`, `prices.output_lt_input`, `prices.input_eq_output`,
    `prices.cross_channel_outlier` (USD-normalized), `prices.stale`,
    `models.no_channel_price`, `models.no_producer_channel`,
    `models.unknown_provider_id`, `plans.stale`, `plans.missing_verified`,
-   `providers.unknown_ref`, `mapping.orphan_model`, `mapping.orphan_plan`.
+   `providers.unknown_ref`, `mapping.orphan_model`, `mapping.orphan_plan`,
+   `plans.missing_kind`, `plans.no_model_mapping`, `plans.selector_empty`,
+   `plans.selector_unknown_slug`.
    Exit code 0 = clean, 1 = critical, 2 = warnings only.
+   The last four need migration 013/014; the audit probes for the columns and
+   skips them with a notice rather than crashing on a pre-migration database.
 
 2. `scripts/fix-data-audit.ts` — idempotent UPDATES / DISABLES /
    NEW_MODELS for api_channel_prices, from web-verified ground truth.

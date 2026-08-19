@@ -24,8 +24,14 @@
  *   C11 providers.unknown_ref     — api_channel_prices.provider_id not in providers (critical)
  *   C12 models.unknown_provider_id — models.provider_ids[] references missing provider (warn)
  *   C13 plans.stale               — plan last_verified older than threshold (warn)
+ *   C14 plans.missing_kind        — plan has no plan_kind/plan_line/tier_rank (warn)
+ *   C15 plans.no_model_mapping    — plan has 0 rows in model_plan_mapping (warn)
+ *   C16 plans.selector_empty      — model_selector resolves to 0 models (critical)
+ *   C17 plans.selector_unknown_slug — selector.extra names a nonexistent model (critical)
  */
 import { supabaseAdmin } from './db/queries';
+import { databaseSql } from './db/postgres-admin';
+import { resolveSelector, type ModelSelector, type SelectableModel } from '../src/lib/plan-selector';
 
 const args = new Set(process.argv.slice(2));
 const VERBOSE = args.has('--verbose') || args.has('-v');
@@ -59,11 +65,24 @@ async function main() {
   log(`\n🔍 Data accuracy audit  (stale=${STALE_DAYS}d, outlier=${OUTLIER_RATIO}x)\n`);
 
   // ---------- fetch ----------
+  // C14-C17 read columns added by migration 013/014. Nothing runs `npm run
+  // migrate` automatically, so probe for them rather than crashing the nightly
+  // job on a deploy that landed before the migration did.
+  const planKindColumns = await databaseSql<{ column_name: string }[]>`
+    SELECT column_name FROM information_schema.columns
+     WHERE table_name = 'plans'
+       AND column_name IN ('plan_kind', 'plan_line', 'tier_rank', 'model_selector')
+  `;
+  const CLASSIFIED = planKindColumns.length === 4;
+  const planColumns = CLASSIFIED
+    ? 'id, name, slug, provider_id, price, last_verified, source, plan_kind, plan_line, tier_rank, model_selector'
+    : 'id, name, slug, provider_id, price, last_verified, source';
+
   const [modelsRes, providersRes, pricesRes, plansRes, mappingsRes, ratesRes] = await Promise.all([
     supabaseAdmin.from('models').select('id, name, slug, provider_ids, type'),
     supabaseAdmin.from('providers').select('id, name, slug, type'),
     supabaseAdmin.from('api_channel_prices').select('id, model_id, provider_id, input_price_per_1m, output_price_per_1m, is_available, last_verified, updated_at, currency'),
-    supabaseAdmin.from('plans').select('id, name, slug, provider_id, price, last_verified, source'),
+    supabaseAdmin.from('plans').select(planColumns),
     supabaseAdmin.from('model_plan_mapping').select('id, model_id, plan_id'),
     supabaseAdmin.from('exchange_rates').select('from_currency, to_currency, rate, valid_at').eq('is_active', true).order('valid_at', { ascending: false }),
   ]);
@@ -107,6 +126,18 @@ async function main() {
     const p = id != null ? providerById.get(id) : undefined;
     return p ? `${p.slug}#${p.id}` : `provider#${id}`;
   };
+
+  // Arena ELO, needed only so a selector's min_elo resolves the same way here
+  // as it does in the materializer. Without it a min_elo selector would look
+  // empty to the audit and report a critical that is not real.
+  const eloRows = await databaseSql<{ model_id: number; elo: number | null }[]>`
+    SELECT score.model_id, max(score.score_value) AS elo
+      FROM model_benchmark_scores AS score
+      JOIN benchmark_metrics AS metric ON metric.id = score.metric_id
+     WHERE metric.name = 'ELO'
+     GROUP BY score.model_id
+  `;
+  const eloByModel = new Map(eloRows.map(r => [r.model_id, r.elo]));
 
   const now = Date.now();
   const staleCutoff = now - STALE_DAYS * 24 * 3600 * 1000;
@@ -286,6 +317,80 @@ async function main() {
     }
   }
 
+  // ---------- C14-C17: plan classification and derived model links ----------
+  // Every plan needs a plan_kind/plan_line/tier_rank so the UI can group it into
+  // the right product ladder, and a model_selector so the materializer can
+  // derive its model links. See scripts/config/plan-classifications.ts.
+  // C15 (no_model_mapping) works on the pre-migration schema too, so it runs
+  // unconditionally; C14/C16/C17 need the new columns.
+  // providerById holds untyped shim rows, so narrow to what the selector needs.
+  const providerSlugById = new Map<number, string>(
+    providers.map((pr: { id: number; slug: string }) => [pr.id, pr.slug]),
+  );
+  const modelCatalog: SelectableModel[] = models.map(
+    (m: { id: number; slug: string; provider_ids: number[] | null }) => ({
+      id: m.id,
+      slug: m.slug,
+      providerSlugs: (m.provider_ids ?? [])
+        .map((pid) => providerSlugById.get(pid))
+        .filter((slug): slug is string => Boolean(slug)),
+      elo: eloByModel.get(m.id) ?? null,
+    }),
+  );
+
+  const mappingCountByPlan = new Map<number, number>();
+  for (const mp of mappings) {
+    mappingCountByPlan.set(mp.plan_id, (mappingCountByPlan.get(mp.plan_id) ?? 0) + 1);
+  }
+
+  for (const pl of plans) {
+    if ((mappingCountByPlan.get(pl.id) ?? 0) === 0) {
+      add('plans.no_model_mapping', 'warning', 'plan has no models in model_plan_mapping', {
+        plan: `${pl.slug}#${pl.id}`,
+        provider: refProvider(pl.provider_id),
+      });
+    }
+  }
+
+  if (!CLASSIFIED) {
+    log('⏭  Skipping C14-C17: plans.plan_kind / model_selector not present. Run `npm run migrate`.\n');
+  }
+
+  for (const pl of CLASSIFIED ? plans : []) {
+    const ref = { plan: `${pl.slug}#${pl.id}`, provider: refProvider(pl.provider_id) };
+
+    const missing: string[] = [];
+    if (!pl.plan_kind) missing.push('plan_kind');
+    if (!pl.plan_line) missing.push('plan_line');
+    if (pl.tier_rank == null) missing.push('tier_rank');
+    if (!pl.model_selector) missing.push('model_selector');
+    if (missing.length > 0) {
+      add('plans.missing_kind', 'warning', `plan is unclassified (${missing.join(', ')} unset)`, ref);
+    }
+
+    if (!pl.model_selector) continue;
+
+    const providerSlug = providerSlugById.get(pl.provider_id);
+    const resolution = resolveSelector(
+      pl.model_selector as ModelSelector,
+      modelCatalog,
+      providerSlug ? [providerSlug] : [],
+    );
+
+    // A selector that matches nothing is worse than no selector at all: the
+    // materializer will keep the plan's links frozen and the plan quietly stops
+    // tracking new models. This is the exact rot the selector system replaced.
+    if (resolution.models.length === 0) {
+      add('plans.selector_empty', 'critical', 'model_selector resolves to 0 models', {
+        ...ref,
+        selector: pl.model_selector,
+      });
+    }
+    for (const slug of resolution.unknownExtra) {
+      add('plans.selector_unknown_slug', 'critical', `selector.extra names unknown model '${slug}'`, ref);
+    }
+  }
+
   // ---------- report ----------
   if (JSON_OUT) {
     console.log(JSON.stringify({
@@ -309,6 +414,8 @@ async function main() {
       'providers.unknown_ref',
       'mapping.orphan_model',
       'mapping.orphan_plan',
+      'plans.selector_empty',
+      'plans.selector_unknown_slug',
       'prices.input_eq_output',
       'prices.cross_channel_outlier',
       'prices.stale',
@@ -318,6 +425,8 @@ async function main() {
       'models.unknown_provider_id',
       'plans.stale',
       'plans.missing_verified',
+      'plans.missing_kind',
+      'plans.no_model_mapping',
     ];
     for (const check of order) {
       const list = grouped.get(check);
