@@ -80,7 +80,7 @@ async function loadCatalog(): Promise<SelectableModel[]> {
                WHERE provider.id = ANY(model.provider_ids)),
              '{}'
            ) AS provider_slugs,
-           (SELECT max(score.score_value)
+           (SELECT max(score.value)
               FROM model_benchmark_scores AS score
               JOIN benchmark_metrics AS metric ON metric.id = score.metric_id
              WHERE score.model_id = model.id AND metric.name = 'ELO') AS elo

@@ -131,7 +131,7 @@ async function main() {
   // as it does in the materializer. Without it a min_elo selector would look
   // empty to the audit and report a critical that is not real.
   const eloRows = await databaseSql<{ model_id: number; elo: number | null }[]>`
-    SELECT score.model_id, max(score.score_value) AS elo
+    SELECT score.model_id, max(score.value) AS elo
       FROM model_benchmark_scores AS score
       JOIN benchmark_metrics AS metric ON metric.id = score.metric_id
      WHERE metric.name = 'ELO'
