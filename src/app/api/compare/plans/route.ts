@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql, INT4_ARRAY, TEXT_ARRAY } from '@/lib/db';
 import type { CurrencyCode } from '@/lib/currency';
 import {
   convertPrice,
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const products = await sql<any[]>`
       SELECT id, name, slug, provider_ids, context_window
       FROM models
-      WHERE slug = ANY(${sql.array(slugCandidates, 25)})
+      WHERE slug = ANY(${sql.array(slugCandidates, TEXT_ARRAY)})
     `;
 
     if (products.length === 0) {
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     const modelPlans = await sql<any[]>`
       SELECT plan_id, model_id, priority
       FROM model_plan_mapping
-      WHERE model_id = ANY(${sql.array(relatedModelIds, 23)})
+      WHERE model_id = ANY(${sql.array(relatedModelIds, INT4_ARRAY)})
     `;
 
     // 3. Get unique plan IDs and fetch full plan details in parallel with provider info
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
               qps, tokens_per_minute, features, region, access_from_china,
               payment_methods, is_official, last_verified, provider_id
             FROM plans
-            WHERE id = ANY(${sql.array(planIds, 23)})
+            WHERE id = ANY(${sql.array(planIds, INT4_ARRAY)})
             ORDER BY price ASC NULLS LAST
           `,
           sql<any[]>`

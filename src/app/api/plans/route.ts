@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql, INT4_ARRAY } from '@/lib/db';
 
 export async function GET(request: Request) {
   try {
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const providersData = providerIds.length > 0
       ? await sql<any[]>`
           SELECT * FROM providers
-          WHERE id = ANY(${sql.array(providerIds, 23)})
+          WHERE id = ANY(${sql.array(providerIds, INT4_ARRAY)})
         `
       : [];
 
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
         ? await sql<any[]>`
             SELECT plan_id, model_id, priority
             FROM model_plan_mapping
-            WHERE plan_id = ANY(${sql.array(planIds, 23)})
+            WHERE plan_id = ANY(${sql.array(planIds, INT4_ARRAY)})
             ORDER BY priority ASC
           `
         : [];
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
         ? await sql<any[]>`
             SELECT id, name, slug, provider_ids, type, context_window
             FROM models
-            WHERE id = ANY(${sql.array(modelIds, 23)})
+            WHERE id = ANY(${sql.array(modelIds, INT4_ARRAY)})
           `
         : [];
 

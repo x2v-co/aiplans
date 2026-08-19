@@ -1,4 +1,4 @@
-import { sql } from '@/lib/db';
+import { sql, INT4_ARRAY } from '@/lib/db';
 
 type ModelWithProviderIds = {
   id: number;
@@ -35,7 +35,7 @@ export async function getProvidersByIds(providerIds: number[]): Promise<Map<numb
   const data = await sql<Provider[]>`
     SELECT id, name, slug, logo, logo_url, website, invite_url, region, type, access_from_china
     FROM providers
-    WHERE id = ANY(${sql.array(providerIds, 23)})
+    WHERE id = ANY(${sql.array(providerIds, INT4_ARRAY)})
   `;
 
   return new Map(data.map((provider) => [provider.id, provider]));
@@ -52,7 +52,7 @@ export async function getPrimaryProvidersForModels<T extends ModelWithProviderId
   const modelOfficialRows = await sql<Array<{ model_id: number; producer_id: number | null }>>`
     SELECT model_id, producer_id
     FROM model_offical
-    WHERE model_id = ANY(${sql.array(modelIds, 23)})
+    WHERE model_id = ANY(${sql.array(modelIds, INT4_ARRAY)})
     ORDER BY id
   `;
 
@@ -117,7 +117,7 @@ export async function getAllModelIdsForProvider(providerId: number, planIds: num
     const mappings = await sql<Array<{ model_id: number }>>`
       SELECT model_id
       FROM model_plan_mapping
-      WHERE plan_id = ANY(${sql.array(planIds, 23)})
+      WHERE plan_id = ANY(${sql.array(planIds, INT4_ARRAY)})
     `;
 
     mappings.forEach((row) => modelIds.add(row.model_id));

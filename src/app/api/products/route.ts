@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql, INT4_ARRAY } from '@/lib/db';
 import { attachPrimaryProvidersToModels, getAllModelIdsForProvider } from '@/lib/schema-adapters';
 import { pickNewestPerSeries } from '@/lib/model-series';
 
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       ? await sql<any[]>`
           SELECT * FROM models
           WHERE (${type}::text IS NULL OR type = ${type})
-            AND id = ANY(${sql.array(matchedModelIds, 23)})
+            AND id = ANY(${sql.array(matchedModelIds, INT4_ARRAY)})
           ORDER BY name
         `
       : await sql<any[]>`
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
             AND bv.is_current = true
           JOIN benchmarks b ON b.id = bv.benchmark_id AND b.slug = 'arena-agent'
           JOIN benchmark_metrics bm ON bm.id = s.metric_id AND bm.name = 'AGENT_NET_IMPROVEMENT'
-          WHERE s.model_id = ANY(${sql.array(modelIds, 23)})
+          WHERE s.model_id = ANY(${sql.array(modelIds, INT4_ARRAY)})
           ORDER BY value DESC NULLS LAST
         `]
       : [];
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
             SELECT model_id, plan_id
             FROM model_plan_mapping
             WHERE plan_id IS NOT NULL
-              AND model_id = ANY(${sql.array(modelIds, 23)})
+              AND model_id = ANY(${sql.array(modelIds, INT4_ARRAY)})
           `]
         : [];
 
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
             SELECT DISTINCT model_id
             FROM api_channel_prices
             WHERE is_available = true
-              AND model_id = ANY(${sql.array(modelIds, 23)})
+              AND model_id = ANY(${sql.array(modelIds, INT4_ARRAY)})
           `
         : [];
       const apiPricingIds = new Set(apiPricedModels.map((row) => row.model_id));

@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og-template';
-import { sql } from '@/lib/db';
+import { sql, INT4_ARRAY } from '@/lib/db';
 
 export const alt = 'Plan Comparison — aiplans.dev';
 export const size = OG_SIZE;
@@ -41,7 +41,7 @@ export default async function Image({
     ? [...await sql<any[]>`
         SELECT price, currency, provider_id
         FROM plans
-        WHERE id = ANY(${sql.array(planIds, 23)})
+        WHERE id = ANY(${sql.array(planIds, INT4_ARRAY)})
       `]
     : [];
 
