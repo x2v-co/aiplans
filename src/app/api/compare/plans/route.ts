@@ -10,6 +10,7 @@ import { getExchangeRateSync } from '@/lib/exchange-rates';
 import { getPrimaryProvidersForModels, getPlanYearlyMonthly } from '@/lib/schema-adapters';
 import { getProviderLogoFallback, getProviderLogoSrc } from '@/lib/provider-branding';
 import { groupPlansByKind, normalizePlanKind, type PlanKind } from '@/lib/plan-kinds';
+import { planEconomics, type EconomicPlan, type Quota } from '@/lib/plan-economics';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -60,7 +61,8 @@ export async function GET(request: NextRequest) {
               price_unit, currency, daily_message_limit, requests_per_minute,
               qps, tokens_per_minute, features, region, access_from_china,
               payment_methods, is_official, last_verified, provider_id,
-              plan_kind, plan_line, tier_rank
+              plan_kind, plan_line, tier_rank,
+              quotas, is_contact_sales, pack_validity_days
             FROM plans
             WHERE id = ANY(${sql.array(planIds, INT4_ARRAY)})
             ORDER BY plan_kind, plan_line NULLS LAST, tier_rank NULLS LAST, price ASC NULLS LAST
@@ -79,6 +81,35 @@ export async function GET(request: NextRequest) {
     });
 
     const subscriptionPlans = rawSubscriptionPlans;
+
+    // Relative quotas name a sibling tier ("20x the usage of claude-pro"), and
+    // turning that into value-per-dollar needs the sibling's price. This page
+    // only fetches plans mapped to one model, so a baseline like claude-pro is
+    // usually absent -- fetch exactly the referenced slugs, and nothing more.
+    const baselineSlugs = new Set<string>();
+    for (const plan of subscriptionPlans) {
+      const quotas: Quota[] | null = plan.quotas ?? null;
+      for (const q of quotas ?? []) {
+        if (q.derived_from) baselineSlugs.add(q.derived_from);
+      }
+    }
+    for (const plan of subscriptionPlans) baselineSlugs.delete(plan.slug);
+
+    const baselineRows = baselineSlugs.size > 0
+      ? await sql<EconomicPlan[]>`
+          SELECT slug, price, currency, price_unit, is_contact_sales,
+            pack_validity_days, quotas
+          FROM plans
+          WHERE slug = ANY(${sql.array([...baselineSlugs], TEXT_ARRAY)})
+        `
+      : [];
+
+    const economicPlanBySlug = new Map<string, EconomicPlan>();
+    for (const row of [...subscriptionPlans, ...baselineRows]) {
+      economicPlanBySlug.set(row.slug, row as EconomicPlan);
+    }
+    const economicsFor = (plan: EconomicPlan) =>
+      planEconomics(plan, (slug) => economicPlanBySlug.get(slug));
 
     // Separate official and third-party subscription plans
     const officialPlans: any[] = [];
@@ -108,6 +139,10 @@ export async function GET(request: NextRequest) {
             isOfficial,
             features: plan.features || [],
           },
+          // Locale-free on purpose: currency conversion happens here on the
+          // server, while the client turns this into strings with its own
+          // locale via describeEconomics.
+          economics: economicsFor(plan as EconomicPlan),
           channel: {
             slug: provider?.slug || 'unknown',
             name: provider?.name || 'Unknown',
