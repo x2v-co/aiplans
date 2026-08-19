@@ -254,8 +254,8 @@ export default function ComparePlansIndexPage(props: {
                     <div className="space-y-2 mb-4">
                       {model.benchmark_arena_elo && (
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-zinc-500">Arena ELO</span>
-                          <Badge variant="secondary">{Math.round(model.benchmark_arena_elo)}</Badge>
+                          <span className="text-zinc-500">Agent Arena</span>
+                          <Badge variant="secondary">{model.benchmark_arena_elo.toFixed(2)}%</Badge>
                         </div>
                       )}
                       <div className="flex items-center justify-between text-sm">

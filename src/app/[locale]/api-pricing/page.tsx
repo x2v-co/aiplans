@@ -427,8 +427,8 @@ export default function ApiPricingPage() {
                               {product.name}
                             </Link>
                             {product.benchmark_arena_elo && (
-                              <Badge variant="outline" className="ml-2" title="Chatbot Arena ELO">
-                                ⭐ {product.benchmark_arena_elo}
+                              <Badge variant="outline" className="ml-2" title="Agent Arena net improvement">
+                                Agent {product.benchmark_arena_elo}%
                               </Badge>
                             )}
                           </div>

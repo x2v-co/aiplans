@@ -46,18 +46,22 @@ export async function GET(request: Request) {
         JOIN providers p ON p.id = cp.provider_id
         WHERE cp.is_available = true
       `,
-      // Fetch Arena ELO scores specifically. Older version of this query
+      // Fetch Agent Arena net-improvement scores specifically. An older query
       // tried to join through `benchmark_tasks.benchmark_id` which doesn't
       // exist (the column is `benchmark_version_id`), so the whole query
       // silently returned 0 rows — meaning every product had
       // `benchmark_arena_elo: null` and "sort by performance" was a no-op
       // for all 271 products. Join through benchmark_metrics and filter
-      // on name='ELO' so we get actual Chatbot Arena ratings.
+      // on the benchmark and metric so Text Arena scores cannot leak in.
       sql<any[]>`
         SELECT s.model_id, s.value
         FROM model_benchmark_scores s
+        JOIN benchmark_tasks bt ON bt.id = s.benchmark_task_id
+        JOIN benchmark_versions bv ON bv.id = bt.benchmark_version_id
+          AND bv.is_current = true
+        JOIN benchmarks b ON b.id = bv.benchmark_id AND b.slug = 'arena-agent'
         JOIN benchmark_metrics bm ON bm.id = s.metric_id
-        WHERE bm.name = 'ELO'
+          AND bm.name = 'AGENT_NET_IMPROVEMENT'
         ORDER BY s.value DESC NULLS LAST
       `,
     ]);

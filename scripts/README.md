@@ -72,11 +72,11 @@ Re-run any time; all steps use `IF NOT EXISTS` / no-op guards.
 
 ## Arena leaderboard
 
-`ingest-arena-leaderboard.ts` reads the live top-60 Chatbot Arena text
-leaderboard with Playwright and upserts ELO scores into
+`ingest-arena-leaderboard.ts` reads the live Chatbot Arena Agent leaderboard
+with Playwright and upserts Net Improvement percentages into
 `model_benchmark_scores`. It falls back to the bundled snapshot only for
 `--dry-run`; a production live-fetch failure leaves the previous scores intact.
-The homepage and compare page select hot models from the latest scores and
+The homepage and compare page select hot models from these Agent scores and
 available model-plan mappings, so no model slug list needs manual maintenance.
 
 Companion: `add-arena-missing-models.ts` creates stub `models` rows
@@ -95,7 +95,7 @@ scripts/
 ├── fix-cn-producer-channels.ts   # GLM/Kimi direct-channel seeds
 ├── fix-siliconflow-currency.ts   # historical CNY currency repair
 ├── fix-currency-on-patched-rows.ts  # historical currency alignment
-├── ingest-arena-leaderboard.ts   # top-60 ELO ingestion
+├── ingest-arena-leaderboard.ts   # Agent Arena score ingestion
 ├── add-arena-missing-models.ts   # arena stub creation
 ├── add-model-plan-mappings.ts    # model_plan_mapping populator
 ├── debug-core-snapshot.ts        # ops snapshot of hot models + channels

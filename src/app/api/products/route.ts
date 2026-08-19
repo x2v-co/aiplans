@@ -72,8 +72,8 @@ export async function GET(request: Request) {
           JOIN benchmark_tasks bt ON bt.id = s.benchmark_task_id
           JOIN benchmark_versions bv ON bv.id = bt.benchmark_version_id
             AND bv.is_current = true
-          JOIN benchmarks b ON b.id = bv.benchmark_id AND b.slug = 'arena'
-          JOIN benchmark_metrics bm ON bm.id = s.metric_id AND bm.name = 'ELO'
+          JOIN benchmarks b ON b.id = bv.benchmark_id AND b.slug = 'arena-agent'
+          JOIN benchmark_metrics bm ON bm.id = s.metric_id AND bm.name = 'AGENT_NET_IMPROVEMENT'
           WHERE s.model_id = ANY(${sql.array(modelIds, 23)})
           ORDER BY value DESC NULLS LAST
         `]
@@ -137,9 +137,9 @@ export async function GET(request: Request) {
       }));
     }
 
-    // Filter featured models (hot models) - based on Arena ELO AND planCount
+    // Filter featured models using Agent Arena performance and availability.
     if (featured === 'true') {
-      // Automatically select top models based on Arena ELO score and plan availability
+      // Automatically select top models based on Agent Arena net improvement.
       products = products
         .filter((p: any) => {
           // A hot model is usable if it has either subscription plans or API
@@ -148,19 +148,19 @@ export async function GET(request: Request) {
           return p.benchmark_arena_elo != null;
         })
         .sort((a: any, b: any) => {
-          // Sort by Arena ELO first, then by plan count
+          // Sort by Agent Arena score first, then by plan count.
           const aElo = a.benchmark_arena_elo || 0;
           const bElo = b.benchmark_arena_elo || 0;
           if (bElo !== aElo) {
             return bElo - aElo;
           }
-          // Same ELO, sort by plan count
+          // Same score, sort by plan count.
           return (b.planCount || 0) - (a.planCount || 0);
         });
 
       // Keep only the newest version within each model series. For example,
       // claude-opus-4.6 and claude-opus-4.7 collapse into claude-opus-5 when
-      // it exists. ELO decides the order between different series.
+      // it exists. Agent Arena performance orders different series.
       const latestBySeries = new Map<string, { product: FeaturedModel; version: number[] }>();
       for (const product of products as FeaturedModel[]) {
         const series = getModelSeries(product.slug);

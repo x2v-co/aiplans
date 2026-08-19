@@ -1,13 +1,13 @@
 #!/usr/bin/env tsx
 /**
- * Ingest Chatbot Arena leaderboard top-60 into model_benchmark_scores.
+ * Ingest Chatbot Arena Agent leaderboard into model_benchmark_scores.
  *
  * The live leaderboard is read with Playwright. The bundled rows remain as a
  * fallback when arena.ai is temporarily unavailable.
  *
  * What it does:
  *   1. Bootstrap benchmarks / benchmark_versions / benchmark_tasks /
- *      benchmark_metrics chain for Arena (text category + ELO metric).
+ *      benchmark_metrics chain for Arena Agent (Agent category + net improvement metric).
  *   2. For each leaderboard row, fuzzy-match `models.slug` using several
  *      normalization strategies.
  *   3. Call upsertBenchmarkScore — idempotent, re-runs fine.
@@ -19,78 +19,78 @@ import { chromium } from 'playwright';
 import { supabaseAdmin, upsertBenchmarkScore } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
-const SOURCE_URL = 'https://arena.ai/leaderboard/text';
+const SOURCE_URL = 'https://arena.ai/leaderboard/agent';
 
 interface ArenaRow {
   rank: number;
   modelName: string;   // slug-like name from arena
-  elo: number;
+  score: number;
   votes: number;
   org: string;
 }
 
 // Fallback top 60 snapshot used only when the live page cannot be reached.
 const ARENA_TOP60: ArenaRow[] = [
-  { rank: 1,  modelName: 'claude-opus-4-6-thinking',                 elo: 1504, votes: 16278, org: 'Anthropic' },
-  { rank: 2,  modelName: 'claude-opus-4-6',                          elo: 1496, votes: 17416, org: 'Anthropic' },
-  { rank: 3,  modelName: 'muse-spark',                               elo: 1493, votes: 3268,  org: 'Meta' },
-  { rank: 4,  modelName: 'gemini-3.1-pro-preview',                   elo: 1492, votes: 20531, org: 'Google' },
-  { rank: 5,  modelName: 'gemini-3-pro',                             elo: 1486, votes: 41585, org: 'Google' },
-  { rank: 6,  modelName: 'grok-4.20-beta1',                          elo: 1486, votes: 9689,  org: 'xAI' },
-  { rank: 7,  modelName: 'gpt-5.4-high',                             elo: 1484, votes: 9681,  org: 'OpenAI' },
-  { rank: 8,  modelName: 'grok-4.20-beta-0309-reasoning',            elo: 1478, votes: 9781,  org: 'xAI' },
-  { rank: 9,  modelName: 'gpt-5.2-chat-latest-20260210',             elo: 1477, votes: 15704, org: 'OpenAI' },
-  { rank: 10, modelName: 'grok-4.20-multi-agent-beta-0309',          elo: 1476, votes: 10112, org: 'xAI' },
-  { rank: 11, modelName: 'gemini-3-flash',                           elo: 1474, votes: 30918, org: 'Google' },
-  { rank: 12, modelName: 'claude-opus-4-5-20251101-thinking-32k',    elo: 1473, votes: 37307, org: 'Anthropic' },
-  { rank: 13, modelName: 'glm-5.1',                                  elo: 1471, votes: 5326,  org: 'Zhipu' },
-  { rank: 14, modelName: 'grok-4.1-thinking',                        elo: 1471, votes: 47508, org: 'xAI' },
-  { rank: 15, modelName: 'claude-opus-4-5-20251101',                 elo: 1468, votes: 47320, org: 'Anthropic' },
-  { rank: 16, modelName: 'qwen3.5-max-preview',                      elo: 1466, votes: 7952,  org: 'Alibaba' },
-  { rank: 17, modelName: 'gpt-5.4',                                  elo: 1466, votes: 9977,  org: 'OpenAI' },
-  { rank: 18, modelName: 'gemini-3-flash-thinking-minimal',          elo: 1463, votes: 33555, org: 'Google' },
-  { rank: 19, modelName: 'claude-sonnet-4-6',                        elo: 1462, votes: 10940, org: 'Anthropic' },
-  { rank: 20, modelName: 'dola-seed-2.0-pro',                        elo: 1461, votes: 18882, org: 'ByteDance' },
-  { rank: 21, modelName: 'grok-4.1',                                 elo: 1460, votes: 51452, org: 'xAI' },
-  { rank: 22, modelName: 'gpt-5.4-mini-high',                        elo: 1459, votes: 7169,  org: 'OpenAI' },
-  { rank: 23, modelName: 'gpt-5.3-chat-latest',                      elo: 1456, votes: 14444, org: 'OpenAI' },
-  { rank: 24, modelName: 'glm-5',                                    elo: 1456, votes: 14093, org: 'Zhipu' },
-  { rank: 25, modelName: 'gpt-5.1-high',                             elo: 1454, votes: 41042, org: 'OpenAI' },
-  { rank: 26, modelName: 'claude-sonnet-4-5-20250929-thinking-32k',  elo: 1452, votes: 60401, org: 'Anthropic' },
-  { rank: 27, modelName: 'kimi-k2.5-thinking',                       elo: 1452, votes: 17735, org: 'Moonshot' },
-  { rank: 28, modelName: 'claude-sonnet-4-5-20250929',               elo: 1451, votes: 58292, org: 'Anthropic' },
-  { rank: 29, modelName: 'gemma-4-31b',                              elo: 1451, votes: 5957,  org: 'Google' },
-  { rank: 30, modelName: 'ernie-5.0-0110',                           elo: 1450, votes: 22778, org: 'Baidu' },
-  { rank: 31, modelName: 'ernie-5.0-preview-1203',                   elo: 1449, votes: 9810,  org: 'Baidu' },
-  { rank: 32, modelName: 'claude-opus-4-1-20250805-thinking-16k',    elo: 1448, votes: 50152, org: 'Anthropic' },
-  { rank: 33, modelName: 'gemini-2.5-pro',                           elo: 1448, votes: 107824, org: 'Google' },
-  { rank: 34, modelName: 'qwen3.5-397b-a17b',                        elo: 1447, votes: 15408, org: 'Alibaba' },
-  { rank: 35, modelName: 'claude-opus-4-1-20250805',                 elo: 1447, votes: 77864, org: 'Anthropic' },
-  { rank: 36, modelName: 'mimo-v2-pro',                              elo: 1446, votes: 8397,  org: 'Xiaomi' },
-  { rank: 37, modelName: 'gpt-4.5-preview-2025-02-27',               elo: 1444, votes: 14547, org: 'OpenAI' },
-  { rank: 38, modelName: 'chatgpt-4o-latest-20250326',               elo: 1443, votes: 82998, org: 'OpenAI' },
-  { rank: 39, modelName: 'glm-4.7',                                  elo: 1443, votes: 12180, org: 'Zhipu' },
-  { rank: 40, modelName: 'gpt-5.2-high',                             elo: 1442, votes: 30488, org: 'OpenAI' },
-  { rank: 41, modelName: 'longcat-flash-chat-2602-exp',              elo: 1440, votes: 5790,  org: 'Meituan' },
-  { rank: 42, modelName: 'gpt-5.2',                                  elo: 1439, votes: 27564, org: 'OpenAI' },
-  { rank: 43, modelName: 'gpt-5.1',                                  elo: 1439, votes: 43708, org: 'OpenAI' },
-  { rank: 44, modelName: 'gemma-4-26b-a4b',                          elo: 1438, votes: 5927,  org: 'Google' },
-  { rank: 45, modelName: 'gemini-3.1-flash-lite-preview',            elo: 1435, votes: 15996, org: 'Google' },
-  { rank: 46, modelName: 'qwen3-max-preview',                        elo: 1435, votes: 27940, org: 'Alibaba' },
-  { rank: 47, modelName: 'gpt-5-high',                               elo: 1433, votes: 32259, org: 'OpenAI' },
-  { rank: 48, modelName: 'kimi-k2.5-instant',                        elo: 1433, votes: 8241,  org: 'Moonshot' },
-  { rank: 49, modelName: 'grok-4-1-fast-reasoning',                  elo: 1432, votes: 42592, org: 'xAI' },
-  { rank: 50, modelName: 'o3-2025-04-16',                            elo: 1431, votes: 60172, org: 'OpenAI' },
-  { rank: 51, modelName: 'kimi-k2-thinking-turbo',                   elo: 1430, votes: 46203, org: 'Moonshot' },
-  { rank: 52, modelName: 'amazon-nova-experimental-chat-26-02-10',   elo: 1428, votes: 3452,  org: 'Amazon' },
-  { rank: 53, modelName: 'gpt-5-chat',                               elo: 1426, votes: 31851, org: 'OpenAI' },
-  { rank: 54, modelName: 'glm-4.6',                                  elo: 1426, votes: 35917, org: 'Zhipu' },
-  { rank: 55, modelName: 'deepseek-v3.2-exp-thinking',               elo: 1425, votes: 9146,  org: 'DeepSeek' },
-  { rank: 56, modelName: 'qwen3-max-2025-09-23',                     elo: 1424, votes: 9242,  org: 'Alibaba' },
-  { rank: 57, modelName: 'deepseek-v3.2',                            elo: 1424, votes: 41182, org: 'DeepSeek' },
-  { rank: 58, modelName: 'claude-opus-4-20250514-thinking-16k',      elo: 1424, votes: 37191, org: 'Anthropic' },
-  { rank: 59, modelName: 'qwen3-235b-a22b-instruct-2507',            elo: 1423, votes: 82043, org: 'Alibaba' },
-  { rank: 60, modelName: 'deepseek-v3.2-exp',                        elo: 1423, votes: 12019, org: 'DeepSeek' },
+  { rank: 1,  modelName: 'claude-opus-4-6-thinking',                 score: 1504, votes: 16278, org: 'Anthropic' },
+  { rank: 2,  modelName: 'claude-opus-4-6',                          score: 1496, votes: 17416, org: 'Anthropic' },
+  { rank: 3,  modelName: 'muse-spark',                               score: 1493, votes: 3268,  org: 'Meta' },
+  { rank: 4,  modelName: 'gemini-3.1-pro-preview',                   score: 1492, votes: 20531, org: 'Google' },
+  { rank: 5,  modelName: 'gemini-3-pro',                             score: 1486, votes: 41585, org: 'Google' },
+  { rank: 6,  modelName: 'grok-4.20-beta1',                          score: 1486, votes: 9689,  org: 'xAI' },
+  { rank: 7,  modelName: 'gpt-5.4-high',                             score: 1484, votes: 9681,  org: 'OpenAI' },
+  { rank: 8,  modelName: 'grok-4.20-beta-0309-reasoning',            score: 1478, votes: 9781,  org: 'xAI' },
+  { rank: 9,  modelName: 'gpt-5.2-chat-latest-20260210',             score: 1477, votes: 15704, org: 'OpenAI' },
+  { rank: 10, modelName: 'grok-4.20-multi-agent-beta-0309',          score: 1476, votes: 10112, org: 'xAI' },
+  { rank: 11, modelName: 'gemini-3-flash',                           score: 1474, votes: 30918, org: 'Google' },
+  { rank: 12, modelName: 'claude-opus-4-5-20251101-thinking-32k',    score: 1473, votes: 37307, org: 'Anthropic' },
+  { rank: 13, modelName: 'glm-5.1',                                  score: 1471, votes: 5326,  org: 'Zhipu' },
+  { rank: 14, modelName: 'grok-4.1-thinking',                        score: 1471, votes: 47508, org: 'xAI' },
+  { rank: 15, modelName: 'claude-opus-4-5-20251101',                 score: 1468, votes: 47320, org: 'Anthropic' },
+  { rank: 16, modelName: 'qwen3.5-max-preview',                      score: 1466, votes: 7952,  org: 'Alibaba' },
+  { rank: 17, modelName: 'gpt-5.4',                                  score: 1466, votes: 9977,  org: 'OpenAI' },
+  { rank: 18, modelName: 'gemini-3-flash-thinking-minimal',          score: 1463, votes: 33555, org: 'Google' },
+  { rank: 19, modelName: 'claude-sonnet-4-6',                        score: 1462, votes: 10940, org: 'Anthropic' },
+  { rank: 20, modelName: 'dola-seed-2.0-pro',                        score: 1461, votes: 18882, org: 'ByteDance' },
+  { rank: 21, modelName: 'grok-4.1',                                 score: 1460, votes: 51452, org: 'xAI' },
+  { rank: 22, modelName: 'gpt-5.4-mini-high',                        score: 1459, votes: 7169,  org: 'OpenAI' },
+  { rank: 23, modelName: 'gpt-5.3-chat-latest',                      score: 1456, votes: 14444, org: 'OpenAI' },
+  { rank: 24, modelName: 'glm-5',                                    score: 1456, votes: 14093, org: 'Zhipu' },
+  { rank: 25, modelName: 'gpt-5.1-high',                             score: 1454, votes: 41042, org: 'OpenAI' },
+  { rank: 26, modelName: 'claude-sonnet-4-5-20250929-thinking-32k',  score: 1452, votes: 60401, org: 'Anthropic' },
+  { rank: 27, modelName: 'kimi-k2.5-thinking',                       score: 1452, votes: 17735, org: 'Moonshot' },
+  { rank: 28, modelName: 'claude-sonnet-4-5-20250929',               score: 1451, votes: 58292, org: 'Anthropic' },
+  { rank: 29, modelName: 'gemma-4-31b',                              score: 1451, votes: 5957,  org: 'Google' },
+  { rank: 30, modelName: 'ernie-5.0-0110',                           score: 1450, votes: 22778, org: 'Baidu' },
+  { rank: 31, modelName: 'ernie-5.0-preview-1203',                   score: 1449, votes: 9810,  org: 'Baidu' },
+  { rank: 32, modelName: 'claude-opus-4-1-20250805-thinking-16k',    score: 1448, votes: 50152, org: 'Anthropic' },
+  { rank: 33, modelName: 'gemini-2.5-pro',                           score: 1448, votes: 107824, org: 'Google' },
+  { rank: 34, modelName: 'qwen3.5-397b-a17b',                        score: 1447, votes: 15408, org: 'Alibaba' },
+  { rank: 35, modelName: 'claude-opus-4-1-20250805',                 score: 1447, votes: 77864, org: 'Anthropic' },
+  { rank: 36, modelName: 'mimo-v2-pro',                              score: 1446, votes: 8397,  org: 'Xiaomi' },
+  { rank: 37, modelName: 'gpt-4.5-preview-2025-02-27',               score: 1444, votes: 14547, org: 'OpenAI' },
+  { rank: 38, modelName: 'chatgpt-4o-latest-20250326',               score: 1443, votes: 82998, org: 'OpenAI' },
+  { rank: 39, modelName: 'glm-4.7',                                  score: 1443, votes: 12180, org: 'Zhipu' },
+  { rank: 40, modelName: 'gpt-5.2-high',                             score: 1442, votes: 30488, org: 'OpenAI' },
+  { rank: 41, modelName: 'longcat-flash-chat-2602-exp',              score: 1440, votes: 5790,  org: 'Meituan' },
+  { rank: 42, modelName: 'gpt-5.2',                                  score: 1439, votes: 27564, org: 'OpenAI' },
+  { rank: 43, modelName: 'gpt-5.1',                                  score: 1439, votes: 43708, org: 'OpenAI' },
+  { rank: 44, modelName: 'gemma-4-26b-a4b',                          score: 1438, votes: 5927,  org: 'Google' },
+  { rank: 45, modelName: 'gemini-3.1-flash-lite-preview',            score: 1435, votes: 15996, org: 'Google' },
+  { rank: 46, modelName: 'qwen3-max-preview',                        score: 1435, votes: 27940, org: 'Alibaba' },
+  { rank: 47, modelName: 'gpt-5-high',                               score: 1433, votes: 32259, org: 'OpenAI' },
+  { rank: 48, modelName: 'kimi-k2.5-instant',                        score: 1433, votes: 8241,  org: 'Moonshot' },
+  { rank: 49, modelName: 'grok-4-1-fast-reasoning',                  score: 1432, votes: 42592, org: 'xAI' },
+  { rank: 50, modelName: 'o3-2025-04-16',                            score: 1431, votes: 60172, org: 'OpenAI' },
+  { rank: 51, modelName: 'kimi-k2-thinking-turbo',                   score: 1430, votes: 46203, org: 'Moonshot' },
+  { rank: 52, modelName: 'amazon-nova-experimental-chat-26-02-10',   score: 1428, votes: 3452,  org: 'Amazon' },
+  { rank: 53, modelName: 'gpt-5-chat',                               score: 1426, votes: 31851, org: 'OpenAI' },
+  { rank: 54, modelName: 'glm-4.6',                                  score: 1426, votes: 35917, org: 'Zhipu' },
+  { rank: 55, modelName: 'deepseek-v3.2-exp-thinking',               score: 1425, votes: 9146,  org: 'DeepSeek' },
+  { rank: 56, modelName: 'qwen3-max-2025-09-23',                     score: 1424, votes: 9242,  org: 'Alibaba' },
+  { rank: 57, modelName: 'deepseek-v3.2',                            score: 1424, votes: 41182, org: 'DeepSeek' },
+  { rank: 58, modelName: 'claude-opus-4-20250514-thinking-16k',      score: 1424, votes: 37191, org: 'Anthropic' },
+  { rank: 59, modelName: 'qwen3-235b-a22b-instruct-2507',            score: 1423, votes: 82043, org: 'Alibaba' },
+  { rank: 60, modelName: 'deepseek-v3.2-exp',                        score: 1423, votes: 12019, org: 'DeepSeek' },
 ];
 
 /** Read the live ranking table rendered by arena.ai. */
@@ -103,15 +103,19 @@ async function fetchLiveLeaderboard(): Promise<ArenaRow[]> {
 
     const rows = await page.locator('table tbody tr').evaluateAll((elements) => elements.map((element) => {
       const cells = Array.from(element.querySelectorAll('td'));
-      const rank = Number.parseInt(cells[0]?.textContent?.trim() || '', 10);
-      const modelElement = cells[2]?.querySelector('[title]') as HTMLElement | null;
-      const modelName = modelElement?.getAttribute('title') || cells[2]?.textContent?.trim() || '';
-      const eloText = cells[3]?.textContent?.replace(/,/g, '').trim() || '';
-      const elo = Number.parseFloat(eloText.match(/-?\d+(?:\.\d+)?/)?.[0] || '');
-      return { rank, modelName, elo };
-    }).filter((row): row is { rank: number; modelName: string; elo: number } =>
+      const rankText = cells[0]?.querySelector('span')?.textContent || cells[0]?.textContent || '';
+      const rank = Number.parseInt(rankText.trim(), 10);
+      const modelElement = cells[1]?.querySelector('[title]') as HTMLElement | null;
+      const modelName = modelElement?.getAttribute('title') || cells[1]?.textContent?.trim() || '';
+      const scoreCell = cells[2];
+      const scoreText = scoreCell?.textContent?.replace(/,/g, '').trim() || '';
+      const magnitude = Number.parseFloat(scoreText.match(/\d+(?:\.\d+)?/)?.[0] || '');
+      const direction = scoreCell?.querySelector('[aria-label="Down"]') ? -1 : 1;
+      const score = magnitude * direction;
+      return { rank, modelName, score };
+    }).filter((row): row is { rank: number; modelName: string; score: number } =>
       Number.isFinite(row.rank) && row.rank > 0 && row.rank <= 60 &&
-      Boolean(row.modelName) && Number.isFinite(row.elo)
+      Boolean(row.modelName) && Number.isFinite(row.score)
     ).map((row) => ({ ...row, votes: 0, org: 'Unknown' })));
 
     if (rows.length < 10) {
@@ -125,7 +129,13 @@ async function fetchLiveLeaderboard(): Promise<ArenaRow[]> {
 
 /** Generate slug candidates to match against models.slug */
 function slugCandidates(arenaName: string): string[] {
-  const base = arenaName.toLowerCase();
+  const base = arenaName
+    .toLowerCase()
+    .replace(/\s*\((?:x?high|max|medium|low)\)/gi, '')
+    .replace(/\s*\(\d{8}\)/g, '')
+    .trim()
+    .replace(/[^a-z0-9.]+/g, '-')
+    .replace(/^-|-$/g, '');
   const candidates = new Set<string>([base]);
 
   // Replace dash-before-version with dot: claude-opus-4-6 → claude-opus-4.6
@@ -185,13 +195,13 @@ function slugCandidates(arenaName: string): string[] {
 async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number } | null> {
   // 1. benchmarks row
   let { data: benchmark } = await supabaseAdmin
-    .from('benchmarks').select('id').eq('slug', 'arena').maybeSingle();
+    .from('benchmarks').select('id').eq('slug', 'arena-agent').maybeSingle();
   if (!benchmark) {
-    console.log('➕ creating benchmarks row: arena');
+    console.log('➕ creating benchmarks row: arena-agent');
     if (!DRY_RUN) {
       const res = await supabaseAdmin.from('benchmarks').insert({
-        name: 'Chatbot Arena', slug: 'arena', type: 'human-preference',
-        offical_url: 'https://arena.ai/leaderboard',
+        name: 'Chatbot Arena Agent', slug: 'arena-agent', type: 'general',
+        offical_url: SOURCE_URL,
       }).select('id').single();
       if (res.error) { console.error(res.error); return null; }
       benchmark = res.data;
@@ -209,7 +219,7 @@ async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number
     if (!DRY_RUN) {
       const res = await supabaseAdmin.from('benchmark_versions').insert({
         benchmark_id: benchmark.id, version_label: 'live', is_current: true,
-        release_date: new Date().toISOString().slice(0, 10), notes: 'Live Arena ELO',
+        release_date: new Date().toISOString().slice(0, 10), notes: 'Live Agent Arena net improvement',
       }).select('id').single();
       if (res.error) { console.error(res.error); return null; }
       version = res.data;
@@ -218,15 +228,15 @@ async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number
     }
   }
 
-  // 3. benchmark_tasks (text category)
+  // 3. benchmark_tasks (agent category)
   let { data: task } = await supabaseAdmin
     .from('benchmark_tasks').select('id')
-    .eq('benchmark_version_id', version.id).eq('name', 'Text').maybeSingle();
+    .eq('benchmark_version_id', version.id).eq('name', 'Agent').maybeSingle();
   if (!task) {
-    console.log('➕ creating benchmark_tasks row: Text');
+    console.log('➕ creating benchmark_tasks row: Agent');
     if (!DRY_RUN) {
       const res = await supabaseAdmin.from('benchmark_tasks').insert({
-        benchmark_version_id: version.id, name: 'Text',
+        benchmark_version_id: version.id, name: 'Agent',
       }).select('id').single();
       if (res.error) { console.error(res.error); return null; }
       task = res.data;
@@ -235,14 +245,15 @@ async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number
     }
   }
 
-  // 4. ELO metric
+  // 4. Agent net-improvement metric
   let { data: metric } = await supabaseAdmin
-    .from('benchmark_metrics').select('id').eq('name', 'ELO').maybeSingle();
+    .from('benchmark_metrics').select('id').eq('name', 'AGENT_NET_IMPROVEMENT').maybeSingle();
   if (!metric) {
-    console.log('➕ creating benchmark_metrics row: ELO');
+    console.log('➕ creating benchmark_metrics row: AGENT_NET_IMPROVEMENT');
     if (!DRY_RUN) {
       const res = await supabaseAdmin.from('benchmark_metrics').insert({
-        name: 'ELO', unit: 'score', description: 'Chatbot Arena ELO rating', higher_better: true,
+        name: 'AGENT_NET_IMPROVEMENT', unit: 'percent',
+        description: 'Chatbot Arena Agent net improvement', higher_better: true,
       }).select('id').single();
       if (res.error) { console.error(res.error); return null; }
       metric = res.data;
@@ -251,7 +262,7 @@ async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number
     }
   }
 
-  console.log(`✓ arena chain ready: benchmark=${benchmark.id} version=${version.id} task=${task.id} metric=${metric.id}`);
+  console.log(`✓ agent arena chain ready: benchmark=${benchmark.id} version=${version.id} task=${task.id} metric=${metric.id}`);
   return { taskId: task.id, metricId: metric.id };
 }
 
@@ -281,10 +292,6 @@ async function main() {
   if (!chain) { console.error('bootstrap failed'); process.exit(1); }
 
   const { taskId, metricId } = chain;
-  if (taskId <= 0 || metricId <= 0) {
-    console.log('\n(dry-run — chain not created, skipping score ingestion)');
-    return;
-  }
 
   // Phase 1: resolve every arena row to a DB model slug (or none).
   interface Resolved { row: ArenaRow; modelId: number; modelSlug: string; usedCandidate: string }
@@ -309,12 +316,12 @@ async function main() {
 
   // Phase 2: collision dedupe — when multiple arena rows map to the same
   // DB slug (e.g. gpt-5.4, gpt-5.4-high, gpt-5.4-mini-high all → gpt-5.4),
-  // pick the highest ELO (best variant of the model family) so last-write
+  // pick the highest Net Improvement (best variant of the model family) so last-write
   // doesn't win arbitrarily. Keep the arena row that contributed.
   const bySlug = new Map<string, Resolved>();
   for (const r of resolved) {
     const prev = bySlug.get(r.modelSlug);
-    if (!prev || r.row.elo > prev.row.elo) bySlug.set(r.modelSlug, r);
+    if (!prev || r.row.score > prev.row.score) bySlug.set(r.modelSlug, r);
   }
   const winners = [...bySlug.values()];
   const losers = resolved.filter(r => bySlug.get(r.modelSlug)?.row.rank !== r.row.rank);
@@ -322,7 +329,7 @@ async function main() {
   const matched: string[] = [];
   for (const r of winners) {
     const note = r.usedCandidate === r.row.modelName ? '' : ` (via "${r.usedCandidate}")`;
-    matched.push(`${r.row.rank.toString().padStart(2)} ${r.row.modelName} → ${r.modelSlug}  ELO=${r.row.elo}${note}`);
+    matched.push(`${r.row.rank.toString().padStart(2)} ${r.row.modelName} → ${r.modelSlug}  Net Improvement=${r.row.score}${note}`);
 
     if (!DRY_RUN) {
       try {
@@ -330,13 +337,13 @@ async function main() {
           model_id: r.modelId,
           benchmark_task_id: taskId,
           metric_id: metricId,
-          value: r.row.elo,
+          value: r.row.score,
           release_date: asOf,
         });
         if (result.action === 'updated') {
-          console.log(`  🔧 ${r.row.modelName} → ${r.modelSlug}: ${result.oldValue} → ${r.row.elo}`);
+          console.log(`  🔧 ${r.row.modelName} → ${r.modelSlug}: ${result.oldValue} → ${r.row.score}`);
         } else if (result.action === 'inserted') {
-          console.log(`  ➕ ${r.row.modelName} → ${r.modelSlug}: ${r.row.elo}`);
+          console.log(`  ➕ ${r.row.modelName} → ${r.modelSlug}: ${r.row.score}`);
         }
       } catch (e) {
         console.error(`  ❌ ${r.row.modelName}: ${(e as Error).message}`);
@@ -346,14 +353,14 @@ async function main() {
 
   console.log(`\n━━━ Summary ━━━`);
   console.log(`Written:       ${winners.length} unique DB models`);
-  console.log(`Collisions:    ${losers.length} arena rows merged into higher-ELO winner`);
+  console.log(`Collisions:    ${losers.length} arena rows merged into higher-Net Improvement winner`);
   console.log(`Unmatched:     ${unmatched.length}`);
 
   if (losers.length > 0) {
-    console.log(`\nCollision losers (mapped to same DB slug as a higher-ELO row):`);
+    console.log(`\nCollision losers (mapped to same DB slug as a higher-Net Improvement row):`);
     for (const l of losers) {
       const winner = bySlug.get(l.modelSlug)!;
-      console.log(`  ${l.row.rank.toString().padStart(2)} ${l.row.modelName} ELO=${l.row.elo} → ${l.modelSlug} (winner: rank ${winner.row.rank} ${winner.row.modelName} ELO=${winner.row.elo})`);
+      console.log(`  ${l.row.rank.toString().padStart(2)} ${l.row.modelName} Net Improvement=${l.row.score} → ${l.modelSlug} (winner: rank ${winner.row.rank} ${winner.row.modelName} Net Improvement=${winner.row.score})`);
     }
   }
 

@@ -311,6 +311,18 @@ const MIGRATIONS: Migration[] = [
          AND plan.slug = 'z-ai-free';
     `,
   },
+  {
+    name: '012_fix_xai_provider_logo',
+    sql: `
+      -- Grok/X.AI was accidentally assigned Meta's logo during the initial
+      -- provider-logo backfill. Keep the correction idempotent for every
+      -- subsequent production deployment.
+      UPDATE providers
+         SET logo_url = '/providers/xai.ico',
+             updated_at = now()
+       WHERE slug = 'grok';
+    `,
+  },
 ];
 
 async function main() {
