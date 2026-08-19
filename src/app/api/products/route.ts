@@ -1,34 +1,13 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { attachPrimaryProvidersToModels, getAllModelIdsForProvider } from '@/lib/schema-adapters';
+import { pickNewestPerSeries } from '@/lib/model-series';
 
 type FeaturedModel = {
   slug: string;
   benchmark_arena_elo?: number | null;
   [key: string]: unknown;
 };
-
-function getModelSeries(slug: string): { key: string; version: number[] } {
-  const normalized = slug.toLowerCase().replace(/_/g, '-');
-  const match = normalized.match(/^(.*?)(?:^|-)(?:v)?(\d+(?:\.\d+)*)(?:-(.*))?$/);
-  if (!match) return { key: normalized, version: [] };
-
-  const prefix = match[1].replace(/-$/, '');
-  const suffix = (match[3] || '').replace(/-(?:high|thinking|latest|preview|instant|reasoning|xhigh)$/g, '');
-  return {
-    key: `${prefix}|${suffix}`,
-    version: match[2].split('.').map(Number),
-  };
-}
-
-function compareVersions(left: number[], right: number[]): number {
-  const length = Math.max(left.length, right.length);
-  for (let index = 0; index < length; index += 1) {
-    const difference = (left[index] || 0) - (right[index] || 0);
-    if (difference !== 0) return difference;
-  }
-  return 0;
-}
 
 // The response varies by query string, so it cannot be statically rendered.
 export const dynamic = 'force-dynamic';
@@ -161,19 +140,11 @@ export async function GET(request: Request) {
       // Keep only the newest version within each model series. For example,
       // claude-opus-4.6 and claude-opus-4.7 collapse into claude-opus-5 when
       // it exists. Agent Arena performance orders different series.
-      const latestBySeries = new Map<string, { product: FeaturedModel; version: number[] }>();
-      for (const product of products as FeaturedModel[]) {
-        const series = getModelSeries(product.slug);
-        const current = latestBySeries.get(series.key);
-        if (!current || compareVersions(series.version, current.version) > 0 ||
-          (compareVersions(series.version, current.version) === 0 &&
-            (product.benchmark_arena_elo || 0) > (current.product.benchmark_arena_elo || 0))) {
-          latestBySeries.set(series.key, { product, version: series.version });
-        }
-      }
-
-      products = [...latestBySeries.values()]
-        .map(({ product }) => product)
+      products = pickNewestPerSeries(
+        products as FeaturedModel[],
+        (product) => product.slug,
+        (product) => product.benchmark_arena_elo || 0,
+      )
         .sort((a: FeaturedModel, b: FeaturedModel) =>
           (b.benchmark_arena_elo || 0) - (a.benchmark_arena_elo || 0)
         )
