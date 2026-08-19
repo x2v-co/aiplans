@@ -97,14 +97,15 @@ scripts/
 ├── fix-currency-on-patched-rows.ts  # historical currency alignment
 ├── ingest-arena-leaderboard.ts   # Agent Arena score ingestion
 ├── add-arena-missing-models.ts   # arena stub creation
-├── add-model-plan-mappings.ts    # model_plan_mapping populator
+├── materialize-model-plan-mappings.ts # derives model_plan_mapping from selectors
+├── fix-plan-kinds.ts             # backfills plan_kind/line/tier_rank/selector
 ├── debug-core-snapshot.ts        # ops snapshot of hot models + channels
 ├── debug-plans-snapshot.ts       # ops snapshot of plans table
 ├── fetch-provider-logos.ts       # logo sync
 ├── index-dynamic.ts              # scraper runner for api_channel_prices
 ├── index-plans-dynamic.ts        # scraper runner for plans
 ├── config/
-│   └── plan-model-slugs.ts       # plan → [model slugs] registry
+│   └── plan-classifications.ts   # plan → kind/line/rank + model_selector
 ├── db/
 │   └── queries.ts                # upsertChannelPrice + logPriceChange
 ├── scrapers/

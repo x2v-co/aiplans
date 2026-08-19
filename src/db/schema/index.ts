@@ -105,6 +105,23 @@ export const plans = pgTable('plans', {
   currency: varchar('currency').default('USD'),
   lastVerified: timestamp('last_verified'),
 
+  // Product line taxonomy — orthogonal to `tier`. Plans are only comparable
+  // when planKind AND planLine match; tierRank orders the rungs within a line.
+  planKind: text('plan_kind').notNull().default('chat'), // 'chat' | 'coding' | 'agent' | 'token_pack' | 'api_tier' | 'bundle'
+  planLine: text('plan_line'), // e.g. 'claude-code', 'minimax-highspeed'
+  tierRank: integer('tier_rank'),
+  secondaryKinds: text('secondary_kinds').array().default([]),
+
+  // Rule that derives this plan's model list, materialized into
+  // model_plan_mapping after every scrape:
+  //   { provider?, families?, current_only?, extra?, exclude? }
+  modelSelector: jsonb('model_selector'),
+
+  // Token-pack economics, so a pack price can be shown as $/1M tokens
+  includedTokens: bigint('included_tokens', { mode: 'number' }),
+  includedCredits: integer('included_credits'),
+  packValidityDays: integer('pack_validity_days'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
@@ -157,6 +174,9 @@ export const modelPlanMapping = pgTable('model_plan_mapping', {
   modelId: integer('model_id').references(() => models.id),
   planId: integer('plan_id').references(() => plans.id),
   priority: integer('priority').default(0),
+  // 'derived' rows are owned by materialize-model-plan-mappings.ts and replaced
+  // on every run; 'manual' rows are hand-curated exceptions it must not touch.
+  source: text('source').notNull().default('manual'),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

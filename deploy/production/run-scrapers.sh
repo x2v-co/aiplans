@@ -33,6 +33,11 @@ plans_status=$?
 set -e
 
 set +e
+# Re-derive model↔plan links from each plan's model_selector. Runs after the
+# plan scrapers so newly-scraped models and plans get linked, and before the
+# audit so plans.no_model_mapping reflects this run.
+"${compose[@]}" run --rm scraper npm run mappings:materialize
+mappings_status=$?
 "${compose[@]}" run --rm scraper npm run audit
 audit_status=$?
 "${compose[@]}" run --rm scraper npm run ingest:arena
@@ -47,6 +52,13 @@ fi
 
 if [[ "$api_status" != "0" || "$plans_status" != "0" ]]; then
   echo "Scraper group failure: api=$api_status plans=$plans_status" >&2
+  exit 1
+fi
+
+# The materializer refuses to run when a selector would wipe a plan's models,
+# leaving the previous mappings in place. That needs a human, not a retry.
+if [[ "$mappings_status" != "0" ]]; then
+  echo "model_plan_mapping materialization failed ($mappings_status); links are unchanged from the last good run." >&2
   exit 1
 fi
 
