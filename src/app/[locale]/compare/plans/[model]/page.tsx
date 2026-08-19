@@ -15,6 +15,8 @@ import {
   planKindIcon,
   planKindLabel,
 } from "@/lib/plan-kinds";
+import { describeEconomics } from "@/lib/plan-economics";
+import { PlanRate } from "@/components/plan-rate";
 
 interface ComparePageProps {
   params: Promise<{ locale: string; model: string }>;
@@ -536,6 +538,18 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
                                     </span>
                                   </div>
                                 </div>
+
+                                {/* Effective unit rate. Sits above Features
+                                    because it is the number that makes two
+                                    vendors' plans actually comparable. */}
+                                {plan.economics && (
+                                  <div className="mb-3 pt-2 border-t border-dashed">
+                                    <PlanRate
+                                      display={describeEconomics(plan.economics, locale)}
+                                      locale={locale}
+                                    />
+                                  </div>
+                                )}
 
                                 {/* Features - Show more */}
                                 {plan.plan?.features && plan.plan.features.length > 0 && (

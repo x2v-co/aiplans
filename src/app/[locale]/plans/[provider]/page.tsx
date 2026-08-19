@@ -11,6 +11,8 @@ import { formatPrice, CurrencyCode } from "@/lib/currency";
 import { getAllModelIdsForProvider, getPlanYearlyMonthly } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { groupPlansByKind, planKindDescription, planKindIcon, planKindLabel } from "@/lib/plan-kinds";
+import { describeEconomics, planEconomics, type EconomicPlan } from "@/lib/plan-economics";
+import { PlanRate } from "@/components/plan-rate";
 import { buildMetadata, breadcrumbList, productOffer, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 
 export async function generateMetadata({
@@ -105,6 +107,13 @@ export default async function ProviderPlansPage({
   const planCurrency = (plan: { currency?: string | null }): CurrencyCode =>
     (plan.currency as CurrencyCode) || currency;
 
+  // Effective unit rates. The lookup is over this provider's own plans, which is
+  // exactly the scope relative quotas are quoted in -- Claude Max's "20x Pro"
+  // means Anthropic's Pro, so a cross-provider map would resolve nothing extra.
+  const planBySlug = new Map(plans.map((p) => [p.slug, p as EconomicPlan]));
+  const economicsFor = (plan: EconomicPlan) =>
+    describeEconomics(planEconomics(plan, (slug) => planBySlug.get(slug)), locale);
+
   // Structured data: breadcrumb + Product/Offer per plan
   const isZh = locale === 'zh';
   const breadcrumbJson = breadcrumbList([
@@ -113,7 +122,11 @@ export default async function ProviderPlansPage({
     { name: provider.name, url: `${SITE_URL}/${locale}/plans/${providerSlug}` },
   ]);
   const planJsonLdItems = plans
-    .filter(p => p.price != null || p.is_contact_sales)
+    // Contact-sales rows are omitted rather than emitted with a price.
+    // They store price=0 to mean "no public price", and productOffer
+    // serialises both 0 and null as "0" -- so including them told search
+    // engines that ChatGPT Enterprise and Claude Enterprise are free.
+    .filter(p => p.price != null && !p.is_contact_sales)
     .map(p => productOffer({
       name: `${provider.name} ${p.name}`,
       price: p.price ?? null,
@@ -243,17 +256,30 @@ export default async function ProviderPlansPage({
                   <CardContent>
                     <div className="mb-4">
                       <span className="text-3xl font-bold">
-                        {plan.price === 0
-                          ? 'Free'
-                          : showYearly && getPlanYearlyMonthly(plan)
-                            ? formatPrice(getPlanYearlyMonthly(plan)! * 12, planCurrency(plan), locale)
-                            : formatPrice(plan.price, planCurrency(plan), locale)}
+                        {/* is_contact_sales is checked before price, because
+                            these rows store price=0 to mean "no public price".
+                            Reading that as free advertised ChatGPT Enterprise
+                            and Claude Enterprise as costing nothing. */}
+                        {plan.is_contact_sales
+                          ? (isZh ? '按需报价' : 'Custom')
+                          : plan.price === 0
+                            ? 'Free'
+                            : showYearly && getPlanYearlyMonthly(plan)
+                              ? formatPrice(getPlanYearlyMonthly(plan)! * 12, planCurrency(plan), locale)
+                              : formatPrice(plan.price, planCurrency(plan), locale)}
                       </span>
-                      {plan.price_unit && plan.price !== 0 && (
+                      {plan.price_unit && plan.price !== 0 && !plan.is_contact_sales && (
                         <span className="text-zinc-500 text-sm ml-1">
                           /{showYearly ? 'year' : (plan.price_unit === 'per_month' ? 'mo' : plan.price_unit.replace('_', ' '))}
                         </span>
                       )}
+                    </div>
+
+                    {/* Effective unit rate, directly under the headline price:
+                        the two answer "what does it cost" and "what does that
+                        buy", and separating them invites reading one alone. */}
+                    <div className="mb-4 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/60">
+                      <PlanRate display={economicsFor(plan as EconomicPlan)} locale={locale} />
                     </div>
 
                     {plan.features && Array.isArray(plan.features) && (

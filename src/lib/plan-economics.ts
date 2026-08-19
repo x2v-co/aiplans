@@ -319,11 +319,25 @@ const UNIT_LABEL: Record<AbsoluteUnit, { en: string; zh: string }> = {
   prompt: { en: 'prompts', zh: '次提问' },
 };
 
+const PERIOD_LABEL: Record<QuotaPeriod, { en: string; zh: string }> = {
+  '5h': { en: 'per 5 hours', zh: '每 5 小时' },
+  day: { en: 'per day', zh: '每天' },
+  week: { en: 'per week', zh: '每周' },
+  month: { en: 'per month', zh: '每月' },
+  total: { en: 'one-off', zh: '一次性' },
+};
+
 /**
  * Formats a rate, keeping enough significant figures to stay useful below a
  * cent since these routinely land at $0.0043.
+ *
+ * Deliberately NOT exported. A bare rate string is the one thing a caller must
+ * never be able to render on its own: Le Chat Pro's $3.62 per 1,000 messages
+ * counts only Flash answers, so the number without its caveat misdescribes the
+ * plan. `describeEconomics` is the only way out of this module, and it returns
+ * the rate and its caveat in the same object.
  */
-export function formatRate(rate: EffectiveRate, locale: string = 'en'): string {
+function formatRate(rate: EffectiveRate, locale: string): string {
   const digits = rate.valueUSD < 0.01 ? 4 : rate.valueUSD < 1 ? 3 : 2;
   const amount = rate.valueUSD.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', {
     minimumFractionDigits: digits,
@@ -335,3 +349,112 @@ export function formatRate(rate: EffectiveRate, locale: string = 'en'): string {
     ? `$${amount} / ${per} ${unit}·月`
     : `$${amount} / ${per} ${unit} per month`;
 }
+
+function formatAllowance(basis: EffectiveRate['basis'], locale: string): string {
+  const zh = locale === 'zh';
+  const unit = UNIT_LABEL[basis.unit][zh ? 'zh' : 'en'];
+  const period = PERIOD_LABEL[basis.period][zh ? 'zh' : 'en'];
+  const amount = basis.amount.toLocaleString(zh ? 'zh-CN' : 'en-US');
+  return zh ? `${amount} ${unit}／${period}` : `${amount} ${unit} ${period}`;
+}
+
+function formatRatio(r: UsageRatio, locale: string): string {
+  const zh = locale === 'zh';
+  const head = zh
+    ? `${r.multiplier}× ${r.baselineSlug} 的用量`
+    : `${r.multiplier}x the usage of ${r.baselineSlug}`;
+  if (r.valuePerDollar == null) {
+    // Almost always a free baseline: "6x free" cannot become a value ratio
+    // because the baseline costs nothing. Say why rather than showing nothing.
+    return zh
+      ? `${head}（基准档免费，无法折算每美元价值）`
+      : `${head} (baseline is free, so no value-per-dollar figure)`;
+  }
+  const value = r.valuePerDollar.toFixed(2);
+  const price = r.priceMultiple?.toFixed(1) ?? '?';
+  return zh
+    ? `${head}，价格 ${price}×，每美元用量 ${value}×`
+    : `${head}, at ${price}x the price — ${value}x usage per dollar`;
+}
+
+/**
+ * Everything the UI is allowed to show about a plan's economics, as one value.
+ *
+ * The union mirrors `PlanEconomics` but carries display strings, and it is the
+ * module's only rendering entry point. Crucially the `rate` variant holds
+ * `caveat` alongside `rate`, so a component cannot destructure the number and
+ * quietly drop the qualification — the two arrive together or not at all.
+ */
+export type EconomicsDisplay =
+  /** Nothing to price. `tone` tells the UI how to style it: `missing` is a
+   *  research gap on our side, `absent` is a fact about the vendor. */
+  | { kind: 'note'; tone: 'missing' | 'absent'; text: string }
+  /** A free tier: its allowance, with no rate (a $0.00 rate is uninformative). */
+  | { kind: 'allowances'; label: string; items: string[] }
+  /** Only relative claims — no absolute allowance to divide a price by. */
+  | { kind: 'ratios'; label: string; items: string[] }
+  | {
+      kind: 'rate';
+      rate: string;
+      /** The vendor's own figure, e.g. "10,000 credits per week". */
+      basis: string;
+      /** Present when the metered quota is narrower than the plan. Render it. */
+      caveat?: string;
+      /** Present when the amount is arithmetic on a published multiple. */
+      derived?: string;
+      ratios: string[];
+    };
+
+export function describeEconomics(e: PlanEconomics, locale: string = 'en'): EconomicsDisplay {
+  const zh = locale === 'zh';
+
+  switch (e.state) {
+    case 'unresearched':
+      return {
+        kind: 'note',
+        tone: 'missing',
+        text: zh ? '额度待采集' : 'Allowance not yet collected',
+      };
+    case 'none_published':
+      return {
+        kind: 'note',
+        tone: 'absent',
+        text: zh ? '厂商未公布用量额度' : 'Vendor publishes no usage allowance',
+      };
+    case 'contact_sales':
+      return {
+        kind: 'note',
+        tone: 'absent',
+        text: zh ? '价格需联系销售，无法折算单价' : 'Price on request — no unit rate',
+      };
+    case 'free':
+      return {
+        kind: 'allowances',
+        label: zh ? '免费额度' : 'Free allowance',
+        items: e.allowances.map((a) => formatAllowance(a, locale)),
+      };
+    case 'not_derivable':
+      return {
+        kind: 'ratios',
+        label: zh ? '厂商只公布相对倍率' : 'Vendor publishes only a relative multiple',
+        items: [
+          ...e.ratios.map((r) => formatRatio(r, locale)),
+          ...e.allowances.map((a) => formatAllowance(a, locale)),
+        ],
+      };
+    case 'rate':
+      return {
+        kind: 'rate',
+        rate: formatRate(e.rate, locale),
+        basis: formatAllowance(e.rate.basis, locale),
+        caveat: e.rate.caveat,
+        derived: e.rate.isDerived
+          ? zh
+            ? '由厂商公布的倍率推算'
+            : 'computed from a published multiple'
+          : undefined,
+        ratios: e.ratios.map((r) => formatRatio(r, locale)),
+      };
+  }
+}
+

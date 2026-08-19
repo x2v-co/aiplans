@@ -9,6 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { Search, TrendingUp, Building2, Zap, ArrowRight } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
+import { formatPrice, convertCurrency, type CurrencyCode } from "@/lib/currency";
+
+// Plans arrive in their vendor's own currency, so any ordering across them has
+// to normalise first. Missing prices sort last rather than as free.
+function usdPrice(plan: { price?: number | null; currency?: string | null }): number {
+  if (plan.price == null) return Infinity;
+  return convertCurrency(plan.price, (plan.currency as CurrencyCode) || 'USD', 'USD');
+}
+
 
 export default function ComparePlansIndexPage(props: {
   params: Promise<{ locale: string }>;
@@ -46,12 +55,18 @@ export default function ComparePlansIndexPage(props: {
         const plansResponse = await fetch('/api/plans?include_models=true');
         const plansData = await plansResponse.json();
         const sortedPlans = (plansData || [])
-          .filter((plan: any) => plan.pricing_model === 'subscription')
+          // Contact-sales rows are excluded: they store price=0 to mean "no
+          // public price", which sorted them to the front of a price-ascending
+          // list and showed ChatGPT/Claude Enterprise as the cheapest plans
+          // on the site.
+          .filter((plan: any) => plan.pricing_model === 'subscription' && !plan.is_contact_sales)
           .sort((a: any, b: any) => {
             if ((a.is_official || false) !== (b.is_official || false)) {
               return a.is_official ? -1 : 1;
             }
-            return (a.price || Infinity) - (b.price || Infinity);
+            // Normalised to USD before comparing -- raw numbers put ¥118/mo
+            // above $20/mo, so a CNY plan looked like the expensive one.
+            return usdPrice(a) - usdPrice(b);
           })
           .slice(0, 8);
 
@@ -317,14 +332,26 @@ export default function ComparePlansIndexPage(props: {
 
                       <div className="mb-4">
                         <div className="text-2xl font-bold">
-                          {plan.price === 0 ? (locale === 'zh' ? '免费' : 'Free') : `$${(plan.price || 0).toFixed(2)}`}
+                          {/* The API returns each plan's own currency, and this
+                              card used to print "$" over all of them -- GLM
+                              Coding Lite is ¥118/month, which rendered as $118
+                              and overstated it sevenfold. is_contact_sales is
+                              checked first because those rows store price=0 to
+                              mean "no public price", not "free". */}
+                          {plan.is_contact_sales
+                            ? (locale === 'zh' ? '按需报价' : 'Custom')
+                            : plan.price === 0
+                              ? (locale === 'zh' ? '免费' : 'Free')
+                              : formatPrice(plan.price ?? 0, (plan.currency as CurrencyCode) || 'USD', locale)}
                         </div>
                         <div className="text-sm text-zinc-500">
-                          {plan.price === 0
-                            ? (locale === 'zh' ? '立即体验' : 'Try now')
-                            : (plan.price_unit === 'per_month'
-                                ? (locale === 'zh' ? '每月' : 'per month')
-                                : (plan.price_unit || 'per_month'))}
+                          {plan.is_contact_sales
+                            ? (locale === 'zh' ? '联系销售' : 'Contact sales')
+                            : plan.price === 0
+                              ? (locale === 'zh' ? '立即体验' : 'Try now')
+                              : (plan.price_unit === 'per_month'
+                                  ? (locale === 'zh' ? '每月' : 'per month')
+                                  : (plan.price_unit || 'per_month'))}
                         </div>
                       </div>
 
