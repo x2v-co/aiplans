@@ -11,6 +11,8 @@ import { sql } from "@/lib/db";
 import { use } from "react";
 import { getPrimaryProvidersForModels } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
+import { formatPrice, type CurrencyCode } from "@/lib/currency";
+import { getExchangeRateSync } from "@/lib/exchange-rates";
 import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
 
@@ -116,6 +118,8 @@ async function getProductWithChannels(slug: string) {
       pl.tier,
       pl.price,
       pl.annual_price,
+      pl.currency,
+      pl.price_unit,
       pl.features,
       pl.access_from_china,
       pl.provider_id,
@@ -198,6 +202,28 @@ export default async function ModelPage({
 
   const { product, channelPrices, plans, arenaElo, priceHistory } = data;
   const isZh = locale === 'zh';
+
+  // Plans can come from several providers (a bundled plan may include
+  // third-party models), so normalize to USD before ordering — otherwise a
+  // ¥40 plan sorts above a $20 one.
+  const planPriceUSD = (plan: any): number =>
+    (plan.price || 0) * getExchangeRateSync(plan.currency || 'USD', 'USD');
+
+  const sortedPlans = [...(plans as any[])].sort((a, b) => {
+    if (a.tier === 'free' && b.tier !== 'free') return -1;
+    if (b.tier === 'free' && a.tier !== 'free') return 1;
+    return planPriceUSD(a) - planPriceUSD(b);
+  });
+
+  // "Best Value" is a single winner, not a predicate. The old check flagged
+  // every plan with a >15% annual discount, so GLM Coding Lite and Max both
+  // wore the badge on the same page.
+  const annualDiscount = (plan: any): number =>
+    plan.annual_price && plan.price ? 1 - plan.annual_price / (plan.price * 12) : 0;
+
+  const bestValuePlanId: number | null = sortedPlans
+    .filter((plan) => annualDiscount(plan) > 0.15)
+    .sort((a, b) => annualDiscount(b) - annualDiscount(a))[0]?.id ?? null;
 
   // Find official and cheapest
   const officialChannel = (channelPrices as any[]).find((cp) => cp.providers?.type === 'official' || cp.providers?.type === 'producer');
@@ -467,18 +493,11 @@ export default async function ModelPage({
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {plans
-                  .sort((a: any, b: any) => {
-                    // Sort by price: free first, then by price ascending
-                    if (a.tier === 'free') return -1;
-                    if (b.tier === 'free') return 1;
-                    return (a.price || 0) - (b.price || 0);
-                  })
-                  .map((plan: any, index: number) => {
+                {sortedPlans
+                  .map((plan: any) => {
+                    const planCurrency = (plan.currency || 'USD') as CurrencyCode;
                     const isRecommended = plan.tier === 'pro' && !plan.name.includes('Max');
-                    const isBestValue = plan.annual_price && plan.price &&
-                      ((plan.price * 12 - plan.annual_price) / (plan.price * 12)) > 0.15;
-                    const isMostPopular = plan.tier === 'pro';
+                    const isBestValue = plan.id === bestValuePlanId;
 
                     return (
                       <Card
@@ -519,12 +538,12 @@ export default async function ModelPage({
                             ) : (
                               <>
                                 <div className="text-3xl font-bold">
-                                  ${plan.price}
+                                  {formatPrice(plan.price, planCurrency, locale)}
                                   <span className="text-sm font-normal text-zinc-500">/month</span>
                                 </div>
                                 {plan.annual_price && (
                                   <div className="text-sm text-zinc-600 mt-1">
-                                    ${plan.annual_price}/year
+                                    {formatPrice(plan.annual_price, planCurrency, locale)}/year
                                     {plan.price && (
                                       <span className="text-green-600 ml-1">
                                         (Save {Math.round((1 - plan.annual_price / (plan.price * 12)) * 100)}%)
