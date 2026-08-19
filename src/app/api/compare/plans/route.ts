@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import type { CurrencyCode } from '@/lib/currency';
 import {
-  convertToUSD,
   convertPrice,
   calculatePriceDifference,
   getExchangeRateDisplay,
@@ -187,16 +186,27 @@ export async function GET(request: NextRequest) {
         })
       : null;
 
-    // Calculate vsOfficial for third-party plans
+    // Calculate vsOfficial for third-party plans. Both sides are normalized to
+    // USD first — the previous version multiplied getExchangeRateSync(x, x)
+    // (always 1) by itself, so every plan reported the same meaningless number.
     const officialPlan = officialPlans[0];
-    if (officialPlan) {
+    if (officialPlan && officialPlan.pricing.monthly) {
       thirdPartyPlans.forEach((plan: any) => {
-        if (plan.vsOfficial) {
-          const diff = getExchangeRateSync(plan.pricing.currency, plan.pricing.currency) *
-            getExchangeRateSync(officialPlan.pricing.currency, officialPlan.pricing.currency);
-          plan.vsOfficial.priceDiffPercent = ((diff - officialPlan.pricing.monthly) / officialPlan.pricing.monthly) * 100;
-          plan.vsOfficial.priceDiffLabel = Math.abs(plan.vsOfficial.priceDiffPercent).toFixed(0) + '%';
-        }
+        if (!plan.vsOfficial || typeof plan.pricing.monthly !== 'number') return;
+
+        const diffPercent = calculatePriceDifference(
+          plan.pricing.monthly,
+          plan.pricing.currency as CurrencyCode,
+          officialPlan.pricing.monthly,
+          officialPlan.pricing.currency as CurrencyCode,
+        );
+
+        if (!Number.isFinite(diffPercent)) return;
+
+        plan.vsOfficial.priceDiffPercent = diffPercent;
+        plan.vsOfficial.priceDiffLabel = diffPercent >= 0
+          ? `+${diffPercent.toFixed(0)}%`
+          : `${diffPercent.toFixed(0)}%`;
       });
     }
 
@@ -244,21 +254,6 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching plan comparison:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
-
-function getChannelLogo(slug: string): string {
-  const logos: Record<string, string> = {
-    'openai-api': '🤖',
-    'anthropic-api': '🧠',
-    'google-gemini-api': '✨',
-    'deepseek-api': '🔍',
-    'mistral-api': '🌪️',
-    'grok-api': '🤠',
-    'openrouter': '🔀',
-    'together-ai': '🤝',
-    'siliconflow': '🇨🇳',
-  };
-  return logos[slug] || '🔧';
 }
 
 function getProviderLogo(slug: string | undefined): string {

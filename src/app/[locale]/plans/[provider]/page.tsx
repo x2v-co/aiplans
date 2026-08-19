@@ -94,8 +94,12 @@ export default async function ProviderPlansPage({
   const { provider, models, plans } = data;
   const providerData = providerInfo[providerSlug] || { name: provider.name, description: "" };
 
-  // Determine currency based on provider region (china providers use CNY)
+  // Provider region is only the fallback. Each plan carries its own currency,
+  // and a china-region provider can still sell a USD plan (and vice versa),
+  // so rendering every price with the provider-level currency mislabels them.
   const currency: CurrencyCode = provider.region === 'china' ? 'CNY' : 'USD';
+  const planCurrency = (plan: { currency?: string | null }): CurrencyCode =>
+    (plan.currency as CurrencyCode) || currency;
 
   // Structured data: breadcrumb + Product/Offer per plan
   const isZh = locale === 'zh';
@@ -219,8 +223,8 @@ export default async function ProviderPlansPage({
                         {plan.price === 0
                           ? 'Free'
                           : showYearly && getPlanYearlyMonthly(plan)
-                            ? formatPrice(getPlanYearlyMonthly(plan)! * 12, currency)
-                            : formatPrice(plan.price, currency)}
+                            ? formatPrice(getPlanYearlyMonthly(plan)! * 12, planCurrency(plan), locale)
+                            : formatPrice(plan.price, planCurrency(plan), locale)}
                       </span>
                       {plan.price_unit && plan.price !== 0 && (
                         <span className="text-zinc-500 text-sm ml-1">
