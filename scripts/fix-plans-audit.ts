@@ -18,6 +18,29 @@ import { supabaseAdmin } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
+/**
+ * `--only=slug,slug` restricts the run to the named plan slugs.
+ *
+ * This script's hardcoded ground truth is dated: entries added during the
+ * 2026-04 audit sit alongside entries added months later, and most plan rows
+ * are `source='scraper'` and get re-verified daily. Running the whole file
+ * therefore risks replacing a price scraped this morning with one hand-copied
+ * in April -- which is the stale-fallback pattern the project forbids. When you
+ * add an entry, apply just that entry:
+ *
+ *   npx tsx scripts/fix-plans-audit.ts --only=lingma-professional
+ *
+ * Reassignment is skipped entirely under --only, since it keys off provider ids
+ * rather than plan slugs and cannot be filtered meaningfully.
+ */
+const ONLY = new Set(
+  (process.argv.find((a) => a.startsWith('--only='))?.slice('--only='.length) ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+);
+const selected = (planSlug: string) => ONLY.size === 0 || ONLY.has(planSlug);
+
 // ─── 1. Reassign orphan provider_ids ───────────────────────────────────────
 // These plans point to provider_ids that were deleted; remap to current FKs.
 // Special case: 1623 / 1624 are duplicates of 1875 / 1876 (google) — DELETE
@@ -36,6 +59,10 @@ interface PlanUpdate {
   price?: number | null;       // monthly
   annual?: number | null;      // total annual price (full year, not /mo)
   currency?: string;
+  /** Set only when the vendor renamed the product. The slug deliberately stays
+   *  put: it is the join key for model_plan_mapping and plan-classifications,
+   *  and a rename is not a reason to break those. */
+  name?: string;
   reason: string;
 }
 
@@ -116,6 +143,25 @@ const PLAN_UPDATES: PlanUpdate[] = [
   { providerSlug: 'openai', planSlug: 'chatgpt-plus',
     price: 20, annual: null, currency: 'USD',
     reason: 'ChatGPT Plus is $20/mo standard US pricing (unchanged since 2023); DB had $5 which looks like a regional Go-tier bleed-through' },
+
+  // ─ Aliyun: 通义灵码 relaunched as Qoder CN ──────────────
+  // https://qoder.com.cn/pricing -- lingma.aliyun.com/pricing now redirects
+  // there. Aliyun rebranded the product and repriced the paid tier from ¥29 to
+  // ¥59/mo, moving the whole line onto Credits (2,000/mo on 专业版, recorded in
+  // fix-plan-quotas.ts). The stored ¥29 predates the relaunch, so pairing it
+  // with the new quota read as ¥29 for 2,000 Credits -- half the real rate.
+  //
+  // annual_price goes to null on purpose. The ¥290 on file is 10x the retired
+  // ¥29 monthly, and qoder.com.cn publishes no annual price for the new tier;
+  // carrying the old figure forward would imply a ¥24.2/mo effective rate that
+  // nobody can buy. Null says "not published", which is what we know.
+  { providerSlug: 'qwen', planSlug: 'lingma-professional',
+    price: 59, annual: null, currency: 'CNY', name: 'Qoder 专业版',
+    reason: 'Lingma relaunched as Qoder CN at ¥59/mo (was ¥29); annual price no longer published, so ¥290 is dropped rather than kept stale' },
+
+  { providerSlug: 'qwen', planSlug: 'lingma-personal',
+    price: 0, annual: null, currency: 'CNY', name: 'Qoder 体验版',
+    reason: 'Renamed to Qoder CN 体验版; still free, now a 300-Credit 2-week trial' },
 ];
 
 // ─── 3. Delete obsolete / non-existent plans ──────────────────────────────
@@ -409,6 +455,7 @@ async function runReassign() {
 async function runUpdates() {
   log(`\n━━━ [2/3] Plan price updates (${PLAN_UPDATES.length}) ━━━`);
   for (const u of PLAN_UPDATES) {
+    if (!selected(u.planSlug)) continue;
     const providerId = await findProviderId(u.providerSlug);
     if (!providerId) {
       log(`  ⏭  ${u.providerSlug}/${u.planSlug}: provider not found`);
@@ -423,12 +470,17 @@ async function runUpdates() {
     }
     const desiredPrice = u.price ?? null;
     const desiredAnnual = u.annual ?? null;
-    const same = plan.price === desiredPrice && plan.annual_price === desiredAnnual;
+    const desiredName = u.name ?? plan.name;
+    const same =
+      plan.price === desiredPrice &&
+      plan.annual_price === desiredAnnual &&
+      plan.name === desiredName;
     if (same) {
       log(`  ✓  ${u.providerSlug}/${u.planSlug}: already at $${desiredPrice}/${desiredAnnual ?? 'no annual'}, skip`);
       continue;
     }
     log(`  🔧 ${u.providerSlug}/${u.planSlug}: ${plan.price}/${plan.annual_price ?? 'null'} → ${desiredPrice}/${desiredAnnual ?? 'null'}`);
+    if (u.name && plan.name !== u.name) log(`      rename: ${plan.name} → ${u.name}`);
     log(`      reason: ${u.reason}`);
     if (!DRY_RUN) {
       const updateData: Record<string, unknown> = {
@@ -438,6 +490,7 @@ async function runUpdates() {
         updated_at: new Date().toISOString(),
       };
       if (u.currency) updateData.currency = u.currency;
+      if (u.name) updateData.name = u.name;
       const { error } = await supabaseAdmin.from('plans').update(updateData).eq('id', plan.id);
       if (error) {
         log(`      ❌ ${error.message}`);
@@ -452,6 +505,7 @@ async function runUpdates() {
 async function runNewPlans() {
   log(`\n━━━ [4/4] Insert missing plans (${NEW_PLANS.length}) ━━━`);
   for (const p of NEW_PLANS) {
+    if (!selected(p.slug)) continue;
     const providerId = await findProviderId(p.providerSlug);
     if (!providerId) {
       log(`  ⏭  ${p.providerSlug}/${p.slug}: provider not found`);
@@ -504,6 +558,7 @@ async function runNewPlans() {
 async function runDeletions() {
   log(`\n━━━ [3/3] Delete obsolete plans (${PLAN_DELETIONS.length}) ━━━`);
   for (const d of PLAN_DELETIONS) {
+    if (!selected(d.planSlug)) continue;
     let providerId: number | null;
     const orphanMatch = d.providerSlug.match(/^ORPHAN_(\d+)$/);
     if (orphanMatch) {
@@ -552,7 +607,11 @@ async function runDeletions() {
 
 async function main() {
   log(`\n📋 fix-plans-audit  ${DRY_RUN ? '[DRY-RUN]' : '[APPLY]'}\n`);
-  await runReassign();
+  if (ONLY.size > 0) {
+    log(`(--only=${[...ONLY].join(',')} — reassignment skipped, it keys off provider ids)\n`);
+  } else {
+    await runReassign();
+  }
   await runUpdates();
   await runDeletions();
   await runNewPlans();
