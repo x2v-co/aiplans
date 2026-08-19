@@ -272,6 +272,33 @@ const ALIYUN_FREE_TRIAL: PlanQuotas[] = [
   },
 ];
 
+// ─── ChatGPT ───────────────────────────────────────────────────────────────
+// https://openai.com/chatgpt/pricing/
+// Readable only through a headed stealth browser; the page 403s otherwise.
+// Every allowance is qualitative: "Unlimited* text chats" (the asterisk being
+// "subject to abuse guardrails"), "Limited messages with uploads" on Free,
+// "More messages with tools" on Go, and "Maximum deep research" on Pro. The
+// only numbers anywhere in the comparison table are context-window sizes
+// (27K / 54K / 128K / 256K / 400K) and "~40 pages of text" input estimates --
+// those are per-request capacity, not a usage allowance, so they are not
+// quotas and are deliberately not recorded here.
+//
+// Pro is the one tier with a ratio: "Everything in Plus and: 5x or 20x more
+// usage". The page states both multiples under a single "From $x/month"
+// listing without saying which price buys which, so both are recorded rather
+// than picking one and implying a precision the vendor does not publish.
+const CHATGPT: PlanQuotas[] = [
+  {
+    slug: 'chatgpt-pro',
+    source: 'https://openai.com/chatgpt/pricing/',
+    quotas: [
+      { unit: 'relative', multiplier: 5, derived_from: 'chatgpt-plus', note: 'page states "5x or 20x more usage" than Plus; lower of the two' },
+      { unit: 'relative', multiplier: 20, derived_from: 'chatgpt-plus', note: 'page states "5x or 20x more usage" than Plus; upper of the two' },
+    ],
+    note: 'Pro is listed as "From $x/month" with "5x or 20x more usage" than Plus; OpenAI does not say which price buys which multiple.',
+  },
+];
+
 // ─── Researched, and the vendor publishes no number ────────────────────────
 // This is the NO FALLBACK case made explicit. MiniMax's Token Plan pages give
 // only a qualitative allowance -- "5-hour rolling and weekly windows" with
@@ -315,6 +342,14 @@ const NO_PUBLISHED_QUOTA: PlanQuotas[] = [
     source: 'https://mistral.ai/pricing',
     quotas: [] as Quota[],
   })),
+  // Every ChatGPT tier but Pro: the comparison table gives allowances only as
+  // "Unlimited*", "Limited messages", "More messages" and the like, with no
+  // figure and no ratio. See the CHATGPT block above for the full reading.
+  ...['chatgpt-free', 'chatgpt-go', 'chatgpt-plus', 'chatgpt-team', 'chatgpt-business', 'chatgpt-enterprise'].map((slug) => ({
+    slug,
+    source: 'https://openai.com/chatgpt/pricing/',
+    quotas: [] as Quota[],
+  })),
 ];
 
 const ALL: PlanQuotas[] = [
@@ -326,6 +361,7 @@ const ALL: PlanQuotas[] = [
   ...MISTRAL_LE_CHAT,
   ...GEMINI_CLI_FREE,
   ...ALIYUN_FREE_TRIAL,
+  ...CHATGPT,
   ...NO_PUBLISHED_QUOTA,
 ];
 
