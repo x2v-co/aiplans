@@ -122,6 +122,12 @@ export const plans = pgTable('plans', {
   includedCredits: integer('included_credits'),
   packValidityDays: integer('pack_validity_days'),
 
+  // The vendor's published allowance, verbatim, as one entry per stated limit:
+  //   [{ amount, unit: token|credit|request|message|prompt,
+  //      period: 5h|day|week|month|total, derived_from?, multiplier?, note? }]
+  // NULL = not researched yet; [] = researched, vendor publishes no number.
+  quotas: jsonb('quotas'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
