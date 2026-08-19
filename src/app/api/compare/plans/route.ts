@@ -9,6 +9,7 @@ import {
 import { getExchangeRateSync } from '@/lib/exchange-rates';
 import { getPrimaryProvidersForModels, getPlanYearlyMonthly } from '@/lib/schema-adapters';
 import { getProviderLogoFallback, getProviderLogoSrc } from '@/lib/provider-branding';
+import { groupPlansByKind, normalizePlanKind, type PlanKind } from '@/lib/plan-kinds';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -58,10 +59,11 @@ export async function GET(request: NextRequest) {
             SELECT id, name, slug, tier, pricing_model, price, annual_price,
               price_unit, currency, daily_message_limit, requests_per_minute,
               qps, tokens_per_minute, features, region, access_from_china,
-              payment_methods, is_official, last_verified, provider_id
+              payment_methods, is_official, last_verified, provider_id,
+              plan_kind, plan_line, tier_rank
             FROM plans
             WHERE id = ANY(${sql.array(planIds, INT4_ARRAY)})
-            ORDER BY price ASC NULLS LAST
+            ORDER BY plan_kind, plan_line NULLS LAST, tier_rank NULLS LAST, price ASC NULLS LAST
           `,
           sql<any[]>`
             SELECT id, name, slug, logo, logo_url, website, invite_url
@@ -100,6 +102,9 @@ export async function GET(request: NextRequest) {
             name: plan.name,
             nameZh: plan.name,
             planTier: plan.tier,
+            planKind: normalizePlanKind(plan.plan_kind),
+            planLine: plan.plan_line ?? null,
+            tierRank: plan.tier_rank ?? null,
             isOfficial,
             features: plan.features || [],
           },
@@ -177,38 +182,93 @@ export async function GET(request: NextRequest) {
     // Build summary for subscription plans only
     const allPlans = [...officialPlans, ...thirdPartyPlans];
 
-    // Find cheapest subscription plan (using converted prices)
-    const cheapestPlan = allPlans.length > 0
-      ? allPlans.reduce((min, p) => {
-          const priceToCompare = p.pricing.convertedYearlyMonthly || p.pricing.convertedMonthly || Infinity;
-          const minPriceToCompare = min.pricing.convertedYearlyMonthly || min.pricing.convertedMonthly || Infinity;
-          return priceToCompare < minPriceToCompare ? p : min;
-        })
-      : null;
+    // The slice of a planData row that the summary math actually reads. The
+    // arrays themselves stay `any[]` (they carry a much wider shape assembled
+    // above), but every comparison below goes through this contract.
+    interface ComparablePlan {
+      plan: { name: string; slug: string; planKind: PlanKind };
+      channel: { name: string };
+      pricing: {
+        monthly: number;
+        currency: string;
+        convertedMonthly?: number;
+        convertedYearlyMonthly?: number;
+      };
+    }
+
+    const planMonthlyUSD = (p: ComparablePlan): number =>
+      p.pricing.convertedYearlyMonthly || p.pricing.convertedMonthly || Infinity;
+
+    const cheapestOf = <T extends ComparablePlan>(candidates: readonly T[]): T | null =>
+      candidates.length > 0
+        ? candidates.reduce((min, p) => (planMonthlyUSD(p) < planMonthlyUSD(min) ? p : min))
+        : null;
+
+    // One cheapest per product line, plus a global one kept for compatibility.
+    //
+    // A single global cheapest is what made this endpoint misleading: a ¥20
+    // coding plan and a $20 chat subscription are not competing offers, but the
+    // cheaper number won and got labelled "cheapest plan" for the model. Now
+    // each kind reports its own winner, so a caller can say "cheapest chat
+    // subscription" and "cheapest coding plan" without implying they are
+    // substitutes. `cheapestPlan` still answers "the lowest price on this page"
+    // for existing callers, which is a defensible question -- it just is not the
+    // recommendation it used to be presented as.
+    const cheapestByKind = groupPlansByKind<ComparablePlan>(allPlans, (p) => p.plan.planKind)
+      .flatMap(({ kind, plans: kindPlans }) => {
+        const winner = cheapestOf(kindPlans);
+        return winner
+          ? [{
+              kind,
+              name: winner.plan.name,
+              planSlug: winner.plan.slug,
+              channel: winner.channel.name,
+              monthlyPrice: winner.pricing.monthly,
+              currency: winner.pricing.currency,
+              convertedMonthlyPrice: winner.pricing.convertedMonthly,
+            }]
+          : [];
+      });
+
+    const cheapestPlan = cheapestOf(allPlans);
 
     // Calculate vsOfficial for third-party plans. Both sides are normalized to
     // USD first — the previous version multiplied getExchangeRateSync(x, x)
     // (always 1) by itself, so every plan reported the same meaningless number.
-    const officialPlan = officialPlans[0];
-    if (officialPlan && officialPlan.pricing.monthly) {
-      thirdPartyPlans.forEach((plan: any) => {
-        if (!plan.vsOfficial || typeof plan.pricing.monthly !== 'number') return;
+    //
+    // The baseline is the cheapest official plan *of the same kind*. Using
+    // officialPlans[0] regardless of kind meant a third-party coding plan was
+    // scored against a chat subscription, producing a discount percentage
+    // against a product nobody was choosing between.
+    const officialByKind = new Map<PlanKind, ComparablePlan>(
+      groupPlansByKind<ComparablePlan>(officialPlans, (p) => p.plan.planKind)
+        .flatMap(({ kind, plans: kindPlans }) => {
+          const priced = kindPlans.filter((p) => typeof p.pricing.monthly === 'number' && p.pricing.monthly);
+          const baseline = cheapestOf(priced);
+          return baseline ? [[kind, baseline] as [PlanKind, ComparablePlan]] : [];
+        }),
+    );
 
-        const diffPercent = calculatePriceDifference(
-          plan.pricing.monthly,
-          plan.pricing.currency as CurrencyCode,
-          officialPlan.pricing.monthly,
-          officialPlan.pricing.currency as CurrencyCode,
-        );
+    thirdPartyPlans.forEach((plan: any) => {
+      if (!plan.vsOfficial || typeof plan.pricing.monthly !== 'number') return;
 
-        if (!Number.isFinite(diffPercent)) return;
+      const officialPlan = officialByKind.get(plan.plan.planKind);
+      if (!officialPlan) return;
 
-        plan.vsOfficial.priceDiffPercent = diffPercent;
-        plan.vsOfficial.priceDiffLabel = diffPercent >= 0
-          ? `+${diffPercent.toFixed(0)}%`
-          : `${diffPercent.toFixed(0)}%`;
-      });
-    }
+      const diffPercent = calculatePriceDifference(
+        plan.pricing.monthly,
+        plan.pricing.currency as CurrencyCode,
+        officialPlan.pricing.monthly,
+        officialPlan.pricing.currency as CurrencyCode,
+      );
+
+      if (!Number.isFinite(diffPercent)) return;
+
+      plan.vsOfficial.priceDiffPercent = diffPercent;
+      plan.vsOfficial.priceDiffLabel = diffPercent >= 0
+        ? `+${diffPercent.toFixed(0)}%`
+        : `${diffPercent.toFixed(0)}%`;
+    });
 
     const response = NextResponse.json({
       model: {
@@ -232,6 +292,7 @@ export async function GET(request: NextRequest) {
       summary: {
         totalPlans: allPlans.length,
         displayCurrency,
+        cheapestByKind,
         cheapestPlan: cheapestPlan ? {
           name: cheapestPlan.plan.name,
           channel: cheapestPlan.channel.name,

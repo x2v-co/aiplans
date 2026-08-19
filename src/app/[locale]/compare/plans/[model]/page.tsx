@@ -9,9 +9,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Check, HelpCircle, ArrowRight, Star, ChevronDown, ChevronUp } from "lucide-react";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
+import {
+  PLAN_KIND_ORDER,
+  normalizePlanKind,
+  planKindIcon,
+  planKindLabel,
+} from "@/lib/plan-kinds";
 
 interface ComparePageProps {
   params: Promise<{ locale: string; model: string }>;
+}
+
+interface CheapestByKind {
+  kind: string;
+  name: string;
+  planSlug: string;
+  channel: string;
+  monthlyPrice: number;
+  currency: string;
+  convertedMonthlyPrice?: number;
 }
 
 interface PlanGroup {
@@ -108,9 +124,15 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
       groups.get(providerId)!.plans.push(plan);
     });
 
-    // Sort plans within each group by price
+    // Sort plans within each group: product line first, price only inside a line.
+    // One provider now sells chat, coding and agent plans side by side, and a flat
+    // price sort interleaves them -- a cheap coding plan reads as the entry tier of
+    // the chat line, which it is not.
     groups.forEach((group) => {
       group.plans.sort((a, b) => {
+        const kindA = PLAN_KIND_ORDER.indexOf(normalizePlanKind(a.plan?.planKind));
+        const kindB = PLAN_KIND_ORDER.indexOf(normalizePlanKind(b.plan?.planKind));
+        if (kindA !== kindB) return kindA - kindB;
         const priceA = showYearly
           ? (a.pricing.yearlyMonthly || a.pricing.monthly || 0)
           : (a.pricing.monthly || 0);
@@ -246,7 +268,13 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
 
   const { model, summary } = data;
   const planCount = planGroups.reduce((sum, g) => sum + g.plans.length, 0);
-  const cheapestPrice = summary?.cheapestPlan?.effectiveMonthly || summary?.cheapestPlan?.monthly || 0;
+  // The API emits convertedMonthlyPrice/monthlyPrice on summary.cheapestPlan; the
+  // older effectiveMonthly/monthly names it used to be read by never existed, so
+  // this stat silently rendered $0.00.
+  const cheapestPrice = summary?.cheapestPlan?.convertedMonthlyPrice || summary?.cheapestPlan?.monthlyPrice || 0;
+  // A single "from $X" is misleading once a model is sold through several product
+  // lines: $20 buys the chat plan, not the $200 coding plan. Show a floor per line.
+  const cheapestByKind: CheapestByKind[] = summary?.cheapestByKind || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
@@ -330,6 +358,23 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">${cheapestPrice.toFixed(2)}</span> {locale === "zh" ? "起" : "from"}
             </div>
           </div>
+
+          {/* Cheapest entry point per product line */}
+          {cheapestByKind.length > 1 && (
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+              {cheapestByKind.map((entry) => (
+                <Badge key={entry.kind} variant="secondary" className="font-normal">
+                  {planKindIcon(normalizePlanKind(entry.kind))}{" "}
+                  {planKindLabel(normalizePlanKind(entry.kind), locale)}
+                  <span className="ml-1.5 font-semibold">
+                    {entry.convertedMonthlyPrice || entry.monthlyPrice
+                      ? `$${(entry.convertedMonthlyPrice || entry.monthlyPrice).toFixed(2)}${locale === "zh" ? " 起" : "+"}`
+                      : locale === "zh" ? "免费" : "Free"}
+                  </span>
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Provider Groups */}
@@ -417,6 +462,10 @@ export default function ComparePlansModelPage({ params }: ComparePageProps) {
 
                               <CardHeader className="pb-3">
                                 <CardTitle className="text-base">{getPlanName(plan)}</CardTitle>
+                                <Badge variant="outline" className="mt-1 w-fit text-xs font-normal">
+                                  {planKindIcon(normalizePlanKind(plan.plan?.planKind))}{" "}
+                                  {planKindLabel(normalizePlanKind(plan.plan?.planKind), locale)}
+                                </Badge>
                               </CardHeader>
 
                               <CardContent className="flex-1 flex flex-col">

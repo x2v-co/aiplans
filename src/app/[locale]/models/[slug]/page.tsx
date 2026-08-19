@@ -13,10 +13,40 @@ import { getPrimaryProvidersForModels } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { formatPrice, type CurrencyCode } from "@/lib/currency";
 import { getExchangeRateSync } from "@/lib/exchange-rates";
+import {
+  groupPlansByKind,
+  planKindDescription,
+  planKindIcon,
+  planKindLabel,
+} from "@/lib/plan-kinds";
 import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
 
 const baseUrl = SITE_URL;
+
+/** The columns the plan cards read out of the `plans` query below. */
+interface PlanRow {
+  id: number;
+  name: string;
+  slug: string;
+  tier: string | null;
+  price: number | null;
+  annual_price: number | null;
+  currency: string | null;
+  // jsonb, and not consistently an array: 12 plans (claude-max-5x, chatgpt-team,
+  // claude-team, the gemini-code-assist line...) carry `{}` rather than `[]`.
+  // `{}` is truthy, so an unguarded `features && features.slice()` threw and took
+  // the whole plan section down. Read it through planFeatures() instead.
+  features: unknown;
+  access_from_china: boolean | null;
+  plan_kind: string | null;
+  providers: { id: number; name: string; slug: string; logo: string | null } | null;
+}
+
+/** Only string entries of an array-shaped `features`; [] for every other shape. */
+function planFeatures(features: unknown): string[] {
+  return Array.isArray(features) ? features.filter((f): f is string => typeof f === 'string') : [];
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
@@ -123,6 +153,9 @@ async function getProductWithChannels(slug: string) {
       pl.features,
       pl.access_from_china,
       pl.provider_id,
+      pl.plan_kind,
+      pl.plan_line,
+      pl.tier_rank,
       CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object(
         'id', p.id,
         'name', p.name,
@@ -206,14 +239,31 @@ export default async function ModelPage({
   // Plans can come from several providers (a bundled plan may include
   // third-party models), so normalize to USD before ordering — otherwise a
   // ¥40 plan sorts above a $20 one.
-  const planPriceUSD = (plan: any): number =>
+  const planPriceUSD = (plan: PlanRow): number =>
     (plan.price || 0) * getExchangeRateSync(plan.currency || 'USD', 'USD');
 
-  const sortedPlans = [...(plans as any[])].sort((a, b) => {
+  const planRows = plans as PlanRow[];
+
+  const sortedPlans = [...planRows].sort((a, b) => {
     if (a.tier === 'free' && b.tier !== 'free') return -1;
     if (b.tier === 'free' && a.tier !== 'free') return 1;
     return planPriceUSD(a) - planPriceUSD(b);
   });
+
+  // A model now commonly maps to several product lines at once (chat, coding,
+  // agent), so the plan list is grouped instead of being one flat price ladder.
+  const planKindGroups = groupPlansByKind(sortedPlans, (plan) => plan.plan_kind);
+
+  // "Recommended" has to be per product line. `tier === 'pro'` matches the Pro
+  // tier of every line, so a model sold as both a chat and a coding plan used to
+  // light up two blue-bordered cards in the same grid.
+  const recommendedPlanIds = new Set<number>(
+    planKindGroups
+      .map(({ plans: kindPlans }) =>
+        kindPlans.find((plan) => plan.tier === 'pro' && !plan.name.includes('Max'))?.id,
+      )
+      .filter((id): id is number => id != null),
+  );
 
   // "Best Value" is a single winner, not a predicate. The old check flagged
   // every plan with a >15% annual discount, so GLM Coding Lite and Max both
@@ -486,17 +536,32 @@ export default async function ModelPage({
           <>
             <section className="mb-8">
               <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-2">💳 Subscription Plans</h2>
+                <h2 className="text-2xl font-bold mb-2">
+                  {isZh ? '💳 订阅套餐' : '💳 Subscription Plans'}
+                </h2>
                 <p className="text-zinc-600">
-                  Access {product.name} through these subscription plans from {product.providers?.name}
+                  {isZh
+                    ? `通过以下套餐使用 ${product.name}，按产品线分组。`
+                    : `Access ${product.name} through these plans, grouped by product line.`}
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {sortedPlans
-                  .map((plan: any) => {
+              {planKindGroups.map(({ kind, plans: kindPlans }) => (
+                <div key={kind} className="mb-8 last:mb-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <h3 className="text-lg font-semibold">
+                      {planKindIcon(kind)} {planKindLabel(kind, locale)}
+                    </h3>
+                    <Badge variant="secondary" className="font-normal">
+                      {isZh ? `${kindPlans.length} 个套餐` : `${kindPlans.length} plan${kindPlans.length === 1 ? '' : 's'}`}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-zinc-500 mb-4">{planKindDescription(kind, locale)}</p>
+
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {kindPlans.map((plan) => {
                     const planCurrency = (plan.currency || 'USD') as CurrencyCode;
-                    const isRecommended = plan.tier === 'pro' && !plan.name.includes('Max');
+                    const isRecommended = recommendedPlanIds.has(plan.id);
                     const isBestValue = plan.id === bestValuePlanId;
 
                     return (
@@ -575,15 +640,15 @@ export default async function ModelPage({
 
                         <CardContent>
                           <div className="space-y-2 mb-4">
-                            {plan.features && plan.features.slice(0, 4).map((feature: string, idx: number) => (
+                            {planFeatures(plan.features).slice(0, 4).map((feature, idx) => (
                               <div key={idx} className="flex items-start gap-2 text-sm">
                                 <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                                 <span className="text-zinc-700">{feature}</span>
                               </div>
                             ))}
-                            {plan.features && plan.features.length > 4 && (
+                            {planFeatures(plan.features).length > 4 && (
                               <div className="text-sm text-zinc-500 ml-6">
-                                +{plan.features.length - 4} more features
+                                +{planFeatures(plan.features).length - 4} more features
                               </div>
                             )}
                           </div>
@@ -613,24 +678,43 @@ export default async function ModelPage({
                       </Card>
                     );
                   })}
-              </div>
+                  </div>
+                </div>
+              ))}
 
-              {/* Quick Comparison */}
+              {/* Quick Comparison. With more than one product line present, "which
+                  line" is the reader's first question and the Free/Pro/Max ladder is
+                  the wrong axis -- those tiers repeat inside every line. */}
               <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
                 <div className="flex items-start gap-3">
                   <div className="text-2xl">💡</div>
                   <div>
-                    <h3 className="font-semibold mb-1">Which plan is right for you?</h3>
+                    <h3 className="font-semibold mb-1">
+                      {isZh ? '哪个套餐适合你？' : 'Which plan is right for you?'}
+                    </h3>
                     <div className="text-sm text-zinc-700 dark:text-zinc-300 space-y-1">
-                      <p><strong>Free:</strong> Best for trying out {product.name} with basic usage</p>
-                      {plans.find((p: any) => p.tier === 'pro' && !p.name.includes('Max')) && (
-                        <p><strong>Pro:</strong> Ideal for individual professionals with regular usage needs</p>
-                      )}
-                      {plans.find((p: any) => p.name.includes('Max')) && (
-                        <p><strong>Max:</strong> For power users who need extended thinking and highest usage limits</p>
-                      )}
-                      {plans.find((p: any) => p.tier === 'team') && (
-                        <p><strong>Team:</strong> Perfect for teams needing collaboration and centralized billing</p>
+                      {planKindGroups.length > 1 ? (
+                        planKindGroups.map(({ kind }) => (
+                          <p key={kind}>
+                            <strong>{planKindIcon(kind)} {planKindLabel(kind, locale)}:</strong>{' '}
+                            {planKindDescription(kind, locale)}
+                          </p>
+                        ))
+                      ) : (
+                        <>
+                          {planRows.find((p) => p.tier === 'free') && (
+                            <p><strong>Free:</strong> Best for trying out {product.name} with basic usage</p>
+                          )}
+                          {planRows.find((p) => p.tier === 'pro' && !p.name.includes('Max')) && (
+                            <p><strong>Pro:</strong> Ideal for individual professionals with regular usage needs</p>
+                          )}
+                          {planRows.find((p) => p.name.includes('Max')) && (
+                            <p><strong>Max:</strong> For power users who need extended thinking and highest usage limits</p>
+                          )}
+                          {planRows.find((p) => p.tier === 'team') && (
+                            <p><strong>Team:</strong> Perfect for teams needing collaboration and centralized billing</p>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

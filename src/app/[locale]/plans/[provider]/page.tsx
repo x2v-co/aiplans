@@ -10,6 +10,7 @@ import { sql, INT4_ARRAY } from "@/lib/db";
 import { formatPrice, CurrencyCode } from "@/lib/currency";
 import { getAllModelIdsForProvider, getPlanYearlyMonthly } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
+import { groupPlansByKind, planKindDescription, planKindIcon, planKindLabel } from "@/lib/plan-kinds";
 import { buildMetadata, breadcrumbList, productOffer, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 
 export async function generateMetadata({
@@ -55,11 +56,14 @@ async function getPlansByProvider(providerSlug: string) {
 
   if (!provider) return null;
 
-  // Get plans for this provider directly
+  // Ordered on the product-line axis, not by price. A flat price sort
+  // interleaves lines -- a ¥20 coding plan landing between two chat tiers reads
+  // as the cheap end of the chat line, which it is not. tier_rank carries the
+  // vendor's own Lite/Pro/Max progression, so price is only the tiebreaker.
   const plans = await sql<any[]>`
     SELECT * FROM plans
     WHERE provider_id = ${provider.id}
-    ORDER BY price ASC NULLS LAST
+    ORDER BY plan_kind, plan_line NULLS LAST, tier_rank NULLS LAST, price ASC NULLS LAST
   `;
 
   const planIds = plans.map(p => p.id);
@@ -194,15 +198,27 @@ export default async function ProviderPlansPage({
           </div>
         </div>
 
-        {/* Plans */}
+        {/* Plans, grouped by product line. Two plans are only alternatives to
+            each other when they share a plan_kind, so each kind gets its own
+            section rather than one undifferentiated grid. */}
         {plans.length > 0 ? (
           <div className="mb-8">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              All Plans
-              <Badge variant="outline">{plans.length} plans</Badge>
-            </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {plans.map((plan) => (
+            {groupPlansByKind(plans, (p) => p.plan_kind).map(({ kind, plans: kindPlans }) => (
+              <section key={kind} className="mb-10 last:mb-0">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <span aria-hidden="true">{planKindIcon(kind)}</span>
+                    {planKindLabel(kind, locale)}
+                    <Badge variant="outline">
+                      {isZh ? `${kindPlans.length} 个套餐` : `${kindPlans.length} ${kindPlans.length === 1 ? 'plan' : 'plans'}`}
+                    </Badge>
+                  </h2>
+                  <p className="text-sm text-zinc-500 mt-1">
+                    {planKindDescription(kind, locale)}
+                  </p>
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {kindPlans.map((plan) => (
                 <Card key={plan.id} className={plan.tier === 'pro' ? 'border-blue-500' : ''}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -212,9 +228,16 @@ export default async function ProviderPlansPage({
                       )}
                     </div>
                     <CardDescription>
-                      {plan.pricing_model === 'subscription' && 'Monthly subscription'}
-                      {plan.pricing_model === 'token_pack' && 'One-time token pack'}
-                      {plan.pricing_model === 'pay_as_you_go' && 'Pay as you go'}
+                      {/* The section heading already states the product line,
+                          so the card says who the plan is for -- which is all
+                          `tier` means now that plan_kind carries the rest. */}
+                      {plan.tier === 'team'
+                        ? (isZh ? '团队（按席位）' : 'Team, per seat')
+                        : plan.tier === 'enterprise'
+                          ? (isZh ? '企业版' : 'Enterprise')
+                          : plan.price === 0
+                            ? (isZh ? '免费额度' : 'Free tier')
+                            : (isZh ? '个人版' : 'Individual')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -285,13 +308,17 @@ export default async function ProviderPlansPage({
                     )}
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
         ) : (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-zinc-500">No plans available for this provider yet.</p>
+              <p className="text-zinc-500">
+                {isZh ? '该厂商暂无套餐数据。' : 'No plans available for this provider yet.'}
+              </p>
             </CardContent>
           </Card>
         )}
