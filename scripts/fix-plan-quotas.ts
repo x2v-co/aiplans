@@ -31,7 +31,11 @@ interface Quota {
    *  of another tier and no absolute figure for any tier in the line. */
   amount?: number;
   unit: QuotaUnit;
-  period: QuotaPeriod;
+  /** Omitted only for unit:'relative' when the vendor states the multiple with
+   *  no window at all -- Mistral's "up to 6x free" messages name no period, so
+   *  claiming one would be inventing it. `assertWellFormed` enforces that every
+   *  absolute entry carries both an amount and a period. */
+  period?: QuotaPeriod;
   /** Set when the vendor publishes a multiple of another tier, not an absolute. */
   derived_from?: string;
   multiplier?: number;
@@ -167,6 +171,61 @@ const ANTHROPIC_RELATIVE: PlanQuotas[] = [
   },
 ];
 
+// ─── Qoder CN, formerly 通义灵码 / Lingma ───────────────────────────────────
+// https://qoder.com.cn/pricing -- lingma.aliyun.com/pricing now redirects here.
+// Aliyun rebranded Lingma to Qoder CN and moved the whole line onto credits:
+//   体验版   ¥0     300 Credits, 2-week trial
+//   专业版   ¥59/mo   2,000 Credits/month
+//   高级版   ¥169/mo  6,000    旗舰版 ¥559/mo 20,000
+//   团队版   ¥99/seat/mo 3,000 per seat, and the two enterprise tiers likewise
+// Only the first two have rows here; the rest are uncollected plans, not
+// missing quotas. Both notes record the rebrand because the DB names still say
+// 通义灵码, and lingma-professional's stored ¥29 predates the ¥59 relaunch --
+// the quota below is the successor product's, so the price needs correcting in
+// fix-plans-audit.ts before the two are read as one coherent offer.
+const QODER_CREDITS: PlanQuotas[] = [
+  {
+    slug: 'lingma-personal',
+    source: 'https://qoder.com.cn/pricing',
+    quotas: [{ amount: 300, unit: 'credit', period: 'total', note: '2-week trial' }],
+    note: 'Rebranded to Qoder CN 体验版; 300 Credits are a one-off 2-week trial grant, not recurring.',
+  },
+  {
+    slug: 'lingma-professional',
+    source: 'https://qoder.com.cn/pricing',
+    quotas: [{ amount: 2_000, unit: 'credit', period: 'month' }],
+    note: 'Rebranded to Qoder CN 专业版, now ¥59/month; the stored ¥29 is the pre-relaunch price.',
+  },
+];
+
+// ─── Mistral Le Chat ───────────────────────────────────────────────────────
+// https://mistral.ai/pricing
+// The comparison table gives every headline allowance as a multiple of a free
+// tier whose own absolute is never stated -- "Messages: up to 6x free", "Web
+// searches: up to 5x free", "Image generation: up to 40x free" -- and names no
+// window for any of them. The one place absolute numbers appear is a FAQ
+// answer about a single narrow feature: "Flash answers: 200 / day on Team vs.
+// 150 / day on Pro". Both are recorded for what they are; neither is a general
+// usage allowance, so a $/message rate is not derivable for this line.
+const MISTRAL_LE_CHAT: PlanQuotas[] = [
+  {
+    slug: 'le-chat-pro',
+    source: 'https://mistral.ai/pricing',
+    quotas: [
+      { unit: 'relative', multiplier: 6, derived_from: 'le-chat-free', note: 'up to 6x free messages; no window published' },
+      { amount: 150, unit: 'message', period: 'day', note: 'Flash answers only' },
+    ],
+  },
+  {
+    slug: 'le-chat-team',
+    source: 'https://mistral.ai/pricing',
+    quotas: [
+      { unit: 'relative', multiplier: 6, derived_from: 'le-chat-free', note: 'up to 6x free messages; no window published' },
+      { amount: 200, unit: 'message', period: 'day', note: 'Flash answers only' },
+    ],
+  },
+];
+
 // ─── Researched, and the vendor publishes no number ────────────────────────
 // This is the NO FALLBACK case made explicit. MiniMax's Token Plan pages give
 // only a qualitative allowance -- "5-hour rolling and weekly windows" with
@@ -195,6 +254,21 @@ const NO_PUBLISHED_QUOTA: PlanQuotas[] = [
     source: 'https://claude.com/pricing',
     quotas: [] as Quota[],
   })),
+  // Google's consumer AI plans page describes every tier only as "More access
+  // to", "Expanded limits" and "Higher access to" -- not one numeric allowance,
+  // and no ratio either. (Gemini Code Assist is the exception and is above.)
+  ...['gemini-free', 'google-ai-plus', 'gemini-advanced', 'google-ai-ultra'].map((slug) => ({
+    slug,
+    source: 'https://one.google.com/about/google-ai-plans/',
+    quotas: [] as Quota[],
+  })),
+  // Le Chat's free tier is the unpublished baseline the paid multiples are
+  // quoted against, and Enterprise is contact-sales with no figures at all.
+  ...['le-chat-free', 'le-chat-enterprise'].map((slug) => ({
+    slug,
+    source: 'https://mistral.ai/pricing',
+    quotas: [] as Quota[],
+  })),
 ];
 
 const ALL: PlanQuotas[] = [
@@ -202,11 +276,33 @@ const ALL: PlanQuotas[] = [
   ...ALIYUN_CODING,
   ...GEMINI_CODE_ASSIST,
   ...ANTHROPIC_RELATIVE,
+  ...QODER_CREDITS,
+  ...MISTRAL_LE_CHAT,
   ...NO_PUBLISHED_QUOTA,
 ];
 
+/** A relative entry may omit amount and period; nothing else may. Catches a
+ *  half-filled entry at startup instead of writing a quota the rate math will
+ *  later read as authoritative. */
+function assertWellFormed(entries: PlanQuotas[]) {
+  for (const entry of entries) {
+    for (const q of entry.quotas) {
+      const where = `${entry.slug} (${q.unit})`;
+      if (q.unit === 'relative') {
+        if (q.multiplier == null || !q.derived_from) {
+          throw new Error(`${where}: a relative quota needs both multiplier and derived_from`);
+        }
+      } else if (q.amount == null || q.period == null) {
+        throw new Error(`${where}: an absolute quota needs both amount and period`);
+      }
+    }
+  }
+}
+
 async function main() {
   console.log(`\n📊 fix-plan-quotas ${DRY_RUN ? '[DRY-RUN]' : '[APPLY]'}\n`);
+
+  assertWellFormed(ALL);
 
   const sql = postgres(DATABASE_URL!, { onnotice: () => {} });
   let updated = 0;
