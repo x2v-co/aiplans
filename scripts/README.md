@@ -41,10 +41,11 @@ The 2026-04 cleanup introduced a full feedback loop:
                                                  DELETE + NEW_PLANS)
 ```
 
-- **`audit-data.ts`** — 13 read-only checks (zero/null, output<input,
+- **`audit-data.ts`** — 17 read-only checks (zero/null, output<input,
   input==output, cross-channel outliers with USD normalization,
-  staleness, orphan mappings, missing producer channel, etc.). Exit
-  code 1 on critical findings, 2 on warnings.
+  staleness, orphan mappings, missing producer channel, unclassified
+  plans, plans with no models, selectors that resolve to nothing, etc.).
+  Exit code 1 on critical findings, 2 on warnings.
 
 - **`fix-data-audit.ts`** — idempotent surgery on `api_channel_prices`.
   Three sections: UPDATES (ground truth from web research),
