@@ -153,5 +153,6 @@ export function getExchangeRateDisplay(currency: CurrencyCode): string {
   if (currency === 'GBP') return '(1 USD = £0.79)';
   if (currency === 'JPY') return '(1 USD = ¥149.50)';
   if (currency === 'KRW') return '(1 USD = ₩1320)';
+  if (currency === 'SGD') return '(1 USD = S$1.35)';
   return '';
 }

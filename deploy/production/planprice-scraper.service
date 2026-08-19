@@ -1,0 +1,13 @@
+[Unit]
+Description=PlanPrice pricing scraper
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/x2v/planprice
+Environment=DOCKER_CMD=/usr/bin/docker
+ExecStart=/opt/x2v/planprice/deploy/production/run-scrapers.sh
+TimeoutStartSec=50min
+Nice=10

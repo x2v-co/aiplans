@@ -1,4 +1,4 @@
-export type CurrencyCode = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'KRW';
+export type CurrencyCode = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'KRW' | 'SGD';
 
 export interface ScrapedPrice {
   modelName: string;

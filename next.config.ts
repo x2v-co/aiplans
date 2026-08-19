@@ -4,8 +4,10 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./src/i18n.ts');
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+
   // Production-only noise suppression — keep error/warn so real issues
-  // still surface in Vercel logs.
+  // still surface in the container logs.
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production'
       ? { exclude: ['error', 'warn'] }
@@ -43,12 +45,10 @@ const nextConfig: NextConfig = {
   // optimize. Without this, <Image src="https://cdn..."> falls back
   // to unoptimized rendering (no resizing, no modern formats). The
   // unoptimized flag on provider logos today means every request
-  // ships the full PNG — allowing them here lets Vercel's image CDN
-  // serve AVIF/WebP at the right resolution.
+  // ships the full PNG — allowing them here lets Next.js image optimization
+  // serve AVIF/WebP at the right resolution on the VPS.
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: '*.supabase.co' },
-      { protocol: 'https', hostname: '*.supabase.in' },
       { protocol: 'https', hostname: 'aiplans.dev' },
       { protocol: 'https', hostname: 'www.aiplans.dev' },
       { protocol: 'https', hostname: 'openai.com' },

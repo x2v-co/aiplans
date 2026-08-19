@@ -6,6 +6,10 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
+    "docker:up": "deploy/production/rollout.sh",
+    "docker:down": "docker compose -p planprice-production -f deploy/production/compose.yml --env-file deploy/production/.env.production down",
+    "docker:scrape": "deploy/production/run-scrapers.sh",
+    "db:test": "node test-connection.mjs",
     "lint": "eslint",
     "scrape": "tsx scripts/index-dynamic.ts",
     "scrape:plans": "tsx scripts/index-plans-dynamic.ts",
@@ -23,9 +27,6 @@
     "fetch-logos:force": "tsx scripts/fetch-provider-logos.ts --force"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.97.0",
-    "@vercel/analytics": "^1.6.1",
-    "@vercel/speed-insights": "^1.3.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.3.1",

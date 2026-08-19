@@ -1,25 +1,8 @@
-// Load environment variables first
-import { config } from 'dotenv';
-import { resolve } from 'path';
+import { databaseSql, postgresAdmin } from './postgres-admin';
 
-// Load .env.local file
-config({ path: resolve(process.cwd(), '.env.local') });
-
-// Import and create Supabase clients after env is loaded
-const { createClient } = require('@supabase/supabase-js') as any;
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-if (!supabaseUrl) {
-  throw new Error('NEXT_PUBLIC_SUPABASE_URL is required in .env.local');
-}
-
-if (!supabaseKey) {
-  throw new Error('SUPABASE_SERVICE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY is required in .env.local');
-}
-
-export const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+// Legacy export name keeps existing scraper imports stable during migration.
+// The implementation is direct PostgreSQL and has no Supabase dependency.
+export const supabaseAdmin = postgresAdmin;
 
 // Query helpers
 export async function upsertChannelPrice(data: {
@@ -259,7 +242,7 @@ export async function upsertPlan(data: {
   pricing_model: string;
   tier: string;
   price_monthly: number;
-  price_yearly?: number;
+  price_yearly?: number | null;
   daily_message_limit?: number;
   requests_per_minute?: number;
   features?: string[];
@@ -646,22 +629,16 @@ export async function upsertModelPlanRelation(data: {
  * Get models for a plan
  */
 export async function getModelsForPlan(planId: number) {
-  const { data, error } = await supabaseAdmin
-    .from('model_plan_mapping')
-    .select(`
-      model_id,
-      priority,
-      models:model_id (
-        id,
-        name,
-        slug
-      )
-    `)
-    .eq('plan_id', planId)
-    .order('priority', { ascending: true });
-
-  if (error) throw error;
-  return data || [];
+  return databaseSql`
+    SELECT
+      mpm.model_id,
+      mpm.priority,
+      jsonb_build_object('id', m.id, 'name', m.name, 'slug', m.slug) AS models
+    FROM model_plan_mapping mpm
+    JOIN models m ON m.id = mpm.model_id
+    WHERE mpm.plan_id = ${planId}
+    ORDER BY mpm.priority ASC
+  `;
 }
 
 /**
@@ -669,25 +646,21 @@ export async function getModelsForPlan(planId: number) {
  * Note: model_plan_mapping only has model_id, plan_id, priority fields
  */
 export async function getPlansForModel(modelId: number) {
-  const { data, error } = await supabaseAdmin
-    .from('model_plan_mapping')
-    .select(`
-      plan_id,
-      priority,
-      plans:plan_id (
-        *,
-        providers:provider_id (
-          id,
-          name,
-          slug,
-          logo
-        )
-      )
-    `)
-    .eq('model_id', modelId);
-
-  if (error) throw error;
-  return (data || []).map((m: any) => ({ ...m.plans, mappingPriority: m.priority }));
+  return databaseSql`
+    SELECT
+      p.*,
+      mpm.priority AS "mappingPriority",
+      CASE WHEN pr.id IS NULL THEN NULL ELSE jsonb_build_object(
+        'id', pr.id,
+        'name', pr.name,
+        'slug', pr.slug,
+        'logo', pr.logo
+      ) END AS providers
+    FROM model_plan_mapping mpm
+    JOIN plans p ON p.id = mpm.plan_id
+    LEFT JOIN providers pr ON pr.id = p.provider_id
+    WHERE mpm.model_id = ${modelId}
+  `;
 }
 
 /**

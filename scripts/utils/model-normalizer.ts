@@ -36,6 +36,8 @@ const MODEL_ALIASES: Record<string, string> = {
   'gemini-1.0-pro': 'gemini-1.0-pro',
   'gemini-2.0-flash-exp': 'gemini-2.0-flash-exp',
   'gemini-2-0-flash-exp': 'gemini-2.0-flash-exp',  // hyphen variant
+  'gemini-2.0-flash-lite': 'gemini-2.0-flash-lite',
+  'gemini-2-0-flash-lite': 'gemini-2.0-flash-lite',  // hyphen variant
 
   // Llama 系列
   'llama-3.1-405b': 'llama-3.1-405b',
@@ -80,8 +82,14 @@ const MODEL_ALIASES: Record<string, string> = {
   // Mistral 系列
   'mistral-large-latest': 'mistral-large',
   'mistral-large-2': 'mistral-large-2',
+  'mistral-medium-latest': 'mistral-medium',
   'mistral-nemo': 'mistral-nemo',
   'mistral-small-latest': 'mistral-small',
+  'codestral-latest': 'codestral',
+  'ministral-3b-latest': 'ministral-3b',
+  'ministral-8b-latest': 'ministral-8b',
+  'ministral-14b-latest': 'ministral-14b',
+  'zai-glm-5-2': 'glm-5.2',
   'mixtral-8x7b': 'mixtral-8x7b',
   'mixtral-8x22b': 'mixtral-8x22b',
 
@@ -134,7 +142,7 @@ function extractBaseModel(name: string): string {
   const lower = name.toLowerCase().replace(/\s+/g, '-');
 
   // 去掉常见的版本后缀 (按顺序处理，避免冲突)
-  let withoutVersion = lower
+  const withoutVersion = lower
     .replace(/-(\d{8}|v\d+(\.\d+)?(-\d+k)?|latest|exp|beta|preview|mini)$/g, '')
     .replace(/-(\d{4})$/g, '') // 去掉年份后缀如 2024
     .replace(/-(\d+k)$/g, '')  // 去掉上下文大小如 8k, 32k (但保留 2.5 这种版本号)
@@ -171,6 +179,9 @@ export function normalizeModelName(name: string): string {
     return MODEL_ALIASES[lower];
   }
 
+  const ministral = lower.match(/(?:^|\/)ministral-(?:3-)?(3b|8b|14b)(?:-latest)?(?:$|[-/])/);
+  if (ministral) return `ministral-${ministral[1]}`;
+
   // 提取基础模型并匹配
   const base = extractBaseModel(name);
 
@@ -181,8 +192,17 @@ export function normalizeModelName(name: string): string {
   if (lower.includes('gpt-4') && !lower.includes('turbo') && !lower.includes('o') && !lower.includes('mini')) return 'gpt-4';
   if (lower.includes('gpt-35-turbo') || lower.includes('gpt-3.5-turbo')) return 'gpt-3.5-turbo';
 
-  if (lower.includes('claude-opus-4')) return 'claude-opus-4.6';
-  if (lower.includes('claude-sonnet-4')) return 'claude-sonnet-4.6';
+  const versionedClaude = lower.match(/claude-(fable|opus|sonnet|haiku)-(\d+(?:\.\d+)?)/);
+  if (versionedClaude) {
+    const [, family, version] = versionedClaude;
+    const normalizedVersion = family === 'haiku' && version === '4.5' ? '4-5' : version;
+    const suffix = lower.includes('fast')
+      ? '-fast'
+      : lower.includes('batch')
+        ? '-batch'
+        : '';
+    return `claude-${family}-${normalizedVersion}${suffix}`;
+  }
   if (lower.includes('claude-3.5-sonnet') || lower.includes('claude-3-5-sonnet')) return 'claude-3.5-sonnet';
   if (lower.includes('claude-3.5-haiku') || lower.includes('claude-3-5-haiku')) return 'claude-3.5-haiku';
   if (lower.includes('claude-3-opus')) return 'claude-3-opus';
@@ -190,6 +210,9 @@ export function normalizeModelName(name: string): string {
   if (lower.includes('claude-3-haiku')) return 'claude-3-haiku';
   if (lower.includes('claude-haiku-4')) return 'claude-haiku-4-5';
 
+  // Check Lite before the broader Flash match; otherwise the Lite price
+  // overwrites the standard Flash row when cloud tables are scraped.
+  if (lower.includes('gemini-2.0-flash-lite') || lower.includes('gemini-2-0-flash-lite')) return 'gemini-2.0-flash-lite';
   if (lower.includes('gemini-2.0-flash') || lower.includes('gemini-2-0-flash')) return 'gemini-2.0-flash-exp';
   if (lower.includes('gemini-1.5-pro') || lower.includes('gemini-1-5-pro')) return 'gemini-1.5-pro';
   if (lower.includes('gemini-1.5-flash-8b')) return 'gemini-1.5-flash-8b';
@@ -210,6 +233,7 @@ export function normalizeModelName(name: string): string {
   if (lower.includes('qwen-2.5-14b') || lower.includes('qwen-2-5-14b')) return 'qwen-2.5-14b';
   if (lower.includes('qwen-2.5-7b') || lower.includes('qwen-2-5-7b')) return 'qwen-2.5-7b';
 
+  if (/^glm-(?:4(?:\.\d+)?v?|5(?:\.\d+)?)(?:-[a-z0-9.]+)*$/.test(lower)) return lower;
   if (lower.includes('glm-4-flash')) return 'glm-4-flash';
   if (lower.includes('glm-4-air')) return 'glm-4-air';
   if (lower.includes('glm-4') && !lower.includes('flash') && !lower.includes('air')) return 'glm-4';

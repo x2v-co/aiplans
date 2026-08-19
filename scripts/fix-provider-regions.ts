@@ -11,7 +11,7 @@
  * Idempotent: re-running is a no-op if values already match.
  *
  * Usage:
- *   SUPABASE_SERVICE_KEY=... npx tsx scripts/fix-provider-regions.ts [--dry-run]
+ *   DATABASE_URL=... npx tsx scripts/fix-provider-regions.ts [--dry-run]
  */
 import { supabaseAdmin } from './db/queries';
 

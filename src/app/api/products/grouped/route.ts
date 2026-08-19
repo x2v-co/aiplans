@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { attachPrimaryProvidersToModels } from '@/lib/schema-adapters';
 
 /**
@@ -13,44 +13,39 @@ export async function GET(request: Request) {
     const type = searchParams.get('type');
 
     // 获取所有 LLM 产品及其渠道价格
-    const [modelsRes, channelPricesRes, benchmarkRes] = await Promise.all([
-      supabase
-        .from('models')
-        .select(`
-          id,
-          name,
-          slug,
-          provider_ids,
-          context_window
-        `)
-        .eq('type', 'llm')
-        .order('name'),
-      supabase
-        .from('api_channel_prices')
-        .select(`
-          id,
-          model_id,
-          provider_id,
-          input_price_per_1m,
-          output_price_per_1m,
-          cached_input_price_per_1m,
-          currency,
-          price_unit,
-          rate_limit,
-          is_available,
-          providers:provider_id (
-            id,
-            name,
-            slug,
-            logo,
-            logo_url,
-            type,
-            region,
-            access_from_china
-          )
-        `)
-        .eq('is_available', true)
-        .not('provider_id', 'is', null),
+    const [modelsData, channelPrices, benchmarkScores] = await Promise.all([
+      sql<any[]>`
+        SELECT id, name, slug, provider_ids, context_window
+        FROM models
+        WHERE type = ${type || 'llm'}
+        ORDER BY name
+      `,
+      sql<any[]>`
+        SELECT
+          cp.id,
+          cp.model_id,
+          cp.provider_id,
+          cp.input_price_per_1m,
+          cp.output_price_per_1m,
+          cp.cached_input_price_per_1m,
+          cp.currency,
+          cp.price_unit,
+          cp.rate_limit,
+          cp.is_available,
+          jsonb_build_object(
+            'id', p.id,
+            'name', p.name,
+            'slug', p.slug,
+            'logo', p.logo,
+            'logo_url', p.logo_url,
+            'type', p.type,
+            'region', p.region,
+            'access_from_china', p.access_from_china
+          ) AS providers
+        FROM api_channel_prices cp
+        JOIN providers p ON p.id = cp.provider_id
+        WHERE cp.is_available = true
+      `,
       // Fetch Arena ELO scores specifically. Older version of this query
       // tried to join through `benchmark_tasks.benchmark_id` which doesn't
       // exist (the column is `benchmark_version_id`), so the whole query
@@ -58,20 +53,16 @@ export async function GET(request: Request) {
       // `benchmark_arena_elo: null` and "sort by performance" was a no-op
       // for all 271 products. Join through benchmark_metrics and filter
       // on name='ELO' so we get actual Chatbot Arena ratings.
-      supabase
-        .from('model_benchmark_scores')
-        .select('model_id, value, benchmark_metrics!inner(name)')
-        .eq('benchmark_metrics.name', 'ELO')
-        .order('value', { ascending: false }),
+      sql<any[]>`
+        SELECT s.model_id, s.value
+        FROM model_benchmark_scores s
+        JOIN benchmark_metrics bm ON bm.id = s.metric_id
+        WHERE bm.name = 'ELO'
+        ORDER BY s.value DESC NULLS LAST
+      `,
     ]);
 
-    if (modelsRes.error || !modelsRes.data) {
-      return NextResponse.json({ error: 'Failed to fetch models' }, { status: 500 });
-    }
-
-    const products = await attachPrimaryProvidersToModels((modelsRes.data || []) as any[]);
-    const channelPrices = (channelPricesRes.data || []) as any[];
-    const benchmarkScores = (benchmarkRes.data || []) as any[];
+    const products = await attachPrimaryProvidersToModels(modelsData as any[]);
 
     // Create benchmark map: model_id -> highest value (for arena elo)
     const benchmarkMap = new Map<number, number>();

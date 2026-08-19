@@ -106,7 +106,17 @@ export abstract class PlaywrightScraper {
       throw new Error('Browser not initialized. Call init() first.');
     }
 
-    await this.page.goto(url, { waitUntil: 'domcontentloaded' });
+    const transientNetworkError = /ERR_(?:NETWORK_CHANGED|CONNECTION_RESET|CONNECTION_CLOSED|TIMED_OUT)|Timeout \d+ms exceeded|Navigation timeout/i;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await this.page.goto(url, { waitUntil: 'domcontentloaded' });
+        break;
+      } catch (error) {
+        if (attempt === 3 || !transientNetworkError.test(String(error))) throw error;
+        await this.page.evaluate(() => window.stop()).catch(() => undefined);
+        await this.page.waitForTimeout(attempt * 500);
+      }
+    }
 
     if (waitForSelector) {
       await this.page.waitForSelector(waitForSelector, { timeout: this.options.timeout });

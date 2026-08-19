@@ -2,7 +2,7 @@
 
 > **披露**：本文提到的 7 款产品里，部分链接含我的推荐码，你通过我的链接订阅，双方都会拿到折扣（不影响我对产品的评价）。4 款是我亲手在项目里跑了至少两周的"实测"，3 款是我只看过文档、定价、口碑的"调研"，每张卡片上会明确标注。
 >
-> 作者：**此方一泉**（agent 开发者） · 发布日期：2026-04-22 · 数据底座：[aiplans.dev](https://aiplans.dev)
+> 作者：**此方一泉**（一个agent开发者） · 发布日期：2026-04-22 · 数据底座：[aiplans.dev](https://aiplans.dev)
 
 ---
 
@@ -11,10 +11,47 @@
 - **Claude Code 重度用户、天天撞配额** → **Claude Max 20x（$200/月）**。每天被 Pro 档 5 小时窗口卡 ≥ 2 次的人，Max 20x 一个月回本。
 - **想用上最新的 GLM-5 + Qwen3.5** → **阿里云百炼 Coding Plan Pro（¥200/月，90k 请求/月）**。2026 年 4 月国内唯一直连 GLM-5 / Qwen3.5 的聚合订阅（火山还停在 GLM-4.7 整整落后一代）。配额紧张，**建议早上抢**。
 - **agent 开发者、需要并行开 2-3 个 agent** → **MiniMax Token Plan Max（¥119/月）**。M2.7 按 agent 并发数标价，接 Claude Code / Cursor / Codex CLI 都能跑。
-- **想要"Claude Code 外壳 + 国产模型"组合** → **GLM Coding Plan（z.ai，$3-30/月）**。
+- **想要"Claude Code 外壳 + 最前沿 GLM-5.1"** → **GLM Coding Plan**（z.ai 海外版 Lite 起步 $18/月、Pro/Max 更高；国内智谱版便宜 1.5-2 倍）。
 - **免费方案、预算 = ¥0** → **Gemini Code Assist 个人版（每天 6000 次补全 + 240 次对话）**，主力撞配额时当兜底。
 - **想一张卡搞定 AI 对话 + 写代码** → **ChatGPT Plus + Codex（$20/月）**。
 - **字节生态或需要国内合规** → **火山引擎（豆包 / Seed）**。
+
+---
+
+## 决策树：按画像 3 步选完
+
+如果不想读全文，按下面这棵树走一遍即可（价格都是 2026-04-22 官方数据，含 referral 折扣另算）：
+
+```
+你每天用 AI 写代码多少？
+│
+├── < 1 小时 ───────────▶ Gemini Code Assist 个人版（¥0，6000 补全/日）
+│
+├── 1-3 小时（偶尔重度）
+│   │
+│   ├── 预算 ≤ ¥100 ────▶ 智谱国内 GLM Lite ¥49  或  MiniMax Plus ¥49
+│   └── 预算 ≤ ¥200 ────▶ 智谱国内 GLM Pro ¥149  或  MiniMax Max ¥119
+│
+└── ≥ 3 小时（日常重度）
+    │
+    ├── 主力 Claude Code ────▶ Claude Max 20x $200
+    │                          (Max 5x $100 可先试，Pro 天天撞墙再升 20x)
+    │
+    ├── 并行跑 agent ────────▶ MiniMax Max ¥119  或  极速版 ¥199
+    │                          (M2.7 按 agent 并发数标价，独一份)
+    │
+    ├── 多模型自由切换 ───────▶ 阿里云百炼 Coding Plan Pro ¥200
+    │                          (GLM-5 + Qwen3.5 + Kimi + MiniMax，早上抢)
+    │
+    ├── 要最前沿 GLM-5.1 ────▶ z.ai Pro (Lite $18 起，Pro/Max 更高)
+    │
+    └── 国内合规 / 大厂生态 ──▶ 百炼 Pro ¥200  或  火山引擎豆包 Pro
+
+特殊情况：
+  • 已订 ChatGPT Plus（别的用途）→ Codex 附带，不用另花钱
+```
+
+如果你落在多个叶子的交集（比如"重度 + 预算紧"），往下翻到文末的"我的 Top 3：三档标杆" —— 我给出了"如果只能挑三个"的排序。
 
 ---
 
@@ -27,11 +64,17 @@
 
 所有价格数据截至 2026-04-22，由 [aiplans.dev](https://aiplans.dev) 的 scraper 每天从官方页面抓取。如果你发现某个数字对不上，说明官方又改价了，评论区告诉我，我当天更新。
 
-**我为什么是我**：我是 agent 开发者，过去一年大部分时间在写 AI agent 相关的业务代码和工具链。4 款实测的选品全部以"能不能稳定跑 agent"为第一标准，不是"能不能写漂亮的 hello world"。所以本文对 agent 场景的判断会比通用型对比文更具体，代价是：如果你的需求是"补全一下 HTML 组件"，本文的推荐顺序可能跟你感觉不一样。
+**我为什么是我**：我是一个 agent 开发者，过去一年大部分时间在写 AI agent 相关的业务代码和工具链。4 款实测的选品全部以"能不能稳定跑 agent"为第一标准，不是"能不能写漂亮的 hello world"。所以本文对 agent 场景的判断会比通用型对比文更具体，代价是：如果你的需求是"补全一下 HTML 组件"，本文的推荐顺序可能跟你感觉不一样。
 
 ---
 
 ## 4 款实测
+
+> **一个重要前提，帮你建立正确预期**：下面 4 款里，**只有 Claude Max 20x 存在日常撞墙的概率**（官方 5 小时滚动窗口仍在，即使 20x 档每月也会被卡 1-2 次）；**其余 3 款国产订阅（GLM、阿里云百炼、MiniMax）在我两周到十天的连续重度使用里基本管饱 —— 几乎撞不到日常配额天花板**。
+>
+> 所以你在下面各卡片里看到的"踩坑点"，**大多是"购买时抢不到 / 新手配置踩坑 / 聚合型产品的小衰减"**，不是"每天用到一半没额度了"。国产这一波的策略很明确：用大额度把开发者留住。
+>
+> 这意味着：对非 Claude 用户来说，**选哪家主要看"模型/生态/口径是否适合你"，不用担心"够不够用"**。
 
 ### 1. Claude Max 20x【实测】
 
@@ -124,7 +167,7 @@
 | Gemini Code Assist | ¥0 / $19 起 | Gemini 2.5（Gemini 3 waitlist） | 6000 补全 + 240 对话/日（免费档） | 否（IDE 插件） | 需代理 | 调研 |
 | 火山引擎 | Token 计费 | 豆包 Pro 1.5 / Seed | ¥/1K token | 部分 | 是 | 调研 |
 
-> 上表每一列都可以在 [aiplans.dev](https://aiplans.dev) 点进去看完整定价曲线和历史变动。{{TODO：贴 aiplans.dev `/compare/plans` 对应截图}}
+> 上表每一列对应的官方定价页都可以在 [aiplans.dev](https://aiplans.dev) 的 `/plans/{厂商}` 页面点进去看（含我的 referral 链接）。每个模型详情页 `/models/{slug}` 已上线**历史价格曲线**（Recharts 折线图，输入/输出价切换，覆盖 2681 次历史变动）—— 比如 [/en/models/deepseek-v3](https://aiplans.dev/en/models/deepseek-v3) 你能看到 DeepSeek V3 过去 3 个月的跨渠道降价轨迹。{{TODO：贴 aiplans.dev `/plans/xxx` 和价格曲线截图}}
 
 ---
 
@@ -163,7 +206,18 @@
 - Week 3：《Go 后端团队选哪个 AI 编程订阅》（场景垂直）
 - Week 4：按 Week 1–3 数据决定主题（可能是"订阅 vs 自建 vs API 三种路线真实成本"）
 
-想被第一时间提醒 → 在 V2EX 收藏本贴 / X 关注 **@此方一泉** / 或等 Week 2 邮件订阅上线。
+---
+
+## 评论区留 2 行，我给你 1 对 1 推荐
+
+上面 7 款我都看过定价、模型池、配额口径；但**你的具体场景我不知道**。在评论区留下：
+
+① 你**每天**用 AI 写代码大约多少小时？
+② 你主力**是哪款**？最不想用哪款？（可选）
+
+我会挨个回 —— 不想公开讨论的可以私信 **@此方一泉**。本篇**回复上限 50 条**（怕忙不过来，后到的我只能抱歉）。过去半年我用这个方式给 5 位朋友各推了一款，100% 续订率，这次换到陌生场景也想试试 —— 你的反馈会影响 Week 2 那篇的走向。
+
+想被下一篇提醒 → V2EX 收藏本贴 / X 关注 **@此方一泉** / Week 2 邮件订阅即将上线。
 
 ---
 
@@ -174,4 +228,4 @@
 - MiniMax Token Plan：[platform.minimaxi.com/subscribe/token-plan](https://platform.minimaxi.com/subscribe/token-plan)
 - Gemini Code Assist：[codeassist.google](https://codeassist.google/)
 - 火山引擎豆包：[volcengine.com/product/doubao](https://www.volcengine.com/product/doubao)
-- 历史定价曲线 + 跨厂对比：[aiplans.dev](https://aiplans.dev)（scraper 每天从官方页面更新；部分厂商页面数据正在补齐）
+- 跨厂对比 + 每个模型的历史价格曲线：[aiplans.dev](https://aiplans.dev)（scraper 每天从官方页面更新；部分厂商页面数据正在补齐）

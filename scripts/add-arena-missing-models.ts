@@ -6,7 +6,7 @@
  * 14+ additional arena rows matched. Idempotent — skips slugs that exist.
  *
  * Usage:
- *   SUPABASE_SERVICE_KEY=... npx tsx scripts/add-arena-missing-models.ts [--dry-run]
+ *   DATABASE_URL=... npx tsx scripts/add-arena-missing-models.ts [--dry-run]
  */
 import { supabaseAdmin } from './db/queries';
 

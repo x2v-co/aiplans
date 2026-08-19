@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og-template';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const alt = 'Provider Subscription Plans — aiplans.dev';
 export const size = OG_SIZE;
@@ -14,11 +14,12 @@ export default async function Image({
   const { locale, provider: providerSlug } = await params;
   const isZh = locale === 'zh';
 
-  const { data: provider } = await supabase
-    .from('providers')
-    .select('id, name, slug, region')
-    .eq('slug', providerSlug)
-    .maybeSingle();
+  const [provider] = await sql<any[]>`
+    SELECT id, name, slug, region
+    FROM providers
+    WHERE slug = ${providerSlug}
+    LIMIT 1
+  `;
 
   if (!provider) {
     return new ImageResponse(
@@ -33,12 +34,11 @@ export default async function Image({
   }
 
   // Plan count + cheapest price
-  const { data: plans } = await supabase
-    .from('plans')
-    .select('price, currency')
-    .eq('provider_id', provider.id);
+  const plans = await sql<any[]>`
+    SELECT price, currency FROM plans WHERE provider_id = ${provider.id}
+  `;
 
-  const priced = (plans ?? []).filter(
+  const priced = plans.filter(
     (p: any) => typeof p.price === 'number' && p.price > 0,
   );
   const cheapest = priced.length
@@ -46,7 +46,7 @@ export default async function Image({
     : null;
 
   const stats: { label: string; value: string }[] = [
-    { label: isZh ? '计划数' : 'Plans', value: String(plans?.length ?? 0) },
+    { label: isZh ? '计划数' : 'Plans', value: String(plans.length) },
   ];
   if (cheapest) {
     const sym = cheapest.currency === 'CNY' ? '¥' : cheapest.currency === 'EUR' ? '€' : '$';

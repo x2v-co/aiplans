@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, boolean, integer, real, jsonb, bigint, varchar, numeric, date } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, boolean, integer, real, jsonb, bigint, bigserial, varchar, numeric, date } from 'drizzle-orm/pg-core';
 
 // Providers - AI service vendors
 export const providers = pgTable('providers', {
@@ -99,6 +99,9 @@ export const plans = pgTable('plans', {
   accessFromChina: boolean('access_from_china').default(true),
   paymentMethods: jsonb('payment_methods'),
   features: jsonb('features'),
+  notes: text('notes'),
+  isContactSales: boolean('is_contact_sales').default(false),
+  source: text('source').default('scraper'),
   currency: varchar('currency').default('USD'),
   lastVerified: timestamp('last_verified'),
 
@@ -122,6 +125,29 @@ export const apiChannelPrices = pgTable('api_channel_prices', {
   priceUnit: varchar('price_unit').default('per_1m_tokens'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
+// Price History - Significant channel price changes recorded by scrapers
+export const priceHistory = pgTable('price_history', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  channelPriceId: integer('channel_price_id').notNull(),
+  oldInputPrice: real('old_input_price'),
+  newInputPrice: real('new_input_price'),
+  oldOutputPrice: real('old_output_price'),
+  newOutputPrice: real('new_output_price'),
+  changePercent: real('change_percent'),
+  currency: varchar('currency', { length: 8 }),
+  source: text('source'),
+  recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Clicks - Minimal affiliate redirect event log
+export const clicks = pgTable('clicks', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  utmSource: text('utm_source').notNull(),
+  utmCampaign: text('utm_campaign').notNull(),
+  product: text('product').notNull(),
+  timestamp: timestamp('ts', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // Model-Plan Mapping - Junction table between models and plans
@@ -249,6 +275,8 @@ export type Provider = typeof providers.$inferSelect;
 export type Model = typeof models.$inferSelect;
 export type Plan = typeof plans.$inferSelect;
 export type ApiChannelPrice = typeof apiChannelPrices.$inferSelect;
+export type PriceHistory = typeof priceHistory.$inferSelect;
+export type Click = typeof clicks.$inferSelect;
 export type ModelPlanMapping = typeof modelPlanMapping.$inferSelect;
 export type Coupon = typeof coupons.$inferSelect;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;

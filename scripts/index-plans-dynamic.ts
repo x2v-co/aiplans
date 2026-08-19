@@ -1,7 +1,11 @@
 #!/usr/bin/env tsx
 
 import { scrapeOpenAIPlans } from './scrapers/plan-openai-dynamic';
-import { scrapeAnthropicPlans } from './scrapers/plan-anthropic-dynamic';
+import {
+  scrapeAnthropicPlans,
+  closeBrowser as closeAnthropicBrowser,
+} from './scrapers/plan-anthropic-dynamic';
+import { closeBrowser as closeSharedBrowser } from './scrapers/base-fetcher';
 import { scrapeGoogleGeminiPlans } from './scrapers/plan-google-gemini-dynamic';
 import { scrapeMistralPlans } from './scrapers/plan-mistral-dynamic';
 import { scrapeMinimaxPlans } from './scrapers/plan-minimax-dynamic';
@@ -81,7 +85,7 @@ const PROVIDER_CONFIG: Record<string, ProviderConfig> = {
   },
   minimax: {
     name: 'Minimax China',
-    slug: 'minimax',
+    slug: 'minimax-china',
     website: 'https://platform.minimaxi.com',
     pricing_url: 'https://platform.minimaxi.com/docs/guides/pricing-coding-plan',
     invite_link: 'https://platform.minimaxi.com/subscribe/coding-plan?code=GOCSHm96x2&source=link',
@@ -181,13 +185,36 @@ const SCRAPERS: Record<ProviderKey, () => Promise<PlanScraperResult>> = {
 
 // Parse CLI arguments
 const args = process.argv.slice(2);
+const allowedArgs = new Set(['--dry-run', '--help']);
+const unknownArgs = args.filter(arg => !allowedArgs.has(arg) && !arg.startsWith('--provider='));
+if (unknownArgs.length > 0) {
+  throw new Error(`Unknown argument${unknownArgs.length > 1 ? 's' : ''}: ${unknownArgs.join(', ')}`);
+}
+
+if (args.includes('--help')) {
+  console.log(`Usage: npm run scrape:plans -- [options]
+
+Options:
+  --dry-run          Scrape without writing to the database
+  --provider=<slug>  Run one provider scraper
+  --help             Show this help message
+
+Available providers:
+  ${Object.keys(PROVIDER_CONFIG).join(', ')}`);
+  process.exit(0);
+}
+
+const providerArgs = args.filter(arg => arg.startsWith('--provider='));
+if (providerArgs.length > 1) {
+  throw new Error('Pass --provider only once');
+}
 const dryRun = args.includes('--dry-run');
 const providerArg = args.find(arg => arg.startsWith('--provider='))?.split('=')[1] as ProviderKey | undefined;
-
-// Determine which providers to scrape
-const providersToScrape = providerArg
-  ? [providerArg]
-  : (Object.keys(PROVIDER_CONFIG) as ProviderKey[]);
+if (providerArgs.length === 1 && (!providerArg || !(providerArg in PROVIDER_CONFIG))) {
+  throw new Error(
+    `Unknown provider "${providerArg || ''}". Available providers: ${Object.keys(PROVIDER_CONFIG).join(', ')}`
+  );
+}
 
 /**
  * Save scraped plans to database
@@ -202,7 +229,7 @@ async function savePlansToDatabase(
   let provider;
   try {
     provider = await getProviderBySlug(config.slug);
-  } catch (error) {
+  } catch {
     // Provider doesn't exist, create it
     provider = await upsertProvider({
       name: config.name,
@@ -222,9 +249,6 @@ async function savePlansToDatabase(
   // Save each plan
   for (const plan of scrapedPlans) {
     try {
-      // Calculate yearly pricing if not provided
-      const priceYearly = plan.priceYearly || (plan.priceMonthly > 0 ? plan.priceMonthly * 12 : undefined);
-
       const savedPlan = await upsertPlan({
         provider_id: provider.id,
         name: plan.planName,
@@ -232,7 +256,7 @@ async function savePlansToDatabase(
         pricing_model: plan.pricingModel,
         tier: plan.tier,
         price_monthly: plan.priceMonthly,
-        price_yearly: priceYearly,
+        price_yearly: plan.priceYearly,
         daily_message_limit: plan.dailyMessageLimit,
         requests_per_minute: plan.requestsPerMinute,
         qps: plan.qps,
@@ -411,11 +435,24 @@ async function main() {
   const duration = Date.now() - startTime;
   console.log(`\n⏱️  Total duration: ${(duration / 1000).toFixed(2)}s`);
   console.log('='.repeat(60));
+
+  if (failed.length > 0) {
+    throw new Error(`${failed.length} plan scraper${failed.length === 1 ? '' : 's'} failed`);
+  }
+}
+
+async function closePlanBrowsers(): Promise<void> {
+  await Promise.allSettled([
+    closeAnthropicBrowser(),
+    closeSharedBrowser(),
+  ]);
 }
 
 // Run main function
 main()
-  .catch((error) => {
+  .then(closePlanBrowsers)
+  .catch(async (error) => {
+    await closePlanBrowsers();
     console.error('❌ Fatal error:', error);
     process.exit(1);
   });

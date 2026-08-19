@@ -1,215 +1,57 @@
-/**
- * Zhipu AI China (ChatGLM) Plan Scraper - Dynamic fetching from Zhipu coding plan page
- */
-
-import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
-import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
+/** Zhipu China GLM Coding Plan scraper. */
+import type { PlanScraperResult, ScrapedPlan } from '../utils/plan-validator';
 import { fetchHTMLSmart } from './base-fetcher';
 
-const ZHIPU_CHINA_PLANS_URL = 'https://bigmodel.cn/glm-coding';
-const ZHIPU_CHINA_INVITE_LINK = 'https://www.bigmodel.cn/glm-coding?ic=U2SFC0L765';
-
-interface ZhipuChinaPlan {
-  name: string;
-  priceMonthly: number;
-  priceYearly?: number;
-  tier: 'free' | 'basic' | 'pro' | 'team' | 'enterprise';
-  dailyMessageLimit?: number;
-  features: string[];
-  paymentMethods: string[];
-  accessFromChina: boolean;
-  region: string;
-  quarterlyDiscount?: number; // 季度折扣
-  yearlyDiscount?: number; // 年度折扣
-}
-
-/**
- * Fetch and parse Zhipu AI China subscription plans from their website
- */
-async function fetchZhipuChinaPlans(): Promise<{ plans: ZhipuChinaPlan[], errors: string[] }> {
-  const result = await fetchHTMLSmart(ZHIPU_CHINA_PLANS_URL);
-  const errors: string[] = [];
-
-  if (!result.success || !result.data) {
-    return { plans: [], errors: ['Failed to fetch Zhipu China plans page - no HTML returned'] };
-  }
-
-  const html = result.data;
-  const plans: ZhipuChinaPlan[] = [];
-
-  // Extract prices from HTML - only proceed if we can find actual pricing data
-  const litePriceMatch = html.match(/Lite[^￥]*?￥\s*[\d,]+/i);
-  const proPriceMatch = html.match(/Pro[^￥]*?￥\s*[\d,]+/i);
-  const maxPriceMatch = html.match(/Max[^￥]*?￥\s*[\d,]+/i);
-  const teamPriceMatch = html.match(/Team[^￥]*?￥\s*[\d,]+/i);
-
-  // Check if we found any pricing information
-  if (!litePriceMatch && !proPriceMatch && !maxPriceMatch && !teamPriceMatch) {
-    return {
-      plans: [],
-      errors: ['No pricing information found on Zhipu China page. The page structure may have changed.']
-    };
-  }
-
-  // GLM Coding Lite plan - only add if we found the price
-  if (litePriceMatch) {
-    const priceMatch = litePriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      const litePlan: ZhipuChinaPlan = {
-        name: 'GLM Coding Lite',
-        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
-        priceYearly: undefined,
-        tier: 'basic',
-        dailyMessageLimit: undefined,
-        features: [], // Features should be extracted from actual page content
-        paymentMethods: ['Alipay', 'WeChat Pay'],
-        accessFromChina: true,
-        region: 'china',
-      };
-      plans.push(litePlan);
-    }
-  }
-
-  // GLM Coding Pro plan - only add if we found the price
-  if (proPriceMatch) {
-    const priceMatch = proPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      const proPlan: ZhipuChinaPlan = {
-        name: 'GLM Coding Pro',
-        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
-        priceYearly: undefined,
-        tier: 'pro',
-        dailyMessageLimit: undefined,
-        features: [],
-        paymentMethods: ['Alipay', 'WeChat Pay'],
-        accessFromChina: true,
-        region: 'china',
-      };
-      plans.push(proPlan);
-    }
-  }
-
-  // GLM Coding Max plan - only add if we found the price
-  if (maxPriceMatch) {
-    const priceMatch = maxPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      const maxPlan: ZhipuChinaPlan = {
-        name: 'GLM Coding Max',
-        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
-        priceYearly: undefined,
-        tier: 'team',
-        dailyMessageLimit: undefined,
-        features: [],
-        paymentMethods: ['Alipay', 'WeChat Pay'],
-        accessFromChina: true,
-        region: 'china',
-      };
-      plans.push(maxPlan);
-    }
-  }
-
-  // Team plan - only add if we found the price or explicit mention
-  if (teamPriceMatch) {
-    const priceMatch = teamPriceMatch[0].match(/[￥]?\s*([\d,]+)/);
-    if (priceMatch) {
-      const teamPlan: ZhipuChinaPlan = {
-        name: 'GLM Coding Team',
-        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
-        priceYearly: undefined,
-        tier: 'team',
-        dailyMessageLimit: undefined,
-        features: [],
-        paymentMethods: ['Alipay', 'WeChat Pay', 'Invoice'],
-        accessFromChina: true,
-        region: 'china',
-      };
-      plans.push(teamPlan);
-    }
-  }
-
-  if (plans.length === 0) {
-    errors.push('No plans could be parsed from Zhipu China pricing page. The page structure may have changed.');
-  }
-
-  return { plans, errors };
-}
+const URL = 'https://bigmodel.cn/glm-coding';
 
 export async function scrapeZhipuPlans(): Promise<PlanScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const plans: ScrapedPlan[] = [];
-
-  try {
-    console.log('🔄 Fetching Zhipu AI China subscription plans...');
-
-    const { plans: zhipuPlans, errors: fetchErrors } = await fetchZhipuChinaPlans();
-    if (fetchErrors.length > 0) {
-      errors.push(...fetchErrors);
-    }
-
-    console.log(`📦 Found ${zhipuPlans.length} plans from Zhipu AI China`);
-    console.log(`🔗 Invite Link: ${ZHIPU_CHINA_INVITE_LINK}`);
-
-    for (const plan of zhipuPlans) {
-      try {
-        // Validate monthly price
-        if (!validatePlanPrice(plan.priceMonthly)) {
-          errors.push(`Invalid monthly price for ${plan.name}: ${plan.priceMonthly}`);
-          continue;
-        }
-
-        // Calculate yearly price based on discount if not provided
-        let yearlyPrice = plan.priceYearly;
-        if (!yearlyPrice && plan.yearlyDiscount && plan.priceMonthly > 0) {
-          yearlyPrice = plan.priceMonthly * 12 * (1 - plan.yearlyDiscount);
-        }
-
-        plans.push({
-          planName: normalizePlanName(plan.name),
-          planSlug: slugifyPlan(plan.name),
-          priceMonthly: plan.priceMonthly,
-          priceYearly: yearlyPrice,
-          pricingModel: 'subscription',
-          tier: plan.tier,
-          dailyMessageLimit: plan.dailyMessageLimit,
-          features: plan.features,
-          region: plan.region,
-          accessFromChina: plan.accessFromChina,
-          paymentMethods: plan.paymentMethods,
-          isOfficial: true,
-          currency: 'CNY',
-        });
-      } catch (error) {
-        errors.push(`Error processing plan ${plan.name}: ${error}`);
-      }
-    }
-
-    const duration = Date.now() - startTime;
-    console.log(`✅ Zhipu AI China plans scrape completed in ${duration}ms`);
-    console.log(`   - Plans processed: ${plans.length}`);
-    console.log(`   - Errors: ${errors.length}`);
-
-    return {
-      source: 'Zhipu-Plans',
-      success: errors.length === 0 && plans.length > 0,
-      plans,
-      errors: errors.length > 0 ? errors : undefined,
-    };
-  } catch (error) {
-    console.error('❌ Zhipu AI China plans scrape failed:', error);
-    return {
-      source: 'Zhipu-Plans',
-      success: false,
-      plans: [],
-      errors: [String(error)],
-    };
+  console.log('🔄 Fetching Zhipu AI China subscription plans...');
+  const result = await fetchHTMLSmart(URL, { waitForTimeout: 3000 });
+  if (!result.success || !result.data) {
+    return { source: 'Zhipu-Plans', success: false, plans: [], errors: [result.error || 'No HTML returned'] };
   }
+
+  const text = stripHtml(result.data);
+  const rows = [
+    extractTier(text, 'Lite', 'Pro', 'glm-coding-lite', 'GLM Coding Lite', 'basic'),
+    extractTier(text, 'Pro', 'Max', 'glm-coding-pro', 'GLM Coding Pro', 'pro'),
+    extractTier(text, 'Max', 'GLM-', 'glm-coding-max', 'GLM Coding Max', 'enterprise'),
+  ];
+  if (rows.some(row => row == null)) {
+    return { source: 'Zhipu-Plans', success: false, plans: [], errors: ['Lite/Pro/Max monthly prices not found'] };
+  }
+
+  const plans: ScrapedPlan[] = rows.map(row => {
+    const item = row!;
+    return {
+      planName: item.name,
+      planSlug: item.slug,
+      priceMonthly: item.price,
+      priceYearly: Math.round(item.price * 12 * 0.7 * 100) / 100,
+      pricingModel: 'subscription',
+      tier: item.tier,
+      features: [],
+      region: 'china',
+      accessFromChina: true,
+      paymentMethods: ['Alipay', 'WeChat Pay'],
+      isOfficial: true,
+      currency: 'CNY',
+    };
+  });
+  return { source: 'Zhipu-Plans', success: true, plans };
 }
 
-// CLI test
-if (require.main === module) {
-  scrapeZhipuPlans().then(result => {
-    console.log('\n📊 Scrape Result:');
-    console.log(JSON.stringify(result, null, 2));
-  });
+function extractTier(text: string, start: string, end: string, slug: string, name: string, tier: ScrapedPlan['tier']) {
+  const section = text.match(new RegExp(`${start}[\\s\\S]*?(?=${end})`, 'i'))?.[0];
+  const prices = section ? [...section.matchAll(/¥\s*([\d.]+)\s*\/月/g)].map(match => Number(match[1])) : [];
+  const regularPrice = prices.length > 0 ? Math.max(...prices) : null;
+  return regularPrice == null ? null : { slug, name, tier, price: regularPrice };
 }
+
+function stripHtml(html: string): string {
+  return html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&#xA0;/gi, ' ').replace(/&yen;|&#165;/gi, '¥')
+    .replace(/\s+/g, ' ').trim();
+}
+
+if (require.main === module) scrapeZhipuPlans().then(result => console.log(JSON.stringify(result, null, 2)));

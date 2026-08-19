@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { sql } from '@/lib/db';
 import type { CurrencyCode } from '@/lib/currency';
 import {
   convertToUSD,
@@ -10,10 +10,6 @@ import {
 import { getExchangeRateSync } from '@/lib/exchange-rates';
 import { getPrimaryProvidersForModels, getPlanYearlyMonthly } from '@/lib/schema-adapters';
 import { getProviderLogoFallback, getProviderLogoSrc } from '@/lib/provider-branding';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -29,18 +25,13 @@ export async function GET(request: NextRequest) {
     const slugCandidates = getModelSlugCandidates(modelSlug);
 
     // 1. Get product/model info first (needed for other queries)
-    const { data: products, error: productError } = await supabase
-      .from('models')
-      .select(`
-        id,
-        name,
-        slug,
-        provider_ids,
-        context_window
-      `)
-      .in('slug', slugCandidates);
+    const products = await sql<any[]>`
+      SELECT id, name, slug, provider_ids, context_window
+      FROM models
+      WHERE slug = ANY(${sql.array(slugCandidates, 25)})
+    `;
 
-    if (productError || !products || products.length === 0) {
+    if (products.length === 0) {
       return NextResponse.json({ error: 'Model not found' }, { status: 404 });
     }
 
@@ -52,97 +43,41 @@ export async function GET(request: NextRequest) {
     const productProvider = modelProviders.get(product.id);
 
     // 2. Run remaining queries in parallel for better performance
-    const [
-      { data: channelPrices },
-      { data: modelPlans },
-    ] = await Promise.all([
-      // Query 2: Get API pricing from api_channel_prices
-      supabase
-        .from('api_channel_prices')
-        .select(`
-          id,
-          input_price_per_1m,
-          output_price_per_1m,
-          cached_input_price_per_1m,
-          rate_limit,
-          last_verified,
-          is_available,
-          providers:provider_id (
-            id,
-            name,
-            slug,
-            type,
-            region,
-            access_from_china,
-            logo,
-            logo_url,
-            website,
-            invite_url
-          )
-        `)
-        .eq('model_id', product.id)
-        .eq('is_available', true)
-        .not('provider_id', 'is', null)
-        .order('input_price_per_1m', { ascending: true }),
-      // Query 3: Get subscription plans that include this model (via model_plan_mapping)
-      // Schema only has: model_id, plan_id, priority
-      supabase
-        .from('model_plan_mapping')
-        .select(`
-          plan_id,
-          model_id,
-          priority
-        `)
-        .in('model_id', relatedModelIds),
-    ]);
+    // Get subscription plans that include this model (via model_plan_mapping).
+    const modelPlans = await sql<any[]>`
+      SELECT plan_id, model_id, priority
+      FROM model_plan_mapping
+      WHERE model_id = ANY(${sql.array(relatedModelIds, 23)})
+    `;
 
     // 3. Get unique plan IDs and fetch full plan details in parallel with provider info
-    const planIds = [...new Set((modelPlans || []).map((m: any) => m.plan_id).filter(Boolean))];
+    const planIds = [...new Set(modelPlans.map((m: any) => m.plan_id).filter(Boolean))];
 
-    const [
-      { data: rawSubscriptionPlans },
-      { data: allProviders },
-    ] = planIds.length > 0 ? await Promise.all([
-      // Query 4: Get subscription plans
-      supabase
-        .from('plans')
-        .select(`
-          id,
-          name,
-          slug,
-          tier,
-          pricing_model,
-          price,
-          annual_price,
-          price_unit,
-          currency,
-          daily_message_limit,
-          requests_per_minute,
-          qps,
-          tokens_per_minute,
-          features,
-          region,
-          access_from_china,
-          payment_methods,
-          is_official,
-          last_verified,
-          provider_id
-        `)
-        .in('id', planIds)
-        .order('price', { ascending: true }),
-      // Query 5: Get all provider info at once
-      supabase
-        .from('providers')
-        .select('id, name, slug, logo, logo_url, website, invite_url'),
-    ]) : [{ data: [] }, { data: [] }];
+    const [rawSubscriptionPlans, allProviders] = planIds.length > 0
+      ? await Promise.all([
+          sql<any[]>`
+            SELECT id, name, slug, tier, pricing_model, price, annual_price,
+              price_unit, currency, daily_message_limit, requests_per_minute,
+              qps, tokens_per_minute, features, region, access_from_china,
+              payment_methods, is_official, last_verified, provider_id
+            FROM plans
+            WHERE id = ANY(${sql.array(planIds, 23)})
+            ORDER BY price ASC NULLS LAST
+          `,
+          sql<any[]>`
+            SELECT id, name, slug, logo, logo_url, website, invite_url
+            FROM providers
+          `,
+        ])
+      : [[], []];
 
     // Build provider map
     const providerMap: Record<number, any> = {};
-    (allProviders || []).forEach((p: any) => {
+    allProviders.forEach((p: any) => {
       providerMap[p.id] = p;
     });
 
-    const subscriptionPlans = rawSubscriptionPlans || [];
+    const subscriptionPlans = rawSubscriptionPlans;
 
     // Separate official and third-party subscription plans
     const officialPlans: any[] = [];

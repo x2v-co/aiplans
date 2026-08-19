@@ -26,6 +26,7 @@ const FIXED_RATES: Record<string, Record<string, number>> = {
     'GBP': 0.79,
     'JPY': 149.5,
     'KRW': 1320,
+    'SGD': 1.35,
   },
   // 反向汇率
   'CNY': { 'USD': 1 / 6.90 },
@@ -33,6 +34,7 @@ const FIXED_RATES: Record<string, Record<string, number>> = {
   'GBP': { 'USD': 1 / 0.79 },
   'JPY': { 'USD': 1 / 149.5 },
   'KRW': { 'USD': 1 / 1320 },
+  'SGD': { 'USD': 1 / 1.35 },
 };
 
 /**

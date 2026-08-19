@@ -1,19 +1,15 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
-// Enable ISR with 5 minute revalidation
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const { data, error } = await supabase
-      .from('providers')
-      .select('*')
-      .order('name');
+    const data = await sql`SELECT * FROM providers ORDER BY name`;
 
-    if (error) throw error;
-
-    return NextResponse.json(data);
+    const response = NextResponse.json(data);
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    return response;
   } catch (error) {
     console.error('Error fetching providers:', error);
     return NextResponse.json({ error: 'Failed to fetch providers' }, { status: 500 });

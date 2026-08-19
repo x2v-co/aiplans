@@ -1,0 +1,11 @@
+[Unit]
+Description=Run PlanPrice pricing scraper hourly
+
+[Timer]
+OnCalendar=*-*-* *:00:00
+Persistent=true
+RandomizedDelaySec=5min
+Unit=planprice-scraper.service
+
+[Install]
+WantedBy=timers.target

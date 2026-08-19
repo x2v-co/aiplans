@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, ArrowRight } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 
@@ -28,35 +28,13 @@ export async function generateMetadata({
 }
 
 async function getProvidersWithPlans() {
-  // Get all providers
-  const { data: providers } = await supabase
-    .from('providers')
-    .select('*')
-    .order('name', { ascending: true });
-
-  if (!providers) return [];
-
-  // Get plan counts for each provider
-  const providerIds = providers.map(p => p.id);
-  const { data: plans } = await supabase
-    .from('plans')
-    .select('provider_id')
-    .in('provider_id', providerIds);
-
-  // Count plans per provider
-  const planCounts: Record<number, number> = {};
-  (plans || []).forEach(plan => {
-    planCounts[plan.provider_id] = (planCounts[plan.provider_id] || 0) + 1;
-  });
-
-  // Filter providers with plans and add count
-  return providers
-    .filter(p => planCounts[p.id] > 0)
-    .map(p => ({
-      ...p,
-      planCount: planCounts[p.id] || 0
-    }))
-    .sort((a, b) => b.planCount - a.planCount);
+  return sql<any[]>`
+    SELECT p.*, COUNT(pl.id)::integer AS "planCount"
+    FROM providers p
+    JOIN plans pl ON pl.provider_id = p.id
+    GROUP BY p.id
+    ORDER BY "planCount" DESC, p.name ASC
+  `;
 }
 
 export default async function PlansIndexPage({

@@ -63,9 +63,9 @@ const UPDATES: PriceUpdate[] = [
   { modelSlug: 'gpt-4o-mini', providerSlug: 'azure-openai', input: 0.15, output: 0.60,
     reason: 'Azure OpenAI mirrors OpenAI pricing; DB had $6/$4 (40x + output<input)' },
 
-  // Vertex AI tracks Google Gemini pricing for listed models
-  { modelSlug: 'gemini-2.0-flash-exp', providerSlug: 'vertex-ai', input: 0.10, output: 0.40,
-    reason: 'Google Gemini 2.0 Flash official is $0.10/$0.40; DB had $14/$2 (140x + output<input)' },
+  // Vertex AI has a distinct Vertex endpoint price for Gemini 2.0 Flash.
+  { modelSlug: 'gemini-2.0-flash-exp', providerSlug: 'vertex-ai', input: 0.15, output: 0.60,
+    reason: 'Vertex AI Gemini 2.0 Flash standard price is $0.15/$0.60; DB had a parser-corrupted value' },
 
   // MiniMax China producer pricing is 7x the international rate per audit
   // International/openrouter price $0.20-0.30/$1.20 is correct; local CNY
@@ -87,15 +87,15 @@ const UPDATES: PriceUpdate[] = [
   { modelSlug: 'o1', providerSlug: 'azure-openai', input: 15, output: 60,
     reason: 'Azure OpenAI mirrors OpenAI o1 pricing $15/$60; DB had $1/$1' },
 
-  // Mistral official prices — these were marked disabled in round 1, re-enable with correct values
-  { modelSlug: 'mistral-large', providerSlug: 'mistral', input: 2, output: 6,
-    reason: 'Mistral Large 2411 official $2/$6' },
-  { modelSlug: 'mistral-medium', providerSlug: 'mistral', input: 0.40, output: 2.00,
-    reason: 'Mistral Medium 3 official $0.40/$2.00; DB had $8/$3 (output<input)' },
-  { modelSlug: 'mistral-small', providerSlug: 'mistral', input: 0.10, output: 0.30,
-    reason: 'Mistral Small 2503 official $0.10/$0.30; DB had $4/$4 (in==out)' },
-  { modelSlug: 'codestral', providerSlug: 'mistral', input: 0.20, output: 0.60,
-    reason: 'Codestral 2501 official $0.20/$0.60; DB had $6/$3 (output<input)' },
+  // Current Mistral official standard prices.
+  { modelSlug: 'mistral-large', providerSlug: 'mistral', input: 1.50, output: 7.00,
+    reason: 'Mistral Large current official standard price is $1.50/$7.00' },
+  { modelSlug: 'mistral-medium', providerSlug: 'mistral', input: 0.50, output: 1.50,
+    reason: 'Mistral Medium current official standard price is $0.50/$1.50' },
+  { modelSlug: 'mistral-small', providerSlug: 'mistral', input: 0.15, output: 0.40,
+    reason: 'Mistral Small current official standard price is $0.15/$0.40' },
+  { modelSlug: 'codestral', providerSlug: 'mistral', input: 0.15, output: 0.60,
+    reason: 'Codestral current official standard price is $0.15/$0.60' },
 
   // Grok via xAI direct
   { modelSlug: 'grok-2', providerSlug: 'grok', input: 2, output: 10,
@@ -112,6 +112,13 @@ const UPDATES: PriceUpdate[] = [
 // these two lists disjoint by (modelSlug, providerSlug).
 // ---------------------------------------------------------------------------
 const DISABLES: PriceDisable[] = [
+  // These legacy Azure model rows are absent from the current official
+  // standard-token pricing table and must not retain parser-corrupted prices.
+  { modelSlug: 'gpt-4-turbo', providerSlug: 'azure-openai',
+    reason: 'not listed in the current Azure OpenAI standard-token pricing table' },
+  { modelSlug: 'gpt-3.5-turbo', providerSlug: 'azure-openai',
+    reason: 'not listed in the current Azure OpenAI standard-token pricing table' },
+
   // output<input records where we don't have ground truth on that specific channel
   { modelSlug: 'mistral-large', providerSlug: 'aws-bedrock',
     reason: 'output<input ($14/$3) — likely AWS Bedrock pricing inverted or unit wrong' },

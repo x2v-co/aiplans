@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { attachPrimaryProvidersToModels, getAllModelIdsForProvider } from '@/lib/schema-adapters';
 
-// Enable ISR with 5 minute revalidation
-export const revalidate = 300;
+// The response varies by query string, so it cannot be statically rendered.
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
@@ -13,41 +13,45 @@ export async function GET(request: Request) {
     const featured = searchParams.get('featured');
     const includePlanCount = searchParams.get('include_plan_count');
 
-    let query = supabase
-      .from('models')
-      .select('*')
-      .order('name');
-
-    if (type) {
-      query = query.eq('type', type);
-    }
+    let matchedModelIds: number[] | null = null;
     if (providerId) {
-      const matchedModelIds = await getAllModelIdsForProvider(parseInt(providerId));
+      matchedModelIds = await getAllModelIdsForProvider(parseInt(providerId));
       if (matchedModelIds.length === 0) {
         return NextResponse.json([]);
       }
-      query = query.in('id', matchedModelIds);
     }
 
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    let products = data || [];
+    const productRows = matchedModelIds
+      ? await sql<any[]>`
+          SELECT * FROM models
+          WHERE (${type}::text IS NULL OR type = ${type})
+            AND id = ANY(${sql.array(matchedModelIds, 23)})
+          ORDER BY name
+        `
+      : await sql<any[]>`
+          SELECT * FROM models
+          WHERE (${type}::text IS NULL OR type = ${type})
+          ORDER BY name
+        `;
+    let products: any[] = [...productRows];
 
     // Fetch benchmark scores from model_benchmark_scores table
     const modelIds = products.map((p: any) => p.id);
-    const { data: benchmarkData } = await supabase
-      .from('model_benchmark_scores')
-      .select('model_id, value')
-      .in('model_id', modelIds)
-      .order('value', { ascending: false });
+    const benchmarkData: Array<{ model_id: number; value: number | null }> = modelIds.length > 0
+      ? [...await sql<Array<{ model_id: number; value: number | null }>>`
+          SELECT model_id, value
+          FROM model_benchmark_scores
+          WHERE model_id = ANY(${sql.array(modelIds, 23)})
+          ORDER BY value DESC NULLS LAST
+        `]
+      : [];
 
     // Create benchmark map: model_id -> highest value
     const benchmarkMap = new Map<number, number>();
-    (benchmarkData || []).forEach((bs: any) => {
+    benchmarkData.forEach((bs) => {
       const modelId = bs.model_id;
       const value = bs.value;
+      if (value == null) return;
       if (!benchmarkMap.has(modelId) || value > (benchmarkMap.get(modelId) || 0)) {
         benchmarkMap.set(modelId, value);
       }
@@ -64,14 +68,17 @@ export async function GET(request: Request) {
     // Include plan count if requested (must do this before featured filtering)
     if (includePlanCount === 'true') {
       const modelIds = products.map((p: any) => p.id);
-      const { data: planMappings } = await supabase
-        .from('model_plan_mapping')
-        .select('model_id, plan_id')
-        .not('plan_id', 'is', null)
-        .in('model_id', modelIds);
+      const planMappings: Array<{ model_id: number; plan_id: number | null }> = modelIds.length > 0
+        ? [...await sql<Array<{ model_id: number; plan_id: number | null }>>`
+            SELECT model_id, plan_id
+            FROM model_plan_mapping
+            WHERE plan_id IS NOT NULL
+              AND model_id = ANY(${sql.array(modelIds, 23)})
+          `]
+        : [];
 
       const planCountMap = new Map();
-      (planMappings || []).forEach((m: any) => {
+      planMappings.forEach((m) => {
         if (m.plan_id) {
           planCountMap.set(m.model_id, (planCountMap.get(m.model_id) || 0) + 1);
         }

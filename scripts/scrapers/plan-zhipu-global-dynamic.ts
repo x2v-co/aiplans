@@ -1,224 +1,77 @@
-/**
- * Zhipu AI Global (Z.AI) Plan Scraper - Dynamic fetching from Z.AI subscription page
- */
+/** Z.AI global GLM Coding Plan scraper. */
+import type { PlanScraperResult, ScrapedPlan } from '../utils/plan-validator';
+import { chromium } from 'playwright';
 
-import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
-import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { fetchHTMLSmart } from './base-fetcher';
-
-const ZHIPU_GLOBAL_PLANS_URL = 'https://z.ai/subscribe';
-const ZHIPU_GLOBAL_INVITE_LINK = 'https://z.ai/subscribe?ic=HFGTURQAPY';
-
-interface ZhipuGlobalPlan {
-  name: string;
-  priceMonthly: number;
-  priceYearly?: number;
-  tier: 'free' | 'basic' | 'pro' | 'team' | 'enterprise';
-  dailyMessageLimit?: number;
-  features: string[];
-  paymentMethods: string[];
-  accessFromChina: boolean;
-  region: string;
-}
-
-/**
- * Fetch and parse Zhipu AI Global subscription plans from their website
- */
-async function fetchZhipuGlobalPlans(): Promise<{ plans: ZhipuGlobalPlan[], errors: string[] }> {
-  const result = await fetchHTMLSmart(ZHIPU_GLOBAL_PLANS_URL);
-  const errors: string[] = [];
-
-  if (!result.success || !result.data) {
-    return { plans: [], errors: ['Failed to fetch Zhipu Global plans page - no HTML returned'] };
-  }
-
-  const html = result.data;
-  const plans: ZhipuGlobalPlan[] = [];
-
-  // Extract prices from HTML - only proceed if we can find actual pricing data
-  const litePriceMatch = html.match(/Lite[^$]*?\$\s*[\d,]+/i);
-  const proPriceMatch = html.match(/Pro[^$]*?\$\s*[\d,]+/i);
-  const teamPriceMatch = html.match(/Team[^$]*?\$\s*[\d,]+/i);
-  const enterpriseMatch = html.match(/Enterprise/i);
-
-  // Check if we found any pricing information
-  if (!litePriceMatch && !proPriceMatch && !teamPriceMatch && !enterpriseMatch) {
-    return {
-      plans: [],
-      errors: ['No pricing information found on Zhipu Global page. The page structure may have changed.']
-    };
-  }
-
-  // Free plan - check if mentioned on page
-  if (html.match(/free|Free|FREE/i)) {
-    const freePlan: ZhipuGlobalPlan = {
-      name: 'Z.AI Free',
-      priceMonthly: 0,
-      tier: 'free',
-      dailyMessageLimit: undefined,
-      features: ['Access to GLM models', 'Limited message capacity'],
-      paymentMethods: [],
-      accessFromChina: true,
-      region: 'global',
-    };
-    plans.push(freePlan);
-  }
-
-  // Lite plan - only add if we found the price
-  if (litePriceMatch) {
-    const priceMatch = litePriceMatch[0].match(/\$?\s*([\d,]+)/);
-    if (priceMatch) {
-      const litePlan: ZhipuGlobalPlan = {
-        name: 'Z.AI Lite',
-        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
-        priceYearly: undefined,
-        tier: 'basic',
-        dailyMessageLimit: undefined,
-        features: [], // Features should be extracted from actual page content
-        paymentMethods: ['Credit Card', 'PayPal'],
-        accessFromChina: true,
-        region: 'global',
-      };
-      plans.push(litePlan);
-    }
-  }
-
-  // Pro plan - only add if we found the price
-  if (proPriceMatch) {
-    const priceMatch = proPriceMatch[0].match(/\$?\s*([\d,]+)/);
-    if (priceMatch) {
-      const proPlan: ZhipuGlobalPlan = {
-        name: 'Z.AI Pro',
-        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
-        priceYearly: undefined,
-        tier: 'pro',
-        dailyMessageLimit: undefined,
-        features: [],
-        paymentMethods: ['Credit Card', 'PayPal'],
-        accessFromChina: true,
-        region: 'global',
-      };
-      plans.push(proPlan);
-    }
-  }
-
-  // Team plan - only add if we found the price
-  if (teamPriceMatch) {
-    const priceMatch = teamPriceMatch[0].match(/\$?\s*([\d,]+)/);
-    if (priceMatch) {
-      const teamPlan: ZhipuGlobalPlan = {
-        name: 'Z.AI Team',
-        priceMonthly: parseFloat(priceMatch[1].replace(',', '')),
-        priceYearly: undefined,
-        tier: 'team',
-        dailyMessageLimit: undefined,
-        features: [],
-        paymentMethods: ['Credit Card', 'PayPal', 'Invoice'],
-        accessFromChina: true,
-        region: 'global',
-      };
-      plans.push(teamPlan);
-    }
-  }
-
-  // Enterprise plan - only add if mentioned (custom pricing)
-  if (enterpriseMatch) {
-    const enterprisePlan: ZhipuGlobalPlan = {
-      name: 'Z.AI Enterprise',
-      priceMonthly: 0, // Custom pricing
-      tier: 'enterprise',
-      dailyMessageLimit: undefined,
-      features: [],
-      paymentMethods: ['Invoice', 'Contract'],
-      accessFromChina: true,
-      region: 'global',
-    };
-    plans.push(enterprisePlan);
-  }
-
-  if (plans.length === 0) {
-    errors.push('No plans could be parsed from Zhipu Global pricing page. The page structure may have changed.');
-  }
-
-  return { plans, errors };
-}
+const URL = 'https://z.ai/subscribe';
 
 export async function scrapeZhipuGlobalPlans(): Promise<PlanScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const plans: ScrapedPlan[] = [];
-
+  console.log('🔄 Fetching Zhipu AI Global subscription plans...');
+  const browser = await chromium.launch({ headless: true });
+  let text = '';
   try {
-    console.log('🔄 Fetching Zhipu AI Global (Z.AI) subscription plans...');
-
-    const { plans: zhipuGlobalPlans, errors: fetchErrors } = await fetchZhipuGlobalPlans();
-    if (fetchErrors.length > 0) {
-      errors.push(...fetchErrors);
-    }
-
-    console.log(`📦 Found ${zhipuGlobalPlans.length} plans from Zhipu AI Global`);
-    console.log(`🔗 Invite Link: ${ZHIPU_GLOBAL_INVITE_LINK}`);
-
-    for (const plan of zhipuGlobalPlans) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const page = await browser.newPage({ locale: 'en-US' });
       try {
-        // Validate monthly price
-        if (!validatePlanPrice(plan.priceMonthly)) {
-          errors.push(`Invalid monthly price for ${plan.name}: ${plan.priceMonthly}`);
-          continue;
-        }
-
-        // Validate yearly price if present
-        if (plan.priceYearly !== null && plan.priceYearly !== undefined && !validatePlanPrice(plan.priceYearly)) {
-          errors.push(`Invalid yearly price for ${plan.name}: ${plan.priceYearly}`);
-          plan.priceYearly = undefined;
-        }
-
-        plans.push({
-          planName: normalizePlanName(plan.name),
-          planSlug: slugifyPlan(plan.name),
-          priceMonthly: plan.priceMonthly,
-          priceYearly: plan.priceYearly,
-          pricingModel: 'subscription',
-          tier: plan.tier,
-          dailyMessageLimit: plan.dailyMessageLimit,
-          features: plan.features,
-          region: plan.region,
-          accessFromChina: plan.accessFromChina,
-          paymentMethods: plan.paymentMethods,
-          isOfficial: true,
-          currency: 'USD',
-        });
+        const response = await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+        if (!response?.ok()) continue;
+        await page.waitForFunction(
+          () => /Lite/i.test(document.body.innerText) && /Pro/i.test(document.body.innerText)
+            && /Max/i.test(document.body.innerText) && /\$\s*\d/.test(document.body.innerText),
+          undefined,
+          { timeout: 15_000 }
+        );
+        text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').trim();
+        break;
       } catch (error) {
-        errors.push(`Error processing plan ${plan.name}: ${error}`);
+        if (attempt === 3) {
+          return {
+            source: 'ZhipuGlobal-Plans',
+            success: false,
+            plans: [],
+            errors: [`Pricing content did not load after 3 attempts: ${String(error)}`],
+          };
+        }
+      } finally {
+        await page.close();
       }
     }
-
-    const duration = Date.now() - startTime;
-    console.log(`✅ Zhipu AI Global plans scrape completed in ${duration}ms`);
-    console.log(`   - Plans processed: ${plans.length}`);
-    console.log(`   - Errors: ${errors.length}`);
-
-    return {
-      source: 'ZhipuGlobal-Plans',
-      success: errors.length === 0 && plans.length > 0,
-      plans,
-      errors: errors.length > 0 ? errors : undefined,
-    };
-  } catch (error) {
-    console.error('❌ Zhipu AI Global plans scrape failed:', error);
-    return {
-      source: 'ZhipuGlobal-Plans',
-      success: false,
-      plans: [],
-      errors: [String(error)],
-    };
+  } finally {
+    await browser.close();
   }
+  const rows = [
+    extractTier(text, 'Lite', 'Pro', 'z-ai-lite', 'Z.AI Lite', 'basic'),
+    extractTier(text, 'Pro', 'Max', 'z-ai-pro', 'Z.AI Pro', 'pro'),
+    extractTier(text, 'Max', 'Invite friends', 'z-ai-max', 'Z.AI Max', 'enterprise'),
+  ];
+  if (rows.some(row => row == null)) {
+    return { source: 'ZhipuGlobal-Plans', success: false, plans: [], errors: ['Lite/Pro/Max monthly prices not found'] };
+  }
+
+  const plans: ScrapedPlan[] = rows.map(row => {
+    const item = row!;
+    return {
+      planName: item.name,
+      planSlug: item.slug,
+      priceMonthly: item.price,
+      priceYearly: Math.round(item.price * 12 * 0.7 * 100) / 100,
+      pricingModel: 'subscription',
+      tier: item.tier,
+      features: [],
+      region: 'global',
+      accessFromChina: true,
+      paymentMethods: ['Credit Card', 'PayPal'],
+      isOfficial: true,
+      currency: 'USD',
+    };
+  });
+  return { source: 'ZhipuGlobal-Plans', success: true, plans };
 }
 
-// CLI test
-if (require.main === module) {
-  scrapeZhipuGlobalPlans().then(result => {
-    console.log('\n📊 Scrape Result:');
-    console.log(JSON.stringify(result, null, 2));
-  });
+function extractTier(text: string, start: string, end: string, slug: string, name: string, tier: ScrapedPlan['tier']) {
+  const section = text.match(new RegExp(`${start}[\\s\\S]*?(?=${end})`, 'i'))?.[0];
+  const prices = section ? [...section.matchAll(/\$\s*([\d.]+)\s*\/month/g)].map(match => Number(match[1])) : [];
+  const regularPrice = prices.length > 0 ? Math.max(...prices) : null;
+  return regularPrice == null ? null : { slug, name, tier, price: regularPrice };
 }
+
+if (require.main === module) scrapeZhipuGlobalPlans().then(result => console.log(JSON.stringify(result, null, 2)));

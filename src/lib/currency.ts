@@ -3,7 +3,7 @@
  * 用于格式化和处理不同货币的价格显示
  */
 
-export type CurrencyCode = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'KRW';
+export type CurrencyCode = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'KRW' | 'SGD';
 
 export type PriceUnit = 'per_month' | 'per_year' | 'per_1m_tokens' | 'per_1k_tokens' | 'per_pack' | 'per_request';
 
@@ -24,6 +24,7 @@ export const CURRENCY_INFO: Record<CurrencyCode, CurrencyInfo> = {
   GBP: { code: 'GBP', symbol: '£', name: 'British Pound', locale: 'en-GB' },
   JPY: { code: 'JPY', symbol: '¥', name: 'Japanese Yen', locale: 'ja-JP' },
   KRW: { code: 'KRW', symbol: '₩', name: 'South Korean Won', locale: 'ko-KR' },
+  SGD: { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar', locale: 'en-SG' },
 };
 
 /**
@@ -137,6 +138,7 @@ export function convertCurrency(
     GBP: 0.79,
     JPY: 149.5,
     KRW: 1320,
+    SGD: 1.35,
   };
 
   const fromRate = EXCHANGE_RATES[fromCurrency];

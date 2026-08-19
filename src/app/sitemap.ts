@@ -1,8 +1,10 @@
 import { MetadataRoute } from 'next';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 const BASE_URL = 'https://aiplans.dev';
 const LOCALES = ['en', 'zh'] as const;
+
+export const dynamic = 'force-dynamic';
 
 interface UrlEntry {
   url: string;
@@ -44,11 +46,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic: every provider in DB → /plans/[provider]
   try {
-    const { data: providers } = await supabase
-      .from('providers')
-      .select('slug, updated_at')
-      .order('priority', { ascending: true });
-    for (const p of providers ?? []) {
+    const providers = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
+      SELECT slug, updated_at FROM providers ORDER BY priority ASC NULLS LAST
+    `;
+    for (const p of providers) {
       if (!p.slug) continue;
       const lastMod = p.updated_at ? new Date(p.updated_at) : now;
       for (const locale of LOCALES) {
@@ -72,14 +73,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic: every LLM model in DB → /[locale]/models/[slug]
   try {
-    const { data: models } = await supabase
-      .from('models')
-      .select('slug, updated_at')
-      .eq('type', 'llm')
-      .order('updated_at', { ascending: false })
-      .limit(500);
+    const models = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
+      SELECT slug, updated_at
+      FROM models
+      WHERE type = 'llm'
+      ORDER BY updated_at DESC NULLS LAST
+      LIMIT 500
+    `;
     const seen = new Set<string>();
-    for (const m of models ?? []) {
+    for (const m of models) {
       if (!m.slug || seen.has(m.slug)) continue;
       seen.add(m.slug);
       const lastMod = m.updated_at ? new Date(m.updated_at) : now;

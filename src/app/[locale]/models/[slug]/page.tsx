@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Check, ExternalLink, TrendingDown, Zap, Globe } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 import { use } from "react";
-import { getPrimaryProvidersForModels, normalizeProviderRecord } from "@/lib/schema-adapters";
+import { getPrimaryProvidersForModels } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
@@ -20,7 +20,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale, slug } = await params;
 
   // Get product name
-  const { data: product } = await supabase.from('models').select('name').eq('slug', slug).single();
+  const [product] = await sql<Array<{ name: string }>>`
+    SELECT name FROM models WHERE slug = ${slug} LIMIT 1
+  `;
   const productName = product?.name || slug;
 
   return buildMetadata({
@@ -48,20 +50,12 @@ const channelTypeLabels: Record<string, { label: string; color: string }> = {
 
 async function getProductWithChannels(slug: string) {
   // Get model with provider info
-  const { data: model } = await supabase
-    .from('models')
-    .select(`
-      id,
-      name,
-      slug,
-      type,
-      description,
-      context_window,
-      max_output_tokens,
-      provider_ids
-    `)
-    .eq('slug', slug)
-    .single();
+  const [model] = await sql<any[]>`
+    SELECT id, name, slug, type, description, context_window, max_output_tokens, provider_ids
+    FROM models
+    WHERE slug = ${slug}
+    LIMIT 1
+  `;
 
   if (!model) return null;
 
@@ -69,45 +63,36 @@ async function getProductWithChannels(slug: string) {
   const modelProvider = modelProviders.get(model.id) || null;
 
   // Get API channel prices
-  const { data: channelPrices } = await supabase
-    .from('api_channel_prices')
-    .select(`
-      id,
-      input_price_per_1m,
-      output_price_per_1m,
-      cached_input_price_per_1m,
-      rate_limit,
-      is_available,
-      providers:provider_id (
-        id,
-        name,
-        slug,
-        type,
-        logo,
-        logo_url,
-        website,
-        region,
-        access_from_china,
-        description
-      )
-    `)
-    .eq('model_id', model.id)
-    .eq('is_available', true)
-    .order('input_price_per_1m', { ascending: true });
-
-  const normalizedChannelPrices = (channelPrices || []).map((channel: any) => ({
-    ...channel,
-    providers: normalizeProviderRecord(channel.providers),
-  }));
+  const normalizedChannelPrices = await sql<any[]>`
+    SELECT
+      cp.*,
+      jsonb_build_object(
+        'id', p.id,
+        'name', p.name,
+        'slug', p.slug,
+        'type', p.type,
+        'logo', p.logo,
+        'logo_url', p.logo_url,
+        'website', p.website,
+        'region', p.region,
+        'access_from_china', p.access_from_china,
+        'description', p.description
+      ) AS providers
+    FROM api_channel_prices cp
+    JOIN providers p ON p.id = cp.provider_id
+    WHERE cp.model_id = ${model.id} AND cp.is_available = true
+    ORDER BY cp.input_price_per_1m ASC NULLS LAST
+  `;
 
   // Fetch Arena ELO score for this model (used in JSON-LD + visible badge)
-  const { data: arenaScores } = await supabase
-    .from('model_benchmark_scores')
-    .select('value, benchmark_metrics!inner(name)')
-    .eq('model_id', model.id)
-    .eq('benchmark_metrics.name', 'ELO')
-    .order('value', { ascending: false })
-    .limit(1);
+  const arenaScores = await sql<Array<{ value: number | null }>>`
+    SELECT s.value
+    FROM model_benchmark_scores s
+    JOIN benchmark_metrics bm ON bm.id = s.metric_id
+    WHERE s.model_id = ${model.id} AND bm.name = 'ELO'
+    ORDER BY s.value DESC NULLS LAST
+    LIMIT 1
+  `;
   const arenaElo = arenaScores?.[0]?.value ?? null;
 
   const derivedProvider =
@@ -116,39 +101,35 @@ async function getProductWithChannels(slug: string) {
     null;
 
   // Get plans that include this model via model_plan_mapping
-  const { data: modelPlanMappings } = await supabase
-    .from('model_plan_mapping')
-    .select(`
-      plan_id,
-      model_id,
-      priority
-    `)
-    .eq('model_id', model.id);
+  const modelPlanMappings = await sql<Array<{ plan_id: number | null }>>`
+    SELECT plan_id FROM model_plan_mapping WHERE model_id = ${model.id}
+  `;
 
   // Get plan IDs and fetch full plan details
-  const planIds = (modelPlanMappings || []).map((m: any) => m.plan_id).filter(Boolean);
+  const planIds = modelPlanMappings.map((m) => m.plan_id).filter((id): id is number => id != null);
 
-  const { data: plansData } = planIds.length > 0 ? await supabase
-    .from('plans')
-    .select(`
-      id,
-      name,
-      slug,
-      tier,
-      price,
-      annual_price,
-      features,
-      access_from_china,
-      provider_id,
-      providers:provider_id (
-        id,
-        name,
-        slug,
-        logo
-      )
-    `)
-    .in('id', planIds)
-    .order('price', { ascending: true }) : { data: [] };
+  const plansData: any[] = planIds.length > 0 ? [...await sql<any[]>`
+    SELECT
+      pl.id,
+      pl.name,
+      pl.slug,
+      pl.tier,
+      pl.price,
+      pl.annual_price,
+      pl.features,
+      pl.access_from_china,
+      pl.provider_id,
+      CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object(
+        'id', p.id,
+        'name', p.name,
+        'slug', p.slug,
+        'logo', p.logo
+      ) END AS providers
+    FROM plans pl
+    LEFT JOIN providers p ON p.id = pl.provider_id
+    WHERE pl.id = ANY(${sql.array(planIds, 23)})
+    ORDER BY pl.price ASC NULLS LAST
+  `] : [];
 
   // Return the model with provider attached
   const product = {
@@ -161,12 +142,13 @@ async function getProductWithChannels(slug: string) {
   const channelIds = normalizedChannelPrices.map((cp: any) => cp.id);
   const priceHistory: PriceHistoryPoint[] = [];
   if (channelIds.length > 0) {
-    const { data: historyRows } = await supabase
-      .from('price_history')
-      .select('channel_price_id, new_input_price, new_output_price, currency, recorded_at')
-      .in('channel_price_id', channelIds)
-      .order('recorded_at', { ascending: true })
-      .limit(500);
+    const historyRows = await sql<any[]>`
+      SELECT channel_price_id, new_input_price, new_output_price, currency, recorded_at
+      FROM price_history
+      WHERE channel_price_id = ANY(${sql.array(channelIds, 23)})
+      ORDER BY recorded_at ASC
+      LIMIT 500
+    `;
 
     const providerByChannelId = new Map<number, { slug: string; name: string }>();
     for (const cp of normalizedChannelPrices) {
@@ -178,7 +160,7 @@ async function getProductWithChannels(slug: string) {
       }
     }
 
-    for (const h of historyRows ?? []) {
+    for (const h of historyRows) {
       const prov = providerByChannelId.get(h.channel_price_id);
       if (!prov) continue;
       priceHistory.push({
@@ -196,7 +178,7 @@ async function getProductWithChannels(slug: string) {
   return {
     product,
     channelPrices: normalizedChannelPrices,
-    plans: plansData || [],
+    plans: plansData,
     arenaElo,
     priceHistory,
   };

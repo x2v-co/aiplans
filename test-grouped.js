@@ -1,12 +1,11 @@
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
-import { createClient } from '@supabase/supabase-js';
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import postgres from 'postgres';
+const sql = postgres(process.env.DATABASE_URL, { max: 1 });
 
 (async () => {
-  const productsRes = await supabase.from('products').select('id, name').eq('type', 'llm').limit(1);
-  console.log('Products:', JSON.stringify(productsRes.data, null, 2));
+  const models = await sql`SELECT id, name FROM models WHERE type = 'llm' ORDER BY id LIMIT 1`;
+  console.log('Models:', JSON.stringify(models, null, 2));
+  await sql.end();
 })();

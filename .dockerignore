@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.vercel
+.env*
+!.env.example
+.npm-cache
+node_modules.bak
+*.log
+coverage
+playwright-report

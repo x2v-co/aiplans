@@ -1,6 +1,7 @@
 /**
- * Replicate API Scraper - Dynamic fetching from pricing page
- * NO FALLBACK DATA - Fails cleanly when scraping fails
+ * Replicate API scraper - reads the token-priced examples from the pricing page.
+ * The page also contains image, video, hardware, and training prices, so only
+ * entries with explicit input/output token units are accepted.
  */
 
 import { normalizeModelName } from '../utils/validator';
@@ -8,47 +9,19 @@ import { PlaywrightScraper, PriceData, ScraperResult } from './lib/playwright-sc
 
 const REPLICATE_PRICING_URL = 'https://replicate.com/pricing';
 
-/**
- * Known Replicate models with their characteristics
- * Replicate charges per token for LLMs
- * Updated 2026-03-19
- */
-const KNOWN_MODELS = [
-  // Llama 4 series
-  { pattern: /llama-4.*maverick/i, name: 'llama-4-maverick', minInput: 0.1, maxInput: 0.4, minOutput: 0.3, maxOutput: 1, context: 128000 },
-  { pattern: /llama-4.*scout/i, name: 'llama-4-scout', minInput: 0.03, maxInput: 0.15, minOutput: 0.1, maxOutput: 0.5, context: 128000 },
+const TOKEN_PRICE_PATTERN =
+  /\$(\d+(?:\.\d+)?)\s*\/\s*(thousand|million)\s+output tokens\s*\$(\d+(?:\.\d+)?)\s*\/\s*(thousand|million)\s+input tokens/i;
 
-  // Llama 3.3 series
-  { pattern: /llama-3\.3.*70b/i, name: 'llama-3.3-70b-instruct', minInput: 0.4, maxInput: 1, minOutput: 0.4, maxOutput: 1, context: 128000 },
+function perMillion(value: string, unit: string): number {
+  const price = Number.parseFloat(value);
+  return unit.toLowerCase() === 'thousand' ? price * 1000 : price;
+}
 
-  // Llama 3.1 series
-  { pattern: /llama-3\.1.*405b/i, name: 'llama-3.1-405b-instruct', minInput: 1.5, maxInput: 3, minOutput: 1.5, maxOutput: 3, context: 131072 },
-  { pattern: /llama-3\.1.*70b/i, name: 'llama-3.1-70b-instruct', minInput: 0.4, maxInput: 1, minOutput: 0.4, maxOutput: 1, context: 131072 },
-  { pattern: /llama-3\.1.*8b/i, name: 'llama-3.1-8b-instruct', minInput: 0.02, maxInput: 0.1, minOutput: 0.02, maxOutput: 0.1, context: 131072 },
-
-  // Llama 3 series
-  { pattern: /llama-3.*70b(?!-b)/i, name: 'llama-3-70b-instruct', minInput: 0.4, maxInput: 1, minOutput: 0.4, maxOutput: 1, context: 8192 },
-  { pattern: /llama-3.*8b/i, name: 'llama-3-8b-instruct', minInput: 0.02, maxInput: 0.1, minOutput: 0.02, maxOutput: 0.1, context: 8192 },
-
-  // Mixtral series
-  { pattern: /mixtral.*8x22b/i, name: 'mixtral-8x22b-instruct', minInput: 0.6, maxInput: 1.5, minOutput: 0.6, maxOutput: 1.5, context: 65536 },
-  { pattern: /mixtral.*8x7b/i, name: 'mixtral-8x7b-instruct', minInput: 0.3, maxInput: 0.7, minOutput: 0.3, maxOutput: 0.7, context: 32768 },
-
-  // Mistral series
-  { pattern: /mistral.*7b/i, name: 'mistral-7b-instruct', minInput: 0.02, maxInput: 0.1, minOutput: 0.02, maxOutput: 0.1, context: 32768 },
-
-  // Qwen series
-  { pattern: /qwen2\.5.*72b/i, name: 'qwen2.5-72b-instruct', minInput: 0.2, maxInput: 0.6, minOutput: 0.2, maxOutput: 0.6, context: 32768 },
-  { pattern: /qwen2\.5.*7b/i, name: 'qwen2.5-7b-instruct', minInput: 0.01, maxInput: 0.05, minOutput: 0.01, maxOutput: 0.05, context: 32768 },
-
-  // DeepSeek series
-  { pattern: /deepseek-r1/i, name: 'deepseek-r1', minInput: 2, maxInput: 5, minOutput: 2, maxOutput: 12, context: 128000 },
-  { pattern: /deepseek-v3/i, name: 'deepseek-v3', minInput: 0.3, maxInput: 1, minOutput: 0.3, maxOutput: 1, context: 128000 },
-
-  // Claude (via Anthropic on Replicate)
-  { pattern: /claude.*3\.7.*sonnet/i, name: 'claude-3.7-sonnet', minInput: 2, maxInput: 4, minOutput: 8, maxOutput: 18, context: 200000 },
-  { pattern: /claude.*3\.5.*sonnet/i, name: 'claude-3.5-sonnet', minInput: 2, maxInput: 4, minOutput: 8, maxOutput: 18, context: 200000 },
-];
+function inferContextWindow(modelName: string): number | null {
+  if (modelName.includes('claude-')) return 200000;
+  if (modelName.includes('deepseek-')) return 128000;
+  return null;
+}
 
 class ReplicateScraper extends PlaywrightScraper {
   getSourceName(): string {
@@ -60,135 +33,52 @@ class ReplicateScraper extends PlaywrightScraper {
   }
 
   async scrape(): Promise<ScraperResult> {
-    const errors: string[] = [];
-    const prices: PriceData[] = [];
-
     await this.navigate(REPLICATE_PRICING_URL);
+    await this.page!.waitForTimeout(3000);
 
-    // Wait for page to fully load
-    await this.page!.waitForTimeout(5000);
+    const prices: PriceData[] = [];
+    const modelCards = this.page!.locator('a[href^="https://replicate.com/"]');
 
-    // Get all text content from the page
-    const bodyText = await this.page!.textContent('body') || '';
-    console.log('📝 Body text length:', bodyText.length);
+    for (let index = 0; index < await modelCards.count(); index++) {
+      const card = modelCards.nth(index);
+      const href = await card.getAttribute('href');
+      if (!href) continue;
 
-    // Debug: Print first 3000 chars
-    console.log('📄 First 3000 chars of body text:');
-    console.log(bodyText.substring(0, 3000));
+      const pathname = new URL(href).pathname;
+      const modelPath = pathname.match(/^\/([a-z0-9][a-z0-9-]*)\/([a-z0-9][a-z0-9._-]*)\/?$/i);
+      const priceMatch = (await card.innerText()).match(TOKEN_PRICE_PATTERN);
+      if (!modelPath || !priceMatch) continue;
 
-    // Split text into lines for analysis
-    const lines = bodyText.split('\n').map(l => l.trim()).filter(l => l);
+      const modelName = normalizeModelName(modelPath[2]);
+      const outputPrice = perMillion(priceMatch[1], priceMatch[2]);
+      const inputPrice = perMillion(priceMatch[3], priceMatch[4]);
 
-    // Extract prices for each known model
-    for (const modelInfo of KNOWN_MODELS) {
-      const found = this.extractModelPrice(lines, modelInfo);
-      if (found) {
-        // Avoid duplicates
-        if (!prices.some(p => p.modelName === found.modelName)) {
-          prices.push(found);
-          console.log(`  ✅ Found: ${found.modelName} - $${found.inputPricePer1M}/$${found.outputPricePer1M} per 1M tokens`);
-        }
+      if (!Number.isFinite(inputPrice) || !Number.isFinite(outputPrice) || outputPrice < inputPrice) {
+        continue;
+      }
+
+      if (!prices.some(price => price.modelName === modelName)) {
+        prices.push({
+          modelName,
+          inputPricePer1M: inputPrice,
+          outputPricePer1M: outputPrice,
+          contextWindow: inferContextWindow(modelName),
+          isAvailable: true,
+          currency: 'USD',
+        });
       }
     }
 
-    // Deduplicate by model name
-    const uniquePrices = prices.filter((price, index, self) =>
-      index === self.findIndex(p => p.modelName === price.modelName)
-    );
-
-    if (uniquePrices.length === 0) {
-      errors.push('No pricing data could be extracted from Replicate pricing page. The page structure may have changed.');
-    }
+    const errors = prices.length === 0
+      ? ['No entries with explicit input and output token pricing were found on the Replicate pricing page.']
+      : undefined;
 
     return {
-      success: errors.length === 0 && uniquePrices.length > 0,
+      success: prices.length > 0,
       source: this.getSourceName(),
-      prices: uniquePrices,
-      errors: errors.length > 0 ? errors : undefined,
+      prices,
+      errors,
     };
-  }
-
-  /**
-   * Extract price for a specific model from text lines
-   * Parses format: "Llama 3.1 70B $0.60 per 1M tokens"
-   */
-  private extractModelPrice(
-    lines: string[],
-    modelInfo: { pattern: RegExp; name: string; minInput: number; maxInput: number; minOutput: number; maxOutput: number; context: number }
-  ): PriceData | null {
-    // Find lines containing this model name
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-
-      // Check if this line matches the model pattern
-      if (modelInfo.pattern.test(line)) {
-        // Use context window of 5 lines to find prices
-        const contextStart = i;
-        const contextEnd = Math.min(lines.length, i + 5);
-        const contextLines = lines.slice(contextStart, contextEnd);
-
-        let inputPrice: number | null = null;
-        let outputPrice: number | null = null;
-
-        // Look for prices in the context
-        // Pattern: "$0.60" or "0.60"
-        for (const ctxLine of contextLines) {
-          // Stop if we hit another model section
-          if (/(llama|mixtral|mistral|qwen|deepseek|claude)/i.test(ctxLine) && !modelInfo.pattern.test(ctxLine)) {
-            break;
-          }
-
-          // Extract all prices from the line
-          const priceMatches = [...ctxLine.matchAll(/\$?(\d+\.?\d+)/g)];
-          const allPrices = priceMatches.map(m => parseFloat(m[1])).filter(p => p > 0 && p < 50);
-
-          if (allPrices.length >= 1) {
-            // Find input and output prices in expected ranges
-            const inpPrice = allPrices.find(p => p >= modelInfo.minInput && p <= modelInfo.maxInput);
-            const outPrice = allPrices.find(p => p >= modelInfo.minOutput && p <= modelInfo.maxOutput);
-
-            if (inpPrice) {
-              inputPrice = inpPrice;
-              outputPrice = outPrice || inpPrice;
-              break;
-            }
-          }
-        }
-
-        if (inputPrice && outputPrice) {
-          return {
-            modelName: normalizeModelName(modelInfo.name),
-            inputPricePer1M: inputPrice,
-            outputPricePer1M: outputPrice,
-            contextWindow: modelInfo.context,
-            isAvailable: true,
-            currency: 'USD',
-          };
-        }
-
-        // Fallback: Try to extract from the line itself
-        const linePrices = [...line.matchAll(/\$?(\d+\.?\d+)/g)];
-        const prices = linePrices.map(m => parseFloat(m[1])).filter(p => p > 0 && p < 50);
-
-        if (prices.length >= 1) {
-          const inpPrice = prices.find(p => p >= modelInfo.minInput && p <= modelInfo.maxInput);
-          const outPrice = prices.find(p => p >= modelInfo.minOutput && p <= modelInfo.maxOutput);
-
-          if (inpPrice) {
-            return {
-              modelName: normalizeModelName(modelInfo.name),
-              inputPricePer1M: inpPrice,
-              outputPricePer1M: outPrice || inpPrice,
-              contextWindow: modelInfo.context,
-              isAvailable: true,
-              currency: 'USD',
-            };
-          }
-        }
-      }
-    }
-
-    return null;
   }
 }
 
@@ -197,10 +87,9 @@ export async function scrapeReplicateDynamic(): Promise<ScraperResult> {
   return scraper.run();
 }
 
-// CLI test
 if (require.main === module) {
   scrapeReplicateDynamic().then(result => {
-    console.log('\n📊 Scrape Result:');
+    console.log('\nScrape result:');
     console.log(JSON.stringify(result, null, 2));
   });
 }

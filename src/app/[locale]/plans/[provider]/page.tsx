@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 import { formatPrice, CurrencyCode } from "@/lib/currency";
 import { getAllModelIdsForProvider, getPlanYearlyMonthly } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
@@ -18,11 +18,12 @@ export async function generateMetadata({
   params: Promise<{ locale: string; provider: string }>;
 }): Promise<Metadata> {
   const { locale, provider: providerSlug } = await params;
-  const { data: provider } = await supabase
-    .from('providers')
-    .select('name, description, region')
-    .eq('slug', providerSlug)
-    .single();
+  const [provider] = await sql<any[]>`
+    SELECT name, description, region
+    FROM providers
+    WHERE slug = ${providerSlug}
+    LIMIT 1
+  `;
   const providerName = provider?.name ?? providerSlug;
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
@@ -48,32 +49,30 @@ const providerInfo: Record<string, { name: string; logo: string; description: st
 };
 
 async function getPlansByProvider(providerSlug: string) {
-  // First get provider
-  const { data: provider } = await supabase
-    .from('providers')
-    .select('*')
-    .eq('slug', providerSlug)
-    .single();
+  const [provider] = await sql<any[]>`
+    SELECT * FROM providers WHERE slug = ${providerSlug} LIMIT 1
+  `;
 
   if (!provider) return null;
 
   // Get plans for this provider directly
-  const { data: plans } = await supabase
-    .from('plans')
-    .select('*')
-    .eq('provider_id', provider.id)
-    .order('price', { ascending: true });
+  const plans = await sql<any[]>`
+    SELECT * FROM plans
+    WHERE provider_id = ${provider.id}
+    ORDER BY price ASC NULLS LAST
+  `;
 
-  const planIds = (plans || []).map(p => p.id);
+  const planIds = plans.map(p => p.id);
   const modelIds = await getAllModelIdsForProvider(provider.id, planIds);
-  const { data: uniqueModels } = modelIds.length > 0
-    ? await supabase
-        .from('models')
-        .select('id, name, slug, provider_ids')
-        .in('id', modelIds)
-    : { data: [] };
+  const uniqueModels: any[] = modelIds.length > 0
+    ? [...await sql<any[]>`
+        SELECT id, name, slug, provider_ids
+        FROM models
+        WHERE id = ANY(${sql.array(modelIds, 23)})
+      `]
+    : [];
 
-  return { provider, models: uniqueModels || [], plans: plans || [] };
+  return { provider, models: uniqueModels, plans };
 }
 
 export default async function ProviderPlansPage({

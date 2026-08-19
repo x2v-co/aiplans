@@ -9,10 +9,7 @@ migrations. See `../CLAUDE.md` for the full system overview.
 npm install
 cp .env.example .env.local   # or create it manually
 # .env.local needs:
-#   NEXT_PUBLIC_SUPABASE_URL
-#   NEXT_PUBLIC_SUPABASE_ANON_KEY
-#   DATABASE_URL               (for raw SQL migrations)
-#   SUPABASE_SERVICE_KEY       (optional, needed for catalog writes)
+#   DATABASE_URL               (required for reads, writes, and migrations)
 ```
 
 ## Routine commands
@@ -35,7 +32,7 @@ The 2026-04 cleanup introduced a full feedback loop:
                                   └── logPriceChange → price_history
                                                            │
                                                            ▼
-                                     audit-data.ts (daily GH Action)
+                                     audit-data.ts (scheduled read-only check)
                                                            │
                                      ┌─────────────────────┤
                                      ▼                     ▼
@@ -62,22 +59,22 @@ Both fix scripts support `--dry-run`.
 
 ## Migrations
 
-`migrate-data-accuracy.ts` runs four idempotent DDL migrations against
-`DATABASE_URL` via the `postgres` client:
+`migrate-data-accuracy.ts` runs idempotent schema/data migrations against
+`DATABASE_URL` via the `postgres` client. They currently cover:
 
-1. `price_history` table (was referenced but never existed)
-2. `plans.notes` + `plans.is_contact_sales` columns
-3. Backfill `plans.notes` from `features.notes`
-4. `plans.source` column + backfill of manual slugs
+1. `price_history` and `clicks` tables
+2. `plans.notes`, `plans.is_contact_sales`, and `plans.source`
+3. plan metadata backfills and manual-source protection
+4. SGD currency constraints and seed rates
+5. retirement or correction of known stale provider/model rows
 
 Re-run any time; all steps use `IF NOT EXISTS` / no-op guards.
 
 ## Arena leaderboard
 
 `ingest-arena-leaderboard.ts` ingests a hand-curated top-60 snapshot of
-Chatbot Arena ELO scores into `model_benchmark_scores`. Requires
-`SUPABASE_SERVICE_KEY` because it writes to `benchmark_metrics` which
-has RLS. The snapshot is embedded as a TS const so the script is
+Chatbot Arena ELO scores into `model_benchmark_scores`. It connects
+directly through `DATABASE_URL`. The snapshot is embedded as a TS const so the script is
 reproducible without re-hitting arena.ai; update the const and re-run
 when you want fresh data.
 
@@ -159,14 +156,18 @@ Register your new scraper in `scripts/index-dynamic.ts`.
 Never ship a hardcoded `prices` fallback — `audit-data.ts` is what
 surfaces staleness, not in-scraper defaults.
 
-## GitHub Actions
+## Scheduling
 
-Two workflows in `.github/workflows/`:
+During migration preparation, the existing GitHub-hosted workflows can keep
+using the source database:
 
 - **`scrape-pricing.yml`** — hourly cron, runs `npm run scrape`
 - **`data-audit.yml`** — daily at 02:00 UTC + on PR, runs
   `audit-data.ts`, fails the check on critical findings, uploads
   output + JSON snapshot as artifacts
 
-Required repo secrets: `NEXT_PUBLIC_SUPABASE_URL`,
-`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`.
+They require the `DATABASE_URL` repo secret. At final self-hosted cutover, do
+not expose PostgreSQL publicly for these runners. Disable their database-backed
+schedules and invoke `deploy/production/run-scrapers.sh` from VPS cron or
+systemd; it runs both scraper groups and the audit inside the private Compose
+network.

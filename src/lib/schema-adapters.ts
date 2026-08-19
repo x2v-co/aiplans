@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 type ModelWithProviderIds = {
   id: number;
@@ -32,12 +32,13 @@ export async function getProvidersByIds(providerIds: number[]): Promise<Map<numb
     return new Map();
   }
 
-  const { data } = await supabase
-    .from('providers')
-    .select('id, name, slug, logo, logo_url, website, invite_url, region, type, access_from_china')
-    .in('id', providerIds);
+  const data = await sql<Provider[]>`
+    SELECT id, name, slug, logo, logo_url, website, invite_url, region, type, access_from_china
+    FROM providers
+    WHERE id = ANY(${sql.array(providerIds, 23)})
+  `;
 
-  return new Map((data || []).map((provider: any) => [provider.id, provider]));
+  return new Map(data.map((provider) => [provider.id, provider]));
 }
 
 export async function getPrimaryProvidersForModels<T extends ModelWithProviderIds>(
@@ -48,15 +49,17 @@ export async function getPrimaryProvidersForModels<T extends ModelWithProviderId
   }
 
   const modelIds = models.map((model) => model.id);
-  const { data: modelOfficialRows } = await supabase
-    .from('model_offical')
-    .select('model_id, producer_id')
-    .in('model_id', modelIds);
+  const modelOfficialRows = await sql<Array<{ model_id: number; producer_id: number | null }>>`
+    SELECT model_id, producer_id
+    FROM model_offical
+    WHERE model_id = ANY(${sql.array(modelIds, 23)})
+    ORDER BY id
+  `;
 
   const providerIds = new Set<number>();
   const modelOfficialMap = new Map<number, number>();
 
-  (modelOfficialRows || []).forEach((row: any) => {
+  modelOfficialRows.forEach((row) => {
     if (!modelOfficialMap.has(row.model_id) && row.producer_id) {
       modelOfficialMap.set(row.model_id, row.producer_id);
       providerIds.add(row.producer_id);
@@ -94,27 +97,30 @@ export async function attachPrimaryProvidersToModels<T extends ModelWithProvider
 export async function getAllModelIdsForProvider(providerId: number, planIds: number[] = []): Promise<number[]> {
   const modelIds = new Set<number>();
 
-  const [{ data: directModels }, { data: officialModels }] = await Promise.all([
-    supabase
-      .from('models')
-      .select('id')
-      .contains('provider_ids', [providerId]),
-    supabase
-      .from('model_offical')
-      .select('model_id')
-      .eq('producer_id', providerId),
+  const [directModels, officialModels] = await Promise.all([
+    sql<Array<{ id: number }>>`
+      SELECT id
+      FROM models
+      WHERE ${providerId} = ANY(COALESCE(provider_ids, ARRAY[]::integer[]))
+    `,
+    sql<Array<{ model_id: number }>>`
+      SELECT model_id
+      FROM model_offical
+      WHERE producer_id = ${providerId}
+    `,
   ]);
 
-  (directModels || []).forEach((model: any) => modelIds.add(model.id));
-  (officialModels || []).forEach((row: any) => modelIds.add(row.model_id));
+  directModels.forEach((model) => modelIds.add(model.id));
+  officialModels.forEach((row) => modelIds.add(row.model_id));
 
   if (planIds.length > 0) {
-    const { data: mappings } = await supabase
-      .from('model_plan_mapping')
-      .select('model_id')
-      .in('plan_id', planIds);
+    const mappings = await sql<Array<{ model_id: number }>>`
+      SELECT model_id
+      FROM model_plan_mapping
+      WHERE plan_id = ANY(${sql.array(planIds, 23)})
+    `;
 
-    (mappings || []).forEach((row: any) => modelIds.add(row.model_id));
+    mappings.forEach((row) => modelIds.add(row.model_id));
   }
 
   return Array.from(modelIds);

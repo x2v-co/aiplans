@@ -276,6 +276,7 @@ function getCurrencySymbol(code: string): string {
     GBP: '£',
     JPY: '¥',
     KRW: '₩',
+    SGD: 'S$',
   };
   return symbols[code] || '$';
 }

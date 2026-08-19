@@ -23,9 +23,10 @@
 
 - **Frontend**: Next.js 16 (App Router), TypeScript, TailwindCSS v4, Shadcn/UI
 - **Backend**: Next.js API Routes, Drizzle ORM
-- **Database**: PostgreSQL (Supabase)
-- **Deployment**: Vercel
-- **Analytics**: Vercel Analytics
+- **Database**: PostgreSQL (self-hosted Docker volume)
+- **Deployment**: Docker Compose on a VPS, behind host-level Nginx
+- **Analytics**: No hosting-provider analytics dependency; add an
+  infrastructure-level analytics tool separately if needed
 
 ### Quick Start
 
@@ -64,11 +65,21 @@ architecture (write-boundary validation, NO FALLBACK principle,
 Create `.env.local`:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-DATABASE_URL=your_supabase_connection_string
-SUPABASE_SERVICE_KEY=optional_service_role_key
+DATABASE_URL=postgresql://planprice:password@localhost:5432/planprice
+DB_POOL_MAX=10
+DB_PREPARE=true
 ```
+
+For the VPS Compose deployment, copy
+`deploy/production/.env.production.template` to
+`deploy/production/.env.production` and set a long random
+`POSTGRES_PASSWORD`. The application runtime connects directly to PostgreSQL;
+it does not require Supabase URL or API keys.
+
+The GitHub-hosted scraper can continue using the source `DATABASE_URL` during
+migration preparation. At final cutover, disable its schedule and run
+`deploy/production/run-scrapers.sh` from VPS cron or systemd instead. The new
+PostgreSQL port stays private and is not exposed for GitHub-hosted runners.
 
 ### Supported Providers
 
@@ -114,9 +125,9 @@ MIT
 
 - **前端**: Next.js 16 (App Router), TypeScript, TailwindCSS v4, Shadcn/UI
 - **后端**: Next.js API Routes, Drizzle ORM
-- **数据库**: PostgreSQL (Supabase)
-- **部署**: Vercel
-- **分析**: Vercel Analytics
+- **数据库**: VPS 上的 PostgreSQL Docker 容器
+- **部署**: VPS Docker Compose + 宿主机 Nginx
+- **分析**: 不依赖云厂商的分析组件；如有需要可单独接入基础设施级分析
 
 ### 快速开始
 
@@ -151,10 +162,12 @@ tsx scripts/scrapers/deepseek-dynamic.ts
 创建 `.env.local`:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-DATABASE_URL=your_supabase_connection_string
+DATABASE_URL=postgresql://planprice:password@localhost:5432/planprice
 ```
+
+VPS 生产环境中，数据库不开放公网端口。正式切流时停用 GitHub 托管的定时
+爬虫，改由 VPS 的 cron 或 systemd 调用
+`deploy/production/run-scrapers.sh`。
 
 ### 支持的供应商
 

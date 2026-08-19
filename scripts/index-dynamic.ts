@@ -30,9 +30,11 @@ import { scrapeBaiduDynamic } from './scrapers/baidu-dynamic';
 // Additional dynamic scrapers - Priority 2 (medium)
 import { scrapeFireworksDynamic } from './scrapers/fireworks-dynamic';
 import { scrapeReplicateDynamic } from './scrapers/replicate-dynamic';
-import { scrapeAnyscaleDynamic } from './scrapers/anyscale-dynamic';
 import { scrapeStepFunDynamic } from './scrapers/stepfun-dynamic';
-import { scrapeDMXAPIDynamic } from './scrapers/dmxapi-dynamic';
+import { scrapeGrokDynamic } from './scrapers/grok-dynamic';
+import { scrapeMoonshotDynamic } from './scrapers/moonshot-dynamic';
+import { scrapeMiniMaxDynamic } from './scrapers/minimax-dynamic';
+import { scrapeZhipuDynamic } from './scrapers/zhipu-dynamic';
 
 import {
   upsertChannelPrice,
@@ -57,6 +59,7 @@ interface ScraperConfig {
   name: string;
   fn: () => Promise<ScraperResult>;
   priority: number; // 1=high, 2=medium, 3=low
+  fullCatalog?: boolean;
 }
 
 /**
@@ -65,31 +68,78 @@ interface ScraperConfig {
  */
 const API_SCRAPERS: ScraperConfig[] = [
   // Priority 1 (⭐⭐⭐) - API-based
-  { name: 'OpenRouter', fn: scrapeOpenRouter, priority: 1 },
-  { name: 'OpenAI', fn: scrapeOpenAIDynamic, priority: 1 },
-  { name: 'Anthropic', fn: scrapeAnthropicDynamic, priority: 1 },
-  { name: 'DeepSeek', fn: scrapeDeepSeekDynamic, priority: 1 },
-  { name: 'Google Gemini', fn: scrapeGoogleDynamic, priority: 1 },
-  { name: 'Together AI', fn: scrapeTogetherAIDynamic, priority: 1 },
+  { name: 'OpenRouter', fn: scrapeOpenRouter, priority: 1, fullCatalog: true },
+  { name: 'OpenAI', fn: scrapeOpenAIDynamic, priority: 1, fullCatalog: true },
+  { name: 'Anthropic', fn: scrapeAnthropicDynamic, priority: 1, fullCatalog: true },
+  { name: 'DeepSeek', fn: scrapeDeepSeekDynamic, priority: 1, fullCatalog: true },
+  { name: 'Google Gemini', fn: scrapeGoogleDynamic, priority: 1, fullCatalog: true },
+  { name: 'Together AI', fn: scrapeTogetherAIDynamic, priority: 1, fullCatalog: true },
   { name: 'SiliconFlow', fn: scrapeSiliconFlowDynamic, priority: 1 },
-  { name: 'Mistral AI', fn: scrapeMistralDynamic, priority: 1 },
-  { name: 'Qwen', fn: scrapeQwenDynamic, priority: 1 },
-  { name: 'Seed', fn: scrapeSeedDynamic, priority: 1 },
+  { name: 'Mistral AI', fn: scrapeMistralDynamic, priority: 1, fullCatalog: true },
+  { name: 'Qwen', fn: scrapeQwenDynamic, priority: 1, fullCatalog: true },
+  { name: 'Seed', fn: scrapeSeedDynamic, priority: 1, fullCatalog: true },
 
   // Priority 1 (⭐⭐⭐) - Cloud/HTML-based
-  { name: 'AWS Bedrock', fn: scrapeAWSBedrockDynamic, priority: 1 },
-  { name: 'Vertex AI', fn: scrapeVertexAIDynamic, priority: 1 },
+  { name: 'AWS Bedrock', fn: scrapeAWSBedrockDynamic, priority: 1, fullCatalog: true },
+  { name: 'Vertex AI', fn: scrapeVertexAIDynamic, priority: 1, fullCatalog: true },
   { name: 'Azure OpenAI', fn: scrapeAzureOpenAIDynamic, priority: 1 },
+  { name: 'Grok', fn: scrapeGrokDynamic, priority: 1, fullCatalog: true },
 
   // Priority 2 (⭐⭐) - Medium priority
-  { name: 'Hunyuan', fn: scrapeHunyuanDynamic, priority: 2 },
-  { name: 'Baidu', fn: scrapeBaiduDynamic, priority: 2 },
+  { name: 'Hunyuan', fn: scrapeHunyuanDynamic, priority: 2, fullCatalog: true },
+  { name: 'Baidu', fn: scrapeBaiduDynamic, priority: 2, fullCatalog: true },
   { name: 'Fireworks AI', fn: scrapeFireworksDynamic, priority: 2 },
   { name: 'Replicate', fn: scrapeReplicateDynamic, priority: 2 },
-  { name: 'Anyscale', fn: scrapeAnyscaleDynamic, priority: 2 },
-  { name: 'StepFun', fn: scrapeStepFunDynamic, priority: 2 },
-  { name: 'DMXAPI', fn: scrapeDMXAPIDynamic, priority: 2 },
+  { name: 'StepFun', fn: scrapeStepFunDynamic, priority: 2, fullCatalog: true },
+  { name: 'Moonshot', fn: scrapeMoonshotDynamic, priority: 2, fullCatalog: true },
+  { name: 'Minimax', fn: scrapeMiniMaxDynamic, priority: 2 },
+  { name: 'Zhipu AI', fn: scrapeZhipuDynamic, priority: 2, fullCatalog: true },
 ];
+
+function printHelp(): void {
+  console.log(`Usage: npm run scrape -- [options]
+
+Options:
+  --provider=<name>  Run one scraper (for example: OpenRouter or Seed)
+  --help             Show this help message
+
+Available providers:
+  ${API_SCRAPERS.map(scraper => scraper.name).join(', ')}`);
+}
+
+function parseArgs(args: string[]): { scrapers: ScraperConfig[]; showHelp: boolean } {
+  const allowed = new Set(['--help']);
+  const unknown = args.filter(arg => !allowed.has(arg) && !arg.startsWith('--provider='));
+  if (unknown.length > 0) {
+    throw new Error(`Unknown argument${unknown.length > 1 ? 's' : ''}: ${unknown.join(', ')}`);
+  }
+
+  if (args.includes('--help')) {
+    return { scrapers: [], showHelp: true };
+  }
+
+  const providerArgs = args.filter(arg => arg.startsWith('--provider='));
+  if (providerArgs.length > 1) {
+    throw new Error('Pass --provider only once');
+  }
+
+  const requested = providerArgs[0]?.slice('--provider='.length).trim();
+  if (!requested) {
+    if (providerArgs.length === 1) throw new Error('--provider requires a non-empty value');
+    return { scrapers: API_SCRAPERS, showHelp: false };
+  }
+
+  const scraper = API_SCRAPERS.find(
+    candidate => candidate.name.toLowerCase() === requested.toLowerCase()
+  );
+  if (!scraper) {
+    throw new Error(
+      `Unknown provider "${requested}". Available providers: ${API_SCRAPERS.map(item => item.name).join(', ')}`
+    );
+  }
+
+  return { scrapers: [scraper], showHelp: false };
+}
 
 // Provider IDs (synced with database - providers table)
 // Verified: 2026-03-18
@@ -136,7 +186,46 @@ const PROVIDER_IDS: Record<string, number> = {
   'AMAZON': 50,     // Same as AWS_BEDROCK
 };
 
-async function processAPIScraper(result: ScraperResult, channelName: string) {
+async function retireUnseenChannelPrices(
+  channelProviderId: number,
+  seenModelIds: Set<number>,
+  source: string
+): Promise<number> {
+  const { data: activeRows, error } = await supabaseAdmin
+    .from('api_channel_prices')
+    .select('id, model_id, notes')
+    .eq('provider_id', channelProviderId)
+    .eq('is_available', true);
+  if (error) throw error;
+
+  const unseen = (activeRows ?? []).filter(
+    row => row.model_id != null && !seenModelIds.has(row.model_id)
+  );
+  if (unseen.length === 0) return 0;
+
+  const retiredAt = new Date().toISOString();
+  await Promise.all(unseen.map(async row => {
+    const retirementNote = `retired ${retiredAt}: absent from successful full-catalog ${source} scrape`;
+    const { error: updateError } = await supabaseAdmin
+      .from('api_channel_prices')
+      .update({
+        is_available: false,
+        notes: row.notes ? `${row.notes} | ${retirementNote}` : retirementNote,
+        updated_at: retiredAt,
+      })
+      .eq('id', row.id);
+    if (updateError) throw updateError;
+  }));
+
+  console.log(`🧹 ${source}: Soft-disabled ${unseen.length} prices absent from the full catalog`);
+  return unseen.length;
+}
+
+async function processAPIScraper(
+  result: ScraperResult,
+  channelName: string,
+  fullCatalog = false
+) {
   console.log(`\n🔄 Processing ${result.source} API results...`);
 
   if (!result.success) {
@@ -158,6 +247,7 @@ async function processAPIScraper(result: ScraperResult, channelName: string) {
 
   let updatedCount = 0;
   let errorCount = 0;
+  const seenModelIds = new Set<number>();
 
   for (const price of result.prices) {
     try {
@@ -221,6 +311,7 @@ async function processAPIScraper(result: ScraperResult, channelName: string) {
         currency: priceCurrency,
         price_unit: 'per_1m_tokens',
       });
+      seenModelIds.add(product.id);
 
       // Log price change if significant
       if (existingPrice) {
@@ -250,6 +341,15 @@ async function processAPIScraper(result: ScraperResult, channelName: string) {
     }
   }
 
+  if (fullCatalog && errorCount === 0 && seenModelIds.size > 0) {
+    try {
+      await retireUnseenChannelPrices(channelProviderId, seenModelIds, result.source);
+    } catch (error) {
+      console.error(`❌ ${result.source}: Failed to retire unseen prices:`, error);
+      errorCount++;
+    }
+  }
+
   console.log(`✅ ${result.source} API: Updated ${updatedCount} prices, ${errorCount} errors`);
   return { updated: updatedCount, errors: errorCount };
 }
@@ -273,6 +373,7 @@ function getChannelProviderKey(source: string): string {
     'Mistral-AI': 'MISTRAL',
     'Qwen': 'ALIBABA',
     'Seed': 'BYTEDANCE',
+    'Seed-Volcengine': 'BYTEDANCE',
     'AWS Bedrock': 'AWS_BEDROCK',
     'AWS-Bedrock': 'AWS_BEDROCK',
     'Vertex AI': 'GOOGLE_VERTEX',
@@ -298,12 +399,52 @@ function getChannelProviderKey(source: string): string {
   return mapping[source] || '';
 }
 
+type ScraperRunResult = { updated: number; errors: number };
+
+/**
+ * Keep browser-heavy scrapers below the machine's resource limit. Running all
+ * Playwright providers at once caused otherwise healthy pages (notably Vertex
+ * and Anthropic) to hit their 30s navigation timeout.
+ */
+async function runScraperQueue(
+  scrapers: ScraperConfig[],
+  concurrency = 4
+): Promise<PromiseSettledResult<ScraperRunResult>[]> {
+  const results: PromiseSettledResult<ScraperRunResult>[] = [];
+  let nextIndex = 0;
+
+  const worker = async (): Promise<void> => {
+    while (true) {
+      const index = nextIndex++;
+      if (index >= scrapers.length) return;
+      const scraper = scrapers[index];
+      try {
+        const result = await scraper.fn();
+        results[index] = {
+          status: 'fulfilled',
+          value: await processAPIScraper(result, scraper.name, scraper.fullCatalog),
+        };
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason };
+      }
+    }
+  };
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, scrapers.length) },
+    () => worker()
+  );
+  await Promise.all(workers);
+  return results;
+}
+
 function inferProviderId(modelName: string, channelName?: string): number {
   const name = modelName.toLowerCase();
   const channel = channelName?.toLowerCase() || '';
 
   // OpenAI models
-  if (name.includes('gpt') || name.includes('openai') || name.startsWith('o1') || name.startsWith('o3') || name.startsWith('o4')) {
+  if (name.includes('gpt') || name.includes('openai') || name === 'chat-latest'
+      || name.startsWith('o1') || name.startsWith('o3') || name.startsWith('o4')) {
     return PROVIDER_IDS['OPENAI'];
   }
 
@@ -323,7 +464,9 @@ function inferProviderId(modelName: string, channelName?: string): number {
   }
 
   // Mistral models
-  if (name.includes('mistral') || name.includes('mixtral') || name.includes('codestral')) return PROVIDER_IDS['MISTRAL'];
+  if (name.includes('mistral') || name.includes('ministral') || name.includes('mixtral') || name.includes('codestral')) {
+    return PROVIDER_IDS['MISTRAL'];
+  }
 
   // Alibaba Qwen models
   if (name.includes('qwen') || name.includes('tongyi') || name.includes('qwq')) return PROVIDER_IDS['ALIBABA'];
@@ -440,21 +583,22 @@ function getChannelWebsite(source: string): string {
 }
 
 async function main() {
+  const { scrapers, showHelp } = parseArgs(process.argv.slice(2));
+  if (showHelp) {
+    printHelp();
+    return;
+  }
+
   console.log('🚀 Starting pricing data scraper (Dynamic Mode)...\n');
   const startTime = Date.now();
 
   // Run API scrapers by priority order
-  const priority1Scrapers = API_SCRAPERS.filter(s => s.priority === 1);
-  const priority2Scrapers = API_SCRAPERS.filter(s => s.priority === 2);
+  const priority1Scrapers = scrapers.filter(s => s.priority === 1);
+  const priority2Scrapers = scrapers.filter(s => s.priority === 2);
 
   console.log(`\n🔄 Running ${priority1Scrapers.length} priority 1 scrapers...`);
 
-  const apiResults = await Promise.allSettled(
-    priority1Scrapers.map(async ({ fn, name }) => {
-      const result = await fn();
-      return processAPIScraper(result, name);
-    })
-  );
+  const apiResults = await runScraperQueue(priority1Scrapers);
 
   let totalUpdated = 0;
   let totalErrors = 0;
@@ -474,12 +618,7 @@ async function main() {
   if (priority2Scrapers.length > 0) {
     console.log(`\n🔄 Running ${priority2Scrapers.length} priority 2 scrapers...`);
 
-    const priority2Results = await Promise.allSettled(
-      priority2Scrapers.map(async ({ fn, name }) => {
-        const result = await fn();
-        return processAPIScraper(result, name);
-      })
-    );
+    const priority2Results = await runScraperQueue(priority2Scrapers);
 
     priority2Results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
@@ -497,7 +636,7 @@ async function main() {
   // Log overall result
   await logScrapeResult({
     source: 'all-dynamic',
-    status: totalErrors === 0 ? 'success' : totalErrors < API_SCRAPERS.length ? 'partial' : 'failed',
+    status: totalErrors === 0 ? 'success' : totalUpdated > 0 ? 'partial' : 'failed',
     models_found: totalUpdated,
     prices_updated: totalUpdated,
     errors: totalErrors > 0 ? `${totalErrors} errors encountered` : undefined,
@@ -511,6 +650,10 @@ async function main() {
 
   // Close Playwright browser
   await closeBrowser();
+
+  if (totalErrors > 0) {
+    throw new Error(`Scraping completed with ${totalErrors} error${totalErrors === 1 ? '' : 's'}`);
+  }
 }
 
 // Run if called directly

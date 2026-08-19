@@ -1,16 +1,17 @@
 import '../globals.css';
 import type { Metadata, Viewport } from 'next';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
 import LocaleClientWrapper from '@/components/locale-client-wrapper';
 import enMessages from '@/../messages/en.json';
 import zhMessages from '@/../messages/zh.json';
 import { SITE_URL, SITE_NAME } from '@/lib/seo';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 
-const messagesMap: Record<string, any> = {
+const messagesMap: Record<string, typeof enMessages> = {
   en: enMessages,
   zh: zhMessages,
 };
+
+const googleSiteVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim();
 
 /**
  * Site-wide metadata via the Next.js Metadata API. This REPLACES the
@@ -73,6 +74,9 @@ export async function generateMetadata({
     // Baidu / 360 / Sogou rendering hints. Next.js Metadata API doesn't
     // have typed fields for these so we fall through to the 'other' map.
     other: {
+      ...(googleSiteVerification
+        ? { 'google-site-verification': googleSiteVerification }
+        : {}),
       'applicable-device': 'pc,mobile',
       'MobileOptimized': 'width',
       'HandheldFriendly': 'true',
@@ -197,8 +201,7 @@ async function LocaleLayoutContent({
         />
       </head>
       <body className="font-sans antialiased">
-        <Analytics />
-        <SpeedInsights />
+        <GoogleAnalytics />
         <LocaleClientWrapper locale={locale} messages={messages}>
           {children}
         </LocaleClientWrapper>

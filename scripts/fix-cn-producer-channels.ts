@@ -15,7 +15,7 @@
  * (model_slug, provider_slug).
  *
  * Usage:
- *   SUPABASE_SERVICE_KEY=... npx tsx scripts/fix-cn-producer-channels.ts [--dry-run]
+ *   DATABASE_URL=... npx tsx scripts/fix-cn-producer-channels.ts [--dry-run]
  */
 import { supabaseAdmin } from './db/queries';
 

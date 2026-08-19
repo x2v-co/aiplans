@@ -24,7 +24,7 @@ npm run build            # production build (webpack)
 npm run start            # serve prod build
 npm run lint             # eslint
 
-# Data scraping (writes to production Supabase)
+# Data scraping (writes to the PostgreSQL database in DATABASE_URL)
 npm run scrape              # all API price scrapers (~20 providers, ~1 min)
 npm run scrape:plans        # all plan scrapers (~12 providers, ~2 min)
 npm run scrape:plans:dry-run
@@ -43,7 +43,7 @@ npm run fix:plans           # apply
 # Schema migrations (idempotent postgres DDL)
 npm run migrate             # adds price_history, plans.notes, plans.source, etc.
 
-# Arena leaderboard ingestion (requires SUPABASE_SERVICE_KEY)
+# Arena leaderboard ingestion (requires DATABASE_URL)
 npm run ingest:arena        # writes top-60 ELO into model_benchmark_scores
 
 # Provider logos
@@ -59,10 +59,11 @@ npx drizzle-kit studio      # DB GUI
 
 - **Frontend**: Next.js 16 (App Router, webpack), TypeScript, TailwindCSS v4,
   Shadcn/UI, Recharts (price charts), Zustand (state), next-intl (i18n)
-- **Backend**: Next.js API Routes + Supabase JS client (direct queries, not
-  Drizzle — we only use drizzle-orm for its schema DSL)
-- **Database**: PostgreSQL on Supabase
-- **Deployment**: Vercel (with data-audit.yml + scrape-pricing.yml GitHub Actions)
+- **Backend**: Next.js API Routes + direct PostgreSQL queries (Drizzle remains
+  the schema/type DSL)
+- **Database**: Self-hosted PostgreSQL in the planprice Docker Compose project
+- **Deployment**: Docker Compose on a VPS behind host-level Nginx; scraper
+  containers run inside the private Compose network
 
 ## Database Schema (Core)
 
@@ -95,18 +96,16 @@ Key tables:
 
 Schema source of truth: `src/db/schema/index.ts` (Drizzle). Migrations
 applied via `scripts/migrate-data-accuracy.ts` using raw SQL + `postgres`
-client. Supabase MCP plugin is NOT required.
+client. No database-provider MCP plugin is required.
 
 ## Environment Variables
 
 Required (in `.env.local`):
 
 ```
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-DATABASE_URL                   # for direct postgres migrations
-SUPABASE_SERVICE_KEY           # optional — required for catalog writes
-                               # (benchmark_metrics, etc. — RLS restricted)
+DATABASE_URL                   # required for app, scripts, and migrations
+DB_POOL_MAX                    # optional, defaults to 10
+DB_PREPARE                     # optional, defaults to true
 ```
 
 ## Page Routes (all under `/[locale]/` with `en` and `zh`)
@@ -237,12 +236,14 @@ rows from web ground truth so `/api-pricing` filter "🇨🇳 China" shows them.
 ### GitHub Actions
 
 - `.github/workflows/scrape-pricing.yml` — hourly cron, runs `npm run scrape`
-- `.github/workflows/data-audit.yml` — daily 02:00 UTC + PR-triggered,
-  runs `audit-data.ts`; fails on critical; uploads output + JSON snapshot
-  as artifacts
+- `.github/workflows/data-audit.yml` — daily 02:00 UTC + PR-triggered during
+  migration preparation; runs `audit-data.ts` and uploads output + JSON
+  snapshot as artifacts
 
-Both need these repo secrets: `NEXT_PUBLIC_SUPABASE_URL`,
-`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`.
+Both currently need the `DATABASE_URL` repo secret. At final self-hosted
+cutover, disable database-backed schedules and use
+`deploy/production/run-scrapers.sh` from VPS cron/systemd so PostgreSQL stays
+private and GitHub-hosted runners do not need network access to it.
 
 ## SEO / GEO (done in 2026-04 session)
 
@@ -272,8 +273,8 @@ Both need these repo secrets: `NEXT_PUBLIC_SUPABASE_URL`,
 - `experimental.optimizePackageImports` for `lucide-react` + 12 Radix
   packages — saves ~150KB pre-gzip on every client bundle
 - `compiler.removeConsole` in production (keeps error/warn)
-- `images.remotePatterns` whitelists Supabase + vendor logo hosts so
-  `next/image` can serve AVIF/WebP with Vercel's image CDN
+- `images.remotePatterns` whitelists the site and vendor logo hosts so
+  Next.js image optimization can serve AVIF/WebP on the VPS
 - `poweredByHeader: false`
 
 ## Project Structure
@@ -295,7 +296,6 @@ src/
 ├── db/schema/index.ts         # Drizzle schema (source of truth)
 ├── lib/
 │   ├── db.ts                  # postgres + drizzle client
-│   ├── supabase.ts            # anon-key client for API routes
 │   ├── currency.ts            # format helpers
 │   ├── currency-conversion.ts # exchange-rate cache
 │   ├── schema-adapters.ts     # provider attachment helpers
@@ -357,7 +357,7 @@ messages/
 2. **Subscription plan comparison**:
    - `/api/compare/plans?model=X` → model_plan_mapping join → tiers
 3. **Provider plan lineup**:
-   - `/[locale]/plans/[provider]` server component directly queries Supabase
+   - `/[locale]/plans/[provider]` server component directly queries PostgreSQL
 
 ## China-specific behaviour
 
@@ -391,7 +391,7 @@ messages/
 - **`provider_ids` is a PostgreSQL integer array** on `models`, not a
   foreign-key scalar. Use `provider_ids?.[0]` in TS and `contains` in SQL.
 - **The `model_offical` table is misspelled** in the schema (`offical` not
-  `official`). Don't "fix" it — the Supabase client queries it by name.
+  `official`). Don't "fix" it — existing SQL queries use it by name.
 - **`api_channel_prices.model_id`**, not `product_id`. Older code may still
   reference `product_id`; it's a legacy alias.
 - **Arena ELO lives in `model_benchmark_scores`**, joined via

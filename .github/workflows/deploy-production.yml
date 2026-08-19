@@ -1,0 +1,124 @@
+name: Deploy Planprice Production
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.github/workflows/data-audit.yml'
+      - '.github/workflows/scrape-pricing.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: planprice-production-deploy
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  verify:
+    name: Verify release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Build production bundle
+        env:
+          NEXT_PUBLIC_GA_ID: ${{ vars.NEXT_PUBLIC_GA_ID }}
+        run: npm run build
+
+  deploy:
+    name: Deploy to devbox
+    needs: verify
+    runs-on: [self-hosted, planprice-production]
+    timeout-minutes: 25
+    environment: Production
+    env:
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/x2v/planprice' }}
+    steps:
+      - name: Checkout release
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Validate runner access
+        run: |
+          set -euo pipefail
+          test -d "$DEPLOY_PATH"
+          sudo -n docker version --format '{{.Server.Version}}'
+          sudo -n test -r "$DEPLOY_PATH/deploy/production/.env.production"
+
+      - name: Create release archive
+        run: git archive --format=tar.gz --output="$RUNNER_TEMP/planprice-${GITHUB_SHA}.tar.gz" "$GITHUB_SHA"
+
+      - name: Roll out release on devbox
+        run: |
+          set -euo pipefail
+
+          base="$DEPLOY_PATH"
+          release_dir="$base/.releases/$GITHUB_SHA"
+          archive="$RUNNER_TEMP/planprice-$GITHUB_SHA.tar.gz"
+          env_file="$base/deploy/production/.env.production"
+
+          test -d "$base"
+          sudo -n test -r "$env_file"
+          exec 9>/tmp/x2v-planprice.lock
+          flock -w 1800 9
+          case "$release_dir" in
+            "$base/.releases/"*) ;;
+            *) echo "Unsafe release directory: $release_dir" >&2; exit 1 ;;
+          esac
+          sudo -n rm -rf "$release_dir"
+          sudo -n mkdir -p "$release_dir"
+          sudo -n tar -xzf "$archive" -C "$release_dir"
+          sudo -n install -m 0600 "$env_file" "$release_dir/deploy/production/.env.production"
+          sudo -n chown -R root:root "$release_dir"
+
+          sudo -n env \
+            DEPLOY_DIR="$release_dir" \
+            COMPOSE_FILE="$release_dir/deploy/production/compose.yml" \
+            ENV_FILE="$release_dir/deploy/production/.env.production" \
+            DOCKER_CMD=/usr/bin/docker \
+            BUILD_SCRAPER=1 \
+            "$release_dir/deploy/production/rollout.sh" "$GITHUB_SHA"
+
+          sudo -n rsync -a \
+            --exclude='deploy/production/.env.production' \
+            "$release_dir/" "$base/"
+          sudo -n chown root:root "$base/Dockerfile" "$base/deploy/production/rollout.sh" 2>/dev/null || true
+          sudo -n docker compose -p planprice-production \
+            -f "$base/deploy/production/compose.yml" \
+            --env-file "$env_file" ps
+          curl -fsS https://aiplans.dev/api/health
+          sudo -n rm -rf "$release_dir"
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          {
+            echo '## Planprice production deployment'
+            echo
+            echo "Commit: \`$GITHUB_SHA\`"
+            echo "Target: \`$DEPLOY_PATH\`"
+            echo "Health: https://aiplans.dev/api/health"
+          } >> "$GITHUB_STEP_SUMMARY"

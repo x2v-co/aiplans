@@ -1,13 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import { config } from 'dotenv';
-import { resolve } from 'path';
-
-// Load environment variables
-config({ path: resolve(process.cwd(), '.env.local') });
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabaseAdmin as database } from './db/queries';
 
 interface Provider {
   id: number;
@@ -125,7 +116,7 @@ async function main() {
   console.log('🎨 Starting logo fetcher for providers...\n');
 
   // 1. 获取所有 providers
-  const { data: providers, error } = await supabase
+  const { data: providers, error } = await database
     .from('providers')
     .select('*')
     .order('id');
@@ -168,7 +159,7 @@ async function main() {
       }
 
       // 3. 更新数据库
-      const { error: updateError } = await supabase
+      const { error: updateError } = await database
         .from('providers')
         .update({ logo: logoUrl })
         .eq('id', provider.id);
@@ -200,7 +191,7 @@ async function main() {
 
   // 5. 显示更新后的结果
   console.log('\n📋 Current provider logos:');
-  const { data: updatedProviders } = await supabase
+  const { data: updatedProviders } = await database
     .from('providers')
     .select('name, slug, logo')
     .order('id');

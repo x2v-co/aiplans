@@ -1,10 +1,10 @@
-export type CurrencyCode = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'KRW';
+export type CurrencyCode = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'KRW' | 'SGD';
 
 export interface ScrapedPlan {
   planName: string;
   planSlug: string;
   priceMonthly: number;
-  priceYearly?: number;
+  priceYearly?: number | null;
   pricingModel: 'subscription' | 'token_pack' | 'pay_as_you_go';
   tier: 'free' | 'basic' | 'pro' | 'team' | 'enterprise';
 

@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { sql } from '@/lib/db';
 
 /**
  * 汇率 API 端点
@@ -13,21 +9,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export async function GET(request: NextRequest) {
   try {
     // Query exchange rates from database
-    const { data: rates, error } = await supabase
-      .from('exchange_rates')
-      .select('*')
-      .eq('is_active', true)
-      .order('updated_at', { ascending: false });
+    const rates = await sql<any[]>`
+      SELECT * FROM exchange_rates
+      WHERE is_active = true
+      ORDER BY updated_at DESC
+    `;
 
-    if (error) {
-      console.error('Database query error:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch exchange rates from database', details: error.message },
-        { status: 500 }
-      );
-    }
-
-    if (!rates || rates.length === 0) {
+    if (rates.length === 0) {
       return NextResponse.json(
         {
           error: 'No exchange rates found in database',
@@ -92,23 +80,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields: from, to, rate' }, { status: 400 });
     }
 
-    const now = new Date().toISOString();
-
-    // 使用 ON CONFLICT DO NOTHING 避免约束冲突
-    const { data, error } = await supabase
-      .from('exchange_rates')
-      .upsert({
-        from_currency: from,
-        to_currency: to,
-        rate: parseFloat(rate),
-        source: 'manual',
-        updated_at: now,
-        is_active: true,
-      }, {
-        onConflict: 'from_currency,to_currency',
-      })
-      .select()
-      .single();
+    const [data] = await sql<any[]>`
+      INSERT INTO exchange_rates (
+        from_currency, to_currency, rate, source, is_active, valid_at, updated_at
+      ) VALUES (
+        ${from}, ${to}, ${parseFloat(rate)}, 'manual', true, NOW(), NOW()
+      )
+      ON CONFLICT (from_currency, to_currency) DO UPDATE SET
+        rate = EXCLUDED.rate,
+        source = EXCLUDED.source,
+        is_active = true,
+        valid_at = NOW(),
+        updated_at = NOW()
+      RETURNING *
+    `;
 
     return NextResponse.json({
       success: true,
@@ -150,7 +135,7 @@ export async function PUT(request: NextRequest) {
 
     // USD 是基准货币
     const usdRates = ratesData.rates as Record<string, number>;
-    const currencies = ['CNY', 'EUR', 'GBP', 'JPY', 'KRW'];
+    const currencies = ['CNY', 'EUR', 'GBP', 'JPY', 'KRW', 'SGD'];
 
     // 批量更新汇率
     const now = new Date().toISOString();
@@ -159,20 +144,20 @@ export async function PUT(request: NextRequest) {
     for (const currency of currencies) {
       if (!usdRates[currency]) continue;
 
-      const { data } = await supabase
-        .from('exchange_rates')
-        .upsert({
-          from_currency: 'USD',
-          to_currency: currency,
-          rate: parseFloat(usdRates[currency].toString()),
-          source: 'openexchangerates',
-          updated_at: now,
-          is_active: true,
-        }, {
-          onConflict: 'from_currency,to_currency',
-        })
-        .select()
-        .single();
+      const [data] = await sql<any[]>`
+        INSERT INTO exchange_rates (
+          from_currency, to_currency, rate, source, is_active, valid_at, updated_at
+        ) VALUES (
+          'USD', ${currency}, ${usdRates[currency]}, 'openexchangerates', true, NOW(), NOW()
+        )
+        ON CONFLICT (from_currency, to_currency) DO UPDATE SET
+          rate = EXCLUDED.rate,
+          source = EXCLUDED.source,
+          is_active = true,
+          valid_at = NOW(),
+          updated_at = NOW()
+        RETURNING id
+      `;
 
       if (data) {
         updates.push(`USD->${currency}: ${usdRates[currency]}`);

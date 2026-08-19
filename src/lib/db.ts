@@ -1,9 +1,20 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
-// For Supabase, we use their JavaScript client directly in the API routes
-// This file provides a simple postgres connection for Drizzle migrations
-const connectionString = process.env.DATABASE_URL || '';
+/**
+ * Direct PostgreSQL connection shared by the web app and data scripts.
+ *
+ * The local fallback keeps image builds usable without production secrets.
+ * `/api/health` verifies the real runtime connection before traffic is sent.
+ */
+const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/planprice';
 
-const client = postgres(connectionString);
-export const db = drizzle(client);
+export const sql = postgres(connectionString, {
+  max: Number(process.env.DB_POOL_MAX || 10),
+  idle_timeout: 20,
+  connect_timeout: 10,
+  // PgBouncer transaction pools do not support prepared statements.
+  prepare: process.env.DB_PREPARE !== 'false',
+});
+
+export const db = drizzle(sql);

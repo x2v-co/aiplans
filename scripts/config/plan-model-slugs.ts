@@ -23,16 +23,14 @@ export const PROVIDER_PLAN_MODEL_SLUGS: Record<string, Record<string, string[]>>
     'mistral-team': ['mistral-large', 'mistral-small', 'mistral-7b'],
   },
   minimax: {
-    'minimax-free': ['minimax-m2.5'],
-    'minimax-lite': ['minimax-m2.1'],
-    'minimax-pro': ['minimax-m2.5'],
-    'minimax-team': ['minimax-m2.5'],
+    'minimax-token-plus': ['minimax-m2.7', 'minimax-m3'],
+    'minimax-token-max': ['minimax-m2.7', 'minimax-m3'],
+    'minimax-token-ultra': ['minimax-m2.7', 'minimax-m3'],
   },
   'minimax-global': {
-    'minimax-global-free': ['minimax-m2.5'],
-    'minimax-global-lite': ['minimax-m2.1'],
-    'minimax-global-pro': ['minimax-m2.5'],
-    'minimax-global-team': ['minimax-m2.5'],
+    'minimax-global-plus': ['minimax-m2.7', 'minimax-m3'],
+    'minimax-global-max': ['minimax-m2.7', 'minimax-m3'],
+    'minimax-global-ultra': ['minimax-m2.7', 'minimax-m3'],
   },
   zhipu: {
     'glm-coding-team': ['glm-4-flash', 'glm-5', 'glm-5.1'],

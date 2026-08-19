@@ -170,6 +170,27 @@ const PLAN_DELETIONS: PlanDelete[] = [
     reason: 'Replaced by minimax-standard-* / minimax-highspeed-* slugs' },
   { providerSlug: 'minimax-china', planSlug: 'minimax-pro',
     reason: 'Replaced by minimax-standard-* / minimax-highspeed-* slugs' },
+
+  // MiniMax replaced the six Standard/High-Speed tiers with one current
+  // Plus/Max/Ultra Token Plan lineup in August 2026.
+  ...[
+    'minimax-standard-starter', 'minimax-standard-plus', 'minimax-standard-max',
+    'minimax-highspeed-plus', 'minimax-highspeed-max', 'minimax-highspeed-ultra',
+  ].map(planSlug => ({
+    providerSlug: 'minimax-china', planSlug,
+    reason: 'Discontinued MiniMax tier; replaced by current Token Plan Plus/Max/Ultra lineup',
+  })),
+  ...[
+    'minimax-standard-starter', 'minimax-standard-plus', 'minimax-standard-max',
+    'minimax-highspeed-plus', 'minimax-highspeed-max', 'minimax-highspeed-ultra',
+  ].map(planSlug => ({
+    providerSlug: 'ORPHAN_66', planSlug,
+    reason: 'Duplicate rows under erroneous provider slug minimax (provider_id=66)',
+  })),
+  ...['minimax-global-free', 'minimax-global-lite', 'minimax-global-pro', 'minimax-global-team'].map(planSlug => ({
+    providerSlug: 'minimax-global', planSlug,
+    reason: 'Discontinued MiniMax Global tier; replaced by current Plus/Max/Ultra lineup',
+  })),
 ];
 
 // ─── 4. New plans to insert ─────────────────────────────────────────────
@@ -191,37 +212,25 @@ interface NewPlan {
 }
 
 const NEW_PLANS: NewPlan[] = [
-  // ─── MiniMax (platform.minimaxi.com Token Plan, 6 tiers) ─────────────
-  { providerSlug: 'minimax-china', slug: 'minimax-standard-starter',
-    name: 'MiniMax 标准版 Starter', tier: 'basic', pricingModel: 'subscription',
-    price: 29, annual: 290, currency: 'CNY',
-    notes: 'M2.7 600 req/5h; Music-2.6 100 songs/day. No speech/image/video.',
-    reason: 'Official MiniMax Token Plan Standard Starter tier' },
-  { providerSlug: 'minimax-china', slug: 'minimax-standard-plus',
-    name: 'MiniMax 标准版 Plus', tier: 'pro', pricingModel: 'subscription',
-    price: 49, annual: 490, currency: 'CNY',
-    notes: 'M2.7 1500 req/5h; Speech 4k chars/day; image-01 50/day. Best value.',
-    reason: 'Official MiniMax Token Plan Standard Plus (高性价比) tier' },
-  { providerSlug: 'minimax-china', slug: 'minimax-standard-max',
-    name: 'MiniMax 标准版 Max', tier: 'team', pricingModel: 'subscription',
-    price: 119, annual: 1190, currency: 'CNY',
-    notes: 'M2.7 4500 req/5h; Speech 11k/day; image-01 120/day; Hailuo-2.3 video 2/day.',
-    reason: 'Official MiniMax Token Plan Standard Max (超大份量) tier' },
-  { providerSlug: 'minimax-china', slug: 'minimax-highspeed-plus',
-    name: 'MiniMax 极速版 Plus', tier: 'pro', pricingModel: 'subscription',
-    price: 98, annual: 980, currency: 'CNY',
-    notes: 'M2.7-highspeed 1500 req/5h; Speech 9k/day; image-01 100/day. No video.',
-    reason: 'Official MiniMax Token Plan High-Speed Plus tier' },
-  { providerSlug: 'minimax-china', slug: 'minimax-highspeed-max',
-    name: 'MiniMax 极速版 Max', tier: 'team', pricingModel: 'subscription',
-    price: 199, annual: 1990, currency: 'CNY',
-    notes: 'M2.7-highspeed 4500 req/5h; Speech 19k/day; image-01 200/day; video 3/day.',
-    reason: 'Official MiniMax Token Plan High-Speed Max (超值之选) tier' },
-  { providerSlug: 'minimax-china', slug: 'minimax-highspeed-ultra',
-    name: 'MiniMax 极速版 Ultra', tier: 'enterprise', pricingModel: 'subscription',
-    price: 899, annual: 8990, currency: 'CNY',
-    notes: 'M2.7-highspeed 30k req/5h; Speech 50k/day; image-01 800/day; video 5/day.',
-    reason: 'Official MiniMax Token Plan High-Speed Ultra (极速畅用) tier' },
+  // ─── MiniMax current Token Plan lineup (August 2026) ────────────────
+  { providerSlug: 'minimax-china', slug: 'minimax-token-plus',
+    name: 'MiniMax Token Plan Plus', tier: 'pro', pricingModel: 'subscription',
+    price: 49, annual: null, currency: 'CNY', reason: 'Current official China Plus tier' },
+  { providerSlug: 'minimax-china', slug: 'minimax-token-max',
+    name: 'MiniMax Token Plan Max', tier: 'team', pricingModel: 'subscription',
+    price: 119, annual: null, currency: 'CNY', reason: 'Current official China Max tier' },
+  { providerSlug: 'minimax-china', slug: 'minimax-token-ultra',
+    name: 'MiniMax Token Plan Ultra', tier: 'enterprise', pricingModel: 'subscription',
+    price: 469, annual: null, currency: 'CNY', reason: 'Current official China Ultra tier' },
+  { providerSlug: 'minimax-global', slug: 'minimax-global-plus',
+    name: 'MiniMax Global Plus', tier: 'pro', pricingModel: 'subscription',
+    price: 20, annual: null, currency: 'USD', reason: 'Current official Global Plus tier' },
+  { providerSlug: 'minimax-global', slug: 'minimax-global-max',
+    name: 'MiniMax Global Max', tier: 'team', pricingModel: 'subscription',
+    price: 50, annual: null, currency: 'USD', reason: 'Current official Global Max tier' },
+  { providerSlug: 'minimax-global', slug: 'minimax-global-ultra',
+    name: 'MiniMax Global Ultra', tier: 'enterprise', pricingModel: 'subscription',
+    price: 120, annual: null, currency: 'USD', reason: 'Current official Global Ultra tier' },
 
   // ─── OpenAI ChatGPT ───────────────────────────────────────────────────
   { providerSlug: 'openai', slug: 'chatgpt-team',
@@ -496,8 +505,9 @@ async function runDeletions() {
   log(`\n━━━ [3/3] Delete obsolete plans (${PLAN_DELETIONS.length}) ━━━`);
   for (const d of PLAN_DELETIONS) {
     let providerId: number | null;
-    if (d.providerSlug === 'ORPHAN_60') {
-      providerId = 60; // dangling FK — match by provider_id directly
+    const orphanMatch = d.providerSlug.match(/^ORPHAN_(\d+)$/);
+    if (orphanMatch) {
+      providerId = Number(orphanMatch[1]); // dangling/duplicate provider — match directly
     } else {
       providerId = await findProviderId(d.providerSlug);
       if (!providerId) {

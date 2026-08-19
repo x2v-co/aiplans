@@ -19,6 +19,7 @@ interface OpenRouterModel {
   context_length: number;
   architecture?: {
     modality?: string;
+    output_modalities?: string[];
   };
 }
 
@@ -145,9 +146,17 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
           continue;
         }
 
-        // Skip non-LLM models (but include multimodal models that can process text)
+        // Skip non-text-output models. OpenRouter exposes image-generation and
+        // image-editing prices in the same prompt/completion fields, but those
+        // are not per-token LLM output prices and must not reach the LLM
+        // output>=input write boundary.
         const modality = model.architecture?.modality || '';
-        if (modality && !modality.includes('text')) {
+        const outputModalities = model.architecture?.output_modalities;
+        if (
+          (outputModalities && outputModalities.some(output => output !== 'text')) ||
+          (!outputModalities && /->.*image/i.test(modality)) ||
+          (modality && !modality.includes('text'))
+        ) {
           continue;
         }
 

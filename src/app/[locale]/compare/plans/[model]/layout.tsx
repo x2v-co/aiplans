@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { buildMetadata, type Locale } from '@/lib/seo';
 
 export async function generateMetadata({
@@ -9,11 +9,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, model: modelSlug } = await params;
 
-  const { data: model } = await supabase
-    .from('models')
-    .select('name')
-    .eq('slug', modelSlug)
-    .maybeSingle();
+  const [model] = await sql<Array<{ name: string }>>`
+    SELECT name FROM models WHERE slug = ${modelSlug} LIMIT 1
+  `;
   const modelName = model?.name ?? modelSlug;
 
   return buildMetadata({

@@ -55,7 +55,7 @@ function median(values: number[]): number {
 }
 
 async function main() {
-  const log = JSON_OUT ? (_: string) => {} : (s: string) => console.log(s);
+  const log = JSON_OUT ? () => {} : (s: string) => console.log(s);
   log(`\n🔍 Data accuracy audit  (stale=${STALE_DAYS}d, outlier=${OUTLIER_RATIO}x)\n`);
 
   // ---------- fetch ----------
@@ -63,7 +63,7 @@ async function main() {
     supabaseAdmin.from('models').select('id, name, slug, provider_ids, type'),
     supabaseAdmin.from('providers').select('id, name, slug, type'),
     supabaseAdmin.from('api_channel_prices').select('id, model_id, provider_id, input_price_per_1m, output_price_per_1m, is_available, last_verified, updated_at, currency'),
-    supabaseAdmin.from('plans').select('id, name, slug, provider_id, price, last_verified'),
+    supabaseAdmin.from('plans').select('id, name, slug, provider_id, price, last_verified, source'),
     supabaseAdmin.from('model_plan_mapping').select('id, model_id, plan_id'),
     supabaseAdmin.from('exchange_rates').select('from_currency, to_currency, rate, valid_at').eq('is_active', true).order('valid_at', { ascending: false }),
   ]);
@@ -78,7 +78,7 @@ async function main() {
 
   // Currency normalization to USD for cross-channel comparison.
   // Builds a lookup with the most recent active rate per currency.
-  const FALLBACK_RATES: Record<string, number> = { CNY: 0.14, EUR: 1.10, GBP: 1.27, JPY: 0.0067 };
+  const FALLBACK_RATES: Record<string, number> = { CNY: 0.14, EUR: 1.10, GBP: 1.27, JPY: 0.0067, SGD: 1 / 1.35 };
   const ratesToUSD = new Map<string, number>([['USD', 1]]);
   for (const r of ratesRes.data ?? []) {
     if (r.to_currency === 'USD' && !ratesToUSD.has(r.from_currency)) {
@@ -121,18 +121,35 @@ async function main() {
     const slug = modelById.get(modelId)?.slug ?? '';
     return slug.includes('(free)') || slug.endsWith('-free') || slug.includes(':free');
   };
+  const isVerifiedFreePrice = (modelId: number | null | undefined, providerId: number | null | undefined) => {
+    const modelSlug = modelId != null ? modelById.get(modelId)?.slug : undefined;
+    const providerSlug = providerId != null ? providerById.get(providerId)?.slug : undefined;
+    return providerSlug === 'zhipu-china'
+      && (modelSlug === 'glm-4.7-flash' || modelSlug === 'glm-4.6v-flash');
+  };
   // Helper: image/audio models priced per-call rather than per-token
   const isNonTokenPriced = (modelId: number | null | undefined) => {
     if (modelId == null) return false;
     const slug = modelById.get(modelId)?.slug ?? '';
-    return slug.includes('imagine') || slug.includes('-image') || slug.includes('-tts') || slug.includes('-whisper');
+    return slug.includes('imagine') || slug.includes('-image') || slug.includes('-tts')
+      || slug.includes('-asr') || slug.includes('-whisper') || slug.includes('embedding')
+      || slug.includes('reranker');
+  };
+  const isVerifiedUnifiedPrice = (modelId: number | null | undefined, providerId: number | null | undefined) => {
+    const modelSlug = modelId != null ? modelById.get(modelId)?.slug : undefined;
+    const providerSlug = providerId != null ? providerById.get(providerId)?.slug : undefined;
+    return (modelSlug === 'qwen2.5-7b-instruct-turbo' && providerSlug === 'together-ai')
+      || (modelSlug === 'gemma-2-27b' && providerSlug === 'openrouter')
+      || (modelSlug === 'glm-4' && providerSlug === 'zhipu-china')
+      || (['mistral', 'openrouter'].includes(providerSlug ?? '')
+        && ['ministral-3b', 'ministral-8b', 'ministral-14b'].includes(modelSlug ?? ''));
   };
 
   // ---------- C1/C2/C3: row-level price sanity ----------
   for (const p of prices) {
     if (isDisabled(p)) continue;
     const ctx = { price_id: p.id, model: refModel(p.model_id), provider: refProvider(p.provider_id), in: p.input_price_per_1m, out: p.output_price_per_1m };
-    const freeTier = isFreeTier(p.model_id);
+    const freeTier = isFreeTier(p.model_id) || isVerifiedFreePrice(p.model_id, p.provider_id);
     const nonToken = isNonTokenPriced(p.model_id);
 
     if (!freeTier && !nonToken) {
@@ -151,10 +168,11 @@ async function main() {
       add('prices.output_lt_input', 'critical', `output ($${p.output_price_per_1m}) < input ($${p.input_price_per_1m})`, ctx);
     }
     if (
+      !nonToken && !isVerifiedUnifiedPrice(p.model_id, p.provider_id) &&
       p.input_price_per_1m != null && p.output_price_per_1m != null &&
       p.input_price_per_1m > 0 && p.input_price_per_1m === p.output_price_per_1m
     ) {
-      add('prices.input_eq_output', 'warning', `input == output == $${p.input_price_per_1m} (likely parser bug)`, ctx);
+      add('prices.input_eq_output', 'warning', `input == output == $${p.input_price_per_1m} (verify unified pricing)`, ctx);
     }
   }
 
@@ -254,6 +272,9 @@ async function main() {
 
   // ---------- C13: plan staleness ----------
   for (const pl of plans) {
+    // Manual plans are curated ground truth and are intentionally outside the
+    // scraper freshness contract. See cleanupOutdatedPlans().
+    if (pl.source === 'manual') continue;
     if (!pl.last_verified) {
       add('plans.missing_verified', 'warning', 'plan.last_verified is null', { plan: `${pl.slug}#${pl.id}` });
       continue;
@@ -318,7 +339,9 @@ async function main() {
   }
 
   const hasCritical = findings.some(f => f.severity === 'critical');
-  process.exit(hasCritical ? 1 : findings.length > 0 ? 2 : 0);
+  // Let Node flush large JSON reports before exiting. Calling process.exit()
+  // here truncated stdout once the report exceeded the pipe buffer.
+  process.exitCode = hasCritical ? 1 : findings.length > 0 ? 2 : 0;
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

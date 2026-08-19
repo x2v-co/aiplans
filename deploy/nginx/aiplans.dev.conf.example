@@ -1,0 +1,50 @@
+# Install as /etc/nginx/sites-available/aiplans.dev.conf and symlink into
+# sites-enabled. Keep this file outside the application Compose project.
+
+upstream planprice_app {
+    server 127.0.0.1:3000;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name aiplans.dev www.aiplans.dev;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name aiplans.dev www.aiplans.dev;
+
+    ssl_certificate /etc/letsencrypt/live/aiplans.dev/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aiplans.dev/privkey.pem;
+
+    location /_next/static/ {
+        proxy_pass http://planprice_app;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    location / {
+        proxy_pass http://planprice_app;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+}

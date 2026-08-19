@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    cpus: 1.5
+    mem_limit: 3g
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-planprice}
+      POSTGRES_USER: ${POSTGRES_USER:-planprice}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - planprice_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
+    restart: unless-stopped
+    cpus: 1.5
+    mem_limit: 2g
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ${APP_ENV_FILE:-.env.production}
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-planprice}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-planprice}
+    ports:
+      - "127.0.0.1:${HOST_APP_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://' + require('os').hostname() + ':3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  migrate:
+    profiles: ["tools"]
+    cpus: 1.0
+    mem_limit: 1g
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: migrator
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ${APP_ENV_FILE:-.env.production}
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-planprice}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-planprice}
+    command: ["npm", "run", "migrate"]
+
+  scraper:
+    profiles: ["tools"]
+    init: true
+    cpus: 2.0
+    mem_limit: 3g
+    shm_size: 1g
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: scraper
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ${APP_ENV_FILE:-.env.production}
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-planprice}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-planprice}
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    command: ["npm", "run", "scrape"]
+
+volumes:
+  planprice_postgres_data:

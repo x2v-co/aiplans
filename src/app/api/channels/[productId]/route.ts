@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { getPrimaryProvidersForModels, getProvidersByIds } from '@/lib/schema-adapters';
 
 // GET /api/channels/[productId] - 某模型渠道价格
@@ -11,33 +11,31 @@ export async function GET(
     const { productId } = await params;
     const productIdNum = parseInt(productId);
 
-    // First, get channel prices with provider info
-    const { data, error } = await supabase
-      .from('api_channel_prices')
-      .select(`
-        *,
-        providers:provider_id (
-          id,
-          name,
-          slug,
-          type,
-          region,
-          access_from_china,
-          logo
-        ),
-        models:model_id (
-          id,
-          name,
-          slug,
-          provider_ids
-        )
-      `)
-      .eq('model_id', productIdNum)
-      .eq('is_available', true)
-      .not('provider_id', 'is', null)
-      .order('input_price_per_1m', { ascending: true });
-
-    if (error) throw error;
+    const data = await sql<any[]>`
+      SELECT
+        cp.*,
+        jsonb_build_object(
+          'id', p.id,
+          'name', p.name,
+          'slug', p.slug,
+          'type', p.type,
+          'region', p.region,
+          'access_from_china', p.access_from_china,
+          'logo', p.logo
+        ) AS providers,
+        jsonb_build_object(
+          'id', m.id,
+          'name', m.name,
+          'slug', m.slug,
+          'provider_ids', m.provider_ids
+        ) AS models
+      FROM api_channel_prices cp
+      JOIN providers p ON p.id = cp.provider_id
+      JOIN models m ON m.id = cp.model_id
+      WHERE cp.model_id = ${productIdNum}
+        AND cp.is_available = true
+      ORDER BY cp.input_price_per_1m ASC NULLS LAST
+    `;
 
     // If we have data, fetch the model's official providers separately
     if (data && data.length > 0 && data[0].models) {
@@ -50,7 +48,7 @@ export async function GET(
         .filter(Boolean);
     }
 
-    return NextResponse.json(data || []);
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching channel prices:', error);
     return NextResponse.json({ error: 'Failed to fetch channel prices' }, { status: 500 });

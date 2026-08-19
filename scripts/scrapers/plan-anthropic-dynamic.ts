@@ -4,8 +4,8 @@
  */
 
 import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
-import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
-import { chromium, Browser, Page, BrowserContext } from 'playwright';
+import { slugifyPlan, normalizePlanName } from '../utils/plan-validator';
+import { chromium, Browser } from 'playwright';
 
 const ANTHROPIC_PLANS_URL = 'https://claude.com/pricing';
 
@@ -217,6 +217,14 @@ async function fetchAnthropicPlans(): Promise<{ plans: AnthropicPlan[], errors: 
         }
       }
     }
+
+    // The footer repeats "Enterprise" links after the pricing section. Keep
+    // only one row per canonical plan name so page chrome cannot create
+    // duplicate writes.
+    const uniquePlans = Array.from(
+      new Map(plans.map(plan => [slugifyPlan(plan.name), plan])).values()
+    );
+    plans.splice(0, plans.length, ...uniquePlans);
 
     if (plans.length === 0) {
       errors.push('No plans could be extracted from Anthropic pricing page. The page structure may have changed.');

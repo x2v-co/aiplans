@@ -1,152 +1,88 @@
-/**
- * Baidu ERNIE / 千帆 API Scraper - Dynamic fetching from pricing page
- * NO FALLBACK DATA - Fails cleanly when scraping fails
- */
-
-import type { ScrapedPrice, ScraperResult } from '../utils/validator';
-import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { fetchHTML } from './base-fetcher';
+/** Baidu Qianfan ERNIE online inference prices from the official table. */
+import type { ScraperResult } from '../utils/validator';
+import { PlaywrightScraper, type PriceData } from './lib/playwright-scraper';
 
 const BAIDU_PRICING_URL = 'https://cloud.baidu.com/doc/qianfan/s/wmh4sv6ya';
 
-interface BaiduModel {
-  model: string;
-  inputPrice: number;
-  outputPrice: number;
-  contextWindow: number;
+function canonicalModel(raw: string): string | null {
+  const clean = raw.trim().toLowerCase().replace(/\s+/g, '-');
+  if (!/^ernie/.test(clean)) return null;
+  return clean
+    .replace(/-\d{8}$/i, '')
+    .replace(/-(?:32k|128k)(?:-preview)?$/i, '')
+    .replace(/-preview$/i, '');
 }
 
-/**
- * Fetch and parse Baidu pricing from their website
- */
-async function fetchBaiduPricing(): Promise<{ models: BaiduModel[], errors: string[] }> {
-  const result = await fetchHTML(BAIDU_PRICING_URL);
-  const errors: string[] = [];
+function numeric(text: string | undefined): number | undefined {
+  if (!text || !/^\d+(?:\.\d+)?$/.test(text)) return undefined;
+  return Number(text);
+}
 
-  if (!result.success || !result.data) {
-    return { models: [], errors: ['Failed to fetch Baidu pricing page'] };
-  }
+class BaiduScraper extends PlaywrightScraper {
+  getSourceName(): string { return 'Baidu-ERNIE'; }
+  getSourceUrl(): string { return BAIDU_PRICING_URL; }
 
-  const html = result.data;
-  const models: BaiduModel[] = [];
+  async scrape(): Promise<ScraperResult> {
+    await this.navigate(BAIDU_PRICING_URL);
+    await this.page!.waitForTimeout(3_000);
 
-  // Known Baidu ERNIE model patterns (2025-2026)
-  const modelPatterns = [
-    {
-      model: 'ernie-4.0',
-      inputPattern: /ernie-4\.0[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-    {
-      model: 'ernie-3.5',
-      inputPattern: /ernie-3\.5[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-    {
-      model: 'ernie-speed',
-      inputPattern: /ernie-speed[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-    {
-      model: 'ernie-turbo',
-      inputPattern: /ernie-turbo[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-    {
-      model: 'ernie-lite',
-      inputPattern: /ernie-lite[^$]*?([¥￥]\s*[\d.]+)/i,
-      context: 128000,
-    },
-  ];
+    const rows = await this.page!.locator('table').filter({ hasText: 'ERNIE 5.1' }).first()
+      .locator('tr').evaluateAll(elements => elements.map(row =>
+        Array.from(row.querySelectorAll('th,td'))
+          .map(cell => (cell.textContent ?? '').replace(/\s+/g, ' ').trim())
+      ));
 
-  for (const pattern of modelPatterns) {
-    const priceMatch = html.match(pattern.inputPattern);
+    const inputByModel = new Map<string, number>();
+    const prices: PriceData[] = [];
+    const seen = new Set<string>();
+    let currentModel: string | null = null;
 
-    if (priceMatch) {
-      const price = parseFloat(priceMatch[1].replace(/[¥￥\s]/g, ''));
-      // Baidu charges same rate for input/output
-      const inputPrice = price;
-      const outputPrice = price;
-
-      if (!isNaN(inputPrice)) {
-        models.push({
-          model: pattern.model,
-          inputPrice,
-          outputPrice,
-          contextWindow: pattern.context,
-        });
+    for (const cells of rows.slice(1)) {
+      const modelCandidate = canonicalModel(cells[0] ?? '');
+      if (modelCandidate && cells.some(cell => /^输入(?:（|$)/.test(cell))) {
+        currentModel = modelCandidate;
       }
+      if (!currentModel || seen.has(currentModel)) continue;
+
+      const inputIndex = cells.findIndex(cell => /^输入(?:（|$)/.test(cell));
+      if (inputIndex >= 0) {
+        const input = numeric(cells[inputIndex + 1]);
+        if (input != null && !inputByModel.has(currentModel)) {
+          inputByModel.set(currentModel, input * 1_000);
+        }
+        continue;
+      }
+
+      const outputIndex = cells.findIndex(cell => /^输出(?:（|$)/.test(cell));
+      if (outputIndex < 0) continue;
+      const outputPerThousand = numeric(cells[outputIndex + 1]);
+      const input = inputByModel.get(currentModel);
+      if (input == null || outputPerThousand == null) continue;
+      const output = outputPerThousand * 1_000;
+      if (output < input) continue;
+
+      prices.push({
+        modelName: currentModel,
+        inputPricePer1M: input,
+        outputPricePer1M: output,
+        contextWindow: 128_000,
+        isAvailable: true,
+        currency: 'CNY',
+      });
+      seen.add(currentModel);
     }
-  }
 
-  if (models.length === 0) {
-    errors.push('No models could be parsed from Baidu pricing page. The page structure may have changed.');
+    const errors = prices.length === 0
+      ? ['No ERNIE online inference prices found in the official Qianfan table']
+      : undefined;
+    return { source: this.getSourceName(), success: prices.length > 0, prices, errors };
   }
-
-  return { models, errors };
 }
 
 export async function scrapeBaiduDynamic(): Promise<ScraperResult> {
-  const startTime = Date.now();
-  const errors: string[] = [];
-  const prices: ScrapedPrice[] = [];
-
-  try {
-    console.log('🔄 Fetching Baidu pricing...');
-
-    const { models, errors: fetchErrors } = await fetchBaiduPricing();
-    errors.push(...fetchErrors);
-
-    console.log(`📦 Found ${models.length} models from Baidu`);
-
-    for (const model of models) {
-      try {
-        // Validate prices
-        if (!validatePrice(model.inputPrice) || !validatePrice(model.outputPrice)) {
-          errors.push(`Invalid price for ${model.model}`);
-          continue;
-        }
-
-        prices.push({
-          modelName: normalizeModelName(model.model),
-          modelSlug: slugify(model.model),
-          inputPricePer1M: model.inputPrice,
-          outputPricePer1M: model.outputPrice,
-          contextWindow: model.contextWindow,
-          isAvailable: true,
-          currency: 'CNY',
-        });
-      } catch (error) {
-        errors.push(`Error processing ${model.model}: ${error}`);
-      }
-    }
-
-    const duration = Date.now() - startTime;
-    console.log(`✅ Baidu scrape completed in ${duration}ms`);
-    console.log(`   - Models processed: ${prices.length}`);
-    console.log(`   - Errors: ${errors.length}`);
-
-    return {
-      source: 'Baidu-ERNIE',
-      success: errors.length === 0 && prices.length > 0,
-      prices,
-      errors: errors.length > 0 ? errors : undefined,
-    };
-  } catch (error) {
-    console.error('❌ Baidu scrape failed:', error);
-    return {
-      source: 'Baidu-ERNIE',
-      success: false,
-      prices: [],
-      errors: [String(error)],
-    };
-  }
+  return new BaiduScraper().run() as Promise<ScraperResult>;
 }
 
-// CLI test
 if (require.main === module) {
-  scrapeBaiduDynamic().then(result => {
-    console.log('\n📊 Scrape Result:');
-    console.log(JSON.stringify(result, null, 2));
-  });
+  scrapeBaiduDynamic().then(result => console.log(JSON.stringify(result, null, 2)));
 }

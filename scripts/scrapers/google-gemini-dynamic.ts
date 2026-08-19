@@ -1,179 +1,106 @@
-/**
- * Google Gemini API Scraper - Uses Playwright for real HTML parsing
- * NO FALLBACK DATA - Fails cleanly when scraping fails
- */
-
-import type { ScrapedPrice, ScraperResult } from '../utils/validator';
-import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
-import { PlaywrightScraper, PriceData } from './lib/playwright-scraper';
+/** Google Gemini API standard token pricing from the official pricing tables. */
+import type { ScraperResult } from '../utils/validator';
+import { PlaywrightScraper, type PriceData } from './lib/playwright-scraper';
 
 const GOOGLE_PRICING_URL = 'https://ai.google.dev/pricing';
 
-class GeminiScraper extends PlaywrightScraper {
-  getSourceName(): string {
-    return 'Google-Gemini-API';
-  }
+function firstDollar(text: string | undefined): number | undefined {
+  const match = text?.match(/\$\s*([\d.]+)/);
+  if (!match) return undefined;
+  const value = Number(match[1]);
+  return Number.isFinite(value) ? value : undefined;
+}
 
-  getSourceUrl(): string {
-    return GOOGLE_PRICING_URL;
-  }
+function canonicalModel(heading: string): string | null {
+  if (!/^Gemini\s+\d/i.test(heading)) return null;
+  if (/(audio|image|live|translate|tts|computer use|omni)/i.test(heading)) return null;
+
+  return heading
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+class GeminiScraper extends PlaywrightScraper {
+  getSourceName(): string { return 'Google-Gemini-API'; }
+  getSourceUrl(): string { return GOOGLE_PRICING_URL; }
 
   async scrape(): Promise<ScraperResult> {
-    const errors: string[] = [];
-    const prices: PriceData[] = [];
-
     await this.navigate(GOOGLE_PRICING_URL);
+    await this.page!.waitForFunction(() =>
+      Array.from(document.querySelectorAll('table')).some(table =>
+        table.previousElementSibling?.textContent?.trim() === 'Standard'
+          && /Input price/i.test(table.textContent ?? '')
+          && /Output price/i.test(table.textContent ?? '')
+      ),
+      undefined,
+      { timeout: 15_000 }
+    );
 
-    // Wait for pricing content to load
-    await this.page!.waitForTimeout(2000);
+    const tables = await this.page!.locator('table').evaluateAll(elements => {
+      const modelHeadings = Array.from(document.querySelectorAll('h2'));
 
-    // Get all text content from the page
-    const pageContent = await this.page!.textContent('body') || '';
+      return elements.map(table => {
+        const model = modelHeadings
+          .filter(heading => heading.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING)
+          .at(-1);
+        const tier = table.previousElementSibling?.textContent?.trim() || '';
+        return {
+          model: (model?.textContent ?? '').replace(/\s+/g, ' ').trim(),
+          tier: tier.replace(/\s+/g, ' '),
+          rows: Array.from(table.querySelectorAll('tr')).map(row =>
+            Array.from(row.querySelectorAll('th,td')).map(cell =>
+              (cell.textContent ?? '').replace(/\s+/g, ' ').trim()
+            )
+          ),
+        };
+      });
+    });
 
-    // Known Gemini model patterns
-    const models = [
-      { name: 'gemini-2.0-flash', patterns: [/gemini\s*2\.?0\s*flash/i] },
-      { name: 'gemini-2.0-flash-thinking', patterns: [/gemini\s*2\.?0\s*flash.*thinking/i] },
-      { name: 'gemini-1.5-pro', patterns: [/gemini\s*1\.5\s*pro/i] },
-      { name: 'gemini-1.5-flash', patterns: [/gemini\s*1\.5\s*flash/i] },
-      { name: 'gemini-1.0-pro', patterns: [/gemini\s*1\.?0\s*pro/i] },
-      { name: 'gemini-exp', patterns: [/gemini\s*exp/i] },
-    ];
+    if (process.env.DEBUG_SCRAPER === '1') {
+      console.log(JSON.stringify(tables.slice(0, 5), null, 2));
+    }
 
-    for (const modelInfo of models) {
-      try {
-        // Find the section containing this model's pricing
-        let modelSection: string | null = null;
+    const prices: PriceData[] = [];
+    const seen = new Set<string>();
+    for (const table of tables) {
+      if (table.tier !== 'Standard') continue;
+      const modelName = canonicalModel(table.model);
+      if (!modelName || seen.has(modelName)) continue;
 
-        for (const pattern of modelInfo.patterns) {
-          const match = pageContent.match(pattern);
-          if (match && match.index !== undefined) {
-            // Extract surrounding context
-            const start = Math.max(0, match.index - 200);
-            const end = Math.min(pageContent.length, match.index + match[0].length + 400);
-            modelSection = pageContent.slice(start, end);
-            break;
-          }
-        }
-
-        if (!modelSection) continue;
-
-        // Extract prices from the section
-        // Look for patterns like "$0.075", "$1.25", etc.
-        const pricePattern = /\$?([\d.]+)\s*(?:per\s*)?(?:million|1M)?/gi;
-        const priceMatches = [...modelSection.matchAll(pricePattern)];
-
-        // Filter out very small numbers (likely not prices) and very large numbers
-        const validPrices = priceMatches
-          .map(m => parseFloat(m[1]))
-          .filter(p => p > 0.01 && p < 1000);
-
-        if (validPrices.length >= 2) {
-          const inputPrice = validPrices[0];
-          const outputPrice = validPrices[1];
-
-          if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
-            prices.push({
-              modelName: normalizeModelName(modelInfo.name),
-              inputPricePer1M: inputPrice,
-              outputPricePer1M: outputPrice,
-              contextWindow: this.inferContextWindow(modelInfo.name),
-              isAvailable: true,
-              currency: 'USD',
-            });
-          }
-        }
-      } catch (error) {
-        errors.push(`Failed to extract pricing for ${modelInfo.name}`);
+      const inputRow = table.rows.find(row => /^Input price/i.test(row[0] ?? ''));
+      const outputRow = table.rows.find(row => /^Output price/i.test(row[0] ?? ''));
+      const input = firstDollar(inputRow?.[2]);
+      const output = firstDollar(outputRow?.[2]);
+      if (process.env.DEBUG_SCRAPER === '1') {
+        console.log({ model: table.model, modelName, input, output });
       }
+      if (input == null || output == null || input <= 0 || output < input) continue;
+
+      prices.push({
+        modelName,
+        inputPricePer1M: input,
+        outputPricePer1M: output,
+        contextWindow: 1_000_000,
+        isAvailable: true,
+        currency: 'USD',
+      });
+      seen.add(modelName);
     }
 
-    // Try alternative approach: look for pricing tables
-    if (prices.length === 0) {
-      const tables = await this.page!.$$('table');
-      for (const table of tables) {
-        const rows = await table.$$('tr');
-        for (const row of rows) {
-          const text = await row.textContent();
-          if (!text) continue;
-
-          // Check if this row mentions a Gemini model
-          if (/gemini/i.test(text)) {
-            const priceMatches = [...text.matchAll(/\$?([\d.]+)/g)];
-            const validPrices = priceMatches
-              .map(m => parseFloat(m[1]))
-              .filter(p => p > 0.01 && p < 1000);
-
-            if (validPrices.length >= 2) {
-              const modelNameMatch = text.match(/gemini[-\s]?\d\.?\d?\s*(pro|flash|exp)?/i);
-              if (modelNameMatch) {
-                const modelName = modelNameMatch[0]
-                  .toLowerCase()
-                  .replace(/\s+/g, '-')
-                  .replace(/[^a-z0-9-]/g, '');
-
-                const inputPrice = validPrices[0];
-                const outputPrice = validPrices[1];
-
-                if (validatePrice(inputPrice) && validatePrice(outputPrice)) {
-                  // Avoid duplicates
-                  if (!prices.some(p => p.modelName.toLowerCase().includes(modelName.toLowerCase()))) {
-                    prices.push({
-                      modelName: normalizeModelName(modelName),
-                      inputPricePer1M: inputPrice,
-                      outputPricePer1M: outputPrice,
-                      contextWindow: this.inferContextWindow(modelName),
-                      isAvailable: true,
-                      currency: 'USD',
-                    });
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (prices.length === 0) {
-      errors.push('No pricing data could be extracted from Google pricing page. The page structure may have changed.');
-    }
-
-    return {
-      success: errors.length === 0 && prices.length > 0,
-      source: this.getSourceName(),
-      prices,
-      errors: errors.length > 0 ? errors : undefined,
-    };
-  }
-
-  private inferContextWindow(model: string): number {
-    const contextWindows: Record<string, number> = {
-      'gemini-2.0-flash': 1000000,
-      'gemini-1.5-pro': 2000000,
-      'gemini-1.5-flash': 1000000,
-      'gemini-1.0-pro': 2800000,
-    };
-
-    const normalizedModel = model.toLowerCase();
-    for (const [key, value] of Object.entries(contextWindows)) {
-      if (normalizedModel.includes(key)) {
-        return value;
-      }
-    }
-    return 1000000; // Default
+    const errors = prices.length === 0
+      ? ['No standard text-token prices found in the official Google Gemini pricing tables']
+      : undefined;
+    return { success: errors == null, source: this.getSourceName(), prices, errors };
   }
 }
 
 export async function scrapeGoogleDynamic(): Promise<ScraperResult> {
-  const scraper = new GeminiScraper();
-  return scraper.run();
+  return new GeminiScraper().run();
 }
 
-// CLI test
 if (require.main === module) {
-  scrapeGoogleDynamic().then(result => {
-    console.log('\n📊 Scrape Result:');
-    console.log(JSON.stringify(result, null, 2));
-  });
+  scrapeGoogleDynamic().then(result => console.log(JSON.stringify(result, null, 2)));
 }
