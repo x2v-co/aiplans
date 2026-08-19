@@ -39,9 +39,14 @@ export async function GET(request: Request) {
     const modelIds = products.map((p: any) => p.id);
     const benchmarkData: Array<{ model_id: number; value: number | null }> = modelIds.length > 0
       ? [...await sql<Array<{ model_id: number; value: number | null }>>`
-          SELECT model_id, value
-          FROM model_benchmark_scores
-          WHERE model_id = ANY(${sql.array(modelIds, 23)})
+          SELECT s.model_id, s.value
+          FROM model_benchmark_scores s
+          JOIN benchmark_tasks bt ON bt.id = s.benchmark_task_id
+          JOIN benchmark_versions bv ON bv.id = bt.benchmark_version_id
+            AND bv.is_current = true
+          JOIN benchmarks b ON b.id = bv.benchmark_id AND b.slug = 'arena'
+          JOIN benchmark_metrics bm ON bm.id = s.metric_id AND bm.name = 'ELO'
+          WHERE s.model_id = ANY(${sql.array(modelIds, 23)})
           ORDER BY value DESC NULLS LAST
         `]
       : [];
@@ -88,6 +93,20 @@ export async function GET(request: Request) {
         ...product,
         planCount: planCountMap.get(product.id) || 0,
       }));
+
+      const apiPricedModels = modelIds.length > 0
+        ? await sql<Array<{ model_id: number }>>`
+            SELECT DISTINCT model_id
+            FROM api_channel_prices
+            WHERE is_available = true
+              AND model_id = ANY(${sql.array(modelIds, 23)})
+          `
+        : [];
+      const apiPricingIds = new Set(apiPricedModels.map((row) => row.model_id));
+      products = products.map((product: any) => ({
+        ...product,
+        hasApiPricing: apiPricingIds.has(product.id),
+      }));
     }
 
     // Filter featured models (hot models) - based on Arena ELO AND planCount
@@ -95,9 +114,10 @@ export async function GET(request: Request) {
       // Automatically select top models based on Arena ELO score and plan availability
       products = products
         .filter((p: any) => {
-          // Only include models that have plans available
-          if (includePlanCount === 'true' && (p.planCount || 0) === 0) return false;
-          return true;
+          // A hot model is usable if it has either subscription plans or API
+          // channel pricing. New model versions often launch API-first.
+          if (includePlanCount === 'true' && (p.planCount || 0) === 0 && !p.hasApiPricing) return false;
+          return p.benchmark_arena_elo != null;
         })
         .sort((a: any, b: any) => {
           // Sort by Arena ELO first, then by plan count
@@ -110,24 +130,10 @@ export async function GET(request: Request) {
           return (b.planCount || 0) - (a.planCount || 0);
         });
 
-      // Keep only the highest ELO model per provider
-      const providerTopModels = new Map();
-      products.forEach((p: any) => {
-        const providerId = p.providers?.id || p.provider_ids?.[0];
-        const currentTop = providerTopModels.get(providerId);
-        const currentElo = currentTop?.benchmark_arena_elo || 0;
-        const newElo = p.benchmark_arena_elo || 0;
-        if (newElo > currentElo) {
-          providerTopModels.set(providerId, p);
-        }
-      });
-
-      // Sort by ELO descending and take top 8
-      products = Array.from(providerTopModels.values())
-        .sort((a: any, b: any) => {
-          return (b.benchmark_arena_elo || 0) - (a.benchmark_arena_elo || 0);
-        })
-        .slice(0, 8);
+      // Sort by current Arena ELO and take the top 8 model versions. Do not
+      // collapse by provider: several versions from one lab can legitimately
+      // be among the current leaders.
+      products = products.slice(0, 8);
     }
 
     return NextResponse.json(products);
