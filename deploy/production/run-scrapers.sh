@@ -33,6 +33,11 @@ plans_status=$?
 set -e
 
 set +e
+# Backfill plan_kind / plan_line / tier_rank / model_selector from the curated
+# classifications. Must precede the materializer, which derives links from
+# plans.model_selector -- a freshly-scraped plan has none until this runs.
+"${compose[@]}" run --rm scraper npm run fix:kinds
+kinds_status=$?
 # Re-derive model↔plan links from each plan's model_selector. Runs after the
 # plan scrapers so newly-scraped models and plans get linked, and before the
 # audit so plans.no_model_mapping reflects this run.
@@ -53,6 +58,14 @@ fi
 if [[ "$api_status" != "0" || "$plans_status" != "0" ]]; then
   echo "Scraper group failure: api=$api_status plans=$plans_status" >&2
   exit 1
+fi
+
+# A plan whose slug is not in plan-classifications.ts simply gets no kind; the
+# audit's plans.missing_kind check reports that. A non-zero exit means the
+# backfill itself broke, which leaves the materializer working from stale
+# selectors.
+if [[ "$kinds_status" != "0" ]]; then
+  echo "Warning: plan kind backfill failed ($kinds_status); selectors are unchanged from the last good run." >&2
 fi
 
 # The materializer refuses to run when a selector would wipe a plan's models,
