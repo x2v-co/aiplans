@@ -323,6 +323,96 @@ const MIGRATIONS: Migration[] = [
        WHERE slug = 'grok';
     `,
   },
+  {
+    name: '013_add_plan_kinds_and_model_selector',
+    sql: `
+      -- Product-line taxonomy. Orthogonal to \`tier\`: a vendor can sell a Pro
+      -- chat plan, a Pro coding plan, and a token pack at the same time, and
+      -- comparing across those lines is meaningless.
+      --   chat       = consumer chat subscription (ChatGPT Plus, Claude Pro)
+      --   coding     = IDE / CLI coding subscription (Copilot, Claude Code seats)
+      --   agent      = autonomous-agent product (credits or task quotas)
+      --   token_pack = prepaid token bundle, no recurring entitlement
+      --   api_tier   = rate-limit tier on a pay-as-you-go API account
+      --   bundle     = one price covering more than one of the above
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS plan_kind text DEFAULT 'chat';
+      UPDATE plans SET plan_kind = 'chat' WHERE plan_kind IS NULL;
+      ALTER TABLE plans ALTER COLUMN plan_kind SET NOT NULL;
+
+      ALTER TABLE plans DROP CONSTRAINT IF EXISTS plans_plan_kind_chk;
+      ALTER TABLE plans ADD CONSTRAINT plans_plan_kind_chk
+        CHECK (plan_kind IN ('chat','coding','agent','token_pack','api_tier','bundle'));
+
+      -- Named product line within a kind ('claude-code', 'minimax-highspeed').
+      -- Two plans compare only when plan_kind AND plan_line match.
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS plan_line text;
+
+      -- Ordering inside a line. Independent of \`tier\` because Max 5x and
+      -- Max 20x are both tier='pro' but are not the same rung.
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS tier_rank integer;
+
+      -- A bundle's non-primary kinds, for filtering without duplicating rows.
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS secondary_kinds text[] DEFAULT '{}';
+
+      -- Rule that derives this plan's model list, materialized into
+      -- model_plan_mapping after every scrape. Shape:
+      --   { provider?: string, families?: string[], current_only?: boolean,
+      --     extra?: string[], exclude?: string[] }
+      -- current_only defaults to false: a model page for an older version in a
+      -- series still needs to show the plans that include it.
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS model_selector jsonb;
+
+      -- Token-pack economics, so a pack price can be shown as $/1M tokens.
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS included_tokens bigint;
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS included_credits integer;
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS pack_validity_days integer;
+
+      CREATE INDEX IF NOT EXISTS plans_plan_kind_idx
+        ON plans (plan_kind, plan_line, tier_rank);
+    `,
+  },
+  {
+    name: '014_add_model_plan_mapping_source',
+    sql: `
+      -- Mirrors plans.source. The materializer owns 'derived' rows and may
+      -- replace them wholesale; 'manual' rows are hand-curated exceptions that
+      -- rule derivation must never delete.
+      ALTER TABLE model_plan_mapping ADD COLUMN IF NOT EXISTS source text DEFAULT 'manual';
+      UPDATE model_plan_mapping SET source = 'manual' WHERE source IS NULL;
+      ALTER TABLE model_plan_mapping ALTER COLUMN source SET NOT NULL;
+
+      ALTER TABLE model_plan_mapping DROP CONSTRAINT IF EXISTS model_plan_mapping_source_chk;
+      ALTER TABLE model_plan_mapping ADD CONSTRAINT model_plan_mapping_source_chk
+        CHECK (source IN ('derived', 'manual'));
+
+      -- This table never had a unique key, so it can already contain duplicate
+      -- (plan_id, model_id) pairs. Collapse them onto the lowest id (keeping the
+      -- highest priority seen) before the unique index can be created.
+      UPDATE model_plan_mapping AS keeper
+         SET priority = ranked.max_priority
+        FROM (
+          SELECT plan_id, model_id,
+                 min(id) AS keep_id,
+                 max(coalesce(priority, 0)) AS max_priority
+            FROM model_plan_mapping
+           GROUP BY plan_id, model_id
+          HAVING count(*) > 1
+        ) AS ranked
+       WHERE keeper.id = ranked.keep_id
+         AND keeper.priority IS DISTINCT FROM ranked.max_priority;
+
+      DELETE FROM model_plan_mapping AS dupe
+       WHERE dupe.id > (
+         SELECT min(other.id)
+           FROM model_plan_mapping AS other
+          WHERE other.plan_id IS NOT DISTINCT FROM dupe.plan_id
+            AND other.model_id IS NOT DISTINCT FROM dupe.model_id
+       );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS model_plan_mapping_uniq
+        ON model_plan_mapping (plan_id, model_id);
+    `,
+  },
 ];
 
 async function main() {

@@ -21,12 +21,8 @@ import {
   upsertProvider,
   getProviderBySlug,
   cleanupOutdatedPlans,
-  upsertModelPlanRelation,
-  deleteModelsForPlan,
 } from './db/queries';
 import type { PlanScraperResult, ScrapedPlan } from './utils/plan-validator';
-import { normalizeSlug } from './utils/model-normalizer';
-import { PROVIDER_PLAN_MODEL_SLUGS } from './config/plan-model-slugs';
 
 // Type definition for provider config
 interface ProviderConfig {
@@ -249,7 +245,7 @@ async function savePlansToDatabase(
   // Save each plan
   for (const plan of scrapedPlans) {
     try {
-      const savedPlan = await upsertPlan({
+      await upsertPlan({
         provider_id: provider.id,
         name: plan.planName,
         slug: plan.planSlug,
@@ -271,39 +267,14 @@ async function savePlansToDatabase(
         price_unit: 'per_month',
       });
 
-      // Handle model-plan relations
-      const productSlugs = normalizeProductSlugs(
-        plan.productSlugs || PROVIDER_PLAN_MODEL_SLUGS[providerKey]?.[plan.planSlug] || []
-      );
-      if (productSlugs.length > 0) {
-        // First, delete existing model relations for this plan
-        await deleteModelsForPlan(savedPlan.id);
-
-        // Then create new model-plan relations
-        for (let i = 0; i < productSlugs.length; i++) {
-          const productSlug = productSlugs[i];
-          try {
-            // Get model by slug
-            const { data: model } = await (await import('./db/queries')).supabaseAdmin
-              .from('models')
-              .select('id')
-              .eq('slug', productSlug)
-              .single();
-
-            if (model) {
-              await upsertModelPlanRelation({
-                plan_id: savedPlan.id,
-                model_id: model.id,
-                priority: i, // Use index as priority for ordering
-              });
-            } else {
-              console.warn(`⚠️  Product not found for slug: ${productSlug}`);
-            }
-          } catch (error) {
-            console.warn(`⚠️  Failed to create model-plan relation for ${productSlug}:`, error);
-          }
-        }
-      }
+      // Model↔plan links are not written here. They are derived from each
+      // plan's `model_selector` by scripts/materialize-model-plan-mappings.ts,
+      // which runs right after this scraper. The old code path called
+      // deleteModelsForPlan() — an unconditional delete of every mapping for
+      // the plan — and then re-inserted from a hand-maintained slug list that
+      // had drifted out of date. No plan scraper ever reported model slugs of
+      // its own, so the list was the only input, and stale entries silently
+      // wiped good links.
 
       currentSlugs.push(plan.planSlug);
     } catch (error) {
@@ -315,17 +286,6 @@ async function savePlansToDatabase(
   if (currentSlugs.length > 0) {
     await cleanupOutdatedPlans(provider.id, currentSlugs);
   }
-}
-
-function normalizeProductSlugs(productSlugs: string[]): string[] {
-  const normalized = new Set<string>();
-
-  for (const productSlug of productSlugs) {
-    if (!productSlug) continue;
-    normalized.add(normalizeSlug(productSlug));
-  }
-
-  return Array.from(normalized);
 }
 
 /**

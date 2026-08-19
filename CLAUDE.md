@@ -39,6 +39,12 @@ npm run fix:data:dry-run    # preview api_channel_prices fixes
 npm run fix:data            # apply them (idempotent)
 npm run fix:plans:dry-run   # preview plan fixes (reassign/update/delete/insert)
 npm run fix:plans           # apply
+npm run fix:kinds:dry-run   # preview plan_kind/plan_line/tier_rank/model_selector
+npm run fix:kinds           # apply
+
+# Model ↔ plan links — derived from plans.model_selector, never hand-listed
+npm run mappings:materialize:dry-run
+npm run mappings:materialize   # rewrites source='derived' rows only
 
 # Schema migrations (idempotent postgres DDL)
 npm run migrate             # adds price_history, plans.notes, plans.source, etc.
@@ -317,11 +323,12 @@ scripts/
 ├── fix-currency-on-patched-rows.ts # one-shot currency alignment
 ├── ingest-arena-leaderboard.ts # ingest top-60 Arena scores
 ├── add-arena-missing-models.ts # stub models for arena coverage
-├── add-model-plan-mappings.ts  # populate model_plan_mapping from config
+├── materialize-model-plan-mappings.ts # derive model_plan_mapping from selectors
+├── fix-plan-kinds.ts           # backfill plan_kind/line/tier_rank/selector
 ├── debug-core-snapshot.ts      # ops snapshot
 ├── debug-plans-snapshot.ts     # ops snapshot
 ├── fetch-provider-logos.ts     # provider logo sync
-├── config/plan-model-slugs.ts  # plan → [model slugs] registry
+├── config/plan-classifications.ts # plan → kind/line/rank + model_selector
 ├── db/queries.ts               # shared upsertChannelPrice / logPriceChange
 ├── scrapers/
 │   ├── base-fetcher.ts         # HTTP + Playwright + JS_HEAVY_DOMAINS
@@ -378,16 +385,23 @@ messages/
 - **New provider**: insert into `providers`, classify `region` and
   `access_from_china`, add to `fix-provider-regions.ts` if it should be
   curated going forward.
-- **New plan**: add the slug + model list to `scripts/config/plan-model-slugs.ts`
-  AND to `fix-plans-audit.ts NEW_PLANS`, then run `npm run fix:plans`.
+- **New plan**: add it to `fix-plans-audit.ts NEW_PLANS` and run
+  `npm run fix:plans`, then add a `plan_kind` / `plan_line` / `tier_rank` /
+  `model_selector` entry to `scripts/config/plan-classifications.ts` and run
+  `npm run fix:kinds` followed by `npm run mappings:materialize`. You do not
+  list model slugs by hand any more — the selector derives them.
 
 ## Common gotchas
 
 - **`upsertChannelPrice` rejects `output < input`** — if a scraper's regex
   accidentally swaps columns, the write fails and you see it in logs. Fix
   the scraper, don't work around the check.
-- **`model_plan_mapping` has only `(id, model_id, plan_id, priority)`** —
-  no override columns. Plan-level overrides were never materialized.
+- **`model_plan_mapping` has `(id, model_id, plan_id, priority, source)`** and
+  no override columns — plan-level overrides were never materialized.
+  `source='derived'` rows are owned by `materialize-model-plan-mappings.ts` and
+  are deleted and rewritten on every run; `source='manual'` rows are never
+  touched, so that is where a hand-curated exception belongs. `priority` is
+  read `ORDER BY priority ASC`, so 0 is the most prominent model.
 - **`provider_ids` is a PostgreSQL integer array** on `models`, not a
   foreign-key scalar. Use `provider_ids?.[0]` in TS and `contains` in SQL.
 - **The `model_offical` table is misspelled** in the schema (`offical` not

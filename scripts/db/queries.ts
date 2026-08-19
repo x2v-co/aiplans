@@ -575,57 +575,6 @@ export async function getPlanByProviderSlug(providerId: number, slug: string) {
 }
 
 /**
- * Upsert model-plan relationship
- * Note: model_plan_mapping table only has model_id, plan_id, and priority fields
- */
-export async function upsertModelPlanRelation(data: {
-  plan_id: number;
-  model_id: number;
-  priority?: number;
-}) {
-  // First, check if a record exists
-  const { data: existing, error: selectError } = await supabaseAdmin
-    .from('model_plan_mapping')
-    .select('id')
-    .eq('model_id', data.model_id)
-    .eq('plan_id', data.plan_id)
-    .single();
-
-  if (selectError && selectError.code !== 'PGRST116') {
-    throw selectError;
-  }
-
-  if (existing) {
-    // Update existing record
-    const { data: result, error: updateError } = await supabaseAdmin
-      .from('model_plan_mapping')
-      .update({
-        priority: data.priority || 0,
-      })
-      .eq('id', existing.id)
-      .select()
-      .single();
-
-    if (updateError) throw updateError;
-    return result;
-  }
-
-  // Insert new record
-  const { data: result, error: insertError } = await supabaseAdmin
-    .from('model_plan_mapping')
-    .insert({
-      plan_id: data.plan_id,
-      model_id: data.model_id,
-      priority: data.priority || 0,
-    })
-    .select()
-    .single();
-
-  if (insertError) throw insertError;
-  return result;
-}
-
-/**
  * Get models for a plan
  */
 export async function getModelsForPlan(planId: number) {
@@ -672,18 +621,6 @@ export async function deleteModelPlanRelation(planId: number, modelId: number) {
     .delete()
     .eq('plan_id', planId)
     .eq('model_id', modelId);
-
-  if (error) throw error;
-}
-
-/**
- * Delete all model-plan relationships for a plan from model_plan_mapping table
- */
-export async function deleteModelsForPlan(planId: number) {
-  const { error } = await supabaseAdmin
-    .from('model_plan_mapping')
-    .delete()
-    .eq('plan_id', planId);
 
   if (error) throw error;
 }
