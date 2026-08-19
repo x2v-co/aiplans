@@ -162,11 +162,12 @@ groups with:
 DOCKER_CMD="sudo -n docker" /opt/x2v/planprice/deploy/production/run-scrapers.sh
 ```
 
-The script runs both scraper groups and the read-only data audit. Audit exit
-code 2 (warnings only) is accepted; critical findings still fail the job. It
-uses the same `flock` lock as deployments, so a scraper cannot overlap either
-the next hourly run or a release. A host cron entry can invoke it without
-installing Node.js or browser packages on the VPS:
+The script runs both scraper groups, refreshes the live Chatbot Arena text
+leaderboard, and runs the read-only data audit. Arena outages are logged as a
+warning and preserve the last successful ranking; audit exit code 2 (warnings
+only) is accepted. It uses the same `flock` lock as deployments, so a scraper
+cannot overlap either the next hourly run or a release. A host cron entry can
+invoke it without installing Node.js or browser packages on the VPS:
 
 ```cron
 0 * * * * DOCKER_CMD="sudo -n docker" /opt/x2v/planprice/deploy/production/run-scrapers.sh >> /var/log/planprice-scraper.log 2>&1

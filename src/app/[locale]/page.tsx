@@ -1,17 +1,26 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, GitCompare, DollarSign, Globe } from "lucide-react";
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/lib/translations';
-import { HOME_HOT_MODEL_SLUGS } from '@/lib/hot-models';
+
+type HotModel = { slug: string; name: string; benchmark_arena_elo: number | null };
 
 export default function HomePage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = use(props.params);
   const t = useTranslations('nav');
+  const [hotModels, setHotModels] = useState<HotModel[]>([]);
+
+  useEffect(() => {
+    fetch('/api/products?featured=true&include_plan_count=true&type=llm', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : [])
+      .then((models: HotModel[]) => setHotModels(models))
+      .catch(() => setHotModels([]));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
@@ -133,12 +142,12 @@ export default function HomePage(props: { params: Promise<{ locale: string }> })
             {locale === 'zh' ? '🔥 热门模型对比' : '🔥 Popular Models'}
           </h2>
           <div className="grid md:grid-cols-4 gap-4">
-            {HOME_HOT_MODEL_SLUGS.map((slug) => (
-              <Link key={slug} href={`/${locale}/compare/plans/${slug}`}>
+            {hotModels.map((model) => (
+              <Link key={model.slug} href={`/${locale}/compare/plans/${model.slug}`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-6 text-center">
                     <h3 className="font-bold mb-2">
-                      {slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                      {model.name}
                     </h3>
                     <Button variant="outline" size="sm" className="w-full">
                       {locale === 'zh' ? '对比价格' : 'Compare Prices'}

@@ -2,10 +2,8 @@
 /**
  * Ingest Chatbot Arena leaderboard top-60 into model_benchmark_scores.
  *
- * Snapshot source: arena.ai/leaderboard/text via web-info-extractor agent on
- * 2026-04-14. Until the Playwright scraper (scripts/scrape-arena-leaderboard
- * .ts.disabled) is revived + wired into this ingestion path, this script is
- * the one-shot data refresh tool.
+ * The live leaderboard is read with Playwright. The bundled rows remain as a
+ * fallback when arena.ai is temporarily unavailable.
  *
  * What it does:
  *   1. Bootstrap benchmarks / benchmark_versions / benchmark_tasks /
@@ -17,10 +15,10 @@
  *
  * Usage: npx tsx scripts/ingest-arena-leaderboard.ts [--dry-run]
  */
+import { chromium } from 'playwright';
 import { supabaseAdmin, upsertBenchmarkScore } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
-const AS_OF = '2026-04-14';
 const SOURCE_URL = 'https://arena.ai/leaderboard/text';
 
 interface ArenaRow {
@@ -31,7 +29,7 @@ interface ArenaRow {
   org: string;
 }
 
-// Top 60 from arena.ai/leaderboard/text as of 2026-04-14 (web agent snapshot).
+// Fallback top 60 snapshot used only when the live page cannot be reached.
 const ARENA_TOP60: ArenaRow[] = [
   { rank: 1,  modelName: 'claude-opus-4-6-thinking',                 elo: 1504, votes: 16278, org: 'Anthropic' },
   { rank: 2,  modelName: 'claude-opus-4-6',                          elo: 1496, votes: 17416, org: 'Anthropic' },
@@ -94,6 +92,36 @@ const ARENA_TOP60: ArenaRow[] = [
   { rank: 59, modelName: 'qwen3-235b-a22b-instruct-2507',            elo: 1423, votes: 82043, org: 'Alibaba' },
   { rank: 60, modelName: 'deepseek-v3.2-exp',                        elo: 1423, votes: 12019, org: 'DeepSeek' },
 ];
+
+/** Read the live ranking table rendered by arena.ai. */
+async function fetchLiveLeaderboard(): Promise<ArenaRow[]> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(SOURCE_URL, { waitUntil: 'domcontentloaded', timeout: 45_000 });
+    await page.locator('table tbody tr').first().waitFor({ state: 'visible', timeout: 30_000 });
+
+    const rows = await page.locator('table tbody tr').evaluateAll((elements) => elements.map((element) => {
+      const cells = Array.from(element.querySelectorAll('td'));
+      const rank = Number.parseInt(cells[0]?.textContent?.trim() || '', 10);
+      const modelElement = cells[2]?.querySelector('[title]') as HTMLElement | null;
+      const modelName = modelElement?.getAttribute('title') || cells[2]?.textContent?.trim() || '';
+      const eloText = cells[3]?.textContent?.replace(/,/g, '').trim() || '';
+      const elo = Number.parseFloat(eloText.match(/-?\d+(?:\.\d+)?/)?.[0] || '');
+      return { rank, modelName, elo };
+    }).filter((row): row is { rank: number; modelName: string; elo: number } =>
+      Number.isFinite(row.rank) && row.rank > 0 && row.rank <= 60 &&
+      Boolean(row.modelName) && Number.isFinite(row.elo)
+    ).map((row) => ({ ...row, votes: 0, org: 'Unknown' })));
+
+    if (rows.length < 10) {
+      throw new Error(`Arena leaderboard returned only ${rows.length} usable rows`);
+    }
+    return rows.slice(0, 60);
+  } finally {
+    await browser.close();
+  }
+}
 
 /** Generate slug candidates to match against models.slug */
 function slugCandidates(arenaName: string): string[] {
@@ -181,7 +209,7 @@ async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number
     if (!DRY_RUN) {
       const res = await supabaseAdmin.from('benchmark_versions').insert({
         benchmark_id: benchmark.id, version_label: 'live', is_current: true,
-        release_date: AS_OF, notes: `Live Arena ELO as of ${AS_OF}`,
+        release_date: new Date().toISOString().slice(0, 10), notes: 'Live Arena ELO',
       }).select('id').single();
       if (res.error) { console.error(res.error); return null; }
       version = res.data;
@@ -236,6 +264,19 @@ async function findModelBySlug(slug: string): Promise<{ id: number; slug: string
 async function main() {
   console.log(`\n🏆 ingest-arena-leaderboard ${DRY_RUN ? '[DRY-RUN]' : '[APPLY]'}\n`);
 
+  let leaderboard: ArenaRow[];
+  try {
+    leaderboard = await fetchLiveLeaderboard();
+    console.log(`Live Arena leaderboard loaded: ${leaderboard.length} rows`);
+  } catch (error) {
+    if (!DRY_RUN) {
+      throw new Error(`Live Arena leaderboard unavailable: ${(error as Error).message}`);
+    }
+    console.warn(`Live Arena leaderboard unavailable; using bundled snapshot for dry-run: ${(error as Error).message}`);
+    leaderboard = ARENA_TOP60;
+  }
+  const asOf = new Date().toISOString().slice(0, 10);
+
   const chain = await bootstrapArenaChain();
   if (!chain) { console.error('bootstrap failed'); process.exit(1); }
 
@@ -250,7 +291,7 @@ async function main() {
   const resolved: Resolved[] = [];
   const unmatched: string[] = [];
 
-  for (const row of ARENA_TOP60) {
+  for (const row of leaderboard) {
     const candidates = slugCandidates(row.modelName);
     let model: { id: number; slug: string } | null = null;
     let usedCandidate: string | null = null;
@@ -290,7 +331,7 @@ async function main() {
           benchmark_task_id: taskId,
           metric_id: metricId,
           value: r.row.elo,
-          release_date: AS_OF,
+          release_date: asOf,
         });
         if (result.action === 'updated') {
           console.log(`  🔧 ${r.row.modelName} → ${r.modelSlug}: ${result.oldValue} → ${r.row.elo}`);
@@ -321,7 +362,7 @@ async function main() {
     for (const u of unmatched) console.log(`  ${u}`);
   }
 
-  console.log(`\nSource: ${SOURCE_URL}  as_of=${AS_OF}`);
+  console.log(`\nSource: ${SOURCE_URL}  as_of=${asOf}`);
   if (DRY_RUN) console.log(`(dry-run — no writes)`);
 }
 

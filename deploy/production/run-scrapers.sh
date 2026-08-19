@@ -32,6 +32,8 @@ set -e
 set +e
 "${compose[@]}" run --rm scraper npm run audit
 audit_status=$?
+"${compose[@]}" run --rm scraper npm run ingest:arena
+arena_status=$?
 set -e
 
 # audit-data uses 2 for warnings-only; only critical findings or an execution
@@ -43,4 +45,8 @@ fi
 if [[ "$api_status" != "0" || "$plans_status" != "0" ]]; then
   echo "Scraper group failure: api=$api_status plans=$plans_status" >&2
   exit 1
+fi
+
+if [[ "$arena_status" != "0" ]]; then
+  echo "Warning: Arena leaderboard update failed; keeping the previous ranking snapshot." >&2
 fi

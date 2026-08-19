@@ -72,11 +72,12 @@ Re-run any time; all steps use `IF NOT EXISTS` / no-op guards.
 
 ## Arena leaderboard
 
-`ingest-arena-leaderboard.ts` ingests a hand-curated top-60 snapshot of
-Chatbot Arena ELO scores into `model_benchmark_scores`. It connects
-directly through `DATABASE_URL`. The snapshot is embedded as a TS const so the script is
-reproducible without re-hitting arena.ai; update the const and re-run
-when you want fresh data.
+`ingest-arena-leaderboard.ts` reads the live top-60 Chatbot Arena text
+leaderboard with Playwright and upserts ELO scores into
+`model_benchmark_scores`. It falls back to the bundled snapshot only for
+`--dry-run`; a production live-fetch failure leaves the previous scores intact.
+The homepage and compare page select hot models from the latest scores and
+available model-plan mappings, so no model slug list needs manual maintenance.
 
 Companion: `add-arena-missing-models.ts` creates stub `models` rows
 for top-60 entries that don't exist in DB yet, so the ingestion's
