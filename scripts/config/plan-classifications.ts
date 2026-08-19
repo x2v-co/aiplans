@@ -149,27 +149,31 @@ export const CLASSIFICATIONS: Classification[] = [
     selector: { families: ['ernie'] },
     reason: 'Coding plan, not a chat tier. NOTE: fix-plans-audit.ts priced this row off 阿里云百炼 while it sits under the baidu provider — the provider attribution still needs a decision' },
 
-  // ─ MiniMax — prepaid token allowances, not chat subscriptions. Comparing a
-  //   ¥49 token bundle against a ¥49 chat plan on price alone is meaningless;
-  //   Part 7 renders these as effective $/1M tokens instead.
-  { providerSlug: 'minimax-china', planSlug: 'minimax-token-plus', kind: 'token_pack', line: 'minimax-token-cn', rank: 0,
+  // ─ MiniMax. These are named "Token Plan" on both platform.minimaxi.com and
+  //   .../cn, but neither page publishes a token allowance: what they sell is
+  //   concurrent agent slots (3–4) metered against a 5-hour rolling window plus
+  //   a weekly cap. That is the `agent` shape, not `token_pack` — so they carry
+  //   no included_tokens and Part 7's effective-rate math correctly skips them.
+  //   MiniMax does sell real prepaid packs (Credits / 积分, 1000 credits = $1,
+  //   365-day validity) but we do not track those rows yet.
+  { providerSlug: 'minimax-china', planSlug: 'minimax-token-plus', kind: 'agent', line: 'minimax-agent-cn', rank: 0,
     selector: { families: ['minimax'], exclude: MINIMAX_LEGACY },
-    reason: 'Token Plan Plus: monthly-recurring token allowance over the current M-series' },
-  { providerSlug: 'minimax-china', planSlug: 'minimax-token-max', kind: 'token_pack', line: 'minimax-token-cn', rank: 1,
+    reason: 'Named "Token Plan Plus" but sells agent slots on a 5-hour/weekly window, with no published token allowance' },
+  { providerSlug: 'minimax-china', planSlug: 'minimax-token-max', kind: 'agent', line: 'minimax-agent-cn', rank: 1,
     selector: { families: ['minimax'], exclude: MINIMAX_LEGACY },
-    reason: 'Token Plan Max is only a larger bundle than Plus — it was tagged tier=team, which it is not' },
-  { providerSlug: 'minimax-china', planSlug: 'minimax-token-ultra', kind: 'token_pack', line: 'minimax-token-cn', rank: 2,
+    reason: 'Max only widens the agent quota over Plus — it was tagged tier=team, which it is not' },
+  { providerSlug: 'minimax-china', planSlug: 'minimax-token-ultra', kind: 'agent', line: 'minimax-agent-cn', rank: 2,
     selector: { families: ['minimax'], exclude: MINIMAX_LEGACY },
-    reason: 'Token Plan Ultra: largest bundle; was tagged tier=enterprise despite being an individual plan' },
-  { providerSlug: 'minimax-global', planSlug: 'minimax-global-plus', kind: 'token_pack', line: 'minimax-token-global', rank: 0,
+    reason: 'Widest agent quota; was tagged tier=enterprise despite being an individual plan' },
+  { providerSlug: 'minimax-global', planSlug: 'minimax-global-plus', kind: 'agent', line: 'minimax-agent-global', rank: 0,
     selector: { providers: ['minimax-china'], families: ['minimax'], exclude: MINIMAX_LEGACY },
-    reason: 'Global token bundle. Models are catalogued under the minimax-china producer, so the selector must name it explicitly' },
-  { providerSlug: 'minimax-global', planSlug: 'minimax-global-max', kind: 'token_pack', line: 'minimax-token-global', rank: 1,
+    reason: 'Global agent plan. Models are catalogued under the minimax-china producer, so the selector must name it explicitly' },
+  { providerSlug: 'minimax-global', planSlug: 'minimax-global-max', kind: 'agent', line: 'minimax-agent-global', rank: 1,
     selector: { providers: ['minimax-china'], families: ['minimax'], exclude: MINIMAX_LEGACY },
-    reason: 'Larger global bundle' },
-  { providerSlug: 'minimax-global', planSlug: 'minimax-global-ultra', kind: 'token_pack', line: 'minimax-token-global', rank: 2,
+    reason: 'Wider global agent quota' },
+  { providerSlug: 'minimax-global', planSlug: 'minimax-global-ultra', kind: 'agent', line: 'minimax-agent-global', rank: 2,
     selector: { providers: ['minimax-china'], families: ['minimax'], exclude: MINIMAX_LEGACY },
-    reason: 'Largest global bundle' },
+    reason: 'Widest global agent quota' },
 
   // ─ Mistral.
   { providerSlug: 'mistral', planSlug: 'le-chat-free', kind: 'chat', line: 'le-chat', rank: 0,

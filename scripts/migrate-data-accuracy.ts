@@ -377,8 +377,26 @@ const MIGRATIONS: Migration[] = [
       -- Mirrors plans.source. The materializer owns 'derived' rows and may
       -- replace them wholesale; 'manual' rows are hand-curated exceptions that
       -- rule derivation must never delete.
-      ALTER TABLE model_plan_mapping ADD COLUMN IF NOT EXISTS source text DEFAULT 'manual';
-      UPDATE model_plan_mapping SET source = 'manual' WHERE source IS NULL;
+      --
+      -- Both the default and the backfill are 'derived', which is the opposite
+      -- of what "protect hand-made rows" suggests. The reason: every row that
+      -- exists when this migration runs came from the hand-maintained
+      -- plan-model-slugs.ts list, and that list is the thing being retired --
+      -- it had drifted to 18 plan slugs that no longer exist while missing 19
+      -- live plans. Labelling those rows 'manual' would freeze the drift
+      -- permanently, since the materializer would then only ever add to them.
+      -- Claiming them as 'derived' lets the first materializer run reconcile
+      -- them against the selectors. A genuine exception is created after the
+      -- fact by inserting with an explicit source='manual'; nothing needs one
+      -- yet, because the concept did not exist before this migration.
+      --
+      -- The default follows the same logic: an unlabelled row is far more
+      -- likely to be an automated writer that forgot the column than a curated
+      -- exception, and treating it as 'derived' means the next run reports and
+      -- reconciles it instead of silently keeping it forever.
+      ALTER TABLE model_plan_mapping ADD COLUMN IF NOT EXISTS source text DEFAULT 'derived';
+      ALTER TABLE model_plan_mapping ALTER COLUMN source SET DEFAULT 'derived';
+      UPDATE model_plan_mapping SET source = 'derived' WHERE source IS NULL;
       ALTER TABLE model_plan_mapping ALTER COLUMN source SET NOT NULL;
 
       ALTER TABLE model_plan_mapping DROP CONSTRAINT IF EXISTS model_plan_mapping_source_chk;

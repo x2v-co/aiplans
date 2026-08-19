@@ -176,7 +176,9 @@ export const modelPlanMapping = pgTable('model_plan_mapping', {
   priority: integer('priority').default(0),
   // 'derived' rows are owned by materialize-model-plan-mappings.ts and replaced
   // on every run; 'manual' rows are hand-curated exceptions it must not touch.
-  source: text('source').notNull().default('manual'),
+  // Defaults to 'derived' so a writer that omits the column gets reconciled
+  // rather than silently pinned forever -- see migration 014 for why.
+  source: text('source').notNull().default('derived'),
   createdAt: timestamp('created_at').defaultNow(),
 });
 
