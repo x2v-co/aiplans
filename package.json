@@ -22,6 +22,8 @@
     "fix:data:dry-run": "tsx scripts/fix-data-audit.ts --dry-run",
     "fix:plans": "tsx scripts/fix-plans-audit.ts",
     "fix:plans:dry-run": "tsx scripts/fix-plans-audit.ts --dry-run",
+    "fix:quotas": "tsx scripts/fix-plan-quotas.ts",
+    "fix:quotas:dry-run": "tsx scripts/fix-plan-quotas.ts --dry-run",
     "fix:kinds": "tsx scripts/fix-plan-kinds.ts",
     "fix:kinds:dry-run": "tsx scripts/fix-plan-kinds.ts --dry-run",
     "mappings:materialize": "tsx scripts/materialize-model-plan-mappings.ts",

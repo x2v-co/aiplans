@@ -431,6 +431,40 @@ const MIGRATIONS: Migration[] = [
         ON model_plan_mapping (plan_id, model_id);
     `,
   },
+  {
+    name: '015_add_plan_published_quotas',
+    sql: `
+      -- What the vendor actually publishes as this plan's usage allowance.
+      --
+      -- The scalar columns above (tokens_per_month, 5_hours_message_limit,
+      -- requests_per_day, included_credits...) each assume one unit over one
+      -- period, and no vendor's page fits that. Surveyed 2026-08-19:
+      --   z.ai / bigmodel GLM Coding  10,000 credits per *week*
+      --   Aliyun Bailian Coding Plan  6,000 requests/5h AND 45,000/week
+      --                               AND 90,000/month, simultaneously
+      --   Gemini Code Assist          1,500 requests per user per day
+      --   MiniMax Token Plan          nothing numeric at all -- "3-4 agents"
+      --   MiniMax credit packs        credits, total, 365-day validity
+      -- Three co-existing windows cannot be stored in three unrelated columns
+      -- without losing which ones bind together, and a credits/week figure has
+      -- no column at all.
+      --
+      -- Shape: an array of what the page states, one entry per published limit.
+      --   [ { amount: 10000, unit: 'credit', period: 'week' } ]
+      --   unit   ∈ token | credit | request | message | prompt
+      --   period ∈ 5h | day | week | month | total
+      -- Optional per entry:
+      --   derived_from  slug of the tier this was multiplied from, when the
+      --                 vendor publishes "6x Lite" instead of an absolute
+      --   multiplier    that multiplier
+      --   note          verbatim qualifier ("approximately", "shared with chat")
+      --
+      -- NULL means not yet researched; [] means researched and the vendor
+      -- publishes no numeric allowance. Those are different facts, and the
+      -- effective-rate math must refuse to guess for both.
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS quotas jsonb;
+    `,
+  },
 ];
 
 async function main() {
