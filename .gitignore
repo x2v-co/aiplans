@@ -56,3 +56,6 @@ next-env.d.ts
 
 # pnpm
 pnpm-lock.yaml
+
+# scratch dir for scripts needing a writable TMPDIR
+.tmp/
