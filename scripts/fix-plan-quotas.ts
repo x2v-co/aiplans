@@ -23,11 +23,13 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-type QuotaUnit = 'token' | 'credit' | 'request' | 'message' | 'prompt';
+type QuotaUnit = 'token' | 'credit' | 'request' | 'message' | 'prompt' | 'relative';
 type QuotaPeriod = '5h' | 'day' | 'week' | 'month' | 'total';
 
 interface Quota {
-  amount: number;
+  /** Omitted only for unit:'relative', where the vendor publishes a multiple
+   *  of another tier and no absolute figure for any tier in the line. */
+  amount?: number;
   unit: QuotaUnit;
   period: QuotaPeriod;
   /** Set when the vendor publishes a multiple of another tier, not an absolute. */
@@ -132,32 +134,74 @@ const GEMINI_CODE_ASSIST: PlanQuotas[] = [
   },
 ];
 
+// ─── Anthropic Claude ──────────────────────────────────────────────────────
+// https://claude.com/pricing and
+// https://support.claude.com/en/articles/11647753-how-do-usage-and-length-limits-work
+// Anthropic publishes no countable allowance anywhere, on purpose: the support
+// article explains that usage depends on the model, effort and thinking
+// settings, and every plan carries only "Usage limits apply". What the pricing
+// page *does* publish is the ratio between tiers, which is worth keeping --
+// Max 20x costs 10x Pro's price for 20x the usage, and that comparison holds
+// without either absolute. Hence unit:'relative' with no amount.
+const ANTHROPIC_RELATIVE: PlanQuotas[] = [
+  {
+    slug: 'claude-max-5x',
+    source: 'https://claude.com/pricing',
+    quotas: [
+      { unit: 'relative', period: 'week', multiplier: 5, derived_from: 'claude-pro', note: '5x more usage than Pro' },
+    ],
+  },
+  {
+    slug: 'claude-max-20x',
+    source: 'https://claude.com/pricing',
+    quotas: [
+      { unit: 'relative', period: 'week', multiplier: 20, derived_from: 'claude-pro', note: '20x more usage than Pro' },
+    ],
+  },
+  {
+    slug: 'claude-team-premium',
+    source: 'https://claude.com/pricing',
+    quotas: [
+      { unit: 'relative', period: 'week', multiplier: 5, derived_from: 'claude-team', note: '5x more usage than standard seats' },
+    ],
+  },
+];
+
 // ─── Researched, and the vendor publishes no number ────────────────────────
 // This is the NO FALLBACK case made explicit. MiniMax's Token Plan pages give
 // only a qualitative allowance -- "5-hour rolling and weekly windows" with
 // "3-4 agents" / "4-5 agents" / "6-7 agents" -- and no token, credit, request
-// or message count anywhere. Writing [] records that someone checked, which is
-// a different fact from NULL (nobody has looked), and both must stop the
-// effective-rate math rather than let it invent a denominator.
+// or message count anywhere. Anthropic's Free/Pro/Team tiers are the same story
+// with no ratio published either. Writing [] records that someone checked,
+// which is a different fact from NULL (nobody has looked), and both must stop
+// the effective-rate math rather than let it invent a denominator.
 const NO_PUBLISHED_QUOTA: PlanQuotas[] = [
-  'minimax-global-plus',
-  'minimax-global-max',
-  'minimax-global-ultra',
-  'minimax-token-plus',
-  'minimax-token-max',
-  'minimax-token-ultra',
-].map((slug) => ({
-  slug,
-  source: slug.startsWith('minimax-global')
-    ? 'https://platform.minimax.io/docs/guides/pricing-token-plan'
-    : 'https://platform.minimaxi.com/docs/guides/pricing-token-plan',
-  quotas: [],
-}));
+  ...[
+    'minimax-global-plus',
+    'minimax-global-max',
+    'minimax-global-ultra',
+    'minimax-token-plus',
+    'minimax-token-max',
+    'minimax-token-ultra',
+  ].map((slug) => ({
+    slug,
+    source: slug.startsWith('minimax-global')
+      ? 'https://platform.minimax.io/docs/guides/pricing-token-plan'
+      : 'https://platform.minimaxi.com/docs/guides/pricing-token-plan',
+    quotas: [] as Quota[],
+  })),
+  ...['claude-free', 'claude-pro', 'claude-max', 'claude-team'].map((slug) => ({
+    slug,
+    source: 'https://claude.com/pricing',
+    quotas: [] as Quota[],
+  })),
+];
 
 const ALL: PlanQuotas[] = [
   ...GLM_CREDITS_PER_WEEK,
   ...ALIYUN_CODING,
   ...GEMINI_CODE_ASSIST,
+  ...ANTHROPIC_RELATIVE,
   ...NO_PUBLISHED_QUOTA,
 ];
 
@@ -183,7 +227,13 @@ async function main() {
       const summary =
         entry.quotas.length === 0
           ? 'no published quota'
-          : entry.quotas.map((q) => `${q.amount.toLocaleString()} ${q.unit}/${q.period}`).join(', ');
+          : entry.quotas
+              .map((q) =>
+                q.unit === 'relative'
+                  ? `${q.multiplier}x ${q.derived_from} (no absolute published)`
+                  : `${q.amount?.toLocaleString()} ${q.unit}/${q.period}`,
+              )
+              .join(', ');
 
       if (DRY_RUN) {
         console.log(`  ${entry.slug} → ${summary}`);
