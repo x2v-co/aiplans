@@ -226,6 +226,52 @@ const MISTRAL_LE_CHAT: PlanQuotas[] = [
   },
 ];
 
+// ─── Gemini CLI free tier = Code Assist for individuals ────────────────────
+// https://google-gemini.github.io/gemini-cli/docs/quota-and-pricing.html
+// codeassist.google no longer prints the individual figures, and the Cloud
+// quotas page tabulates only Standard and Enterprise -- but the Gemini CLI doc
+// still states the individual allowance, and restates Standard 1500 /
+// Enterprise 2000, matching what GEMINI_CODE_ASSIST already recorded. The
+// per-minute ceiling is a rate limit rather than an allowance, so it stays in
+// the note where it cannot be mistaken for a denominator.
+const GEMINI_CLI_FREE: PlanQuotas[] = [
+  {
+    slug: 'gemini-code-assist-individual',
+    source: 'https://google-gemini.github.io/gemini-cli/docs/quota-and-pricing.html',
+    quotas: [
+      {
+        amount: 1_000,
+        unit: 'request',
+        period: 'day',
+        note: 'agent mode and Gemini CLI, per user; also capped at 60 requests/minute',
+      },
+    ],
+  },
+];
+
+// ─── Aliyun Bailian new-account free tokens ────────────────────────────────
+// https://help.aliyun.com/zh/model-studio/new-free-quota
+// A one-off grant, not a recurring allowance: each model carries its own
+// ~1,000,000 tokens, quotas never pool across models, and the whole grant
+// expires 90 days after activation whether or not it is used. Only the 华北2
+// (Beijing) region grants it at all. Recorded as period:'total' for that
+// reason -- reading it as a monthly figure would overstate it threefold.
+const ALIYUN_FREE_TRIAL: PlanQuotas[] = [
+  {
+    slug: 'qwen-free-trial',
+    source: 'https://help.aliyun.com/zh/model-studio/new-free-quota',
+    quotas: [
+      {
+        amount: 1_000_000,
+        unit: 'token',
+        period: 'total',
+        note: 'per model, not poolable; expires 90 days after activation; 华北2 (Beijing) region only',
+      },
+    ],
+    note: '新人免费额度：每个模型各约 100 万 Token，不跨模型共享，开通后 90 天到期作废，仅华北2（北京）地域发放。',
+  },
+];
+
 // ─── Researched, and the vendor publishes no number ────────────────────────
 // This is the NO FALLBACK case made explicit. MiniMax's Token Plan pages give
 // only a qualitative allowance -- "5-hour rolling and weekly windows" with
@@ -278,6 +324,8 @@ const ALL: PlanQuotas[] = [
   ...ANTHROPIC_RELATIVE,
   ...QODER_CREDITS,
   ...MISTRAL_LE_CHAT,
+  ...GEMINI_CLI_FREE,
+  ...ALIYUN_FREE_TRIAL,
   ...NO_PUBLISHED_QUOTA,
 ];
 
