@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
-import { sql } from "@/lib/db";
+import { sql, INT4_ARRAY } from "@/lib/db";
 import { formatPrice, CurrencyCode } from "@/lib/currency";
 import { getAllModelIdsForProvider, getPlanYearlyMonthly } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
@@ -68,7 +68,7 @@ async function getPlansByProvider(providerSlug: string) {
     ? [...await sql<any[]>`
         SELECT id, name, slug, provider_ids
         FROM models
-        WHERE id = ANY(${sql.array(modelIds, 23)})
+        WHERE id = ANY(${sql.array(modelIds, INT4_ARRAY)})
       `]
     : [];
 

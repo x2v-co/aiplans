@@ -38,11 +38,14 @@ function joinFragments(sql: Sql, fragments: any[], separator: any): any {
   );
 }
 
+// postgres.js wants the OID of the *array* type, not of the element -- see the
+// INT4_ARRAY/TEXT_ARRAY comment in src/lib/db.ts for why passing 23/25 here
+// failed only on cold connections.
 function arrayType(values: unknown[]): number {
   const value = values.find((item) => item != null);
-  if (typeof value === 'number') return 23;
-  if (typeof value === 'boolean') return 16;
-  return 25;
+  if (typeof value === 'number') return 1007; // int4[]
+  if (typeof value === 'boolean') return 1000; // bool[]
+  return 1009; // text[]
 }
 
 function selectColumns(sql: Sql, selection: string): any {

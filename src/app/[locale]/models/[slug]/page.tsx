@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Check, ExternalLink, TrendingDown, Zap, Globe } from "lucide-react";
-import { sql } from "@/lib/db";
+import { sql, INT4_ARRAY } from "@/lib/db";
 import { use } from "react";
 import { getPrimaryProvidersForModels } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
@@ -131,7 +131,7 @@ async function getProductWithChannels(slug: string) {
       ) END AS providers
     FROM plans pl
     LEFT JOIN providers p ON p.id = pl.provider_id
-    WHERE pl.id = ANY(${sql.array(planIds, 23)})
+    WHERE pl.id = ANY(${sql.array(planIds, INT4_ARRAY)})
     ORDER BY pl.price ASC NULLS LAST
   `] : [];
 
@@ -149,7 +149,7 @@ async function getProductWithChannels(slug: string) {
     const historyRows = await sql<any[]>`
       SELECT channel_price_id, new_input_price, new_output_price, currency, recorded_at
       FROM price_history
-      WHERE channel_price_id = ANY(${sql.array(channelIds, 23)})
+      WHERE channel_price_id = ANY(${sql.array(channelIds, INT4_ARRAY)})
       ORDER BY recorded_at ASC
       LIMIT 500
     `;
