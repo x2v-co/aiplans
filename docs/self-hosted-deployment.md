@@ -162,21 +162,22 @@ groups with:
 DOCKER_CMD="sudo -n docker" /opt/x2v/planprice/deploy/production/run-scrapers.sh
 ```
 
-The script runs both scraper groups, refreshes the live Chatbot Arena text
-leaderboard, and runs the read-only data audit. Arena outages are logged as a
+The script refreshes API prices, subscription plans, and the live Chatbot Arena
+Agent leaderboard, then runs the read-only data audit. Arena outages are logged as a
 warning and preserve the last successful ranking; audit exit code 2 (warnings
 only) is accepted. It uses the same `flock` lock as deployments, so a scraper
-cannot overlap either the next hourly run or a release. A host cron entry can
-invoke it without installing Node.js or browser packages on the VPS:
+cannot overlap either the next daily run or a release. The production GitHub
+Actions deployment installs and enables the checked-in systemd units. The timer
+runs daily at 03:15 Asia/Singapore with up to 15 minutes of randomized delay.
+A host cron entry can provide an equivalent fallback without installing Node.js
+or browser packages on the VPS:
 
 ```cron
-0 * * * * DOCKER_CMD="sudo -n docker" /opt/x2v/planprice/deploy/production/run-scrapers.sh >> /var/log/planprice-scraper.log 2>&1
+15 3 * * * DOCKER_CMD="sudo -n docker" /opt/x2v/planprice/deploy/production/run-scrapers.sh >> /var/log/planprice-scraper.log 2>&1
 ```
 
-Use a systemd service/timer instead when centralized journal logs and explicit
-failure status are preferred. The current GitHub workflow can remain active
-against the source database during preparation, but its schedule must be
-disabled at final cutover to prevent two independent writers.
+The GitHub-hosted scraper workflow is manual recovery only, preventing two
+independent scheduled writers.
 
 ## Gateway ownership
 

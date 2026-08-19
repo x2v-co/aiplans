@@ -82,7 +82,8 @@ jobs:
 
           test -d "$base"
           sudo -n test -r "$env_file"
-          exec 9>/tmp/x2v-planprice.lock
+          # The timer uses the same stable directory inode as its flock target.
+          exec 9<"$base"
           flock -w 1800 9
           case "$release_dir" in
             "$base/.releases/"*) ;;
@@ -99,6 +100,7 @@ jobs:
             COMPOSE_FILE="$release_dir/deploy/production/compose.yml" \
             ENV_FILE="$release_dir/deploy/production/.env.production" \
             DOCKER_CMD=/usr/bin/docker \
+            LOCK_PATH="$base" \
             BUILD_SCRAPER=1 \
             "$release_dir/deploy/production/rollout.sh" "$GITHUB_SHA"
 
@@ -106,6 +108,13 @@ jobs:
             --exclude='deploy/production/.env.production' \
             "$release_dir/" "$base/"
           sudo -n chown root:root "$base/Dockerfile" "$base/deploy/production/rollout.sh" 2>/dev/null || true
+          sudo -n install -m 0644 "$base/deploy/production/planprice-scraper.service" \
+            /etc/systemd/system/planprice-scraper.service
+          sudo -n install -m 0644 "$base/deploy/production/planprice-scraper.timer" \
+            /etc/systemd/system/planprice-scraper.timer
+          sudo -n systemctl daemon-reload
+          sudo -n systemctl enable planprice-scraper.timer
+          sudo -n systemctl restart planprice-scraper.timer
           sudo -n docker compose -p planprice-production \
             -f "$base/deploy/production/compose.yml" \
             --env-file "$env_file" ps

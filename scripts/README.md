@@ -159,16 +159,15 @@ surfaces staleness, not in-scraper defaults.
 
 ## Scheduling
 
-During migration preparation, the existing GitHub-hosted workflows can keep
-using the source database:
+Production scheduling runs on the VPS through the checked-in systemd service
+and timer:
 
-- **`scrape-pricing.yml`** — hourly cron, runs `npm run scrape`
-- **`data-audit.yml`** — daily at 02:00 UTC + on PR, runs
-  `audit-data.ts`, fails the check on critical findings, uploads
-  output + JSON snapshot as artifacts
+- **`planprice-scraper.timer`** — daily at 03:15 Asia/Singapore (plus up to
+  15 minutes randomized delay)
+- **`run-scrapers.sh`** — refreshes API prices, plans, Agent Arena scores, and
+  runs the data audit inside the private Compose network
+- **`scrape-pricing.yml`** — manual recovery only
+- **`data-audit.yml`** — pull-request and manual audit workflow
 
-They require the `DATABASE_URL` repo secret. At final self-hosted cutover, do
-not expose PostgreSQL publicly for these runners. Disable their database-backed
-schedules and invoke `deploy/production/run-scrapers.sh` from VPS cron or
-systemd; it runs both scraper groups and the audit inside the private Compose
-network.
+The deployment workflow installs and restarts the systemd timer after each
+successful release. Do not expose PostgreSQL publicly for GitHub-hosted runners.

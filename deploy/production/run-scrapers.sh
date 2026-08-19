@@ -5,7 +5,7 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 compose_file="${COMPOSE_FILE:-$script_dir/compose.yml}"
 env_file="${ENV_FILE:-$script_dir/.env.production}"
 project_name="${COMPOSE_PROJECT_NAME:-planprice-production}"
-lock_file="${LOCK_FILE:-/tmp/x2v-planprice.lock}"
+lock_path="${LOCK_PATH:-$(cd -- "$script_dir/../.." && pwd)}"
 docker_cmd=(${DOCKER_CMD:-docker})
 
 if [[ ! -f "$env_file" ]]; then
@@ -16,7 +16,10 @@ fi
 export APP_ENV_FILE="$env_file"
 compose=("${docker_cmd[@]}" compose -p "$project_name" -f "$compose_file" --env-file "$env_file")
 
-exec 9>"$lock_file"
+# Lock the stable project directory read-only. This lets the root-owned timer
+# and the ubuntu-owned GitHub runner share one lock without /tmp ownership
+# conflicts, including after a reboot.
+exec 9<"$lock_path"
 if ! flock -n 9; then
   echo "Another planprice operation is active; skipping this scraper run."
   exit 0

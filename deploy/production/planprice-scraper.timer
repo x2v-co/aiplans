@@ -1,10 +1,10 @@
 [Unit]
-Description=Run PlanPrice pricing scraper hourly
+Description=Run PlanPrice daily data refresh
 
 [Timer]
-OnCalendar=*-*-* *:00:00
+OnCalendar=*-*-* 03:15:00 Asia/Singapore
 Persistent=true
-RandomizedDelaySec=5min
+RandomizedDelaySec=15min
 Unit=planprice-scraper.service
 
 [Install]
