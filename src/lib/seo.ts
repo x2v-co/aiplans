@@ -125,6 +125,18 @@ export function breadcrumbList(items: BreadcrumbItem[]) {
 interface OfferInput {
   name: string;
   price: number | string | null;
+  /**
+   * Absolute URL of an image representing this product. Required — Search
+   * Console flagged every Product on the site for a missing `image`, so this
+   * is not optional at the type level any more. Every route that emits a
+   * Product already has an opengraph-image.tsx, and its extensionless URL
+   * serves image/png, so `${SITE_URL}/${locale}/<route>/opengraph-image` is
+   * the intended value. Don't use public/providers/*.ico — Google doesn't
+   * accept ICO.
+   */
+  image: string;
+  /** Vendor name, e.g. 'OpenAI'. Google's accepted stand-in for GTIN/MPN. */
+  brand?: string;
   currency?: string;
   url?: string;
   description?: string;
@@ -134,6 +146,21 @@ interface OfferInput {
 /**
  * Build a Product JSON-LD for a single subscription / API plan.
  * Use price=null for contact-sales plans.
+ *
+ * Deliberately omits `shippingDetails` and `hasMerchantReturnPolicy`, which
+ * Search Console asks for under "merchant listings". Please don't add them:
+ *
+ *  1. We can never qualify for that experience. Google: "Only pages where a
+ *     shopper can purchase a product are eligible for merchant listing
+ *     experiences, not pages with links to other sites that sell the product."
+ *     Every buy link here points at the vendor.
+ *  2. Both are recommended-only, so they block nothing.
+ *  3. We have no truthful value. We don't ship these and we don't know the
+ *     vendor's refund terms — stating a returnPolicyCategory would assert a
+ *     policy we have no knowledge of, in a format built to be trusted.
+ *
+ * `image` and `brand` are different: both are cheap and true, so we do send
+ * them.
  */
 export function productOffer(input: OfferInput): string {
   const offer: Record<string, unknown> = {
@@ -160,6 +187,8 @@ export function productOffer(input: OfferInput): string {
     '@type': 'Product',
     name: input.name,
     description: input.description ?? input.name,
+    image: input.image,
+    ...(input.brand ? { brand: { '@type': 'Brand', name: input.brand } } : {}),
     category: input.category ?? 'AI Service',
     offers: offer,
   });
@@ -171,6 +200,50 @@ interface PriceListItem {
   url: string;
   price: number | string;
   currency?: string;
+}
+
+/**
+ * Choose the single currency a model's AggregateOffer should be quoted in.
+ *
+ * `AggregateOffer` carries one `priceCurrency`, but our channels are stored in
+ * whatever the vendor publishes — 154 CNY rows against 533 USD ones. The old
+ * code hardcoded a `currency === 'USD'` filter, which meant a CNY-only model
+ * (qwen-max, glm-4, hunyuan-pro, ernie) produced an empty price list and the
+ * page emitted a bare `Product` with no offers at all. That is the "应指定
+ * offers、review 或 aggregateRating" critical error in Search Console, and it
+ * hit 10 of the 27 model pages in the sitemap.
+ *
+ * So: quote the model in whichever currency most of its priced channels use,
+ * preferring USD on a tie. The caller must then filter its per-channel `Offer[]`
+ * to the same currency — otherwise a ¥ Offer ends up nested inside a
+ * `priceCurrency: "USD"` AggregateOffer, which is what used to happen.
+ *
+ * We quote the vendor's real published figure rather than converting to USD.
+ * `convertToUSD` is right for *comparison* (see ef16dde) but a JSON-LD `price`
+ * is a published-price claim, and exchange-rates.ts holds a hardcoded
+ * `CNY: 6.90`, so converting would publish a stale invented number.
+ *
+ * Returns null when there are no priced channels — the caller should then emit
+ * no Product at all, since there is nothing to advertise.
+ */
+export function pickOfferCurrency(currencies: string[]): string | null {
+  if (currencies.length === 0) return null;
+
+  const counts = new Map<string, number>();
+  for (const raw of currencies) {
+    const currency = raw || 'USD';
+    counts.set(currency, (counts.get(currency) ?? 0) + 1);
+  }
+
+  let best: string | null = null;
+  let bestCount = 0;
+  for (const [currency, count] of counts) {
+    if (count > bestCount || (count === bestCount && currency === 'USD')) {
+      best = currency;
+      bestCount = count;
+    }
+  }
+  return best;
 }
 
 /**

@@ -19,7 +19,7 @@ import {
   planKindIcon,
   planKindLabel,
 } from "@/lib/plan-kinds";
-import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
+import { buildMetadata, breadcrumbList, jsonLd, pickOfferCurrency, SITE_URL, type Locale } from "@/lib/seo";
 import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
 
 const baseUrl = SITE_URL;
@@ -51,11 +51,18 @@ function planFeatures(features: unknown): string[] {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
 
-  // Get product name
+  // Get product name. An unknown slug 404s from *here*, not from the page
+  // body, and there is deliberately no loading.tsx anywhere above this route.
+  // Any ancestor Suspense boundary flushes a shell and locks in the 200 before
+  // the page body runs, so the page's own notFound() can no longer change the
+  // status — crawlers get a 200 with an empty skeleton (a soft 404). Verified:
+  // with `[locale]/loading.tsx` present every unknown slug returned 200; with
+  // it removed and this check here they return 404 + the not-found UI.
   const [product] = await sql<Array<{ name: string }>>`
     SELECT name FROM models WHERE slug = ${slug} LIMIT 1
   `;
-  const productName = product?.name || slug;
+  if (!product) notFound();
+  const productName = product.name || slug;
 
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
@@ -280,71 +287,84 @@ export default async function ModelPage({
   const cheapestChannel = (channelPrices as any[])[0];
 
   // JSON-LD: Product + AggregateOffer + BreadcrumbList
-  // AggregateOffer packages every channel's input_price_per_1m so Google
-  // can show a price range in the SERP snippet. Channel currencies get
-  // normalized to USD at display time on the page but for SEO we only
-  // advertise the USD prices (channels with USD currency).
-  const usdPrices = (channelPrices as any[])
-    .filter((cp) => (cp.currency ?? 'USD') === 'USD' && typeof cp.input_price_per_1m === 'number')
+  // AggregateOffer packages the channel input_price_per_1m figures so Google can
+  // show a price range in the SERP snippet.
+  //
+  // It carries a single priceCurrency, and channels are stored in whatever the
+  // vendor publishes, so we quote the model in its dominant channel currency
+  // (see pickOfferCurrency) and restrict both the aggregate and the per-channel
+  // Offer[] to that one currency. Restricting both matters: this used to filter
+  // the aggregate to USD but not the nested offers, so a ¥ Offer sat inside a
+  // priceCurrency:"USD" AggregateOffer.
+  const pricedChannels = (channelPrices as any[]).filter(
+    (cp) => typeof cp.input_price_per_1m === 'number' && cp.input_price_per_1m > 0,
+  );
+  const offerCurrency = pickOfferCurrency(pricedChannels.map((cp) => cp.currency ?? 'USD'));
+  const offerChannels = pricedChannels.filter((cp) => (cp.currency ?? 'USD') === offerCurrency);
+  const offerPrices = offerChannels
     .map((cp) => cp.input_price_per_1m as number)
-    .filter((p) => p > 0)
     .sort((a, b) => a - b);
 
   // Build individual Offer entries per channel. AggregateOffer alone can't
   // tell Google which seller has which price — the per-channel Offer array
   // is what lets the SERP show "OpenAI $2.50 / SiliconFlow $1.08 / Azure
   // $2.50" style breakdown.
-  const individualOffers = (channelPrices as any[])
-    .filter((cp) => typeof cp.input_price_per_1m === 'number' && cp.input_price_per_1m > 0)
-    .map((cp) => ({
-      '@type': 'Offer',
-      priceCurrency: cp.currency ?? 'USD',
+  const individualOffers = offerChannels.map((cp) => ({
+    '@type': 'Offer',
+    priceCurrency: offerCurrency,
+    price: String(cp.input_price_per_1m),
+    priceSpecification: {
+      '@type': 'UnitPriceSpecification',
+      priceCurrency: offerCurrency,
       price: String(cp.input_price_per_1m),
-      priceSpecification: {
-        '@type': 'UnitPriceSpecification',
-        priceCurrency: cp.currency ?? 'USD',
-        price: String(cp.input_price_per_1m),
-        unitText: 'per 1M input tokens',
-      },
-      availability: cp.is_available !== false
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/Discontinued',
-      seller: cp.providers?.name
-        ? {
-            '@type': 'Organization',
-            name: cp.providers.name,
-            url: cp.providers.website ?? undefined,
-          }
-        : undefined,
-      url: `${baseUrl}/${locale}/models/${product.slug}`,
-      category: cp.providers?.type ?? undefined,
-    }));
+      unitText: 'per 1M input tokens',
+    },
+    availability: cp.is_available !== false
+      ? 'https://schema.org/InStock'
+      : 'https://schema.org/Discontinued',
+    seller: cp.providers?.name
+      ? {
+          '@type': 'Organization',
+          name: cp.providers.name,
+          url: cp.providers.website ?? undefined,
+        }
+      : undefined,
+    url: `${baseUrl}/${locale}/models/${product.slug}`,
+    category: cp.providers?.type ?? undefined,
+  }));
 
-  const productJsonLd = jsonLd({
+  // No priced channel means there is no offer to advertise, and a Product with
+  // no offers/review/aggregateRating is exactly what Search Console rejects
+  // ("应指定 offers、review 或 aggregateRating"). Emit no Product at all in that
+  // case rather than an empty shell — the breadcrumb still ships below.
+  //
+  // Don't reach for aggregateRating to satisfy the one-of-three rule: we have no
+  // ratings, and the Arena ELO below is not a 1-5 rating scale.
+  const productJsonLd = offerCurrency == null ? null : jsonLd({
     '@type': 'Product',
     name: product.name,
     description: product.description ?? `${product.name} — ${product.context_window?.toLocaleString() ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
+    // Required by Google, and missing site-wide until now. The route's own
+    // opengraph-image.tsx already renders a real 1200x630 card for this model,
+    // and its extensionless URL serves image/png.
+    image: `${SITE_URL}/${locale}/models/${product.slug}/opengraph-image`,
     brand: product.providers?.name
       ? { '@type': 'Brand', name: product.providers.name }
       : undefined,
     category: 'AI Model API',
-    ...(usdPrices.length > 0
-      ? {
-          offers: {
-            '@type': 'AggregateOffer',
-            priceCurrency: 'USD',
-            lowPrice: String(usdPrices[0]),
-            highPrice: String(usdPrices[usdPrices.length - 1]),
-            offerCount: usdPrices.length,
-            priceSpecification: {
-              '@type': 'UnitPriceSpecification',
-              priceCurrency: 'USD',
-              unitText: 'per 1M input tokens',
-            },
-            offers: individualOffers,
-          },
-        }
-      : {}),
+    offers: {
+      '@type': 'AggregateOffer',
+      priceCurrency: offerCurrency,
+      lowPrice: String(offerPrices[0]),
+      highPrice: String(offerPrices[offerPrices.length - 1]),
+      offerCount: offerPrices.length,
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        priceCurrency: offerCurrency,
+        unitText: 'per 1M input tokens',
+      },
+      offers: individualOffers,
+    },
     // Arena ELO as an additional property (Google accepts custom numeric
     // metrics; we don't use AggregateRating because ELO isn't a 1-5 scale)
     ...(arenaElo != null
@@ -376,7 +396,9 @@ export default async function ModelPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd }} />
+      {productJsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd }} />
+      )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">

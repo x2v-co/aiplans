@@ -275,8 +275,14 @@ private and GitHub-hosted runners do not need network access to it.
   (`applicable-device`, `MobileOptimized`, `HandheldFriendly`). Baidu site
   verification is a placeholder in `metadata.other` comment — uncomment and
   add the token once the site is registered at https://ziyuan.baidu.com/
-- Sitemap (`src/app/sitemap.ts`) fully DB-driven: every provider
-  (`/plans/[provider]`) + up to 500 LLM models (`/models/[slug]`)
+- Sitemap (`src/app/sitemap.ts`) fully DB-driven: every provider that has at
+  least one plan row (`/plans/[provider]`) + every `type='llm'` model with at
+  least one `is_available` channel (`/models/[slug]`), both locales. ~710 URLs.
+  The filters are deliberate — a provider with no plans or a model with no
+  available channel renders an empty page, and we don't ask Google to index
+  those. There must be **no `public/sitemap.xml`**: a static file there shadows
+  this route (that bug shipped from 2026-03 to 2026-08, serving 85 stale URLs
+  including 3 slugs that no longer existed).
 
 ## Performance tuning (next.config.ts)
 
@@ -397,6 +403,15 @@ messages/
 
 ## Common gotchas
 
+- **Never add a `loading.tsx` above `models/[slug]` or `plans/[provider]`.**
+  An ancestor Suspense boundary makes Next flush the shell and commit HTTP 200
+  before the page body runs, so `notFound()` can no longer set the status —
+  every unknown slug becomes a 200 serving an empty skeleton (a soft 404 that
+  Search Console reports as a thin/duplicate page). `[locale]/loading.tsx` was
+  deleted for exactly this reason. Existence checks live in `generateMetadata`,
+  which resolves before the shell flushes. If those pages need a skeleton back,
+  it has to be an in-page `<Suspense>` around the heavy query, not a route-level
+  `loading.tsx`.
 - **`upsertChannelPrice` rejects `output < input`** — if a scraper's regex
   accidentally swaps columns, the write fails and you see it in logs. Fix
   the scraper, don't work around the check.

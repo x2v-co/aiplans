@@ -27,7 +27,12 @@ export async function generateMetadata({
     WHERE slug = ${providerSlug}
     LIMIT 1
   `;
-  const providerName = provider?.name ?? providerSlug;
+  // Unknown slug has to 404 here rather than in the page body, and no
+  // loading.tsx may be added above this route — see the longer note in
+  // models/[slug]/page.tsx. An ancestor Suspense boundary flushes the shell
+  // first, which turns the page's own notFound() into a 200 soft 404.
+  if (!provider) notFound();
+  const providerName = provider.name ?? providerSlug;
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: `/plans/${providerSlug}`,
@@ -131,6 +136,14 @@ export default async function ProviderPlansPage({
       name: `${provider.name} ${p.name}`,
       price: p.price ?? null,
       currency: p.currency ?? currency,
+      // Google requires Product.image, and it was missing site-wide. This
+      // route's opengraph-image.tsx already renders a real 1200x630 card and
+      // its extensionless URL serves image/png. The provider icons in
+      // public/providers/ are mostly .ico, which Google does not accept.
+      image: `${SITE_URL}/${locale}/plans/${providerSlug}/opengraph-image`,
+      // Stands in for the GTIN/MPN we will never have — these are
+      // subscriptions, not retail goods with a barcode.
+      brand: provider.name,
       url: `${SITE_URL}/${locale}/plans/${providerSlug}#${p.slug}`,
       description: p.notes ?? `${provider.name} ${p.name} subscription plan`,
       category: 'AI Subscription',

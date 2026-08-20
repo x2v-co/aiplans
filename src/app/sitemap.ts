@@ -44,10 +44,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (path) push(path, Math.max(priority - 0.1, 0.5), changefreq);
   }
 
-  // Dynamic: every provider in DB → /plans/[provider]
+  // Dynamic: every provider that actually has plans → /plans/[provider].
+  // The page renders for any existing provider slug, but one with zero plan
+  // rows is a blank lineup — thin content we shouldn't be asking Google to
+  // index. 17 of 29 providers were in that state when this filter was added.
   try {
     const providers = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
-      SELECT slug, updated_at FROM providers ORDER BY priority ASC NULLS LAST
+      SELECT slug, updated_at FROM providers
+      WHERE EXISTS (SELECT 1 FROM plans WHERE plans.provider_id = providers.id)
+      ORDER BY priority ASC NULLS LAST
     `;
     for (const p of providers) {
       if (!p.slug) continue;
@@ -71,15 +76,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('sitemap: failed to query providers', err);
   }
 
-  // Dynamic: every LLM model in DB → /[locale]/models/[slug]
+  // Dynamic: every LLM model with at least one *available* channel →
+  // /[locale]/models/[slug]. The `is_available` predicate is the same one the
+  // page uses to build its price table, so a model excluded here is exactly a
+  // model whose page would render an empty table and no Product JSON-LD.
   try {
+    const MODEL_LIMIT = 2000;
     const models = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
       SELECT slug, updated_at
       FROM models
       WHERE type = 'llm'
+        AND EXISTS (
+          SELECT 1 FROM api_channel_prices cp
+          WHERE cp.model_id = models.id AND cp.is_available = true
+        )
       ORDER BY updated_at DESC NULLS LAST
-      LIMIT 500
+      LIMIT ${MODEL_LIMIT}
     `;
+    if (models.length === MODEL_LIMIT) {
+      console.warn(`sitemap: model list hit the ${MODEL_LIMIT} cap — raise it or split the sitemap`);
+    }
     const seen = new Set<string>();
     for (const m of models) {
       if (!m.slug || seen.has(m.slug)) continue;
