@@ -403,6 +403,17 @@ messages/
 
 ## Common gotchas
 
+- **Never fetch a page's own data in a `useEffect`.** A `"use client"` component
+  *is* server-rendered — the boundary controls hydration, not SSR — but an effect
+  only runs in the browser, so the server renders the `loading` branch and ships
+  crawlers a spinner. `/api-pricing` served 63 characters that way. Every page
+  that needs data is a server `page.tsx` that awaits it and passes it to a
+  `*-view.tsx` client component holding the interactivity; the payload builders
+  live in `src/lib/` (`grouped-products.ts`, `products.ts`, `plans.ts`,
+  `coupons.ts`, `compare-plans.ts`, `compare-plans-index.ts`) and the matching
+  API route is a thin wrapper over the same function. See
+  `docs/todo-api-pricing-searchparams.md` for the deeper version of this that is
+  still open.
 - **Never add a `loading.tsx` above `models/[slug]` or `plans/[provider]`.**
   An ancestor Suspense boundary makes Next flush the shell and commit HTTP 200
   before the page body runs, so `notFound()` can no longer set the status —
