@@ -2,49 +2,16 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Geist Sans Font */
-@font-face {
-  font-family: 'Geist';
-  src: url('/fonts/Geist-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Geist';
-  src: url('/fonts/Geist-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Geist';
-  src: url('/fonts/Geist-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+/* Geist Sans + Geist Mono come from the `geist` package via next/font/local,
+   applied as classes on <html> in [locale]/layout.tsx. That defines
+   --font-geist-sans / --font-geist-mono (with metric-adjusted fallbacks) and
+   self-hosts the woff2 out of .next/static/media with a preload hint.
 
-/* Geist Mono Font */
-@font-face {
-  font-family: 'Geist Mono';
-  src: url('/fonts/GeistMono-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Geist Mono';
-  src: url('/fonts/GeistMono-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-:root {
-  --font-geist-sans: 'Geist', sans-serif;
-  --font-geist-mono: 'Geist Mono', monospace;
-}
+   This used to be five hand-written @font-face rules pointing at
+   /fonts/*.woff2. Those five files were HTML error pages saved with a .woff2
+   extension — every browser rejected them ("OTS parsing error: invalid
+   sfntVersion: 168430090"), so the whole site had been silently falling back
+   to a system font. Do not reintroduce the /fonts/ copies. */
 
 @custom-variant dark (&:is(.dark *));
 

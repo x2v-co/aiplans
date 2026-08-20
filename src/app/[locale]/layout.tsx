@@ -1,5 +1,7 @@
 import '../globals.css';
 import type { Metadata, Viewport } from 'next';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import LocaleClientWrapper from '@/components/locale-client-wrapper';
 import enMessages from '@/../messages/en.json';
 import zhMessages from '@/../messages/zh.json';
@@ -145,7 +147,10 @@ async function LocaleLayoutContent({
   const htmlLang = isZh ? 'zh-CN' : 'en-US';
 
   return (
-    <html lang={htmlLang}>
+    // The two font classes define --font-geist-sans / --font-geist-mono, which
+    // is what globals.css's @theme maps --font-sans / --font-mono onto. They
+    // have to sit on <html> because that is the only element every page shares.
+    <html lang={htmlLang} className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
         {/* Two site-wide JSON-LD graphs. Page-level JSON-LD (Product,
             Breadcrumb, FAQ, ItemList) is emitted by each route's own
