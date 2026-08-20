@@ -80,12 +80,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // /[locale]/models/[slug]. The `is_available` predicate is the same one the
   // page uses to build its price table, so a model excluded here is exactly a
   // model whose page would render an empty table and no Product JSON-LD.
+  //
+  // `type ILIKE '%llm%'` rather than `type = 'llm'`: the column holds
+  // 'thinking llm' for the GLM reasoning models and one row is literally 'llm '
+  // with a trailing space (gpt-5). An exact match silently dropped all five
+  // from the sitemap even though every one of them has channels and renders a
+  // full page.
   try {
     const MODEL_LIMIT = 2000;
     const models = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
       SELECT slug, updated_at
       FROM models
-      WHERE type = 'llm'
+      WHERE type ILIKE '%llm%'
         AND EXISTS (
           SELECT 1 FROM api_channel_prices cp
           WHERE cp.model_id = models.id AND cp.is_available = true
@@ -112,6 +118,44 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   } catch (err) {
     console.error('sitemap: failed to query models', err);
+  }
+
+  // Dynamic: every LLM model that at least one subscription plan includes →
+  // /[locale]/compare/plans/[model]. getPlanComparison only returns null for a
+  // slug with no models row, so the page renders for any model that exists —
+  // but one with zero model_plan_mapping rows renders a comparison of nothing.
+  // Same reasoning as the two blocks above: only advertise pages with content.
+  try {
+    const comparable = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
+      SELECT slug, updated_at
+      FROM models
+      WHERE type ILIKE '%llm%'
+        AND EXISTS (
+          SELECT 1 FROM model_plan_mapping mpm WHERE mpm.model_id = models.id
+        )
+      ORDER BY updated_at DESC NULLS LAST
+    `;
+    // getModelSlugCandidates() treats `claude-opus-4.6` and `claude-opus-4-6`
+    // as the same model, so both slugs resolve to the same plan set and would
+    // be two URLs serving one page. Collapse them to whichever row is freshest.
+    const seenKey = new Set<string>();
+    for (const m of comparable) {
+      if (!m.slug) continue;
+      const key = m.slug.replace(/(\d)\.(\d)/g, '$1-$2');
+      if (seenKey.has(key)) continue;
+      seenKey.add(key);
+      const lastMod = m.updated_at ? new Date(m.updated_at) : now;
+      for (const locale of LOCALES) {
+        urls.push({
+          url: `${BASE_URL}/${locale}/compare/plans/${m.slug}`,
+          lastModified: lastMod,
+          changeFrequency: 'weekly',
+          priority: 0.6,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('sitemap: failed to query comparable models', err);
   }
 
   return urls;
