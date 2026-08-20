@@ -65,6 +65,21 @@ interface ChannelPrice {
   };
 }
 
+/**
+ * Normalises a channel price to USD for comparison only.
+ *
+ * Channels are stored in the vendor's own currency — 154 CNY rows against 533
+ * USD ones — so comparing `input_price_per_1m` directly treats ¥3 as $3. Since
+ * the same real cost is a ~6.9× larger number in CNY, every Chinese channel was
+ * judged the more expensive one: the cheapest channel was picked wrongly for 17
+ * models, worst of all qwen3.5-flash, which reported $0.065 as its floor when
+ * the true floor was $0.029 (124% too high).
+ *
+ * Display is unaffected and still uses each row's own currency via formatPrice.
+ */
+const usd = (price: number | null | undefined, currency: CurrencyCode): number | null =>
+  price == null ? null : convertToUSD(price, currency || 'USD');
+
 export default function ApiPricingPage() {
   const t = useTranslations('apiPricing');
   const tNav = useTranslations('nav');
@@ -159,8 +174,8 @@ export default function ApiPricingPage() {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "price":
-          const priceA = getLowestDisplayedPrice(a);
-          const priceB = getLowestDisplayedPrice(b);
+          const priceA = getLowestPriceUSD(a);
+          const priceB = getLowestPriceUSD(b);
           return sortOrder === "asc"
             ? (priceA || Infinity) - (priceB || Infinity)
             : (priceB || Infinity) - (priceA || Infinity);
@@ -183,7 +198,9 @@ export default function ApiPricingPage() {
       cp.providers.type === 'official' || cp.providers.type === 'producer'
     );
     if (officialPrices.length === 0) return null;
-    const prices = officialPrices.map(cp => cp.input_price_per_1m).filter((p): p is number => p != null);
+    const prices = officialPrices
+      .map(cp => usd(cp.input_price_per_1m, cp.currency))
+      .filter((p): p is number => p != null);
     if (prices.length === 0) return null;
     return Math.min(...prices);
   }
@@ -207,9 +224,13 @@ export default function ApiPricingPage() {
     }
   }
 
-  function getLowestDisplayedPrice(product: GroupedProduct): number | null {
+  // Returns USD, not the stored number. Channels are priced in their vendor's
+  // own currency, so the minimum has to be taken after normalising -- ¥3/1M is
+  // cheaper than $0.78/1M even though 3 > 0.78. Used only for sorting; the
+  // table still displays each channel in its own currency.
+  function getLowestPriceUSD(product: GroupedProduct): number | null {
     const prices = product.versions
-      .map((cp) => cp.input_price_per_1m)
+      .map((cp) => usd(cp.input_price_per_1m, cp.currency))
       .filter((price): price is number => price != null);
 
     if (prices.length === 0) return getCheapestOfficialPrice(product);
@@ -398,10 +419,14 @@ export default function ApiPricingPage() {
                   });
 
                   // 获取最便宜的官方价格（用于计算节省）
-                  const officialPrices = product.versions.filter(cp => (cp.providers.type === 'official' || cp.providers.type === 'producer' || cp.providers.type === 'producer') && cp.input_price_per_1m != null);
+                  const officialPrices = product.versions.filter(cp => (cp.providers.type === 'official' || cp.providers.type === 'producer') && cp.input_price_per_1m != null);
                   const cheapestOfficial = officialPrices.length > 0
                     ? officialPrices.reduce((min, cp) =>
-                        (cp.input_price_per_1m || Infinity) < (min.input_price_per_1m || Infinity) ? cp : min
+                        // 折算成 USD 再比大小：官方渠道里同时有 CNY 和 USD 定价，
+                        // 直接比原始数字会把国内官方价当成最贵的那个，于是所有
+                        // "省 x%" 都是相对错误的基准算出来的。
+                        (usd(cp.input_price_per_1m, cp.currency) ?? Infinity) <
+                        (usd(min.input_price_per_1m, min.currency) ?? Infinity) ? cp : min
                       )
                     : null;
 
@@ -470,9 +495,14 @@ export default function ApiPricingPage() {
 
                             // 如果是官方渠道且同时有国内和国际版本，合并显示
                             if (isOfficial && chinaVersion && globalVersion) {
+                              // No raw-number pre-check: calculateSavingsPercent
+                              // already converts both sides to USD and returns a
+                              // negative number when the channel is dearer, and
+                              // every render site gates on `> 0`. The old guard
+                              // compared ¥ against $ and so hid the badge on
+                              // exactly the CN channels that are cheapest.
                               const savingsChina = cheapestOfficial && cheapestOfficial.input_price_per_1m != null &&
-                                  chinaVersion.input_price_per_1m != null &&
-                                  chinaVersion.input_price_per_1m < cheapestOfficial.input_price_per_1m
+                                  chinaVersion.input_price_per_1m != null
                                 ? calculateSavingsPercent(
                                     chinaVersion.input_price_per_1m,
                                     chinaVersion.currency || 'USD',
@@ -481,8 +511,7 @@ export default function ApiPricingPage() {
                                   )
                                 : 0;
                               const savingsGlobal = cheapestOfficial && cheapestOfficial.input_price_per_1m != null &&
-                                  globalVersion.input_price_per_1m != null &&
-                                  globalVersion.input_price_per_1m < cheapestOfficial.input_price_per_1m
+                                  globalVersion.input_price_per_1m != null
                                 ? calculateSavingsPercent(
                                     globalVersion.input_price_per_1m,
                                     globalVersion.currency || 'USD',
@@ -586,8 +615,7 @@ export default function ApiPricingPage() {
                             // 标准单行显示（非合并的国内/国际版本）
                             return prices.map((cp, idx) => {
                               const savings = cheapestOfficial && cheapestOfficial.input_price_per_1m != null &&
-                                  cp.input_price_per_1m != null &&
-                                  cp.input_price_per_1m < cheapestOfficial.input_price_per_1m
+                                  cp.input_price_per_1m != null
                                 ? calculateSavingsPercent(
                                     cp.input_price_per_1m,
                                     cp.currency || 'USD',

@@ -119,10 +119,9 @@ export async function GET(request: Request) {
         const hasChinaVersion = productPrices.some(cp => (cp as any).providers?.region === 'china');
         const hasGlobalVersion = productPrices.some(cp => (cp as any).providers?.region === 'global');
 
-        // 按价格排序找到最便宜的
-        const sortedByPrice = [...productPrices].sort((a, b) =>
-          (a.input_price_per_1m || Infinity) - (b.input_price_per_1m || Infinity)
-        );
+        // (A cheapest-first ordering used to be computed here and never read.
+        // It compared input_price_per_1m across currencies, so it would have
+        // ranked ¥3 above $0.78; /api-pricing now normalises to USD itself.)
 
         modelGroups.set(baseName, {
           id: product.id,
