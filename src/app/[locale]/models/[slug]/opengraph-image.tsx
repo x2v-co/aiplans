@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og-template';
 import { sql } from '@/lib/db';
+import { decodeSlugParam } from '@/lib/route-params';
 
 export const alt = 'Model API Pricing — aiplans.dev';
 export const size = OG_SIZE;
@@ -13,7 +14,8 @@ export default async function Image({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { locale, slug } = await params;
+  const { locale, slug: rawSlug } = await params;
+  const slug = decodeSlugParam(rawSlug);
   const isZh = locale === 'zh';
 
   // Fetch model + channels + arena elo. These are small queries and the

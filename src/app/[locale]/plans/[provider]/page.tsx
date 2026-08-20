@@ -14,13 +14,15 @@ import { groupPlansByKind, planKindDescription, planKindIcon, planKindLabel } fr
 import { describeEconomics, planEconomics, type EconomicPlan } from "@/lib/plan-economics";
 import { PlanRate } from "@/components/plan-rate";
 import { buildMetadata, breadcrumbList, productOffer, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
+import { decodeSlugParam } from "@/lib/route-params";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; provider: string }>;
 }): Promise<Metadata> {
-  const { locale, provider: providerSlug } = await params;
+  const { locale, provider: rawProvider } = await params;
+  const providerSlug = decodeSlugParam(rawProvider);
   const [provider] = await sql<any[]>`
     SELECT name, description, region
     FROM providers
@@ -93,7 +95,8 @@ export default async function ProviderPlansPage({
   params: Promise<{ locale: string; provider: string }>;
   searchParams: Promise<{ period?: string }>;
 }) {
-  const { locale, provider: providerSlug } = await params;
+  const { locale, provider: rawProvider } = await params;
+  const providerSlug = decodeSlugParam(rawProvider);
   const { period } = await searchParams;
   const showYearly = period === 'yearly';
   const data = await getPlansByProvider(providerSlug);

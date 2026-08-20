@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import { sql } from '@/lib/db';
 import { buildMetadata, type Locale } from '@/lib/seo';
+import { decodeSlugParam } from '@/lib/route-params';
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; model: string }>;
 }): Promise<Metadata> {
-  const { locale, model: modelSlug } = await params;
+  const { locale, model: rawModel } = await params;
+  const modelSlug = decodeSlugParam(rawModel);
 
   const [model] = await sql<Array<{ name: string }>>`
     SELECT name FROM models WHERE slug = ${modelSlug} LIMIT 1

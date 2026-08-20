@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og-template';
 import { sql, INT4_ARRAY } from '@/lib/db';
+import { decodeSlugParam } from '@/lib/route-params';
 
 export const alt = 'Plan Comparison — aiplans.dev';
 export const size = OG_SIZE;
@@ -11,7 +12,8 @@ export default async function Image({
 }: {
   params: Promise<{ locale: string; model: string }>;
 }) {
-  const { locale, model: modelSlug } = await params;
+  const { locale, model: rawModel } = await params;
+  const modelSlug = decodeSlugParam(rawModel);
   const isZh = locale === 'zh';
 
   const [model] = await sql<any[]>`

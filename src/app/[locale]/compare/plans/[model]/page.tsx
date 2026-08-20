@@ -3,6 +3,7 @@ import { getPlanComparison } from "@/lib/compare-plans";
 import type { CurrencyCode } from "@/lib/currency";
 import { breadcrumbList, SITE_URL } from "@/lib/seo";
 import ComparePlansView from "./compare-plans-view";
+import { decodeSlugParam } from "@/lib/route-params";
 
 /**
  * Server component. This page used to be a client component that fetched
@@ -19,7 +20,8 @@ export default async function ComparePlansModelPage({
 }: {
   params: Promise<{ locale: string; model: string }>;
 }) {
-  const { locale, model: modelSlug } = await params;
+  const { locale, model: rawModel } = await params;
+  const modelSlug = decodeSlugParam(rawModel);
 
   const data = await getPlanComparison(modelSlug, "USD" as CurrencyCode);
   if (!data) notFound();

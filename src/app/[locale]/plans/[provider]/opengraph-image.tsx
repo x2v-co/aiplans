@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og-template';
 import { sql } from '@/lib/db';
+import { decodeSlugParam } from '@/lib/route-params';
 
 export const alt = 'Provider Subscription Plans — aiplans.dev';
 export const size = OG_SIZE;
@@ -11,7 +12,8 @@ export default async function Image({
 }: {
   params: Promise<{ locale: string; provider: string }>;
 }) {
-  const { locale, provider: providerSlug } = await params;
+  const { locale, provider: rawProvider } = await params;
+  const providerSlug = decodeSlugParam(rawProvider);
   const isZh = locale === 'zh';
 
   const [provider] = await sql<any[]>`

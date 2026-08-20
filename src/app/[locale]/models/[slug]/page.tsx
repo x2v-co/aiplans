@@ -21,6 +21,7 @@ import {
 } from "@/lib/plan-kinds";
 import { buildMetadata, breadcrumbList, jsonLd, pickOfferCurrency, SITE_URL, type Locale } from "@/lib/seo";
 import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
+import { decodeSlugParam } from "@/lib/route-params";
 
 const baseUrl = SITE_URL;
 
@@ -49,7 +50,8 @@ function planFeatures(features: unknown): string[] {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
-  const { locale, slug } = await params;
+  const { locale, slug: rawSlug } = await params;
+  const slug = decodeSlugParam(rawSlug);
 
   // Get product name. An unknown slug 404s from *here*, not from the page
   // body, and there is deliberately no loading.tsx anywhere above this route.
@@ -233,7 +235,8 @@ export default async function ModelPage({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { locale, slug } = await params;
+  const { locale, slug: rawSlug } = await params;
+  const slug = decodeSlugParam(rawSlug);
   const data = await getProductWithChannels(slug);
 
   if (!data) {
