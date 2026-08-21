@@ -15,75 +15,18 @@ import {
   formatPrice,
   formatPriceSimple,
   calculateSavingsPercent,
-  type CurrencyCode,
 } from "@/lib/currency";
-import { convertToUSD } from "@/lib/currency-conversion";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import type { ChannelPrice, GroupedProduct } from "@/lib/grouped-products";
-
-/**
- * Normalises a channel price to USD for comparison only.
- *
- * Channels are stored in the vendor's own currency — 154 CNY rows against 533
- * USD ones — so comparing `input_price_per_1m` directly treats ¥3 as $3. Since
- * the same real cost is a ~6.9× larger number in CNY, every Chinese channel was
- * judged the more expensive one: the cheapest channel was picked wrongly for 17
- * models, worst of all qwen3.5-flash, which reported $0.065 as its floor when
- * the true floor was $0.029 (124% too high).
- *
- * Display is unaffected and still uses each row's own currency via formatPrice.
- */
-const usd = (price: number | null | undefined, currency: CurrencyCode): number | null =>
-  price == null ? null : convertToUSD(price, currency || 'USD');
-
-// These three are pure functions of a product and live at module scope rather
-// than inside the component: as inner function declarations they were new
-// closures on every render, which cost the React Compiler its memoization of
-// `filteredProducts` ("existing memoization could not be preserved") — and that
-// memo is what keeps filtering 320 models off the keystroke path.
-function getCheapestOfficialPrice(product: GroupedProduct): number | null {
-  const officialPrices = product.versions.filter(cp =>
-    cp.providers.type === 'official' || cp.providers.type === 'producer'
-  );
-  if (officialPrices.length === 0) return null;
-  const prices = officialPrices
-    .map(cp => usd(cp.input_price_per_1m, cp.currency))
-    .filter((p): p is number => p != null);
-  if (prices.length === 0) return null;
-  return Math.min(...prices);
-}
-
-// Returns USD, not the stored number. Channels are priced in their vendor's
-// own currency, so the minimum has to be taken after normalising -- ¥3/1M is
-// cheaper than $0.78/1M even though 3 > 0.78. Used only for sorting; the
-// table still displays each channel in its own currency.
-function getLowestPriceUSD(product: GroupedProduct): number | null {
-  const prices = product.versions
-    .map((cp) => usd(cp.input_price_per_1m, cp.currency))
-    .filter((price): price is number => price != null);
-
-  if (prices.length === 0) return getCheapestOfficialPrice(product);
-  return Math.min(...prices);
-}
-
-// Normalize legacy DB channel type values to the canonical set that has
-// i18n entries. 'producer' is an older name for 'official' (the company
-// that makes the model) — without this mapping the Badge renders the raw
-// key `apiPricing.channelTypes.producer`. Any other unknown value falls
-// back to 'aggregator'.
-function normalizeChannelType(type: string | null | undefined): 'official' | 'cloud' | 'aggregator' | 'reseller' {
-  switch (type) {
-    case 'official':
-    case 'producer':
-      return 'official';
-    case 'cloud':
-    case 'aggregator':
-    case 'reseller':
-      return type;
-    default:
-      return 'aggregator';
-  }
-}
+// Currency-normalised cheapest-channel selection. These are pure, module-scope
+// functions (see channel-price-utils.ts) so the React Compiler can preserve the
+// memoization of `filteredProducts` below — that memo is what keeps filtering
+// 320 models off the keystroke path.
+import {
+  usd,
+  getLowestPriceUSD,
+  normalizeChannelType,
+} from "@/lib/channel-price-utils";
 
 /**
  * The interactive half of /api-pricing: search, sort and the four filters.
@@ -97,9 +40,12 @@ function normalizeChannelType(type: string | null | undefined): 'official' | 'cl
 export default function ApiPricingView({
   locale,
   products,
+  initialQuery,
 }: {
   locale: string;
   products: GroupedProduct[];
+  /** Initial search term, e.g. from ?q=gpt (the WebSite SearchAction target). */
+  initialQuery?: string;
 }) {
   const t = useTranslations('apiPricing');
   const tNav = useTranslations('nav');
@@ -108,7 +54,7 @@ export default function ApiPricingView({
   const tChina = () => t('china' as any);
   const tGlobal = () => t('global' as any);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => initialQuery?.trim() ?? "");
   const [sortBy, setSortBy] = useState<"price" | "name" | "elo">("elo");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [regionFilter, setRegionFilter] = useState<"all" | "global" | "china">("all");
@@ -637,18 +583,6 @@ export default function ApiPricingView({
           </CardContent>
         </Card>
       </main>
-
-      <footer className="border-t py-8 mt-12">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">💰</span>
-            <span className="font-medium">aiplans.dev</span>
-          </div>
-          <p className="text-sm text-zinc-500">
-            {t('pricesUpdated', { date: new Date().toLocaleDateString() })}
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -170,7 +170,7 @@ export default async function ProviderPlansPage({
               Compare Plans
             </Link>
             <Link href={`/${locale}/compare/models`} className="text-sm font-medium hover:text-blue-600">
-              Model Compare
+              {locale === 'zh' ? '模型对比' : 'Model Compare'}
             </Link>
             <Link href={`/${locale}/coupons`} className="text-sm font-medium hover:text-blue-600">
               Coupons
@@ -386,19 +386,6 @@ export default async function ProviderPlansPage({
           </div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="border-t py-8 mt-12">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">💰</span>
-            <span className="font-medium">aiplans.dev</span>
-          </div>
-          <p className="text-sm text-zinc-500">
-            © 2026 aiplans.dev
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { useTranslations } from '@/lib/translations';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Gift, Copy, Check, ExternalLink, Sparkles, Shield, Clock, Tag } from "lucide-react";
+import { ArrowLeft, Gift, Copy, Check, ExternalLink, Sparkles, Shield, Clock, Tag, HelpCircle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import type { Coupon } from "@/lib/coupons";
@@ -38,6 +38,7 @@ export default function CouponsView({
   const tNav = useTranslations('nav');
 
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -286,18 +287,33 @@ export default function CouponsView({
             </Button>
           </CardContent>
         </Card>
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t py-8 mt-12">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">💰</span>
-            <span className="font-medium">aiplans.dev</span>
+        {/* FAQ — kept in sync with the FAQPage JSON-LD in layout.tsx */}
+        <section className="mt-12">
+          <h2 className="text-2xl font-bold mb-6">{t('faqTitle')}</h2>
+          <div className="space-y-4">
+            {[
+              { q: t('q1'), a: t('a1') },
+              { q: t('q2'), a: t('a2') },
+            ].map((faq, index) => (
+              <div key={index} className="border rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+                >
+                  <span className="font-medium pr-4">{faq.q}</span>
+                  <HelpCircle
+                    className={`w-5 h-5 flex-shrink-0 transition-transform ${openFaq === index ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {openFaq === index && (
+                  <div className="px-4 pb-4 text-zinc-600 dark:text-zinc-400">{faq.a}</div>
+                )}
+              </div>
+            ))}
           </div>
-          <p className="text-sm text-zinc-500">{locale === 'zh' ? '© 2026 aiplans.dev - 全网 AI 价格对比' : '© 2026 aiplans.dev - Compare AI pricing & save money'}</p>
-        </div>
-      </footer>
+        </section>
+      </main>
     </div>
   );
 }

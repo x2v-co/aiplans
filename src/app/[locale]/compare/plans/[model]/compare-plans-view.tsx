@@ -18,6 +18,7 @@ import {
 import { describeEconomics } from "@/lib/plan-economics";
 import type { PlanComparison } from "@/lib/compare-plans";
 import { PlanRate } from "@/components/plan-rate";
+import { FAQS } from "./faqs";
 
 interface ComparePlansViewProps {
   locale: string;
@@ -167,28 +168,9 @@ export default function ComparePlansView({ locale, data }: ComparePlansViewProps
     return newest.toISOString().slice(0, 10);
   }, [data]);
 
-  // FAQ data
-  const faqs = [
-    {
-      question: locale === "zh" ? "如何选择最合适的订阅计划？" : "How to choose the best subscription plan?",
-      answer: locale === "zh"
-        ? "选择订阅计划时，请考虑您的使用场景、预算和所需功能。如果您是轻度用户，Free或Basic计划可能足够；如果您需要更高限速和高级功能，建议选择Pro或Enterprise计划。"
-        : "When choosing a subscription plan, consider your usage scenarios, budget, and required features. If you're a light user, Free or Basic plans may be sufficient; if you need higher rate limits and advanced features, Pro or Enterprise plans are recommended.",
-    },
-    {
-      question: locale === "zh" ? "年付和月付有什么区别？" : "What's the difference between yearly and monthly billing?",
-      answer: locale === "zh"
-        ? "年付计划通常比月付计划便宜15-20%，适合长期使用的用户。月付计划更灵活，可以随时取消或更换计划。"
-        : "Yearly plans are typically 15-20% cheaper than monthly plans, suitable for long-term users. Monthly plans are more flexible and can be cancelled or changed at any time.",
-    },
-    {
-      question: locale === "zh" ? "国内用户如何支付？" : "How can China-based users pay?",
-      answer: locale === "zh"
-        ? "部分提供商支持支付宝和微信支付。您可以在计划详情中查看支持的支付方式。第三方渠道如硅基流动、火山引擎等通常支持国内支付。"
-        : "Some providers support Alipay and WeChat Pay. You can check the supported payment methods in the plan details. Third-party channels like SiliconFlow and Volcano Engine typically support domestic payments.",
-    },
-  ];
-
+  // FAQ sourced from ./faqs.ts so the visible answers and the route's
+  // FAQPage JSON-LD never drift apart.
+  const faqs = FAQS[locale === "zh" ? "zh" : "en"];
 
   const { model, summary } = data;
   const planCount = planGroups.reduce((sum, g) => sum + g.plans.length, 0);
@@ -591,7 +573,7 @@ export default function ComparePlansView({ locale, data }: ComparePlansViewProps
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
-              href={`/${locale}/compare/models`}
+              href={`/${locale}/compare/models?models=${encodeURIComponent(data.model.slug)}`}
               className="px-6 py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
             >
               {locale === "zh" ? "查看更多模型" : "View More Models"}
@@ -638,25 +620,6 @@ export default function ComparePlansView({ locale, data }: ComparePlansViewProps
           </ul>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t py-8 mt-12">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">💰</span>
-            <span className="font-medium">aiplans.dev</span>
-          </div>
-          <nav className="flex gap-6 text-sm text-zinc-500">
-            <Link href={`/${locale}/about`} className="hover:text-blue-600">About</Link>
-            <Link href={`/${locale}/api`} className="hover:text-blue-600">API</Link>
-            <Link href={`/${locale}/blog`} className="hover:text-blue-600">Blog</Link>
-            <Link href={`/${locale}/contact`} className="hover:text-blue-600">Contact</Link>
-          </nav>
-          <p className="text-sm text-zinc-500">
-            © 2026 aiplans.dev - Compare AI pricing & save money
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

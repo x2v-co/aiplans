@@ -4,6 +4,7 @@
     "plans": "套餐",
     "apiPricing": "API 价格",
     "comparePlans": "对比套餐",
+    "compareModels": "模型对比",
     "coupons": "优惠码",
     "calculator": "计算器"
   },
@@ -123,6 +124,56 @@
     "exportCSV": "📥 导出 CSV",
     "priceAlerts": "🔔 价格变动提醒"
   },
+  "compareModels": {
+    "title": "AI 模型横向对比",
+    "subtitle": "选择 2–4 个模型，横向对比 Agent Arena 性能、上下文窗口，以及各渠道最便宜的 API token 价格。",
+    "selectorTitle": "选择要对比的模型",
+    "selectorHint": "可选择 2–4 个模型。选中第 5 个时会替换最早选中的那个。",
+    "searchPlaceholder": "搜索模型名称...（如 \"Claude Sonnet\"、\"GPT-4o\"）",
+    "selectedCount": "已选 {count} / 4",
+    "pleaseSelect": "请至少选择 2 个模型开始对比。",
+    "agentScore": "Agent 分数",
+    "contextWindow": "上下文窗口",
+    "cheapestInput": "最便宜输入 / 1M",
+    "cheapestOutput": "最便宜输出 / 1M",
+    "officialPrice": "官方价 / 1M",
+    "details": "详情",
+    "viewAllPrices": "查看全部渠道价格",
+    "comparePlansForModel": "对比订阅套餐",
+    "groups": {
+      "performance": "性能",
+      "context": "上下文与限制",
+      "pricing": "API 价格（每百万 token）",
+      "links": "链接"
+    },
+    "fields": {
+      "agentScore": "Agent Arena 分数",
+      "contextWindow": "上下文窗口",
+      "maxOutput": "最大输出",
+      "inputPrice": "最便宜输入",
+      "outputPrice": "最便宜输出",
+      "officialInput": "官方输入价",
+      "vsOfficial": "对比官方"
+    },
+    "badges": {
+      "best": "最强",
+      "largest": "最大",
+      "cheapest": "最便宜",
+      "same": "与官方同价"
+    },
+    "recommendation": {
+      "title": "一目了然",
+      "subtitle": "当前所选模型中的各项优胜者。"
+    },
+    "recBadges": {
+      "topRated": "评分最高",
+      "largestContext": "上下文最大",
+      "lowestPrice": "价格最低"
+    },
+    "noChannelPrices": "暂无渠道价格",
+    "noOfficialPrice": "暂无官方渠道",
+    "pricesUpdated": "价格更新时间：{date}"
+  },
   "apiPricing": {
     "title": "API 价格对比",
     "subtitle": "对比不同供应商和渠道的 AI 模型 API 价格，找到最适合你的最便宜选项。",
@@ -184,13 +235,26 @@
     "shareCoupon": "分享你的折扣码，帮助其他人节省 AI 服务费用。",
     "submitCoupon": "提交优惠码",
     "percentOff": "{value}% 折扣",
-    "creditAmount": "${value} 额度"
+    "creditAmount": "${value} 额度",
+    "faqTitle": "常见问题",
+    "q1": "如何获取 AI 服务优惠码？",
+    "a1": "在本页浏览已验证的优惠码，点击「复制」后到对应服务商结账页面粘贴即可。优惠码由社区提交并经其他用户确认；请认准「已验证」标签和最近确认日期。",
+    "q2": "这些 AI 优惠码可靠吗？",
+    "a2": "并非所有优惠码都长期有效——促销会到期，部分还有地区限制。只有经过多位社区成员确认的优惠码我们才标记为「已验证」，并尽量展示到期时间。如果某个优惠码失效，请反馈给我们，避免其他人浪费时间。"
   },
   "footer": {
-    "about": "关于",
-    "api": "API",
-    "blog": "博客",
-    "contact": "联系",
-    "copyright": "© 2026 PlanPrice.ai - 全网 AI 价格对比"
+    "tagline": "全网最专业的 AI 价格对比平台 — API token 价格与订阅套餐，每日审计。",
+    "compare": "对比",
+    "comparePlans": "订阅套餐",
+    "compareModels": "模型对比",
+    "apiPricing": "API Token 价格",
+    "coupons": "优惠码",
+    "moreFromX2v": "更多 x2v 产品",
+    "x2vBlurb": "集成 Sora、Veo、Kling 等模型的 AI 视频生成平台",
+    "aeeisBlurb": "智能 AI 对话助手",
+    "toolkitBlurb": "可复用的 AI 工具、MCP 服务与技能",
+    "github": "GitHub 仓库",
+    "methodology": "每日从官方定价页面和已验证渠道审计价格。",
+    "copyright": "© {year} aiplans.dev"
   }
 }

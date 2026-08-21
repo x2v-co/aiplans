@@ -432,19 +432,6 @@ export default function ComparePlansIndexView({
           </div>
         </section>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t py-8 mt-12">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">💰</span>
-            <span className="font-medium">aiplans.dev</span>
-          </div>
-          <p className="text-sm text-zinc-500">
-            {locale === 'zh' ? '© 2026 aiplans.dev - 全网 AI 价格对比' : '© 2026 aiplans.dev - Compare AI pricing & save money'}
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

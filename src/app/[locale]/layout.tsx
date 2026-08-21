@@ -7,6 +7,7 @@ import enMessages from '@/../messages/en.json';
 import zhMessages from '@/../messages/zh.json';
 import { SITE_URL, SITE_NAME } from '@/lib/seo';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
+import Footer from '@/components/Footer';
 
 const messagesMap: Record<string, typeof enMessages> = {
   en: enMessages,
@@ -112,15 +113,6 @@ export const viewport: Viewport = {
   themeColor: '#2563eb',
 };
 
-interface FAQItem { question: string; answer: string }
-type FAQData = Record<string, Record<string, FAQItem[]>>;
-
-// FAQ data (currently unused — per-route FAQ JSON-LD lives in each
-// page's own layout.tsx). Kept here as a reference corpus in case we
-// later centralize it.
-const _faqData: FAQData = {};
-void _faqData;
-
 export default function LocaleLayout({
   children,
   params,
@@ -165,12 +157,21 @@ async function LocaleLayoutContent({
               name: 'aiplans.dev',
               alternateName: isZh ? 'AI Plans 价格对比' : 'AI Plans',
               url: SITE_URL,
-              logo: `${SITE_URL}/logo.png`,
+              logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo.png` },
               description: isZh
                 ? '全网最专业的 AI 价格对比平台'
                 : 'The most comprehensive AI pricing comparison platform',
               foundingDate: '2025',
-              sameAs: ['https://github.com/x2v-co/aiplans'],
+              // x2v is the parent company / publisher. sameAs holds same-entity
+              // profiles only — sister products (aeeis.com, toolkit.fun) are
+              // separate entities and are linked visibly from the footer, not
+              // listed here, to keep the graph truthful.
+              parentOrganization: {
+                '@type': 'Organization',
+                name: 'x2v',
+                url: 'https://x2v.co',
+              },
+              sameAs: ['https://github.com/x2v-co/aiplans', 'https://x2v.co'],
             }),
           }}
         />
@@ -209,6 +210,7 @@ async function LocaleLayoutContent({
         <GoogleAnalytics />
         <LocaleClientWrapper locale={locale} messages={messages}>
           {children}
+          <Footer locale={locale} />
         </LocaleClientWrapper>
       </body>
     </html>

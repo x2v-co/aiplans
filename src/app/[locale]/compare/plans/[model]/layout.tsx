@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { sql } from '@/lib/db';
-import { buildMetadata, type Locale } from '@/lib/seo';
+import { buildMetadata, faqPage, type Locale } from '@/lib/seo';
 import { decodeSlugParam } from '@/lib/route-params';
+import { FAQS } from './faqs';
 
 export async function generateMetadata({
   params,
@@ -32,8 +33,20 @@ export async function generateMetadata({
 
 export default async function ComparePlansModelLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ locale: string; model: string }>;
 }) {
-  return <>{children}</>;
+  const { locale } = await params;
+  const faqs = FAQS[locale === 'zh' ? 'zh' : 'en'];
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: faqPage(faqs) }}
+      />
+      {children}
+    </>
+  );
 }

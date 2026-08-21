@@ -10,6 +10,7 @@ Crawl-delay: 1
 
 # Block unnecessary paths
 Disallow: /api/
+Disallow: /go/
 Disallow: /_next/
 Disallow: /404
 Disallow: /500

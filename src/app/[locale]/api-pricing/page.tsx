@@ -12,11 +12,18 @@ import ApiPricingView from "./api-pricing-view";
  */
 export default async function ApiPricingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   const { locale } = await params;
+  const { q } = await searchParams;
   const products = await getGroupedProducts("llm");
 
-  return <ApiPricingView locale={locale} products={products} />;
+  // `q` is the target of the site-wide WebSite SearchAction (JSON-LD). Reading
+  // it server-side means /api-pricing?q=gpt serves pre-filtered HTML, so the
+  // Sitelinks Search Box target is truthful rather than a dead-end ?q= that
+  // only the client could react to.
+  return <ApiPricingView locale={locale} products={products} initialQuery={q} />;
 }

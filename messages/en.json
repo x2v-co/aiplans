@@ -4,6 +4,7 @@
     "plans": "Plans",
     "apiPricing": "API Pricing",
     "comparePlans": "Compare Plans",
+    "compareModels": "Model Compare",
     "coupons": "Coupons",
     "calculator": "Calculator"
   },
@@ -123,6 +124,56 @@
     "exportCSV": "Export to CSV",
     "priceAlerts": "Price change alerts"
   },
+  "compareModels": {
+    "title": "Compare AI Models Side by Side",
+    "subtitle": "Pick 2–4 models to compare Agent Arena performance, context windows, and the cheapest API token prices across every channel.",
+    "selectorTitle": "Select Models to Compare",
+    "selectorHint": "Choose 2–4 models. Selecting a 5th replaces the first one.",
+    "searchPlaceholder": "Search model name... (e.g. \"Claude Sonnet\", \"GPT-4o\")",
+    "selectedCount": "{count} of 4 selected",
+    "pleaseSelect": "Select at least 2 models to start comparing.",
+    "agentScore": "Agent Score",
+    "contextWindow": "Context Window",
+    "cheapestInput": "Cheapest Input / 1M",
+    "cheapestOutput": "Cheapest Output / 1M",
+    "officialPrice": "Official Price / 1M",
+    "details": "Details",
+    "viewAllPrices": "View all channel prices",
+    "comparePlansForModel": "Compare subscription plans",
+    "groups": {
+      "performance": "Performance",
+      "context": "Context & Limits",
+      "pricing": "API Pricing (per 1M tokens)",
+      "links": "Links"
+    },
+    "fields": {
+      "agentScore": "Agent Arena score",
+      "contextWindow": "Context window",
+      "maxOutput": "Max output",
+      "inputPrice": "Cheapest input",
+      "outputPrice": "Cheapest output",
+      "officialInput": "Official input",
+      "vsOfficial": "vs Official"
+    },
+    "badges": {
+      "best": "Best",
+      "largest": "Largest",
+      "cheapest": "Cheapest",
+      "same": "Same as official"
+    },
+    "recommendation": {
+      "title": "At a glance",
+      "subtitle": "Winners within your current selection."
+    },
+    "recBadges": {
+      "topRated": "Top rated",
+      "largestContext": "Largest context",
+      "lowestPrice": "Lowest price"
+    },
+    "noChannelPrices": "No channel prices",
+    "noOfficialPrice": "No official channel",
+    "pricesUpdated": "Prices last updated: {date}"
+  },
   "apiPricing": {
     "title": "API Pricing Comparison",
     "subtitle": "Compare AI model API prices across different providers and channels. Find the cheapest option for your use case.",
@@ -184,13 +235,26 @@
     "shareCoupon": "Share your discount code with the community and help others save money on AI services.",
     "submitCoupon": "Submit a Coupon",
     "percentOff": "{value}% OFF",
-    "creditAmount": "${value} CREDIT"
+    "creditAmount": "${value} CREDIT",
+    "faqTitle": "Frequently asked questions",
+    "q1": "How do I get AI service discount codes?",
+    "a1": "Browse the verified codes on this page and click Copy, then paste it at the provider's checkout. Codes are submitted by the community and confirmed by other users; look for the Verified badge and a recent confirmation date.",
+    "q2": "Are these AI coupon codes reliable?",
+    "a2": "Not every code works — promotions expire and some are region-specific. We mark codes as Verified only after multiple community confirmations, and we show expiry dates where known. If a code fails, please report it so others don't waste time."
   },
   "footer": {
-    "about": "About",
-    "api": "API",
-    "blog": "Blog",
-    "contact": "Contact",
-    "copyright": "© 2026 PlanPrice.ai - Compare AI pricing & save money"
+    "tagline": "The most comprehensive AI pricing comparison platform — API token prices and subscription plans, audited daily.",
+    "compare": "Compare",
+    "comparePlans": "Subscription Plans",
+    "compareModels": "Compare Models",
+    "apiPricing": "API Token Prices",
+    "coupons": "Discount Codes",
+    "moreFromX2v": "More from x2v",
+    "x2vBlurb": "AI video generation with Sora, Veo, Kling and more",
+    "aeeisBlurb": "Intelligent AI conversation assistant",
+    "toolkitBlurb": "Reusable AI tools, MCP servers and skills",
+    "github": "GitHub repository",
+    "methodology": "Prices audited daily from official provider pages and verified channels.",
+    "copyright": "© {year} aiplans.dev"
   }
 }

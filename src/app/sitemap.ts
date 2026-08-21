@@ -17,12 +17,13 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '', priority: 1.0, changefreq: 'daily' },
   { path: '/api-pricing', priority: 0.9, changefreq: 'daily' },
   { path: '/compare/plans', priority: 0.9, changefreq: 'daily' },
+  { path: '/compare/models', priority: 0.8, changefreq: 'daily' },
   { path: '/plans', priority: 0.85, changefreq: 'daily' },
   { path: '/coupons', priority: 0.7, changefreq: 'weekly' },
-  // Note: /compare/models and /compare/api were removed — they only
-  // existed as non-locale routes that got redirected into the 404
-  // void by proxy.ts (no /[locale]/compare/{api,models} target exists).
-  // Drop /calculator too until there's an actual implementation.
+  // Note: /compare/api was removed — it only existed as a non-locale route
+  // that got redirected into the 404 void by proxy.ts (no
+  // /[locale]/compare/api target exists). Drop /calculator too until there's
+  // an actual implementation. /compare/models was rebuilt as a locale route.
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
