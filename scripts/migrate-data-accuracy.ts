@@ -465,6 +465,22 @@ const MIGRATIONS: Migration[] = [
       ALTER TABLE plans ADD COLUMN IF NOT EXISTS quotas jsonb;
     `,
   },
+  {
+    name: '016_fix_openrouter_provider_type',
+    sql: `
+      -- OpenRouter is a reseller marketplace/aggregator, never the producer of
+      -- any model it lists. One stale row had type='official', so the model
+      -- detail page's "Official Price" card resolved to OpenRouter (its $3
+      -- sorted ahead of the real producer's ¥20) instead of 月之暗面/Kimi and
+      -- every other model's actual producer. provider-config.ts already declares
+      -- it 'aggregator'; this keeps the database aligned idempotently.
+      UPDATE providers
+         SET type = 'aggregator',
+             updated_at = now()
+       WHERE slug = 'openrouter'
+         AND type <> 'aggregator';
+    `,
+  },
 ];
 
 async function main() {
