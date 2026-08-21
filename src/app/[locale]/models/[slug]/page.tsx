@@ -12,6 +12,7 @@ import { use } from "react";
 import { getPrimaryProvidersForModels } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { formatPrice, type CurrencyCode } from "@/lib/currency";
+import { convertToUSD } from "@/lib/currency-conversion";
 import { getExchangeRateSync } from "@/lib/exchange-rates";
 import {
   groupPlansByKind,
@@ -88,6 +89,16 @@ const channelTypeLabels: Record<string, { label: string; color: string }> = {
   aggregator: { label: "聚合平台", color: "bg-green-100 text-green-800" },
   reseller: { label: "转售商", color: "bg-orange-100 text-orange-800" },
 };
+
+/**
+ * A channel is stored in whatever currency the vendor publishes (CNY for the
+ * Chinese producers, USD for everyone else). Every channel-price read below
+ * must go through this instead of assuming USD — a ¥20 row used to render as
+ * "$20.00", and the raw-number sort treated ¥20 (≈$2.90) as pricier than $3.
+ */
+function channelCurrency(cp: { currency?: string | null } | null | undefined): CurrencyCode {
+  return (cp?.currency || 'USD') as CurrencyCode;
+}
 
 async function getProductWithChannels(slug: string) {
   // Get model with provider info
@@ -285,9 +296,17 @@ export default async function ModelPage({
     .filter((plan) => annualDiscount(plan) > 0.15)
     .sort((a, b) => annualDiscount(b) - annualDiscount(a))[0]?.id ?? null;
 
-  // Find official and cheapest
+  // Find official and cheapest. The SQL ORDER BY is on the raw
+  // input_price_per_1m number, which is wrong across currencies (a ¥6 row
+  // sorts above a $1 row even though ¥6 ≈ $0.87), so re-sort by
+  // USD-normalised price before picking the cheapest and before rendering.
   const officialChannel = (channelPrices as any[]).find((cp) => cp.providers?.type === 'official' || cp.providers?.type === 'producer');
-  const cheapestChannel = (channelPrices as any[])[0];
+  const sortedChannelPrices = [...(channelPrices as any[])].sort((a, b) => {
+    const aUsd = a.input_price_per_1m == null ? Infinity : convertToUSD(Number(a.input_price_per_1m), channelCurrency(a));
+    const bUsd = b.input_price_per_1m == null ? Infinity : convertToUSD(Number(b.input_price_per_1m), channelCurrency(b));
+    return aUsd - bUsd;
+  });
+  const cheapestChannel = sortedChannelPrices[0];
 
   // JSON-LD: Product + AggregateOffer + BreadcrumbList
   // AggregateOffer packages the channel input_price_per_1m figures so Google can
@@ -390,11 +409,20 @@ export default async function ModelPage({
     { name: product.name, url: `${SITE_URL}/${locale}/models/${product.slug}` },
   ]);
 
-  // Calculate savings
-  const calculateSavings = (price: number, officialPrice: number) => {
+  // Savings vs the official channel, compared in USD — a ¥20 official row and
+  // a $3 aggregator row cannot be subtracted directly. Returns null when there
+  // is no official baseline, the channel IS the official baseline, or it is
+  // not cheaper.
+  const calculateSavings = (cp: any) => {
+    if (!officialChannel || cp.id === officialChannel.id) return null;
+    const price = cp.input_price_per_1m;
+    const officialPrice = officialChannel.input_price_per_1m;
     if (!officialPrice || !price) return null;
-    const savings = ((officialPrice - price) / officialPrice) * 100;
-    return savings > 0 ? savings.toFixed(1) : null;
+    const priceUSD = convertToUSD(Number(price), channelCurrency(cp));
+    const officialUSD = convertToUSD(Number(officialPrice), channelCurrency(officialChannel));
+    if (!officialUSD) return null;
+    const savings = ((officialUSD - priceUSD) / officialUSD) * 100;
+    return savings > 0.1 ? savings.toFixed(1) : null;
   };
 
   return (
@@ -471,16 +499,16 @@ export default async function ModelPage({
             <CardContent>
               <div className="text-2xl font-bold">{cheapestChannel?.providers?.name || 'N/A'}</div>
               <div className="text-3xl font-bold text-green-600 mt-1">
-                ${cheapestChannel?.input_price_per_1m?.toFixed(2)}
+                {formatPrice(cheapestChannel?.input_price_per_1m, channelCurrency(cheapestChannel), locale)}
                 <span className="text-sm font-normal text-zinc-500">/1M input</span>
               </div>
               <div className="text-xl text-zinc-600 mt-1">
-                ${cheapestChannel?.output_price_per_1m?.toFixed(2)}
+                {formatPrice(cheapestChannel?.output_price_per_1m, channelCurrency(cheapestChannel), locale)}
                 <span className="text-sm font-normal text-zinc-500">/1M output</span>
               </div>
-              {cheapestChannel?.id !== officialChannel?.id && officialChannel && (
+              {cheapestChannel && officialChannel && cheapestChannel.id !== officialChannel.id && (
                 <div className="text-sm text-green-600 mt-2 font-medium">
-                  💸 Save {calculateSavings(cheapestChannel?.input_price_per_1m, officialChannel?.input_price_per_1m)}% vs official
+                  💸 Save {calculateSavings(cheapestChannel)}% vs official
                 </div>
               )}
               {cheapestChannel?.providers?.access_from_china && (
@@ -501,11 +529,11 @@ export default async function ModelPage({
               {officialChannel ? (
                 <>
                   <div className="text-3xl font-bold mt-1">
-                    ${officialChannel.input_price_per_1m?.toFixed(2)}
+                    {formatPrice(officialChannel.input_price_per_1m, channelCurrency(officialChannel), locale)}
                     <span className="text-sm font-normal text-zinc-500">/1M input</span>
                   </div>
                   <div className="text-xl text-zinc-600 mt-1">
-                    ${officialChannel.output_price_per_1m?.toFixed(2)}
+                    {formatPrice(officialChannel.output_price_per_1m, channelCurrency(officialChannel), locale)}
                     <span className="text-sm font-normal text-zinc-500">/1M output</span>
                   </div>
                   {officialChannel.providers?.access_from_china ? (
@@ -529,17 +557,23 @@ export default async function ModelPage({
             </CardHeader>
             <CardContent>
               {(() => {
-                const chinaOptions = (channelPrices as any[]).filter((cp) => cp.providers?.access_from_china);
+                const chinaOptions = (channelPrices as any[])
+                  .filter((cp) => cp.providers?.access_from_china)
+                  .sort((a, b) => {
+                    const aUsd = a.input_price_per_1m == null ? Infinity : convertToUSD(Number(a.input_price_per_1m), channelCurrency(a));
+                    const bUsd = b.input_price_per_1m == null ? Infinity : convertToUSD(Number(b.input_price_per_1m), channelCurrency(b));
+                    return aUsd - bUsd;
+                  });
                 const cheapestChina = chinaOptions[0];
                 return cheapestChina ? (
                   <>
                     <div className="text-2xl font-bold">{cheapestChina.providers?.name}</div>
                     <div className="text-3xl font-bold mt-1">
-                      ${cheapestChina.input_price_per_1m?.toFixed(2)}
+                      {formatPrice(cheapestChina.input_price_per_1m, channelCurrency(cheapestChina), locale)}
                       <span className="text-sm font-normal text-zinc-500">/1M input</span>
                     </div>
                     <div className="text-xl text-zinc-600 mt-1">
-                      ${cheapestChina.output_price_per_1m?.toFixed(2)}
+                      {formatPrice(cheapestChina.output_price_per_1m, channelCurrency(cheapestChina), locale)}
                       <span className="text-sm font-normal text-zinc-500">/1M output</span>
                     </div>
                     <Badge className="mt-2 bg-green-100 text-green-800">
@@ -775,10 +809,10 @@ export default async function ModelPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {channelPrices.map((cp: any, idx: number) => {
+                  {sortedChannelPrices.map((cp: any) => {
                     const isOfficial = cp.providers.type === 'official' || cp.providers.type === 'producer';
-                    const isCheapest = idx === 0;
-                    const savings = calculateSavings(cp.input_price_per_1m, officialChannel?.input_price_per_1m);
+                    const isCheapest = cp.id === cheapestChannel?.id;
+                    const savings = calculateSavings(cp);
 
                     return (
                       <TableRow key={cp.id} className={isCheapest ? "bg-green-50 dark:bg-green-950/30" : ""}>
@@ -799,10 +833,10 @@ export default async function ModelPage({
                           </span>
                         </TableCell>
                         <TableCell className="text-right font-mono">
-                          ${cp.input_price_per_1m?.toFixed(2)}
+                          {formatPrice(cp.input_price_per_1m, channelCurrency(cp), locale)}
                         </TableCell>
                         <TableCell className="text-right font-mono">
-                          ${cp.output_price_per_1m?.toFixed(2)}
+                          {formatPrice(cp.output_price_per_1m, channelCurrency(cp), locale)}
                         </TableCell>
                         <TableCell className="text-center text-sm">
                           {cp.rate_limit || '-'}
@@ -862,12 +896,16 @@ export default async function ModelPage({
           </CardContent>
         </Card>
 
-        {/* Estimated Costs */}
+        {/* Estimated Costs. Channels publish in different currencies (CNY vs
+            USD), so each cost is normalised to USD before comparison —
+            otherwise a ¥20/¥100 row is totalled as if it were $20/$100. */}
         <Card className="mt-8">
           <CardHeader>
             <CardTitle>💵 Estimated Monthly Costs</CardTitle>
             <CardDescription>
-              Based on typical usage patterns (input:output = 2:1 ratio)
+              {isZh
+                ? '基于典型使用比例（输入:输出 = 2:1），所有渠道统一换算为美元对比'
+                : 'Based on typical usage patterns (input:output = 2:1 ratio); all channels converted to USD for comparison'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -877,7 +915,7 @@ export default async function ModelPage({
                   <TableRow>
                     <TableHead>Usage Level</TableHead>
                     <TableHead>Tokens/Month</TableHead>
-                    {channelPrices.slice(0, 4).map((cp: any) => (
+                    {sortedChannelPrices.slice(0, 4).map((cp: any) => (
                       <TableHead key={cp.id} className="text-right">
                         {cp.providers.name}
                       </TableHead>
@@ -896,13 +934,14 @@ export default async function ModelPage({
                       <TableCell>
                         {(usage.inputTokens / 1000000).toFixed(1)}M in + {(usage.outputTokens / 1000000).toFixed(1)}M out
                       </TableCell>
-                      {channelPrices.slice(0, 4).map((cp: any) => {
-                        const cost =
-                          (cp.input_price_per_1m * usage.inputTokens) / 1000000 +
-                          (cp.output_price_per_1m * usage.outputTokens) / 1000000;
+                      {sortedChannelPrices.slice(0, 4).map((cp: any) => {
+                        const costInChannelCurrency =
+                          (Number(cp.input_price_per_1m) * usage.inputTokens) / 1000000 +
+                          (Number(cp.output_price_per_1m) * usage.outputTokens) / 1000000;
+                        const cost = convertToUSD(costInChannelCurrency, channelCurrency(cp));
                         return (
                           <TableCell key={cp.id} className="text-right font-mono font-semibold">
-                            ${cost.toFixed(2)}
+                            {formatPrice(cost, 'USD', locale)}
                           </TableCell>
                         );
                       })}
