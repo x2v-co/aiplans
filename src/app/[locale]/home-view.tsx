@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, GitCompare, DollarSign, Globe } from "lucide-react";
+import { ArrowRight, GitCompare, DollarSign, Globe, HelpCircle } from "lucide-react";
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/lib/translations';
 
 export type HotModel = { slug: string; name: string; benchmark_arena_elo: number | null };
+type FaqItem = { question: string; answer: string };
 
 /**
  * The landing page markup. Still a client component for the language switcher
@@ -18,9 +19,11 @@ export type HotModel = { slug: string; name: string; benchmark_arena_elo: number
 export default function HomeView({
   locale,
   hotModels,
+  faqs,
 }: {
   locale: string;
   hotModels: HotModel[];
+  faqs: FaqItem[];
 }) {
   const t = useTranslations('nav');
 
@@ -160,6 +163,28 @@ export default function HomeView({
             ))}
           </div>
         </div>
+
+        {/* FAQ — visible mirror of the FAQPage JSON-LD emitted by page.tsx. */}
+        {faqs.length > 0 && (
+          <div className="mt-20 max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-2">
+              <HelpCircle className="w-7 h-7 text-blue-600" />
+              {locale === 'zh' ? '常见问题' : 'Frequently asked questions'}
+            </h2>
+            <div className="grid gap-4">
+              {faqs.map((faq, i) => (
+                <Card key={i}>
+                  <CardContent className="py-4">
+                    <h3 className="font-semibold mb-1">{faq.question}</h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

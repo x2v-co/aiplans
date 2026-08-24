@@ -1,43 +1,16 @@
 import type { Metadata } from 'next';
-import { buildMetadata, faqPage, type Locale } from '@/lib/seo';
+import { buildMetadata, type Locale } from '@/lib/seo';
 
-const FAQ = {
-  en: [
-    {
-      question: 'What is the cheapest GPT-4 API provider?',
-      answer:
-        'The cheapest GPT-4 API provider varies by region. Generally, Chinese aggregators like SiliconFlow and 火山引擎 (Volcengine) offer 30-50% lower pricing than the official OpenAI API for the same models.',
-    },
-    {
-      question: 'How are these prices verified?',
-      answer:
-        'aiplans.dev runs hourly scrapers against official provider pages plus a daily data-accuracy audit that cross-checks every channel against the model producer’s published price. Stale or inconsistent rows are flagged and corrected.',
-    },
-    {
-      question: 'Which API works in mainland China?',
-      answer:
-        'Chinese providers like Zhipu (智谱), Qwen (通义千问), Moonshot Kimi, MiniMax, Hunyuan and DeepSeek work natively. International providers like OpenRouter, OpenAI, Anthropic and Google AI require a proxy or VPN.',
-    },
-  ],
-  zh: [
-    {
-      question: '哪个 GPT-4 API 提供商最便宜？',
-      answer:
-        '不同区域有不同最便宜方案。整体来看，国内聚合平台如硅基流动、火山引擎价格比 OpenAI 官方便宜 30-50%。',
-    },
-    {
-      question: '这些价格是怎么核对的？',
-      answer:
-        'aiplans.dev 每小时跑 scraper 抓取官方页面，并每天跑数据准确性 audit，对比每个渠道和模型生产方的官方价。过期或异常的数据会被标记并修正。',
-    },
-    {
-      question: '哪些 API 可以在中国大陆直连？',
-      answer:
-        '国内厂商如智谱、通义千问、Kimi、MiniMax、混元、DeepSeek 都能直连。OpenAI、Anthropic、Google AI、OpenRouter 等国际厂商需要代理或 VPN。',
-    },
-  ],
-};
-
+/**
+ * Route-level metadata (canonical/hreflang/OG) for /api-pricing.
+ *
+ * The FAQ used to be emitted here as a static FAQPage — but it had no visible
+ * counterpart on the page, which violates Google's FAQ structured-data policy
+ * (FAQ content must be visible), and the answer even hardcoded a generic
+ * "30-50% cheaper" claim. The data-driven, *visible* FAQ now lives in
+ * page.tsx + api-pricing-view.tsx and is mirrored by FAQPage JSON-LD there.
+ * This layout intentionally emits no JSON-LD.
+ */
 export async function generateMetadata({
   params,
 }: {
@@ -58,23 +31,11 @@ export async function generateMetadata({
   });
 }
 
-export default async function ApiPricingLayout({
+export default function ApiPricingLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
-  const faqs = locale === 'zh' ? FAQ.zh : FAQ.en;
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: faqPage(faqs) }}
-      />
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

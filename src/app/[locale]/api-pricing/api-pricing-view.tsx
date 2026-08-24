@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Check, Filter, Search, Globe, MapPin } from "lucide-react";
+import { ArrowRight, Check, Filter, Search, Globe, MapPin, HelpCircle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   formatPrice,
@@ -18,6 +18,7 @@ import {
 } from "@/lib/currency";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import type { ChannelPrice, GroupedProduct } from "@/lib/grouped-products";
+import type { ApiPricingStats, FaqItem } from "@/lib/api-pricing-copy";
 // Currency-normalised cheapest-channel selection. These are pure, module-scope
 // functions (see channel-price-utils.ts) so the React Compiler can preserve the
 // memoization of `filteredProducts` below — that memo is what keeps filtering
@@ -41,14 +42,19 @@ export default function ApiPricingView({
   locale,
   products,
   initialQuery,
+  stats,
+  faqs,
 }: {
   locale: string;
   products: GroupedProduct[];
   /** Initial search term, e.g. from ?q=gpt (the WebSite SearchAction target). */
   initialQuery?: string;
+  stats: ApiPricingStats;
+  faqs: FaqItem[];
 }) {
   const t = useTranslations('apiPricing');
   const tNav = useTranslations('nav');
+  const isZh = locale === "zh";
 
   // 获取嵌套翻译的辅助函数
   const tChina = () => t('china' as any);
@@ -194,6 +200,21 @@ export default function ApiPricingView({
           <p className="text-zinc-600 dark:text-zinc-400 mb-6">
             {t('subtitle')}
           </p>
+          {/* Stats strip — real counts from the payload, gives the page
+              crawlable, data-specific intro copy. */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { value: stats.modelCount, label: isZh ? "模型" : "models" },
+              { value: stats.channelCount, label: isZh ? "API 渠道" : "API channels" },
+              { value: stats.providerCount, label: isZh ? "供应商" : "providers" },
+              { value: stats.chinaModelCount, label: isZh ? "可中国直连" : "China-reachable" },
+            ].map((s) => (
+              <div key={s.label} className="rounded-lg border bg-white px-4 py-3 dark:bg-zinc-900">
+                <div className="text-2xl font-bold">{s.value.toLocaleString()}</div>
+                <div className="text-xs text-zinc-500">{s.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <Card className="mb-6">
@@ -582,6 +603,29 @@ export default function ApiPricingView({
             )}
           </CardContent>
         </Card>
+
+        {/* FAQ — visible mirror of the FAQPage JSON-LD emitted by the server
+            component, built from the same stats/faqs so they never drift. */}
+        {faqs.length > 0 && (
+          <section className="mt-12">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <HelpCircle className="w-6 h-6 text-blue-600" />
+              {isZh ? "常见问题" : "Frequently asked questions"}
+            </h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {faqs.map((faq, i) => (
+                <Card key={i}>
+                  <CardContent className="py-4">
+                    <h3 className="font-semibold mb-1">{faq.question}</h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
