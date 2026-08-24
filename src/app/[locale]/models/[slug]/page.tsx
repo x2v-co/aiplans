@@ -20,7 +20,8 @@ import {
   planKindIcon,
   planKindLabel,
 } from "@/lib/plan-kinds";
-import { buildMetadata, breadcrumbList, jsonLd, pickOfferCurrency, SITE_URL, type Locale } from "@/lib/seo";
+import { buildMetadata, breadcrumbList, jsonLd, pickOfferCurrency, faqPage, SITE_URL, type Locale } from "@/lib/seo";
+import { buildModelCopy } from "@/lib/model-copy";
 import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
 import { decodeSlugParam } from "@/lib/route-params";
 
@@ -61,11 +62,45 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   // status — crawlers get a 200 with an empty skeleton (a soft 404). Verified:
   // with `[locale]/loading.tsx` present every unknown slug returned 200; with
   // it removed and this check here they return 404 + the not-found UI.
-  const [product] = await sql<Array<{ name: string }>>`
-    SELECT name FROM models WHERE slug = ${slug} LIMIT 1
+  const [product] = await sql<Array<{ id: number; name: string }>>`
+    SELECT id, name FROM models WHERE slug = ${slug} LIMIT 1
   `;
   if (!product) notFound();
   const productName = product.name || slug;
+
+  // A few real facts make the SERP snippet specific instead of a generic
+  // template repeated across 400+ model pages: how many channels, and the
+  // cheapest USD-normalised input price. Cheap one-row aggregate.
+  const [stats] = await sql<Array<{ channel_count: number; cheapest_usd: number | null }>>`
+    SELECT count(*)::int AS channel_count,
+           min(
+             CASE WHEN cp.input_price_per_1m > 0
+               THEN cp.input_price_per_1m /
+                    CASE upper(coalesce(cp.currency,'USD'))
+                      WHEN 'CNY' THEN 6.90 WHEN 'EUR' THEN 0.92
+                      WHEN 'GBP' THEN 0.79 WHEN 'JPY' THEN 149.5
+                      WHEN 'KRW' THEN 1320 WHEN 'SGD' THEN 1.35
+                      ELSE 1 END
+             END
+           ) AS cheapest_usd
+      FROM api_channel_prices cp
+     WHERE cp.model_id = ${product.id} AND cp.is_available = true
+  `;
+  const channelCount = stats?.channel_count ?? 0;
+  const cheapestUsd = stats?.cheapest_usd;
+  const cheapestLabel =
+    cheapestUsd != null && Number.isFinite(cheapestUsd) && cheapestUsd > 0
+      ? `$${cheapestUsd < 1 ? cheapestUsd.toFixed(3) : cheapestUsd.toFixed(2)}/1M tokens`
+      : null;
+
+  const enDesc =
+    `Compare ${productName} API pricing${cheapestLabel ? ` from ${cheapestLabel}` : ''} across ${
+      channelCount || 'all available'
+    } channels — official, Azure, AWS Bedrock, Vertex AI, OpenRouter, SiliconFlow and more. Find the cheapest ${productName} provider, with subscription plans and hourly-updated, audited prices.`;
+  const zhDesc =
+    `对比 ${productName} 在${channelCount || '全部'}个 API 渠道的价格${
+      cheapestLabel ? `（低至 ${cheapestLabel}）` : ''
+    }：官方、Azure、AWS Bedrock、Vertex AI、OpenRouter、硅基流动等，含订阅套餐。每小时更新、数据经审计。`;
 
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
@@ -74,10 +109,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       en: `${productName} API Price Comparison · All Channels | aiplans.dev`,
       zh: `${productName} API 价格对比 · 各渠道价格 | aiplans.dev`,
     },
-    description: {
-      en: `Compare ${productName} API prices across official, Azure, AWS Bedrock, Vertex AI, OpenRouter, SiliconFlow and other channels. Find the cheapest ${productName} API provider. Updated hourly.`,
-      zh: `对比 ${productName} 在官方、Azure、AWS Bedrock、Vertex AI、OpenRouter、硅基流动等渠道的 API 价格。找到最便宜的 ${productName} API 供应商。每小时更新。`,
-    },
+    description: { en: enDesc, zh: zhDesc },
   });
 }
 
@@ -135,6 +167,29 @@ async function getProductWithChannels(slug: string) {
     WHERE cp.model_id = ${model.id} AND cp.is_available = true
     ORDER BY cp.input_price_per_1m ASC NULLS LAST
   `;
+
+  // Related models from the same producer (provider_ids[1] is the primary
+  // producer in our data). Internal links distribute crawl equity and give
+  // readers a next click instead of a dead end. We deliberately match on the
+  // producer only — matching any shared aggregator would link unrelated models
+  // that happen to both be on OpenRouter.
+  const primaryProducerId = (model.provider_ids as number[] | null | undefined)?.[0] ?? null;
+  let relatedModels: Array<{ slug: string; name: string }> = [];
+  if (primaryProducerId) {
+    relatedModels = await sql<Array<{ slug: string; name: string }>>`
+      SELECT m.slug, m.name
+      FROM models m
+      WHERE m.id <> ${model.id}
+        AND m.type ILIKE '%llm%'
+        AND m.provider_ids[1] = ${primaryProducerId}
+        AND EXISTS (
+          SELECT 1 FROM api_channel_prices cp
+          WHERE cp.model_id = m.id AND cp.is_available = true
+        )
+      ORDER BY m.updated_at DESC NULLS LAST
+      LIMIT 8
+    `;
+  }
 
   // Fetch Arena ELO score for this model (used in JSON-LD + visible badge)
   const arenaScores = await sql<Array<{ value: number | null }>>`
@@ -238,6 +293,7 @@ async function getProductWithChannels(slug: string) {
     plans: plansData,
     arenaElo,
     priceHistory,
+    relatedModels,
   };
 }
 
@@ -254,7 +310,7 @@ export default async function ModelPage({
     notFound();
   }
 
-  const { product, channelPrices, plans, arenaElo, priceHistory } = data;
+  const { product, channelPrices, plans, arenaElo, priceHistory, relatedModels } = data;
   const isZh = locale === 'zh';
 
   // Plans can come from several providers (a bundled plan may include
@@ -307,6 +363,25 @@ export default async function ModelPage({
     return aUsd - bUsd;
   });
   const cheapestChannel = sortedChannelPrices[0];
+
+  // Data-driven, localized summary + FAQ for SEO/GEO. Derived entirely from
+  // the facts already queried (no invented capabilities), so every model page
+  // gets unique crawlable prose and a FAQPage without hand-written blurbs.
+  const modelCopy = buildModelCopy(
+    {
+      name: product.name,
+      producerName: product.providers?.name,
+      modelType: product.type,
+      contextWindow: product.context_window,
+      maxOutputTokens: product.max_output_tokens,
+      channels: channelPrices as any[],
+      officialChannel,
+      cheapestChannel,
+      plans: plans as any[],
+      arenaElo,
+    },
+    (locale === 'zh' ? 'zh' : 'en') as Locale,
+  );
 
   // JSON-LD: Product + AggregateOffer + BreadcrumbList
   // AggregateOffer packages the channel input_price_per_1m figures so Google can
@@ -431,6 +506,12 @@ export default async function ModelPage({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd }} />
       )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
+      {modelCopy.faqs.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: faqPage(modelCopy.faqs) }}
+        />
+      )}
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -484,7 +565,18 @@ export default async function ModelPage({
                 📏 Context: {product.context_window.toLocaleString()} tokens
               </Badge>
             )}
-            </div>
+            {arenaElo != null && (
+              <Badge variant="outline" className="text-sm">
+                🏟️ Arena ELO: {Math.round(arenaElo)}
+              </Badge>
+            )}
+          </div>
+
+          {/* Data-driven model summary — unique, factual prose for crawlers and
+              answer engines (GEO). Omitted facts are simply absent, never invented. */}
+          <p className="mt-4 text-zinc-700 dark:text-zinc-300 leading-relaxed max-w-4xl">
+            {modelCopy.summary}
+          </p>
         </div>
 
         {/* Quick Stats */}
@@ -901,7 +993,7 @@ export default async function ModelPage({
             otherwise a ¥20/¥100 row is totalled as if it were $20/$100. */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>💵 Estimated Monthly Costs</CardTitle>
+            <CardTitle>{isZh ? '💵 预估月度费用' : '💵 Estimated Monthly Costs'}</CardTitle>
             <CardDescription>
               {isZh
                 ? '基于典型使用比例（输入:输出 = 2:1），所有渠道统一换算为美元对比'
@@ -952,6 +1044,50 @@ export default async function ModelPage({
             </div>
           </CardContent>
         </Card>
+
+        {/* FAQ — visible mirror of the FAQPage JSON-LD emitted in <head>.
+            Direct, factual answers are what answer engines (GEO) extract. */}
+        {modelCopy.faqs.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">
+              {isZh ? `关于 ${product.name} 的常见问题` : `Frequently asked questions about ${product.name}`}
+            </h2>
+            <div className="space-y-4">
+              {modelCopy.faqs.map((faq, idx) => (
+                <Card key={idx}>
+                  <CardContent className="pt-6">
+                    <h3 className="font-semibold text-lg mb-2">{faq.question}</h3>
+                    <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed">{faq.answer}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Related models from the same producer — internal linking for crawl
+            depth and a non-dead-end next click. */}
+        {relatedModels.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">
+              {isZh ? '同厂商相关模型' : 'Related models from the same producer'}
+            </h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {relatedModels.map((m) => (
+                <Link key={m.slug} href={`/${locale}/models/${m.slug}`}>
+                  <Card className="h-full hover:border-blue-400 hover:shadow-md transition-shadow">
+                    <CardContent className="pt-6">
+                      <div className="font-medium">{m.name}</div>
+                      <div className="text-sm text-blue-600 mt-1">
+                        {isZh ? '查看价格对比 →' : 'View pricing →'}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
