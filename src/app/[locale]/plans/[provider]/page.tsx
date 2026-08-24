@@ -13,7 +13,8 @@ import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-bran
 import { groupPlansByKind, planKindDescription, planKindIcon, planKindLabel } from "@/lib/plan-kinds";
 import { describeEconomics, planEconomics, type EconomicPlan } from "@/lib/plan-economics";
 import { PlanRate } from "@/components/plan-rate";
-import { buildMetadata, breadcrumbList, productOffer, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
+import { buildMetadata, breadcrumbList, productOffer, faqPage, SITE_URL, type Locale } from "@/lib/seo";
+import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
 import { decodeSlugParam } from "@/lib/route-params";
 
 export async function generateMetadata({
@@ -152,9 +153,40 @@ export default async function ProviderPlansPage({
       category: 'AI Subscription',
     }));
 
+  // Data-driven summary + FAQ for GEO. Built from the same plan rows the page
+  // already renders — no invented facts. The visible FAQ and the FAQPage
+  // JSON-LD both source from this so they stay in lockstep.
+  const providerCopy = buildProviderCopy(
+    {
+      name: provider.name,
+      type: provider.type,
+      region: provider.region,
+      access_from_china: provider.access_from_china,
+      description: provider.description,
+      modelCount: models.length,
+      // `plans` is the untyped SQL result; annotate the return shape only.
+      plans: plans.map((p): ProviderCopyPlan => ({
+        name: p.name,
+        price: p.price ?? null,
+        price_unit: p.price_unit ?? null,
+        annual_price: p.annual_price ?? null,
+        price_yearly_monthly: getPlanYearlyMonthly(p) ?? null,
+        tier: p.tier ?? null,
+        plan_kind: p.plan_kind ?? null,
+        monthly_message_limit: p.monthly_message_limit ?? null,
+        context_window: p.context_window ?? null,
+        access_from_china: p.access_from_china ?? null,
+        is_contact_sales: p.is_contact_sales ?? null,
+        currency: p.currency ?? null,
+      })),
+    },
+    (isZh ? 'zh' : 'en') as Locale,
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJson }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage(providerCopy.faqs) }} />
       {planJsonLdItems.map((ld, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />
       ))}
@@ -203,6 +235,9 @@ export default async function ProviderPlansPage({
               <div>
                 <h1 className="text-3xl font-bold">{providerData.name} Plans</h1>
                 <p className="text-zinc-600">{providerData.description}</p>
+                <p className="text-zinc-700 dark:text-zinc-300 mt-2 max-w-3xl leading-relaxed">
+                  {providerCopy.summary}
+                </p>
               </div>
             </div>
             {/* Period Toggle */}
@@ -363,6 +398,28 @@ export default async function ProviderPlansPage({
               </p>
             </CardContent>
           </Card>
+        )}
+
+        {/* FAQ — visible mirror of the FAQPage JSON-LD, sourced from the
+            same data-driven providerCopy so the two never drift apart. */}
+        {providerCopy.faqs.length > 0 && (
+          <section className="mt-12">
+            <h2 className="text-xl font-bold mb-4">
+              {isZh ? '常见问题' : 'Frequently asked questions'}
+            </h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {providerCopy.faqs.map((faq, i) => (
+                <Card key={i}>
+                  <CardContent className="py-4">
+                    <h3 className="font-semibold mb-1">{faq.question}</h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Models Section */}

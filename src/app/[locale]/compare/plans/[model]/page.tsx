@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { getPlanComparison } from "@/lib/compare-plans";
 import type { CurrencyCode } from "@/lib/currency";
-import { breadcrumbList, SITE_URL } from "@/lib/seo";
+import { breadcrumbList, faqPage, SITE_URL } from "@/lib/seo";
 import ComparePlansView from "./compare-plans-view";
+import { buildCompareFaqs } from "./faqs";
 import { decodeSlugParam } from "@/lib/route-params";
 
 /**
@@ -33,10 +34,15 @@ export default async function ComparePlansModelPage({
     { name: data.model.name, url: `${SITE_URL}/${locale}/compare/plans/${modelSlug}` },
   ]);
 
+  // Data-driven FAQ, shared between the visible section and the JSON-LD so
+  // the two stay in lockstep.
+  const faqs = buildCompareFaqs(data, (isZh ? "zh" : "en") as "zh" | "en");
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
-      <ComparePlansView locale={locale} data={data} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage(faqs) }} />
+      <ComparePlansView locale={locale} data={data} faqs={faqs} />
     </>
   );
 }

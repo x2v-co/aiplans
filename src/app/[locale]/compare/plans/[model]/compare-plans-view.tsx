@@ -18,12 +18,14 @@ import {
 import { describeEconomics } from "@/lib/plan-economics";
 import type { PlanComparison } from "@/lib/compare-plans";
 import { PlanRate } from "@/components/plan-rate";
-import { FAQS } from "./faqs";
+import type { FaqItem } from "./faqs";
 
 interface ComparePlansViewProps {
   locale: string;
   /** Comparison payload, already fetched and shaped on the server. */
   data: PlanComparison;
+  /** Data-driven FAQ, built on the server and mirrored as FAQPage JSON-LD. */
+  faqs: FaqItem[];
 }
 
 interface CheapestByKind {
@@ -45,7 +47,7 @@ interface PlanGroup {
   plans: any[];
 }
 
-export default function ComparePlansView({ locale, data }: ComparePlansViewProps) {
+export default function ComparePlansView({ locale, data, faqs }: ComparePlansViewProps) {
   // Billing toggle
   const [showYearly, setShowYearly] = useState(false);
   // Every provider starts expanded, and it has to be the *initial* state rather
@@ -168,9 +170,9 @@ export default function ComparePlansView({ locale, data }: ComparePlansViewProps
     return newest.toISOString().slice(0, 10);
   }, [data]);
 
-  // FAQ sourced from ./faqs.ts so the visible answers and the route's
-  // FAQPage JSON-LD never drift apart.
-  const faqs = FAQS[locale === "zh" ? "zh" : "en"];
+  // `faqs` is passed from the server component, which also serializes it as
+  // FAQPage JSON-LD, so the visible answers and the structured data never
+  // drift apart.
 
   const { model, summary } = data;
   const planCount = planGroups.reduce((sum, g) => sum + g.plans.length, 0);
