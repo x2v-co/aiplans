@@ -1,5 +1,5 @@
 import { getGroupedProducts } from '@/lib/grouped-products';
-import { faqPage, type Locale } from '@/lib/seo';
+import { breadcrumbList, faqPage, SITE_URL, type Locale } from '@/lib/seo';
 import CompareModelsView from './compare-models-view';
 import { FAQS } from './faqs';
 
@@ -33,9 +33,17 @@ export default async function CompareModelsPage({
     .slice(0, 4);
 
   const faqs = FAQS[loc];
+  const crumbs = breadcrumbList([
+    { name: loc === 'zh' ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
+    { name: loc === 'zh' ? '模型对比' : 'Model compare', url: `${SITE_URL}/${locale}/compare/models` },
+  ]);
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: crumbs }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: faqPage(faqs) }}

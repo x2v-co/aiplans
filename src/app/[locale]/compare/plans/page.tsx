@@ -1,4 +1,5 @@
 import { getComparePlansIndexData } from "@/lib/compare-plans-index";
+import { breadcrumbList, SITE_URL, type Locale } from "@/lib/seo";
 import ComparePlansIndexView from "./compare-plans-index-view";
 
 /**
@@ -12,7 +13,21 @@ export default async function ComparePlansIndexPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const loc = (locale === "zh" ? "zh" : "en") as Locale;
   const data = await getComparePlansIndexData();
 
-  return <ComparePlansIndexView locale={locale} data={data} />;
+  const crumbs = breadcrumbList([
+    { name: loc === "zh" ? "首页" : "Home", url: `${SITE_URL}/${locale}` },
+    { name: loc === "zh" ? "套餐对比" : "Compare plans", url: `${SITE_URL}/${locale}/compare/plans` },
+  ]);
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: crumbs }}
+      />
+      <ComparePlansIndexView locale={locale} data={data} />
+    </>
+  );
 }
