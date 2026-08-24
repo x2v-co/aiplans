@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Check, Search, Star, Layers, DollarSign } from "lucide-react";
+import { ArrowRight, Check, Search, Star, Layers, DollarSign, HelpCircle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { formatPrice, calculateSavingsPercent } from "@/lib/currency";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
@@ -18,6 +18,7 @@ import {
   getCheapestChannel,
   getCheapestOfficialChannel,
 } from "@/lib/channel-price-utils";
+import type { FaqItem } from "./faqs";
 
 const MAX_SELECT = 4;
 
@@ -59,12 +60,15 @@ export default function CompareModelsView({
   locale,
   products,
   initialSlugs,
+  faqs,
 }: {
   locale: string;
   products: GroupedProduct[];
   initialSlugs: string[];
+  faqs: FaqItem[];
 }) {
   const t = useTranslations("compareModels");
+  const isZh = locale === "zh";
   const tNav = useTranslations("nav");
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -603,6 +607,28 @@ export default function CompareModelsView({
               </CardContent>
             </Card>
           </>
+        )}
+
+        {/* FAQ — visible mirror of the FAQPage JSON-LD emitted by page.tsx. */}
+        {faqs.length > 0 && (
+          <section className="mt-12">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <HelpCircle className="w-6 h-6 text-blue-600" />
+              {isZh ? "常见问题" : "Frequently asked questions"}
+            </h2>
+            <div className="grid md:grid-cols-3 gap-4">
+              {faqs.map((faq, i) => (
+                <Card key={i}>
+                  <CardContent className="py-4">
+                    <h3 className="font-semibold mb-1">{faq.question}</h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
         )}
       </main>
     </div>

@@ -1,5 +1,7 @@
 import { getGroupedProducts } from '@/lib/grouped-products';
+import { faqPage, type Locale } from '@/lib/seo';
 import CompareModelsView from './compare-models-view';
+import { FAQS } from './faqs';
 
 /**
  * Server component. The previous /compare/models page was a non-locale legacy
@@ -22,6 +24,7 @@ export default async function CompareModelsPage({
   const { locale } = await params;
   const { models: modelsParam } = await searchParams;
   const products = await getGroupedProducts('llm');
+  const loc = (locale === 'zh' ? 'zh' : 'en') as Locale;
 
   const validSlugs = new Set(products.map((p) => p.slug));
   const initialSlugs = (modelsParam ? modelsParam.split(',') : [])
@@ -29,11 +32,20 @@ export default async function CompareModelsPage({
     .filter((s) => validSlugs.has(s))
     .slice(0, 4);
 
+  const faqs = FAQS[loc];
+
   return (
-    <CompareModelsView
-      locale={locale}
-      products={products}
-      initialSlugs={initialSlugs}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: faqPage(faqs) }}
+      />
+      <CompareModelsView
+        locale={locale}
+        products={products}
+        initialSlugs={initialSlugs}
+        faqs={faqs}
+      />
+    </>
   );
 }
