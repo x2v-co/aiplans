@@ -282,8 +282,28 @@ export default function CouponsView({
             <p className="text-zinc-600 mb-4">
               {t('shareCoupon')}
             </p>
-            <Button size="lg" className="gap-2">
-              <Gift className="w-4 h-4" /> {t('submitCoupon')}
+            <Button asChild size="lg" className="gap-2">
+              <a
+                href={`https://github.com/x2v-co/aiplans/issues/new?${new URLSearchParams({
+                  title: 'Coupon submission',
+                  body: [
+                    '## Coupon submission',
+                    '',
+                    '- **Provider:**',
+                    '- **Code:**',
+                    '- **Discount** (e.g. 20% off / $5 credit):',
+                    '- **Expiry date** (if any):',
+                    '- **Source / link to the offer:**',
+                    '- **Notes:**',
+                    '',
+                    'Submitted coupons are reviewed before being listed. Thank you!',
+                  ].join('\n'),
+                })}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Gift className="w-4 h-4" /> {t('submitCoupon')}
+              </a>
             </Button>
           </CardContent>
         </Card>
