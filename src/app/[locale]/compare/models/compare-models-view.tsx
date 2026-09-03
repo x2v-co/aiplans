@@ -14,6 +14,7 @@ import { formatModelName } from '@/lib/model-names';
 import { formatPrice, calculateSavingsPercent } from "@/lib/currency";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import type { GroupedProduct } from "@/lib/grouped-products";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import {
   usd,
   getCheapestChannel,
@@ -102,10 +103,18 @@ export default function CompareModelsView({
   });
 
   const toggleSelect = (slug: string) => {
-    setSelected((prev) => {
-      if (prev.includes(slug)) return prev.filter((s) => s !== slug);
-      if (prev.length >= MAX_SELECT) return [...prev.slice(1), slug];
-      return [...prev, slug];
+    const removing = selected.includes(slug);
+    const nextSelected = removing
+      ? selected.filter((s) => s !== slug)
+      : selected.length >= MAX_SELECT
+        ? [...selected.slice(1), slug]
+        : [...selected, slug];
+
+    setSelected(nextSelected);
+    trackAnalyticsEvent('comparison_model_change', {
+      action: removing ? 'remove' : 'add',
+      model_slug: slug,
+      selection_count: nextSelected.length,
     });
   };
 

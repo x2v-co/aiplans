@@ -9,15 +9,9 @@ import {
   getAnalyticsConsentSnapshot,
   subscribeToConsent,
 } from '@/lib/consent';
+import { classifyTrackedLink, trackAnalyticsEvent } from '@/lib/analytics';
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
-
-declare global {
-  interface Window {
-    dataLayer: Record<string, unknown>[];
-    gtag?: (...args: unknown[]) => void;
-  }
-}
 
 function trackPageView(path: string) {
   if (!GA_ID || typeof window === 'undefined') return;
@@ -58,6 +52,36 @@ export default function GoogleAnalytics() {
     const query = searchParams?.toString();
     trackPageView(query ? `${pathname}?${query}` : pathname);
   }, [pathname, searchParams, scriptReady]);
+
+  useEffect(() => {
+    if (!analyticsAllowed) return;
+
+    const handleClick = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const anchor = event.target.closest('a[href]');
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+
+      const tracked = classifyTrackedLink(anchor.href, window.location.origin);
+      if (!tracked) return;
+
+      if (tracked.kind === 'outbound') {
+        trackAnalyticsEvent('outbound_click', {
+          link_domain: tracked.domain,
+          link_text: anchor.innerText.trim().slice(0, 100),
+          link_url: tracked.url,
+        });
+        return;
+      }
+
+      trackAnalyticsEvent('compare_start', {
+        compare_type: tracked.compareType,
+        target_path: tracked.targetPath,
+      });
+    };
+
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [analyticsAllowed]);
 
   if (!GA_ID || !analyticsAllowed) return null;
 

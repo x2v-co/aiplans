@@ -21,6 +21,7 @@ import type { ApiPricingStats, FaqItem } from "@/lib/api-pricing-copy";
 import { modelFreshnessTime } from "@/lib/model-freshness";
 import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
 import { formatModelName } from '@/lib/model-names';
+import { trackAnalyticsEvent } from '@/lib/analytics';
 // Currency-normalised cheapest-channel selection. These are pure, module-scope
 // functions (see channel-price-utils.ts) so the React Compiler can preserve the
 // memoization of `filteredProducts` below — that memo is what keeps filtering
@@ -179,6 +180,19 @@ export default function ApiPricingView({
     setRegionFilter("all");
     setChannelTypeFilter("all");
     setChinaAccessOnly(false);
+    trackAnalyticsEvent('pricing_filter_change', {
+      filter_name: 'clear_all',
+      filter_value: 'default',
+      locale,
+    });
+  };
+
+  const trackFilter = (filterName: string, filterValue: string | boolean) => {
+    trackAnalyticsEvent('pricing_filter_change', {
+      filter_name: filterName,
+      filter_value: String(filterValue),
+      locale,
+    });
   };
 
   const hasActiveFilters =
@@ -243,12 +257,25 @@ export default function ApiPricingView({
                   placeholder={t('searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onBlur={() => {
+                    const query = searchQuery.trim();
+                    if (query) {
+                      trackAnalyticsEvent('pricing_search', {
+                        query_length: Math.min(query.length, 100),
+                        result_count: filteredProducts.length,
+                        locale,
+                      });
+                    }
+                  }}
                   className="pl-9"
                 />
               </div>
 
               <div>
-                <Select value={regionFilter} onValueChange={(v) => setRegionFilter(v as typeof regionFilter)}>
+                <Select value={regionFilter} onValueChange={(v) => {
+                  setRegionFilter(v as typeof regionFilter);
+                  trackFilter('region', v);
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder={t('region')} />
                   </SelectTrigger>
@@ -261,7 +288,10 @@ export default function ApiPricingView({
               </div>
 
               <div>
-                <Select value={channelTypeFilter} onValueChange={(v) => setChannelTypeFilter(v as typeof channelTypeFilter)}>
+                <Select value={channelTypeFilter} onValueChange={(v) => {
+                  setChannelTypeFilter(v as typeof channelTypeFilter);
+                  trackFilter('channel_type', v);
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder={t('channelType')} />
                   </SelectTrigger>
@@ -282,6 +312,7 @@ export default function ApiPricingView({
                     const [by, order] = value.split("-") as ["price" | "name" | "elo" | "latest", "asc" | "desc"];
                     setSortBy(by);
                     setSortOrder(order);
+                    trackFilter('sort', value);
                   }}
                 >
                   <SelectTrigger>
@@ -304,7 +335,10 @@ export default function ApiPricingView({
                   <input
                     type="checkbox"
                     checked={chinaAccessOnly}
-                    onChange={(e) => setChinaAccessOnly(e.target.checked)}
+                    onChange={(e) => {
+                      setChinaAccessOnly(e.target.checked);
+                      trackFilter('china_access_only', e.target.checked);
+                    }}
                     className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                   />
                   <MapPin className="w-4 h-4 text-zinc-400" />

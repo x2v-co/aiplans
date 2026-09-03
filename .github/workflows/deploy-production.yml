@@ -131,3 +131,15 @@ jobs:
             echo "Target: \`$DEPLOY_PATH\`"
             echo "Health: https://aiplans.dev/api/health"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Node.js for IndexNow
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Notify IndexNow
+        run: |
+          set -euo pipefail
+          key='b1f0d17ebd1d1720cc80f2ede4b03770'
+          test "$(curl -fsS "https://aiplans.dev/$key.txt")" = "$key"
+          node --experimental-strip-types scripts/submit-indexnow.ts

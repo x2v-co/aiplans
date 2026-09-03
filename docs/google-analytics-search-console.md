@@ -15,6 +15,18 @@ The app sends an initial `page_view` and additional `page_view` events when
 the Next.js App Router changes route. When the variable is empty, no Google
 script is emitted.
 
+After analytics consent, the app also sends these product events:
+
+- `outbound_click`: a visitor follows an external provider or source link.
+- `compare_start`: a visitor opens a localized model or plan comparison.
+- `comparison_model_change`: a visitor adds or removes a model in the comparison tool.
+- `pricing_filter_change`: a visitor changes a pricing region, channel, sort, or access filter.
+- `pricing_search`: a visitor finishes a non-empty search in the API pricing table.
+
+Mark `outbound_click` and `compare_start` as key events in GA4. Keep the other
+events as diagnostic interaction signals. Event collection follows the site's
+analytics consent preference; no events are sent before consent.
+
 ## Search Console
 
 For a URL-prefix property, copy the HTML tag verification value and set
