@@ -36,11 +36,29 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run scrape:plans
 
-      - name: Fail if a scraper group failed
-        if: steps.api-scrape.outcome == 'failure' || steps.plan-scrape.outcome == 'failure'
+      - name: Refresh plan classifications
+        id: plan-kinds
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run fix:kinds
+
+      - name: Materialize model plan mappings
+        id: plan-mappings
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run mappings:materialize
+
+      - name: Fail if a scraper group or mapping refresh failed
+        if: >-
+          steps.api-scrape.outcome == 'failure' ||
+          steps.plan-scrape.outcome == 'failure' ||
+          steps.plan-mappings.outcome == 'failure'
         run: |
           echo "API scrape: ${{ steps.api-scrape.outcome }}"
           echo "Plan scrape: ${{ steps.plan-scrape.outcome }}"
+          echo "Plan kind refresh: ${{ steps.plan-kinds.outcome }}"
+          echo "Plan mapping refresh: ${{ steps.plan-mappings.outcome }}"
           exit 1
 
       - name: Upload logs (if failed)
