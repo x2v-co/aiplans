@@ -131,7 +131,7 @@ export default async function ApiPriceIndexPage({
             <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">
               {locale === 'zh'
                 ? '每个主模型只保留当前最低价渠道。美元值仅用于排序，账单仍以供应商显示的原始币种为准。'
-                : 'Each primary model is represented by its lowest current channel. The USD value is only for ranking; billing remains in the provider’s displayed currency.'}
+                : 'Each model identifier is represented by its lowest current channel. The USD value is only for ranking; billing remains in the provider’s displayed currency.'}
             </p>
           </div>
           <div className="mt-6 overflow-x-auto rounded-md border bg-white dark:bg-zinc-900">
@@ -172,8 +172,8 @@ export default async function ApiPriceIndexPage({
             </h2>
             <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">
               {locale === 'zh'
-                ? '以下记录来自价格历史表，仅在抓取器发现显著变化时写入。'
-                : 'These records come from the price history log, written when the collector detects a material change.'}
+                ? '以下为价格历史表中每个渠道最近一次显著价格变化。'
+                : 'These records show the latest material change for each channel in the price history log.'}
             </p>
           </div>
           {snapshot.recentChanges.length > 0 ? (

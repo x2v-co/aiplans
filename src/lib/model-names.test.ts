@@ -7,6 +7,9 @@ test('formats common model slugs as readable product names', () => {
   assert.equal(formatModelName('claude-opus-4.8'), 'Claude Opus 4.8');
   assert.equal(formatModelName('glm-5.2-(free)'), 'GLM 5.2 (Free)');
   assert.equal(formatModelName('qwen3.5-397b-a17b'), 'Qwen3.5 397B A17B');
+  assert.equal(formatModelName('zai-glm-5-2'), 'Z.ai GLM 5.2');
+  assert.equal(formatModelName('gpt-oss-120b'), 'GPT OSS 120B');
+  assert.equal(formatModelName('qwen3-vl-flash'), 'Qwen3 VL Flash');
 });
 
 test('preserves already-readable numeric and mixed-case labels', () => {

@@ -86,17 +86,25 @@ export async function getPriceIndexSnapshot(): Promise<PriceIndexSnapshot> {
       WHERE m.type ILIKE '%llm%' AND cp.input_price_per_1m > 0
     `,
     sql<ChangeRow[]>`
-      SELECT m.name AS model_name, m.slug AS model_slug,
-             p.name AS provider_name, p.slug AS provider_slug,
-             ph.old_input_price, ph.new_input_price,
-             ph.old_output_price, ph.new_output_price,
-             ph.change_percent, ph.currency, ph.recorded_at
-      FROM price_history ph
-      JOIN api_channel_prices cp ON cp.id = ph.channel_price_id
-      JOIN models m ON m.id = cp.model_id
-      JOIN providers p ON p.id = cp.provider_id
-      WHERE m.type ILIKE '%llm%'
-      ORDER BY ph.recorded_at DESC
+      SELECT model_name, model_slug, provider_name, provider_slug,
+             old_input_price, new_input_price, old_output_price,
+             new_output_price, change_percent, currency, recorded_at
+      FROM (
+        SELECT DISTINCT ON (ph.channel_price_id)
+               m.name AS model_name, m.slug AS model_slug,
+               p.name AS provider_name, p.slug AS provider_slug,
+               ph.old_input_price, ph.new_input_price,
+               ph.old_output_price, ph.new_output_price,
+               ph.change_percent, ph.currency, ph.recorded_at,
+               ph.channel_price_id
+        FROM price_history ph
+        JOIN api_channel_prices cp ON cp.id = ph.channel_price_id
+        JOIN models m ON m.id = cp.model_id
+        JOIN providers p ON p.id = cp.provider_id
+        WHERE m.type ILIKE '%llm%'
+        ORDER BY ph.channel_price_id, ph.recorded_at DESC
+      ) latest_channel_changes
+      ORDER BY recorded_at DESC
       LIMIT 12
     `,
   ]);

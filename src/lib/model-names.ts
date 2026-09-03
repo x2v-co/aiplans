@@ -16,7 +16,10 @@ const TOKEN_LABELS: Record<string, string> = {
   mistral: 'Mistral',
   mixtral: 'Mixtral',
   openai: 'OpenAI',
+  oss: 'OSS',
   qwen: 'Qwen',
+  vl: 'VL',
+  zai: 'Z.ai',
 };
 
 function formatToken(token: string): string {
@@ -39,8 +42,13 @@ export function formatModelName(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return value;
 
-  return trimmed
+  const normalized = trimmed
     .replace(/_/g, '-')
+    .replace(/\b(glm|gpt)-(\d+)-(\d+)(?=$|-)/gi, '$1-$2.$3')
+    .replace(/\b((?:claude-)?(?:opus|sonnet|haiku))-(\d+)-(\d+)(?=$|-)/gi, '$1-$2.$3')
+    .replace(/\b(k\d+)-(\d+)(?=$|-)/gi, '$1.$2');
+
+  return normalized
     .split('-')
     .filter(Boolean)
     .map(formatToken)
