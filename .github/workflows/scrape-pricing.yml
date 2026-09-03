@@ -2,7 +2,13 @@ name: Scrape Pricing Data
 
 on:
   # Production scheduling is owned by planprice-scraper.timer on devbox.
-  workflow_dispatch: # Allow manual recovery runs only.
+  workflow_dispatch:
+    inputs:
+      skip_api:
+        description: 'Skip API scrapers and refresh subscription plan mappings only'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   scrape:
@@ -25,6 +31,7 @@ jobs:
       - name: Run API price scrapers
         id: api-scrape
         continue-on-error: true
+        if: ${{ !inputs.skip_api }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run scrape
