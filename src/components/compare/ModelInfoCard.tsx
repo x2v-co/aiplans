@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
+import { getProviderVisitRel } from "@/lib/provider-links";
 
 interface ModelInfoCardProps {
   model: {
@@ -54,7 +55,7 @@ export function ModelInfoCard({ model, planCount, lowestPrice }: ModelInfoCardPr
                   <a
                     href={model.provider.inviteUrl || model.provider.website || undefined}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel={getProviderVisitRel(model.provider, 'plan')}
                     className="text-blue-600 hover:text-blue-800"
                     title="Visit website"
                   >

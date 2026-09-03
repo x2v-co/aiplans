@@ -6,6 +6,7 @@ import { Building2, ArrowRight } from "lucide-react";
 import { sql } from "@/lib/db";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
+import SiteHeader from '@/components/SiteHeader';
 
 export async function generateMetadata({
   params,
@@ -68,29 +69,7 @@ export default async function PlansIndexPage({
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJson }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: itemListJson }} />
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href={`/${locale}`} className="flex items-center gap-2">
-            <span className="text-2xl">💰</span>
-            <span className="text-xl font-bold">aiplans.dev</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href={`/${locale}`} className="text-sm font-medium hover:text-blue-600">
-              {isZh ? '首页' : 'Home'}
-            </Link>
-            <Link href={`/${locale}/compare/plans`} className="text-sm font-medium hover:text-blue-600">
-              {isZh ? '套餐对比' : 'Compare Plans'}
-            </Link>
-            <Link href={`/${locale}/api-pricing`} className="text-sm font-medium hover:text-blue-600">
-              {isZh ? 'API 价格' : 'API Pricing'}
-            </Link>
-            <Link href={`/${locale}/coupons`} className="text-sm font-medium hover:text-blue-600">
-              {isZh ? '优惠码' : 'Coupons'}
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader locale={locale} />
 
       <main className="container mx-auto px-4 py-12">
         {/* Hero Section */}

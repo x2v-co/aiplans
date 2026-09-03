@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import SiteHeader from '@/components/SiteHeader';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,7 @@ import { describeEconomics } from "@/lib/plan-economics";
 import type { PlanComparison } from "@/lib/compare-plans";
 import { PlanRate } from "@/components/plan-rate";
 import type { FaqItem } from "./faqs";
-import { getProviderVisitUrl } from "@/lib/provider-links";
+import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
 
 interface ComparePlansViewProps {
   locale: string;
@@ -189,27 +189,7 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href={`/${locale}`} className="flex items-center gap-2">
-            <span className="text-2xl">💰</span>
-            <span className="text-xl font-bold">aiplans.dev</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href={`/${locale}`} className="text-sm font-medium hover:text-blue-600">
-              Home
-            </Link>
-            <Link href={`/${locale}/compare/plans`} className="text-sm font-medium text-blue-600">
-              Compare Plans
-            </Link>
-            <Link href={`/${locale}/api-pricing`} className="text-sm font-medium hover:text-blue-600">
-              API Pricing
-            </Link>
-            <LanguageSwitcher />
-          </nav>
-        </div>
-      </header>
+      <SiteHeader locale={locale} />
 
       <main className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
@@ -239,7 +219,7 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
 
           {providerVisitUrl && (
             <Button asChild variant="outline" className="mb-8">
-              <a href={providerVisitUrl} target="_blank" rel="noopener noreferrer">
+              <a href={providerVisitUrl} target="_blank" rel={getProviderVisitRel(model.provider, 'plan')}>
                 {locale === "zh" ? `访问 ${model.provider.name}` : `Visit ${model.provider.name}`}
                 <ExternalLink />
               </a>
@@ -360,7 +340,8 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
                           const price = showYearly
                             ? (plan.pricing.yearlyMonthly || plan.pricing.monthly)
                             : plan.pricing.monthly;
-                          const planVisitUrl = getProviderVisitUrl(plan.channel, 'plan') || providerVisitUrl;
+                          const channelVisitUrl = getProviderVisitUrl(plan.channel, 'plan');
+                          const planVisitUrl = channelVisitUrl || providerVisitUrl;
 
                           return (
                             <Card
@@ -520,7 +501,9 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
                                   <a
                                     href={planVisitUrl}
                                     target="_blank"
-                                    rel="noopener noreferrer"
+                                    rel={channelVisitUrl
+                                      ? getProviderVisitRel(plan.channel, 'plan')
+                                      : getProviderVisitRel(model.provider, 'plan')}
                                     className={`w-full flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                                       isRecommended
                                         ? "bg-blue-600 text-white hover:bg-blue-700"
@@ -564,7 +547,7 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
                 </Button>
                 {providerVisitUrl && (
                   <Button asChild variant="outline">
-                    <a href={providerVisitUrl} target="_blank" rel="noopener noreferrer">
+                    <a href={providerVisitUrl} target="_blank" rel={getProviderVisitRel(model.provider, 'plan')}>
                       {locale === "zh" ? "访问供应商" : "Visit provider"}
                       <ExternalLink />
                     </a>

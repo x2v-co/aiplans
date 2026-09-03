@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Gift, Copy, Check, ExternalLink, Sparkles, Shield, Clock, Tag, HelpCircle } from "lucide-react";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import SiteHeader from '@/components/SiteHeader';
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import type { Coupon } from "@/lib/coupons";
 
@@ -35,8 +35,6 @@ export default function CouponsView({
   coupons: Coupon[];
 }) {
   const t = useTranslations('coupons');
-  const tNav = useTranslations('nav');
-
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
@@ -70,30 +68,7 @@ export default function CouponsView({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href={`/${locale}`} className="flex items-center gap-2">
-            <span className="text-2xl">💰</span>
-            <span className="text-xl font-bold">aiplans.dev</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href={`/${locale}`} className="text-sm font-medium hover:text-blue-600">
-              {tNav('home')}
-            </Link>
-            <Link href={`/${locale}/compare/plans`} className="text-sm font-medium hover:text-blue-600">
-              {tNav('comparePlans')}
-            </Link>
-            <Link href={`/${locale}/api-pricing`} className="text-sm font-medium hover:text-blue-600">
-              {tNav('apiPricing')}
-            </Link>
-            <Link href={`/${locale}/coupons`} className="text-sm font-medium text-blue-600">
-              {tNav('coupons')}
-            </Link>
-            <LanguageSwitcher />
-          </nav>
-        </div>
-      </header>
+      <SiteHeader locale={locale} />
 
       <main className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}

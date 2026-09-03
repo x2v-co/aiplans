@@ -2,7 +2,13 @@
 
 import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  CONSENT_CHANGE_EVENT,
+  type ConsentPreferences,
+  getAnalyticsConsentSnapshot,
+  subscribeToConsent,
+} from '@/lib/consent';
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
@@ -27,14 +33,33 @@ function trackPageView(path: string) {
 export default function GoogleAnalytics() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const analyticsAllowed = useSyncExternalStore(
+    subscribeToConsent,
+    getAnalyticsConsentSnapshot,
+    () => false,
+  );
+  const [scriptReady, setScriptReady] = useState(false);
 
   useEffect(() => {
-    if (!pathname) return;
+    const handleConsent = (event: Event) => {
+      const preferences = (event as CustomEvent<ConsentPreferences>).detail;
+      if (!preferences.analytics) {
+        setScriptReady(false);
+        window.gtag?.('consent', 'update', { analytics_storage: 'denied' });
+      }
+    };
+
+    window.addEventListener(CONSENT_CHANGE_EVENT, handleConsent);
+    return () => window.removeEventListener(CONSENT_CHANGE_EVENT, handleConsent);
+  }, []);
+
+  useEffect(() => {
+    if (!scriptReady || !pathname) return;
     const query = searchParams?.toString();
     trackPageView(query ? `${pathname}?${query}` : pathname);
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, scriptReady]);
 
-  if (!GA_ID) return null;
+  if (!GA_ID || !analyticsAllowed) return null;
 
   return (
     <>
@@ -46,7 +71,8 @@ export default function GoogleAnalytics() {
             window.dataLayer = window.dataLayer || [];
             window.gtag = function(){window.dataLayer.push(arguments);};
             window.gtag('js', new Date());
-            window.gtag('config', '${GA_ID}', { send_page_view: false });
+            window.gtag('consent', 'default', { analytics_storage: 'granted' });
+            window.gtag('config', '${GA_ID}', { send_page_view: false, anonymize_ip: true });
           `,
         }}
       />
@@ -54,6 +80,7 @@ export default function GoogleAnalytics() {
         id="google-analytics-script"
         strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`}
+        onReady={() => setScriptReady(true)}
       />
     </>
   );

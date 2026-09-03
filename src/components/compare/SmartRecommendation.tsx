@@ -3,6 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
+import { getProviderVisitRel } from "@/lib/provider-links";
 
 interface PlanComparison {
   plan: {
@@ -95,7 +96,7 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
                   <a
                     href={cheapestPlan.channel.inviteUrl || cheapestPlan.channel.website || undefined}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel={getProviderVisitRel(cheapestPlan.channel, 'plan')}
                     className="text-blue-600 hover:text-blue-800"
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -133,7 +134,7 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
                     <a
                       href={officialPlan.channel.inviteUrl || officialPlan.channel.website || undefined}
                       target="_blank"
-                      rel="noopener noreferrer"
+                      rel={getProviderVisitRel(officialPlan.channel, 'plan')}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       <ExternalLink className="w-4 h-4" />
@@ -170,7 +171,7 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
                     <a
                       href={bestChinaPlan.channel.inviteUrl || bestChinaPlan.channel.website || undefined}
                       target="_blank"
-                      rel="noopener noreferrer"
+                      rel={getProviderVisitRel(bestChinaPlan.channel, 'plan')}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       <ExternalLink className="w-4 h-4" />
@@ -207,7 +208,7 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
                     <a
                       href={bestValuePlan.channel.inviteUrl || bestValuePlan.channel.website || undefined}
                       target="_blank"
-                      rel="noopener noreferrer"
+                      rel={getProviderVisitRel(bestValuePlan.channel, 'plan')}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       <ExternalLink className="w-4 h-4" />

@@ -24,6 +24,7 @@ import { buildMetadata, breadcrumbList, jsonLd, pickOfferCurrency, faqPage, SITE
 import { buildModelCopy } from "@/lib/model-copy";
 import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
 import { decodeSlugParam } from "@/lib/route-params";
+import SiteHeader from '@/components/SiteHeader';
 
 const baseUrl = SITE_URL;
 
@@ -513,26 +514,7 @@ export default async function ModelPage({
           dangerouslySetInnerHTML={{ __html: faqPage(modelCopy.faqs) }}
         />
       )}
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href={`/${locale}`} className="flex items-center gap-2">
-            <span className="text-2xl">💰</span>
-            <span className="text-xl font-bold">aiplans.dev</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href={`/${locale}/compare/plans`} className="text-sm font-medium hover:text-blue-600">
-              Compare Plans
-            </Link>
-            <Link href={`/${locale}/api-pricing`} className="text-sm font-medium text-blue-600">
-              API Pricing
-            </Link>
-            <Link href={`/${locale}/coupons`} className="text-sm font-medium hover:text-blue-600">
-              Coupons
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader locale={locale} />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">

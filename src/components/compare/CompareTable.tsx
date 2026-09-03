@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
+import { getProviderVisitRel } from "@/lib/provider-links";
 
 // Helper function to parse numbers with optional commas
 function parseNumberWithCommas(str: string): number | null {
@@ -333,7 +334,7 @@ function PlanRow({ plan, isBaseline, currency: _currency, showYearly }: {
                 <a
                   href={plan.channel.inviteUrl || plan.channel.website || undefined}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel={getProviderVisitRel(plan.channel, 'plan')}
                   className="text-blue-600 hover:text-blue-800"
                   title="Visit website"
                 >
@@ -361,7 +362,7 @@ function PlanRow({ plan, isBaseline, currency: _currency, showYearly }: {
             <a
               href={plan.channel.inviteUrl || plan.channel.website || undefined}
               target="_blank"
-              rel="noopener noreferrer"
+              rel={getProviderVisitRel(plan.channel, 'plan')}
               className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             >
               Subscribe

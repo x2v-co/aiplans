@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from '@/lib/translations';
+import { CONSENT_OPEN_EVENT } from '@/lib/consent';
 
 /**
  * Site-wide footer. Mounted once in [locale]/layout.tsx so every locale route
@@ -17,7 +18,7 @@ export default function Footer({ locale }: { locale: string }) {
   return (
     <footer className="border-t bg-white/60 dark:bg-black/60 mt-16">
       <div className="container mx-auto px-4 py-10">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link href={`/${locale}`} className="flex items-center gap-2 mb-3">
@@ -50,6 +51,34 @@ export default function Footer({ locale }: { locale: string }) {
                 <Link href={`/${locale}/coupons`} className="text-zinc-500 hover:text-blue-600">
                   {t('coupons')}
                 </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Company and policies */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">{t('company')}</h3>
+            <ul className="space-y-2 text-sm">
+              {[
+                ['about', t('about')],
+                ['methodology', t('methodologyLink')],
+                ['contact', t('contact')],
+                ['disclosure', t('disclosure')],
+                ['privacy', t('privacy')],
+                ['terms', t('terms')],
+              ].map(([path, label]) => (
+                <li key={path}>
+                  <Link href={`/${locale}/${path}`} className="text-zinc-500 hover:text-blue-600">{label}</Link>
+                </li>
+              ))}
+              <li>
+                <button
+                  type="button"
+                  className="text-left text-zinc-500 hover:text-blue-600"
+                  onClick={() => window.dispatchEvent(new Event(CONSENT_OPEN_EVENT))}
+                >
+                  {t('cookieSettings')}
+                </button>
               </li>
             </ul>
           </div>

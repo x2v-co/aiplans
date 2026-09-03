@@ -41,3 +41,17 @@ export function getProviderVisitUrl(
   const fallback = provider.slug ? PROVIDER_LINK_FALLBACKS[provider.slug] : undefined;
   return safeExternalUrl(intent === 'plan' ? fallback?.plan ?? fallback?.api : fallback?.api);
 }
+
+export function getProviderVisitRel(
+  provider: ProviderLinkSource | null | undefined,
+  intent: 'api' | 'plan' = 'api',
+): string {
+  const href = getProviderVisitUrl(provider, intent);
+  const inviteUrls = [provider?.inviteUrl, provider?.invite_url]
+    .map(safeExternalUrl)
+    .filter(Boolean);
+
+  return href && inviteUrls.includes(href)
+    ? 'noopener noreferrer sponsored'
+    : 'noopener noreferrer';
+}

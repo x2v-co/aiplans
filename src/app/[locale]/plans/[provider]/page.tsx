@@ -16,6 +16,7 @@ import { PlanRate } from "@/components/plan-rate";
 import { buildMetadata, breadcrumbList, productOffer, faqPage, SITE_URL, type Locale } from "@/lib/seo";
 import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
 import { decodeSlugParam } from "@/lib/route-params";
+import SiteHeader from '@/components/SiteHeader';
 
 export async function generateMetadata({
   params,
@@ -190,29 +191,7 @@ export default async function ProviderPlansPage({
       {planJsonLdItems.map((ld, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />
       ))}
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 dark:bg-black/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href={`/${locale}`} className="flex items-center gap-2">
-            <span className="text-2xl">💰</span>
-            <span className="text-xl font-bold">aiplans.dev</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href={`/${locale}/compare/plans`} className="text-sm font-medium hover:text-blue-600">
-              Compare Plans
-            </Link>
-            <Link href={`/${locale}/compare/models`} className="text-sm font-medium hover:text-blue-600">
-              {locale === 'zh' ? '模型对比' : 'Model Compare'}
-            </Link>
-            <Link href={`/${locale}/coupons`} className="text-sm font-medium hover:text-blue-600">
-              Coupons
-            </Link>
-            <Link href={`/${locale}/api-pricing`} className="text-sm font-medium hover:text-blue-600">
-              API Pricing
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader locale={locale} />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
@@ -375,7 +354,9 @@ export default async function ProviderPlansPage({
                       <a
                         href={provider.pricing_url || provider.invite_url || provider.website}
                         target="_blank"
-                        rel="noopener noreferrer"
+                        rel={provider.invite_url && (provider.pricing_url || provider.invite_url || provider.website) === provider.invite_url
+                          ? 'noopener noreferrer sponsored'
+                          : 'noopener noreferrer'}
                         className="mt-4 block w-full text-center rounded-md bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
                       >
                         {plan.is_contact_sales

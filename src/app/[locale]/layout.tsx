@@ -8,6 +8,7 @@ import zhMessages from '@/../messages/zh.json';
 import { SITE_URL, SITE_NAME } from '@/lib/seo';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import Footer from '@/components/Footer';
+import ConsentManager from '@/components/ConsentManager';
 
 const messagesMap: Record<string, typeof enMessages> = {
   en: enMessages,
@@ -211,6 +212,7 @@ async function LocaleLayoutContent({
         <LocaleClientWrapper locale={locale} messages={messages}>
           {children}
           <Footer locale={locale} />
+          <ConsentManager locale={locale} />
         </LocaleClientWrapper>
       </body>
     </html>

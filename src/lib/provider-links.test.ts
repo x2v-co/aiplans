@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getProviderVisitUrl } from './provider-links';
+import { getProviderVisitRel, getProviderVisitUrl } from './provider-links';
 
 test('prefers the pricing page for API channel visits', () => {
   assert.equal(
@@ -26,4 +26,22 @@ test('prefers an invite URL for plan visits', () => {
 test('fills the known OpenRouter data gap and rejects unsafe schemes', () => {
   assert.equal(getProviderVisitUrl({ slug: 'openrouter', website: '' }), 'https://openrouter.ai/models');
   assert.equal(getProviderVisitUrl({ website: 'javascript:alert(1)' }), null);
+});
+
+test('marks invite links as sponsored', () => {
+  const provider = {
+    website: 'https://example.com',
+    pricing_url: 'https://example.com/pricing',
+    invite_url: 'https://example.com/join?ref=abc',
+  };
+
+  assert.equal(getProviderVisitRel(provider), 'noopener noreferrer');
+  assert.equal(getProviderVisitRel(provider, 'plan'), 'noopener noreferrer sponsored');
+});
+
+test('does not mark rejected invite links as sponsored', () => {
+  assert.equal(
+    getProviderVisitRel({ invite_url: 'javascript:alert(1)' }, 'plan'),
+    'noopener noreferrer',
+  );
 });

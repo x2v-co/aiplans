@@ -20,6 +20,12 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '/compare/models', priority: 0.8, changefreq: 'daily' },
   { path: '/plans', priority: 0.85, changefreq: 'daily' },
   { path: '/coupons', priority: 0.7, changefreq: 'weekly' },
+  { path: '/about', priority: 0.4, changefreq: 'monthly' },
+  { path: '/contact', priority: 0.3, changefreq: 'monthly' },
+  { path: '/disclosure', priority: 0.3, changefreq: 'monthly' },
+  { path: '/methodology', priority: 0.6, changefreq: 'monthly' },
+  { path: '/privacy', priority: 0.3, changefreq: 'monthly' },
+  { path: '/terms', priority: 0.3, changefreq: 'monthly' },
   // Note: /compare/api was removed — it only existed as a non-locale route
   // that got redirected into the 404 void by proxy.ts (no
   // /[locale]/compare/api target exists). Drop /calculator too until there's
