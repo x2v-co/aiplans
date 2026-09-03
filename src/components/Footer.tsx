@@ -18,7 +18,7 @@ export default function Footer({ locale }: { locale: string }) {
   return (
     <footer className="border-t bg-white/60 dark:bg-black/60 mt-16">
       <div className="container mx-auto px-4 py-10">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-6">
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link href={`/${locale}`} className="flex items-center gap-2 mb-3">
@@ -50,6 +50,23 @@ export default function Footer({ locale }: { locale: string }) {
               <li>
                 <Link href={`/${locale}/coupons`} className="text-zinc-500 hover:text-blue-600">
                   {t('coupons')}
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Research */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">{t('research')}</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href={`/${locale}/guides`} className="text-zinc-500 hover:text-blue-600">
+                  {t('pricingGuides')}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/${locale}/reports/api-price-index`} className="text-zinc-500 hover:text-blue-600">
+                  {t('priceIndex')}
                 </Link>
               </li>
             </ul>

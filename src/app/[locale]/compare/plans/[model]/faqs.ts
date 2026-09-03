@@ -13,6 +13,7 @@
 import { formatPrice, type CurrencyCode } from '@/lib/currency';
 import type { Locale } from '@/lib/seo';
 import type { PlanComparison } from '@/lib/compare-plans';
+import { formatModelName } from '@/lib/model-names';
 
 export type FaqItem = { question: string; answer: string };
 
@@ -42,6 +43,7 @@ export function buildCompareFaqs(
   const isZh = locale === 'zh';
   const rows = allRows(data);
   const { model, summary, officialPlans, thirdPartyPlans } = data;
+  const modelName = formatModelName(model.name);
   const cheapest = summary.cheapestPlan;
   const free = hasFree(rows);
   const discount = maxDiscount(rows);
@@ -57,7 +59,7 @@ export function buildCompareFaqs(
     );
     if (isZh) {
       faqs.push({
-        question: `包含 ${model.name} 的套餐里，哪个最便宜？`,
+        question: `包含 ${modelName} 的套餐里，哪个最便宜？`,
         answer:
           `在本站对比的 ${summary.totalPlans} 个套餐中，${cheapest.channel} 的 ${cheapest.name} 价格最低，为 ${priceStr}/月。` +
           (free ? '若用量不大，也有免费套餐可选。' : '') +
@@ -65,7 +67,7 @@ export function buildCompareFaqs(
       });
     } else {
       faqs.push({
-        question: `Which subscription plan that includes ${model.name} is the cheapest?`,
+        question: `Which subscription plan that includes ${modelName} is the cheapest?`,
         answer:
           `Of the ${summary.totalPlans} plans compared here, ${cheapest.name} on ${cheapest.channel} is the lowest at ${priceStr}/month.` +
           (free ? ' A free tier is also available for light usage.' : '') +
@@ -78,12 +80,12 @@ export function buildCompareFaqs(
   if (free) {
     if (isZh) {
       faqs.push({
-        question: `能免费使用 ${model.name} 吗？`,
+        question: `能免费使用 ${modelName} 吗？`,
         answer: '可以。对比中包含免费档位的套餐，可在不付费的情况下体验模型，只是消息数/速率限制较低；升级到付费档位可获得更高额度。',
       });
     } else {
       faqs.push({
-        question: `Can I use ${model.name} for free?`,
+        question: `Can I use ${modelName} for free?`,
         answer: 'Yes — the comparison includes plans with a free tier, so you can use the model at no cost with lower message and rate limits; paid tiers raise those limits.',
       });
     }

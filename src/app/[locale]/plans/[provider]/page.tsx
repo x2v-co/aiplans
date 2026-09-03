@@ -17,6 +17,7 @@ import { buildMetadata, breadcrumbList, productOffer, faqPage, SITE_URL, type Lo
 import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
 import { decodeSlugParam } from "@/lib/route-params";
 import SiteHeader from '@/components/SiteHeader';
+import { guideForProviderSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 
 export async function generateMetadata({
   params,
@@ -109,6 +110,7 @@ export default async function ProviderPlansPage({
 
   const { provider, models, plans } = data;
   const providerData = providerInfo[providerSlug] || { name: provider.name, description: "" };
+  const guideSlug = guideForProviderSlug(providerSlug);
 
   // Provider region is only the fallback. Each plan carries its own currency,
   // and a china-region provider can still sell a USD plan (and vice versa),
@@ -400,6 +402,16 @@ export default async function ProviderPlansPage({
                 </Card>
               ))}
             </div>
+          </section>
+        )}
+
+        {guideSlug && (
+          <section className="mt-8 border-y py-7">
+            <p className="text-sm font-medium text-blue-600">{isZh ? '相关价格研究' : 'Related pricing research'}</p>
+            <h2 className="mt-2 text-xl font-bold">{PRICING_GUIDES[guideSlug].title[isZh ? 'zh' : 'en']}</h2>
+            <Link href={`/${locale}/guides/${guideSlug}`} className="mt-3 inline-flex text-sm font-medium text-blue-600 hover:underline">
+              {isZh ? '阅读完整指南 →' : 'Read the full guide →'}
+            </Link>
           </section>
         )}
 

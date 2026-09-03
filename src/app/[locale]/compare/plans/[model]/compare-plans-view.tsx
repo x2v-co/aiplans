@@ -21,6 +21,7 @@ import type { PlanComparison } from "@/lib/compare-plans";
 import { PlanRate } from "@/components/plan-rate";
 import type { FaqItem } from "./faqs";
 import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
+import { formatModelName } from '@/lib/model-names';
 
 interface ComparePlansViewProps {
   locale: string;
@@ -177,6 +178,7 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
   // drift apart.
 
   const { model, summary } = data;
+  const modelName = formatModelName(model.name);
   const providerVisitUrl = getProviderVisitUrl(model.provider, 'plan');
   const planCount = planGroups.reduce((sum, g) => sum + g.plans.length, 0);
   // The API emits convertedMonthlyPrice/monthlyPrice on summary.cheapestPlan; the
@@ -198,7 +200,7 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
           <span>/</span>
           <Link href={`/${locale}/compare/plans`} className="hover:text-blue-600">Compare Plans</Link>
           <span>/</span>
-          <span className="text-zinc-900 dark:text-zinc-100">{model.name}</span>
+          <span className="text-zinc-900 dark:text-zinc-100">{modelName}</span>
         </div>
 
         {/* Hero Section */}
@@ -209,12 +211,12 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
             ) : (
               <span className="text-4xl">{model.provider?.logoFallback || getProviderLogoFallback(model.provider)}</span>
             )}
-            <h1 className="text-4xl font-bold">{model.name} Plans</h1>
+            <h1 className="text-4xl font-bold">{modelName} Plans</h1>
           </div>
           <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-6 max-w-2xl mx-auto">
             {locale === "zh"
-              ? `比较 ${model.name} 在不同渠道的订阅计划，找到最适合您的方案`
-              : `Compare ${model.name} subscription plans across different channels to find the best option for you`}
+              ? `比较 ${modelName} 在不同渠道的订阅计划，找到最适合您的方案`
+              : `Compare ${modelName} subscription plans across different channels to find the best option for you`}
           </p>
 
           {providerVisitUrl && (

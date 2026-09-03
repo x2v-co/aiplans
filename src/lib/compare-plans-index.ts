@@ -2,6 +2,7 @@ import { getPlans } from '@/lib/plans';
 import { getProducts } from '@/lib/products';
 import { convertCurrency, type CurrencyCode } from '@/lib/currency';
 import { getProviderLogoSrc } from '@/lib/provider-branding';
+import { selectIndexablePlanComparisons } from '@/lib/search-indexing';
 
 /**
  * Everything /compare/plans lists: the hot-model cards, the featured plans, and
@@ -38,12 +39,23 @@ export async function getComparePlansIndexData(): Promise<ComparePlansIndexData>
     getProducts({ type: 'llm', includePlanCount: true }),
   ]);
 
-  // Sort by Arena ELO score (highest first)
-  const hotModels = [...hotModelsData].sort((a: any, b: any) => {
+  const indexableModels = selectIndexablePlanComparisons(
+    allProducts.map((model: any) => ({
+      ...model,
+      plan_count: model.planCount || 0,
+    })),
+  );
+  const indexableIds = new Set(indexableModels.map((model: any) => model.id));
+
+  // Only link models that have a meaningful plan comparison. API-only models
+  // remain discoverable from /api-pricing instead of leading to empty cards.
+  const hotModels = hotModelsData
+    .filter((model: any) => indexableIds.has(model.id))
+    .sort((a: any, b: any) => {
     const aElo = a.benchmark_arena_elo || 0;
     const bElo = b.benchmark_arena_elo || 0;
     return bElo - aElo;
-  });
+    });
 
   const featuredPlans = (plansData || [])
     // Contact-sales rows are excluded: they store price=0 to mean "no
@@ -63,7 +75,7 @@ export async function getComparePlansIndexData(): Promise<ComparePlansIndexData>
 
   // Group by provider
   const providerMap = new Map<number, ProviderModelGroup>();
-  allProducts.forEach((product: any) => {
+  indexableModels.forEach((product: any) => {
     const providerId = product.providers?.id || product.provider_ids?.[0];
     // Skip products without a valid provider ID
     if (!providerId) return;

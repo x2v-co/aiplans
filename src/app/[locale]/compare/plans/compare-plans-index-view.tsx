@@ -11,6 +11,7 @@ import SiteHeader from '@/components/SiteHeader';
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { formatPrice, type CurrencyCode } from "@/lib/currency";
 import type { ComparePlansIndexData } from "@/lib/compare-plans-index";
+import { formatModelName } from '@/lib/model-names';
 
 /**
  * The interactive half of /compare/plans: the search box and the sort control.
@@ -145,7 +146,7 @@ export default function ComparePlansIndexView({
                           <span className="text-3xl">{getProviderLogoFallback(model.providers, "🤖")}</span>
                         )}
                         <div>
-                          <h3 className="font-bold text-lg leading-tight">{model.name}</h3>
+                          <h3 className="font-bold text-lg leading-tight">{formatModelName(model.name)}</h3>
                           <p className="text-sm text-zinc-500">{model.providers?.name}</p>
                         </div>
                       </div>
@@ -247,7 +248,7 @@ export default function ComparePlansIndexView({
                         </div>
                         {showModels.map((model: any) => (
                           <div key={model.id} className="text-sm text-zinc-600 dark:text-zinc-400">
-                            {model.name}
+                            {formatModelName(model.name)}
                           </div>
                         ))}
                       </div>
@@ -319,7 +320,7 @@ export default function ComparePlansIndexView({
                           className="block p-2 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{model.name}</span>
+                            <span className="text-sm font-medium">{formatModelName(model.name)}</span>
                             <Badge variant="secondary" className="text-xs">
                               {model.planCount || 0} {model.planCount === 1 ? 'plan' : 'plans'}
                             </Badge>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, GitCompare, DollarSign, Globe, HelpCircle, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, BookOpen, GitCompare, DollarSign, Globe, HelpCircle, Sparkles } from "lucide-react";
 import SiteHeader from '@/components/SiteHeader';
 
 export type HotModel = {
@@ -152,6 +152,35 @@ export default function HomeView({
             </div>
           </section>
         )}
+
+        <section className="mb-16 border-y py-10" aria-labelledby="pricing-research-heading">
+          <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <h2 id="pricing-research-heading" className="text-2xl font-bold">
+                {locale === 'zh' ? '价格研究与市场数据' : 'Pricing research and market data'}
+              </h2>
+              <p className="mt-3 max-w-3xl leading-7 text-zinc-600 dark:text-zinc-400">
+                {locale === 'zh'
+                  ? '从 GLM、Claude、Grok 与 Kimi 专题指南入手，或查看全市场最低付费 API 与近期价格变化。'
+                  : 'Start with focused GLM, Claude, Grok, and Kimi guides, or inspect the market-wide lowest paid APIs and recent price changes.'}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link href={`/${locale}/guides`}>
+                <Button variant="outline" className="gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  {locale === 'zh' ? '价格指南' : 'Pricing guides'}
+                </Button>
+              </Link>
+              <Link href={`/${locale}/reports/api-price-index`}>
+                <Button variant="outline" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  {locale === 'zh' ? 'API 价格指数' : 'API Price Index'}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
 
         {/* Hot Models */}
         <div className="text-center">

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowRight, Check, Search, Star, Layers, DollarSign, HelpCircle } from "lucide-react";
 import SiteHeader from '@/components/SiteHeader';
+import { formatModelName } from '@/lib/model-names';
 import { formatPrice, calculateSavingsPercent } from "@/lib/currency";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import type { GroupedProduct } from "@/lib/grouped-products";
@@ -242,7 +243,7 @@ export default function CompareModelsView({
                         {getProviderLogoFallback(product.providers, "🤖")}
                       </span>
                     )}
-                    <span className="truncate">{product.name}</span>
+                    <span className="truncate">{formatModelName(product.name)}</span>
                     {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
                   </Button>
                 );
@@ -273,7 +274,7 @@ export default function CompareModelsView({
                         {logoSrc ? (
                           <img
                             src={logoSrc}
-                            alt={product.providers?.name || product.name}
+                            alt={product.providers?.name || formatModelName(product.name)}
                             className="w-10 h-10 rounded-lg flex-shrink-0 object-contain"
                           />
                         ) : (
@@ -286,7 +287,7 @@ export default function CompareModelsView({
                             href={`/${locale}/models/${product.slug}`}
                             className="font-bold hover:text-blue-600 block truncate"
                           >
-                            {product.name}
+                            {formatModelName(product.name)}
                           </Link>
                           <p className="text-sm text-zinc-500 truncate">
                             {product.providers?.name}
@@ -374,7 +375,7 @@ export default function CompareModelsView({
                                 </span>
                               );
                             })()}
-                            <span className="truncate max-w-[120px]">{product.name}</span>
+                            <span className="truncate max-w-[120px]">{formatModelName(product.name)}</span>
                           </Link>
                         </TableHead>
                       ))}
@@ -546,7 +547,7 @@ export default function CompareModelsView({
                               {getProviderLogoFallback(product.providers, "🤖")}
                             </span>
                           )}
-                          <span className="font-semibold truncate">{product.name}</span>
+                          <span className="font-semibold truncate">{formatModelName(product.name)}</span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {bestElo != null && product.benchmark_arena_elo === bestElo && (

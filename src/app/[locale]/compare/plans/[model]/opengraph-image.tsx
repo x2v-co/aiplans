@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og';
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og-template';
 import { sql, INT4_ARRAY } from '@/lib/db';
 import { decodeSlugParam } from '@/lib/route-params';
+import { formatModelName } from '@/lib/model-names';
 
 export const alt = 'Plan Comparison — aiplans.dev';
 export const size = OG_SIZE;
@@ -70,10 +71,10 @@ export default async function Image({
   return new ImageResponse(
     ogTemplate({
       kicker: isZh ? '计划对比' : 'Compare Plans',
-      title: model.name,
+      title: formatModelName(model.name),
       subtitle: isZh
-        ? `${plans.length} 个订阅计划覆盖 ${model.name} · 横向对比月付/年付/速率限制`
-        : `${plans.length} subscription plans include ${model.name} · monthly vs annual vs rate limits`,
+        ? `${plans.length} 个订阅计划覆盖 ${formatModelName(model.name)} · 横向对比月付/年付/速率限制`
+        : `${plans.length} subscription plans include ${formatModelName(model.name)} · monthly vs annual vs rate limits`,
       stats,
       accent: '#10b981',
       locale: isZh ? 'zh' : 'en',

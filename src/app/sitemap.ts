@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { sql } from '@/lib/db';
+import { selectIndexablePlanComparisons } from '@/lib/search-indexing';
 
 const BASE_URL = 'https://aiplans.dev';
 const LOCALES = ['en', 'zh'] as const;
@@ -24,6 +25,12 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '/contact', priority: 0.3, changefreq: 'monthly' },
   { path: '/disclosure', priority: 0.3, changefreq: 'monthly' },
   { path: '/methodology', priority: 0.6, changefreq: 'monthly' },
+  { path: '/guides', priority: 0.75, changefreq: 'weekly' },
+  { path: '/guides/glm-chatglm-api-pricing', priority: 0.75, changefreq: 'daily' },
+  { path: '/guides/claude-anthropic-pricing', priority: 0.75, changefreq: 'daily' },
+  { path: '/guides/grok-pricing', priority: 0.75, changefreq: 'daily' },
+  { path: '/guides/kimi-api-pricing', priority: 0.75, changefreq: 'daily' },
+  { path: '/reports/api-price-index', priority: 0.8, changefreq: 'daily' },
   { path: '/privacy', priority: 0.3, changefreq: 'monthly' },
   { path: '/terms', priority: 0.3, changefreq: 'monthly' },
   // Note: /compare/api was removed — it only existed as a non-locale route
@@ -46,11 +53,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       push(`/${locale}${path}`, priority, changefreq);
     }
   }
-  // Non-locale convenience paths (mostly redirect to /en)
-  for (const { path, priority, changefreq } of STATIC_PATHS) {
-    if (path) push(path, Math.max(priority - 0.1, 0.5), changefreq);
-  }
-
   // Dynamic: every provider that actually has plans → /plans/[provider].
   // The page renders for any existing provider slug, but one with zero plan
   // rows is a blank lineup — thin content we shouldn't be asking Google to
@@ -72,12 +74,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority: 0.8,
         });
       }
-      urls.push({
-        url: `${BASE_URL}/plans/${p.slug}`,
-        lastModified: lastMod,
-        changeFrequency: 'weekly',
-        priority: 0.7,
-      });
     }
   } catch (err) {
     console.error('sitemap: failed to query providers', err);
@@ -133,24 +129,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // but one with zero model_plan_mapping rows renders a comparison of nothing.
   // Same reasoning as the two blocks above: only advertise pages with content.
   try {
-    const comparable = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
-      SELECT slug, updated_at
+    const comparable = await sql<Array<{
+      slug: string;
+      released_at: Date | string | null;
+      updated_at: Date | string | null;
+      plan_count: number;
+    }>>`
+      SELECT models.slug, models.released_at, models.updated_at,
+             count(DISTINCT mpm.plan_id)::int AS plan_count
       FROM models
-      WHERE type ILIKE '%llm%'
-        AND EXISTS (
-          SELECT 1 FROM model_plan_mapping mpm WHERE mpm.model_id = models.id
-        )
-      ORDER BY updated_at DESC NULLS LAST
+      JOIN model_plan_mapping mpm ON mpm.model_id = models.id
+      JOIN plans ON plans.id = mpm.plan_id
+      WHERE models.type ILIKE '%llm%'
+        AND plans.pricing_model = 'subscription'
+      GROUP BY models.id, models.slug, models.released_at, models.updated_at
+      ORDER BY models.updated_at DESC NULLS LAST
     `;
-    // getModelSlugCandidates() treats `claude-opus-4.6` and `claude-opus-4-6`
-    // as the same model, so both slugs resolve to the same plan set and would
-    // be two URLs serving one page. Collapse them to whichever row is freshest.
-    const seenKey = new Set<string>();
-    for (const m of comparable) {
-      if (!m.slug) continue;
-      const key = m.slug.replace(/(\d)\.(\d)/g, '$1-$2');
-      if (seenKey.has(key)) continue;
-      seenKey.add(key);
+
+    for (const m of selectIndexablePlanComparisons(comparable)) {
       const lastMod = m.updated_at ? new Date(m.updated_at) : now;
       for (const locale of LOCALES) {
         urls.push({

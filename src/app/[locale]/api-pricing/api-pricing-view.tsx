@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Check, ExternalLink, Filter, Search, Globe, MapPin, HelpCircle } from "lucide-react";
+import { ArrowRight, BarChart3, BookOpen, Check, ExternalLink, Filter, Search, Globe, MapPin, HelpCircle } from "lucide-react";
 import SiteHeader from '@/components/SiteHeader';
 import {
   formatPrice,
@@ -20,6 +20,7 @@ import type { ChannelPrice, GroupedProduct } from "@/lib/grouped-products";
 import type { ApiPricingStats, FaqItem } from "@/lib/api-pricing-copy";
 import { modelFreshnessTime } from "@/lib/model-freshness";
 import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
+import { formatModelName } from '@/lib/model-names';
 // Currency-normalised cheapest-channel selection. These are pure, module-scope
 // functions (see channel-price-utils.ts) so the React Compiler can preserve the
 // memoization of `filteredProducts` below — that memo is what keeps filtering
@@ -196,6 +197,16 @@ export default function ApiPricingView({
           <p className="text-zinc-600 dark:text-zinc-400 mb-6">
             {t('subtitle')}
           </p>
+          <div className="mb-6 flex flex-wrap gap-4 text-sm font-medium">
+            <Link href={`/${locale}/guides`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline">
+              <BookOpen className="h-4 w-4" />
+              {isZh ? '阅读价格指南' : 'Read pricing guides'}
+            </Link>
+            <Link href={`/${locale}/reports/api-price-index`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline">
+              <BarChart3 className="h-4 w-4" />
+              {isZh ? '查看 API 价格指数' : 'View the API Price Index'}
+            </Link>
+          </div>
           {/* Stats strip — real counts from the payload, gives the page
               crawlable, data-specific intro copy. */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -349,7 +360,7 @@ export default function ApiPricingView({
                         {getProviderLogoSrc(product.providers) ? (
                           <img
                             src={getProviderLogoSrc(product.providers)!}
-                            alt={product.providers?.name || product.name}
+                            alt={product.providers?.name || formatModelName(product.name)}
                             className="w-12 h-12 rounded-lg flex-shrink-0"
                           />
                         ) : (
@@ -361,7 +372,7 @@ export default function ApiPricingView({
                               href={`/${locale}/models/${product.slug}`}
                               className="text-xl font-bold hover:text-blue-600"
                             >
-                              {product.name}
+                              {formatModelName(product.name)}
                             </Link>
                             {product.benchmark_arena_elo && (
                               <Badge variant="outline" className="ml-2" title="Agent Arena net improvement">

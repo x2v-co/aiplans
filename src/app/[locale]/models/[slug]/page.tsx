@@ -25,6 +25,8 @@ import { buildModelCopy } from "@/lib/model-copy";
 import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
 import { decodeSlugParam } from "@/lib/route-params";
 import SiteHeader from '@/components/SiteHeader';
+import { formatModelName } from '@/lib/model-names';
+import { guideForModelSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 
 const baseUrl = SITE_URL;
 
@@ -67,7 +69,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     SELECT id, name FROM models WHERE slug = ${slug} LIMIT 1
   `;
   if (!product) notFound();
-  const productName = product.name || slug;
+  const productName = formatModelName(product.name || slug);
 
   // A few real facts make the SERP snippet specific instead of a generic
   // template repeated across 400+ model pages: how many channels, and the
@@ -314,6 +316,8 @@ export default async function ModelPage({
 
   const { product, channelPrices, plans, arenaElo, priceHistory, relatedModels } = data;
   const isZh = locale === 'zh';
+  const productName = formatModelName(product.name);
+  const guideSlug = guideForModelSlug(product.slug);
 
   // Plans can come from several providers (a bundled plan may include
   // third-party models), so normalize to USD before ordering — otherwise a
@@ -371,7 +375,7 @@ export default async function ModelPage({
   // gets unique crawlable prose and a FAQPage without hand-written blurbs.
   const modelCopy = buildModelCopy(
     {
-      name: product.name,
+      name: productName,
       producerName: product.providers?.name,
       modelType: product.type,
       contextWindow: product.context_window,
@@ -441,8 +445,8 @@ export default async function ModelPage({
   // ratings, and the Arena ELO below is not a 1-5 rating scale.
   const productJsonLd = offerCurrency == null ? null : jsonLd({
     '@type': 'Product',
-    name: product.name,
-    description: product.description ?? `${product.name} — ${product.context_window?.toLocaleString() ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
+    name: productName,
+    description: product.description ?? `${productName} — ${product.context_window?.toLocaleString() ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
     // Required by Google, and missing site-wide until now. The route's own
     // opengraph-image.tsx already renders a real 1200x630 card for this model,
     // and its extensionless URL serves image/png.
@@ -483,7 +487,7 @@ export default async function ModelPage({
   const breadcrumbJsonLd = breadcrumbList([
     { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
     { name: isZh ? 'API 价格' : 'API Pricing', url: `${SITE_URL}/${locale}/api-pricing` },
-    { name: product.name, url: `${SITE_URL}/${locale}/models/${product.slug}` },
+    { name: productName, url: `${SITE_URL}/${locale}/models/${product.slug}` },
   ]);
 
   // Savings vs the official channel, compared in USD — a ¥20 official row and
@@ -531,14 +535,14 @@ export default async function ModelPage({
             {getProviderLogoSrc(product.providers) ? (
               <img
                 src={getProviderLogoSrc(product.providers)!}
-                alt={product.providers?.name || product.name}
+                alt={product.providers?.name || productName}
                 className="w-16 h-16 object-contain"
               />
             ) : (
               <span className="text-5xl">{getProviderLogoFallback(product.providers)}</span>
             )}
             <div>
-              <h1 className="text-3xl font-bold">{product.name}</h1>
+              <h1 className="text-3xl font-bold">{productName}</h1>
               <p className="text-zinc-600">{product.providers?.name} • API Price Comparison</p>
             </div>
           </div>
@@ -1057,6 +1061,16 @@ export default async function ModelPage({
                 </Card>
               ))}
             </div>
+          </section>
+        )}
+
+        {guideSlug && (
+          <section className="mt-8 border-y py-7">
+            <p className="text-sm font-medium text-blue-600">{isZh ? '相关价格研究' : 'Related pricing research'}</p>
+            <h2 className="mt-2 text-xl font-bold">{PRICING_GUIDES[guideSlug].title[isZh ? 'zh' : 'en']}</h2>
+            <Link href={`/${locale}/guides/${guideSlug}`} className="mt-3 inline-flex items-center text-sm font-medium text-blue-600 hover:underline">
+              {isZh ? '阅读完整指南 →' : 'Read the full guide →'}
+            </Link>
           </section>
         )}
 

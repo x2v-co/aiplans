@@ -5,6 +5,7 @@ import { breadcrumbList, faqPage, SITE_URL } from "@/lib/seo";
 import ComparePlansView from "./compare-plans-view";
 import { buildCompareFaqs } from "./faqs";
 import { decodeSlugParam } from "@/lib/route-params";
+import { formatModelName } from '@/lib/model-names';
 
 /**
  * Server component. This page used to be a client component that fetched
@@ -31,7 +32,7 @@ export default async function ComparePlansModelPage({
   const crumbs = breadcrumbList([
     { name: isZh ? "首页" : "Home", url: `${SITE_URL}/${locale}` },
     { name: isZh ? "套餐对比" : "Compare Plans", url: `${SITE_URL}/${locale}/compare/plans` },
-    { name: data.model.name, url: `${SITE_URL}/${locale}/compare/plans/${modelSlug}` },
+    { name: formatModelName(data.model.name), url: `${SITE_URL}/${locale}/compare/plans/${modelSlug}` },
   ]);
 
   // Data-driven FAQ, shared between the visible section and the JSON-LD so
