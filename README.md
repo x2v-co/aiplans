@@ -10,6 +10,15 @@
 
 **aiplans.dev** is an AI pricing comparison platform that helps users compare AI subscription plans and API token prices across providers. Compare GPT-4, Claude, DeepSeek, Gemini, and other AI models to find the best deals.
 
+### Live pricing research
+
+- [AI API Price Index](https://aiplans.dev/en/reports/api-price-index) - current model, channel, provider, and price-change coverage
+- [Complete API price table](https://aiplans.dev/en/api-pricing) - search and filter all tracked model channels
+- Pricing guides: [GLM / ChatGLM](https://aiplans.dev/en/guides/glm-chatglm-api-pricing), [Claude / Anthropic](https://aiplans.dev/en/guides/claude-anthropic-pricing), [Grok](https://aiplans.dev/en/guides/grok-pricing), and [Kimi / Moonshot](https://aiplans.dev/en/guides/kimi-api-pricing)
+- [Subscription plan comparison](https://aiplans.dev/en/compare/plans) - compare monthly and annual AI product plans
+
+The price index and guides are generated from the same audited pricing data as the comparison pages. Prices retain the vendor's billing currency and are normalized to USD only for cross-channel ranking.
+
 ### Features
 
 - **Subscription Plan Comparison** - Compare ChatGPT Plus, Claude Pro, DeepSeek, and other AI subscription plans
@@ -111,6 +120,15 @@ MIT
 ### 概述
 
 **aiplans.dev** 是一个 AI 价格对比平台，帮助用户比较不同供应商的 AI 订阅套餐和 API 令牌价格。对比 GPT-4、Claude、DeepSeek、Gemini 等 AI 模型，找到最优惠的方案。
+
+### 实时价格研究
+
+- [AI API 价格指数](https://aiplans.dev/zh/reports/api-price-index)：汇总当前模型、渠道、供应商和价格变化
+- [完整 API 价格表](https://aiplans.dev/zh/api-pricing)：搜索并筛选全部已追踪模型渠道
+- 专题指南：[GLM / ChatGLM](https://aiplans.dev/zh/guides/glm-chatglm-api-pricing)、[Claude / Anthropic](https://aiplans.dev/zh/guides/claude-anthropic-pricing)、[Grok](https://aiplans.dev/zh/guides/grok-pricing)、[Kimi / Moonshot](https://aiplans.dev/zh/guides/kimi-api-pricing)
+- [订阅套餐对比](https://aiplans.dev/zh/compare/plans)：对比 AI 产品月付与年付套餐
+
+价格指数、专题指南与站内对比页面使用同一套经审计的数据。页面保留供应商原始结算币种，仅在跨渠道排序时统一换算为美元。
 
 ### 功能特性
 
