@@ -481,6 +481,35 @@ const MIGRATIONS: Migration[] = [
          AND type <> 'aggregator';
     `,
   },
+  {
+    name: '017_backfill_openrouter_links',
+    sql: `
+      -- OpenRouter was created before provider metadata became part of the
+      -- scraper contract, leaving its website blank while every other active
+      -- provider has a usable destination. Fill only missing values so an
+      -- operator-supplied URL always wins.
+      UPDATE providers
+         SET website = CASE
+               WHEN website IS NULL OR btrim(website) = '' THEN 'https://openrouter.ai'
+               ELSE website
+             END,
+             pricing_url = CASE
+               WHEN pricing_url IS NULL OR btrim(pricing_url) = '' THEN 'https://openrouter.ai/models'
+               ELSE pricing_url
+             END,
+             api_docs_url = CASE
+               WHEN api_docs_url IS NULL OR btrim(api_docs_url) = '' THEN 'https://openrouter.ai/docs'
+               ELSE api_docs_url
+             END,
+             updated_at = now()
+       WHERE slug = 'openrouter'
+         AND (
+           website IS NULL OR btrim(website) = '' OR
+           pricing_url IS NULL OR btrim(pricing_url) = '' OR
+           api_docs_url IS NULL OR btrim(api_docs_url) = ''
+         );
+    `,
+  },
 ];
 
 async function main() {

@@ -3,11 +3,17 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, GitCompare, DollarSign, Globe, HelpCircle } from "lucide-react";
+import { ArrowRight, GitCompare, DollarSign, Globe, HelpCircle, Sparkles } from "lucide-react";
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/lib/translations';
 
-export type HotModel = { slug: string; name: string; benchmark_arena_elo: number | null };
+export type HotModel = {
+  slug: string;
+  name: string;
+  benchmark_arena_elo: number | null;
+  released_at?: string | null;
+  created_at?: string | null;
+};
 type FaqItem = { question: string; answer: string };
 
 /**
@@ -19,10 +25,12 @@ type FaqItem = { question: string; answer: string };
 export default function HomeView({
   locale,
   hotModels,
+  latestModels,
   faqs,
 }: {
   locale: string;
   hotModels: HotModel[];
+  latestModels: HotModel[];
   faqs: FaqItem[];
 }) {
   const t = useTranslations('nav');
@@ -140,6 +148,46 @@ export default function HomeView({
             </CardContent>
           </Card>
         </div>
+
+        {/* Recently released / first-seen models */}
+        {latestModels.length > 0 && (
+          <section className="mb-16" aria-labelledby="latest-models-heading">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <h2 id="latest-models-heading" className="flex items-center gap-2 text-2xl font-bold">
+                <Sparkles className="h-6 w-6 text-emerald-600" />
+                {locale === 'zh' ? '最新收录模型' : 'Recently Added Models'}
+              </h2>
+              <Link href={`/${locale}/api-pricing`} className="text-sm font-medium text-blue-600 hover:underline">
+                {locale === 'zh' ? '查看全部' : 'View all'}
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {latestModels.slice(0, 4).map((model) => {
+                const date = model.released_at ?? model.created_at;
+                return (
+                  <Link key={model.slug} href={`/${locale}/models/${model.slug}`}>
+                    <Card className="h-full transition-shadow hover:shadow-lg">
+                      <CardContent className="p-5">
+                        <h3 className="font-bold">{model.name}</h3>
+                        {date && (
+                          <p className="mt-2 text-xs text-zinc-500">
+                            {model.released_at
+                              ? locale === 'zh' ? '发布时间' : 'Released'
+                              : locale === 'zh' ? '收录时间' : 'Added'}{' '}
+                            {new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+                              dateStyle: 'medium',
+                              timeZone: 'Asia/Singapore',
+                            }).format(new Date(date))}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Hot Models */}
         <div className="text-center">

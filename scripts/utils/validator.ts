@@ -10,6 +10,8 @@ export interface ScrapedPrice {
   rateLimit?: string | number;
   isAvailable: boolean;
   currency?: CurrencyCode;
+  /** Source-provided release/listing timestamp, when available. */
+  releasedAt?: string;
 }
 
 export interface ScraperResult {

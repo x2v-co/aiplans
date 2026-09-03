@@ -193,6 +193,7 @@
     "nameAZ": "A 到 Z",
     "nameZA": "Z 到 A",
     "performanceHighToLow": "⭐ 性能（高到低）",
+    "latestFirst": "最新收录",
     "chinaAccessOnly": "仅显示国内可用",
     "results": "{count} 个结果",
     "modelChannelPrices": "模型渠道价格",

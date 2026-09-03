@@ -23,12 +23,12 @@ export default async function Image({
         ? [
             { label: '模型', value: '250+' },
             { label: '官方 / 云 / 聚合', value: '27' },
-            { label: '每小时更新', value: '✓' },
+            { label: '每日更新', value: '✓' },
           ]
         : [
             { label: 'Models', value: '250+' },
             { label: 'Channels', value: '27' },
-            { label: 'Hourly refresh', value: '✓' },
+            { label: 'Daily refresh', value: '✓' },
           ],
       locale: locale === 'zh' ? 'zh' : 'en',
     }),

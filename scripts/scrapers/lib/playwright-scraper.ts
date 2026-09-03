@@ -22,6 +22,7 @@ export interface PriceData {
   rateLimit?: number | null;
   isAvailable?: boolean;
   currency?: string;
+  releasedAt?: string;
 }
 
 export interface ScraperResult {

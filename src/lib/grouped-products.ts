@@ -33,6 +33,9 @@ export interface ChannelPrice {
     type: string;
     region: string;
     access_from_china: boolean;
+    website?: string | null;
+    pricing_url?: string | null;
+    invite_url?: string | null;
   };
 }
 
@@ -43,6 +46,8 @@ export interface GroupedProduct {
   provider_ids: number[];
   context_window: number;
   benchmark_arena_elo: number | null;
+  released_at: string | null;
+  created_at: string | null;
   providers?: {
     id: number;
     name: string;
@@ -63,7 +68,7 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
   // 获取所有 LLM 产品及其渠道价格
   const [modelsData, channelPrices, benchmarkScores] = await Promise.all([
     sql<any[]>`
-      SELECT id, name, slug, provider_ids, context_window
+      SELECT id, name, slug, provider_ids, context_window, released_at, created_at
       FROM models
       WHERE type = ${type || 'llm'}
       ORDER BY name
@@ -88,7 +93,10 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
           'logo_url', p.logo_url,
           'type', p.type,
           'region', p.region,
-          'access_from_china', p.access_from_china
+          'access_from_china', p.access_from_china,
+          'website', p.website,
+          'pricing_url', p.pricing_url,
+          'invite_url', p.invite_url
         ) AS providers
       FROM api_channel_prices cp
       JOIN providers p ON p.id = cp.provider_id
@@ -159,6 +167,8 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
         provider_ids: product.provider_ids,
         context_window: (product as any).context_window,
         benchmark_arena_elo: benchmarkMap.get(product.id) || null,
+        released_at: product.released_at ?? null,
+        created_at: product.created_at ?? null,
         providers: displayProvider,
         baseName,
         versions: productPrices as ChannelPrice[],

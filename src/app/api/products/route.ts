@@ -13,6 +13,7 @@ export async function GET(request: Request) {
       type: searchParams.get('type'),
       providerId: providerId ? parseInt(providerId) : null,
       featured: searchParams.get('featured') === 'true',
+      latest: searchParams.get('latest') === 'true',
       includePlanCount: searchParams.get('include_plan_count') === 'true',
     }));
   } catch (error) {

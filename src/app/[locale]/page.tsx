@@ -31,7 +31,7 @@ function homeFaqs(locale: Locale, hotCount: number): FaqItem[] {
       {
         question: "这些价格数据多久更新、准确吗？",
         answer:
-          "API 价格每小时、套餐价格每日从官方页面与各渠道自动抓取，显著变动记入价格历史；每日只读数据审计交叉核对各渠道与模型生产方的官方价，发现过期或异常行会标记并修正。",
+          "API 与套餐价格每日从官方页面及各渠道自动抓取，显著变动记入价格历史；每日只读数据审计交叉核对各渠道与模型生产方的官方价，发现过期或异常行会标记并修正。",
       },
       ...(hotCount > 0
         ? [
@@ -63,7 +63,7 @@ function homeFaqs(locale: Locale, hotCount: number): FaqItem[] {
     {
       question: "How up to date and accurate is the pricing data?",
       answer:
-        "API prices are scraped hourly and plan prices daily from official pages and every tracked channel, with significant changes recorded in a price-history log. A daily read-only audit cross-checks each channel against the model producer's published price and flags stale or inconsistent rows for correction.",
+        "API and plan prices are scraped daily from official pages and every tracked channel, with significant changes recorded in a price-history log. A daily read-only audit cross-checks each channel against the model producer's published price and flags stale or inconsistent rows for correction.",
     },
     ...(hotCount > 0
       ? [
@@ -86,12 +86,12 @@ export default async function HomePage({
   const loc = (locale === "zh" ? "zh" : "en") as Locale;
 
   let hotModels: HotModel[] = [];
+  let latestModels: HotModel[] = [];
   try {
-    hotModels = (await getProducts({
-      type: "llm",
-      featured: true,
-      includePlanCount: true,
-    })) as HotModel[];
+    [hotModels, latestModels] = (await Promise.all([
+      getProducts({ type: "llm", featured: true, includePlanCount: true }),
+      getProducts({ type: "llm", latest: true, includePlanCount: true }),
+    ])) as [HotModel[], HotModel[]];
   } catch (err) {
     // The rest of the landing page is static copy and is worth serving even if
     // the database is unreachable — which is what the old effect's .catch did.
@@ -106,7 +106,7 @@ export default async function HomePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: faqPage(faqs) }}
       />
-      <HomeView locale={locale} hotModels={hotModels} faqs={faqs} />
+      <HomeView locale={locale} hotModels={hotModels} latestModels={latestModels} faqs={faqs} />
     </>
   );
 }

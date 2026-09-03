@@ -5,9 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Check, HelpCircle, ArrowRight, Star, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, HelpCircle, ArrowRight, Star, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import {
   PLAN_KIND_ORDER,
@@ -19,6 +20,7 @@ import { describeEconomics } from "@/lib/plan-economics";
 import type { PlanComparison } from "@/lib/compare-plans";
 import { PlanRate } from "@/components/plan-rate";
 import type { FaqItem } from "./faqs";
+import { getProviderVisitUrl } from "@/lib/provider-links";
 
 interface ComparePlansViewProps {
   locale: string;
@@ -175,6 +177,7 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
   // drift apart.
 
   const { model, summary } = data;
+  const providerVisitUrl = getProviderVisitUrl(model.provider, 'plan');
   const planCount = planGroups.reduce((sum, g) => sum + g.plans.length, 0);
   // The API emits convertedMonthlyPrice/monthlyPrice on summary.cheapestPlan; the
   // older effectiveMonthly/monthly names it used to be read by never existed, so
@@ -233,6 +236,15 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
               ? `比较 ${model.name} 在不同渠道的订阅计划，找到最适合您的方案`
               : `Compare ${model.name} subscription plans across different channels to find the best option for you`}
           </p>
+
+          {providerVisitUrl && (
+            <Button asChild variant="outline" className="mb-8">
+              <a href={providerVisitUrl} target="_blank" rel="noopener noreferrer">
+                {locale === "zh" ? `访问 ${model.provider.name}` : `Visit ${model.provider.name}`}
+                <ExternalLink />
+              </a>
+            </Button>
+          )}
 
           {/* Billing Toggle - only show if yearly pricing exists */}
           {hasYearlyPricing && (
@@ -348,6 +360,7 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
                           const price = showYearly
                             ? (plan.pricing.yearlyMonthly || plan.pricing.monthly)
                             : plan.pricing.monthly;
+                          const planVisitUrl = getProviderVisitUrl(plan.channel, 'plan') || providerVisitUrl;
 
                           return (
                             <Card
@@ -503,9 +516,9 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
                                 )}
 
                                 {/* Action Button - at bottom */}
-                                <div className="mt-auto pt-3">
+                                {planVisitUrl && <div className="mt-auto pt-3">
                                   <a
-                                    href={plan.channel?.inviteUrl || plan.channel?.website || "#"}
+                                    href={planVisitUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className={`w-full flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -517,7 +530,7 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
                                     {locale === "zh" ? "订阅" : "Subscribe"}
                                     <ArrowRight className="w-3 h-3" />
                                   </a>
-                                </div>
+                                </div>}
                               </CardContent>
                             </Card>
                           );
@@ -529,6 +542,37 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
               );
             })}
           </div>
+        )}
+
+        {planGroups.length === 0 && (
+          <Card className="mb-16">
+            <CardContent className="py-10 text-center">
+              <h2 className="text-lg font-semibold">
+                {locale === "zh" ? "暂未收录可对比的订阅套餐" : "No comparable subscription plans yet"}
+              </h2>
+              <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-500">
+                {locale === "zh"
+                  ? "该模型仍可通过供应商或 API 渠道使用。"
+                  : "This model may still be available from its provider or through API channels."}
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Button asChild>
+                  <Link href={`/${locale}/api-pricing?q=${encodeURIComponent(model.slug)}`}>
+                    {locale === "zh" ? "查看 API 渠道" : "View API channels"}
+                    <ArrowRight />
+                  </Link>
+                </Button>
+                {providerVisitUrl && (
+                  <Button asChild variant="outline">
+                    <a href={providerVisitUrl} target="_blank" rel="noopener noreferrer">
+                      {locale === "zh" ? "访问供应商" : "Visit provider"}
+                      <ExternalLink />
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* FAQ Section */}

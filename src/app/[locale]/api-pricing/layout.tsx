@@ -25,8 +25,8 @@ export async function generateMetadata({
       zh: 'API 价格对比 · 最便宜的 AI API 渠道汇总 | aiplans.dev',
     },
     description: {
-      en: 'Compare GPT-4o, Claude, DeepSeek, Gemini, Qwen API pricing across official providers, Azure, AWS Bedrock, OpenRouter, SiliconFlow and more. Updated hourly with audited data.',
-      zh: '对比 GPT-4o、Claude、DeepSeek、Gemini、通义千问等 API 价格在官方渠道、Azure、AWS Bedrock、OpenRouter、硅基流动等的差异。每小时更新，数据经过准确性审计。',
+      en: 'Compare GPT-4o, Claude, DeepSeek, Gemini, Qwen API pricing across official providers, Azure, AWS Bedrock, OpenRouter, SiliconFlow and more. Updated daily with audited data.',
+      zh: '对比 GPT-4o、Claude、DeepSeek、Gemini、通义千问等 API 价格在官方渠道、Azure、AWS Bedrock、OpenRouter、硅基流动等的差异。每日更新，数据经过准确性审计。',
     },
   });
 }

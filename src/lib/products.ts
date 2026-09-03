@@ -1,6 +1,7 @@
 import { sql, INT4_ARRAY } from '@/lib/db';
 import { attachPrimaryProvidersToModels, getAllModelIdsForProvider } from '@/lib/schema-adapters';
 import { pickNewestPerSeries } from '@/lib/model-series';
+import { pickLatestModels } from '@/lib/model-freshness';
 
 /**
  * The model listing behind /api/products, extracted so server components can
@@ -20,12 +21,14 @@ export type ProductQuery = {
   providerId?: number | null;
   /** Collapse to the top 8 models by Agent Arena score, newest per series. */
   featured?: boolean;
+  /** Return recent primary models, using source date then first-seen date. */
+  latest?: boolean;
   /** Attach `planCount` and `hasApiPricing`. Required for `featured` filtering. */
   includePlanCount?: boolean;
 };
 
 export async function getProducts(query: ProductQuery = {}): Promise<any[]> {
-  const { type = null, providerId = null, featured = false, includePlanCount = false } = query;
+  const { type = null, providerId = null, featured = false, latest = false, includePlanCount = false } = query;
 
   let matchedModelIds: number[] | null = null;
   if (providerId != null) {
@@ -156,6 +159,11 @@ export async function getProducts(query: ProductQuery = {}): Promise<any[]> {
         (b.benchmark_arena_elo || 0) - (a.benchmark_arena_elo || 0)
       )
       .slice(0, 8);
+  } else if (latest) {
+    const available = includePlanCount
+      ? products.filter((p: any) => (p.planCount || 0) > 0 || p.hasApiPricing)
+      : products;
+    products = pickLatestModels(available as FeaturedModel[], 8);
   }
 
   return products;

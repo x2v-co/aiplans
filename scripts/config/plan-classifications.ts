@@ -49,6 +49,7 @@ const MOONSHOT_NOISE = ['kimi', '*-us'];
 const MINIMAX_LEGACY = ['minimax-01', 'minimax-m1'];
 
 const CLAUDE_FAMILIES = ['claude-opus', 'claude-sonnet', 'claude-haiku'];
+const CLAUDE_MAX_FAMILIES = [...CLAUDE_FAMILIES, 'claude-fable'];
 const GPT_CHAT_FAMILIES = ['gpt-4o', 'gpt-4.1', 'gpt-5'];
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -96,16 +97,16 @@ export const CLASSIFICATIONS: Classification[] = [
     reason: 'Pro unlocks Opus and bundles Claude Code' },
   { providerSlug: 'anthropic', planSlug: 'claude-max', kind: 'chat', line: 'claude', rank: 2,
     secondaryKinds: ['coding'],
-    selector: { families: CLAUDE_FAMILIES, exclude: ANTHROPIC_NOISE },
-    reason: 'Legacy generic Max row; same catalog as Pro, larger quota' },
+    selector: { families: CLAUDE_MAX_FAMILIES, exclude: ANTHROPIC_NOISE },
+    reason: 'Legacy generic Max row; includes the Max-only Fable family in addition to the Pro catalog' },
   { providerSlug: 'anthropic', planSlug: 'claude-max-5x', kind: 'chat', line: 'claude', rank: 3,
     secondaryKinds: ['coding'],
-    selector: { families: CLAUDE_FAMILIES, exclude: ANTHROPIC_NOISE },
-    reason: 'Max 5x differs from Pro only in quota, so tier_rank not tier carries the difference' },
+    selector: { families: CLAUDE_MAX_FAMILIES, exclude: ANTHROPIC_NOISE },
+    reason: 'Max 5x includes Fable at a limited share of weekly usage; tier_rank carries its quota position' },
   { providerSlug: 'anthropic', planSlug: 'claude-max-20x', kind: 'chat', line: 'claude', rank: 4,
     secondaryKinds: ['coding'],
-    selector: { families: CLAUDE_FAMILIES, exclude: ANTHROPIC_NOISE },
-    reason: 'Max 20x differs from Max 5x only in quota — both were tier=pro, which is why tier_rank exists' },
+    selector: { families: CLAUDE_MAX_FAMILIES, exclude: ANTHROPIC_NOISE },
+    reason: 'Max 20x includes Fable at a limited share of weekly usage; tier_rank distinguishes it from Max 5x' },
   { providerSlug: 'anthropic', planSlug: 'claude-team', kind: 'chat', line: 'claude', rank: 5,
     selector: { families: CLAUDE_FAMILIES, exclude: ANTHROPIC_NOISE },
     reason: 'Team Standard: full chat catalog but no Claude Code, so no coding secondary kind' },

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Check, ExternalLink, TrendingDown, Zap, Globe } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, ExternalLink, TrendingDown, Zap, Globe } from "lucide-react";
 import { sql, INT4_ARRAY } from "@/lib/db";
 import { use } from "react";
 import { getPrimaryProvidersForModels } from "@/lib/schema-adapters";
@@ -96,11 +96,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const enDesc =
     `Compare ${productName} API pricing${cheapestLabel ? ` from ${cheapestLabel}` : ''} across ${
       channelCount || 'all available'
-    } channels — official, Azure, AWS Bedrock, Vertex AI, OpenRouter, SiliconFlow and more. Find the cheapest ${productName} provider, with subscription plans and hourly-updated, audited prices.`;
+    } channels — official, Azure, AWS Bedrock, Vertex AI, OpenRouter, SiliconFlow and more. Find the cheapest ${productName} provider, with subscription plans and daily-updated, audited prices.`;
   const zhDesc =
     `对比 ${productName} 在${channelCount || '全部'}个 API 渠道的价格${
       cheapestLabel ? `（低至 ${cheapestLabel}）` : ''
-    }：官方、Azure、AWS Bedrock、Vertex AI、OpenRouter、硅基流动等，含订阅套餐。每小时更新、数据经审计。`;
+    }：官方、Azure、AWS Bedrock、Vertex AI、OpenRouter、硅基流动等，含订阅套餐。每日更新、数据经审计。`;
 
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
@@ -135,7 +135,8 @@ function channelCurrency(cp: { currency?: string | null } | null | undefined): C
 async function getProductWithChannels(slug: string) {
   // Get model with provider info
   const [model] = await sql<any[]>`
-    SELECT id, name, slug, type, description, context_window, max_output_tokens, provider_ids
+    SELECT id, name, slug, type, description, context_window, max_output_tokens,
+           provider_ids, released_at, created_at
     FROM models
     WHERE slug = ${slug}
     LIMIT 1
@@ -568,6 +569,18 @@ export default async function ModelPage({
             {arenaElo != null && (
               <Badge variant="outline" className="text-sm">
                 🏟️ Arena ELO: {Math.round(arenaElo)}
+              </Badge>
+            )}
+            {(product.released_at || product.created_at) && (
+              <Badge variant="outline" className="gap-1.5 text-sm">
+                <CalendarDays className="h-3.5 w-3.5" />
+                {product.released_at
+                  ? locale === 'zh' ? '发布于' : 'Released'
+                  : locale === 'zh' ? '收录于' : 'Added'}{' '}
+                {new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+                  dateStyle: 'medium',
+                  timeZone: 'Asia/Singapore',
+                }).format(new Date(product.released_at ?? product.created_at))}
               </Badge>
             )}
           </div>

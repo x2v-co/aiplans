@@ -271,7 +271,14 @@ async function processAPIScraper(
           .single();
 
         if (existingProduct) {
-          product = existingProduct;
+          product = await getOrCreateProduct({
+            name: existingProduct.name,
+            slug: existingProduct.slug,
+            provider_ids: existingProduct.provider_ids,
+            type: existingProduct.type || 'llm',
+            context_window: price.contextWindow,
+            released_at: price.releasedAt,
+          });
         } else {
           console.log(`⚠️ Skipping ${normalizedName} - unknown provider`);
           continue;
@@ -284,6 +291,7 @@ async function processAPIScraper(
           provider_id: providerId,
           type: 'llm',
           context_window: price.contextWindow,
+          released_at: price.releasedAt,
         });
       }
 

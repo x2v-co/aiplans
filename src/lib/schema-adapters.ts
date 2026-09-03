@@ -15,6 +15,8 @@ type Provider = {
   logo_url?: string | null;
   website?: string | null;
   invite_url?: string | null;
+  pricing_url?: string | null;
+  api_docs_url?: string | null;
   region?: string | null;
   type?: string | null;
   access_from_china?: boolean | null;
@@ -33,7 +35,8 @@ export async function getProvidersByIds(providerIds: number[]): Promise<Map<numb
   }
 
   const data = await sql<Provider[]>`
-    SELECT id, name, slug, logo, logo_url, website, invite_url, region, type, access_from_china
+    SELECT id, name, slug, logo, logo_url, website, invite_url, pricing_url,
+           api_docs_url, region, type, access_from_china
     FROM providers
     WHERE id = ANY(${sql.array(providerIds, INT4_ARRAY)})
   `;

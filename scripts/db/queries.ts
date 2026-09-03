@@ -157,7 +157,22 @@ export async function getOrCreateProduct(data: {
   provider_ids?: number[];  // Preferred: array of provider IDs
   type: string;
   context_window?: number;
+  released_at?: string;
 }) {
+  const backfillReleaseDate = async <T extends { id: number; released_at?: string | null }>(product: T): Promise<T> => {
+    if (product.released_at || !data.released_at) return product;
+
+    const releasedAt = new Date(data.released_at).toISOString();
+    const { error } = await supabaseAdmin
+      .from('models')
+      .update({ released_at: releasedAt, updated_at: new Date().toISOString() })
+      .eq('id', product.id);
+    if (error) throw error;
+
+    product.released_at = releasedAt;
+    return product;
+  };
+
   // First: try to find by exact slug match
   const { data: existingBySlug } = await supabaseAdmin
     .from('models')
@@ -166,6 +181,7 @@ export async function getOrCreateProduct(data: {
     .single();
 
   if (existingBySlug) {
+    await backfillReleaseDate(existingBySlug);
     // Update slug if different
     if (existingBySlug.slug !== data.slug) {
       await supabaseAdmin
@@ -187,6 +203,7 @@ export async function getOrCreateProduct(data: {
     .limit(1);
 
   if (existingByName && existingByName.length > 0) {
+    await backfillReleaseDate(existingByName[0]);
     // Update the slug to match the normalized version
     if (existingByName[0].slug !== data.slug) {
       await supabaseAdmin
@@ -215,6 +232,7 @@ export async function getOrCreateProduct(data: {
       provider_ids: providerIdsArray,
       type: data.type,
       context_window: data.context_window,
+      released_at: data.released_at,
     })
     .select()
     .single();

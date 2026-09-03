@@ -139,7 +139,7 @@ export function buildApiPricingFaqs(
     faqs.push({
       question: '这些价格多久更新一次？数据可靠吗？',
       answer:
-        'API 价格每小时从官方定价页与各渠道自动抓取，显著变动会写入价格历史；另有每日只读数据审计，交叉核对每个渠道与模型生产方的官方价，发现过期或异常行会标记并修正。',
+        'API 价格每日从官方定价页与各渠道自动抓取，显著变动会写入价格历史；每日只读数据审计同时交叉核对每个渠道与模型生产方的官方价，发现过期或异常行会标记并修正。',
     });
   } else {
     faqs.push({
@@ -165,7 +165,7 @@ export function buildApiPricingFaqs(
     faqs.push({
       question: 'How often are these prices updated, and how reliable is the data?',
       answer:
-        'API prices are scraped hourly from official pricing pages and every tracked channel, with significant changes recorded in a price-history log. A daily read-only data audit cross-checks each channel against the model producer\'s published price and flags stale or inconsistent rows for correction.',
+        'API prices are scraped daily from official pricing pages and every tracked channel, with significant changes recorded in a price-history log. A daily read-only data audit cross-checks each channel against the model producer\'s published price and flags stale or inconsistent rows for correction.',
     });
   }
 

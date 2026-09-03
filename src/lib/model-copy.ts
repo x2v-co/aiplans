@@ -185,7 +185,7 @@ export function buildModelCopy(ctx: ModelCopyContext, locale: Locale): ModelCopy
       summaryParts.push(`Chatbot Arena ELO 评分约为 ${Math.round(ctx.arenaElo)}。`);
     }
 
-    summaryParts.push('价格由每小时自动抓取官方与各渠道页面生成，并经过每日数据准确性审计。');
+    summaryParts.push('价格由每日自动抓取官方与各渠道页面生成，并经过数据准确性审计。');
   } else {
     let lead = `${name} is a ${modelNoun(ctx.modelType, locale)}`;
     if (producer) lead += ` by ${producer}`;
@@ -242,7 +242,7 @@ export function buildModelCopy(ctx: ModelCopyContext, locale: Locale): ModelCopy
     }
 
     summaryParts.push(
-      'Prices are collected hourly from official provider pages and every tracked channel, then cross-checked by a daily data-accuracy audit.',
+      'Prices are collected daily from official provider pages and every tracked channel, then cross-checked by a data-accuracy audit.',
     );
   }
 
@@ -260,7 +260,7 @@ export function buildModelCopy(ctx: ModelCopyContext, locale: Locale): ModelCopy
         answer:
           `在本站追踪的渠道中，${cheapestName} 最便宜，输入价格为 ${native}/1M tokens，输出 ${outNative}/1M tokens` +
           (Number.isFinite(usd) ? `（约合 ${formatPrice(usd, 'USD', locale)}/1M 输入）。` : '。') +
-          ' 实际价格以供应商页面为准，本站每小时更新。',
+          ' 实际价格以供应商页面为准，本站每日更新。',
       });
     } else {
       faqs.push({
@@ -268,7 +268,7 @@ export function buildModelCopy(ctx: ModelCopyContext, locale: Locale): ModelCopy
         answer:
           `Of the channels tracked here, ${cheapestName} is the cheapest at ${native} per 1M input tokens and ${outNative} per 1M output tokens` +
           (Number.isFinite(usd) ? ` (about ${formatPrice(usd, 'USD', locale)} per 1M input).` : '.') +
-          ' Confirm on the provider\'s page; figures are updated hourly.',
+          ' Confirm on the provider\'s page; figures are updated daily.',
       });
     }
   }
@@ -358,13 +358,13 @@ export function buildModelCopy(ctx: ModelCopyContext, locale: Locale): ModelCopy
     faqs.push({
       question: `${name} 的价格多久更新一次？数据可靠吗？`,
       answer:
-        '价格每小时从官方定价页和各渠道自动抓取，并写入价格历史。另有每日只读数据审计，交叉核对每个渠道与模型生产方的官方价，发现过期或异常行会标记并修正。',
+        '价格每日从官方定价页和各渠道自动抓取，并写入价格历史。每日只读数据审计同时交叉核对每个渠道与模型生产方的官方价，发现过期或异常行会标记并修正。',
     });
   } else {
     faqs.push({
       question: `How often are ${name} prices updated, and how reliable is the data?`,
       answer:
-        'Prices are scraped hourly from official pricing pages and every tracked channel, with every significant change recorded in a price-history log. A daily read-only data audit cross-checks each channel against the model producer\'s published price and flags stale or inconsistent rows for correction.',
+        'Prices are scraped daily from official pricing pages and every tracked channel, with every significant change recorded in a price-history log. A daily read-only data audit cross-checks each channel against the model producer\'s published price and flags stale or inconsistent rows for correction.',
     });
   }
 

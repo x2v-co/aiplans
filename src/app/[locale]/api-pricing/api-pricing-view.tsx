@@ -9,16 +9,17 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Check, Filter, Search, Globe, MapPin, HelpCircle } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Filter, Search, Globe, MapPin, HelpCircle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   formatPrice,
-  formatPriceSimple,
   calculateSavingsPercent,
 } from "@/lib/currency";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import type { ChannelPrice, GroupedProduct } from "@/lib/grouped-products";
 import type { ApiPricingStats, FaqItem } from "@/lib/api-pricing-copy";
+import { modelFreshnessTime } from "@/lib/model-freshness";
+import { getProviderVisitUrl } from "@/lib/provider-links";
 // Currency-normalised cheapest-channel selection. These are pure, module-scope
 // functions (see channel-price-utils.ts) so the React Compiler can preserve the
 // memoization of `filteredProducts` below — that memo is what keeps filtering
@@ -28,6 +29,26 @@ import {
   getLowestPriceUSD,
   normalizeChannelType,
 } from "@/lib/channel-price-utils";
+
+function ProviderVisitLink({
+  provider,
+  label,
+}: {
+  provider: ChannelPrice['providers'];
+  label: string;
+}) {
+  const href = getProviderVisitUrl(provider, 'api');
+  if (!href) return <span className="text-zinc-400">-</span>;
+
+  return (
+    <Button asChild variant="outline" size="xs">
+      <a href={href} target="_blank" rel="noopener noreferrer">
+        {label}
+        <ExternalLink />
+      </a>
+    </Button>
+  );
+}
 
 /**
  * The interactive half of /api-pricing: search, sort and the four filters.
@@ -61,7 +82,7 @@ export default function ApiPricingView({
   const tGlobal = () => t('global' as any);
 
   const [searchQuery, setSearchQuery] = useState(() => initialQuery?.trim() ?? "");
-  const [sortBy, setSortBy] = useState<"price" | "name" | "elo">("elo");
+  const [sortBy, setSortBy] = useState<"price" | "name" | "elo" | "latest">("elo");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [regionFilter, setRegionFilter] = useState<"all" | "global" | "china">("all");
   const [channelTypeFilter, setChannelTypeFilter] = useState<"all" | "official" | "cloud" | "aggregator" | "reseller">("all");
@@ -70,7 +91,7 @@ export default function ApiPricingView({
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
-    let filtered = products.filter(p => {
+    const filtered = products.filter(p => {
       // Search across model name + all channel provider names
       if (normalizedQuery) {
         const searchValues = [
@@ -137,6 +158,10 @@ export default function ApiPricingView({
           const eloA = a.benchmark_arena_elo || 0;
           const eloB = b.benchmark_arena_elo || 0;
           return sortOrder === "asc" ? eloA - eloB : eloB - eloA;
+        case "latest":
+          return sortOrder === "asc"
+            ? modelFreshnessTime(a) - modelFreshnessTime(b)
+            : modelFreshnessTime(b) - modelFreshnessTime(a);
         default:
           return 0;
       }
@@ -272,7 +297,7 @@ export default function ApiPricingView({
                 <Select
                   value={`${sortBy}-${sortOrder}`}
                   onValueChange={(value) => {
-                    const [by, order] = value.split("-") as ["price" | "name" | "elo", "asc" | "desc"];
+                    const [by, order] = value.split("-") as ["price" | "name" | "elo" | "latest", "asc" | "desc"];
                     setSortBy(by);
                     setSortOrder(order);
                   }}
@@ -281,6 +306,7 @@ export default function ApiPricingView({
                     <SelectValue placeholder={t('sortBy')} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="latest-desc">{t('latestFirst')}</SelectItem>
                     <SelectItem value="elo-desc">{t('performanceHighToLow')}</SelectItem>
                     <SelectItem value="elo-asc">{locale === 'zh' ? '⭐ 性能从低到高' : '⭐ Performance (Low to High)'}</SelectItem>
                     <SelectItem value="price-asc">{t('priceLowToHigh')}</SelectItem>
@@ -382,6 +408,18 @@ export default function ApiPricingView({
                             )}
                             {' • '}
                             {product.context_window ? `${product.context_window.toLocaleString()} tokens` : 'N/A'}
+                            {(product.released_at || product.created_at) && (
+                              <>
+                                {' • '}
+                                {product.released_at
+                                  ? locale === 'zh' ? '发布于' : 'Released'
+                                  : locale === 'zh' ? '收录于' : 'Added'}{' '}
+                                {new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+                                  dateStyle: 'medium',
+                                  timeZone: 'Asia/Singapore',
+                                }).format(new Date(product.released_at ?? product.created_at!))}
+                              </>
+                            )}
                             {' • '}
                             <Link href={`/${locale}/compare/plans/${product.slug}`} className="text-blue-600 hover:underline">
                               {locale === 'zh' ? '对比订阅计划' : 'Compare plans'}
@@ -399,6 +437,7 @@ export default function ApiPricingView({
                             <TableHead className="text-right">{t('inputPer1M')}</TableHead>
                             <TableHead className="text-right">{t('outputPer1M')}</TableHead>
                             <TableHead className="text-right">{t('savings')}</TableHead>
+                            <TableHead className="w-24 text-right">{locale === 'zh' ? '访问' : 'Visit'}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -523,6 +562,12 @@ export default function ApiPricingView({
                                       </div>
                                     </div>
                                   </TableCell>
+                                  <TableCell className="text-right">
+                                    <ProviderVisitLink
+                                      provider={chinaVersion.providers}
+                                      label={locale === 'zh' ? '访问' : 'Visit'}
+                                    />
+                                  </TableCell>
                                 </TableRow>
                               );
                             }
@@ -580,6 +625,12 @@ export default function ApiPricingView({
                                     ) : (
                                       <span className="text-zinc-400">-</span>
                                     )}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <ProviderVisitLink
+                                      provider={cp.providers}
+                                      label={locale === 'zh' ? '访问' : 'Visit'}
+                                    />
                                   </TableCell>
                                 </TableRow>
                               );

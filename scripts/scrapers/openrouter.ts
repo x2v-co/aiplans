@@ -17,6 +17,7 @@ interface OpenRouterModel {
     input_cache_read?: string;  // Cache price per token ($/token) - CACHE
   };
   context_length: number;
+  created?: number;
   architecture?: {
     modality?: string;
     output_modalities?: string[];
@@ -172,6 +173,9 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
           contextWindow: model.context_length,
           isAvailable: true,
           currency: 'USD',
+          releasedAt: model.created && Number.isFinite(model.created)
+            ? new Date(model.created * 1000).toISOString()
+            : undefined,
         });
       } catch (error) {
         errors.push(`Error processing ${model.id}: ${error}`);
