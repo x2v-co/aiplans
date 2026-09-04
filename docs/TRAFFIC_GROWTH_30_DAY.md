@@ -43,6 +43,10 @@ GA4, previous 28 days:
   changes, pricing filters, and pricing search.
 - Marked `outbound_click` and `compare_start` as GA4 key events and registered
   `link_domain`, `compare_type`, and `filter_name` custom dimensions.
+- Added 1200x630 Open Graph and Twitter cards to pricing guides and the API
+  Price Index. Production metadata and image responses were verified after
+  deployment `33834732790`; the Price Index card renders the current 343
+  priced models, 479 available channels, and 21 providers.
 
 ## Channel Order
 
