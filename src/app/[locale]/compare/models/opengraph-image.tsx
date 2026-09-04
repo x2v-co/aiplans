@@ -23,12 +23,12 @@ export default async function Image({
         ? [
             { label: '主流厂商', value: '9' },
             { label: '最多对比', value: '4' },
-            { label: '价格每日审计', value: '✓' },
+            { label: '价格审计', value: '每日' },
           ]
         : [
             { label: 'Major vendors', value: '9' },
             { label: 'Compare up to', value: '4' },
-            { label: 'Audited daily', value: '✓' },
+            { label: 'Price audit', value: 'Daily' },
           ],
       accent: '#7c3aed',
       locale: isZh ? 'zh' : 'en',
