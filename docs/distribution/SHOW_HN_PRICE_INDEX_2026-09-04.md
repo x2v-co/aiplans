@@ -55,7 +55,8 @@ around to answer questions and fix factual issues.
 ## Current State
 
 - Hacker News login confirmed on 2026-09-04.
-- Submission form prefilled with the title, URL, and text above.
+- The title, URL, submission text, and first comment are stored above. HN does
+  not provide a persistent draft, so browser form contents are not treated as
+  saved state.
 - The final `submit` action has not been performed.
 - Do not ask friends or other accounts to upvote or comment.
-

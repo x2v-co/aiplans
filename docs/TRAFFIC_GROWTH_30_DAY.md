@@ -118,7 +118,7 @@ Verified on 2026-09-04:
 | Juejin | Complete article saved as draft `7681467854781431818`; category `人工智能`, tags `人工智能` and `API` | Explicit approval for public publication |
 | V2EX | Community rules and `分享创造` node checked; tailored draft prepared | Account login, then explicit approval |
 | Zhihu | Logged in; target question has 21 followers, 36,023 views, and 6 answers; tailored answer prepared | Explicit approval |
-| Hacker News | Logged in; Show HN rules checked; submission form prefilled | Explicit approval for `submit` |
+| Hacker News | Logged in; Show HN rules checked; ready-to-submit copy stored in the repository | Explicit approval before opening and submitting the form |
 | Reddit | `r/ClaudeAI` and `r/LocalLLaMA` rules checked | Verify karma/content-history gates before posting |
 | Newsletters | `console.dev` and Changelog News routes verified; tailored pitches prepared | Explicit approval before email/form submission; Changelog account required |
 
