@@ -1,145 +1,75 @@
-# aiplans.dev - 全网最全 AI 价格对比平台 | Launch Announcement
+# aiplans.dev Distribution Article
 
----
+This is a source draft for community posts. Adapt the opening and title to the
+community instead of publishing identical text everywhere. Do not claim a
+specific saving percentage, provider count, or real-time coverage unless the
+linked live page currently proves it.
 
-## English Version
+## 中文稿
 
-### Introducing aiplans.dev - Your Ultimate AI Pricing Comparison Tool
+### 标题
 
-Finding the cheapest AI API prices just got easier. Today, we're excited to announce the launch of **aiplans.dev** - the most comprehensive AI pricing comparison platform.
+我把 Kimi、GLM、Claude、Grok 的 API 价格整理成了一套可复查的对比表
 
-### What is aiplans.dev?
+### 正文
 
-aiplans.dev helps developers and businesses compare AI subscription plans and API prices across 30+ providers. Whether you're looking for the cheapest GPT-4 API or comparing Claude vs DeepSeek, we've got you covered.
+做 AI 应用成本评估时，最容易混在一起的是三件事：模型厂商、实际购买渠道，
+以及面向个人用户的订阅套餐。相同模型可能同时出现在官方接口、云平台和聚合
+渠道，而 API token 计费通常也不等于 ChatGPT、Claude 或 Kimi 的应用订阅。
 
-### Key Features
+我维护的 aiplans.dev 先保留每个渠道的原始结算币种，再统一换算成美元用于横向
+排序。免费路由不会混入“最低付费价格”榜单；渠道页同时保留来源和最近核验时间，
+方便发现数据不一致时回查。
 
-**🔍 API Price Comparison**
-- Compare prices for the same model across different channels
-- Official API vs Azure vs AWS Bedrock vs OpenRouter vs SiliconFlow
-- Real-time price updates with detailed breakdowns
+目前可以从四类高频问题开始：
 
-**📊 Plan Comparison**
-- ChatGPT Plus vs Claude Pro vs DeepSeek
-- Subscription plans with feature comparisons
-- Yearly vs monthly pricing
+- Kimi API 的国内、国际与第三方渠道有什么区别？
+- GLM/ChatGLM 的官方接口与免费路由该怎么区分？
+- Claude API token 费用和 Claude Pro/Max 订阅是什么关系？
+- Grok API 与消费级订阅应该分别如何估算？
 
-**🌏 China-Optimized**
-- Prices in both USD and CNY
-- Local payment methods tracking
-- Domestic provider coverage
+完整价格指数会展示当前有价格的模型、可用渠道、供应商覆盖，以及价格历史里记录
+到的显著变化。它不是静态榜单，最终接入前仍应核对厂商定价页、地区、限速和支付
+条件。
 
-**🏆 Benchmark Integration**
-- Chatbot Arena ELO scores
-- Performance-aware recommendations
+欢迎指出缺失渠道或价格错误，最好附上官方价格来源。项目与数据处理代码均可在
+GitHub 查看。
 
-**🎟️ Community Coupons**
-- Share and vote on discount codes
-- Community-driven savings
+## English Draft
 
-### Supported Providers
+### Title
 
-- **OpenAI**: GPT-4o, o1, o3-mini
-- **Anthropic**: Claude 3.5 Sonnet, Claude 3 Opus
-- **Google**: Gemini 2.5 Pro, Gemini 2.0 Flash
-- **DeepSeek**: V3, R1
-- **Moonshot**: Kimi series
-- **Zhipu**: GLM series
-- **Qwen**: Tongyi series
-- **And 20+ more providers**
+I built an auditable price index for Kimi, GLM, Claude, and Grok APIs
 
-### Why aiplans.dev?
+### Body
 
-> "I spent hours searching for the cheapest Claude API. With aiplans.dev, I found savings of up to 70% in just minutes."
+AI cost comparisons often mix up three different things: the model maker, the
+channel that sells access, and the consumer subscription product. The same
+model can be available through an official API, a cloud platform, and an
+aggregator, while API token billing is separate from subscriptions such as
+Claude Pro or Kimi plans.
 
-- **Time-saving**: One-click comparison across all providers
-- **Cost-effective**: Find the cheapest channels for your use case
-- **Up-to-date**: Regular price updates from official sources
-- **Community-driven**: Coupons and reviews from real users
+aiplans.dev keeps each channel's billing currency and normalizes prices to USD
+only for cross-channel ranking. Free routes are excluded from the lowest paid
+price table. Source links and verification dates are retained so discrepancies
+can be checked rather than hidden behind a single score.
 
-### Get Started
+The focused guides currently cover Kimi, GLM/ChatGLM, Claude, and Grok. The
+market-wide price index reports priced models, available channels, provider
+coverage, and material changes recorded in the price history.
 
-Visit **https://aiplans.dev** and start comparing AI prices today!
+This is not a promise that the cheapest row is operationally equivalent to an
+official endpoint. Region availability, contracts, rate limits, payment, and
+data handling still need to be checked before integration.
 
-- English: https://aiplans.dev/en
-- Chinese: https://aiplans.dev/zh
+Corrections and missing-provider reports are welcome, preferably with an
+official pricing source. The project and data tooling are available on GitHub.
 
-### Join Our Community
+## Canonical Links
 
-- **GitHub**: https://github.com/x2v-co/aiplans
-- **Report Issues**: https://github.com/x2v-co/aiplans/issues
-
----
-
-### 中文版本
-
-### 正式发布：全网最全 AI 价格对比平台 aiplans.dev
-
-找到最便宜的 AI API 价格从未如此简单。今天，我们兴奋地宣布推出 **aiplans.dev** - 最全面的 AI 价格对比平台。
-
-### 什么是 aiplans.dev？
-
-aiplans.dev 帮助开发者和企业比较 30+ 供应商的 AI 订阅套餐和 API 价格。无论您在寻找最便宜的 GPT-4 API 还是对比 Claude 与 DeepSeek，我们都为您准备好了。
-
-### 核心功能
-
-**🔍 API 价格对比**
-- 对比同一模型在不同渠道的价格
-- 官方 API vs Azure vs AWS Bedrock vs OpenRouter vs 硅基流动
-- 实时价格更新，详细价格分解
-
-**📊 套餐对比**
-- ChatGPT Plus vs Claude Pro vs DeepSeek
-- 订阅套餐功能对比
-- 年付 vs 月付价格
-
-**🌏 国内优化**
-- USD 和 CNY 双币种显示
-- 本地支付方式跟踪
-- 国内供应商覆盖
-
-**🏆 排行榜集成**
-- Chatbot Arena ELO 分数
-- 性能感知推荐
-
-**🎟️ 社区优惠券**
-- 分享和投票折扣码
-- 社区驱动的省钱方案
-
-### 支持的供应商
-
-- **OpenAI**: GPT-4o, o1, o3-mini
-- **Anthropic**: Claude 3.5 Sonnet, Claude 3 Opus
-- **Google**: Gemini 2.5 Pro, Gemini 2.0 Flash
-- **DeepSeek**: V3, R1
-- **Moonshot**: Kimi 系列
-- **Zhipu**: GLM 系列
-- **Qwen**: 通义千问系列
-- **以及 20+ 更多供应商**
-
-### 为什么选择 aiplans.dev？
-
-> "我花了几个小时寻找最便宜的 Claude API。使用 aiplans.dev，我在几分钟内就找到了高达 70% 的节省。"
-
-- **省时**: 一键对比所有供应商
-- **省钱**: 找到适合您使用场景的最便宜渠道
-- **实时**: 定期更新官方价格来源
-- **社区驱动**: 真实用户的优惠券和评价
-
-### 开始使用
-
-立即访问 **https://aiplans.dev** 开始对比 AI 价格！
-
-- 英文版: https://aiplans.dev/en
-- 中文版: https://aiplans.dev/zh
-
-### 加入社区
-
-- **GitHub**: https://github.com/x2v-co/aiplans
-- **反馈问题**: https://github.com/x2v-co/aiplans/issues
-
----
-
-*Built with ❤️ for the AI community*
-
-*© 2026 aiplans.dev*
+- Price index: https://aiplans.dev/en/reports/api-price-index
+- Kimi guide: https://aiplans.dev/en/guides/kimi-api-pricing
+- GLM guide: https://aiplans.dev/en/guides/glm-chatglm-api-pricing
+- Claude guide: https://aiplans.dev/en/guides/claude-anthropic-pricing
+- Grok guide: https://aiplans.dev/en/guides/grok-pricing
+- GitHub: https://github.com/x2v-co/aiplans

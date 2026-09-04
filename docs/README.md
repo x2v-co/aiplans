@@ -7,9 +7,12 @@ lives in git log + commit messages.
 
 ```
 docs/
-├── README.md        # This index
-├── BLOG_POST.md     # Blog-style write-up for marketing
-└── PRODUCT_HUNT.md  # Product Hunt launch copy
+├── README.md                     # This index
+├── BLOG_POST.md                  # Data-led distribution article source
+├── PRODUCT_HUNT.md               # Verified Product Hunt listing copy
+├── TRAFFIC_GROWTH_30_DAY.md      # Traffic execution and measurement log
+└── google-analytics-search-console.md
+                                 # Analytics and search setup
 ```
 
 ## Root-level docs
