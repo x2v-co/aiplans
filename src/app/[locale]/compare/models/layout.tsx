@@ -19,8 +19,8 @@ export async function generateMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: '/compare/models',
     title: {
-      en: 'Best AI Models by Vendor · Performance, Price & API Channels | aiplans.dev',
-      zh: '各厂最强 AI 模型横评 · 性能、价格与 API 渠道 | aiplans.dev',
+      en: 'Available AI Model Leaders · Performance, Price & API Channels | aiplans.dev',
+      zh: '当前可用 AI 模型横评 · 性能、价格与 API 渠道 | aiplans.dev',
     },
     description: {
       en: 'Compare one current leading model from OpenAI, Anthropic, Google, xAI, DeepSeek, GLM, Kimi, Qwen and MiniMax, then inspect every API channel offering it.',

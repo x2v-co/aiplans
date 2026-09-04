@@ -4,10 +4,15 @@ import { isPrimaryModelVariant, modelFreshnessTime } from './model-freshness';
 type VendorDefinition = {
   key: string;
   matches: (providerName: string) => boolean;
+  officialFlagshipSlugs?: string[];
 };
 
 const VENDORS: VendorDefinition[] = [
-  { key: 'openai', matches: (name) => /openai/i.test(name) },
+  {
+    key: 'openai',
+    matches: (name) => /openai/i.test(name),
+    officialFlagshipSlugs: ['gpt-6-astra'],
+  },
   { key: 'anthropic', matches: (name) => /anthropic/i.test(name) },
   { key: 'google', matches: (name) => /gemini|google/i.test(name) },
   { key: 'xai', matches: (name) => /grok|x\.ai/i.test(name) },
@@ -21,7 +26,7 @@ const VENDORS: VendorDefinition[] = [
 export type VendorLeader = {
   vendorKey: string;
   product: GroupedProduct;
-  selectionBasis: 'agent-arena' | 'latest-available';
+  selectionBasis: 'official-flagship' | 'agent-arena' | 'latest-available';
 };
 
 function isGeneralPurposeCandidate(product: GroupedProduct): boolean {
@@ -54,12 +59,19 @@ export function selectVendorLeaders(products: GroupedProduct[]): VendorLeader[] 
       .filter((product) => vendor.matches(product.providers?.name || ''))
       .filter(isGeneralPurposeCandidate)
       .sort(compareCandidates);
-    const product = candidates[0];
+    const officialFlagship = vendor.officialFlagshipSlugs
+      ?.map((slug) => candidates.find((candidate) => candidate.slug === slug))
+      .find((candidate): candidate is GroupedProduct => Boolean(candidate));
+    const product = officialFlagship || candidates[0];
     if (!product) return [];
     return [{
       vendorKey: vendor.key,
       product,
-      selectionBasis: product.benchmark_arena_elo != null ? 'agent-arena' : 'latest-available',
+      selectionBasis: officialFlagship
+        ? 'official-flagship'
+        : product.benchmark_arena_elo != null
+          ? 'agent-arena'
+          : 'latest-available',
     } satisfies VendorLeader];
   });
 }

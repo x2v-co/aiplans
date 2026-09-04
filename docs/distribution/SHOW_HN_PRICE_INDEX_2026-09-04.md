@@ -9,7 +9,7 @@
 Title:
 
 ```text
-Show HN: AIPlans - compare leading AI models, then their API channels
+Show HN: AIPlans - compare available AI model leaders and API channels
 ```
 
 URL:
@@ -21,13 +21,15 @@ https://aiplans.dev/en/compare/models?utm_source=hackernews&utm_medium=community
 Text:
 
 ```text
-I built AIPlans around a two-step choice: compare one current leading model from
+I built AIPlans around a two-step choice: compare one currently available model from
 each major vendor, then compare the exact model across direct providers, cloud
-platforms, and aggregators. The shortlist currently covers OpenAI, Anthropic,
+platforms, and aggregators. The shortlist covers OpenAI, Anthropic,
 Google, xAI, DeepSeek, GLM, Kimi, Qwen, and MiniMax. It uses Agent Arena as the
 comparable performance signal and release date only as a fallback, so "newest"
-is not silently treated as "best." The code and data pipeline are open source.
-I would value feedback on this selection rule and the channel data.
+is not silently treated as "best." GPT-6 Astra was announced today, but OpenAI
+says broader API access is coming in the next few days, so the table keeps
+GPT-5.6 Sol until an available channel is verified. The code and data pipeline
+are open source. I would value feedback on this rule and the channel data.
 ```
 
 ## First Comment
@@ -40,6 +42,12 @@ is enough to choose an API. AIPlans now starts with one current, purchasable,
 general-purpose leader per vendor. The default rule is highest Agent Arena score
 within that vendor; release recency breaks the gap when no comparable score is
 available. The rule is shown on the page because it is a judgment, not a fact.
+
+This distinction became concrete today: OpenAI describes GPT-6 Astra as its most
+capable model, but its official page says broader API and plan access is coming
+in the next few days. I show that rollout state rather than listing it as a
+purchasable API prematurely. Once a channel is verified, the OpenAI row will
+switch to GPT-6 Astra.
 
 Once a model is selected, its detail page compares that exact model ID across
 official APIs, cloud marketplaces, and aggregators. It keeps the original billing

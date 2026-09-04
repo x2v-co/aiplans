@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Check, Search, Star, Layers, DollarSign, HelpCircle, Trophy } from "lucide-react";
+import { ArrowRight, Check, Search, Star, Layers, DollarSign, HelpCircle, Info, Trophy } from "lucide-react";
 import SiteHeader from '@/components/SiteHeader';
 import { formatModelName } from '@/lib/model-names';
 import { formatPrice, calculateSavingsPercent } from "@/lib/currency";
@@ -125,6 +125,7 @@ export default function CompareModelsView({
       .filter((product): product is GroupedProduct => Boolean(product)),
     [products, vendorLeaderSlugs],
   );
+  const hasGpt6Astra = products.some((product) => product.slug === "gpt-6-astra");
 
   const toggleSelect = (slug: string) => {
     const removing = selected.includes(slug);
@@ -243,6 +244,22 @@ export default function CompareModelsView({
                 {t("vendorLeaders.description")}
               </p>
             </div>
+            {!hasGpt6Astra && (
+              <div className="mb-6 flex max-w-4xl gap-3 border-l-2 border-amber-500 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+                <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>
+                  {t("vendorLeaders.gpt6Notice")}{' '}
+                  <a
+                    href="https://developers.openai.com/api/docs/models/gpt-6-astra"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium underline underline-offset-2"
+                  >
+                    {t("vendorLeaders.officialSource")}
+                  </a>
+                </p>
+              </div>
+            )}
             <div className="overflow-x-auto rounded-md border bg-white dark:bg-zinc-950">
               <Table>
                 <TableHeader>

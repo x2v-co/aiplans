@@ -63,3 +63,22 @@ test('falls back to the newest available general-purpose model', () => {
   assert.equal(leaders[0]?.product.slug, 'minimax-m3');
   assert.equal(leaders[0]?.selectionBasis, 'latest-available');
 });
+
+test('uses a verified official flagship once it has an available priced product', () => {
+  const leaders = selectVendorLeaders([
+    product({
+      slug: 'gpt-5.6-sol',
+      providers: { id: 1, name: 'OpenAI', slug: 'openai', logo: '' },
+      benchmark_arena_elo: 9.49,
+      released_at: '2026-07-09',
+    }),
+    product({
+      slug: 'gpt-6-astra',
+      providers: { id: 1, name: 'OpenAI', slug: 'openai', logo: '' },
+      released_at: '2026-09-04',
+    }),
+  ]);
+
+  assert.equal(leaders[0]?.product.slug, 'gpt-6-astra');
+  assert.equal(leaders[0]?.selectionBasis, 'official-flagship');
+});
