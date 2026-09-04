@@ -11,6 +11,7 @@ docs/
 ├── BLOG_POST.md                  # Data-led distribution article source
 ├── PRODUCT_HUNT.md               # Verified Product Hunt listing copy
 ├── TRAFFIC_GROWTH_30_DAY.md      # Traffic execution and measurement log
+├── distribution/                 # Channel-specific reviewed post drafts
 └── google-analytics-search-console.md
                                  # Analytics and search setup
 ```
