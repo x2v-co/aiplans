@@ -132,7 +132,7 @@ After publishing:
 
 | Date | Channel | Post URL | Landing page | Sessions after 72h | Backlink verified | Notes |
 | --- | --- | --- | --- | ---: | --- | --- |
-| | | | | | | |
+| 2026-09-04 | Hacker News | https://news.ycombinator.com/item?id=49561389 | https://aiplans.dev/en/compare/models | Pending | No | Published at 06:58:03 UTC; initially appeared at the top of `newest`, then was marked `[flagged]`/`dead`; first comment unavailable |
 
 ## Distribution Readiness
 
@@ -143,7 +143,7 @@ Verified on 2026-09-04:
 | Juejin | Existing Kimi draft `7681467854781431818` retained as long-tail content; not the launch post | Rewrite around model selection after the new page deploys |
 | V2EX | Community rules and `分享创造` node checked; flagship-comparison draft prepared | Verify the deployed comparison, then explicit approval |
 | Zhihu | Logged in; existing single-brand answer retained for relevant questions only | Find a genuine cross-vendor selection question |
-| Hacker News | Logged in; Show HN rules checked; flagship-comparison copy stored in the repository | Verify the deployed comparison, then explicit approval before submit |
+| Hacker News | Published item `49561389`; HN then marked it `[flagged]`/`dead` and closed comments | Do not repost; only pursue normal moderator review or organic vouching |
 | Reddit | `r/ClaudeAI` and `r/LocalLLaMA` rules checked | Verify karma/content-history gates before posting |
 | Newsletters | `console.dev` and Changelog News routes verified; tailored pitches prepared | Explicit approval before email/form submission; Changelog account required |
 

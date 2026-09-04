@@ -67,8 +67,14 @@ around to answer questions and fix factual issues.
 ## Current State
 
 - Hacker News login confirmed on 2026-09-04.
-- The title, URL, submission text, and first comment are stored above. HN does
-  not provide a persistent draft, so browser form contents are not treated as
-  saved state.
-- The final `submit` action has not been performed.
+- Submitted at 2026-09-04 06:58:03 UTC (14:58:03 Asia/Singapore):
+  `https://news.ycombinator.com/item?id=49561389`.
+- HN displayed the submission at the top of `newest` immediately after
+  publishing, then marked it `[flagged]`; the official item API reports
+  `"dead": true`.
+- The first comment was not posted because HN removes the comment form from a
+  killed submission. Do not repost or try to bypass this state.
+- HN documents that dead posts may be restored through community vouches, and
+  that moderators sometimes turn off unfair flags. No vouches were requested
+  or coordinated.
 - Do not ask friends or other accounts to upvote or comment.
