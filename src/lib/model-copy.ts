@@ -182,7 +182,7 @@ export function buildModelCopy(ctx: ModelCopyContext, locale: Locale): ModelCopy
     }
 
     if (ctx.arenaElo) {
-      summaryParts.push(`Chatbot Arena ELO 评分约为 ${Math.round(ctx.arenaElo)}。`);
+      summaryParts.push(`Agent Arena 净提升分数约为 ${ctx.arenaElo.toFixed(1)}%。`);
     }
 
     summaryParts.push('价格由每日自动抓取官方与各渠道页面生成，并经过数据准确性审计。');
@@ -238,7 +238,7 @@ export function buildModelCopy(ctx: ModelCopyContext, locale: Locale): ModelCopy
     }
 
     if (ctx.arenaElo) {
-      summaryParts.push(`Its Chatbot Arena ELO is approximately ${Math.round(ctx.arenaElo)}.`);
+      summaryParts.push(`Its Agent Arena net-improvement score is approximately ${ctx.arenaElo.toFixed(1)}%.`);
     }
 
     summaryParts.push(

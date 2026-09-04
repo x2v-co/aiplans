@@ -1,6 +1,7 @@
 import { sql } from '@/lib/db';
 import { attachPrimaryProvidersToModels } from '@/lib/schema-adapters';
 import type { CurrencyCode, PriceUnit } from '@/lib/currency';
+import { benchmarkKey, type ModelBenchmarkScore } from '@/lib/benchmarks';
 
 /**
  * Builds the /api-pricing payload: every model of a given type, grouped by base
@@ -46,6 +47,7 @@ export interface GroupedProduct {
   provider_ids: number[];
   context_window: number;
   benchmark_arena_elo: number | null;
+  benchmarks: ModelBenchmarkScore[];
   released_at: string | null;
   created_at: string | null;
   providers?: {
@@ -102,23 +104,25 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
       JOIN providers p ON p.id = cp.provider_id
       WHERE cp.is_available = true
     `,
-    // Fetch Agent Arena net-improvement scores specifically. An older query
-    // tried to join through `benchmark_tasks.benchmark_id` which doesn't
-    // exist (the column is `benchmark_version_id`), so the whole query
-    // silently returned 0 rows — meaning every product had
-    // `benchmark_arena_elo: null` and "sort by performance" was a no-op
-    // for all 271 products. Join through benchmark_metrics and filter
-    // on the benchmark and metric so Text Arena scores cannot leak in.
+    // Fetch all current scores with their complete identity. Keeping benchmark,
+    // version, task and metric together prevents unlike evaluation runs from
+    // becoming a single ambiguous number in the comparison UI.
     sql<any[]>`
-      SELECT s.model_id, s.value
+      SELECT s.model_id, m.slug AS source_model_slug, s.value,
+             b.slug AS benchmark_slug, b.name AS benchmark_name,
+             b.type AS benchmark_type, b.offical_url AS official_url,
+             bv.version_label, bt.name AS task_name,
+             bm.name AS metric_name, bm.unit, bm.higher_better,
+             s.release_date
       FROM model_benchmark_scores s
+      JOIN models m ON m.id = s.model_id
       JOIN benchmark_tasks bt ON bt.id = s.benchmark_task_id
       JOIN benchmark_versions bv ON bv.id = bt.benchmark_version_id
         AND bv.is_current = true
-      JOIN benchmarks b ON b.id = bv.benchmark_id AND b.slug = 'arena-agent'
+      JOIN benchmarks b ON b.id = bv.benchmark_id
       JOIN benchmark_metrics bm ON bm.id = s.metric_id
-        AND bm.name = 'AGENT_NET_IMPROVEMENT'
-      ORDER BY s.value DESC NULLS LAST
+      WHERE s.value IS NOT NULL
+      ORDER BY b.name, s.value DESC NULLS LAST
     `,
   ]);
 
@@ -126,12 +130,31 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
 
   // Create benchmark map: model_id -> highest value (for arena elo)
   const benchmarkMap = new Map<number, number>();
+  const benchmarksByModel = new Map<number, ModelBenchmarkScore[]>();
   benchmarkScores.forEach((bs: any) => {
     const modelId = bs.model_id;
     const value = bs.value;
-    if (!benchmarkMap.has(modelId) || value > (benchmarkMap.get(modelId) || 0)) {
+    if (bs.benchmark_slug === 'arena-agent' &&
+        (!benchmarkMap.has(modelId) || value > (benchmarkMap.get(modelId) || 0))) {
       benchmarkMap.set(modelId, value);
     }
+    const scores = benchmarksByModel.get(modelId) || [];
+    scores.push({
+      benchmark_slug: bs.benchmark_slug,
+      benchmark_name: bs.benchmark_name,
+      benchmark_type: bs.benchmark_type,
+      official_url: bs.official_url,
+      version_label: bs.version_label || 'default',
+      task_name: bs.task_name || 'default',
+      metric_name: bs.metric_name,
+      unit: bs.unit,
+      higher_better: bs.higher_better !== false,
+      value: Number(bs.value),
+      release_date: bs.release_date,
+      source_model_id: modelId,
+      source_model_slug: bs.source_model_slug,
+    });
+    benchmarksByModel.set(modelId, scores);
   });
 
   // 按模型基础名称分组
@@ -167,6 +190,7 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
         provider_ids: product.provider_ids,
         context_window: (product as any).context_window,
         benchmark_arena_elo: benchmarkMap.get(product.id) || null,
+        benchmarks: benchmarksByModel.get(product.id) || [],
         released_at: product.released_at ?? null,
         created_at: product.created_at ?? null,
         providers: displayProvider,
@@ -182,6 +206,20 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
       const productPrices = channelPrices.filter(cp => cp.model_id === product.id);
       group.versions.push(...(productPrices as ChannelPrice[]));
       group.versionCounts += productPrices.length;
+
+      const merged = new Map(group.benchmarks.map((score) => [benchmarkKey(score), score]));
+      for (const score of benchmarksByModel.get(product.id) || []) {
+        const key = benchmarkKey(score);
+        const existing = merged.get(key);
+        if (!existing || (score.higher_better ? score.value > existing.value : score.value < existing.value)) {
+          merged.set(key, score);
+        }
+      }
+      group.benchmarks = [...merged.values()];
+      const groupArena = group.benchmarks.filter((score) => score.benchmark_slug === 'arena-agent');
+      group.benchmark_arena_elo = groupArena.length
+        ? Math.max(...groupArena.map((score) => score.value))
+        : group.benchmark_arena_elo;
 
       if (!group.hasChinaVersion && productPrices.some(cp => cp.providers.region === 'china')) {
         group.hasChinaVersion = true;

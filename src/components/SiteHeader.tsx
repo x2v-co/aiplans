@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Github, Menu, X } from 'lucide-react';
+import { Calculator, Github, Menu, X } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/lib/translations';
 
@@ -12,11 +12,17 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const t = useTranslations('nav');
   const [open, setOpen] = useState(false);
 
-  const links = [
+  const links: Array<{
+    href: string;
+    label: string;
+    active: boolean | null | undefined;
+    icon?: typeof Calculator;
+  }> = [
     { href: `/${locale}`, label: t('home'), active: pathname === `/${locale}` },
     { href: `/${locale}/compare/plans`, label: t('comparePlans'), active: pathname?.startsWith(`/${locale}/compare/plans`) },
     { href: `/${locale}/compare/models`, label: t('compareModels'), active: pathname?.startsWith(`/${locale}/compare/models`) },
     { href: `/${locale}/api-pricing`, label: t('apiPricing'), active: pathname?.startsWith(`/${locale}/api-pricing`) || pathname?.startsWith(`/${locale}/models/`) },
+    { href: `/${locale}/calculator`, label: t('calculator'), active: pathname?.startsWith(`/${locale}/calculator`), icon: Calculator },
     { href: `/${locale}/coupons`, label: t('coupons'), active: pathname?.startsWith(`/${locale}/coupons`) },
   ];
 
@@ -25,9 +31,10 @@ export default function SiteHeader({ locale }: { locale: string }) {
       key={item.href}
       href={item.href}
       aria-current={item.active ? 'page' : undefined}
-      className={`text-sm font-medium transition-colors hover:text-blue-600 ${item.active ? 'text-blue-600' : ''}`}
+      className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-600 ${item.active ? 'text-blue-600' : ''}`}
       onClick={() => setOpen(false)}
     >
+      {item.icon && <item.icon className="h-4 w-4" />}
       {item.label}
     </Link>
   ));
@@ -40,7 +47,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
           <span className="text-xl font-bold">aiplans.dev</span>
         </Link>
 
-        <nav className="hidden items-center gap-5 md:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>
+        <nav className="hidden items-center gap-5 xl:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>
           {navLinks}
           <a
             href="https://github.com/x2v-co/aiplans"
@@ -57,7 +64,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white md:hidden dark:bg-zinc-950"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white xl:hidden dark:bg-zinc-950"
           aria-expanded={open}
           aria-controls="mobile-navigation"
           aria-label={open ? (locale === 'zh' ? '关闭菜单' : 'Close menu') : (locale === 'zh' ? '打开菜单' : 'Open menu')}
@@ -70,7 +77,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
       {open && (
         <nav
           id="mobile-navigation"
-          className="border-t bg-white px-4 py-4 shadow-sm md:hidden dark:bg-black"
+          className="border-t bg-white px-4 py-4 shadow-sm xl:hidden dark:bg-black"
           aria-label={locale === 'zh' ? '移动端主导航' : 'Mobile navigation'}
         >
           <div className="container mx-auto flex flex-col gap-4">

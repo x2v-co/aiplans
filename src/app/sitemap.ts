@@ -17,6 +17,7 @@ interface UrlEntry {
 const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['changeFrequency'] }[] = [
   { path: '', priority: 1.0, changefreq: 'daily' },
   { path: '/api-pricing', priority: 0.9, changefreq: 'daily' },
+  { path: '/calculator', priority: 0.9, changefreq: 'daily' },
   { path: '/compare/plans', priority: 0.9, changefreq: 'daily' },
   { path: '/compare/models', priority: 0.8, changefreq: 'daily' },
   { path: '/plans', priority: 0.85, changefreq: 'daily' },
@@ -33,10 +34,9 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '/reports/api-price-index', priority: 0.8, changefreq: 'daily' },
   { path: '/privacy', priority: 0.3, changefreq: 'monthly' },
   { path: '/terms', priority: 0.3, changefreq: 'monthly' },
-  // Note: /compare/api was removed — it only existed as a non-locale route
-  // that got redirected into the 404 void by proxy.ts (no
-  // /[locale]/compare/api target exists). Drop /calculator too until there's
-  // an actual implementation. /compare/models was rebuilt as a locale route.
+  // Note: /compare/api was removed because it only existed as a non-locale
+  // route that proxy.ts redirected into a 404. /compare/models and /calculator
+  // are locale routes and intentionally remain in the sitemap.
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

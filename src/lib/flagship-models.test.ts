@@ -10,6 +10,7 @@ function product(overrides: Partial<GroupedProduct> & Pick<GroupedProduct, 'slug
     provider_ids: [],
     context_window: 128_000,
     benchmark_arena_elo: null,
+    benchmarks: [],
     released_at: null,
     created_at: null,
     baseName: overrides.slug,

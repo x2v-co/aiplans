@@ -84,6 +84,16 @@ Companion: `add-arena-missing-models.ts` creates stub `models` rows
 for top-60 entries that don't exist in DB yet, so the ingestion's
 slug matcher can link them.
 
+## Task benchmarks
+
+`ingest-artificial-analysis-benchmarks.ts` reads the public Artificial Analysis
+model leaderboard and imports GPQA Diamond, Humanity's Last Exam, SciCode,
+Terminal-Bench Hard, IFBench, and MMMU-Pro as separate percentage metrics. It
+does not import or calculate a composite score. Every row retains its benchmark,
+version, task, metric, source URL, and snapshot date. Run `npm run
+ingest:benchmarks -- --dry-run` to validate the upstream payload without a
+database write.
+
 ## File layout
 
 ```

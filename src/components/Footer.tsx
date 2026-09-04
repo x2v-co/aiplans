@@ -48,6 +48,11 @@ export default function Footer({ locale }: { locale: string }) {
                 </Link>
               </li>
               <li>
+                <Link href={`/${locale}/calculator`} className="text-zinc-500 hover:text-blue-600">
+                  {locale === 'zh' ? 'API 成本计算器' : 'API cost calculator'}
+                </Link>
+              </li>
+              <li>
                 <Link href={`/${locale}/coupons`} className="text-zinc-500 hover:text-blue-600">
                   {t('coupons')}
                 </Link>

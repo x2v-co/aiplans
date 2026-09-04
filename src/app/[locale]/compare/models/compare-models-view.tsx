@@ -21,6 +21,7 @@ import {
   getCheapestOfficialChannel,
 } from "@/lib/channel-price-utils";
 import type { FaqItem } from "./faqs";
+import { benchmarkKey, benchmarkValue, isArenaBenchmark, sortBenchmarks, type ModelBenchmarkScore } from '@/lib/benchmarks';
 
 const MAX_SELECT = 4;
 
@@ -203,6 +204,15 @@ export default function CompareModelsView({
     .map((c) => c.product.benchmark_arena_elo)
     .filter((v): v is number => v != null);
   const bestElo = eloValues.length ? Math.max(...eloValues) : null;
+  const benchmarkRows = useMemo(() => {
+    const rows = new Map<string, ModelBenchmarkScore>();
+    for (const { product } of comparisons) {
+      for (const score of product.benchmarks || []) {
+        if (!isArenaBenchmark(score)) rows.set(benchmarkKey(score), score);
+      }
+    }
+    return sortBenchmarks([...rows.values()]);
+  }, [comparisons]);
   const ctxValues = comparisons
     .map((c) => c.product.context_window)
     .filter((v): v is number => v != null && v > 0);
@@ -527,6 +537,41 @@ export default function CompareModelsView({
                         </TableCell>
                       ))}
                     </TableRow>
+                    {benchmarkRows.map((benchmark) => {
+                      const values = comparisons.map(({ product }) =>
+                        product.benchmarks?.find((score) => benchmarkKey(score) === benchmarkKey(benchmark)),
+                      ).filter((score): score is ModelBenchmarkScore => Boolean(score));
+                      const winner = values.length > 1
+                        ? (benchmark.higher_better
+                            ? Math.max(...values.map((score) => score.value))
+                            : Math.min(...values.map((score) => score.value)))
+                        : null;
+                      return (
+                        <TableRow key={benchmarkKey(benchmark)}>
+                          <TableCell className="font-medium">
+                            {benchmark.official_url ? (
+                              <a href={benchmark.official_url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 hover:underline">
+                                {benchmark.benchmark_name}
+                              </a>
+                            ) : benchmark.benchmark_name}
+                            <span className="block text-xs font-normal text-zinc-500">
+                              {benchmark.version_label} · {benchmark.task_name} · {benchmark.metric_name}
+                            </span>
+                          </TableCell>
+                          {comparisons.map(({ product }) => {
+                            const score = product.benchmarks?.find((item) => benchmarkKey(item) === benchmarkKey(benchmark));
+                            return (
+                              <TableCell key={product.id} className="text-center">
+                                <span className="font-semibold">{score ? benchmarkValue(score, locale) : '—'}</span>
+                                {score && winner != null && score.value === winner && (
+                                  <Badge className="ml-2 bg-green-600 text-xs">{t("badges.best")}</Badge>
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      );
+                    })}
 
                     <TableRow className="bg-zinc-50 dark:bg-zinc-900/50">
                       <TableCell colSpan={comparisons.length + 1} className="font-semibold text-xs uppercase tracking-wide text-zinc-500">

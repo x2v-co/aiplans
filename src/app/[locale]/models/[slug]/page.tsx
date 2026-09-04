@@ -27,6 +27,8 @@ import { decodeSlugParam } from "@/lib/route-params";
 import SiteHeader from '@/components/SiteHeader';
 import { formatModelName } from '@/lib/model-names';
 import { guideForModelSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
+import ModelBenchmarkPanel from '@/components/model-benchmark-panel';
+import { isArenaBenchmark, type ModelBenchmarkScore } from '@/lib/benchmarks';
 
 const baseUrl = SITE_URL;
 
@@ -195,16 +197,22 @@ async function getProductWithChannels(slug: string) {
     `;
   }
 
-  // Fetch Arena ELO score for this model (used in JSON-LD + visible badge)
-  const arenaScores = await sql<Array<{ value: number | null }>>`
-    SELECT s.value
+  // Fetch every current benchmark with its full scoring context. The page must
+  // not compare values without retaining benchmark, version, task and metric.
+  const benchmarkScores = await sql<ModelBenchmarkScore[]>`
+    SELECT b.slug AS benchmark_slug, b.name AS benchmark_name,
+           b.type AS benchmark_type, b.offical_url AS official_url,
+           bv.version_label, bt.name AS task_name, bm.name AS metric_name,
+           bm.unit, bm.higher_better, s.value, s.release_date
     FROM model_benchmark_scores s
+    JOIN benchmark_tasks bt ON bt.id = s.benchmark_task_id
+    JOIN benchmark_versions bv ON bv.id = bt.benchmark_version_id AND bv.is_current = true
+    JOIN benchmarks b ON b.id = bv.benchmark_id
     JOIN benchmark_metrics bm ON bm.id = s.metric_id
-    WHERE s.model_id = ${model.id} AND bm.name = 'ELO'
-    ORDER BY s.value DESC NULLS LAST
-    LIMIT 1
+    WHERE s.model_id = ${model.id} AND s.value IS NOT NULL
+    ORDER BY b.name, bt.name, bm.name
   `;
-  const arenaElo = arenaScores?.[0]?.value ?? null;
+  const arenaElo = benchmarkScores.find(isArenaBenchmark)?.value ?? null;
 
   const derivedProvider =
     normalizedChannelPrices.find((channel: any) => channel.providers?.type === 'producer')?.providers ||
@@ -296,6 +304,7 @@ async function getProductWithChannels(slug: string) {
     channelPrices: normalizedChannelPrices,
     plans: plansData,
     arenaElo,
+    benchmarkScores,
     priceHistory,
     relatedModels,
   };
@@ -314,7 +323,7 @@ export default async function ModelPage({
     notFound();
   }
 
-  const { product, channelPrices, plans, arenaElo, priceHistory, relatedModels } = data;
+  const { product, channelPrices, plans, arenaElo, benchmarkScores, priceHistory, relatedModels } = data;
   const isZh = locale === 'zh';
   const productName = formatModelName(product.name);
   const guideSlug = guideForModelSlug(product.slug);
@@ -468,18 +477,16 @@ export default async function ModelPage({
       },
       offers: individualOffers,
     },
-    // Arena ELO as an additional property (Google accepts custom numeric
-    // metrics; we don't use AggregateRating because ELO isn't a 1-5 scale)
-    ...(arenaElo != null
+    // Benchmarks remain custom properties, not AggregateRating: they use
+    // different scales and are evaluation results rather than user ratings.
+    ...(benchmarkScores.length > 0
       ? {
-          additionalProperty: [
-            {
-              '@type': 'PropertyValue',
-              name: 'Chatbot Arena ELO',
-              value: arenaElo,
-              unitText: 'ELO',
-            },
-          ],
+          additionalProperty: benchmarkScores.map((score) => ({
+            '@type': 'PropertyValue',
+            name: `${score.benchmark_name} (${score.version_label})`,
+            value: score.value,
+            unitText: score.unit || undefined,
+          })),
         }
       : {}),
   });
@@ -554,7 +561,7 @@ export default async function ModelPage({
             )}
             {arenaElo != null && (
               <Badge variant="outline" className="text-sm">
-                🏟️ Arena ELO: {Math.round(arenaElo)}
+                🏟️ Agent Arena: {arenaElo.toLocaleString(undefined, { maximumFractionDigits: 1 })}%
               </Badge>
             )}
             {(product.released_at || product.created_at) && (
@@ -577,6 +584,8 @@ export default async function ModelPage({
             {modelCopy.summary}
           </p>
         </div>
+
+        <ModelBenchmarkPanel scores={benchmarkScores} locale={locale} />
 
         {/* Quick Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -992,7 +1001,12 @@ export default async function ModelPage({
             otherwise a ¥20/¥100 row is totalled as if it were $20/$100. */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>{isZh ? '💵 预估月度费用' : '💵 Estimated Monthly Costs'}</CardTitle>
+            <CardTitle className="flex flex-wrap items-center justify-between gap-3">
+              <span>{isZh ? '💵 预估月度费用' : '💵 Estimated Monthly Costs'}</span>
+              <Link href={`/${locale}/calculator?models=${encodeURIComponent(product.slug)}`}>
+                <Button variant="outline" size="sm">{isZh ? '自定义用量计算' : 'Calculate custom usage'}</Button>
+              </Link>
+            </CardTitle>
             <CardDescription>
               {isZh
                 ? '基于典型使用比例（输入:输出 = 2:1），所有渠道统一换算为美元对比'

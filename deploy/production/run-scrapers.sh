@@ -47,6 +47,8 @@ mappings_status=$?
 audit_status=$?
 "${compose[@]}" run --rm scraper npm run ingest:arena
 arena_status=$?
+"${compose[@]}" run --rm scraper npm run ingest:benchmarks
+benchmarks_status=$?
 set -e
 
 # audit-data uses 2 for warnings-only; only critical findings or an execution
@@ -77,4 +79,8 @@ fi
 
 if [[ "$arena_status" != "0" ]]; then
   echo "Warning: Arena leaderboard update failed; keeping the previous ranking snapshot." >&2
+fi
+
+if [[ "$benchmarks_status" != "0" ]]; then
+  echo "Warning: task benchmark update failed; keeping the previous benchmark snapshot." >&2
 fi
