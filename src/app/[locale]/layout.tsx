@@ -16,6 +16,9 @@ const messagesMap: Record<string, typeof enMessages> = {
 };
 
 const googleSiteVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim();
+// Bing verification tokens are public by design and must remain in the page
+// after ownership verification succeeds.
+const bingSiteVerification = '2FE87A7F2427E2E4AA10217B9340FDCE';
 
 /**
  * Site-wide metadata via the Next.js Metadata API. This REPLACES the
@@ -81,6 +84,7 @@ export async function generateMetadata({
       ...(googleSiteVerification
         ? { 'google-site-verification': googleSiteVerification }
         : {}),
+      'msvalidate.01': bingSiteVerification,
       'applicable-device': 'pc,mobile',
       'MobileOptimized': 'width',
       'HandheldFriendly': 'true',

@@ -44,3 +44,15 @@ After verification, submit:
 
 Keep the Search Console property and GA4 data stream on the canonical HTTPS
 domain. `www.aiplans.dev` should remain a redirect or canonical alias.
+
+## Bing Webmaster Tools
+
+The site is verified with the public `msvalidate.01` metadata value emitted by
+the locale layout. Keep this tag present after verification succeeds.
+
+After adding `https://aiplans.dev`, submit:
+
+- `https://aiplans.dev/sitemap.xml`
+
+IndexNow complements this setup by notifying Bing about changed priority URLs;
+it does not replace site ownership verification or sitemap monitoring.
