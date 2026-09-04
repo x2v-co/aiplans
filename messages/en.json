@@ -127,6 +127,16 @@
   "compareModels": {
     "title": "Compare AI Models Side by Side",
     "subtitle": "Pick 2–4 models to compare Agent Arena performance, context windows, and the cheapest API token prices across every channel.",
+    "vendorLeaders": {
+      "title": "Current Leaders by Vendor",
+      "description": "One currently purchasable general-purpose model per vendor, selected first by its Agent Arena score and then by release date when no comparable score exists. Add a model to the side-by-side comparison or inspect every channel offering it.",
+      "vendor": "Vendor",
+      "model": "Current leader",
+      "released": "Released",
+      "channel": "Cheapest channel",
+      "action": "Channel prices",
+      "compareChannels": "Compare {count} channels"
+    },
     "selectorTitle": "Select Models to Compare",
     "selectorHint": "Choose 2–4 models. Selecting a 5th replaces the first one.",
     "searchPlaceholder": "Search model name... (e.g. \"Claude Sonnet\", \"GPT-4o\")",

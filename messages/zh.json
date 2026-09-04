@@ -127,6 +127,16 @@
   "compareModels": {
     "title": "AI 模型横向对比",
     "subtitle": "选择 2–4 个模型，横向对比 Agent Arena 性能、上下文窗口，以及各渠道最便宜的 API token 价格。",
+    "vendorLeaders": {
+      "title": "各厂当前领先模型",
+      "description": "每家厂商保留一个当前可购买的通用模型，优先选择 Agent Arena 分数最高者；没有可比分数时才按发布时间选择。点击模型加入横向对比，或查看同一模型的全部渠道价格。",
+      "vendor": "厂商",
+      "model": "当前领先模型",
+      "released": "发布时间",
+      "channel": "最低价渠道",
+      "action": "渠道比价",
+      "compareChannels": "对比 {count} 个渠道"
+    },
     "selectorTitle": "选择要对比的模型",
     "selectorHint": "可选择 2–4 个模型。选中第 5 个时会替换最早选中的那个。",
     "searchPlaceholder": "搜索模型名称...（如 \"Claude Sonnet\"、\"GPT-4o\"）",

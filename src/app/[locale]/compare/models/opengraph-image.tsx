@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og-template';
 
-export const alt = 'AI Model Comparison — aiplans.dev';
+export const alt = 'Leading AI models and API channel comparison - aiplans.dev';
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 
@@ -14,19 +14,19 @@ export default async function Image({
   const isZh = locale === 'zh';
   return new ImageResponse(
     ogTemplate({
-      kicker: isZh ? '模型对比' : 'Model Compare',
-      title: isZh ? 'AI 模型横向对比' : 'AI Models, Side by Side',
+      kicker: isZh ? '九大厂商' : '9 Major Vendors',
+      title: isZh ? '各厂领先 AI 模型横评' : 'Leading AI Models by Vendor',
       subtitle: isZh
-        ? '对比 Agent Arena 性能、上下文窗口，以及各渠道最便宜的 API token 价格'
-        : 'Compare Agent Arena score, context windows, and the cheapest API prices across channels',
+        ? '先比较性能与成本，再查看同一模型的全部 API 渠道价格'
+        : 'Compare performance and cost, then inspect every API channel for your chosen model',
       stats: isZh
         ? [
-            { label: '可选模型', value: '250+' },
+            { label: '主流厂商', value: '9' },
             { label: '最多对比', value: '4' },
             { label: '价格每日审计', value: '✓' },
           ]
         : [
-            { label: 'Models', value: '250+' },
+            { label: 'Major vendors', value: '9' },
             { label: 'Compare up to', value: '4' },
             { label: 'Audited daily', value: '✓' },
           ],

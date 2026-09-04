@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Check, Search, Star, Layers, DollarSign, HelpCircle } from "lucide-react";
+import { ArrowRight, Check, Search, Star, Layers, DollarSign, HelpCircle, Trophy } from "lucide-react";
 import SiteHeader from '@/components/SiteHeader';
 import { formatModelName } from '@/lib/model-names';
 import { formatPrice, calculateSavingsPercent } from "@/lib/currency";
@@ -43,6 +43,16 @@ function formatContext(ctx: number | null | undefined, locale: string): string {
   return `${Math.round(ctx / 1000).toLocaleString(locale === "zh" ? "zh-CN" : "en-US")}K`;
 }
 
+function formatReleaseDate(value: string | null | undefined, locale: string): string {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "Asia/Singapore",
+  }).format(new Date(value));
+}
+
 interface Comparison {
   product: GroupedProduct;
   cheapest: ReturnType<typeof getCheapestChannel>;
@@ -61,11 +71,13 @@ interface Comparison {
 export default function CompareModelsView({
   locale,
   products,
+  vendorLeaderSlugs,
   initialSlugs,
   faqs,
 }: {
   locale: string;
   products: GroupedProduct[];
+  vendorLeaderSlugs: string[];
   initialSlugs: string[];
   faqs: FaqItem[];
 }) {
@@ -86,6 +98,11 @@ export default function CompareModelsView({
 
     // Top-up candidates, in priority order: highest Agent-scored models, then
     // well-known flagships present in the dataset, then alphabetical.
+    const vendorLeaders = vendorLeaderSlugs
+      .map((slug) => bySlug.get(slug))
+      .filter((product): product is GroupedProduct => Boolean(product))
+      .sort((a, b) => (b.benchmark_arena_elo ?? -1) - (a.benchmark_arena_elo ?? -1))
+      .map((product) => product.slug);
     const topScored = [...products]
       .filter((p) => p.benchmark_arena_elo != null)
       .sort((a, b) => (b.benchmark_arena_elo ?? -1) - (a.benchmark_arena_elo ?? -1))
@@ -95,12 +112,19 @@ export default function CompareModelsView({
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((p) => p.slug);
 
-    for (const slug of [...topScored, ...curated, ...alphabetical]) {
+    for (const slug of [...vendorLeaders, ...topScored, ...curated, ...alphabetical]) {
       if (ordered.size >= 2) break;
       ordered.add(slug);
     }
     return Array.from(ordered).slice(0, MAX_SELECT);
   });
+
+  const vendorLeaders = useMemo(
+    () => vendorLeaderSlugs
+      .map((slug) => products.find((product) => product.slug === slug))
+      .filter((product): product is GroupedProduct => Boolean(product)),
+    [products, vendorLeaderSlugs],
+  );
 
   const toggleSelect = (slug: string) => {
     const removing = selected.includes(slug);
@@ -207,6 +231,81 @@ export default function CompareModelsView({
           <h1 className="text-3xl font-bold mb-2">{t("title")}</h1>
           <p className="text-zinc-600 dark:text-zinc-400 max-w-3xl">{t("subtitle")}</p>
         </div>
+
+        {vendorLeaders.length > 0 && (
+          <section className="mb-10 border-y py-8" aria-labelledby="vendor-leaders-heading">
+            <div className="mb-6 max-w-3xl">
+              <h2 id="vendor-leaders-heading" className="flex items-center gap-2 text-2xl font-bold">
+                <Trophy className="h-5 w-5 text-amber-600" />
+                {t("vendorLeaders.title")}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                {t("vendorLeaders.description")}
+              </p>
+            </div>
+            <div className="overflow-x-auto rounded-md border bg-white dark:bg-zinc-950">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("vendorLeaders.vendor")}</TableHead>
+                    <TableHead>{t("vendorLeaders.model")}</TableHead>
+                    <TableHead>{t("vendorLeaders.released")}</TableHead>
+                    <TableHead>{t("agentScore")}</TableHead>
+                    <TableHead>{t("contextWindow")}</TableHead>
+                    <TableHead>{t("cheapestInput")}</TableHead>
+                    <TableHead>{t("cheapestOutput")}</TableHead>
+                    <TableHead>{t("vendorLeaders.channel")}</TableHead>
+                    <TableHead className="text-right">{t("vendorLeaders.action")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vendorLeaders.map((product) => {
+                    const cheapest = getCheapestChannel(product);
+                    return (
+                      <TableRow key={product.slug}>
+                        <TableCell className="whitespace-nowrap">{product.providers?.name || "—"}</TableCell>
+                        <TableCell className="font-medium">
+                          <button
+                            type="button"
+                            onClick={() => toggleSelect(product.slug)}
+                            className="text-left text-blue-600 hover:underline"
+                          >
+                            {formatModelName(product.name)}
+                          </button>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatReleaseDate(product.released_at, locale)}
+                        </TableCell>
+                        <TableCell>{product.benchmark_arena_elo != null ? `${product.benchmark_arena_elo}%` : "—"}</TableCell>
+                        <TableCell>{formatContext(product.context_window, locale)}</TableCell>
+                        <TableCell>
+                          {cheapest
+                            ? formatPrice(cheapest.input_price_per_1m, cheapest.currency || "USD", locale)
+                            : "—"}
+                        </TableCell>
+                        <TableCell>
+                          {cheapest
+                            ? formatPrice(cheapest.output_price_per_1m, cheapest.currency || "USD", locale)
+                            : "—"}
+                        </TableCell>
+                        <TableCell>{cheapest?.providers?.name || "—"}</TableCell>
+                        <TableCell className="text-right">
+                          <Link
+                            href={`/${locale}/models/${product.slug}`}
+                            className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-medium text-blue-600 hover:underline"
+                          >
+                            {t("vendorLeaders.compareChannels", { count: product.versionCounts })}
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </section>
+        )}
 
         {/* Model picker */}
         <Card className="mb-8">

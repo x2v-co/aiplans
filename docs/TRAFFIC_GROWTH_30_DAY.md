@@ -5,6 +5,22 @@ Canonical domain: https://aiplans.dev
 Decision: defer AdSense until organic traffic is consistently around 50-100
 visits per day and engagement quality is stable.
 
+## Product And Content Strategy
+
+The primary acquisition intent is now model selection, not model-price history:
+
+1. Compare one current leading general-purpose model from each major vendor.
+2. Use Agent Arena as the comparable performance signal; use release recency
+   only when a vendor has no scored candidate. Do not equate newest with best.
+3. After a user chooses a model, compare that exact model ID across official,
+   cloud, aggregator, and reseller channels.
+4. Keep historical prices for trend, migration, and deprecation research, but
+   do not lead the homepage or community launch with them.
+
+The first comparison covers OpenAI, Anthropic, Google, xAI, DeepSeek, GLM,
+Kimi, Qwen, and MiniMax. It is generated from currently purchasable production
+data rather than a static list of historical model versions.
+
 ## Verified Baseline
 
 Search Console, previous three months:
@@ -55,29 +71,29 @@ the next channel. Do not paste the same opening or title across communities.
 
 | Order | Channel | Angle | Primary deep link |
 | --- | --- | --- | --- |
-| 1 | Juejin | How API channels and subscriptions distort cost comparisons | Kimi guide |
-| 2 | V2EX | Show the data method, ask developers to report missing channels | Price Index |
-| 3 | Zhihu | Answer a real Kimi/GLM/Claude API pricing question in depth | Matching guide |
-| 4 | Hacker News | Open-source, auditable AI API price index; ask for data feedback | Price Index |
+| 1 | Hacker News | One current leader per vendor, then exact-model channel comparison | Model compare |
+| 2 | V2EX | Nine-vendor leader table and the cases where newest is not strongest | Model compare |
+| 3 | Zhihu | Answer a real cross-vendor model-selection question with current data | Model compare |
+| 4 | Juejin | Explain the two-stage decision: choose a model, then choose its channel | Model compare |
 | 5 | Reddit | Community-specific comparison, posted only where self-promotion rules permit | Matching guide |
-| 6 | Developer newsletters | Short editorial pitch with current dataset scope and GitHub link | Price Index |
+| 6 | Developer newsletters | Current model leaders plus auditable channel-price data | Model compare |
 
 ## Campaign Links
 
 Campaign name: `pricing_research_2026_09`
 
-- Juejin Kimi:
-  `https://aiplans.dev/zh/guides/kimi-api-pricing?utm_source=juejin&utm_medium=community&utm_campaign=pricing_research_2026_09&utm_content=kimi_guide`
-- V2EX Price Index:
-  `https://aiplans.dev/zh/reports/api-price-index?utm_source=v2ex&utm_medium=community&utm_campaign=pricing_research_2026_09&utm_content=price_index`
-- Zhihu GLM:
-  `https://aiplans.dev/zh/guides/glm-chatglm-api-pricing?utm_source=zhihu&utm_medium=community&utm_campaign=pricing_research_2026_09&utm_content=glm_guide`
-- Hacker News Price Index:
-  `https://aiplans.dev/en/reports/api-price-index?utm_source=hackernews&utm_medium=community&utm_campaign=pricing_research_2026_09&utm_content=show_hn`
+- Juejin model selection:
+  `https://aiplans.dev/zh/compare/models?utm_source=juejin&utm_medium=community&utm_campaign=model_selection_2026_09&utm_content=vendor_leaders`
+- V2EX model selection:
+  `https://aiplans.dev/zh/compare/models?utm_source=v2ex&utm_medium=community&utm_campaign=model_selection_2026_09&utm_content=vendor_leaders`
+- Zhihu model selection:
+  `https://aiplans.dev/zh/compare/models?utm_source=zhihu&utm_medium=community&utm_campaign=model_selection_2026_09&utm_content=vendor_leaders`
+- Hacker News model selection:
+  `https://aiplans.dev/en/compare/models?utm_source=hackernews&utm_medium=community&utm_campaign=model_selection_2026_09&utm_content=show_hn`
 - Reddit Claude:
   `https://aiplans.dev/en/guides/claude-anthropic-pricing?utm_source=reddit&utm_medium=community&utm_campaign=pricing_research_2026_09&utm_content=claude_guide`
-- Newsletter Price Index:
-  `https://aiplans.dev/en/reports/api-price-index?utm_source=newsletter&utm_medium=referral&utm_campaign=pricing_research_2026_09&utm_content=editorial_pitch`
+- Newsletter model selection:
+  `https://aiplans.dev/en/compare/models?utm_source=newsletter&utm_medium=referral&utm_campaign=model_selection_2026_09&utm_content=editorial_pitch`
 
 The Product Hunt page already adds `?ref=producthunt`. Keep that referral URL
 as-is so Product Hunt and GA4 remain comparable with the historical listing.
@@ -115,10 +131,10 @@ Verified on 2026-09-04:
 
 | Channel | State | Next gate |
 | --- | --- | --- |
-| Juejin | Complete article saved as draft `7681467854781431818`; category `人工智能`, tags `人工智能` and `API` | Explicit approval for public publication |
-| V2EX | Community rules and `分享创造` node checked; tailored draft prepared | Account login, then explicit approval |
-| Zhihu | Logged in; target question has 21 followers, 36,023 views, and 6 answers; tailored answer prepared | Explicit approval |
-| Hacker News | Logged in; Show HN rules checked; ready-to-submit copy stored in the repository | Explicit approval before opening and submitting the form |
+| Juejin | Existing Kimi draft `7681467854781431818` retained as long-tail content; not the launch post | Rewrite around model selection after the new page deploys |
+| V2EX | Community rules and `分享创造` node checked; flagship-comparison draft prepared | Verify the deployed comparison, then explicit approval |
+| Zhihu | Logged in; existing single-brand answer retained for relevant questions only | Find a genuine cross-vendor selection question |
+| Hacker News | Logged in; Show HN rules checked; flagship-comparison copy stored in the repository | Verify the deployed comparison, then explicit approval before submit |
 | Reddit | `r/ClaudeAI` and `r/LocalLLaMA` rules checked | Verify karma/content-history gates before posting |
 | Newsletters | `console.dev` and Changelog News routes verified; tailored pitches prepared | Explicit approval before email/form submission; Changelog account required |
 
@@ -156,10 +172,12 @@ Verified on 2026-09-04:
 
 ## Content Cadence
 
-- Publish at most one evidence-backed price-change report per week.
-- Publish at most one additional high-intent comparison or guide per week.
+- Publish one current cross-vendor selection comparison when the leader set or
+  its decision materially changes.
+- Publish at most one additional high-intent exact-model channel comparison or
+  guide per week.
 - Only create a price-change article when the price-history data contains a
-  material change that can be cited.
+  material change that affects a current leader or a migration decision.
 - Do not bulk-generate thin pages while 258 discovered URLs are still waiting
   to be crawled.
 

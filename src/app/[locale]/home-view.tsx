@@ -41,22 +41,22 @@ export default function HomeView({
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-6">
             {locale === 'zh' ? (
-              <>💰 全网 AI 价格对比平台</>
+              <>主流 AI 模型与渠道价格对比</>
             ) : (
-              <>💰 Compare AI Pricing & Save Money</>
+              <>Compare Leading AI Models and API Channels</>
             )}
           </h1>
           <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-8 max-w-2xl mx-auto">
             {locale === 'zh' ? (
-              '对比 GPT-4, Claude, DeepSeek 等主流 AI 模型在不同供应商的价格，找到最优惠的方案。'
+              '先比较各厂当前领先模型的性能与成本，再为选定模型找到最合适的 API 渠道。'
             ) : (
-              'Compare pricing for GPT-4, Claude, DeepSeek, and other AI models across providers to find the best deals.'
+              'Compare each vendor’s current leading model, then find the best API channel for the model you choose.'
             )}
           </p>
           <div className="flex gap-4 justify-center">
-            <Link href={`/${locale}/compare/plans`}>
+            <Link href={`/${locale}/compare/models`}>
               <Button size="lg" className="gap-2">
-                {locale === 'zh' ? '开始对比' : 'Start Comparing'}
+                {locale === 'zh' ? '比较各厂领先模型' : 'Compare Vendor Leaders'}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -161,11 +161,17 @@ export default function HomeView({
               </h2>
               <p className="mt-3 max-w-3xl leading-7 text-zinc-600 dark:text-zinc-400">
                 {locale === 'zh'
-                  ? '从 GLM、Claude、Grok 与 Kimi 专题指南入手，或查看全市场最低付费 API 与近期价格变化。'
-                  : 'Start with focused GLM, Claude, Grok, and Kimi guides, or inspect the market-wide lowest paid APIs and recent price changes.'}
+                  ? '先用跨厂商横评确定模型，再深入查看该模型在官方、云厂商和聚合渠道的实际价格。历史价格作为趋势和迁移参考保留。'
+                  : 'Choose a model through the cross-vendor comparison, then inspect its prices across official, cloud, and aggregator channels. Price history remains available for trend and migration research.'}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
+              <Link href={`/${locale}/compare/models`}>
+                <Button variant="outline" className="gap-2">
+                  <GitCompare className="h-4 w-4" />
+                  {locale === 'zh' ? '旗舰模型横评' : 'Leading model comparison'}
+                </Button>
+              </Link>
               <Link href={`/${locale}/guides`}>
                 <Button variant="outline" className="gap-2">
                   <BookOpen className="h-4 w-4" />
@@ -185,18 +191,18 @@ export default function HomeView({
         {/* Hot Models */}
         <div className="text-center">
           <h2 className="text-3xl font-bold mb-8">
-            {locale === 'zh' ? '🔥 热门模型对比' : '🔥 Popular Models'}
+            {locale === 'zh' ? '高性能模型渠道比价' : 'Channel Prices for Top Models'}
           </h2>
           <div className="grid md:grid-cols-4 gap-4">
             {hotModels.map((model) => (
-              <Link key={model.slug} href={`/${locale}/compare/plans/${model.slug}`}>
+              <Link key={model.slug} href={`/${locale}/models/${model.slug}`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-6 text-center">
                     <h3 className="font-bold mb-2">
                       {model.name}
                     </h3>
                     <Button variant="outline" size="sm" className="w-full">
-                      {locale === 'zh' ? '对比价格' : 'Compare Prices'}
+                      {locale === 'zh' ? '查看渠道价格' : 'Compare Channels'}
                     </Button>
                   </CardContent>
                 </Card>

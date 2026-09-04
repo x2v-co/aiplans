@@ -16,7 +16,7 @@ auditability, not the consumer subscription comparison.
 Subject:
 
 ```text
-Tool submission: AIPlans, an auditable AI API price index
+Tool submission: AIPlans, compare vendor-leading models and API channels
 ```
 
 Body:
@@ -24,16 +24,16 @@ Body:
 ```text
 Hi Console team,
 
-I maintain AIPlans, a free and open-source tool for comparing AI API token
-prices across direct providers, cloud platforms, and aggregators:
+I maintain AIPlans, a free and open-source tool for choosing a current leading
+AI model and then comparing that exact model across API channels:
 
-https://aiplans.dev/en/reports/api-price-index?utm_source=newsletter&utm_medium=referral&utm_campaign=pricing_research_2026_09&utm_content=editorial_pitch
+https://aiplans.dev/en/compare/models?utm_source=newsletter&utm_medium=referral&utm_campaign=model_selection_2026_09&utm_content=editorial_pitch
 
-The current index covers 343 priced models, 479 available channels, and 21
-providers. It preserves each vendor's original billing currency, separates
-input/output and cache/batch pricing, and links every price to its source and
-last verification date. Developers can search and filter without creating an
-account.
+The comparison starts with one purchasable general-purpose leader each from
+OpenAI, Anthropic, Google, xAI, DeepSeek, GLM, Kimi, Qwen, and MiniMax. It uses
+Agent Arena as the comparable performance signal and release date only when a
+vendor has no scored candidate. From there, developers can inspect prices for
+the exact model across direct providers, clouds, and aggregators.
 
 The code and data pipeline are available at https://github.com/x2v-co/aiplans.
 I would be happy to provide more detail on the data model, verification process,

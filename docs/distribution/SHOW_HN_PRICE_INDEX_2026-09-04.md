@@ -1,4 +1,4 @@
-# Show HN 发布稿：AI API Price Index
+# Show HN 发布稿：Vendor Leaders + Exact-Model Channel Prices
 
 规则核验：2026-09-04 阅读了 `https://news.ycombinator.com/showhn.html`。目标页面可
 直接搜索、筛选和比较，不需要注册，不是单纯的文章或落地页，因此符合 Show HN 的
@@ -9,25 +9,25 @@
 Title:
 
 ```text
-Show HN: AIPlans - compare AI API prices across providers and channels
+Show HN: AIPlans - compare leading AI models, then their API channels
 ```
 
 URL:
 
 ```text
-https://aiplans.dev/en/reports/api-price-index?utm_source=hackernews&utm_medium=community&utm_campaign=pricing_research_2026_09&utm_content=show_hn
+https://aiplans.dev/en/compare/models?utm_source=hackernews&utm_medium=community&utm_campaign=model_selection_2026_09&utm_content=show_hn
 ```
 
 Text:
 
 ```text
-I built AIPlans to make API price comparisons auditable across direct providers,
-cloud platforms, and aggregators. The current index covers 343 priced models,
-479 available channels, and 21 providers. It preserves each vendor's billing
-currency, uses normalized USD only for cross-channel ranking, and links prices
-back to their source and verification date. The code and data pipeline are open
-source. I would especially value feedback on model aliasing, cache/batch pricing,
-and channels that are missing or stale.
+I built AIPlans around a two-step choice: compare one current leading model from
+each major vendor, then compare the exact model across direct providers, cloud
+platforms, and aggregators. The shortlist currently covers OpenAI, Anthropic,
+Google, xAI, DeepSeek, GLM, Kimi, Qwen, and MiniMax. It uses Agent Arena as the
+comparable performance signal and release date only as a fallback, so "newest"
+is not silently treated as "best." The code and data pipeline are open source.
+I would value feedback on this selection rule and the channel data.
 ```
 
 ## First Comment
@@ -35,11 +35,15 @@ and channels that are missing or stale.
 ```text
 Hi HN - I maintain AIPlans.
 
-I started this because "what does model X cost?" often mixes together a direct
-API, cloud marketplaces, aggregators, different currencies, and sometimes even
-different model revisions. The index compares exact model IDs across channels,
-keeps the original billing currency, and uses a fixed example workload of 1M
-input + 250k output tokens so each result can be recalculated.
+Most model lists answer either "what is newest?" or "what is cheapest?" Neither
+is enough to choose an API. AIPlans now starts with one current, purchasable,
+general-purpose leader per vendor. The default rule is highest Agent Arena score
+within that vendor; release recency breaks the gap when no comparable score is
+available. The rule is shown on the page because it is a judgment, not a fact.
+
+Once a model is selected, its detail page compares that exact model ID across
+official APIs, cloud marketplaces, and aggregators. It keeps the original billing
+currency and normalizes to USD only for ranking.
 
 Free routes are shown but excluded from the cheapest-paid ranking because their
 limits and availability are different. Each row links to its source and records
