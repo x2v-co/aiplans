@@ -63,6 +63,15 @@ GA4, previous 28 days:
   Price Index. Production metadata and image responses were verified after
   deployment `33834732790`; the Price Index card renders the current 343
   priced models, 479 available channels, and 21 providers.
+- Reframed the homepage and model-comparison flow around one current leader per
+  major vendor, with release date, Agent Arena signal, context window, lowest
+  input/output prices, and a direct link to every channel for that exact model.
+- Verified nine production leaders across OpenAI, Anthropic, Google, xAI,
+  DeepSeek, GLM, Kimi, Qwen, and MiniMax. The selection rule prefers the
+  strongest comparable Agent Arena result instead of assuming newest is best.
+- Production deployments `33837055795` and `33837874899` passed build, rollout,
+  and IndexNow notification. Desktop and 390px mobile layouts, all nine rows,
+  internal channel links, metadata, and the 1200x630 social card were verified.
 
 ## Channel Order
 
