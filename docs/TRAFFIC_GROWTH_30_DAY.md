@@ -107,15 +107,26 @@ After publishing:
 
 ## Bing Webmaster
 
-Pending account login and site authorization:
+Verified on 2026-09-04:
 
-1. Import the verified `aiplans.dev` property from Google Search Console when
-   the account offers that option; otherwise add the domain and verify it.
-2. Submit `https://aiplans.dev/sitemap.xml`.
-3. Inspect the Price Index, Kimi guide, GLM guide, Claude guide, and Grok guide.
-4. Review URL Submission, Site Scan, and SEO Reports for actionable errors.
-5. Record the verified property and submission result here. Do not claim Bing
-   configuration is complete until the dashboard confirms it.
+- Added `https://aiplans.dev` manually and verified ownership with the public
+  `msvalidate.01` metadata tag.
+- Submitted `https://aiplans.dev/sitemap.xml`. Bing completed its first crawl
+  on 2026-09-04 with status `Success`, 936 URLs discovered, 0 errors, and 0
+  warnings.
+- URL Inspection reported `Indexed successfully`, `URL can appear on Bing`,
+  and no SEO/GEO issues for:
+  - `https://aiplans.dev/zh/guides/kimi-api-pricing`
+  - `https://aiplans.dev/zh/reports/api-price-index`
+  - `https://aiplans.dev/zh/guides/glm-chatglm-api-pricing`
+  - `https://aiplans.dev/en/guides/claude-anthropic-pricing`
+  - `https://aiplans.dev/en/guides/grok-pricing`
+- Recommendations and Backlinks both showed `No data available` for the newly
+  added property; this is not evidence that there are no issues or backlinks.
+- Site Scan could not start because the account showed `Quota left: 0 pages`.
+- The IndexNow dashboard still showed its onboarding screen. Production
+  submissions are independently confirmed by successful HTTP responses and the
+  deployment workflow; recheck whether Bing attributes them to this property.
 
 ## Content Cadence
 
