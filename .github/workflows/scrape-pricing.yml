@@ -9,6 +9,11 @@ on:
         required: false
         default: false
         type: boolean
+      benchmarks_only:
+        description: 'Only refresh task benchmark scores'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   scrape:
@@ -31,7 +36,7 @@ jobs:
       - name: Run API price scrapers
         id: api-scrape
         continue-on-error: true
-        if: ${{ !inputs.skip_api }}
+        if: ${{ !inputs.skip_api && !inputs.benchmarks_only }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run scrape
@@ -39,6 +44,7 @@ jobs:
       - name: Run subscription plan scrapers
         id: plan-scrape
         continue-on-error: true
+        if: ${{ !inputs.benchmarks_only }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run scrape:plans
@@ -46,15 +52,23 @@ jobs:
       - name: Refresh plan classifications
         id: plan-kinds
         continue-on-error: true
+        if: ${{ !inputs.benchmarks_only }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run fix:kinds
 
       - name: Materialize model plan mappings
         id: plan-mappings
+        if: ${{ !inputs.benchmarks_only }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run mappings:materialize
+
+      - name: Refresh task benchmark scores
+        id: benchmark-ingest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run ingest:benchmarks
 
       - name: Fail if a scraper group or mapping refresh failed
         if: >-
