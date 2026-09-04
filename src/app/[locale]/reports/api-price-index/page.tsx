@@ -70,6 +70,7 @@ export default async function ApiPriceIndexPage({
     name: title[locale].replace(' | aiplans.dev', ''),
     description: description[locale],
     url: reportUrl,
+    license: `${SITE_URL}/${locale}/terms`,
     dateModified,
     creator: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
     includedInDataCatalog: { '@type': 'DataCatalog', name: SITE_NAME, url: SITE_URL },
