@@ -17,6 +17,7 @@ on:
 
 jobs:
   scrape:
+    if: ${{ !inputs.benchmarks_only }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -64,12 +65,6 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run mappings:materialize
 
-      - name: Refresh task benchmark scores
-        id: benchmark-ingest
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npm run ingest:benchmarks
-
       - name: Fail if a scraper group or mapping refresh failed
         if: >-
           steps.api-scrape.outcome == 'failure' ||
@@ -91,3 +86,50 @@ jobs:
             *.log
             scrape-*.json
           retention-days: 7
+
+  benchmark:
+    if: ${{ inputs.benchmarks_only }}
+    runs-on: [self-hosted, planprice-production]
+    timeout-minutes: 15
+    environment: Production
+    env:
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/x2v/planprice' }}
+
+    steps:
+      - name: Refresh task benchmark scores
+        run: |
+          set -euo pipefail
+          base="$DEPLOY_PATH"
+          compose_file="$base/deploy/production/compose.yml"
+          env_file="$base/deploy/production/.env.production"
+
+          test -d "$base"
+          sudo -n test -r "$env_file"
+          exec 9<"$base"
+          flock -w 1800 9
+
+          sudo -n docker compose -p planprice-production \
+            -f "$compose_file" \
+            --env-file "$env_file" \
+            run --rm scraper npm run ingest:benchmarks
+
+      - name: Report benchmark coverage
+        run: |
+          set -euo pipefail
+          base="$DEPLOY_PATH"
+          sudo -n docker compose -p planprice-production \
+            -f "$base/deploy/production/compose.yml" \
+            --env-file "$base/deploy/production/.env.production" \
+            exec -T postgres sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -P pager=off' <<'SQL'
+          SELECT b.slug, COUNT(DISTINCT s.model_id) AS models, COUNT(*) AS scores
+          FROM benchmarks b
+          JOIN benchmark_versions v ON v.benchmark_id = b.id AND v.is_current = true
+          JOIN benchmark_tasks t ON t.benchmark_version_id = v.id
+          JOIN model_benchmark_scores s ON s.benchmark_task_id = t.id
+          WHERE b.slug IN (
+            'gpqa-diamond', 'humanitys-last-exam', 'scicode',
+            'terminal-bench-hard', 'ifbench', 'mmmu-pro'
+          )
+          GROUP BY b.slug
+          ORDER BY b.slug;
+          SQL
