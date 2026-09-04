@@ -133,6 +133,7 @@ After publishing:
 | Date | Channel | Post URL | Landing page | Sessions after 72h | Backlink verified | Notes |
 | --- | --- | --- | --- | ---: | --- | --- |
 | 2026-09-04 | Hacker News | https://news.ycombinator.com/item?id=49561389 | https://aiplans.dev/en/compare/models | Pending | No | Published at 06:58:03 UTC; initially appeared at the top of `newest`, then was marked `[flagged]`/`dead`; first comment unavailable |
+| 2026-09-04 | V2EX | https://www.v2ex.com/t/1239522 | https://aiplans.dev/zh/compare/models | Pending | Pending | Published to `分享创造` at 07:56:32 UTC; Markdown and outbound links verified |
 
 ## Distribution Readiness
 
@@ -141,9 +142,9 @@ Verified on 2026-09-04:
 | Channel | State | Next gate |
 | --- | --- | --- |
 | Juejin | Existing Kimi draft `7681467854781431818` retained as long-tail content; not the launch post | Rewrite around model selection after the new page deploys |
-| V2EX | Community rules and `分享创造` node checked; flagship-comparison draft prepared | Verify the deployed comparison, then explicit approval |
+| V2EX | Published topic `1239522` to `分享创造`; public rendering and links verified | Answer factual replies; capture 24h and 72h campaign results |
 | Zhihu | Logged in; existing single-brand answer retained for relevant questions only | Find a genuine cross-vendor selection question |
-| Hacker News | Published item `49561389`; HN then marked it `[flagged]`/`dead` and closed comments | Do not repost; only pursue normal moderator review or organic vouching |
+| Hacker News | Published item `49561389`; HN marked it `[flagged]`/`dead`; moderator review requested by email | Do not repost; monitor the item and Gmail for a response |
 | Reddit | `r/ClaudeAI` and `r/LocalLLaMA` rules checked | Verify karma/content-history gates before posting |
 | Newsletters | `console.dev` and Changelog News routes verified; tailored pitches prepared | Explicit approval before email/form submission; Changelog account required |
 

@@ -25,6 +25,10 @@ Anthropic、Google、xAI、DeepSeek、GLM、Kimi、Qwen 和 MiniMax；第二层�
 - 479 个当前可用渠道；
 - 21 家提供商。
 
+今天 OpenAI 已经发布 GPT-6 Astra，并将它称为当前最强模型；不过官方文档同时说明，
+普通 API 和订阅方案要在未来几天才开放。所以页面会显示这条发布状态，但在确认到
+实际可用渠道前，OpenAI 行暂时保留 GPT-5.6 Sol，不把“已经发布”写成“现在可买”。
+
 领先模型的选择规则是：
 
 1. 每家厂商只保留当前可买到的通用模型；
@@ -56,3 +60,13 @@ https://aiplans.dev/zh/compare/models?utm_source=v2ex&utm_medium=community&utm_c
 - 正文保留维护者身份披露。
 - 主文只放一个带 UTM 的站内链接；GitHub 用纯文本，避免帖子像链接集合。
 - 发布后先回答数据质疑，不追加推广回复。
+
+## Current State
+
+- Published to `分享创造` at 2026-09-04 07:56:32 UTC
+  (15:56:32 Asia/Singapore): `https://www.v2ex.com/t/1239522`.
+- The public topic uses Markdown and renders the model/channel counts, GPT-6
+  Astra availability note, selection rules, landing-page link, and repository
+  link correctly.
+- Monitor genuine replies and factual corrections; do not add promotional
+  replies or cross-post the same text to other communities.

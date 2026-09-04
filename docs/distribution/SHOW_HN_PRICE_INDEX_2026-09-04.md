@@ -77,4 +77,7 @@ around to answer questions and fix factual issues.
 - HN documents that dead posts may be restored through community vouches, and
   that moderators sometimes turn off unfair flags. No vouches were requested
   or coordinated.
+- Sent a review request from Gmail to `hn@ycombinator.com` on 2026-09-04,
+  referencing item `49561389` and explicitly stating that it will not be
+  reposted.
 - Do not ask friends or other accounts to upvote or comment.
