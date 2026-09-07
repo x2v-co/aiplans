@@ -4,7 +4,30 @@ import type { NextRequest } from 'next/server';
 const locales = ['en', 'zh'];
 const defaultLocale = 'en';
 
+export function requestUsedHttp(request: NextRequest): boolean {
+  const cloudflareVisitor = request.headers.get('cf-visitor');
+  if (cloudflareVisitor) {
+    try {
+      const visitor = JSON.parse(cloudflareVisitor) as { scheme?: unknown };
+      if (visitor.scheme === 'http') return true;
+    } catch {
+      // Ignore malformed proxy metadata and fall back to the standard header.
+    }
+  }
+
+  return request.headers.get('x-forwarded-proto')
+    ?.split(',', 1)[0]
+    .trim()
+    .toLowerCase() === 'http';
+}
+
 export default function proxy(request: NextRequest) {
+  if (requestUsedHttp(request)) {
+    const secureUrl = request.nextUrl.clone();
+    secureUrl.protocol = 'https:';
+    return NextResponse.redirect(secureUrl, 308);
+  }
+
   const { pathname } = request.nextUrl;
 
   // Check if pathname already has a locale
