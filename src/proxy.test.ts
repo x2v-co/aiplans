@@ -12,7 +12,7 @@ test('permanently redirects Cloudflare HTTP requests to the same HTTPS URL', () 
 
   assert.equal(requestUsedHttp(request), true);
   assert.equal(response.status, 308);
-  assert.equal(response.headers.get('location'), 'https://aiplans.dev/zh/models/claude-opus-5?source=test');
+  assert.equal(response.headers.get('location'), 'https://www.aiplans.dev/zh/models/claude-opus-5?source=test');
   assert.match(response.headers.get('location') ?? '', /^https:\/\//);
 });
 
@@ -34,5 +34,5 @@ test('uses X-Forwarded-Proto when Cloudflare metadata is unavailable', () => {
   });
 
   assert.equal(requestUsedHttp(request), true);
-  assert.equal(proxy(request).headers.get('location'), 'https://aiplans.dev/en/api-pricing');
+  assert.equal(proxy(request).headers.get('location'), 'https://www.aiplans.dev/en/api-pricing');
 });

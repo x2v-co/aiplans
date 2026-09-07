@@ -25,9 +25,13 @@ export default function proxy(request: NextRequest) {
   if (requestUsedHttp(request)) {
     const secureUrl = request.nextUrl.clone();
     secureUrl.protocol = 'https:';
-    // NextResponse.redirect may serialize same-host redirects as a relative
-    // Location in production. That would preserve the client's HTTP scheme
-    // and loop, so keep the absolute HTTPS target explicit.
+    // Next.js serializes same-host middleware redirects as relative Locations,
+    // which preserve HTTP at the client and loop. Use the existing www alias
+    // as a cross-host HTTPS hop; the gateway then redirects www to the apex.
+    // The URL host inside the container may be localhost, so use the public
+    // alias explicitly instead of deriving it from request.nextUrl.
+    secureUrl.hostname = 'www.aiplans.dev';
+    secureUrl.port = '';
     return new NextResponse(null, {
       status: 308,
       headers: { Location: secureUrl.toString() },
