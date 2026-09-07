@@ -13,6 +13,7 @@ test('permanently redirects Cloudflare HTTP requests to the same HTTPS URL', () 
   assert.equal(requestUsedHttp(request), true);
   assert.equal(response.status, 308);
   assert.equal(response.headers.get('location'), 'https://aiplans.dev/zh/models/claude-opus-5?source=test');
+  assert.match(response.headers.get('location') ?? '', /^https:\/\//);
 });
 
 test('keeps Cloudflare HTTPS requests on the normal routing path', () => {

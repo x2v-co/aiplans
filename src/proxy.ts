@@ -25,7 +25,13 @@ export default function proxy(request: NextRequest) {
   if (requestUsedHttp(request)) {
     const secureUrl = request.nextUrl.clone();
     secureUrl.protocol = 'https:';
-    return NextResponse.redirect(secureUrl, 308);
+    // NextResponse.redirect may serialize same-host redirects as a relative
+    // Location in production. That would preserve the client's HTTP scheme
+    // and loop, so keep the absolute HTTPS target explicit.
+    return new NextResponse(null, {
+      status: 308,
+      headers: { Location: secureUrl.toString() },
+    });
   }
 
   const { pathname } = request.nextUrl;
