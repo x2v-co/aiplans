@@ -26,8 +26,13 @@ if ! flock -n 9; then
 fi
 
 set +e
-"${compose[@]}" run --rm scraper npm run scrape
-api_status=$?
+if [[ "${SKIP_API:-0}" == "1" ]]; then
+  echo "SKIP_API=1 — skipping API price scrapers"
+  api_status=0
+else
+  "${compose[@]}" run --rm scraper npm run scrape
+  api_status=$?
+fi
 "${compose[@]}" run --rm scraper npm run scrape:plans
 plans_status=$?
 set -e

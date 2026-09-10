@@ -112,8 +112,9 @@ jobs:
             /etc/systemd/system/planprice-scraper.service
           sudo -n install -m 0644 "$base/deploy/production/planprice-scraper-failure.service" \
             /etc/systemd/system/planprice-scraper-failure.service
-          sudo -n install -m 0755 "$base/deploy/production/notify-failure.sh" \
-            "$base/deploy/production/notify-failure.sh"
+          # rsync already ships notify-failure.sh at its repo mode (0755);
+          # `install file file` onto itself exits 1 ("are the same file").
+          sudo -n chmod 0755 "$base/deploy/production/notify-failure.sh"
           sudo -n install -m 0644 "$base/deploy/production/planprice-scraper.timer" \
             /etc/systemd/system/planprice-scraper.timer
           sudo -n systemctl daemon-reload
