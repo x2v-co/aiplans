@@ -558,6 +558,38 @@ const MIGRATIONS: Migration[] = [
         updated_at     = now();
     `,
   },
+  {
+    name: '020_add_zai_glm_coding_invite_coupon',
+    sql: `
+      -- Z.AI (international Zhipu, provider slug 'zhipu-global') official
+      -- "Invite Friends, Get Credits" campaign (docs.z.ai, rules updated
+      -- 2026-03-15): invited users who are newly registered (or have no paid
+      -- subscription history) get a 10% instant discount on their FIRST GLM
+      -- Coding subscription order only; it does not stack with other
+      -- first-order campaigns. Verified 2026-09-11: the icoded subscribe page
+      -- loads discount-10.png and api.z.ai/api/biz/fission/inviter-info/HFGTURQAPY
+      -- returns campaignCode fission_glmcode_sub_v1.
+      INSERT INTO coupons
+        (code, provider_id, description, discount_type, discount_value,
+         expires_at, is_verified, offer_url)
+      SELECT
+        'HFGTURQAPY',
+        p.id,
+        'Z.AI GLM Coding Plan 邀请链接：新用户首单订阅 9 折（仅首单，不与其他首单优惠叠加）· Invite link: 10% off your first GLM Coding Plan subscription (new accounts, first order only)',
+        'percentage', 10, NULL, true,
+        'https://z.ai/subscribe?ic=HFGTURQAPY'
+      FROM providers p
+      WHERE p.slug = 'zhipu-global'
+      ON CONFLICT (code) DO UPDATE SET
+        provider_id    = EXCLUDED.provider_id,
+        description    = EXCLUDED.description,
+        discount_type  = EXCLUDED.discount_type,
+        discount_value = EXCLUDED.discount_value,
+        is_verified    = EXCLUDED.is_verified,
+        offer_url      = EXCLUDED.offer_url,
+        updated_at     = now();
+    `,
+  },
 ];
 
 async function main() {
