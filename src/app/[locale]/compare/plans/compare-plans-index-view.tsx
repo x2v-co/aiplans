@@ -35,9 +35,32 @@ export default function ComparePlansIndexView({
   const tCommon = useTranslations('common');
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'elo' | 'plans' | 'name'>('elo');
+  const [sortBy, setSortBy] = useState<'elo' | 'plans' | 'name' | 'context'>('elo');
+  // "国内可用" capability card: narrow the grid to China-region producers,
+  // whose subscription plans are buyable without a VPN.
+  const [chinaOnly, setChinaOnly] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const resultsRef = useRef<HTMLElement>(null);
+  const featuredRef = useRef<HTMLElement>(null);
+
+  // The capability cards stay on this page: they re-sort/filter the plan
+  // comparison grid instead of sending users to /api-pricing, which is
+  // pay-per-token pricing — a different product from subscription plans.
+  const applyCapability = (options: {
+    sort?: 'elo' | 'context';
+    china?: boolean;
+    target: 'results' | 'featured';
+  }) => {
+    setSearchQuery('');
+    if (options.china !== undefined) setChinaOnly(options.china);
+    if (options.sort) setSortBy(options.sort);
+    const targetRef = options.target === 'featured' ? featuredRef : resultsRef;
+    // The hot/featured sections unmount while searching, so wait for the
+    // cleared-search render before scrolling.
+    setTimeout(() => {
+      targetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
 
   const normalizedSearchQuery = deferredSearchQuery.trim().toLowerCase();
   const isSearching = normalizedSearchQuery.length > 0;
@@ -46,6 +69,7 @@ export default function ComparePlansIndexView({
     .map((item: any) => {
       const filteredModels = item.models
         .filter((model: any) => {
+          if (chinaOnly && model.providers?.region !== 'china') return false;
           if (!normalizedSearchQuery) return true;
 
           // Shared fuzzy matcher: punctuation-insensitive plus brand aliases,
@@ -67,6 +91,11 @@ export default function ComparePlansIndexView({
             if (planDiff !== 0) return planDiff;
             return (b.benchmark_arena_elo || 0) - (a.benchmark_arena_elo || 0);
           }
+          if (sortBy === 'context') {
+            const ctxDiff = (b.context_window || 0) - (a.context_window || 0);
+            if (ctxDiff !== 0) return ctxDiff;
+            return (b.benchmark_arena_elo || 0) - (a.benchmark_arena_elo || 0);
+          }
           const eloDiff = (b.benchmark_arena_elo || 0) - (a.benchmark_arena_elo || 0);
           if (eloDiff !== 0) return eloDiff;
           return (b.planCount || 0) - (a.planCount || 0);
@@ -86,7 +115,9 @@ export default function ComparePlansIndexView({
       const scoreForProvider = (providerItem: any) => {
         const topModel = providerItem.models[0];
         if (!topModel) return 0;
-        return sortBy === 'plans' ? (topModel.planCount || 0) : (topModel.benchmark_arena_elo || 0);
+        if (sortBy === 'plans') return topModel.planCount || 0;
+        if (sortBy === 'context') return topModel.context_window || 0;
+        return topModel.benchmark_arena_elo || 0;
       };
 
       const scoreDiff = scoreForProvider(b) - scoreForProvider(a);
@@ -190,8 +221,10 @@ export default function ComparePlansIndexView({
           </div>
         </section>
 
-        {/* Featured Plans */}
-        <section className="mb-16">
+        {/* Featured Plans — the payload builder sorts subscription plans by
+            USD-normalised price ascending, so this list is the site's
+            "cheapest plans" view. */}
+        <section ref={featuredRef} className="mb-16 scroll-mt-20">
           <div className="flex items-center gap-2 mb-6">
             <Zap className="w-6 h-6 text-emerald-500" />
             <h2 className="text-2xl font-bold">
@@ -293,23 +326,35 @@ export default function ComparePlansIndexView({
           </div>
 
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <p className="text-sm text-zinc-500">
-              {locale === 'zh'
-                ? (isSearching
-                    ? `${visibleModelCount} 个模型与“${deferredSearchQuery}”相关`
-                    : `共 ${visibleModelCount} 个模型`)
-                : (isSearching
-                    ? `${visibleModelCount} ${visibleModelCount === 1 ? 'model' : 'models'} matched "${deferredSearchQuery}"`
-                    : `${visibleModelCount} ${visibleModelCount === 1 ? 'model' : 'models'} available`)}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-zinc-500">
+                {locale === 'zh'
+                  ? (isSearching
+                      ? `${visibleModelCount} 个模型与“${deferredSearchQuery}”相关`
+                      : `共 ${visibleModelCount} 个模型`)
+                  : (isSearching
+                      ? `${visibleModelCount} ${visibleModelCount === 1 ? 'model' : 'models'} matched "${deferredSearchQuery}"`
+                      : `${visibleModelCount} ${visibleModelCount === 1 ? 'model' : 'models'} available`)}
+              </p>
+              {chinaOnly && !isSearching && (
+                <button
+                  type="button"
+                  onClick={() => setChinaOnly(false)}
+                  className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 hover:bg-red-100"
+                >
+                  🇨🇳 {locale === 'zh' ? '仅国内模型' : 'China models only'} ✕
+                </button>
+              )}
+            </div>
             <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
               <span>{locale === 'zh' ? '排序' : 'Sort by'}</span>
               <select
                 value={sortBy}
-                onChange={(event) => setSortBy(event.target.value as 'elo' | 'plans' | 'name')}
+                onChange={(event) => setSortBy(event.target.value as 'elo' | 'plans' | 'name' | 'context')}
                 className="h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-950"
               >
                 <option value="elo">Arena ELO</option>
+                <option value="context">{locale === 'zh' ? '上下文长度' : 'Context length'}</option>
                 <option value="plans">{locale === 'zh' ? '套餐数量' : 'Plan count'}</option>
                 <option value="name">{locale === 'zh' ? '名称' : 'Name'}</option>
               </select>
@@ -326,8 +371,16 @@ export default function ComparePlansIndexView({
             <Card className="border-dashed">
               <CardContent className="p-8 text-center text-zinc-500">
                 {locale === 'zh'
-                  ? `没有找到与 "${deferredSearchQuery}" 相关的模型`
-                  : `No models found for "${deferredSearchQuery}"`}
+                  ? (isSearching
+                      ? `没有找到与 "${deferredSearchQuery}" 相关的模型`
+                      : chinaOnly
+                        ? '暂未收录国内模型的套餐对比'
+                        : '暂无模型')
+                  : (isSearching
+                      ? `No models found for "${deferredSearchQuery}"`
+                      : chinaOnly
+                        ? 'No China-region model comparisons indexed yet'
+                        : 'No models available')}
               </CardContent>
             </Card>
           )}
@@ -341,49 +394,73 @@ export default function ComparePlansIndexView({
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href={`/${locale}/api-pricing?sort=elo`}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl mb-2">🏆</div>
-                  <h3 className="font-bold mb-1">{t('arenaRanking')}</h3>
-                  <p className="text-sm text-zinc-500">{t('topRated')}</p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href={`/${locale}/api-pricing?sort=context`}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl mb-2">📏</div>
-                  <h3 className="font-bold mb-1">{t('longestContext')}</h3>
-                  <p className="text-sm text-zinc-500">{t('bestForDocs')}</p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href={`/${locale}/api-pricing?sort=price&order=asc`}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl mb-2">💰</div>
-                  <h3 className="font-bold mb-1">{t('cheapestPlans')}</h3>
-                  <p className="text-sm text-zinc-500">{t('bestValue')}</p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href={`/${locale}/api-pricing?china=1`}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl mb-2">🇨🇳</div>
-                  <h3 className="font-bold mb-1">{t('chinaAccessible')}</h3>
-                  <p className="text-sm text-zinc-500">{t('noVPN')}</p>
-                </CardContent>
-              </Card>
-            </Link>
+            <CapabilityCard
+              icon="🏆"
+              title={t('arenaRanking')}
+              description={t('topRated')}
+              active={!chinaOnly && sortBy === 'elo'}
+              onClick={() => applyCapability({ sort: 'elo', china: false, target: 'results' })}
+            />
+            <CapabilityCard
+              icon="📏"
+              title={t('longestContext')}
+              description={t('bestForDocs')}
+              active={!chinaOnly && sortBy === 'context'}
+              onClick={() => applyCapability({ sort: 'context', china: false, target: 'results' })}
+            />
+            <CapabilityCard
+              icon="💰"
+              title={t('cheapestPlans')}
+              description={t('bestValue')}
+              onClick={() => applyCapability({ target: 'featured' })}
+            />
+            <CapabilityCard
+              icon="🇨🇳"
+              title={t('chinaAccessible')}
+              description={t('noVPN')}
+              active={chinaOnly}
+              onClick={() => applyCapability({ sort: 'elo', china: true, target: 'results' })}
+            />
           </div>
         </section>
       </main>
     </div>
+  );
+}
+
+/**
+ * One tile in the "browse by capability" grid. These are in-page controls
+ * (sort/filter/scroll), not links: this is the subscription-plans page, so a
+ * tile that promised "cheapest plans" and landed on pay-per-token API
+ * pricing was a category error.
+ */
+function CapabilityCard({
+  icon,
+  title,
+  description,
+  active = false,
+  onClick,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+  active?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick} className="w-full text-left focus:outline-none">
+      <Card
+        className={`h-full cursor-pointer transition-shadow hover:shadow-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+          active ? 'border-blue-400 ring-2 ring-blue-500' : ''
+        }`}
+      >
+        <CardContent className="p-6 text-center">
+          <div className="text-3xl mb-2">{icon}</div>
+          <h3 className="font-bold mb-1">{title}</h3>
+          <p className="text-sm text-zinc-500">{description}</p>
+        </CardContent>
+      </Card>
+    </button>
   );
 }
 
