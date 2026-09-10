@@ -44,9 +44,16 @@ export interface Classification {
 // ────────────────────────────────────────────────────────────────────────────
 const ANTHROPIC_NOISE = ['claude-opus', 'claude-sonnet', 'claude-haiku', '*-fast'];
 const GOOGLE_NOISE = ['gemini-pro', 'gemini-flash', '*-preview*'];
-const ZHIPU_NOISE = ['glm-4', '*-us'];
 const MOONSHOT_NOISE = ['kimi', '*-us'];
 const MINIMAX_LEGACY = ['minimax-01', 'minimax-m1'];
+
+// Every GLM Coding Plan tier (CN and Z.AI global) supports exactly these two
+// models per docs.bigmodel.cn/cn/coding-plan/overview (verified 2026-09):
+// "所有套餐均支持 GLM-5.3、GLM-5.3-Flash". Older selections auto-route to a
+// different model (GLM-5.2/5.1 → GLM-5.3, GLM-5-Turbo/4.7 → GLM-5.3-Flash),
+// which is not the same as the plan including them. Explicit `extra` rather
+// than families:['glm'] keeps the plan from claiming the whole back catalog.
+const ZHIPU_CODING_MODELS = ['glm-5.3', 'glm-5.3-flash'];
 
 const CLAUDE_FAMILIES = ['claude-opus', 'claude-sonnet', 'claude-haiku'];
 const CLAUDE_MAX_FAMILIES = [...CLAUDE_FAMILIES, 'claude-fable'];
@@ -244,30 +251,31 @@ export const CLASSIFICATIONS: Classification[] = [
     selector: { families: ['doubao', 'seed'] },
     reason: 'Contact-sales tier' },
 
-  // ─ Zhipu — the CN and international GLM Coding Plans are the same product on
-  //   two price sheets. Both also grant chat access, hence the secondary kind.
+  // ─ Zhipu — the CN and international Z.AI versions are the same Coding Plan
+  //   on two price sheets, with exactly two entitlements (see constant above).
+  //   Both also grant chat access, hence the secondary kind.
   { providerSlug: 'zhipu-china', planSlug: 'glm-coding-lite', kind: 'coding', line: 'glm-coding', rank: 0,
     secondaryKinds: ['chat'],
-    selector: { families: ['glm'], exclude: ZHIPU_NOISE },
+    selector: { extra: ZHIPU_CODING_MODELS, only_extra: true },
     reason: 'GLM Coding Plan Lite. It is a coding plan, not the "basic tier of a chat plan"' },
   { providerSlug: 'zhipu-china', planSlug: 'glm-coding-pro', kind: 'coding', line: 'glm-coding', rank: 1,
     secondaryKinds: ['chat'],
-    selector: { families: ['glm'], exclude: ZHIPU_NOISE },
+    selector: { extra: ZHIPU_CODING_MODELS, only_extra: true },
     reason: 'GLM Coding Plan Pro' },
   { providerSlug: 'zhipu-china', planSlug: 'glm-coding-max', kind: 'coding', line: 'glm-coding', rank: 2,
     secondaryKinds: ['chat'],
-    selector: { families: ['glm'], exclude: ZHIPU_NOISE },
+    selector: { extra: ZHIPU_CODING_MODELS, only_extra: true },
     reason: 'GLM Coding Plan Max is an individual plan — it was tagged tier=enterprise purely to express scale' },
   { providerSlug: 'zhipu-global', planSlug: 'z-ai-lite', kind: 'coding', line: 'z-ai-coding', rank: 0,
     secondaryKinds: ['chat'],
-    selector: { providers: ['zhipu-china'], families: ['glm'], exclude: ZHIPU_NOISE },
+    selector: { extra: ZHIPU_CODING_MODELS, only_extra: true },
     reason: 'Z.AI Lite is the international GLM Coding Plan; models live under the zhipu-china producer' },
   { providerSlug: 'zhipu-global', planSlug: 'z-ai-pro', kind: 'coding', line: 'z-ai-coding', rank: 1,
     secondaryKinds: ['chat'],
-    selector: { providers: ['zhipu-china'], families: ['glm'], exclude: ZHIPU_NOISE },
+    selector: { extra: ZHIPU_CODING_MODELS, only_extra: true },
     reason: 'Z.AI Pro' },
   { providerSlug: 'zhipu-global', planSlug: 'z-ai-max', kind: 'coding', line: 'z-ai-coding', rank: 2,
     secondaryKinds: ['chat'],
-    selector: { providers: ['zhipu-china'], families: ['glm'], exclude: ZHIPU_NOISE },
+    selector: { extra: ZHIPU_CODING_MODELS, only_extra: true },
     reason: 'Z.AI Max' },
 ];

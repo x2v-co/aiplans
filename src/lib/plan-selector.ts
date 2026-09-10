@@ -26,6 +26,14 @@ export type ModelSelector = {
   min_elo?: number;
   /** Explicit slugs to include regardless of provider/family/ELO (cross-vendor bundles). */
   extra?: string[];
+  /**
+   * The plan contains exactly the `extra` slugs: skip provider/family candidate
+   * matching instead of unioning extras with the plan's own catalog. Use this
+   * when the vendor publishes a closed entitlement list (e.g. every GLM Coding
+   * Plan tier serves only GLM-5.3 / GLM-5.3-Flash, with older model names
+   * rerouted server-side).
+   */
+  only_extra?: boolean;
   /** Globs to remove, e.g. 'claude-opus-*'. Applied last, so it also overrides `extra`. */
   exclude?: string[];
 };
@@ -125,7 +133,9 @@ export function resolveSelector(
     );
   }
 
-  const selected = new Map(candidates.map((model) => [model.slug.toLowerCase(), model]));
+  const selected: Map<string, SelectableModel> = new Map(
+    selector.only_extra ? [] : candidates.map((model) => [model.slug.toLowerCase(), model]),
+  );
 
   // `extra` bypasses every filter above — it exists for cross-vendor bundles
   // (the Bailian and Volcengine coding plans resell GLM / Kimi / DeepSeek).
