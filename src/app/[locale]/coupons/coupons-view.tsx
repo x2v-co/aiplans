@@ -53,9 +53,20 @@ export default function CouponsView({
     return `${coupon.discount_value}`;
   };
 
-  const isExpired = (expiresAt: string) => {
+  const isExpired = (expiresAt: string | null) => {
+    if (!expiresAt) return false; // null = no published expiry, not "expired in 1970"
     return new Date(expiresAt) < new Date();
   };
+
+  // providerMeta is id-keyed and only covers the launch providers; for newer
+  // providers fall back to the joined DB row (name, logo, website).
+  const resolveProvider = (coupon: Coupon) =>
+    providerMeta[coupon.provider_id] || {
+      name: coupon.providers?.name ?? 'Unknown',
+      logo: '🏢',
+      color: 'bg-gray-600',
+      website: coupon.providers?.website ?? '#',
+    };
 
   const getDaysLeft = (expiresAt: string) => {
     const diff = new Date(expiresAt).getTime() - new Date().getTime();
@@ -125,10 +136,11 @@ export default function CouponsView({
 
           <div className="grid md:grid-cols-2 gap-4">
             {verifiedCoupons.map((coupon) => {
-              const provider = providerMeta[coupon.provider_id] || { name: "Unknown", logo: "🏢", color: "bg-gray-600", website: "#" };
+              const provider = resolveProvider(coupon);
               const providerLogoSrc = getProviderLogoSrc(coupon.providers);
               const providerLogoFallback = getProviderLogoFallback(coupon.providers, provider.logo);
-              const daysLeft = getDaysLeft(coupon.expires_at);
+              const daysLeft = coupon.expires_at ? getDaysLeft(coupon.expires_at) : null;
+              const visitUrl = coupon.providers?.website || provider.website;
 
               return (
                 <Card key={coupon.id} className="hover:shadow-lg transition-shadow">
@@ -184,22 +196,26 @@ export default function CouponsView({
                               </>
                             )}
                           </Button>
-                          <a
-                            href={provider.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <Button size="sm" variant="outline" className="gap-1">
-                              {t('visit')} <ExternalLink className="w-3 h-3" />
-                            </Button>
-                          </a>
+                          {visitUrl !== '#' && (
+                            <a
+                              href={visitUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button size="sm" variant="outline" className="gap-1">
+                                {t('visit')} <ExternalLink className="w-3 h-3" />
+                              </Button>
+                            </a>
+                          )}
                         </div>
 
                         {/* Expiry */}
-                        <div className="flex items-center gap-1 mt-2 text-xs text-zinc-500">
-                          <Clock className="w-3 h-3" />
-                          {daysLeft > 0 ? t('expiresIn', { days: daysLeft }) : t('expiringSoon')}
-                        </div>
+                        {daysLeft !== null && (
+                          <div className="flex items-center gap-1 mt-2 text-xs text-zinc-500">
+                            <Clock className="w-3 h-3" />
+                            {daysLeft > 0 ? t('expiresIn', { days: daysLeft }) : t('expiringSoon')}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -219,7 +235,7 @@ export default function CouponsView({
 
             <div className="grid md:grid-cols-2 gap-4">
               {otherCoupons.map((coupon) => {
-                const provider = providerMeta[coupon.provider_id] || { name: "Unknown", logo: "🏢", color: "bg-gray-600", website: "#" };
+                const provider = resolveProvider(coupon);
 
                 return (
                   <Card key={coupon.id} className="opacity-60 hover:opacity-80 transition-opacity">

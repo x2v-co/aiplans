@@ -15,6 +15,7 @@ const PROVIDER_EMOJI: Record<string, string> = {
   meta: '🦙',
   qwen: '🐱',
   volcengine: '🔥',
+  seed: '🌋',
   moonshot: '🌙',
   zhipu: '⚡',
   'zhipu-china': '⚡',

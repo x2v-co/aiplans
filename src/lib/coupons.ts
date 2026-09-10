@@ -15,7 +15,7 @@ export interface Coupon {
   description: string;
   discount_type: string;
   discount_value: number;
-  expires_at: string;
+  expires_at: string | null;
   is_verified: boolean;
   providers: {
     id: number;
@@ -23,6 +23,7 @@ export interface Coupon {
     slug: string;
     logo: string;
     logo_url?: string;
+    website?: string | null;
   };
 }
 
@@ -34,7 +35,8 @@ export async function getCoupons(): Promise<Coupon[]> {
         'id', p.id,
         'name', p.name,
         'slug', p.slug,
-        'logo', p.logo
+        'logo', p.logo,
+        'website', p.website
       ) END AS providers
     FROM coupons c
     LEFT JOIN providers p ON p.id = c.provider_id
