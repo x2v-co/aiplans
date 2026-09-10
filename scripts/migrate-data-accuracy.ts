@@ -510,6 +510,25 @@ const MIGRATIONS: Migration[] = [
          );
     `,
   },
+  {
+    name: '018_add_coupons_offer_url',
+    sql: `
+      -- Coupon submissions include a "source / link to the offer" and invite
+      -- codes need a destination that carries the code (?rc=…); providers.website
+      -- is provider-level and shared by every CTA site-wide, so a personal
+      -- referral link must not live there. Per-coupon column instead.
+      ALTER TABLE coupons ADD COLUMN IF NOT EXISTS offer_url text;
+
+      -- Issue #6: ZAGRFMAR invite code. Canonical activity URL (what the
+      -- submitter's volcengine.com short link 302-redirects to) with rc= bound;
+      -- it auto-applies the extra 5% first-subscription discount.
+      UPDATE coupons
+         SET offer_url = 'https://www.volcengine.com/activity/codingplan?ac=MMAP8JTTCAQ2&rc=ZAGRFMAR',
+             updated_at = now()
+       WHERE code = 'ZAGRFMAR'
+         AND offer_url IS DISTINCT FROM 'https://www.volcengine.com/activity/codingplan?ac=MMAP8JTTCAQ2&rc=ZAGRFMAR';
+    `,
+  },
 ];
 
 async function main() {

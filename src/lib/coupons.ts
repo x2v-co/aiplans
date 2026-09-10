@@ -16,6 +16,7 @@ export interface Coupon {
   discount_type: string;
   discount_value: number;
   expires_at: string | null;
+  offer_url: string | null;
   is_verified: boolean;
   providers: {
     id: number;
