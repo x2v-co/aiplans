@@ -89,6 +89,22 @@ export default function CouponsView({
   const verifiedCoupons = coupons.filter(c => c.is_verified && !isExpired(c.expires_at));
   const otherCoupons = coupons.filter(c => !c.is_verified || isExpired(c.expires_at));
 
+  const maxPercentOff = verifiedCoupons.reduce(
+    (acc, c) => Math.max(acc, c.discount_type === 'percentage' ? c.discount_value : 0), 0);
+  const totalCredit = verifiedCoupons.reduce(
+    (acc, c) => acc + (c.discount_type === 'fixed' ? c.discount_value : 0), 0);
+
+  // Compact, human-readable label for a link-only coupon (the full icoded URL
+  // stays in href / clipboard): "bigmodel.cn/invite".
+  const linkLabel = (url: string) => {
+    try {
+      const u = new URL(url);
+      return u.hostname.replace(/^www\./, '') + u.pathname.replace(/\/$/, '');
+    } catch {
+      return url;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
       <SiteHeader locale={locale} />
@@ -112,30 +128,35 @@ export default function CouponsView({
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
+        {/* Stats — only render cards that say something (a "$0 credits" stat
+            when no coupon grants credit looks broken) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
             <CardContent className="py-4 text-center">
               <div className="text-3xl font-bold text-green-600">{verifiedCoupons.length}</div>
               <div className="text-sm text-zinc-600">{t('verifiedCoupons')}</div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-            <CardContent className="py-4 text-center">
-              <div className="text-3xl font-bold text-blue-600">
-                {verifiedCoupons.reduce((acc, c) => acc + (c.discount_type === 'percentage' ? c.discount_value : 0), 0)}%
-              </div>
-              <div className="text-sm text-zinc-600">{t('maxDiscount')}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
-            <CardContent className="py-4 text-center">
-              <div className="text-3xl font-bold text-purple-600">
-                ${verifiedCoupons.reduce((acc, c) => acc + (c.discount_type === 'fixed' ? c.discount_value : 0), 0)}
-              </div>
-              <div className="text-sm text-zinc-600">{t('totalCredits')}</div>
-            </CardContent>
-          </Card>
+          {maxPercentOff > 0 && (
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+              <CardContent className="py-4 text-center">
+                <div className="text-3xl font-bold text-blue-600">
+                  {maxPercentOff}%
+                </div>
+                <div className="text-sm text-zinc-600">{t('maxDiscount')}</div>
+              </CardContent>
+            </Card>
+          )}
+          {totalCredit > 0 && (
+            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+              <CardContent className="py-4 text-center">
+                <div className="text-3xl font-bold text-purple-600">
+                  ${totalCredit}
+                </div>
+                <div className="text-sm text-zinc-600">{t('totalCredits')}</div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Verified Coupons */}
@@ -146,7 +167,7 @@ export default function CouponsView({
             <Badge className="bg-green-100 text-green-800">{verifiedCoupons.length}</Badge>
           </h2>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {verifiedCoupons.map((coupon) => {
               const provider = resolveProvider(coupon);
               const providerLogoSrc = getProviderLogoSrc(coupon.providers);
@@ -160,20 +181,22 @@ export default function CouponsView({
                 <Card key={coupon.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-0">
                     <div className="flex">
-                      {/* Provider Logo */}
-                      <div className={`${provider.color} w-24 flex items-center justify-center rounded-l-lg`}>
+                      {/* Provider Logo — neutral tile for real logos so the
+                          artwork stays legible; brand color only for emoji */}
+                      <div className={`w-20 sm:w-24 shrink-0 flex items-center justify-center rounded-l-lg ${providerLogoSrc ? 'bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-100 dark:border-zinc-800' : provider.color}`}>
                         {providerLogoSrc ? (
-                          <Image src={providerLogoSrc} alt={coupon.providers?.name || provider.name} width={48} height={48} className="w-12 h-12 object-contain" unoptimized />
+                          <Image src={providerLogoSrc} alt={coupon.providers?.name || provider.name} width={48} height={48} className="w-10 h-10 sm:w-12 sm:h-12 object-contain" unoptimized />
                         ) : (
                           <span className="text-3xl">{providerLogoFallback}</span>
                         )}
                       </div>
 
-                      {/* Coupon Details */}
-                      <div className="flex-1 p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <div className="flex items-center gap-2">
+                      {/* Coupon Details — min-w-0 lets the long invite URL
+                          truncate instead of forcing the card wider */}
+                      <div className="flex-1 min-w-0 p-4">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                               <span className="font-semibold">{provider.name}</span>
                               {coupon.is_verified && (
                                 <Badge className="bg-green-100 text-green-800 text-xs">
@@ -181,50 +204,59 @@ export default function CouponsView({
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-zinc-500">{coupon.description}</p>
+                            <p className="text-sm text-zinc-500 mt-0.5">{coupon.description}</p>
                           </div>
-                          <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white">
+                          <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white shrink-0">
                             {formatDiscount(coupon)}
                           </Badge>
                         </div>
 
-                        {/* Code & Actions */}
-                        <div className="flex items-center gap-2 mt-3">
-                          <div className="flex-1 min-w-0 bg-zinc-100 dark:bg-zinc-800 rounded px-3 py-2 font-mono text-sm flex items-center gap-2">
+                        {/* Code & Actions — stacked on narrow screens so the
+                            code/link row never forces the card wider */}
+                        <div className="flex flex-col gap-2 lg:flex-row lg:items-center mt-3">
+                          <div className="w-full min-w-0 lg:flex-1 bg-zinc-100 dark:bg-zinc-800 rounded px-3 py-2 font-mono text-sm flex items-center gap-2">
                             {targetIsLink ? (
                               <ExternalLink className="w-4 h-4 text-zinc-500 shrink-0" />
                             ) : (
                               <Tag className="w-4 h-4 text-zinc-500 shrink-0" />
                             )}
-                            <span className="truncate">{target}</span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant={copiedValue === target ? "secondary" : "default"}
-                            onClick={() => handleCopy(target)}
-                            className="gap-1 shrink-0"
-                          >
-                            {copiedValue === target ? (
-                              <>
-                                <Check className="w-4 h-4" /> {t('copied')}
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-4 h-4" /> {t('copy')}
-                              </>
-                            )}
-                          </Button>
-                          {visitUrl !== '#' && (
-                            <a
-                              href={visitUrl}
-                              target="_blank"
-                              rel="sponsored noopener noreferrer"
+                            <span
+                              className="truncate"
+                              title={targetIsLink ? target : undefined}
                             >
-                              <Button size="sm" variant="outline" className="gap-1">
-                                {t('visit')} <ExternalLink className="w-3 h-3" />
-                              </Button>
-                            </a>
-                          )}
+                              {targetIsLink ? linkLabel(target) : target}
+                            </span>
+                          </div>
+                          <div className="flex gap-2 shrink-0 w-full lg:w-auto">
+                            <Button
+                              size="sm"
+                              variant={copiedValue === target ? "secondary" : "default"}
+                              onClick={() => handleCopy(target)}
+                              className="gap-1 flex-1 lg:flex-none"
+                            >
+                              {copiedValue === target ? (
+                                <>
+                                  <Check className="w-4 h-4" /> {t('copied')}
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-4 h-4" /> {targetIsLink ? t('copyLink') : t('copy')}
+                                </>
+                              )}
+                            </Button>
+                            {visitUrl !== '#' && (
+                              <a
+                                href={visitUrl}
+                                target="_blank"
+                                rel="sponsored noopener noreferrer"
+                                className="flex-1 lg:flex-none"
+                              >
+                                <Button size="sm" variant="outline" className="gap-1 w-full lg:w-auto">
+                                  {t('visit')} <ExternalLink className="w-3 h-3" />
+                                </Button>
+                              </a>
+                            )}
+                          </div>
                         </div>
 
                         {/* Expiry */}
@@ -251,7 +283,7 @@ export default function CouponsView({
               {t('otherOffers')}
             </h2>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {otherCoupons.map((coupon) => {
                 const provider = resolveProvider(coupon);
 

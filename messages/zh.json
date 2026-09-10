@@ -258,6 +258,7 @@
     "expiresIn": "{days} 天后过期",
     "expiringSoon": "即将过期",
     "copy": "复制",
+    "copyLink": "复制链接",
     "copied": "已复制",
     "visit": "访问",
     "haveCoupon": "有优惠码？",
