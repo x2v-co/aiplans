@@ -258,6 +258,7 @@
     "expiresIn": "Expires in {days} days",
     "expiringSoon": "Expiring soon",
     "copy": "Copy",
+    "copyLink": "Copy link",
     "copied": "Copied",
     "visit": "Visit",
     "haveCoupon": "Have a coupon code?",

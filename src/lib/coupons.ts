@@ -23,7 +23,7 @@ export interface Coupon {
     name: string;
     slug: string;
     logo: string;
-    logo_url?: string;
+    logo_url?: string | null;
     website?: string | null;
   };
 }
@@ -37,6 +37,7 @@ export async function getCoupons(): Promise<Coupon[]> {
         'name', p.name,
         'slug', p.slug,
         'logo', p.logo,
+        'logo_url', p.logo_url,
         'website', p.website
       ) END AS providers
     FROM coupons c
