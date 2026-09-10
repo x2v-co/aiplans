@@ -265,6 +265,7 @@
     "submitCoupon": "提交优惠码",
     "percentOff": "{value}% 折扣",
     "creditAmount": "${value} 额度",
+    "tokenCredit": "{value} Tokens",
     "faqTitle": "常见问题",
     "q1": "如何获取 AI 服务优惠码？",
     "a1": "在本页浏览已验证的优惠码，点击「复制」后到对应服务商结账页面粘贴即可。优惠码由社区提交并经其他用户确认；请认准「已验证」标签和最近确认日期。",
