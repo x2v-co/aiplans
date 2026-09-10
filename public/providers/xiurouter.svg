@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="xiu-ai-favicon-title">
+  <title id="xiu-ai-favicon-title">xiu.ai favicon</title>
+  <rect width="64" height="64" rx="14" fill="#1C1E24"></rect>
+  <defs>
+    <mask id="xiu-ai-favicon-cut">
+      <rect width="64" height="64" fill="#fff"></rect>
+      <path d="M32 26.75 37.25 32 32 37.25 26.75 32Z" fill="#000"></path>
+    </mask>
+  </defs>
+  <g mask="url(#xiu-ai-favicon-cut)">
+    <path fill="#FFFFFF" d="M13.58 8h11.04c1.22 0 2.35.65 2.97 1.7l8.74 15.52-7.15 7.15L12.05 11.55C10.86 10.1 11.89 8 13.58 8Z"></path>
+    <path fill="#E06A3C" d="M50.42 8H39.38c-1.22 0-2.35.65-2.97 1.7l-8.74 15.52 7.15 7.15 17.13-20.82C53.14 10.1 52.11 8 50.42 8Z"></path>
+    <path fill="#FFFFFF" d="M13.58 56h11.04c1.22 0 2.35-.65 2.97-1.7l8.74-15.52-7.15-7.15-17.13 20.82C10.86 53.9 11.89 56 13.58 56Z"></path>
+    <path fill="#B4B8C6" d="M50.42 56H39.38c-1.22 0-2.35-.65-2.97-1.7l-8.74-15.52 7.15-7.15 17.13 20.82C53.14 53.9 52.11 56 50.42 56Z"></path>
+  </g>
+</svg>

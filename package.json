@@ -32,7 +32,8 @@
     "ingest:benchmarks": "tsx scripts/ingest-artificial-analysis-benchmarks.ts",
     "indexnow": "tsx scripts/submit-indexnow.ts",
     "fetch-logos": "tsx scripts/fetch-provider-logos.ts",
-    "fetch-logos:force": "tsx scripts/fetch-provider-logos.ts --force"
+    "fetch-logos:force": "tsx scripts/fetch-provider-logos.ts --force",
+    "seed:xiurouter": "tsx scripts/seed-xiurouter-provider.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

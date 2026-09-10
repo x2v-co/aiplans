@@ -16,6 +16,11 @@ export async function upsertChannelPrice(data: {
   last_verified: Date;
   currency?: string;
   price_unit?: string;
+  /**
+   * Scraper-owned provenance note. When provided it overwrites the row's
+   * notes on every run; when omitted existing notes are preserved.
+   */
+  notes?: string;
 }) {
   // Defensive validation — reject obvious bad data at the write boundary so
   // scraper bugs fail loudly instead of silently overwriting good rows.
@@ -74,6 +79,7 @@ export async function upsertChannelPrice(data: {
         currency: data.currency ?? 'USD',
         price_unit: data.price_unit ?? 'per_1m_tokens',
         updated_at: new Date(),
+        ...(data.notes !== undefined ? { notes: data.notes } : {}),
       })
       .eq('id', existing.id)
       .select()
@@ -97,6 +103,7 @@ export async function upsertChannelPrice(data: {
       last_verified: data.last_verified,
       currency: data.currency ?? 'USD',
       price_unit: data.price_unit ?? 'per_1m_tokens',
+      ...(data.notes !== undefined ? { notes: data.notes } : {}),
     })
     .select()
     .single();

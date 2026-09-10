@@ -12,6 +12,12 @@ export interface ScrapedPrice {
   currency?: CurrencyCode;
   /** Source-provided release/listing timestamp, when available. */
   releasedAt?: string;
+  /**
+   * Source-specific provenance attached to the api_channel_prices row.
+   * Scraper-owned: overwritten on every run. Scrapers that don't set it
+   * leave existing notes untouched.
+   */
+  notes?: string;
 }
 
 export interface ScraperResult {
