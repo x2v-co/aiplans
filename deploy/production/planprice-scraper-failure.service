@@ -1,0 +1,10 @@
+[Unit]
+Description=Telegram alert when the PlanPrice scraper job fails
+Wants=network-online.target
+# OnFailure units are started after the failed unit is torn down; this just
+# makes the API call wait on connectivity rather than racing the network.
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/x2v/planprice/deploy/production/notify-failure.sh planprice-scraper.service

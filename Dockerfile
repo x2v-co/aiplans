@@ -24,6 +24,10 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN npx playwright install --with-deps chromium
 COPY package.json tsconfig.json ./
 COPY scripts ./scripts
+# Scripts share selectors with the app (e.g. src/lib/plan-selector.ts, used by
+# fix:kinds / mappings:materialize / audit); copying scripts alone made those
+# commands crash in-container from 2026-08-20 until the drift was spotted.
+COPY src ./src
 CMD ["npm", "run", "scrape"]
 
 FROM node:22-bookworm-slim AS runner

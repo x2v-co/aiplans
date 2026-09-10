@@ -28,6 +28,8 @@
  *   C15 plans.no_model_mapping    — plan has 0 rows in model_plan_mapping (warn)
  *   C16 plans.selector_empty      — model_selector resolves to 0 models (critical)
  *   C17 plans.selector_unknown_slug — selector.extra names a nonexistent model (critical)
+ *   C18 plans.mapping_drift       — materialized model_plan_mapping rows disagree with
+ *                                   the current selector resolution (critical)
  */
 import { supabaseAdmin } from './db/queries';
 import { databaseSql } from './db/postgres-admin';
@@ -78,12 +80,20 @@ async function main() {
     ? 'id, name, slug, provider_id, price, last_verified, source, plan_kind, plan_line, tier_rank, model_selector'
     : 'id, name, slug, provider_id, price, last_verified, source';
 
+  // model_plan_mapping.source ('derived' | 'manual') landed with the selector
+  // system; like the plans probe above, skip it on a pre-migration database.
+  const mappingSourceRows = await databaseSql<{ column_name: string }[]>`
+    SELECT column_name FROM information_schema.columns
+     WHERE table_name = 'model_plan_mapping' AND column_name = 'source'
+  `;
+  const MAPPING_SOURCES = mappingSourceRows.length === 1;
+
   const [modelsRes, providersRes, pricesRes, plansRes, mappingsRes, ratesRes] = await Promise.all([
     supabaseAdmin.from('models').select('id, name, slug, provider_ids, type'),
     supabaseAdmin.from('providers').select('id, name, slug, type'),
     supabaseAdmin.from('api_channel_prices').select('id, model_id, provider_id, input_price_per_1m, output_price_per_1m, is_available, last_verified, updated_at, currency'),
     supabaseAdmin.from('plans').select(planColumns),
-    supabaseAdmin.from('model_plan_mapping').select('id, model_id, plan_id'),
+    supabaseAdmin.from('model_plan_mapping').select(MAPPING_SOURCES ? 'id, model_id, plan_id, source' : 'id, model_id, plan_id'),
     supabaseAdmin.from('exchange_rates').select('from_currency, to_currency, rate, valid_at').eq('is_active', true).order('valid_at', { ascending: false }),
   ]);
   for (const r of [modelsRes, providersRes, pricesRes, plansRes, mappingsRes, ratesRes]) {
@@ -317,12 +327,12 @@ async function main() {
     }
   }
 
-  // ---------- C14-C17: plan classification and derived model links ----------
+  // ---------- C14-C18: plan classification and derived model links ----------
   // Every plan needs a plan_kind/plan_line/tier_rank so the UI can group it into
   // the right product ladder, and a model_selector so the materializer can
   // derive its model links. See scripts/config/plan-classifications.ts.
   // C15 (no_model_mapping) works on the pre-migration schema too, so it runs
-  // unconditionally; C14/C16/C17 need the new columns.
+  // unconditionally; C14/C16-C18 need the new columns.
   // providerById holds untyped shim rows, so narrow to what the selector needs.
   const providerSlugById = new Map<number, string>(
     providers.map((pr: { id: number; slug: string }) => [pr.id, pr.slug]),
@@ -339,8 +349,12 @@ async function main() {
   );
 
   const mappingCountByPlan = new Map<number, number>();
+  const mappingsByPlan = new Map<number, { model_id: number; source?: string }[]>();
   for (const mp of mappings) {
     mappingCountByPlan.set(mp.plan_id, (mappingCountByPlan.get(mp.plan_id) ?? 0) + 1);
+    const list = mappingsByPlan.get(mp.plan_id) ?? [];
+    list.push(mp);
+    mappingsByPlan.set(mp.plan_id, list);
   }
 
   for (const pl of plans) {
@@ -353,7 +367,7 @@ async function main() {
   }
 
   if (!CLASSIFIED) {
-    log('⏭  Skipping C14-C17: plans.plan_kind / model_selector not present. Run `npm run migrate`.\n');
+    log('⏭  Skipping C14-C18: plans.plan_kind / model_selector not present. Run `npm run migrate`.\n');
   }
 
   for (const pl of CLASSIFIED ? plans : []) {
@@ -389,6 +403,34 @@ async function main() {
     for (const slug of resolution.unknownExtra) {
       add('plans.selector_unknown_slug', 'critical', `selector.extra names unknown model '${slug}'`, ref);
     }
+
+    // C18: materialized rows must match what the selector resolves to today.
+    // The materializer is a separate scheduled step and can silently lag the
+    // catalog — it did for three weeks in 2026-08/09 when the scraper image
+    // stopped shipping src/lib, and every newly released model dropped out of
+    // every plan until someone noticed. C16/C17 only inspect the selector rule;
+    // this compares the rule both directions against the actual mapping rows.
+    // Manual rows are curated exceptions: they satisfy a "missing" link and
+    // are never reported stale.
+    if (MAPPING_SOURCES) {
+      const expectedIds = new Set(resolution.models.map((m) => m.id));
+      const planMappings = mappingsByPlan.get(pl.id) ?? [];
+      const linkedIds = new Set(planMappings.map((mp) => mp.model_id));
+      const missingSlugs = resolution.models
+        .filter((m) => !linkedIds.has(m.id))
+        .map((m) => m.slug);
+      const staleSlugs = planMappings
+        .filter((mp) => mp.source === 'derived' && !expectedIds.has(mp.model_id))
+        .map((mp) => modelById.get(mp.model_id)?.slug ?? `model#${mp.model_id}`);
+      if (missingSlugs.length > 0 || staleSlugs.length > 0) {
+        add(
+          'plans.mapping_drift',
+          'critical',
+          `materialized mappings lag the selector (+${missingSlugs.length} not linked, −${staleSlugs.length} stale)`,
+          { ...ref, missing: missingSlugs.slice(0, 20), stale: staleSlugs.slice(0, 20) },
+        );
+      }
+    }
   }
 
   // ---------- report ----------
@@ -416,6 +458,7 @@ async function main() {
       'mapping.orphan_plan',
       'plans.selector_empty',
       'plans.selector_unknown_slug',
+      'plans.mapping_drift',
       'prices.input_eq_output',
       'prices.cross_channel_outlier',
       'prices.stale',

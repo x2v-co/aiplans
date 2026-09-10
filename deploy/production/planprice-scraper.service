@@ -3,6 +3,7 @@ Description=PlanPrice daily pricing, plans, audit, and Agent Arena refresh
 Wants=network-online.target
 After=network-online.target docker.service
 Requires=docker.service
+OnFailure=planprice-scraper-failure.service
 
 [Service]
 Type=oneshot

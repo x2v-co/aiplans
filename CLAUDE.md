@@ -220,15 +220,19 @@ immune to `cleanupOutdatedPlans`. To add a new manual plan, put it in the
 
 Three scripts form the feedback loop:
 
-1. `scripts/audit-data.ts` — 17 read-only checks:
+1. `scripts/audit-data.ts` — 18 read-only checks:
    `prices.zero_or_null`, `prices.output_lt_input`, `prices.input_eq_output`,
    `prices.cross_channel_outlier` (USD-normalized), `prices.stale`,
    `models.no_channel_price`, `models.no_producer_channel`,
    `models.unknown_provider_id`, `plans.stale`, `plans.missing_verified`,
    `providers.unknown_ref`, `mapping.orphan_model`, `mapping.orphan_plan`,
    `plans.missing_kind`, `plans.no_model_mapping`, `plans.selector_empty`,
-   `plans.selector_unknown_slug`.
+   `plans.selector_unknown_slug`, `plans.mapping_drift`.
    Exit code 0 = clean, 1 = critical, 2 = warnings only.
+   `plans.mapping_drift` compares each plan's materialized mapping rows
+   against a fresh selector resolution in both directions, so a broken/stale
+   materializer (missing links for new models, or links the selector no
+   longer matches) goes critical even when every selector rule is valid.
    The last four need migration 013/014; the audit probes for the columns and
    skips them with a notice rather than crashing on a pre-migration database.
 
@@ -423,6 +427,18 @@ messages/
   which resolves before the shell flushes. If those pages need a skeleton back,
   it has to be an in-page `<Suspense>` around the heavy query, not a route-level
   `loading.tsx`.
+- **The scraper Docker image must ship `src/`.** Scripts share modules with
+  the app (`src/lib/plan-selector.ts` is imported by `fix:kinds`,
+  `mappings:materialize`, and `audit`). The scraper stage in `Dockerfile`
+  does `COPY src ./src`; if it ever copies `scripts` alone again, those three
+  nightly steps crash in-container with `Cannot find module '../src/lib/...'`
+  while working locally — exactly how every plan lost new-model links for
+  three weeks in 2026-08/09. After Dockerfile changes, rebuild with
+  `BUILD_SCRAPER=1 deploy/production/rollout.sh` (the default build skips the
+  scraper image). A failed `planprice-scraper.service` fires
+  `planprice-scraper-failure.service`, which sends a Telegram alert via
+  `deploy/production/notify-failure.sh` (credentials in
+  `/home/ubuntu/.config/brain-tg-bot/env`).
 - **`upsertChannelPrice` rejects `output < input`** — if a scraper's regex
   accidentally swaps columns, the write fails and you see it in logs. Fix
   the scraper, don't work around the check.
