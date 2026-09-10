@@ -267,6 +267,7 @@ export const coupons = pgTable('coupons', {
   discountType: text('discount_type'), // 'percentage', 'fixed', 'trial'
   discountValue: real('discount_value'),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
+  offerUrl: text('offer_url'), // per-coupon destination (may carry a referral code); falls back to providers.website
   isVerified: boolean('is_verified').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),

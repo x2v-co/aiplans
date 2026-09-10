@@ -140,7 +140,7 @@ export default function CouponsView({
               const providerLogoSrc = getProviderLogoSrc(coupon.providers);
               const providerLogoFallback = getProviderLogoFallback(coupon.providers, provider.logo);
               const daysLeft = coupon.expires_at ? getDaysLeft(coupon.expires_at) : null;
-              const visitUrl = coupon.providers?.website || provider.website;
+              const visitUrl = coupon.offer_url || coupon.providers?.website || provider.website;
 
               return (
                 <Card key={coupon.id} className="hover:shadow-lg transition-shadow">
@@ -200,7 +200,7 @@ export default function CouponsView({
                             <a
                               href={visitUrl}
                               target="_blank"
-                              rel="noopener noreferrer"
+                              rel="sponsored noopener noreferrer"
                             >
                               <Button size="sm" variant="outline" className="gap-1">
                                 {t('visit')} <ExternalLink className="w-3 h-3" />
