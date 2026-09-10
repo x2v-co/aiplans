@@ -5,7 +5,8 @@ export type AnalyticsEventName =
   | 'comparison_model_change'
   | 'outbound_click'
   | 'pricing_filter_change'
-  | 'pricing_search';
+  | 'pricing_search'
+  | 'global_search';
 
 export type AnalyticsEventParams = Record<string, string | number | boolean | undefined>;
 
