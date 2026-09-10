@@ -35,13 +35,13 @@ export default function CouponsView({
   coupons: Coupon[];
 }) {
   const t = useTranslations('coupons');
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [copiedValue, setCopiedValue] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const handleCopy = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2000);
+  const handleCopy = (value: string) => {
+    navigator.clipboard.writeText(value);
+    setCopiedValue(value);
+    setTimeout(() => setCopiedValue(null), 2000);
   };
 
   const formatDiscount = (coupon: Coupon) => {
@@ -49,9 +49,21 @@ export default function CouponsView({
       return t('percentOff', { value: coupon.discount_value });
     } else if (coupon.discount_type === 'fixed') {
       return t('creditAmount', { value: coupon.discount_value });
+    } else if (coupon.discount_type === 'trial') {
+      // Token grant packs (e.g. BigModel invite: 20,000,000 tokens) — compact
+      // notation renders 2000万 / 20M.
+      const compact = new Intl.NumberFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+        notation: 'compact',
+      }).format(coupon.discount_value ?? 0);
+      return t('tokenCredit', { value: compact });
     }
     return `${coupon.discount_value}`;
   };
+
+  // Invite-link grants (trial type, no enterable code) are redeemed by
+  // registering through offer_url, so the box shows/copies the link itself.
+  const copyTarget = (coupon: Coupon) =>
+    coupon.discount_type === 'trial' && coupon.offer_url ? coupon.offer_url : coupon.code;
 
   const isExpired = (expiresAt: string | null) => {
     if (!expiresAt) return false; // null = no published expiry, not "expired in 1970"
@@ -141,6 +153,8 @@ export default function CouponsView({
               const providerLogoFallback = getProviderLogoFallback(coupon.providers, provider.logo);
               const daysLeft = coupon.expires_at ? getDaysLeft(coupon.expires_at) : null;
               const visitUrl = coupon.offer_url || coupon.providers?.website || provider.website;
+              const target = copyTarget(coupon);
+              const targetIsLink = target.startsWith('http');
 
               return (
                 <Card key={coupon.id} className="hover:shadow-lg transition-shadow">
@@ -176,17 +190,21 @@ export default function CouponsView({
 
                         {/* Code & Actions */}
                         <div className="flex items-center gap-2 mt-3">
-                          <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded px-3 py-2 font-mono text-sm flex items-center gap-2">
-                            <Tag className="w-4 h-4 text-zinc-500" />
-                            {coupon.code}
+                          <div className="flex-1 min-w-0 bg-zinc-100 dark:bg-zinc-800 rounded px-3 py-2 font-mono text-sm flex items-center gap-2">
+                            {targetIsLink ? (
+                              <ExternalLink className="w-4 h-4 text-zinc-500 shrink-0" />
+                            ) : (
+                              <Tag className="w-4 h-4 text-zinc-500 shrink-0" />
+                            )}
+                            <span className="truncate">{target}</span>
                           </div>
                           <Button
                             size="sm"
-                            variant={copiedCode === coupon.code ? "secondary" : "default"}
-                            onClick={() => handleCopy(coupon.code)}
-                            className="gap-1"
+                            variant={copiedValue === target ? "secondary" : "default"}
+                            onClick={() => handleCopy(target)}
+                            className="gap-1 shrink-0"
                           >
-                            {copiedCode === coupon.code ? (
+                            {copiedValue === target ? (
                               <>
                                 <Check className="w-4 h-4" /> {t('copied')}
                               </>

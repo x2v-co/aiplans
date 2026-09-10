@@ -265,6 +265,7 @@
     "submitCoupon": "Submit a Coupon",
     "percentOff": "{value}% OFF",
     "creditAmount": "${value} CREDIT",
+    "tokenCredit": "{value} token grant",
     "faqTitle": "Frequently asked questions",
     "q1": "How do I get AI service discount codes?",
     "a1": "Browse the verified codes on this page and click Copy, then paste it at the provider's checkout. Codes are submitted by the community and confirmed by other users; look for the Verified badge and a recent confirmation date.",

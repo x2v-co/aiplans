@@ -529,6 +529,35 @@ const MIGRATIONS: Migration[] = [
          AND offer_url IS DISTINCT FROM 'https://www.volcengine.com/activity/codingplan?ac=MMAP8JTTCAQ2&rc=ZAGRFMAR';
     `,
   },
+  {
+    name: '019_add_bigmodel_invite_coupon',
+    sql: `
+      -- BigModel.cn (智谱, provider slug 'zhipu-china') official invite program:
+      -- the /invite?icode=… link 30x-carrying icode lands on the registration
+      -- page ("新用户免费赠送专享 2000万 tokens 体验包", verified 2026-09-10).
+      -- Invitee benefit only; the opaque icode lives in offer_url, the code
+      -- column is a stable slug (nothing is typed at checkout).
+      INSERT INTO coupons
+        (code, provider_id, description, discount_type, discount_value,
+         expires_at, is_verified, offer_url)
+      SELECT
+        'BIGMODEL-INVITE-20M',
+        p.id,
+        '智谱 BigModel 邀请注册：新用户通过链接注册即送 2000 万 Tokens 体验包 · Invite link: 20M free tokens for new BigModel sign-ups',
+        'trial', 20000000, NULL, true,
+        'https://www.bigmodel.cn/invite?icode=TVJqk7kNrXW70Ja0yO%2FmbYe6UE6JlE%2B3e4PKL%2FdzkG8%3D'
+      FROM providers p
+      WHERE p.slug = 'zhipu-china'
+      ON CONFLICT (code) DO UPDATE SET
+        provider_id    = EXCLUDED.provider_id,
+        description    = EXCLUDED.description,
+        discount_type  = EXCLUDED.discount_type,
+        discount_value = EXCLUDED.discount_value,
+        is_verified    = EXCLUDED.is_verified,
+        offer_url      = EXCLUDED.offer_url,
+        updated_at     = now();
+    `,
+  },
 ];
 
 async function main() {
