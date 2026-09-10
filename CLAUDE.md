@@ -249,15 +249,19 @@ rows from web ground truth so `/api-pricing` filter "🇨🇳 China" shows them.
 
 ### GitHub Actions
 
-- `.github/workflows/scrape-pricing.yml` — hourly cron, runs `npm run scrape`
-- `.github/workflows/data-audit.yml` — daily 02:00 UTC + PR-triggered during
-  migration preparation; runs `audit-data.ts` and uploads output + JSON
-  snapshot as artifacts
-
-Both currently need the `DATABASE_URL` repo secret. At final self-hosted
-cutover, disable database-backed schedules and use
-`deploy/production/run-scrapers.sh` from VPS cron/systemd so PostgreSQL stays
-private and GitHub-hosted runners do not need network access to it.
+- `.github/workflows/deploy-production.yml` — auto-rollout on push to `main`
+  (self-hosted devbox runner, always builds with `BUILD_SCRAPER=1`, runs
+  migrations, health-gates on `/api/health`).
+- `.github/workflows/data-audit.yml` — PRs touching scripts/scrapers/schema
+  get a DB-free `tsc --noEmit` gate; the real 18-check audit runs nightly on
+  the devbox timer, with `workflow_dispatch` re-runnable on the self-hosted
+  runner inside the compose network.
+- `.github/workflows/scrape-pricing.yml` — manual-only `workflow_dispatch`
+  recovery trigger that runs the same `run-scrapers.sh` chain as the timer on
+  devbox (`skip_api` → `SKIP_API=1`). Scheduling itself is
+  `planprice-scraper.timer` on the VPS — GitHub-hosted runners have no path
+  to the private Postgres and no `DATABASE_URL` secret exists any more.
+  PostgreSQL stays private and runners never need network access to it.
 
 ## SEO / GEO (done in 2026-04 session)
 

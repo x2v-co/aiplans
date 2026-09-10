@@ -1,8 +1,10 @@
 name: Data Accuracy Audit
 
 on:
-  # The VPS scraper timer runs the audit after each scrape cycle.
-  workflow_dispatch:   # manual recovery trigger
+  # Nightly auditing is owned by planprice-scraper.timer on devbox, which runs
+  # the audit against the private production Postgres after every scrape
+  # cycle. GitHub-hosted runners have no network path to that database.
+  workflow_dispatch:   # manual audit on the production host
   pull_request:
     paths:
       - 'scripts/db/queries.ts'
@@ -12,10 +14,17 @@ on:
       - 'scripts/fix-plans-audit.ts'
       - 'src/db/schema/**'
 
+permissions:
+  contents: read
+
 jobs:
-  audit:
+  # DB-free gate for code review: scraper/schema changes must still compile.
+  # Data correctness is enforced by the post-scrape audit on the VPS.
+  typecheck:
+    name: Type-check scripts
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -30,40 +39,47 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run data accuracy audit
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        # Exit codes: 0 clean, 1 critical findings (fail), 2 warnings only (pass)
+      - name: Type-check
+        run: npx tsc --noEmit
+
+  # Manual recovery/inspection run against production, inside the compose
+  # network — no database credentials need to live in GitHub secrets.
+  audit:
+    name: Audit production data
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, planprice-production]
+    timeout-minutes: 15
+    environment: Production
+    env:
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/x2v/planprice' }}
+
+    steps:
+      - name: Run audit in scraper container
         run: |
+          set -euo pipefail
+          base="$DEPLOY_PATH"
+          compose_file="$base/deploy/production/compose.yml"
+          env_file="$base/deploy/production/.env.production"
+
+          test -d "$base"
+          sudo -n test -r "$env_file"
+          exec 9<"$base"
+          flock -w 1800 9
+
           set +e
-          npx tsx scripts/audit-data.ts | tee audit-output.txt
-          code=${PIPESTATUS[0]}
-          echo "AUDIT_EXIT=$code" >> "$GITHUB_ENV"
+          sudo -n docker compose -p planprice-production \
+            -f "$compose_file" \
+            --env-file "$env_file" \
+            run --rm scraper npm run audit
+          code=$?
+          set -e
+
+          # Exit codes: 0 clean, 1 critical findings (fail), 2 warnings only (pass)
           if [ "$code" = "1" ]; then
-            echo "::error::Critical data-accuracy findings detected — see audit-output.txt"
+            echo "::error::Critical data-accuracy findings detected"
             exit 1
           fi
-          exit 0
-
-      - name: Upload audit output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: audit-output-${{ github.run_number }}
-          path: audit-output.txt
-          retention-days: 30
-
-      - name: Generate JSON snapshot
-        if: always()
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          npx tsx scripts/audit-data.ts --json > audit-snapshot.json || true
-
-      - name: Upload JSON snapshot
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: audit-snapshot-${{ github.run_number }}
-          path: audit-snapshot.json
-          retention-days: 30
+          if [ "$code" != "0" ] && [ "$code" != "2" ]; then
+            echo "::error::Audit execution failed with exit code $code"
+            exit "$code"
+          fi
