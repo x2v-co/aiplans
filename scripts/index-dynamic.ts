@@ -35,6 +35,7 @@ import { scrapeGrokDynamic } from './scrapers/grok-dynamic';
 import { scrapeMoonshotDynamic } from './scrapers/moonshot-dynamic';
 import { scrapeMiniMaxDynamic } from './scrapers/minimax-dynamic';
 import { scrapeZhipuDynamic } from './scrapers/zhipu-dynamic';
+import { scrapeXiuRouterDynamic } from './scrapers/xiurouter-dynamic';
 
 import {
   upsertChannelPrice,
@@ -94,6 +95,7 @@ const API_SCRAPERS: ScraperConfig[] = [
   { name: 'Moonshot', fn: scrapeMoonshotDynamic, priority: 2, fullCatalog: true },
   { name: 'Minimax', fn: scrapeMiniMaxDynamic, priority: 2 },
   { name: 'Zhipu AI', fn: scrapeZhipuDynamic, priority: 2, fullCatalog: true },
+  { name: 'XiuRouter', fn: scrapeXiuRouterDynamic, priority: 2 },
 ];
 
 function printHelp(): void {
@@ -180,6 +182,9 @@ const PROVIDER_IDS: Record<string, number> = {
 
   // Official routing
   'OPENROUTER': 59,
+
+  // Aggregator (new-api/one-api style managed router)
+  'XIUROUTER': 69,
 
   // Legacy aliases (for backward compatibility)
   'BYTEDANCE': 47,  // Same as SEED
@@ -318,6 +323,7 @@ async function processAPIScraper(
         last_verified: new Date(),
         currency: priceCurrency,
         price_unit: 'per_1m_tokens',
+        notes: price.notes,
       });
       seenModelIds.add(product.id);
 
@@ -396,6 +402,7 @@ function getChannelProviderKey(source: string): string {
     'Fireworks-AI': 'FIREWORKS',
     'Replicate': 'REPLICATE',
     'Anyscale': 'ANYSCALE',
+    'XiuRouter': 'XIUROUTER',
     'StepFun': 'STEPFUN',
     'DMXAPI': 'DMXAPI',
     'Grok': 'XAI',
@@ -561,6 +568,7 @@ function getChannelWebsite(source: string): string {
     'Fireworks-AI': 'https://fireworks.ai',
     'Replicate': 'https://replicate.com',
     'Anyscale': 'https://anyscale.com',
+    'XiuRouter': 'https://router.xiu.ai',
     'DMXAPI': 'https://www.dmxapi.cn',
     'AWS-Bedrock': 'https://aws.amazon.com/bedrock',
     'Vertex-AI': 'https://cloud.google.com/vertex-ai',

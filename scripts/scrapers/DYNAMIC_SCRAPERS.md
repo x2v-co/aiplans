@@ -69,6 +69,21 @@ These scrapers cover cloud providers, aggregators, and resellers.
 | Anyscale | Aggregator | Acquired by Replicate (merged) | USD | ⚠️ Deprecated |
 | StepFun | Official | step-1/2/3 series, vision, audio models (21 models) | CNY | ✅ Updated |
 | DMXAPI | Reseller | gpt-4o/4o-mini, claude-3.5/haiku, deepseek, gemini (7 models) | CNY | ✅ Working |
+| XiuRouter | Aggregator | Claude/GPT/Gemini/Grok/DeepSeek (25 models), new-api ratios × group tiers | USD | ✅ Working |
+
+#### XiuRouter notes
+
+- Public endpoint `GET https://router.xiu.ai/api/pricing` (no auth, no Playwright).
+- Billing: `input = model_ratio × 2 × group_ratio`; `output = input × completion_ratio`;
+  cache read = `input × cache_ratio`.
+- Two self-service groups (`usable_group`): **max/Managed 满血档** (0.9) is the
+  full-speed headline tier; **benefit/Value 福利档** (0.6) is the cheaper,
+  capacity-limited fallback used only for models not on max. Partner groups
+  (`*-partner`, `ccmax-蒸馏`) are not publicly subscribable and are ignored.
+- Headline tier + the other tier's rates + row `pricing_version` are stored in
+  `api_channel_prices.notes`. `reference_price` is upstream list price and is
+  never published as a XiuRouter price.
+- Provider row seeded by `npm run seed:xiurouter` (id 69).
 
 ## Latest Pricing Data
 
