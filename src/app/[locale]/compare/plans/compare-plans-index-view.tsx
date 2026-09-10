@@ -1,6 +1,6 @@
 'use client';
 
-import { useDeferredValue, useState } from 'react';
+import { useDeferredValue, useRef, useState } from 'react';
 import Link from "next/link";
 import { useTranslations } from '@/lib/translations';
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,8 @@ import { Search, TrendingUp, Building2, Zap, ArrowRight } from "lucide-react";
 import SiteHeader from '@/components/SiteHeader';
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { formatPrice, type CurrencyCode } from "@/lib/currency";
-import type { ComparePlansIndexData } from "@/lib/compare-plans-index";
+import { matchesSearch } from "@/lib/search-match";
+import type { ComparePlansIndexData, ProviderModelGroup } from "@/lib/compare-plans-index";
 import { formatModelName } from '@/lib/model-names';
 
 /**
@@ -36,8 +37,10 @@ export default function ComparePlansIndexView({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'elo' | 'plans' | 'name'>('elo');
   const deferredSearchQuery = useDeferredValue(searchQuery);
+  const resultsRef = useRef<HTMLElement>(null);
 
   const normalizedSearchQuery = deferredSearchQuery.trim().toLowerCase();
+  const isSearching = normalizedSearchQuery.length > 0;
 
   const filteredModelsByProvider = modelsByProvider
     .map((item: any) => {
@@ -45,16 +48,15 @@ export default function ComparePlansIndexView({
         .filter((model: any) => {
           if (!normalizedSearchQuery) return true;
 
-          const haystacks = [
+          // Shared fuzzy matcher: punctuation-insensitive plus brand aliases,
+          // so "chatgpt" surfaces OpenAI GPT models and "智谱" surfaces GLM.
+          return matchesSearch(deferredSearchQuery, [
             model.name,
             model.slug,
             model.providers?.name,
             item.provider?.name,
-          ]
-            .filter(Boolean)
-            .map((value: string) => value.toLowerCase());
-
-          return haystacks.some((value: string) => value.includes(normalizedSearchQuery));
+            item.provider?.slug,
+          ]);
         })
         .sort((a: any, b: any) => {
           if (sortBy === 'name') {
@@ -118,10 +120,23 @@ export default function ComparePlansIndexView({
               className="pl-12 h-14 text-lg"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  // Results render straight under the hero while searching;
+                  // this only matters on short viewports where the section
+                  // still starts below the fold.
+                  resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
             />
           </div>
         </div>
 
+        {/* While searching, hot/featured collections hide so matches show
+            immediately under the search box instead of below two card
+            grids. */}
+        {!isSearching && (
+        <>
         {/* Hot Models Section */}
         <section className="mb-16">
           <div className="flex items-center gap-2 mb-6">
@@ -263,18 +278,29 @@ export default function ComparePlansIndexView({
             })}
           </div>
         </section>
+        </>
+        )}
 
-        {/* Browse by Provider */}
-        <section className="mb-16">
+        {/* Browse by Provider / search results */}
+        <section ref={resultsRef} className="mb-16 scroll-mt-20">
           <div className="flex items-center gap-2 mb-6">
             <Building2 className="w-6 h-6 text-blue-500" />
-            <h2 className="text-2xl font-bold">{t('browseByProvider')}</h2>
+            <h2 className="text-2xl font-bold">
+              {isSearching
+                ? (locale === 'zh' ? `🔍 搜索结果` : `🔍 Search results`)
+                : t('browseByProvider')}
+            </h2>
           </div>
 
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <p className="text-sm text-zinc-500">
-              {visibleModelCount} {visibleModelCount === 1 ? 'model' : 'models'}
-              {normalizedSearchQuery ? ` matched "${deferredSearchQuery}"` : ' available'}
+              {locale === 'zh'
+                ? (isSearching
+                    ? `${visibleModelCount} 个模型与“${deferredSearchQuery}”相关`
+                    : `共 ${visibleModelCount} 个模型`)
+                : (isSearching
+                    ? `${visibleModelCount} ${visibleModelCount === 1 ? 'model' : 'models'} matched "${deferredSearchQuery}"`
+                    : `${visibleModelCount} ${visibleModelCount === 1 ? 'model' : 'models'} available`)}
             </p>
             <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
               <span>{locale === 'zh' ? '排序' : 'Sort by'}</span>
@@ -283,7 +309,7 @@ export default function ComparePlansIndexView({
                 onChange={(event) => setSortBy(event.target.value as 'elo' | 'plans' | 'name')}
                 className="h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-950"
               >
-                <option value="elo">{locale === 'zh' ? 'Arena ELO' : 'Arena ELO'}</option>
+                <option value="elo">Arena ELO</option>
                 <option value="plans">{locale === 'zh' ? '套餐数量' : 'Plan count'}</option>
                 <option value="name">{locale === 'zh' ? '名称' : 'Name'}</option>
               </select>
@@ -292,50 +318,8 @@ export default function ComparePlansIndexView({
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredModelsByProvider.map((item) => (
-                <Card key={item.provider.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      {getProviderLogoSrc(item.provider) ? (
-                        <img
-                          src={getProviderLogoSrc(item.provider)!}
-                          alt={item.provider.name}
-                          className="w-12 h-12 object-contain"
-                        />
-                      ) : (
-                        <span className="text-4xl">{getProviderLogoFallback(item.provider, "🏢")}</span>
-                      )}
-                      <div>
-                        <h3 className="font-bold text-xl">{item.provider.name}</h3>
-                        <p className="text-sm text-zinc-500">
-                          {item.models.length} {item.models.length === 1 ? 'model' : 'models'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      {item.models.slice(0, 3).map((model: any) => (
-                        <Link
-                          key={model.id}
-                          href={`/${locale}/compare/plans/${model.slug}`}
-                          className="block p-2 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{formatModelName(model.name)}</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {model.planCount || 0} {model.planCount === 1 ? 'plan' : 'plans'}
-                            </Badge>
-                          </div>
-                        </Link>
-                      ))}
-                      {item.models.length > 3 && (
-                        <div className="text-sm text-zinc-500 text-center pt-2">
-                          +{item.models.length - 3} more models
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              <ProviderGroupCard key={item.provider.id} locale={locale} group={item} />
+            ))}
           </div>
 
           {filteredModelsByProvider.length === 0 && (
@@ -357,7 +341,7 @@ export default function ComparePlansIndexView({
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href={`/${locale}/rankings/arena`}>
+            <Link href={`/${locale}/api-pricing?sort=elo`}>
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl mb-2">🏆</div>
@@ -367,7 +351,7 @@ export default function ComparePlansIndexView({
               </Card>
             </Link>
 
-            <Link href={`/${locale}/rankings/context`}>
+            <Link href={`/${locale}/api-pricing?sort=context`}>
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl mb-2">📏</div>
@@ -377,7 +361,7 @@ export default function ComparePlansIndexView({
               </Card>
             </Link>
 
-            <Link href={`/${locale}/rankings/cheapest`}>
+            <Link href={`/${locale}/api-pricing?sort=price&order=asc`}>
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl mb-2">💰</div>
@@ -387,7 +371,7 @@ export default function ComparePlansIndexView({
               </Card>
             </Link>
 
-            <Link href={`/${locale}/rankings/china`}>
+            <Link href={`/${locale}/api-pricing?china=1`}>
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl mb-2">🇨🇳</div>
@@ -400,5 +384,74 @@ export default function ComparePlansIndexView({
         </section>
       </main>
     </div>
+  );
+}
+
+/**
+ * One provider tile in the browse-by-provider grid. The "+N more models"
+ * row used to be plain text, so a provider with more than three models
+ * offered no way to reach the rest from this page.
+ */
+function ProviderGroupCard({ locale, group }: { locale: string; group: ProviderModelGroup }) {
+  const isZh = locale === 'zh';
+  const [expanded, setExpanded] = useState(false);
+  const visibleModels = expanded ? group.models : group.models.slice(0, 3);
+  const hiddenCount = group.models.length - 3;
+
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          {getProviderLogoSrc(group.provider) ? (
+            <img
+              src={getProviderLogoSrc(group.provider)!}
+              alt={group.provider.name}
+              className="w-12 h-12 object-contain"
+            />
+          ) : (
+            <span className="text-4xl">{getProviderLogoFallback(group.provider, "🏢")}</span>
+          )}
+          <div>
+            <h3 className="font-bold text-xl">{group.provider.name}</h3>
+            <p className="text-sm text-zinc-500">
+              {group.models.length} {group.models.length === 1
+                ? (isZh ? '个模型' : 'model')
+                : (isZh ? '个模型' : 'models')}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {visibleModels.map((model: any) => (
+            <Link
+              key={model.id}
+              href={`/${locale}/compare/plans/${model.slug}`}
+              className="block p-2 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{formatModelName(model.name)}</span>
+                <Badge variant="secondary" className="text-xs">
+                  {model.planCount || 0} {model.planCount === 1
+                    ? (isZh ? '个套餐' : 'plan')
+                    : (isZh ? '个套餐' : 'plans')}
+                </Badge>
+              </div>
+            </Link>
+          ))}
+          {hiddenCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setExpanded((value) => !value)}
+              aria-expanded={expanded}
+              className="w-full pt-2 text-center text-sm font-medium text-blue-600 hover:underline"
+            >
+              {expanded
+                ? (isZh ? '收起' : 'Show less')
+                : (isZh ? `展开其余 ${hiddenCount} 个模型` : `+${hiddenCount} more models`)}
+            </button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

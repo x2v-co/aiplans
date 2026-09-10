@@ -24,6 +24,20 @@
     "getStarted": "Get Started",
     "learnMore": "Learn More"
   },
+  "search": {
+    "openSearch": "Search",
+    "placeholder": "Search models, plans, providers…",
+    "models": "Models",
+    "plans": "Plans",
+    "providers": "Providers",
+    "noResults": "No results for \"{query}\"",
+    "hint": "Search across models, subscription plans and providers — try \"chatgpt\", \"Claude\", \"智谱\"",
+    "loading": "Loading search index…",
+    "error": "Search is temporarily unavailable.",
+    "navigate": "navigate",
+    "open": "open",
+    "close": "close"
+  },
   "compare": {
     "title": "Compare AI Plans",
     "subtitle": "Select a model to compare all available plans across providers",
@@ -206,6 +220,7 @@
     "nameZA": "Z to A",
     "performanceHighToLow": "⭐ Performance (High to Low)",
     "latestFirst": "Latest added",
+    "contextHighToLow": "📏 Context window (longest first)",
     "chinaAccessOnly": "China Access Only",
     "results": "{count} results",
     "modelChannelPrices": "Model Channel Prices",

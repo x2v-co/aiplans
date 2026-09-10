@@ -24,6 +24,20 @@
     "getStarted": "开始使用",
     "learnMore": "了解更多"
   },
+  "search": {
+    "openSearch": "搜索",
+    "placeholder": "搜索模型、套餐、供应商…",
+    "models": "模型",
+    "plans": "套餐",
+    "providers": "供应商",
+    "noResults": "没有找到与“{query}”相关的结果",
+    "hint": "可搜索模型、订阅套餐和供应商，试试“chatgpt”、“Claude”、“智谱”",
+    "loading": "正在加载搜索索引…",
+    "error": "搜索暂时不可用，请稍后再试。",
+    "navigate": "选择",
+    "open": "打开",
+    "close": "关闭"
+  },
   "compare": {
     "title": "AI 套餐对比",
     "subtitle": "选择一个模型，对比全网所有供应商的套餐",
@@ -206,6 +220,7 @@
     "nameZA": "Z 到 A",
     "performanceHighToLow": "⭐ 性能（高到低）",
     "latestFirst": "最新收录",
+    "contextHighToLow": "📏 上下文长度（从长到短）",
     "chinaAccessOnly": "仅显示国内可用",
     "results": "{count} 个结果",
     "modelChannelPrices": "模型渠道价格",

@@ -17,11 +17,35 @@ export default async function ApiPricingPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    sort?: string;
+    order?: string;
+    china?: string;
+    region?: string;
+    channel?: string;
+  }>;
 }) {
   const { locale } = await params;
-  const { q } = await searchParams;
+  const { q, sort, order, china, region, channel } = await searchParams;
   const products = await getGroupedProducts("llm");
+
+  // The capability cards on /compare/plans deep-link here (Arena ranking,
+  // longest context, cheapest, China-reachable). Validate whitelist-style so
+  // an arbitrary query string can't put the sort select in an unknown state.
+  const initialFilters = {
+    ...(sort && ["price", "name", "elo", "latest", "context"].includes(sort)
+      ? { sortBy: sort as "price" | "name" | "elo" | "latest" | "context" }
+      : {}),
+    ...(order && ["asc", "desc"].includes(order) ? { sortOrder: order as "asc" | "desc" } : {}),
+    ...(china === "1" ? { chinaAccessOnly: true } : {}),
+    ...(region && ["global", "china"].includes(region)
+      ? { regionFilter: region as "global" | "china" }
+      : {}),
+    ...(channel && ["official", "cloud", "aggregator", "reseller"].includes(channel)
+      ? { channelTypeFilter: channel as "official" | "cloud" | "aggregator" | "reseller" }
+      : {}),
+  };
 
   // Data-driven FAQ + stats, shared between the visible section and the JSON-LD.
   const loc = (locale === "zh" ? "zh" : "en") as Locale;
@@ -60,6 +84,7 @@ export default async function ApiPricingPage({
         locale={locale}
         products={products}
         initialQuery={q}
+        initialFilters={initialFilters}
         stats={stats}
         faqs={faqs}
       />

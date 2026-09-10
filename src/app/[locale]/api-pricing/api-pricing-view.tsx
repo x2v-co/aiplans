@@ -22,6 +22,7 @@ import { modelFreshnessTime } from "@/lib/model-freshness";
 import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
 import { formatModelName } from '@/lib/model-names';
 import { trackAnalyticsEvent } from '@/lib/analytics';
+import { matchesSearch } from '@/lib/search-match';
 // Currency-normalised cheapest-channel selection. These are pure, module-scope
 // functions (see channel-price-utils.ts) so the React Compiler can preserve the
 // memoization of `filteredProducts` below — that memo is what keeps filtering
@@ -64,10 +65,21 @@ function ProviderVisitLink({
  * characters of HTML on the page CLAUDE.md calls the site's core SEO surface.
  * Filtering stays here and stays client-side, so it is still instant.
  */
+type SortBy = "price" | "name" | "elo" | "latest" | "context";
+
+export type ApiPricingInitialFilters = Partial<{
+  sortBy: SortBy;
+  sortOrder: "asc" | "desc";
+  regionFilter: "all" | "global" | "china";
+  channelTypeFilter: "all" | "official" | "cloud" | "aggregator" | "reseller";
+  chinaAccessOnly: boolean;
+}>;
+
 export default function ApiPricingView({
   locale,
   products,
   initialQuery,
+  initialFilters,
   stats,
   faqs,
 }: {
@@ -75,6 +87,8 @@ export default function ApiPricingView({
   products: GroupedProduct[];
   /** Initial search term, e.g. from ?q=gpt (the WebSite SearchAction target). */
   initialQuery?: string;
+  /** Initial sort/filter state, e.g. from ?sort=context&china=1 deep links. */
+  initialFilters?: ApiPricingInitialFilters;
   stats: ApiPricingStats;
   faqs: FaqItem[];
 }) {
@@ -86,18 +100,26 @@ export default function ApiPricingView({
   const tGlobal = () => t('global' as any);
 
   const [searchQuery, setSearchQuery] = useState(() => initialQuery?.trim() ?? "");
-  const [sortBy, setSortBy] = useState<"price" | "name" | "elo" | "latest">("elo");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [regionFilter, setRegionFilter] = useState<"all" | "global" | "china">("all");
-  const [channelTypeFilter, setChannelTypeFilter] = useState<"all" | "official" | "cloud" | "aggregator" | "reseller">("all");
-  const [chinaAccessOnly, setChinaAccessOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<SortBy>(initialFilters?.sortBy ?? "elo");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
+    initialFilters?.sortOrder ?? "desc",
+  );
+  const [regionFilter, setRegionFilter] = useState<"all" | "global" | "china">(
+    initialFilters?.regionFilter ?? "all",
+  );
+  const [channelTypeFilter, setChannelTypeFilter] = useState<"all" | "official" | "cloud" | "aggregator" | "reseller">(
+    initialFilters?.channelTypeFilter ?? "all",
+  );
+  const [chinaAccessOnly, setChinaAccessOnly] = useState(initialFilters?.chinaAccessOnly ?? false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_MODELS);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
     const filtered = products.filter(p => {
-      // Search across model name + all channel provider names
+      // Search across model name + all channel provider names. The shared
+      // matcher ignores punctuation and resolves brand aliases, so
+      // "chatgpt" surfaces GPT models and "智谱" GLM channels.
       if (normalizedQuery) {
         const searchValues = [
           p.name,
@@ -105,11 +127,9 @@ export default function ApiPricingView({
           p.baseName,
           p.providers?.name,
           ...p.versions.flatMap((cp) => [cp.providers?.name, cp.providers?.slug]),
-        ]
-          .filter(Boolean)
-          .map((value) => String(value).toLowerCase());
+        ];
 
-        if (!searchValues.some((value) => value.includes(normalizedQuery))) return false;
+        if (!matchesSearch(deferredSearchQuery.trim(), searchValues)) return false;
       }
 
       // Region filter: match if the product's primary producer is in the
@@ -167,6 +187,11 @@ export default function ApiPricingView({
           return sortOrder === "asc"
             ? modelFreshnessTime(a) - modelFreshnessTime(b)
             : modelFreshnessTime(b) - modelFreshnessTime(a);
+        case "context": {
+          const ctxA = a.context_window || 0;
+          const ctxB = b.context_window || 0;
+          return sortOrder === "asc" ? ctxA - ctxB : ctxB - ctxA;
+        }
         default:
           return 0;
       }
@@ -309,7 +334,7 @@ export default function ApiPricingView({
                 <Select
                   value={`${sortBy}-${sortOrder}`}
                   onValueChange={(value) => {
-                    const [by, order] = value.split("-") as ["price" | "name" | "elo" | "latest", "asc" | "desc"];
+                    const [by, order] = value.split("-") as [SortBy, "asc" | "desc"];
                     setSortBy(by);
                     setSortOrder(order);
                     trackFilter('sort', value);
@@ -321,6 +346,7 @@ export default function ApiPricingView({
                   <SelectContent>
                     <SelectItem value="latest-desc">{t('latestFirst')}</SelectItem>
                     <SelectItem value="elo-desc">{t('performanceHighToLow')}</SelectItem>
+                    <SelectItem value="context-desc">{t('contextHighToLow')}</SelectItem>
                     <SelectItem value="elo-asc">{locale === 'zh' ? '⭐ 性能从低到高' : '⭐ Performance (Low to High)'}</SelectItem>
                     <SelectItem value="price-asc">{t('priceLowToHigh')}</SelectItem>
                     <SelectItem value="price-desc">{t('priceHighToLow')}</SelectItem>

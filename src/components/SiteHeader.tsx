@@ -3,14 +3,22 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Calculator, Github, Menu, X } from 'lucide-react';
+import { Calculator, Github, Menu, Search, X } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import GlobalSearch from '@/components/GlobalSearch';
 import { useTranslations } from '@/lib/translations';
 
 export default function SiteHeader({ locale }: { locale: string }) {
   const pathname = usePathname();
   const t = useTranslations('nav');
+  const tSearch = useTranslations('search');
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const openSearch = () => {
+    setOpen(false);
+    setSearchOpen(true);
+  };
 
   const links: Array<{
     href: string;
@@ -49,6 +57,15 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
         <nav className="hidden items-center gap-5 xl:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>
           {navLinks}
+          <button
+            type="button"
+            onClick={openSearch}
+            className="text-zinc-600 transition-colors hover:text-blue-600 dark:text-zinc-300"
+            aria-label={tSearch('openSearch')}
+            title={tSearch('openSearch')}
+          >
+            <Search className="h-5 w-5" />
+          </button>
           <a
             href="https://github.com/x2v-co/aiplans"
             target="_blank"
@@ -62,16 +79,27 @@ export default function SiteHeader({ locale }: { locale: string }) {
           <LanguageSwitcher />
         </nav>
 
-        <button
-          type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white xl:hidden dark:bg-zinc-950"
-          aria-expanded={open}
-          aria-controls="mobile-navigation"
-          aria-label={open ? (locale === 'zh' ? '关闭菜单' : 'Close menu') : (locale === 'zh' ? '打开菜单' : 'Open menu')}
-          onClick={() => setOpen((value) => !value)}
-        >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2 xl:hidden">
+          <button
+            type="button"
+            onClick={openSearch}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white dark:bg-zinc-950"
+            aria-label={tSearch('openSearch')}
+            title={tSearch('openSearch')}
+          >
+            <Search className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-white dark:bg-zinc-950"
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
+            aria-label={open ? (locale === 'zh' ? '关闭菜单' : 'Close menu') : (locale === 'zh' ? '打开菜单' : 'Open menu')}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       {open && (
@@ -82,6 +110,13 @@ export default function SiteHeader({ locale }: { locale: string }) {
         >
           <div className="container mx-auto flex flex-col gap-4">
             {navLinks}
+            <button
+              type="button"
+              onClick={openSearch}
+              className="inline-flex items-center gap-2 text-left text-sm font-medium text-blue-600"
+            >
+              <Search className="h-4 w-4" /> {tSearch('openSearch')}
+            </button>
             <div className="flex items-center justify-between border-t pt-4">
               <a
                 href="https://github.com/x2v-co/aiplans"
@@ -96,6 +131,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
           </div>
         </nav>
       )}
+
+      <GlobalSearch locale={locale} open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
 }
