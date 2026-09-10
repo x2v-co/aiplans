@@ -55,7 +55,7 @@ const GROUP_LABELS: Record<string, string> = {
 /**
  * XiuRouter model_name → canonical planprice model slug. Only token-billed
  * LLM rows that already exist in the models table are mapped; the channel
- * pipeline cannot create products for an aggregator.
+ * pipeline cannot create products for a non-producer (aggregator/reseller).
  *
  * Deliberately excluded (logged, not priced):
  * - gpt-image-1.5, gpt-image-2 — image generation, per-call product

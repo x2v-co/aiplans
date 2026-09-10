@@ -69,7 +69,7 @@ These scrapers cover cloud providers, aggregators, and resellers.
 | Anyscale | Aggregator | Acquired by Replicate (merged) | USD | ⚠️ Deprecated |
 | StepFun | Official | step-1/2/3 series, vision, audio models (21 models) | CNY | ✅ Updated |
 | DMXAPI | Reseller | gpt-4o/4o-mini, claude-3.5/haiku, deepseek, gemini (7 models) | CNY | ✅ Working |
-| XiuRouter | Aggregator | Claude/GPT/Gemini/Grok/DeepSeek (25 models), new-api ratios × group tiers | USD | ✅ Working |
+| XiuRouter | Reseller (中转站) | Claude/GPT/Gemini/Grok/DeepSeek (25 models), new-api ratios × group tiers | USD | ✅ Working |
 
 #### XiuRouter notes
 

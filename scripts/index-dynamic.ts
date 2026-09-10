@@ -183,7 +183,7 @@ const PROVIDER_IDS: Record<string, number> = {
   // Official routing
   'OPENROUTER': 59,
 
-  // Aggregator (new-api/one-api style managed router)
+  // Reseller / 中转站 (new-api/one-api style managed router)
   'XIUROUTER': 69,
 
   // Legacy aliases (for backward compatibility)

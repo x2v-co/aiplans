@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Seed the XiuRouter aggregator provider row.
+ * Seed the XiuRouter reseller provider row (new-api/one-api 中转站).
  *
  * The nightly scrape pipeline (index-dynamic.ts) resolves channel rows by a
  * hardcoded provider id, so a new channel's provider must exist before its
@@ -20,7 +20,8 @@ const DRY_RUN = process.argv.includes('--dry-run');
 const PROVIDER = {
   name: 'XiuRouter',
   slug: 'xiurouter',
-  type: 'aggregator',
+  // new-api/one-api style 中转站: resells third-party capacity, same class as DMXAPI
+  type: 'reseller',
   region: 'global',
   // USD-billed, .ai domain, no mainland-access evidence at submission time;
   // revisit if the operator confirms reachability / CN payment methods.
