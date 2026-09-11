@@ -2,7 +2,9 @@
  * xAI model pricing from the official structured model directory.
  *
  * docs.x.ai embeds __XAI_PUBLIC_MODELS__ as JSON. The token price fields are
- * expressed in thousandths of a dollar per million tokens (12500 = $12.50/M).
+ * expressed in ten-thousandths of a dollar per million tokens (12500 = $1.25/M,
+ * 20000 = $2/M). Dividing by 1000 here was a live 10x bug until 2026-09-10,
+ * verified against the docs' per-1M price table and models.dev xai TOML.
  * Aliases are intentionally not emitted as separate products.
  */
 
@@ -48,8 +50,8 @@ function parseDirectory(html: string): PriceData[] {
     if (!Number.isFinite(inputRaw) || !Number.isFinite(outputRaw)) continue;
 
     const modelName = canonicalModelName(model.name);
-    const inputPrice = inputRaw / 1000;
-    const outputPrice = outputRaw / 1000;
+    const inputPrice = inputRaw / 10000;
+    const outputPrice = outputRaw / 10000;
     if (inputPrice <= 0 || outputPrice < inputPrice) continue;
 
     if (!unique.has(modelName)) {
@@ -58,7 +60,7 @@ function parseDirectory(html: string): PriceData[] {
         inputPricePer1M: inputPrice,
         outputPricePer1M: outputPrice,
         cachedInputPricePer1M: model.cachedPromptTokenPrice
-          ? Number(model.cachedPromptTokenPrice) / 1000
+          ? Number(model.cachedPromptTokenPrice) / 10000
           : undefined,
         contextWindow: model.maxPromptLength ?? null,
         isAvailable: true,

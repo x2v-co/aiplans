@@ -31,26 +31,62 @@ class SeedScraper extends PlaywrightScraper {
         Array.from(row.querySelectorAll('th,td')).map(cell => cell.textContent ?? '')
       ));
 
-    const prices: PriceData[] = [];
-    const seen = new Set<string>();
+    // doubao-seed-1.6/1.8 tier models are billed by BOTH input-length band
+    // ([0,32K], (32K,128K], …) and output length: responses ≤200 output
+    // tokens get a short-output price, all longer responses the standard one
+    // (e.g. ¥2 vs ¥8 per 1M). Rows share one rowspan model-name cell, so the
+    // continuation rows arrive with an empty first cell. We keep the base
+    // [0,32K] input/cache price and always take the STANDARD output tier
+    // (0.2K,+∞); the ≤0.2K tier understates normal chat/agent output 4x.
+    interface SeedEntry { input?: number; cached?: number; output?: number; band?: number | null }
+    const byModel = new Map<string, SeedEntry>();
+    let current = '';
     for (const cells of rows.slice(1)) {
-      const modelName = clean(cells[0] ?? '').toLowerCase();
-      if (!/^doubao-/.test(modelName) || seen.has(modelName)) continue;
-      const input = numeric(cells[2]);
-      const cached = numeric(cells[5]);
-      const output = numeric(cells[7]);
-      if (input == null || output == null || input <= 0 || output < input) continue;
+      const firstName = clean(cells[0] ?? '').toLowerCase();
+      if (/^doubao-/.test(firstName)) {
+        current = firstName;
+        if (!byModel.has(current)) byModel.set(current, { band: undefined });
+      } else if (firstName !== '') {
+        // A different product's row (glm-*, etc.); stop attributing tiers.
+        current = '';
+        continue;
+      }
+      if (!current) continue;
+      const entry = byModel.get(current);
+      if (!entry) continue;
+      const condition = clean(cells[1] ?? '');
+      // Each model's bands are listed shortest first; the first row fixes the
+      // base band ([0,32K] for Seed 1.x/2.0, [0,256K] for 2.1, [0,1024K] for
+      // evolving). Longer input bands are different products price-wise and
+      // must not overwrite base-band values.
+      const bandMatch = condition.match(/输入长度\s*\[\s*0\s*,\s*(\d+)/);
+      const band: number | null = bandMatch ? Number(bandMatch[1]) : null;
+      if (entry.band === undefined) entry.band = band;
+      if (band !== entry.band) continue;
+      const tieredOutput = condition.includes('输出长度');
+      const isStandardOutputTier = /\(0\s*[,.]\s*2\s*,/.test(condition);
+      if (tieredOutput && !isStandardOutputTier) continue;
 
+      if (entry.input == null && numeric(cells[2]) != null) {
+        entry.input = numeric(cells[2]);
+        entry.cached = numeric(cells[5]);
+      }
+      const out = numeric(cells[7]);
+      if (out != null && entry.output == null) entry.output = out;
+    }
+
+    const prices: PriceData[] = [];
+    for (const [modelName, entry] of byModel) {
+      if (entry.input == null || entry.output == null || entry.input <= 0 || entry.output < entry.input) continue;
       prices.push({
         modelName,
-        inputPricePer1M: input,
-        outputPricePer1M: output,
-        cachedInputPricePer1M: cached,
+        inputPricePer1M: entry.input,
+        outputPricePer1M: entry.output,
+        cachedInputPricePer1M: entry.cached,
         contextWindow: 256_000,
         isAvailable: true,
         currency: 'CNY',
       });
-      seen.add(modelName);
     }
 
     const errors = prices.length === 0

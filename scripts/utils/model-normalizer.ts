@@ -142,8 +142,11 @@ function extractBaseModel(name: string): string {
   const lower = name.toLowerCase().replace(/\s+/g, '-');
 
   // 去掉常见的版本后缀 (按顺序处理，避免冲突)
+  // `mini`/`nano` are deliberately NOT stripped: they are distinct priced
+  // SKUs (gpt-5-mini ≠ gpt-5). Stripping `mini` here let scraper rows for
+  // gpt-5-mini / gpt-5.4-mini / gpt-4.1-mini overwrite the base model prices.
   const withoutVersion = lower
-    .replace(/-(\d{8}|v\d+(\.\d+)?(-\d+k)?|latest|exp|beta|preview|mini)$/g, '')
+    .replace(/-(\d{8}|v\d+(\.\d+)?(-\d+k)?|latest|exp|beta|preview)$/g, '')
     .replace(/-(\d{4})$/g, '') // 去掉年份后缀如 2024
     .replace(/-(\d+k)$/g, '')  // 去掉上下文大小如 8k, 32k (但保留 2.5 这种版本号)
     .replace(/-chat$/g, '')    // 去掉 chat 后缀
@@ -174,6 +177,19 @@ export function normalizeModelName(name: string): string {
   // 正则解释：在两个数字之间的连字符（后跟另一个连字符或版本结束）替换为点
   lower = lower.replace(/-(\d)-(\d)(?=-|_|\/|$)/g, '-$1.$2');
 
+  // OpenRouter exposes batch-discount variants with a ":batch" suffix
+  // (openai/gpt-4o:batch) or a "(batch)" display name. They are distinct
+  // catalog products — see the separate *-batch model rows for Claude — and
+  // must never overwrite the base model's standard price. Normalize both
+  // forms, resolve the base name recursively, then reattach.
+  if (/\(batch\)$/.test(lower)) {
+    lower = lower.replace(/[-\s]*\(batch\)$/, '-batch');
+  }
+  if (/(?::|-)batch$/.test(lower)) {
+    const base = normalizeModelName(lower.replace(/(?::|-)batch$/, ''));
+    return base.endsWith('-batch') ? base : `${base}-batch`;
+  }
+
   // 尝试直接匹配
   if (MODEL_ALIASES[lower]) {
     return MODEL_ALIASES[lower];
@@ -186,6 +202,10 @@ export function normalizeModelName(name: string): string {
   const base = extractBaseModel(name);
 
   // 常见模式匹配
+  // GPT-5.x family: mini/nano (incl. codex-mini) are distinct priced SKUs.
+  // Return the dotted slug as-is so e.g. gpt-5.4-mini does not land on
+  // gpt-5.4 and overwrite its channel price.
+  if (/^(gpt-\d+(?:\.\d+)?(?:-codex)?)-(?:mini|nano)$/.test(lower)) return lower;
   if (lower.includes('gpt-4o-mini')) return 'gpt-4o-mini';
   if (lower.includes('gpt-4o') && !lower.includes('mini')) return 'gpt-4o';
   if (lower.includes('gpt-4-turbo')) return 'gpt-4-turbo';

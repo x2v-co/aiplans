@@ -30,10 +30,14 @@
  *   C17 plans.selector_unknown_slug — selector.extra names a nonexistent model (critical)
  *   C18 plans.mapping_drift       — materialized model_plan_mapping rows disagree with
  *                                   the current selector resolution (critical)
+ *   C19 prices.modelsdev_divergence — our USD-normalized price disagrees with the external
+ *                                   models.dev community catalog (warn; read-only, skipped
+ *                                   with a notice when models.dev is unreachable)
  */
 import { supabaseAdmin } from './db/queries';
 import { databaseSql } from './db/postgres-admin';
 import { resolveSelector, type ModelSelector, type SelectableModel } from '../src/lib/plan-selector';
+import { fetchModelsDevCatalog, isModelsDevComparable, type ModelsDevCatalog } from './scrapers/modelsdev';
 
 const args = new Set(process.argv.slice(2));
 const VERBOSE = args.has('--verbose') || args.has('-v');
@@ -43,6 +47,12 @@ const STALE_DAYS = (() => {
   return i >= 0 ? Number(process.argv[i + 1]) : 30;
 })();
 const OUTLIER_RATIO = 5; // 5x deviation from median triggers outlier
+// C19: models.dev cross-check tolerances on USD-normalized prices. The wider
+// FX band absorbs exchange-rate noise on rows we store in CNY (qwen/seed/…);
+// the absolute floor keeps tiny cent-level deltas on cheap models quiet.
+const MODELSDEV_REL_TOLERANCE = 0.25;
+const MODELSDEV_FX_REL_TOLERANCE = 0.35;
+const MODELSDEV_ABS_FLOOR_USD = 0.05;
 
 type Severity = 'critical' | 'warning';
 interface Finding {
@@ -87,6 +97,12 @@ async function main() {
      WHERE table_name = 'model_plan_mapping' AND column_name = 'source'
   `;
   const MAPPING_SOURCES = mappingSourceRows.length === 1;
+
+  // C19: external reference fetch, kicked off concurrently with the DB reads.
+  // Network trouble must never gate the audit — it degrades to a skip notice.
+  const modelsDevPromise = fetchModelsDevCatalog()
+    .then((catalog: ModelsDevCatalog) => ({ catalog, error: null as string | null }))
+    .catch((e: unknown) => ({ catalog: null, error: e instanceof Error ? e.message : String(e) }));
 
   const [modelsRes, providersRes, pricesRes, plansRes, mappingsRes, ratesRes] = await Promise.all([
     supabaseAdmin.from('models').select('id, name, slug, provider_ids, type'),
@@ -266,6 +282,99 @@ async function main() {
     }
   }
 
+  // ---------- C19: models.dev external price reference ----------
+  // Independent community-curated catalog (MIT, PR-maintained TOML → api.json).
+  // Both sides are compared in USD; CNY rows use the wider FX tolerance. A
+  // finding here is a "go verify" signal, not proof — models.dev itself can be
+  // stale or wrong. The first production run already surfaced a 10x unit bug
+  // in the grok scraper that every internal check missed.
+  const modelsDevResult = await modelsDevPromise;
+  let mdComparable = 0;
+  let mdMatched = 0;
+  const fmtUsd = (n: number) => n.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+  if (modelsDevResult.error) {
+    log(`⏭  Skipping C19 prices.modelsdev_divergence: models.dev unreachable (${modelsDevResult.error})\n`);
+  } else {
+    const modelsDev = modelsDevResult.catalog;
+    for (const p of prices) {
+      if (isDisabled(p)) continue;
+      const modelSlug = p.model_id != null ? modelById.get(p.model_id)?.slug : undefined;
+      const providerSlug = p.provider_id != null ? providerById.get(p.provider_id)?.slug : undefined;
+      if (!modelSlug || !providerSlug) continue;
+      if (isFreeTier(p.model_id) || isNonTokenPriced(p.model_id)) continue;
+      // Audio-minute / live-billing models are not priced on a per-text-token
+      // basis on both sides, so a "divergence" here is a unit mismatch, not data rot.
+      if (/(^|[-/])(realtime|transcribe|live)(?=-|$)|stepaudio|step-1o-audio/.test(modelSlug)) continue;
+      // Verified against the official price pages (2026-09-10): our row is the
+      // current official price and models.dev is stale or quotes a different
+      // billing tier. Re-check when the upstream TOML updates.
+      const modelsDevVerified =
+        // DeepSeek stores PEAK prices; models.dev's convention is the off-peak
+        // half rate (see their deepseek-flash.toml; upstream PR #6722 aligns
+        // v4-pro to $0.66/$1.98). A 2x ratio here is the convention, not rot.
+        (providerSlug === 'deepseek' && ['deepseek-v4-pro(2)', 'deepseek-flash(1)'].includes(modelSlug))
+        // mistral.ai/pricing/api current; md entry last updated 2024-10.
+        || (providerSlug === 'mistral' && modelSlug === 'ministral-3b')
+        // Bailuan current alias price ¥0.3/0.5; md holds the deprecated 2025-04-13 ¥5 snapshot.
+        || (providerSlug === 'qwen' && modelSlug === 'qwen-vl-ocr')
+        // Azure Global short-context standard $5/$30; md's $4/$20 is an older price.
+        || (providerSlug === 'azure-openai' && modelSlug === 'gpt-5.6-sol')
+        // Bailuan base-band prices verified 2026-09-10; md alibaba-cn entries
+        // hold launch/snapshot prices from 2025-09 … 2026-02 (¥6.15/24.6,
+        // ¥4/24, ¥1.2/12, ¥7/35 respectively), all superseded.
+        || (providerSlug === 'qwen' && [
+          'qwen3-max', 'qwen3.5-plus', 'qwen3.5-flash', 'qwen3-coder-plus',
+        ].includes(modelSlug));
+      if (modelsDevVerified) continue;
+      if (!isModelsDevComparable(providerSlug, modelSlug)) continue;
+      if (typeof p.input_price_per_1m !== 'number' || typeof p.output_price_per_1m !== 'number') continue;
+      if (p.input_price_per_1m <= 0 || p.output_price_per_1m <= 0) continue;
+
+      mdComparable++;
+      const hit = modelsDev.lookup(providerSlug, modelSlug);
+      if (!hit) continue;
+      mdMatched++;
+
+      const oursIn = toUSD(p.input_price_per_1m, p.currency);
+      const oursOut = toUSD(p.output_price_per_1m, p.currency);
+      const tol = modelsDev.isFxConverted(providerSlug)
+        ? MODELSDEV_FX_REL_TOLERANCE
+        : MODELSDEV_REL_TOLERANCE;
+      const fieldAgrees = (ours: number, ref: number) =>
+        Math.abs(ours - ref) <= MODELSDEV_ABS_FLOOR_USD
+        || Math.abs(ours - ref) / Math.max(ref, 1e-9) <= tol;
+      // Snapshot/region variants can legitimately differ in price; agree if
+      // any variant agrees.
+      if (hit.candidates.some(c => fieldAgrees(oursIn, c.input) && fieldAgrees(oursOut, c.output))) continue;
+
+      const ref = hit.candidates[0];
+      const cnyNote = p.currency && p.currency !== 'USD'
+        ? ` (stored ${p.input_price_per_1m}/${p.output_price_per_1m} ${p.currency})`
+        : '';
+      add(
+        'prices.modelsdev_divergence',
+        'warning',
+        `${providerSlug}/${modelSlug}: ours $${fmtUsd(oursIn)}/$${fmtUsd(oursOut)}${cnyNote} vs models.dev $${ref.input}/$${ref.output}`
+          + ` (${hit.mdProvider}/${ref.rawId}${ref.lastUpdated ? `, updated ${ref.lastUpdated.slice(0, 10)}` : ''})`,
+        {
+          price_id: p.id,
+          model: refModel(p.model_id),
+          provider: refProvider(p.provider_id),
+          ours_usd: { input: Number(oursIn.toFixed(4)), output: Number(oursOut.toFixed(4)) },
+          reference: {
+            source: 'models.dev', provider: hit.mdProvider, id: ref.rawId,
+            input: ref.input, output: ref.output, updated: ref.lastUpdated, variants: hit.candidates.length,
+          },
+          ratio: {
+            input: Number((oursIn / Math.max(ref.input, 1e-9)).toFixed(2)),
+            output: Number((oursOut / Math.max(ref.output, 1e-9)).toFixed(2)),
+          },
+        },
+      );
+    }
+    log(`models.dev reference: ${modelsDev.providerCount} providers / ${modelsDev.pricedEntryCount} priced entries; matched ${mdMatched}/${mdComparable} comparable rows\n`);
+  }
+
   // ---------- C7/C8: model coverage ----------
   const pricedModelIds = new Set(prices.map(p => p.model_id).filter((x): x is number => x != null));
   for (const m of models) {
@@ -439,6 +548,15 @@ async function main() {
       generatedAt: new Date().toISOString(),
       config: { staleDays: STALE_DAYS, outlierRatio: OUTLIER_RATIO },
       counts: { models: models.length, providers: providers.length, prices: prices.length, plans: plans.length, mappings: mappings.length },
+      reference: {
+        source: 'models.dev',
+        available: !modelsDevResult.error,
+        error: modelsDevResult.error,
+        comparableRows: mdComparable,
+        matchedRows: mdMatched,
+        relTolerance: MODELSDEV_REL_TOLERANCE,
+        fxRelTolerance: MODELSDEV_FX_REL_TOLERANCE,
+      },
       findings,
     }, null, 2));
   } else {
@@ -461,6 +579,7 @@ async function main() {
       'plans.mapping_drift',
       'prices.input_eq_output',
       'prices.cross_channel_outlier',
+      'prices.modelsdev_divergence',
       'prices.stale',
       'prices.missing_verified',
       'models.no_channel_price',
