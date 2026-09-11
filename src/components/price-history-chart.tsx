@@ -61,6 +61,7 @@ type SeriesMeta = {
 
 export default function PriceHistoryChart({ history, locale, officialProviderSlugs = [] }: PriceHistoryChartProps) {
   const [mode, setMode] = useState<'input' | 'output'>('input');
+  const [unit, setUnit] = useState<'usd' | 'native'>('usd');
   const isZh = locale === 'zh';
 
   const { seriesMeta, series, currencies } = useMemo(() => {
@@ -88,8 +89,10 @@ export default function PriceHistoryChart({ history, locale, officialProviderSlu
       if (native == null) continue;
       const ts = row.recordedAt.slice(0, 10);
       const key = `${row.providerSlug}|${row.currency ?? 'USD'}`;
+      // Native mode plots the raw value; USD mode converts for a common axis.
+      const value = unit === 'usd' ? toUsd(native, row.currency) : native;
       const existing = byTs.get(ts) ?? {};
-      existing[key] = toUsd(native, row.currency);
+      existing[key] = value;
       byTs.set(ts, existing);
     }
 
@@ -110,7 +113,7 @@ export default function PriceHistoryChart({ history, locale, officialProviderSlu
 
     const currencySet = new Set(metaList.map(m => m.currency));
     return { seriesMeta: metaList, series: filled, currencies: currencySet };
-  }, [history, mode]);
+  }, [history, mode, unit]);
 
   // Provider-level selection (currency variants share one checkbox).
   const [hiddenSlugs, setHiddenSlugs] = useState<Set<string> | null>(null);
@@ -179,6 +182,29 @@ export default function PriceHistoryChart({ history, locale, officialProviderSlu
         >
           {isZh ? '输出价' : 'Output'}
         </button>
+        <span className="mx-1 h-4 w-px bg-zinc-300" />
+        <button
+          type="button"
+          onClick={() => setUnit('usd')}
+          className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+            unit === 'usd'
+              ? 'bg-zinc-800 text-white'
+              : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+          }`}
+        >
+          USD
+        </button>
+        <button
+          type="button"
+          onClick={() => setUnit('native')}
+          className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+            unit === 'native'
+              ? 'bg-zinc-800 text-white'
+              : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+          }`}
+        >
+          {isZh ? '原币种' : 'Native'}
+        </button>
         <button
           type="button"
           onClick={selectAll}
@@ -202,11 +228,18 @@ export default function PriceHistoryChart({ history, locale, officialProviderSlu
         </span>
       </div>
 
-      {mixedCurrencies && (
+      {mixedCurrencies && unit === 'usd' && (
         <p className="text-xs text-zinc-500">
           {isZh
-            ? '不同币种已按汇率折算为 USD（CNY×0.14）后绘制。'
-            : 'Mixed currencies are plotted in USD (CNY converted at ~0.14).'}
+            ? '不同币种已按汇率折算为 USD（CNY×0.14）后绘制；切到「原币种」看各家原始报价。'
+            : 'Mixed currencies plotted in USD (CNY ~0.14); switch to Native for raw list prices.'}
+        </p>
+      )}
+      {mixedCurrencies && unit === 'native' && (
+        <p className="text-xs text-amber-600">
+          {isZh
+            ? '原币种模式下各线单位不同（CNY/USD），仅适合同币种渠道比较。'
+            : 'Native mode mixes units (CNY/USD) on one axis; compare same-currency lines only.'}
         </p>
       )}
 
@@ -240,7 +273,11 @@ export default function PriceHistoryChart({ history, locale, officialProviderSlu
             <YAxis
               tick={{ fontSize: 11 }}
               label={{
-                value: 'USD / 1M tokens',
+                value: unit === 'usd'
+                  ? 'USD / 1M tokens'
+                  : currencies.size === 1
+                    ? `${[...currencies][0]} / 1M tokens`
+                    : `${isZh ? '原币种' : 'Native'} / 1M`,
                 angle: -90,
                 position: 'insideLeft',
                 style: { fontSize: 11, fill: '#6b7280' },
