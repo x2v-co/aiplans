@@ -25,6 +25,8 @@ export type PriceHistoryPoint = {
 export type PriceHistoryChartProps = {
   history: PriceHistoryPoint[];
   locale: 'en' | 'zh';
+  /** Providers considered the vendor's own channels (official/producer), selected by default. */
+  officialProviderSlugs?: string[];
 };
 
 const COLORS = [
@@ -40,56 +42,90 @@ const COLORS = [
   '#a855f7',
 ];
 
-export default function PriceHistoryChart({ history, locale }: PriceHistoryChartProps) {
+/** USD value of one native-currency point. Only CNY rows occur in practice. */
+const TO_USD: Record<string, number> = { CNY: 0.14, USD: 1 };
+
+function toUsd(price: number, currency: string | null): number {
+  const rate = currency ? (TO_USD[currency] ?? 1) : 1;
+  return price * rate;
+}
+
+type SeriesMeta = {
+  slug: string;
+  name: string;
+  /** Line key, e.g. "qwen|CNY" when one provider carries several currencies. */
+  key: string;
+  color: string;
+  currency: string;
+};
+
+export default function PriceHistoryChart({ history, locale, officialProviderSlugs = [] }: PriceHistoryChartProps) {
   const [mode, setMode] = useState<'input' | 'output'>('input');
   const isZh = locale === 'zh';
 
-  const { providers, series } = useMemo(() => {
-    const providerMap = new Map<string, { slug: string; name: string }>();
+  const { seriesMeta, series, currencies } = useMemo(() => {
+    // One line per provider + currency (a few providers carry both CNY and USD rows).
+    const meta = new Map<string, SeriesMeta>();
+    let colorIndex = 0;
     for (const row of history) {
-      if (!providerMap.has(row.providerSlug)) {
-        providerMap.set(row.providerSlug, {
+      const currency = row.currency ?? 'USD';
+      const key = `${row.providerSlug}|${currency}`;
+      if (!meta.has(key)) {
+        meta.set(key, {
           slug: row.providerSlug,
           name: row.providerName,
+          key,
+          color: COLORS[colorIndex++ % COLORS.length],
+          currency,
         });
       }
     }
-    const providerList = Array.from(providerMap.values());
+    const metaList = Array.from(meta.values());
 
-    const byTs = new Map<string, Record<string, number | string>>();
+    const byTs = new Map<string, Record<string, number>>();
     for (const row of history) {
+      const native = mode === 'input' ? row.newInputPrice : row.newOutputPrice;
+      if (native == null) continue;
       const ts = row.recordedAt.slice(0, 10);
-      const price = mode === 'input' ? row.newInputPrice : row.newOutputPrice;
-      if (price == null) continue;
-      const key = row.providerSlug;
-      const existing = byTs.get(ts) ?? { ts };
-      existing[key] = price;
+      const key = `${row.providerSlug}|${row.currency ?? 'USD'}`;
+      const existing = byTs.get(ts) ?? {};
+      existing[key] = toUsd(native, row.currency);
       byTs.set(ts, existing);
     }
 
-    const sorted = Array.from(byTs.values()).sort((a, b) =>
-      String(a.ts).localeCompare(String(b.ts)),
-    );
+    const sorted = Array.from(byTs.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, v]) => v);
 
-    const filledSeries: Record<string, number | string>[] = [];
+    // Forward-fill so a line stays flat between that provider's own changes.
     const lastSeen: Record<string, number> = {};
-    for (const row of sorted) {
-      const merged: Record<string, number | string> = { ts: row.ts };
-      for (const p of providerList) {
-        if (row[p.slug] != null) {
-          lastSeen[p.slug] = row[p.slug] as number;
-        }
-        if (lastSeen[p.slug] != null) {
-          merged[p.slug] = lastSeen[p.slug];
-        }
+    const filled = sorted.map(row => {
+      const merged: Record<string, number> = {};
+      for (const m of metaList) {
+        if (row[m.key] != null) lastSeen[m.key] = row[m.key];
+        if (lastSeen[m.key] != null) merged[m.key] = lastSeen[m.key];
       }
-      filledSeries.push(merged);
-    }
+      return merged;
+    });
 
-    return { providers: providerList, series: filledSeries };
+    const currencySet = new Set(metaList.map(m => m.currency));
+    return { seriesMeta: metaList, series: filled, currencies: currencySet };
   }, [history, mode]);
 
-  if (history.length === 0 || providers.length === 0) {
+  // Provider-level selection (currency variants share one checkbox).
+  const [hiddenSlugs, setHiddenSlugs] = useState<Set<string> | null>(null);
+  const effectiveHidden = useMemo(() => {
+    if (hiddenSlugs !== null) return hiddenSlugs;
+    // Default: official channels, but only when they actually have history —
+    // otherwise the chart would start empty for models whose official row
+    // is newer than the price-history table.
+    const present = new Set(seriesMeta.map(m => m.slug));
+    const officialPresent = [...present].filter(s => officialProviderSlugs.includes(s));
+    if (officialPresent.length === 0) return new Set<string>();
+    return new Set([...present].filter(s => !officialPresent.includes(s)));
+  }, [hiddenSlugs, seriesMeta, officialProviderSlugs]);
+
+  if (history.length === 0 || seriesMeta.length === 0) {
     return (
       <div className="rounded-md border p-4 text-sm text-zinc-500">
         {isZh
@@ -99,9 +135,28 @@ export default function PriceHistoryChart({ history, locale }: PriceHistoryChart
     );
   }
 
+  const toggle = (slug: string) => {
+    setHiddenSlugs(prev => {
+      const base = new Set(prev ?? effectiveHidden);
+      if (base.has(slug)) base.delete(slug);
+      else base.add(slug);
+      return base;
+    });
+  };
+
+  const selectAll = () => setHiddenSlugs(new Set());
+  const selectOfficial = () => {
+    const official = new Set(officialProviderSlugs);
+    if (official.size === 0) return;
+    setHiddenSlugs(new Set(seriesMeta.map(m => m.slug).filter(s => !official.has(s))));
+  };
+
+  const visibleMeta = seriesMeta.filter(m => !effectiveHidden.has(m.slug));
+  const mixedCurrencies = currencies.size > 1;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setMode('input')}
@@ -124,11 +179,57 @@ export default function PriceHistoryChart({ history, locale }: PriceHistoryChart
         >
           {isZh ? '输出价' : 'Output'}
         </button>
+        <button
+          type="button"
+          onClick={selectAll}
+          className="rounded-md px-2 py-1 text-xs text-zinc-500 hover:text-zinc-800 hover:underline"
+        >
+          {isZh ? '全部渠道' : 'All channels'}
+        </button>
+        {officialProviderSlugs.length > 0 && (
+          <button
+            type="button"
+            onClick={selectOfficial}
+            className="rounded-md px-2 py-1 text-xs text-zinc-500 hover:text-zinc-800 hover:underline"
+          >
+            {isZh ? '仅官方' : 'Official only'}
+          </button>
+        )}
         <span className="ml-auto text-xs text-zinc-500">
           {isZh
-            ? `${history.length} 次变动 · ${providers.length} 个渠道`
-            : `${history.length} changes · ${providers.length} channels`}
+            ? `${history.length} 次变动 · ${visibleMeta.length}/${seriesMeta.length} 个渠道`
+            : `${history.length} changes · ${visibleMeta.length}/${seriesMeta.length} channels`}
         </span>
+      </div>
+
+      {mixedCurrencies && (
+        <p className="text-xs text-zinc-500">
+          {isZh
+            ? '不同币种已按汇率折算为 USD（CNY×0.14）后绘制。'
+            : 'Mixed currencies are plotted in USD (CNY converted at ~0.14).'}
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-1.5">
+        {seriesMeta.map(m => {
+          const active = !effectiveHidden.has(m.slug);
+          return (
+            <button
+              key={m.key}
+              type="button"
+              onClick={() => toggle(m.slug)}
+              aria-pressed={active}
+              title={`${m.name} · ${m.currency}`}
+              className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-opacity ${
+                active ? 'border-zinc-300 bg-white' : 'border-zinc-200 bg-zinc-50 opacity-45'
+              }`}
+            >
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: m.color }} />
+              {m.name}
+              {m.currency !== 'USD' && <span className="text-zinc-400">{m.currency}</span>}
+            </button>
+          );
+        })}
       </div>
 
       <div className="h-[340px] w-full">
@@ -139,7 +240,7 @@ export default function PriceHistoryChart({ history, locale }: PriceHistoryChart
             <YAxis
               tick={{ fontSize: 11 }}
               label={{
-                value: isZh ? 'USD / 1M tokens' : 'USD / 1M tokens',
+                value: 'USD / 1M tokens',
                 angle: -90,
                 position: 'insideLeft',
                 style: { fontSize: 11, fill: '#6b7280' },
@@ -149,14 +250,22 @@ export default function PriceHistoryChart({ history, locale }: PriceHistoryChart
               contentStyle={{ fontSize: 12 }}
               formatter={(value) => (typeof value === 'number' ? value.toFixed(4) : String(value))}
             />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            {providers.map((p, i) => (
+            <Legend
+              wrapperStyle={{ fontSize: 12, cursor: 'pointer' }}
+              onClick={(entry) => {
+                const key = (entry as { dataKey?: unknown }).dataKey;
+                if (typeof key !== 'string') return;
+                const meta = seriesMeta.find(m => m.key === key);
+                if (meta) toggle(meta.slug);
+              }}
+            />
+            {visibleMeta.map(m => (
               <Line
-                key={p.slug}
+                key={m.key}
                 type="monotone"
-                dataKey={p.slug}
-                name={p.name}
-                stroke={COLORS[i % COLORS.length]}
+                dataKey={m.key}
+                name={m.currency === 'USD' ? m.name : `${m.name} (${m.currency})`}
+                stroke={m.color}
                 strokeWidth={2}
                 dot={false}
                 connectNulls
