@@ -54,6 +54,26 @@ const KNOWN_MODELS: KnownModel[] = [
 
   // OCR
   { pattern: /qwen-vl-ocr/i,          name: 'qwen-vl-ocr',       minInput: 0.2,  maxInput: 0.4,  minOutput: 0.3,  maxOutput: 0.7,  contextWindow: 8192 },
+
+  // ─── Current-generation models without a direct Bailuan channel row ───
+  // Base-band CNY prices verified 2026-09-11 on model-pricing; added because
+  // these previously had aggregator channels only. Dense open-weight rows
+  // share the 2/8 tier so patterns must anchor to the full slug.
+  // Flagship 3.7/3.8 Max (single band, 1M context):
+  { pattern: /qwen3\.7-max/i,        name: 'qwen3.7-max',      minInput: 10,   maxInput: 13,   minOutput: 30,   maxOutput: 40,   contextWindow: 1_000_000 },
+  { pattern: /qwen3\.8-max/i,        name: 'qwen3.8-max',      minInput: 10,   maxInput: 13,   minOutput: 30,   maxOutput: 40,   contextWindow: 1_000_000 },
+  // Plus current band 0-256K:
+  { pattern: /qwen3\.6-plus/i,       name: 'qwen3.6-plus',     minInput: 1.5,  maxInput: 2.5,  minOutput: 10,   maxOutput: 14,   contextWindow: 1_000_000 },
+  // Flash family:
+  { pattern: /qwen3\.6-flash/i,      name: 'qwen3.6-flash',    minInput: 1.0,  maxInput: 1.4,  minOutput: 6,    maxOutput: 8.5,  contextWindow: 1_000_000 },
+  { pattern: /qwen3\.7-flash/i,      name: 'qwen3.7-flash',    minInput: 0.15, maxInput: 0.3,  minOutput: 0.6,  maxOutput: 1.0,  contextWindow: 1_000_000 },
+  { pattern: /qwen3\.8-flash/i,      name: 'qwen3.8-flash',    minInput: 0.6,  maxInput: 0.95, minOutput: 2.2,  maxOutput: 3.2,  contextWindow: 1_000_000 },
+  // Open-weight dense/MoT (flat tiered rows, base band):
+  { pattern: /qwen3-235b-a22b/i,     name: 'qwen3-235b-a22b',  minInput: 1.5,  maxInput: 2.5,  minOutput: 6,    maxOutput: 10,   contextWindow: 128_000 },
+  { pattern: /qwen3-32b/i,           name: 'qwen3-32b',        minInput: 1.5,  maxInput: 2.5,  minOutput: 6,    maxOutput: 10,   contextWindow: 128_000 },
+  { pattern: /qwen3-14b/i,           name: 'qwen3-14b',        minInput: 0.8,  maxInput: 1.2,  minOutput: 3,    maxOutput: 5,    contextWindow: 128_000 },
+  { pattern: /qwen3-8b/i,            name: 'qwen3-8b',         minInput: 0.4,  maxInput: 0.6,  minOutput: 1.5,  maxOutput: 2.5,  contextWindow: 128_000 },
+  { pattern: /qwen3\.5-397b-a17b/i,  name: 'qwen3.5-397b-a17b', minInput: 1.0, maxInput: 1.4,  minOutput: 6,    maxOutput: 8.5,  contextWindow: 256_000 },
 ];
 
 class QwenScraper extends KnownModelsExtractor {
@@ -71,7 +91,9 @@ class QwenScraper extends KnownModelsExtractor {
     return /[¥￥]?(\d+\.?\d*)\s*元/g;
   }
   modelHeaderRegex(): RegExp { return /qwen[0-9.\-]/i; }
-  contextWindowLines(): number { return 5; }
+  // Newer rows carry alias/Batch/cache/mode/band lines (up to 6) before the
+  // first 元 price; the next-model header stops scanning before those.
+  contextWindowLines(): number { return 12; }
 }
 
 export async function scrapeQwenDynamic(): Promise<ScraperResult> {
