@@ -16,7 +16,7 @@
  * Usage: npx tsx scripts/ingest-arena-leaderboard.ts [--dry-run]
  */
 import { chromium } from 'playwright';
-import { supabaseAdmin, upsertBenchmarkScore } from './db/queries';
+import { db, upsertBenchmarkScore } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const SOURCE_URL = 'https://arena.ai/leaderboard/agent';
@@ -194,12 +194,12 @@ function slugCandidates(arenaName: string): string[] {
 
 async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number } | null> {
   // 1. benchmarks row
-  let { data: benchmark } = await supabaseAdmin
+  let { data: benchmark } = await db
     .from('benchmarks').select('id').eq('slug', 'arena-agent').maybeSingle();
   if (!benchmark) {
     console.log('➕ creating benchmarks row: arena-agent');
     if (!DRY_RUN) {
-      const res = await supabaseAdmin.from('benchmarks').insert({
+      const res = await db.from('benchmarks').insert({
         name: 'Chatbot Arena Agent', slug: 'arena-agent', type: 'general',
         offical_url: SOURCE_URL,
       }).select('id').single();
@@ -211,13 +211,13 @@ async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number
   }
 
   // 2. benchmark_versions (is_current=true)
-  let { data: version } = await supabaseAdmin
+  let { data: version } = await db
     .from('benchmark_versions').select('id')
     .eq('benchmark_id', benchmark.id).eq('is_current', true).maybeSingle();
   if (!version) {
     console.log('➕ creating benchmark_versions row');
     if (!DRY_RUN) {
-      const res = await supabaseAdmin.from('benchmark_versions').insert({
+      const res = await db.from('benchmark_versions').insert({
         benchmark_id: benchmark.id, version_label: 'live', is_current: true,
         release_date: new Date().toISOString().slice(0, 10), notes: 'Live Agent Arena net improvement',
       }).select('id').single();
@@ -229,13 +229,13 @@ async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number
   }
 
   // 3. benchmark_tasks (agent category)
-  let { data: task } = await supabaseAdmin
+  let { data: task } = await db
     .from('benchmark_tasks').select('id')
     .eq('benchmark_version_id', version.id).eq('name', 'Agent').maybeSingle();
   if (!task) {
     console.log('➕ creating benchmark_tasks row: Agent');
     if (!DRY_RUN) {
-      const res = await supabaseAdmin.from('benchmark_tasks').insert({
+      const res = await db.from('benchmark_tasks').insert({
         benchmark_version_id: version.id, name: 'Agent',
       }).select('id').single();
       if (res.error) { console.error(res.error); return null; }
@@ -246,12 +246,12 @@ async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number
   }
 
   // 4. Agent net-improvement metric
-  let { data: metric } = await supabaseAdmin
+  let { data: metric } = await db
     .from('benchmark_metrics').select('id').eq('name', 'AGENT_NET_IMPROVEMENT').maybeSingle();
   if (!metric) {
     console.log('➕ creating benchmark_metrics row: AGENT_NET_IMPROVEMENT');
     if (!DRY_RUN) {
-      const res = await supabaseAdmin.from('benchmark_metrics').insert({
+      const res = await db.from('benchmark_metrics').insert({
         name: 'AGENT_NET_IMPROVEMENT', unit: 'percent',
         description: 'Chatbot Arena Agent net improvement', higher_better: true,
       }).select('id').single();
@@ -267,7 +267,7 @@ async function bootstrapArenaChain(): Promise<{ taskId: number; metricId: number
 }
 
 async function findModelBySlug(slug: string): Promise<{ id: number; slug: string } | null> {
-  const { data } = await supabaseAdmin
+  const { data } = await db
     .from('models').select('id, slug').eq('slug', slug).maybeSingle();
   return data ?? null;
 }

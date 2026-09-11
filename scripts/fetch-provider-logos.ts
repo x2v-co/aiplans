@@ -1,4 +1,4 @@
-import { supabaseAdmin as database } from './db/queries';
+import { db as database } from './db/queries';
 
 interface Provider {
   id: number;

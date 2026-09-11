@@ -15,7 +15,7 @@
  *   npx tsx scripts/fix-add-variant-models.ts --dry-run
  *   npx tsx scripts/fix-add-variant-models.ts
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -101,7 +101,7 @@ async function main() {
   let skipped = 0;
 
   for (const slug of VARIANT_SLUGS) {
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await db
       .from('models')
       .select('id')
       .eq('slug', slug)
@@ -112,7 +112,7 @@ async function main() {
     }
 
     const base = baseSlug(slug);
-    const { data: baseModel, error } = await supabaseAdmin
+    const { data: baseModel, error } = await db
       .from('models')
       .select('id, provider_ids, type, context_window')
       .eq('slug', base)
@@ -126,7 +126,7 @@ async function main() {
 
     console.log(`  ➕ ${slug}  (base ${base}, providers ${JSON.stringify(baseModel.provider_ids)}, ctx ${baseModel.context_window ?? '-'})`);
     if (!DRY_RUN) {
-      const { error: insertError } = await supabaseAdmin.from('models').insert({
+      const { error: insertError } = await db.from('models').insert({
         slug,
         name: slug,
         // Trim: a handful of legacy rows carry type='llm ' (trailing space),

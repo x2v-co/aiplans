@@ -17,7 +17,7 @@
  * Usage:
  *   DATABASE_URL=... npx tsx scripts/fix-cn-producer-channels.ts [--dry-run]
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -70,15 +70,15 @@ async function main() {
 
   for (const s of SEEDS) {
     const [{ data: model }, { data: provider }] = await Promise.all([
-      supabaseAdmin.from('models').select('id').eq('slug', s.modelSlug).maybeSingle(),
-      supabaseAdmin.from('providers').select('id').eq('slug', s.providerSlug).maybeSingle(),
+      db.from('models').select('id').eq('slug', s.modelSlug).maybeSingle(),
+      db.from('providers').select('id').eq('slug', s.providerSlug).maybeSingle(),
     ]);
     if (!model || !provider) {
       console.log(`  ⏭  ${s.modelSlug} / ${s.providerSlug}: ${!model ? 'model' : 'provider'} not found`);
       missing++;
       continue;
     }
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await db
       .from('api_channel_prices')
       .select('id, input_price_per_1m, output_price_per_1m, currency')
       .eq('model_id', model.id)
@@ -96,7 +96,7 @@ async function main() {
       }
       console.log(`  🔧 ${s.modelSlug} / ${s.providerSlug}: ${existing.currency} ${existing.input_price_per_1m}/${existing.output_price_per_1m} → ${s.currency} ${s.input}/${s.output}`);
       if (!DRY_RUN) {
-        const { error } = await supabaseAdmin.from('api_channel_prices').update({
+        const { error } = await db.from('api_channel_prices').update({
           input_price_per_1m: s.input,
           output_price_per_1m: s.output,
           currency: s.currency,
@@ -111,7 +111,7 @@ async function main() {
     } else {
       console.log(`  ➕ ${s.modelSlug} / ${s.providerSlug}: insert ${s.currency} ${s.input}/${s.output}`);
       if (!DRY_RUN) {
-        const { error } = await supabaseAdmin.from('api_channel_prices').insert({
+        const { error } = await db.from('api_channel_prices').insert({
           model_id: model.id,
           provider_id: provider.id,
           input_price_per_1m: s.input,

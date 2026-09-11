@@ -3,7 +3,7 @@
  * One-shot: snapshot core models and their current channel prices.
  * Used by data accuracy audit flow to drive web cross-verification.
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 const CORE_SLUGS = [
   'gpt-4o',
@@ -24,7 +24,7 @@ const CORE_SLUGS = [
 ];
 
 async function main() {
-  const { data: models, error: modelsErr } = await supabaseAdmin
+  const { data: models, error: modelsErr } = await db
     .from('models')
     .select('id, name, slug, provider_ids')
     .in('slug', CORE_SLUGS);
@@ -36,13 +36,13 @@ async function main() {
   if (missing.length) console.log(`Missing slugs: ${missing.join(', ')}`);
 
   const modelIds = found.map(m => m.id);
-  const { data: prices, error: pricesErr } = await supabaseAdmin
+  const { data: prices, error: pricesErr } = await db
     .from('api_channel_prices')
     .select('id, model_id, provider_id, input_price_per_1m, output_price_per_1m, is_available, last_verified, updated_at')
     .in('model_id', modelIds);
   if (pricesErr) throw pricesErr;
 
-  const { data: providers } = await supabaseAdmin
+  const { data: providers } = await db
     .from('providers')
     .select('id, name, slug, type');
   const provById = new Map((providers ?? []).map(p => [p.id, p]));
@@ -64,10 +64,10 @@ async function main() {
   // Also dump counts
   console.log('\n=== Global counts ===');
   const [m, p, c, pl] = await Promise.all([
-    supabaseAdmin.from('models').select('id', { count: 'exact', head: true }),
-    supabaseAdmin.from('providers').select('id', { count: 'exact', head: true }),
-    supabaseAdmin.from('api_channel_prices').select('id', { count: 'exact', head: true }),
-    supabaseAdmin.from('plans').select('id', { count: 'exact', head: true }),
+    db.from('models').select('id', { count: 'exact', head: true }),
+    db.from('providers').select('id', { count: 'exact', head: true }),
+    db.from('api_channel_prices').select('id', { count: 'exact', head: true }),
+    db.from('plans').select('id', { count: 'exact', head: true }),
   ]);
   console.log(`models=${m.count} providers=${p.count} api_channel_prices=${c.count} plans=${pl.count}`);
 }

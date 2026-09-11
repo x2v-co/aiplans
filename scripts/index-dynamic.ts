@@ -44,7 +44,7 @@ import {
   logScrapeResult,
   getOrCreateProduct,
   getOrCreateProvider,
-  supabaseAdmin
+  db
 } from './db/queries';
 import { calculateChangePercent, isSignificantChange } from './utils/validator';
 import type { ScraperResult } from './utils/validator';
@@ -196,7 +196,7 @@ async function retireUnseenChannelPrices(
   seenModelIds: Set<number>,
   source: string
 ): Promise<number> {
-  const { data: activeRows, error } = await supabaseAdmin
+  const { data: activeRows, error } = await db
     .from('api_channel_prices')
     .select('id, model_id, notes')
     .eq('provider_id', channelProviderId)
@@ -211,7 +211,7 @@ async function retireUnseenChannelPrices(
   const retiredAt = new Date().toISOString();
   await Promise.all(unseen.map(async row => {
     const retirementNote = `retired ${retiredAt}: absent from successful full-catalog ${source} scrape`;
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await db
       .from('api_channel_prices')
       .update({
         is_available: false,
@@ -269,7 +269,7 @@ async function processAPIScraper(
       // If not an official provider, try to find existing official product
       let product;
       if (providerId === -1 || !OFFICIAL_PROVIDER_IDS.includes(providerId)) {
-        const { data: existingProduct } = await supabaseAdmin
+        const { data: existingProduct } = await db
           .from('models')
           .select('*')
           .eq('slug', normalizedSlug)
@@ -301,7 +301,7 @@ async function processAPIScraper(
       }
 
       // Get existing price for comparison
-      const { data: existingPrice } = await supabaseAdmin
+      const { data: existingPrice } = await db
         .from('api_channel_prices')
         .select('*')
         .eq('model_id', product.id)

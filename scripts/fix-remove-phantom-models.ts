@@ -13,7 +13,7 @@
  *
  * Usage: npx tsx scripts/fix-remove-phantom-models.ts [--dry-run] [slug ...]
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const EXTRA = process.argv.slice(2).filter(a => !a.startsWith('--'));
@@ -33,14 +33,14 @@ async function main() {
   let removed = 0;
 
   for (const slug of PHANTOM_SLUGS) {
-    const { data: model } = await supabaseAdmin.from('models').select('id').eq('slug', slug).maybeSingle();
+    const { data: model } = await db.from('models').select('id').eq('slug', slug).maybeSingle();
     if (!model) {
       console.log(`  · ${slug}: already gone`);
       continue;
     }
 
     // Safety: never delete a row that still carries a live or historical price.
-    const { count: priceCount } = await supabaseAdmin
+    const { count: priceCount } = await db
       .from('api_channel_prices')
       .select('id', { count: 'exact', head: true })
       .eq('model_id', model.id);
@@ -49,7 +49,7 @@ async function main() {
       continue;
     }
 
-    const { data: links } = await supabaseAdmin
+    const { data: links } = await db
       .from('model_plan_mapping')
       .select('id, source')
       .eq('model_id', model.id);
@@ -66,18 +66,18 @@ async function main() {
     }
 
     if ((links?.length ?? 0) > 0) {
-      const { error: linkErr } = await supabaseAdmin
+      const { error: linkErr } = await db
         .from('model_plan_mapping')
         .delete()
         .eq('model_id', model.id);
       if (linkErr) throw linkErr;
     }
-    const { error: scoreErr } = await supabaseAdmin
+    const { error: scoreErr } = await db
       .from('model_benchmark_scores')
       .delete()
       .eq('model_id', model.id);
     if (scoreErr) throw scoreErr;
-    const { error: delErr } = await supabaseAdmin.from('models').delete().eq('id', model.id);
+    const { error: delErr } = await db.from('models').delete().eq('id', model.id);
     if (delErr) throw delErr;
     removed++;
   }

@@ -19,7 +19,7 @@
  *   npx tsx scripts/fix-siliconflow-currency.ts --dry-run
  *   npx tsx scripts/fix-siliconflow-currency.ts
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const SILICONFLOW_PROVIDER_ID = 54;
@@ -27,7 +27,7 @@ const SILICONFLOW_PROVIDER_ID = 54;
 async function main() {
   console.log(`\n🔧 fix-siliconflow-currency ${DRY_RUN ? '[DRY-RUN]' : '[APPLY]'}\n`);
 
-  const { data: rows, error } = await supabaseAdmin
+  const { data: rows, error } = await db
     .from('api_channel_prices')
     .select('id, model_id, input_price_per_1m, output_price_per_1m, currency, is_available')
     .eq('provider_id', SILICONFLOW_PROVIDER_ID);
@@ -44,7 +44,7 @@ async function main() {
 
   // Resolve model slugs for nicer logging
   const modelIds = [...new Set(wrong.map(r => r.model_id).filter((x): x is number => x != null))];
-  const { data: models } = await supabaseAdmin
+  const { data: models } = await db
     .from('models')
     .select('id, slug')
     .in('id', modelIds);
@@ -61,7 +61,7 @@ async function main() {
   }
 
   const ids = wrong.map(r => r.id);
-  const { error: upErr } = await supabaseAdmin
+  const { error: upErr } = await db
     .from('api_channel_prices')
     .update({
       currency: 'CNY',

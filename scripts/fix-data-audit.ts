@@ -16,7 +16,7 @@
  *
  * All actions log before/after. Safe to re-run.
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -237,17 +237,17 @@ const NEW_MODELS: NewModel[] = [
 // helpers
 // ---------------------------------------------------------------------------
 async function findModelId(slug: string): Promise<number | null> {
-  const { data } = await supabaseAdmin.from('models').select('id').eq('slug', slug).maybeSingle();
+  const { data } = await db.from('models').select('id').eq('slug', slug).maybeSingle();
   return data?.id ?? null;
 }
 
 async function findProviderId(slug: string): Promise<number | null> {
-  const { data } = await supabaseAdmin.from('providers').select('id').eq('slug', slug).maybeSingle();
+  const { data } = await db.from('providers').select('id').eq('slug', slug).maybeSingle();
   return data?.id ?? null;
 }
 
 async function findPriceRow(modelId: number, providerId: number) {
-  const { data } = await supabaseAdmin
+  const { data } = await db
     .from('api_channel_prices')
     .select('id, input_price_per_1m, output_price_per_1m, is_available')
     .eq('model_id', modelId)
@@ -294,7 +294,7 @@ async function runUpdates() {
     log(`  🔧 ${u.modelSlug}/${u.providerSlug}: ${unit}${row.input_price_per_1m}/${unit}${row.output_price_per_1m} → ${unit}${u.input}/${unit}${u.output}`);
     log(`      reason: ${u.reason}`);
     if (!DRY_RUN) {
-      const { error } = await supabaseAdmin
+      const { error } = await db
         .from('api_channel_prices')
         .update({
           input_price_per_1m: u.input,
@@ -340,7 +340,7 @@ async function runDisables() {
     log(`  🚫 ${d.modelSlug}/${d.providerSlug}: was $${row.input_price_per_1m}/$${row.output_price_per_1m}, disabling`);
     log(`      reason: ${d.reason}`);
     if (!DRY_RUN) {
-      const { error } = await supabaseAdmin
+      const { error } = await db
         .from('api_channel_prices')
         .update({
           is_available: false,
@@ -374,7 +374,7 @@ async function runNewModels() {
       log(`  ➕ ${m.slug}: create model "${m.name}" (producer=${m.producerSlug})`);
       log(`      reason: ${m.reason}`);
       if (!DRY_RUN) {
-        const { data: newModel, error } = await supabaseAdmin
+        const { data: newModel, error } = await db
           .from('models')
           .insert({
             slug: m.slug,
@@ -401,14 +401,14 @@ async function runNewModels() {
 
     // Ensure model_official mapping for producer
     if (!DRY_RUN && modelId > 0) {
-      const { data: existingOfficial } = await supabaseAdmin
+      const { data: existingOfficial } = await db
         .from('model_offical')
         .select('id')
         .eq('model_id', modelId)
         .eq('producer_id', providerId)
         .maybeSingle();
       if (!existingOfficial) {
-        await supabaseAdmin.from('model_offical').insert({ model_id: modelId, producer_id: providerId });
+        await db.from('model_offical').insert({ model_id: modelId, producer_id: providerId });
       }
     }
 
@@ -423,7 +423,7 @@ async function runNewModels() {
         }
         log(`      🔧 ${m.producerSlug}: $${existing.input_price_per_1m}/$${existing.output_price_per_1m} → $${m.input}/$${m.output}`);
         if (!DRY_RUN) {
-          const { error } = await supabaseAdmin
+          const { error } = await db
             .from('api_channel_prices')
             .update({
               input_price_per_1m: m.input,
@@ -440,7 +440,7 @@ async function runNewModels() {
       } else {
         log(`      ➕ ${m.producerSlug}: insert price $${m.input}/$${m.output}`);
         if (!DRY_RUN) {
-          const { error } = await supabaseAdmin.from('api_channel_prices').insert({
+          const { error } = await db.from('api_channel_prices').insert({
             model_id: modelId,
             provider_id: providerId,
             input_price_per_1m: m.input,

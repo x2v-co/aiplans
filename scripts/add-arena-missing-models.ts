@@ -8,7 +8,7 @@
  * Usage:
  *   DATABASE_URL=... npx tsx scripts/add-arena-missing-models.ts [--dry-run]
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -46,7 +46,7 @@ async function main() {
   const providerCache = new Map<string, number>();
   async function getProviderId(slug: string): Promise<number | null> {
     if (providerCache.has(slug)) return providerCache.get(slug)!;
-    const { data } = await supabaseAdmin.from('providers').select('id').eq('slug', slug).maybeSingle();
+    const { data } = await db.from('providers').select('id').eq('slug', slug).maybeSingle();
     if (data) providerCache.set(slug, data.id);
     return data?.id ?? null;
   }
@@ -54,7 +54,7 @@ async function main() {
   let created = 0;
   let skipped = 0;
   for (const s of STUBS) {
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await db
       .from('models').select('id').eq('slug', s.slug).maybeSingle();
     if (existing) {
       console.log(`  ✓ ${s.slug}: exists, skip`);
@@ -68,7 +68,7 @@ async function main() {
     }
     console.log(`  ➕ ${s.slug} → provider=${s.providerSlug} (${providerId}) ctx=${s.contextWindow}`);
     if (!DRY_RUN) {
-      const { error } = await supabaseAdmin.from('models').insert({
+      const { error } = await db.from('models').insert({
         slug: s.slug,
         name: s.name,
         type: s.type ?? 'llm',

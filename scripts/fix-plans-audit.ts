@@ -14,7 +14,7 @@
  *
  * All ground truth verified against official pricing pages on 2026-04-13.
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -404,12 +404,12 @@ const NEW_PLANS: NewPlan[] = [
 // helpers
 // ────────────────────────────────────────────────────────────────────────────
 async function findProviderId(slug: string): Promise<number | null> {
-  const { data } = await supabaseAdmin.from('providers').select('id').eq('slug', slug).maybeSingle();
+  const { data } = await db.from('providers').select('id').eq('slug', slug).maybeSingle();
   return data?.id ?? null;
 }
 
 async function findPlan(providerId: number, planSlug: string) {
-  const { data } = await supabaseAdmin
+  const { data } = await db
     .from('plans')
     .select('id, name, slug, price, annual_price, currency, last_verified')
     .eq('provider_id', providerId)
@@ -425,7 +425,7 @@ const skipped: string[] = [];
 async function runReassign() {
   log(`\n━━━ [1/3] Reassign orphan provider_ids (${REASSIGN.length}) ━━━`);
   for (const r of REASSIGN) {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await db
       .from('plans')
       .select('id, slug, provider_id')
       .eq('provider_id', r.fromProviderId);
@@ -438,7 +438,7 @@ async function runReassign() {
     log(`  🔧 provider_id=${r.fromProviderId} → ${r.toProviderId} (${r.toSlug}): ${rows.length} plans`);
     for (const row of rows) log(`      · #${row.id} ${row.slug}`);
     if (!DRY_RUN) {
-      const { error: upErr } = await supabaseAdmin
+      const { error: upErr } = await db
         .from('plans')
         .update({ provider_id: r.toProviderId, updated_at: new Date().toISOString() })
         .eq('provider_id', r.fromProviderId);
@@ -491,7 +491,7 @@ async function runUpdates() {
       };
       if (u.currency) updateData.currency = u.currency;
       if (u.name) updateData.name = u.name;
-      const { error } = await supabaseAdmin.from('plans').update(updateData).eq('id', plan.id);
+      const { error } = await db.from('plans').update(updateData).eq('id', plan.id);
       if (error) {
         log(`      ❌ ${error.message}`);
         skipped.push(`UPDATE ${u.providerSlug}/${u.planSlug}: ${error.message}`);
@@ -544,7 +544,7 @@ async function runNewPlans() {
         // when a plan scraper runs and doesn't see them on the public page.
         source: 'manual',
       };
-      const { error } = await supabaseAdmin.from('plans').insert(insertRow);
+      const { error } = await db.from('plans').insert(insertRow);
       if (error) {
         log(`      ❌ ${error.message}`);
         skipped.push(`NEW ${p.providerSlug}/${p.slug}: ${error.message}`);
@@ -572,7 +572,7 @@ async function runDeletions() {
       }
     }
 
-    const { data: rows } = await supabaseAdmin
+    const { data: rows } = await db
       .from('plans')
       .select('id, slug, provider_id, price, currency')
       .eq('provider_id', providerId)
@@ -587,13 +587,13 @@ async function runDeletions() {
       log(`      reason: ${d.reason}`);
       if (!DRY_RUN) {
         // First delete dependent model_plan_mapping rows, if any
-        const { error: mapErr } = await supabaseAdmin
+        const { error: mapErr } = await db
           .from('model_plan_mapping')
           .delete()
           .eq('plan_id', row.id);
         if (mapErr) log(`      ⚠ failed to clean mapping: ${mapErr.message}`);
 
-        const { error } = await supabaseAdmin.from('plans').delete().eq('id', row.id);
+        const { error } = await db.from('plans').delete().eq('id', row.id);
         if (error) {
           log(`      ❌ ${error.message}`);
           skipped.push(`DELETE ${d.providerSlug}/${d.planSlug}: ${error.message}`);

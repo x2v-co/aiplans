@@ -1,15 +1,15 @@
 #!/usr/bin/env tsx
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 async function main() {
-  const { data: plans, error } = await supabaseAdmin
+  const { data: plans, error } = await db
     .from('plans')
     .select('id, name, slug, provider_id, tier, pricing_model, price, annual_price, currency, price_unit, last_verified, is_official')
     .order('provider_id')
     .order('id');
   if (error) throw error;
 
-  const { data: providers } = await supabaseAdmin.from('providers').select('id, slug, name');
+  const { data: providers } = await db.from('providers').select('id, slug, name');
   const provBySlug = new Map((providers ?? []).map(p => [p.id, p.slug]));
 
   console.log(`\nTotal plans: ${plans?.length ?? 0}\n`);
