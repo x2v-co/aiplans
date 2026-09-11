@@ -30,6 +30,7 @@ import { getActiveCouponMap } from "@/lib/coupons";
 import { formatModelName } from '@/lib/model-names';
 import { guideForModelSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import ModelBenchmarkPanel from '@/components/model-benchmark-panel';
+import VariantBadges from '@/components/variant-badges';
 import { isArenaBenchmark, type ModelBenchmarkScore } from '@/lib/benchmarks';
 
 const baseUrl = SITE_URL;
@@ -570,7 +571,10 @@ export default async function ModelPage({
               <span className="text-5xl">{getProviderLogoFallback(product.providers)}</span>
             )}
             <div>
-              <h1 className="text-3xl font-bold">{productName}</h1>
+              <h1 className="text-3xl font-bold flex flex-wrap items-center gap-2">
+                {productName}
+                <VariantBadges slug={product.slug} locale={locale} />
+              </h1>
               <p className="text-zinc-600">{product.providers?.name} • API Price Comparison</p>
             </div>
           </div>
