@@ -8,6 +8,8 @@ function canonicalModel(raw: string): string | null {
   const clean = raw.trim().toLowerCase().replace(/\s+/g, '-');
   if (clean === 'tencent-hy-vision-1.5-instruct') return 'hy-vision-1.5-instruct';
   if (!/^(hunyuan|tencent-hy)/.test(clean)) return null;
+  // Non-chat products share the pricing table but are not LLM API prices.
+  if (/(^|-)(embedding|vision-video|video|tts|asr|rerank)(-|$)/.test(clean)) return null;
   return clean;
 }
 
