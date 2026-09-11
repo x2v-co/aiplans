@@ -230,25 +230,49 @@ export const CLASSIFICATIONS: Classification[] = [
     reason: '通义灵码 专业版 unlocks Qwen3-Coder-Plus and larger context' },
   { providerSlug: 'qwen', planSlug: 'aliyun-bailian-coding-pro', kind: 'coding', line: 'bailian-coding', rank: 0,
     selector: {
-      families: ['qwen', 'qwen2', 'qwen2.5', 'qwen3'],
-      extra: ['glm-5.2', 'kimi-k2.5', 'minimax-m2.5'],
+      // Closed list verified against help.aliyun.com/zh/model-studio/coding-plan
+      // "仅支持以下精确版本" (2026-09-11). Pro models: qwen3.7-plus,
+      // qwen3.6-plus, kimi-k2.5, glm-5, MiniMax-M2.5, qwen3.5-plus,
+      // qwen3-max (dated qwen3-max-2026-01-23 aliases here), qwen3-coder-next,
+      // qwen3-coder-plus, glm-4.7.
+      only_extra: true,
+      extra: [
+        'qwen3.7-plus', 'qwen3.6-plus', 'kimi-k2.5', 'glm-5', 'minimax-m2.5',
+        'qwen3.5-plus', 'qwen3-max', 'qwen3-coder-next', 'qwen3-coder-plus', 'glm-4.7',
+      ],
     },
-    reason: 'Aggregator coding plan: its own notes column lists GLM, Kimi and MiniMax alongside Qwen — this is the case `extra` exists for' },
+    reason: '百炼 Coding Plan Pro: 官方闭列表 10 个模型（2026-09-11 核实）' },
 
-  // ─ Volcengine Seed. TODO(confirm with owner): 火山方舟 Lite/Pro are billed as
-  //   Coding Plans, but the product page also markets agent task quotas. If they
-  //   are really agent bundles, flip kind to 'agent' and keep the line name.
+  // ─ Volcengine Seed Coding Plan. All four tiers share one closed model list;
+  //   quotas differ, entitlements don't (docs 82379/1928261, verified
+  //   2026-09-11): 3 Doubao Seed + 5 cross-vendor models + kimi-k3.
   { providerSlug: 'seed', planSlug: 'seed-free-trial', kind: 'coding', line: 'seed-coding', rank: 0,
-    selector: { families: ['doubao', 'seed'], current_only: true },
-    reason: 'Trial tier of 火山方舟 Coding Plan' },
+    selector: { only_extra: true, extra: [
+      'doubao-seed-evolving', 'doubao-seed-2.1-turbo', 'doubao-seed-2.0-lite',
+      'minimax-m3', 'glm-5.3', 'glm-5.3-flash',
+      'deepseek-v4-flash', 'deepseek-v4-pro', 'kimi-k2.7-code', 'kimi-k3',
+    ] },
+    reason: '火山方舟 Coding Plan 免费试用：官方闭列表 10 个模型' },
   { providerSlug: 'seed', planSlug: 'seed-lite', kind: 'coding', line: 'seed-coding', rank: 1,
-    selector: { families: ['doubao', 'seed'] },
+    selector: { only_extra: true, extra: [
+      'doubao-seed-evolving', 'doubao-seed-2.1-turbo', 'doubao-seed-2.0-lite',
+      'minimax-m3', 'glm-5.3', 'glm-5.3-flash',
+      'deepseek-v4-flash', 'deepseek-v4-pro', 'kimi-k2.7-code', 'kimi-k3',
+    ] },
     reason: '火山方舟 Coding Plan Lite ¥40/mo' },
   { providerSlug: 'seed', planSlug: 'seed-pro', kind: 'coding', line: 'seed-coding', rank: 2,
-    selector: { families: ['doubao', 'seed'] },
+    selector: { only_extra: true, extra: [
+      'doubao-seed-evolving', 'doubao-seed-2.1-turbo', 'doubao-seed-2.0-lite',
+      'minimax-m3', 'glm-5.3', 'glm-5.3-flash',
+      'deepseek-v4-flash', 'deepseek-v4-pro', 'kimi-k2.7-code', 'kimi-k3',
+    ] },
     reason: '火山方舟 Coding Plan Pro ¥200/mo' },
   { providerSlug: 'seed', planSlug: 'seed-enterprise', kind: 'coding', line: 'seed-coding', rank: 3,
-    selector: { families: ['doubao', 'seed'] },
+    selector: { only_extra: true, extra: [
+      'doubao-seed-evolving', 'doubao-seed-2.1-turbo', 'doubao-seed-2.0-lite',
+      'minimax-m3', 'glm-5.3', 'glm-5.3-flash',
+      'deepseek-v4-flash', 'deepseek-v4-pro', 'kimi-k2.7-code', 'kimi-k3',
+    ] },
     reason: 'Contact-sales tier' },
 
   // ─ Zhipu — the CN and international Z.AI versions are the same Coding Plan

@@ -33,11 +33,13 @@
  *   C19 prices.modelsdev_divergence — our USD-normalized price disagrees with the external
  *                                   models.dev community catalog (warn; read-only, skipped
  *                                   with a notice when models.dev is unreachable)
+ *   C20 plans.modelsdev_entitlements — coding-plan lists models.dev includes that our plan
+ *                                   selector omits (warn; closed-list products only)
  */
 import { supabaseAdmin } from './db/queries';
 import { databaseSql } from './db/postgres-admin';
 import { resolveSelector, type ModelSelector, type SelectableModel } from '../src/lib/plan-selector';
-import { fetchModelsDevCatalog, isModelsDevComparable, type ModelsDevCatalog } from './scrapers/modelsdev';
+import { fetchModelsDevCatalog, isModelsDevComparable, PLAN_DRIFT_SKIP, type ModelsDevCatalog } from './scrapers/modelsdev';
 
 const args = new Set(process.argv.slice(2));
 const VERBOSE = args.has('--verbose') || args.has('-v');
@@ -545,6 +547,54 @@ async function main() {
           'critical',
           `materialized mappings lag the selector (+${missingSlugs.length} not linked, −${staleSlugs.length} stale)`,
           { ...ref, missing: missingSlugs.slice(0, 20), stale: staleSlugs.slice(0, 20) },
+        );
+      }
+    }
+  }
+
+  // ---------- C20: models.dev coding-plan entitlement drift ----------
+  // Subscription plans publish closed model lists (Bailuan Coding Pro,
+  // Volcengine Coding Plan). models.dev mirrors them as zero-priced providers.
+  // We compare one direction: an entitlement md lists that our selector does
+  // NOT resolve (a model plan users can call but our plan page omits).
+  // Over-inclusion is covered qualitatively by the closed-list selectors.
+  const PLAN_MD_EXTRA_VERIFIED: Record<string, string[]> = {
+    // md lists these two but the official Bailuan Coding Pro page
+    // (help.aliyun.com/zh/model-studio/coding-plan, checked 2026-09-11)
+    // publishes a closed 10-model list without them.
+    'qwen/aliyun-bailian-coding-pro': ['qwen3.6-flash', 'qwen3.7-max'],
+  };
+  if (CLASSIFIED && modelsDevResult.catalog) {
+    const catalogSlugs = new Set(modelCatalog.map(m => m.slug.toLowerCase()));
+    for (const pl of plans) {
+      const providerSlug = providerSlugById.get(pl.provider_id);
+      if (!providerSlug) continue;
+      const planKey = `${providerSlug}/${pl.slug}`;
+      if (PLAN_DRIFT_SKIP.has(planKey)) continue;
+      const mdKey = modelsDevResult.catalog.planProviderFor(providerSlug, pl.slug);
+      if (!mdKey) continue;
+      const planEntitlements = modelsDevResult.catalog.planModels(mdKey);
+      if (!planEntitlements) continue;
+
+      const resolution20 = resolveSelector(pl.model_selector as ModelSelector, modelCatalog, [providerSlug]);
+      const linked = new Set(resolution20.models.map(m => m.slug.toLowerCase()));
+      const whitelist = new Set(PLAN_MD_EXTRA_VERIFIED[planKey] ?? []);
+      const missingEntitlements = planEntitlements.ids.filter(
+        id => catalogSlugs.has(id) && !linked.has(id) && !whitelist.has(id),
+      );
+      const absentFromCatalog = planEntitlements.ids.filter(id => !catalogSlugs.has(id));
+      if (missingEntitlements.length > 0) {
+        add(
+          'plans.modelsdev_entitlements',
+          'warning',
+          `${pl.slug}: models.dev lists ${missingEntitlements.length} coding-plan entitlement(s) the selector omits: ${missingEntitlements.slice(0, 8).join(', ')}`,
+          {
+            plan: `${pl.slug}#${pl.id}`,
+            provider: refProvider(pl.provider_id),
+            md_provider: mdKey,
+            missing: missingEntitlements,
+            absent_from_catalog: absentFromCatalog,
+          },
         );
       }
     }
