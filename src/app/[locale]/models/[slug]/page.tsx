@@ -268,12 +268,21 @@ async function getProductWithChannels(slug: string) {
   const channelIds = normalizedChannelPrices.map((cp: any) => cp.id);
   const priceHistory: PriceHistoryPoint[] = [];
   if (channelIds.length > 0) {
+    // Per-channel window, not one global LIMIT: a fast-changing aggregator
+    // (hundreds of events) otherwise fills the cap and starves every other
+    // provider, so official/CN lines never appear. 150 events/channel covers
+    // months of changes and stays within chart payload limits.
     const historyRows = await sql<any[]>`
       SELECT channel_price_id, new_input_price, new_output_price, currency, recorded_at
-      FROM price_history
-      WHERE channel_price_id = ANY(${sql.array(channelIds, INT4_ARRAY)})
+      FROM (
+        SELECT
+          channel_price_id, new_input_price, new_output_price, currency, recorded_at,
+          row_number() OVER (PARTITION BY channel_price_id ORDER BY recorded_at DESC) AS rn
+        FROM price_history
+        WHERE channel_price_id = ANY(${sql.array(channelIds, INT4_ARRAY)})
+      ) ranked
+      WHERE rn <= 150
       ORDER BY recorded_at ASC
-      LIMIT 500
     `;
 
     const providerByChannelId = new Map<number, { slug: string; name: string }>();
@@ -383,6 +392,13 @@ export default async function ModelPage({
     return aUsd - bUsd;
   });
   const cheapestChannel = sortedChannelPrices[0];
+
+  const officialHistoryProviderSlugs: string[] = [...new Set(
+    sortedChannelPrices
+      .filter((cp) => cp.providers?.type === 'producer' || cp.providers?.type === 'official')
+      .map((cp) => cp.providers?.slug as string | undefined)
+      .filter((s): s is string => Boolean(s)),
+  )];
 
   // Data-driven, localized summary + FAQ for SEO/GEO. Derived entirely from
   // the facts already queried (no invented capabilities), so every model page
@@ -1005,7 +1021,11 @@ export default async function ModelPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <PriceHistoryChart history={priceHistory} locale={isZh ? 'zh' : 'en'} />
+            <PriceHistoryChart
+              history={priceHistory}
+              locale={isZh ? 'zh' : 'en'}
+              officialProviderSlugs={officialHistoryProviderSlugs}
+            />
           </CardContent>
         </Card>
 
