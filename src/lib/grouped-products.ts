@@ -69,9 +69,9 @@ export interface GroupedProduct {
   hasGlobalVersion: boolean;
   versionCounts: number;
   /** Distinct variant tags present on this card (for search/labels). */
-  variantTags?: Set<string>;
+  variantTags?: string[];
   /** Slugs of every model row merged into this card (for search). */
-  memberSlugs?: Set<string>;
+  memberSlugs?: string[];
 }
 
 /**
@@ -257,18 +257,20 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
         hasChinaVersion,
         hasGlobalVersion,
         versionCounts: productPrices.length,
-        variantTags: new Set(variant?.tags ?? []),
-        memberSlugs: new Set([product.slug]),
+        variantTags: [...new Set(variant?.tags ?? [])],
+        memberSlugs: [product.slug],
       });
     } else {
       // 合并到现有组
       const group = modelGroups.get(baseName)!;
       group.versions.push(...productPrices);
       group.versionCounts += productPrices.length;
-      group.memberSlugs ??= new Set();
-      group.variantTags ??= new Set();
-      group.memberSlugs.add(product.slug);
-      variant?.tags.forEach(t => group.variantTags!.add(t));
+      group.memberSlugs ??= [];
+      group.variantTags ??= [];
+      group.memberSlugs.push(product.slug);
+      variant?.tags.forEach(t => {
+        if (!group.variantTags!.includes(t)) group.variantTags!.push(t);
+      });
       // Standard model owns the card identity (name/link/context/ELO); a
       // variant-only product may have created the group first by sort order.
       if (!variant) {
