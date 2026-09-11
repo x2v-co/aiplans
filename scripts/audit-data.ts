@@ -327,7 +327,7 @@ async function main() {
         // hold launch/snapshot prices from 2025-09 … 2026-02 (¥6.15/24.6,
         // ¥4/24, ¥1.2/12, ¥7/35 respectively), all superseded.
         || (providerSlug === 'qwen' && [
-          'qwen3-max', 'qwen3.5-plus', 'qwen3.5-flash', 'qwen3-coder-plus',
+          'qwen3-max', 'qwen3.5-plus', 'qwen3.5-flash', 'qwen3-coder-plus', 'qwen3.6-plus',
         ].includes(modelSlug))
         // Together AI current page lists Qwen3.7-Max at $2/$6 (verified
         // 2026-09-11); md's $1.25/$3.75 is the 2026-07-02 launch price.

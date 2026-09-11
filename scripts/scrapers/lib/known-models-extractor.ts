@@ -226,13 +226,17 @@ export abstract class KnownModelsExtractor extends PlaywrightScraper {
       // the next model header so we don't leak prices from neighbors.
       const candidates: number[] = [];
       for (const line of ctx) {
-        if (line !== lines[i] && modelHeaderRe.test(line) && !model.pattern.test(line)) break;
-        // Reset regex state — we're using /g so lastIndex persists otherwise
+        const nextHeader = line !== lines[i] && modelHeaderRe.test(line) && !model.pattern.test(line);
+        // In headless renders a table row can collapse into one line with our
+        // prices followed by the next model's header ("0.8元2.7元…qwen3.7-flash").
+        // Collect this line's numbers first; breaking before them drops the
+        // row's own prices. Then stop so no further neighbor rows leak in.
         const re = new RegExp(numRe.source, numRe.flags);
         for (const m of line.matchAll(re)) {
           const v = parseFloat(m[1]);
           if (v > 0 && v < 10_000) candidates.push(v);
         }
+        if (nextHeader) break;
       }
       if (candidates.length < 2) continue;
 

@@ -290,6 +290,17 @@ export class ModelsDevCatalog {
     return { mdProvider: mdProviderKey, ids };
   }
 
+  /** Token-priced model slugs of a regular provider (excludes free/zero rows). */
+  providerModelSlugs(mdProviderKey: string): string[] {
+    const map = this.byMdProvider.get(mdProviderKey);
+    return map ? [...map.keys()].sort() : [];
+  }
+
+  /** Whether md lists a (token-priced, non-free) model under that provider. */
+  providerHasModel(mdProviderKey: string, canonicalKey: string): boolean {
+    return this.byMdProvider.get(mdProviderKey)?.has(canonicalKey) ?? false;
+  }
+
   lookup(ourProviderSlug: string, ourModelSlug: string): ModelsDevLookup | null {
     const profile = PROVIDER_PROFILES[ourProviderSlug];
     if (!profile) return null;
