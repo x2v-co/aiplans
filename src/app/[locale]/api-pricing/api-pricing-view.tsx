@@ -23,6 +23,8 @@ import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
 import { formatModelName } from '@/lib/model-names';
 import { trackAnalyticsEvent } from '@/lib/analytics';
 import { matchesSearch } from '@/lib/search-match';
+import { CouponBadge } from "@/components/coupon-badge";
+import { couponsFor, type CouponOffer } from "@/lib/coupon-format";
 // Currency-normalised cheapest-channel selection. These are pure, module-scope
 // functions (see channel-price-utils.ts) so the React Compiler can preserve the
 // memoization of `filteredProducts` below — that memo is what keeps filtering
@@ -39,20 +41,33 @@ const LOAD_MORE_MODELS = 36;
 function ProviderVisitLink({
   provider,
   label,
+  locale,
+  coupons,
 }: {
   provider: ChannelPrice['providers'];
   label: string;
+  locale: string;
+  coupons?: CouponOffer[];
 }) {
   const href = getProviderVisitUrl(provider, 'api');
-  if (!href) return <span className="text-zinc-400">-</span>;
+  const badge = <CouponBadge coupons={coupons ?? []} locale={locale} size="xs" align="end" />;
+  if (!href) return (
+    <div className="flex flex-col items-end gap-1">
+      <span className="text-zinc-400">-</span>
+      {badge}
+    </div>
+  );
 
   return (
-    <Button asChild variant="outline" size="xs">
-      <a href={href} target="_blank" rel={getProviderVisitRel(provider, 'api')}>
-        {label}
-        <ExternalLink />
-      </a>
-    </Button>
+    <div className="flex flex-col items-end gap-1">
+      <Button asChild variant="outline" size="xs">
+        <a href={href} target="_blank" rel={getProviderVisitRel(provider, 'api')}>
+          {label}
+          <ExternalLink />
+        </a>
+      </Button>
+      {badge}
+    </div>
   );
 }
 
@@ -82,6 +97,7 @@ export default function ApiPricingView({
   initialFilters,
   stats,
   faqs,
+  couponByProvider,
 }: {
   locale: string;
   products: GroupedProduct[];
@@ -91,6 +107,8 @@ export default function ApiPricingView({
   initialFilters?: ApiPricingInitialFilters;
   stats: ApiPricingStats;
   faqs: FaqItem[];
+  /** Active api-scoped coupons keyed by provider slug. */
+  couponByProvider: Record<string, CouponOffer[]>;
 }) {
   const t = useTranslations('apiPricing');
   const isZh = locale === "zh";
@@ -479,7 +497,7 @@ export default function ApiPricingView({
                             <TableHead className="text-right">{t('inputPer1M')}</TableHead>
                             <TableHead className="text-right">{t('outputPer1M')}</TableHead>
                             <TableHead className="text-right">{t('savings')}</TableHead>
-                            <TableHead className="w-24 text-right">{locale === 'zh' ? '访问' : 'Visit'}</TableHead>
+                            <TableHead className="w-28 text-right">{locale === 'zh' ? '访问' : 'Visit'}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -608,6 +626,12 @@ export default function ApiPricingView({
                                     <ProviderVisitLink
                                       provider={chinaVersion.providers}
                                       label={locale === 'zh' ? '访问' : 'Visit'}
+                                      locale={locale}
+                                      coupons={couponsFor(
+                                        couponByProvider,
+                                        chinaVersion.providers.slug,
+                                        globalVersion?.providers.slug,
+                                      )}
                                     />
                                   </TableCell>
                                 </TableRow>
@@ -672,6 +696,8 @@ export default function ApiPricingView({
                                     <ProviderVisitLink
                                       provider={cp.providers}
                                       label={locale === 'zh' ? '访问' : 'Visit'}
+                                      locale={locale}
+                                      coupons={couponsFor(couponByProvider, cp.providers.slug)}
                                     />
                                   </TableCell>
                                 </TableRow>

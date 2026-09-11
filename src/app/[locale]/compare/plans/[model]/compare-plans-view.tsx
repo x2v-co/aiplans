@@ -22,6 +22,8 @@ import { PlanRate } from "@/components/plan-rate";
 import type { FaqItem } from "./faqs";
 import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
 import { formatModelName } from '@/lib/model-names';
+import { CouponBadge } from "@/components/coupon-badge";
+import { couponsFor, type CouponOffer } from "@/lib/coupon-format";
 
 interface ComparePlansViewProps {
   locale: string;
@@ -29,6 +31,8 @@ interface ComparePlansViewProps {
   data: PlanComparison;
   /** Data-driven FAQ, built on the server and mirrored as FAQPage JSON-LD. */
   faqs: FaqItem[];
+  /** Active plan-scoped coupons keyed by provider slug. */
+  couponByProvider: Record<string, CouponOffer[]>;
 }
 
 interface CheapestByKind {
@@ -50,7 +54,7 @@ interface PlanGroup {
   plans: any[];
 }
 
-export default function ComparePlansView({ locale, data, faqs }: ComparePlansViewProps) {
+export default function ComparePlansView({ locale, data, faqs, couponByProvider }: ComparePlansViewProps) {
   // Billing toggle
   const [showYearly, setShowYearly] = useState(false);
   // Every provider starts expanded, and it has to be the *initial* state rather
@@ -219,13 +223,22 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
               : `Compare ${modelName} subscription plans across different channels to find the best option for you`}
           </p>
 
-          {providerVisitUrl && (
-            <Button asChild variant="outline" className="mb-8">
-              <a href={providerVisitUrl} target="_blank" rel={getProviderVisitRel(model.provider, 'plan')}>
-                {locale === "zh" ? `访问 ${model.provider.name}` : `Visit ${model.provider.name}`}
-                <ExternalLink />
-              </a>
-            </Button>
+          {(providerVisitUrl || couponsFor(couponByProvider, model.provider?.slug).length > 0) && (
+            <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
+              {providerVisitUrl && (
+                <Button asChild variant="outline">
+                  <a href={providerVisitUrl} target="_blank" rel={getProviderVisitRel(model.provider, 'plan')}>
+                    {locale === "zh" ? `访问 ${model.provider.name}` : `Visit ${model.provider.name}`}
+                    <ExternalLink />
+                  </a>
+                </Button>
+              )}
+              <CouponBadge
+                coupons={couponsFor(couponByProvider, model.provider?.slug)}
+                locale={locale}
+                size="sm"
+              />
+            </div>
           )}
 
           {/* Billing Toggle - only show if yearly pricing exists */}
@@ -499,7 +512,7 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
                                 )}
 
                                 {/* Action Button - at bottom */}
-                                {planVisitUrl && <div className="mt-auto pt-3">
+                                {planVisitUrl && <div className="mt-auto pt-3 flex flex-col items-stretch gap-1.5">
                                   <a
                                     href={planVisitUrl}
                                     target="_blank"
@@ -515,6 +528,13 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
                                     {locale === "zh" ? "订阅" : "Subscribe"}
                                     <ArrowRight className="w-3 h-3" />
                                   </a>
+                                  <div className="flex justify-center">
+                                    <CouponBadge
+                                      coupons={couponsFor(couponByProvider, plan.channel?.slug)}
+                                      locale={locale}
+                                      size="xs"
+                                    />
+                                  </div>
                                 </div>}
                               </CardContent>
                             </Card>
@@ -555,6 +575,12 @@ export default function ComparePlansView({ locale, data, faqs }: ComparePlansVie
                     </a>
                   </Button>
                 )}
+                <CouponBadge
+                  coupons={couponsFor(couponByProvider, model.provider?.slug)}
+                  locale={locale}
+                  size="sm"
+                  className="self-center"
+                />
               </div>
             </CardContent>
           </Card>

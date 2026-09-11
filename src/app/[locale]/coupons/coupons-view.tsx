@@ -10,6 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Gift, Copy, Check, ExternalLink, Sparkles, Shield, Clock, Tag, HelpCircle } from "lucide-react";
 import SiteHeader from '@/components/SiteHeader';
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
+import {
+  couponCopyTarget,
+  couponLinkLabel,
+  formatCouponDiscount,
+  isCouponExpired,
+} from "@/lib/coupon-format";
 import type { Coupon } from "@/lib/coupons";
 
 // Provider info
@@ -44,31 +50,7 @@ export default function CouponsView({
     setTimeout(() => setCopiedValue(null), 2000);
   };
 
-  const formatDiscount = (coupon: Coupon) => {
-    if (coupon.discount_type === 'percentage') {
-      return t('percentOff', { value: coupon.discount_value });
-    } else if (coupon.discount_type === 'fixed') {
-      return t('creditAmount', { value: coupon.discount_value });
-    } else if (coupon.discount_type === 'trial') {
-      // Token grant packs (e.g. BigModel invite: 20,000,000 tokens) — compact
-      // notation renders 2000万 / 20M.
-      const compact = new Intl.NumberFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
-        notation: 'compact',
-      }).format(coupon.discount_value ?? 0);
-      return t('tokenCredit', { value: compact });
-    }
-    return `${coupon.discount_value}`;
-  };
-
-  // Invite-link grants (trial type, no enterable code) are redeemed by
-  // registering through offer_url, so the box shows/copies the link itself.
-  const copyTarget = (coupon: Coupon) =>
-    coupon.discount_type === 'trial' && coupon.offer_url ? coupon.offer_url : coupon.code;
-
-  const isExpired = (expiresAt: string | null) => {
-    if (!expiresAt) return false; // null = no published expiry, not "expired in 1970"
-    return new Date(expiresAt) < new Date();
-  };
+  const formatDiscount = (coupon: Coupon) => formatCouponDiscount(coupon, locale, t);
 
   // providerMeta is id-keyed and only covers the launch providers; for newer
   // providers fall back to the joined DB row (name, logo, website).
@@ -86,24 +68,13 @@ export default function CouponsView({
     return days;
   };
 
-  const verifiedCoupons = coupons.filter(c => c.is_verified && !isExpired(c.expires_at));
-  const otherCoupons = coupons.filter(c => !c.is_verified || isExpired(c.expires_at));
+  const verifiedCoupons = coupons.filter(c => c.is_verified && !isCouponExpired(c.expires_at));
+  const otherCoupons = coupons.filter(c => !c.is_verified || isCouponExpired(c.expires_at));
 
   const maxPercentOff = verifiedCoupons.reduce(
     (acc, c) => Math.max(acc, c.discount_type === 'percentage' ? c.discount_value : 0), 0);
   const totalCredit = verifiedCoupons.reduce(
     (acc, c) => acc + (c.discount_type === 'fixed' ? c.discount_value : 0), 0);
-
-  // Compact, human-readable label for a link-only coupon (the full icoded URL
-  // stays in href / clipboard): "bigmodel.cn/invite".
-  const linkLabel = (url: string) => {
-    try {
-      const u = new URL(url);
-      return u.hostname.replace(/^www\./, '') + u.pathname.replace(/\/$/, '');
-    } catch {
-      return url;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
@@ -174,7 +145,7 @@ export default function CouponsView({
               const providerLogoFallback = getProviderLogoFallback(coupon.providers, provider.logo);
               const daysLeft = coupon.expires_at ? getDaysLeft(coupon.expires_at) : null;
               const visitUrl = coupon.offer_url || coupon.providers?.website || provider.website;
-              const target = copyTarget(coupon);
+              const target = couponCopyTarget(coupon);
               const targetIsLink = target.startsWith('http');
 
               return (
@@ -224,7 +195,7 @@ export default function CouponsView({
                               className="truncate"
                               title={targetIsLink ? target : undefined}
                             >
-                              {targetIsLink ? linkLabel(target) : target}
+                              {targetIsLink ? couponLinkLabel(target) : target}
                             </span>
                           </div>
                           <div className="flex gap-2 shrink-0 w-full lg:w-auto">
@@ -295,7 +266,7 @@ export default function CouponsView({
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{provider.name}</span>
-                            {isExpired(coupon.expires_at) && (
+                            {isCouponExpired(coupon.expires_at) && (
                               <Badge variant="outline" className="text-xs">{t('expired')}</Badge>
                             )}
                             {!coupon.is_verified && (
