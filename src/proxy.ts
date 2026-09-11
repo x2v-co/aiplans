@@ -22,7 +22,7 @@ export function requestUsedHttp(request: NextRequest): boolean {
 }
 
 export default function proxy(request: NextRequest) {
-  if (requestUsedHttp(request)) {
+  if (process.env.NODE_ENV === 'production' && requestUsedHttp(request)) {
     const secureUrl = request.nextUrl.clone();
     secureUrl.protocol = 'https:';
     // Next.js serializes same-host middleware redirects as relative Locations,
