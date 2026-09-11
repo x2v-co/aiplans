@@ -26,6 +26,7 @@ interface PriceUpdate {
   input: number;
   output: number;
   reason: string;
+  currency?: string;
 }
 
 interface PriceDisable {
@@ -70,14 +71,15 @@ const UPDATES: PriceUpdate[] = [
   // MiniMax China producer pricing is 7x the international rate per audit
   // International/openrouter price $0.20-0.30/$1.20 is correct; local CNY
   // converts to approximately $0.30/$1.20. DB had $2.10/$8.40.
-  { modelSlug: 'minimax-m2.5', providerSlug: 'minimax-china', input: 0.30, output: 1.20,
-    reason: 'MiniMax official M2.5 international pricing is $0.30/$1.20; DB had 7x' },
+  // (Entry removed 2026-09-10: the $2.10/$8.40 row is the correct CNY price
+  // on the minimax-china channel — re-applying $0.30/$1.20 here overwrote a
+  // good CNY row with USD numbers. Verified against minimax-cn $0.3/$1.2.)
 
   // ─── Round 2 ─── Additional ground truth from web verification 2026-04-13
 
-  // Zhipu GLM-4.6 (z.ai international pricing)
-  { modelSlug: 'glm-4.6', providerSlug: 'openrouter', input: 0.60, output: 2.20,
-    reason: 'GLM-4.6 official z.ai pricing; DB had $0/$0 (zero-write bug)' },
+  // (glm-4.6/openrouter entry removed 2026-09-10: live z-ai/glm-4.6 is
+  // $0.43/$1.75 and the row already matches; its 2026-04 $0.60/$2.20 truth
+  // was stale.)
 
   // Google Gemini producer record for 2.0-flash had $0.5/$10 — wrong
   { modelSlug: 'gemini-2.0-flash-exp', providerSlug: 'google', input: 0.10, output: 0.40,
@@ -87,15 +89,10 @@ const UPDATES: PriceUpdate[] = [
   { modelSlug: 'o1', providerSlug: 'azure-openai', input: 15, output: 60,
     reason: 'Azure OpenAI mirrors OpenAI o1 pricing $15/$60; DB had $1/$1' },
 
-  // Current Mistral official standard prices.
-  { modelSlug: 'mistral-large', providerSlug: 'mistral', input: 1.50, output: 7.00,
-    reason: 'Mistral Large current official standard price is $1.50/$7.00' },
-  { modelSlug: 'mistral-medium', providerSlug: 'mistral', input: 0.50, output: 1.50,
-    reason: 'Mistral Medium current official standard price is $0.50/$1.50' },
-  { modelSlug: 'mistral-small', providerSlug: 'mistral', input: 0.15, output: 0.40,
-    reason: 'Mistral Small current official standard price is $0.15/$0.40' },
-  { modelSlug: 'codestral', providerSlug: 'mistral', input: 0.15, output: 0.60,
-    reason: 'Codestral current official standard price is $0.15/$0.60' },
+  // (Mistral large/medium/small + codestral entries removed 2026-09-10:
+  // current mistral.ai/pricing/api is large $0.5/$1.5, medium $1.5/$7.5,
+  // small $0.15/$0.6, codestral $0.3/$0.9 — the scraper rows already match;
+  // the April "truth" below was the stale one.)
 
   // Grok via xAI direct
   { modelSlug: 'grok-2', providerSlug: 'grok', input: 2, output: 10,
@@ -104,6 +101,73 @@ const UPDATES: PriceUpdate[] = [
     reason: 'xAI Grok-3 official $3/$15' },
   { modelSlug: 'grok-4', providerSlug: 'grok', input: 2, output: 6,
     reason: 'xAI Grok-4.20 (current flagship) official $2/$6 + cached $0.20' },
+
+  // ─── Round 3 ─── xAI per-1M unit bug surfaced by models.dev C19 (2026-09-10)
+  // grok-dynamic.ts divided the embedded ten-thousandths-of-a-dollar fields
+  // by 1000 instead of 10000, so every row was exactly 10x the docs.x.ai
+  // per-1M price table. Standard (<200K context) prices; verified 2026-09-10.
+  { modelSlug: 'grok-4.3', providerSlug: 'grok', input: 1.25, output: 2.5,
+    reason: 'docs.x.ai per-1M: $1.25/$2.5 (<200K); row was 10x ($12.5/$25) unit bug' },
+  { modelSlug: 'grok-4.20-reasoning', providerSlug: 'grok', input: 1.25, output: 2.5,
+    reason: 'docs.x.ai per-1M: $1.25/$2.5; row was 10x ($12.5/$25) unit bug' },
+  { modelSlug: 'grok-4.20-non-reasoning', providerSlug: 'grok', input: 1.25, output: 2.5,
+    reason: 'docs.x.ai per-1M: $1.25/$2.5; row was 10x ($12.5/$25) unit bug' },
+  { modelSlug: 'grok-4.20-multi-agent', providerSlug: 'grok', input: 1.25, output: 2.5,
+    reason: 'docs.x.ai per-1M: $1.25/$2.5; row was 10x ($12.5/$25) unit bug' },
+  { modelSlug: 'grok-4.5', providerSlug: 'grok', input: 2, output: 6,
+    reason: 'docs.x.ai per-1M: $2/$6 (<200K); row was 10x ($20/$60) unit bug' },
+  { modelSlug: 'grok-4.6', providerSlug: 'grok', input: 2, output: 6,
+    reason: 'docs.x.ai per-1M: $2/$6 (<200K); row was 10x ($20/$60) unit bug' },
+  { modelSlug: 'grok-code-fast-1', providerSlug: 'grok', input: 1, output: 2,
+    reason: 'grok-build-0.1 per-1M: $1/$2; row was 10x ($10/$20) unit bug' },
+
+  // ─── Round 3b ─── mini/batch slug collisions found via models.dev C19
+  // (2026-09-10). The normalizer stripped trailing `mini` and the broad
+  // gpt-4o branch swallowed ":batch" ids, so variant rows overwrote base
+  // model prices on OpenRouter/Azure. Values from the live OpenRouter API
+  // and azure.microsoft.com standard Global table (verified 2026-09-10).
+  { modelSlug: 'gpt-5.4', providerSlug: 'azure-openai', input: 2.5, output: 15,
+    reason: 'Azure Global <272k: $2.5/$15; row held gpt-5.4-mini price $0.75/$4.5' },
+  { modelSlug: 'gpt-5.1-codex', providerSlug: 'azure-openai', input: 1.25, output: 10,
+    reason: 'Azure Global: $1.25/$10; row held gpt-5.1-codex-mini price $0.25/$2' },
+  { modelSlug: 'gpt-5', providerSlug: 'openrouter', input: 1.25, output: 10,
+    reason: 'OpenRouter live API: $1.25/$10; row held gpt-5-mini price $0.25/$2' },
+  { modelSlug: 'gpt-5.1-codex', providerSlug: 'openrouter', input: 1.25, output: 10,
+    reason: 'OpenRouter live API: $1.25/$10; row held codex-mini price $0.25/$2' },
+  { modelSlug: 'gpt-4o', providerSlug: 'openrouter', input: 2.5, output: 10,
+    reason: 'OpenRouter live API: $2.5/$10; row held :batch price $1.25/$5' },
+  { modelSlug: 'gpt-4o-mini', providerSlug: 'openrouter', input: 0.15, output: 0.6,
+    reason: 'OpenRouter live API: $0.15/$0.6; row held :batch price $0.075/$0.3' },
+  { modelSlug: 'gpt-4.1', providerSlug: 'openrouter', input: 2, output: 8,
+    reason: 'OpenRouter live API: $2/$8; row held gpt-4.1-mini price $0.4/$1.6' },
+  { modelSlug: 'o3-mini', providerSlug: 'openrouter', input: 1.1, output: 4.4,
+    reason: 'OpenRouter live API: $1.1/$4.4; row held :batch price $0.55/$2.2' },
+  { modelSlug: 'gpt-3.5-turbo', providerSlug: 'openrouter', input: 0.5, output: 1.5,
+    reason: 'OpenRouter live API: $0.5/$1.5; row held :batch price $0.25/$0.75' },
+  { modelSlug: 'glm-5.2', providerSlug: 'openrouter', input: 0.28, output: 0.88,
+    reason: 'OpenRouter live API z-ai/glm-5.2: $0.28/$0.88; row held $0.4875/$1.56' },
+  { modelSlug: 'qwen3.6-35b-a3b', providerSlug: 'openrouter', input: 0.05, output: 0.7,
+    reason: 'OpenRouter live API qwen/qwen3.6-35b-a3b: $0.05/$0.70 (C19 2026-09-11)' },
+
+  // ─── Round 4 ─── Bailuan / Volcengine base-band CNY corrections (2026-09-10,
+  // verified on the official CN pricing pages). The qwen positional extractor
+  // matched stale snapshot bands; the seed scraper took the ≤200-output-token
+  // short tier. Scrapers fixed the same day so these rows self-heal nightly;
+  // the entries make the fix immediate and idempotent.
+  { modelSlug: 'qwen3-max', providerSlug: 'qwen', input: 9, output: 54, currency: 'CNY',
+    reason: 'Bailuan base band 0-128K: ¥9/54; row held 2026-01 snapshot ¥3/10' },
+  { modelSlug: 'qwen3.5-plus', providerSlug: 'qwen', input: 2, output: 12, currency: 'CNY',
+    reason: 'Bailuan base band 0-256K: ¥2/12; row held ¥1/2 (old snapshot band)' },
+  { modelSlug: 'qwen3.5-flash', providerSlug: 'qwen', input: 1.2, output: 7.2, currency: 'CNY',
+    reason: 'Bailuan base band 0-256K: ¥1.2/7.2; row held ¥0.2/2 (now the qwen-flash tier)' },
+  { modelSlug: 'qwen3-coder-plus', providerSlug: 'qwen', input: 4, output: 16, currency: 'CNY',
+    reason: 'Bailuan base band 0-32K: ¥4/16; alias-line digits fed ¥3 into positional matcher' },
+  { modelSlug: 'qwen3-coder-flash', providerSlug: 'qwen', input: 1, output: 4, currency: 'CNY',
+    reason: 'Bailuan 0-32K: ¥1/4; positional matcher took a higher-band ¥1/3' },
+  { modelSlug: 'doubao-seed-1.6', providerSlug: 'seed', input: 0.8, output: 8, currency: 'CNY',
+    reason: 'Ark standard output tier (output >0.2K tokens): ¥0.8/8; row held short-output ¥0.8/2' },
+  { modelSlug: 'doubao-seed-1.8', providerSlug: 'seed', input: 0.8, output: 8, currency: 'CNY',
+    reason: 'Ark standard output tier (output >0.2K tokens): ¥0.8/8; row held short-output ¥0.8/2' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -208,9 +272,16 @@ async function runUpdates() {
       continue;
     }
     if (already && row.is_available === false) {
-      log(`  ♻  ${u.modelSlug}/${u.providerSlug}: price correct but disabled, re-enabling`);
+      // A disabled row means the model was delisted on this channel (or
+      // deliberately soft-disabled). A matching ground-truth price is not a
+      // reason to resurrect it — re-enabling used to bring retired
+      // grok-2/3/4 and gemini-2.0-flash rows back. Handle re-enables
+      // explicitly in DISABLES or by hand instead.
+      log(`  ⏭  ${u.modelSlug}/${u.providerSlug}: price matches but row is disabled, leaving as-is`);
+      continue;
     }
-    log(`  🔧 ${u.modelSlug}/${u.providerSlug}: $${row.input_price_per_1m}/$${row.output_price_per_1m} → $${u.input}/$${u.output}`);
+    const unit = u.currency === 'CNY' ? '¥' : '$';
+    log(`  🔧 ${u.modelSlug}/${u.providerSlug}: ${unit}${row.input_price_per_1m}/${unit}${row.output_price_per_1m} → ${unit}${u.input}/${unit}${u.output}`);
     log(`      reason: ${u.reason}`);
     if (!DRY_RUN) {
       const { error } = await supabaseAdmin
@@ -220,8 +291,9 @@ async function runUpdates() {
           output_price_per_1m: u.output,
           is_available: true,
           last_verified: new Date().toISOString(),
-          // All UPDATES in this script are USD-denominated ground truth.
-          currency: 'USD',
+          // Ground-truth rows are USD unless the update entry says otherwise
+          // (CN scrapers store their home currency).
+          currency: u.currency ?? 'USD',
           notes: `audit-fix 2026-04-13: ${u.reason}`,
           updated_at: new Date().toISOString(),
         })
