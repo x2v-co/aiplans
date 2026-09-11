@@ -156,12 +156,63 @@ export function isModelsDevComparable(ourProviderSlug: string, ourModelSlug: str
   return true;
 }
 
+// ---------------------------------------------------------------------------
+// Coding-plan entitlement providers (zero-priced pseudo-providers in api.json
+// that list the models a subscription plan can call)
+// ---------------------------------------------------------------------------
+
+/** (our plan provider slug, plan slug) → models.dev coding-plan provider key. */
+const PLAN_PROVIDER_MAP: Array<{ provider: string; plan?: RegExp; mdKey: string }> = [
+  { provider: 'zhipu-china', plan: /^glm-coding-/, mdKey: 'zhipuai-coding-plan' },
+  { provider: 'zhipu-global', plan: /^z-ai-/, mdKey: 'zai-coding-plan' },
+  { provider: 'qwen', plan: /^aliyun-bailian-coding-pro$/, mdKey: 'alibaba-coding-plan-cn' },
+  { provider: 'seed', plan: /^seed-(free-trial|lite|pro|enterprise)$/, mdKey: 'volcengine-coding-plan' },
+  // minimax-token-* are Agent/Token plans, not the MiniMax Coding Plan
+  // subscription md lists — different products, so they are intentionally unmapped.
+];
+
+/**
+ * Coding-plan entitlement check policy. GLM Coding Plans are deliberately
+ * pinned to glm-5.3/glm-5.3-flash (only_extra): per docs.bigmodel.cn the older
+ * accepted model names are server-rerouted, while models.dev lists every
+ * accepted alias. That convention difference is verified, not drift.
+ */
+export const PLAN_DRIFT_SKIP = new Set<string>([
+  'zhipu-china/glm-coding-lite',
+  'zhipu-china/glm-coding-pro',
+  'zhipu-china/glm-coding-max',
+  'zhipu-global/z-ai-lite',
+  'zhipu-global/z-ai-pro',
+  'zhipu-global/z-ai-max',
+]);
+
+export interface ModelsDevPlanModels {
+  mdProvider: string;
+  /** Canonicalized ids, aligned to our slug conventions (lowercase, etc.). */
+  ids: string[];
+}
+
+/**
+ * Normalize a coding-plan model id toward our catalog slug shape for set
+ * comparison: lowercase, dots/underscores to hyphens, drop vendor path
+ * prefixes and dated snapshot suffixes (qwen3-max-2026-01-23 → qwen3-max).
+ */
+export function planModelSlug(rawId: string): string {
+  // Keep dots: our catalog uses them (minimax-m2.5, doubao-seed-2.0-lite).
+  return rawId
+    .toLowerCase()
+    .replace(/_/g, '-')
+    .replace(/^[a-z0-9-]+\//, '')
+    .replace(/-\d{4}-\d{2}-\d{2}$/, '');
+}
+
 export class ModelsDevCatalog {
   readonly providerCount: number;
   readonly pricedEntryCount: number;
 
   constructor(
     private readonly byMdProvider: Map<string, Map<string, ModelsDevRefPrice[]>>,
+    private readonly rawProviders: Map<string, ModelsDevProvider>,
     providerCount: number,
     pricedEntryCount: number,
   ) {
@@ -171,9 +222,11 @@ export class ModelsDevCatalog {
 
   static fromJson(data: ModelsDevApiJson): ModelsDevCatalog {
     const byMdProvider = new Map<string, Map<string, ModelsDevRefPrice[]>>();
+    const rawProviders = new Map<string, ModelsDevProvider>();
     let priced = 0;
 
     for (const [mdProvider, provider] of Object.entries(data)) {
+      rawProviders.set(mdProvider, provider);
       const rawModels: ModelsDevModel[] = Array.isArray(provider.models)
         ? provider.models.map(m => ({ ...m.value, id: m.value.id ?? m.key }))
         : Object.entries(provider.models ?? {}).map(([key, value]) => ({ ...value, id: value.id ?? key }));
@@ -207,7 +260,7 @@ export class ModelsDevCatalog {
       byMdProvider.set(mdProvider, byKey);
     }
 
-    return new ModelsDevCatalog(byMdProvider, Object.keys(data).length, priced);
+    return new ModelsDevCatalog(byMdProvider, rawProviders, Object.keys(data).length, priced);
   }
 
   profileFor(ourProviderSlug: string): ProviderProfile | undefined {
@@ -216,6 +269,25 @@ export class ModelsDevCatalog {
 
   isFxConverted(ourProviderSlug: string): boolean {
     return PROVIDER_PROFILES[ourProviderSlug]?.fxConverted ?? false;
+  }
+
+  /** Find the models.dev coding-plan provider for one of our plans, if mapped. */
+  planProviderFor(ourProviderSlug: string, ourPlanSlug: string): string | null {
+    const hit = PLAN_PROVIDER_MAP.find(
+      m => m.provider === ourProviderSlug && (m.plan ? m.plan.test(ourPlanSlug) : true),
+    );
+    return hit?.mdKey ?? null;
+  }
+
+  /** Entitlement model ids of a coding-plan pseudo-provider (priced at zero). */
+  planModels(mdProviderKey: string): ModelsDevPlanModels | null {
+    const provider = this.rawProviders.get(mdProviderKey);
+    if (!provider) return null;
+    const rawModels: ModelsDevModel[] = Array.isArray(provider.models)
+      ? provider.models.map(m => ({ ...m.value, id: m.value.id ?? m.key }))
+      : Object.entries(provider.models ?? {}).map(([key, value]) => ({ ...value, id: value.id ?? key }));
+    const ids = [...new Set(rawModels.map(m => planModelSlug(m.id)).filter(Boolean))].sort();
+    return { mdProvider: mdProviderKey, ids };
   }
 
   lookup(ourProviderSlug: string, ourModelSlug: string): ModelsDevLookup | null {
