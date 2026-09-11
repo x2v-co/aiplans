@@ -17,6 +17,8 @@ import { buildMetadata, breadcrumbList, productOffer, faqPage, SITE_URL, type Lo
 import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
 import { decodeSlugParam } from "@/lib/route-params";
 import SiteHeader from '@/components/SiteHeader';
+import { CouponBadge } from '@/components/coupon-badge';
+import { getActiveCouponMap } from '@/lib/coupons';
 import { guideForProviderSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 
 export async function generateMetadata({
@@ -102,13 +104,17 @@ export default async function ProviderPlansPage({
   const providerSlug = decodeSlugParam(rawProvider);
   const { period } = await searchParams;
   const showYearly = period === 'yearly';
-  const data = await getPlansByProvider(providerSlug);
+  const [data, couponByProvider] = await Promise.all([
+    getPlansByProvider(providerSlug),
+    getActiveCouponMap('plan'),
+  ]);
 
   if (!data) {
     notFound();
   }
 
   const { provider, models, plans } = data;
+  const providerCoupons = couponByProvider[providerSlug] ?? [];
   const providerData = providerInfo[providerSlug] || { name: provider.name, description: "" };
   const guideSlug = guideForProviderSlug(providerSlug);
 
@@ -219,6 +225,11 @@ export default async function ProviderPlansPage({
                 <p className="text-zinc-700 dark:text-zinc-300 mt-2 max-w-3xl leading-relaxed">
                   {providerCopy.summary}
                 </p>
+                {providerCoupons.length > 0 && (
+                  <div className="mt-3">
+                    <CouponBadge coupons={providerCoupons} locale={locale} size="sm" />
+                  </div>
+                )}
               </div>
             </div>
             {/* Period Toggle */}

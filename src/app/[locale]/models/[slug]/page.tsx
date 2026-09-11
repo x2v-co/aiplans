@@ -25,6 +25,8 @@ import { buildModelCopy } from "@/lib/model-copy";
 import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
 import { decodeSlugParam } from "@/lib/route-params";
 import SiteHeader from '@/components/SiteHeader';
+import { CouponBadge } from "@/components/coupon-badge";
+import { getActiveCouponMap } from "@/lib/coupons";
 import { formatModelName } from '@/lib/model-names';
 import { guideForModelSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import ModelBenchmarkPanel from '@/components/model-benchmark-panel';
@@ -317,7 +319,10 @@ export default async function ModelPage({
 }) {
   const { locale, slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
-  const data = await getProductWithChannels(slug);
+  const [data, couponByProvider] = await Promise.all([
+    getProductWithChannels(slug),
+    getActiveCouponMap('api'),
+  ]);
 
   if (!data) {
     notFound();
@@ -960,17 +965,25 @@ export default async function ModelPage({
                           )}
                         </TableCell>
                         <TableCell>
-                          {cp.providers.website && (
-                            <a
-                              href={cp.providers.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button variant="outline" size="sm" className="gap-1">
-                                Visit <ExternalLink className="w-3 h-3" />
-                              </Button>
-                            </a>
-                          )}
+                          <div className="flex flex-col items-end gap-1.5">
+                            {cp.providers.website && (
+                              <a
+                                href={cp.providers.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Button variant="outline" size="sm" className="gap-1">
+                                  Visit <ExternalLink className="w-3 h-3" />
+                                </Button>
+                              </a>
+                            )}
+                            <CouponBadge
+                              coupons={couponByProvider[cp.providers.slug] ?? []}
+                              locale={locale}
+                              size="xs"
+                              align="end"
+                            />
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

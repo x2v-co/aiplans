@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPlanComparison } from "@/lib/compare-plans";
+import { getActiveCouponMap } from "@/lib/coupons";
 import type { CurrencyCode } from "@/lib/currency";
 import { breadcrumbList, faqPage, SITE_URL } from "@/lib/seo";
 import ComparePlansView from "./compare-plans-view";
@@ -25,7 +26,10 @@ export default async function ComparePlansModelPage({
   const { locale, model: rawModel } = await params;
   const modelSlug = decodeSlugParam(rawModel);
 
-  const data = await getPlanComparison(modelSlug, "USD" as CurrencyCode);
+  const [data, couponByProvider] = await Promise.all([
+    getPlanComparison(modelSlug, "USD" as CurrencyCode),
+    getActiveCouponMap('plan'),
+  ]);
   if (!data) notFound();
 
   const isZh = locale === "zh";
@@ -43,7 +47,7 @@ export default async function ComparePlansModelPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage(faqs) }} />
-      <ComparePlansView locale={locale} data={data} faqs={faqs} />
+      <ComparePlansView locale={locale} data={data} faqs={faqs} couponByProvider={couponByProvider} />
     </>
   );
 }

@@ -590,6 +590,27 @@ const MIGRATIONS: Migration[] = [
         updated_at     = now();
     `,
   },
+  {
+    name: '021_add_coupons_scope',
+    sql: `
+      -- Coupon surface class: 'plan' coupons (subscription discounts / Coding
+      -- Plan invites) render on plan surfaces; 'api' coupons (token credits /
+      -- API discounts) on token-pricing surfaces. Default 'plan' preserves
+      -- the historical intent of every row; the BigModel token pack is api.
+      ALTER TABLE coupons ADD COLUMN IF NOT EXISTS scope text NOT NULL DEFAULT 'plan';
+
+      UPDATE coupons SET scope = 'plan', updated_at = now()
+       WHERE code IN ('ZAGRFMAR', 'HFGTURQAPY')
+         AND scope IS DISTINCT FROM 'plan';
+
+      UPDATE coupons SET scope = 'api', updated_at = now()
+       WHERE code = 'BIGMODEL-INVITE-20M'
+         AND scope IS DISTINCT FROM 'api';
+
+      ALTER TABLE coupons DROP CONSTRAINT IF EXISTS coupons_scope_check;
+      ALTER TABLE coupons ADD CONSTRAINT coupons_scope_check CHECK (scope IN ('plan', 'api'));
+    `,
+  },
 ];
 
 async function main() {

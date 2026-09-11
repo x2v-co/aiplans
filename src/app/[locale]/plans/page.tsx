@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, ArrowRight } from "lucide-react";
 import { sql } from "@/lib/db";
+import { getActiveCouponMap } from "@/lib/coupons";
+import { CouponBadge } from "@/components/coupon-badge";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 import SiteHeader from '@/components/SiteHeader';
@@ -44,7 +46,10 @@ export default async function PlansIndexPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const providers = await getProvidersWithPlans();
+  const [providers, couponByProvider] = await Promise.all([
+    getProvidersWithPlans(),
+    getActiveCouponMap('plan'),
+  ]);
 
   const isZh = locale === 'zh';
 
@@ -97,9 +102,8 @@ export default async function PlansIndexPage({
           {providers.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {providers.map((provider) => (
-                <Link key={provider.id} href={`/${locale}/plans/${provider.slug}`}>
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                    <CardContent className="p-6">
+                <Card key={provider.id} className="hover:shadow-lg transition-shadow h-full flex flex-col">
+                  <CardContent className="p-6 flex flex-1 flex-col">
                       <div className="flex items-center gap-4 mb-4">
                         {getProviderLogoSrc(provider) ? (
                           <img
@@ -128,17 +132,26 @@ export default async function PlansIndexPage({
                         </p>
                       )}
 
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-sm">
+                      <div className="mt-auto flex items-center justify-between gap-2">
+                        <Badge variant="outline" className="text-sm shrink-0">
                           {provider.planCount} {isZh ? '个套餐' : 'plans'}
                         </Badge>
-                        <span className="text-blue-600 text-sm font-medium flex items-center gap-1">
-                          {isZh ? '查看详情' : 'View Plans'} <ArrowRight className="w-4 h-4" />
-                        </span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <CouponBadge
+                            coupons={couponByProvider[provider.slug] ?? []}
+                            locale={locale}
+                            size="xs"
+                          />
+                          <Link
+                            href={`/${locale}/plans/${provider.slug}`}
+                            className="text-blue-600 text-sm font-medium flex items-center gap-1 shrink-0"
+                          >
+                            {isZh ? '查看详情' : 'View Plans'} <ArrowRight className="w-4 h-4" />
+                          </Link>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
-                </Link>
               ))}
             </div>
           ) : (

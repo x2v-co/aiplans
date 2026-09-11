@@ -1,4 +1,5 @@
 import { getGroupedProducts } from "@/lib/grouped-products";
+import { getActiveCouponMap } from "@/lib/coupons";
 import { breadcrumbList, faqPage, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 import { computeApiPricingStats, buildApiPricingFaqs } from "@/lib/api-pricing-copy";
 import ApiPricingView from "./api-pricing-view";
@@ -28,7 +29,10 @@ export default async function ApiPricingPage({
 }) {
   const { locale } = await params;
   const { q, sort, order, china, region, channel } = await searchParams;
-  const products = await getGroupedProducts("llm");
+  const [products, couponByProvider] = await Promise.all([
+    getGroupedProducts("llm"),
+    getActiveCouponMap('api'),
+  ]);
 
   // The capability cards on /compare/plans deep-link here (Arena ranking,
   // longest context, cheapest, China-reachable). Validate whitelist-style so
@@ -87,6 +91,7 @@ export default async function ApiPricingPage({
         initialFilters={initialFilters}
         stats={stats}
         faqs={faqs}
+        couponByProvider={couponByProvider}
       />
     </>
   );
