@@ -4,6 +4,19 @@ import { PlaywrightScraper, type PriceData } from './lib/playwright-scraper';
 
 const DEEPSEEK_PRICING_URL = 'https://api-docs.deepseek.com/quick_start/pricing';
 
+// Table headers carry footnote markers ("deepseek-flash(1)") and the current
+// flash is labeled without its generation. Map to the canonical catalog slugs
+// shared with OpenRouter/Fireworks so the direct channel lands on the same
+// model row instead of spawning deepseek-flash(1) / deepseek-v4-pro(2) dupes.
+const CANONICAL_SLUG: Record<string, string> = {
+  'deepseek-flash': 'deepseek-v4-flash',
+};
+
+function canonicalModelName(header: string): string {
+  const stripped = header.toLowerCase().replace(/\(\d+\)\s*$/, '').trim();
+  return CANONICAL_SLUG[stripped] ?? stripped;
+}
+
 class DeepSeekScraper extends PlaywrightScraper {
   getSourceName(): string { return 'DeepSeek-API'; }
   getSourceUrl(): string { return DEEPSEEK_PRICING_URL; }
@@ -37,7 +50,7 @@ class DeepSeekScraper extends PlaywrightScraper {
       if (input == null || output == null) continue;
 
       prices.push({
-        modelName: modelNames[index].toLowerCase(),
+        modelName: canonicalModelName(modelNames[index]),
         inputPricePer1M: input,
         outputPricePer1M: output,
         contextWindow: 1_000_000,
