@@ -129,7 +129,10 @@ async function main() {
       const { error: insertError } = await supabaseAdmin.from('models').insert({
         slug,
         name: slug,
-        type: baseModel.type ?? 'llm',
+        // Trim: a handful of legacy rows carry type='llm ' (trailing space),
+        // which inherits silently and makes the row invisible to every
+        // type='llm' query (grouped API, sitemap, most scrapers).
+        type: (baseModel.type ?? 'llm').trim(),
         provider_ids: baseModel.provider_ids,
         context_window: baseModel.context_window ?? null,
       });
