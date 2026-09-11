@@ -611,6 +611,24 @@ const MIGRATIONS: Migration[] = [
       ALTER TABLE coupons ADD CONSTRAINT coupons_scope_check CHECK (scope IN ('plan', 'api'));
     `,
   },
+  {
+    name: '022_add_audit_alert_state',
+    sql: `
+      -- Dedup state for scripts/audit-alert.ts: one row per audit finding
+      -- fingerprint (check + stable ref). First appearance triggers a Telegram
+      -- alert; repeat appearances just refresh last_seen.
+      CREATE TABLE IF NOT EXISTS audit_alert_state (
+        fingerprint text PRIMARY KEY,
+        check_name  text NOT NULL,
+        ref         text,
+        message     text,
+        first_seen  timestamptz NOT NULL DEFAULT now(),
+        last_seen   timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS idx_audit_alert_state_check
+        ON audit_alert_state (check_name);
+    `,
+  },
 ];
 
 async function main() {

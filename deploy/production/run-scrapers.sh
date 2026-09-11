@@ -50,6 +50,16 @@ kinds_status=$?
 mappings_status=$?
 "${compose[@]}" run --rm scraper npm run audit
 audit_status=$?
+
+# Alert on NEW critical / models.dev-reference findings. Runs after the audit
+# so audit_alert_state is current; dedup means a recurring finding never spams.
+# A second audit:json run costs ~seconds and keeps the exit-code run above.
+alert_text="$("${compose[@]}" run --rm -e AUDIT_ALERT_APPLY=1 scraper sh -c 'npm run audit:json --silent 2>/dev/null | npm run audit:alert --silent 2>/dev/null')"
+echo "$alert_text"
+if [[ "$alert_text" == *"NEW finding"* ]]; then
+  printf '%s\n' "$alert_text" | "${script_dir}/notify-audit-alert.sh" || true
+fi
+
 "${compose[@]}" run --rm scraper npm run ingest:arena
 arena_status=$?
 "${compose[@]}" run --rm scraper npm run ingest:benchmarks
