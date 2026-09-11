@@ -338,7 +338,7 @@ if (require.main === module) {
     ['openai', 'gpt-5.6-luna'],
     ['google', 'gemini-3-flash'],
     ['grok', 'grok-4.5'],
-    ['deepseek', 'deepseek-v4-pro(2)'],
+    ['deepseek', 'deepseek-v4-pro'],
     ['qwen', 'qwen-max'],
     ['seed', 'doubao-seed-2.1-pro'],
     ['azure-openai', 'gpt-5.2'],

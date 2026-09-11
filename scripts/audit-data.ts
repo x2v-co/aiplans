@@ -316,7 +316,7 @@ async function main() {
         // DeepSeek stores PEAK prices; models.dev's convention is the off-peak
         // half rate (see their deepseek-flash.toml; upstream PR #6722 aligns
         // v4-pro to $0.66/$1.98). A 2x ratio here is the convention, not rot.
-        (providerSlug === 'deepseek' && ['deepseek-v4-pro(2)', 'deepseek-flash(1)'].includes(modelSlug))
+        (providerSlug === 'deepseek' && ['deepseek-v4-pro', 'deepseek-v4-flash'].includes(modelSlug))
         // mistral.ai/pricing/api current; md entry last updated 2024-10.
         || (providerSlug === 'mistral' && modelSlug === 'ministral-3b')
         // Bailuan current alias price ¥0.3/0.5; md holds the deprecated 2025-04-13 ¥5 snapshot.
