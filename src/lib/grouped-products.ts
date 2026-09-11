@@ -79,7 +79,7 @@ export interface GroupedProduct {
  * gpt-5-mini, gpt-4o-batch, gpt-5-mini-batch. Returns the tags and the
  * remaining parent slug, or null for a standard model.
  */
-function variantOf(slug: string): { tags: string[]; parent: string } | null {
+export function variantOf(slug: string): { tags: string[]; parent: string } | null {
   const tags: string[] = [];
   let parent = slug;
   for (;;) {
@@ -94,7 +94,7 @@ function variantOf(slug: string): { tags: string[]; parent: string } | null {
 /** Existing loose group key: only collapse dated snapshots; major version
  * numbers are part of the model identity (gpt-4 vs gpt-5, grok-2 vs grok-4
  * must not merge). Variant suffixes are handled separately by variantOf. */
-function baseGroupName(name: string): string {
+export function baseGroupName(name: string): string {
   return name
     .replace(/-(?:19|20)\d{2}-\d{2}-\d{2}$/, '')
     .replace(/-(?:19|20)\d{2}$/, '')
@@ -104,7 +104,7 @@ function baseGroupName(name: string): string {
 const VARIANT_RANK: Record<string, number> = { mini: 1, nano: 1, batch: 2 };
 
 /** A dated snapshot (qwen3.5-plus-2026-04-20) never owns the card identity. */
-function isCanonicalSlug(slug: string): boolean {
+export function isCanonicalSlug(slug: string): boolean {
   return !/-(?:19|20)\d{2}(?:-\d{2}-\d{2})?$/.test(slug)
     && !/\d+\.\d+\.\d+$/.test(slug);
 }
