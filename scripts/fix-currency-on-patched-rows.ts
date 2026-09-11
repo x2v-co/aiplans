@@ -11,7 +11,7 @@
  *
  * Usage: npx tsx scripts/fix-currency-on-patched-rows.ts [--dry-run]
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -40,14 +40,14 @@ async function main() {
   let updated = 0;
   for (const r of PATCHED_USD_ROWS) {
     const [{ data: model }, { data: provider }] = await Promise.all([
-      supabaseAdmin.from('models').select('id').eq('slug', r.modelSlug).maybeSingle(),
-      supabaseAdmin.from('providers').select('id').eq('slug', r.providerSlug).maybeSingle(),
+      db.from('models').select('id').eq('slug', r.modelSlug).maybeSingle(),
+      db.from('providers').select('id').eq('slug', r.providerSlug).maybeSingle(),
     ]);
     if (!model || !provider) {
       console.log(`  ⏭ ${r.modelSlug}/${r.providerSlug}: model or provider missing`);
       continue;
     }
-    const { data: row } = await supabaseAdmin
+    const { data: row } = await db
       .from('api_channel_prices')
       .select('id, currency, input_price_per_1m, output_price_per_1m')
       .eq('model_id', model.id)
@@ -63,7 +63,7 @@ async function main() {
     }
     console.log(`  🔧 ${r.modelSlug}/${r.providerSlug}: currency=${row.currency} → USD (price ${row.input_price_per_1m}/${row.output_price_per_1m})`);
     if (!DRY_RUN) {
-      const { error } = await supabaseAdmin
+      const { error } = await db
         .from('api_channel_prices')
         .update({ currency: 'USD', updated_at: new Date().toISOString() })
         .eq('id', row.id);

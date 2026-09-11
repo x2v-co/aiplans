@@ -36,7 +36,7 @@
  *   C20 plans.modelsdev_entitlements — coding-plan lists models.dev includes that our plan
  *                                   selector omits (warn; closed-list products only)
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 import { databaseSql } from './db/postgres-admin';
 import { resolveSelector, type ModelSelector, type SelectableModel } from '../src/lib/plan-selector';
 import { fetchModelsDevCatalog, isModelsDevComparable, PLAN_DRIFT_SKIP, type ModelsDevCatalog } from './scrapers/modelsdev';
@@ -107,12 +107,12 @@ async function main() {
     .catch((e: unknown) => ({ catalog: null, error: e instanceof Error ? e.message : String(e) }));
 
   const [modelsRes, providersRes, pricesRes, plansRes, mappingsRes, ratesRes] = await Promise.all([
-    supabaseAdmin.from('models').select('id, name, slug, provider_ids, type'),
-    supabaseAdmin.from('providers').select('id, name, slug, type'),
-    supabaseAdmin.from('api_channel_prices').select('id, model_id, provider_id, input_price_per_1m, output_price_per_1m, is_available, last_verified, updated_at, currency'),
-    supabaseAdmin.from('plans').select(planColumns),
-    supabaseAdmin.from('model_plan_mapping').select(MAPPING_SOURCES ? 'id, model_id, plan_id, source' : 'id, model_id, plan_id'),
-    supabaseAdmin.from('exchange_rates').select('from_currency, to_currency, rate, valid_at').eq('is_active', true).order('valid_at', { ascending: false }),
+    db.from('models').select('id, name, slug, provider_ids, type'),
+    db.from('providers').select('id, name, slug, type'),
+    db.from('api_channel_prices').select('id, model_id, provider_id, input_price_per_1m, output_price_per_1m, is_available, last_verified, updated_at, currency'),
+    db.from('plans').select(planColumns),
+    db.from('model_plan_mapping').select(MAPPING_SOURCES ? 'id, model_id, plan_id, source' : 'id, model_id, plan_id'),
+    db.from('exchange_rates').select('from_currency, to_currency, rate, valid_at').eq('is_active', true).order('valid_at', { ascending: false }),
   ]);
   for (const r of [modelsRes, providersRes, pricesRes, plansRes, mappingsRes, ratesRes]) {
     if (r.error) throw r.error;

@@ -1,8 +1,9 @@
 import { databaseSql, postgresAdmin } from './postgres-admin';
 
-// Legacy export name keeps existing scraper imports stable during migration.
-// The implementation is direct PostgreSQL and has no Supabase dependency.
-export const supabaseAdmin = postgresAdmin;
+// Direct PostgreSQL client (postgres.js). Historical name was supabaseAdmin;
+// the platform has never used Supabase at runtime. Exported so the many data
+// scripts import their client from one place alongside these helpers.
+export const db = postgresAdmin;
 
 // Query helpers
 export async function upsertChannelPrice(data: {
@@ -53,7 +54,7 @@ export async function upsertChannelPrice(data: {
     : undefined;
 
   // First, check if a record exists
-  const { data: existing, error: selectError } = await supabaseAdmin
+  const { data: existing, error: selectError } = await db
     .from('api_channel_prices')
     .select('id')
     .eq('model_id', data.model_id)
@@ -67,7 +68,7 @@ export async function upsertChannelPrice(data: {
 
   if (existing) {
     // Update existing record
-    const { data: result, error: updateError } = await supabaseAdmin
+    const { data: result, error: updateError } = await db
       .from('api_channel_prices')
       .update({
         input_price_per_1m: data.input_price_per_1m,
@@ -90,7 +91,7 @@ export async function upsertChannelPrice(data: {
   }
 
   // Insert new record
-  const { data: result, error: insertError } = await supabaseAdmin
+  const { data: result, error: insertError } = await db
     .from('api_channel_prices')
     .insert({
       model_id: data.model_id,
@@ -122,7 +123,7 @@ export async function logPriceChange(data: {
   currency?: string;
   source?: string;
 }) {
-  const { error } = await supabaseAdmin
+  const { error } = await db
     .from('price_history')
     .insert({
       channel_price_id: data.channel_price_id,
@@ -150,7 +151,7 @@ export async function logScrapeResult(data: {
   started_at: Date;
   completed_at: Date;
 }) {
-  const { error } = await supabaseAdmin
+  const { error } = await db
     .from('scrape_logs')
     .insert(data);
 
@@ -170,7 +171,7 @@ export async function getOrCreateProduct(data: {
     if (product.released_at || !data.released_at) return product;
 
     const releasedAt = new Date(data.released_at).toISOString();
-    const { error } = await supabaseAdmin
+    const { error } = await db
       .from('models')
       .update({ released_at: releasedAt, updated_at: new Date().toISOString() })
       .eq('id', product.id);
@@ -181,7 +182,7 @@ export async function getOrCreateProduct(data: {
   };
 
   // First: try to find by exact slug match
-  const { data: existingBySlug } = await supabaseAdmin
+  const { data: existingBySlug } = await db
     .from('models')
     .select('*')
     .eq('slug', data.slug)
@@ -191,7 +192,7 @@ export async function getOrCreateProduct(data: {
     await backfillReleaseDate(existingBySlug);
     // Update slug if different
     if (existingBySlug.slug !== data.slug) {
-      await supabaseAdmin
+      await db
         .from('models')
         .update({ slug: data.slug })
         .eq('id', existingBySlug.id);
@@ -202,7 +203,7 @@ export async function getOrCreateProduct(data: {
 
   // Second: try to find by name (models table doesn't have provider_id column for products)
   // But there might be duplicates, so we order by id and take the first
-  const { data: existingByName } = await supabaseAdmin
+  const { data: existingByName } = await db
     .from('models')
     .select('*')
     .eq('name', data.name)
@@ -213,7 +214,7 @@ export async function getOrCreateProduct(data: {
     await backfillReleaseDate(existingByName[0]);
     // Update the slug to match the normalized version
     if (existingByName[0].slug !== data.slug) {
-      await supabaseAdmin
+      await db
         .from('models')
         .update({ slug: data.slug })
         .eq('id', existingByName[0].id);
@@ -231,7 +232,7 @@ export async function getOrCreateProduct(data: {
   }
 
   // Third: create new - use provider_ids array field
-  const { data: newProduct, error } = await supabaseAdmin
+  const { data: newProduct, error } = await db
     .from('models')
     .insert({
       name: data.name,
@@ -247,7 +248,7 @@ export async function getOrCreateProduct(data: {
   if (error) {
     // If unique constraint error, find existing
     if (error.code === '23505') {
-      const { data: retry } = await supabaseAdmin
+      const { data: retry } = await db
         .from('models')
         .select('*')
         .eq('slug', data.slug)
@@ -301,7 +302,7 @@ export async function upsertPlan(data: {
   };
 
   // First, check if a record exists
-  const { data: existing, error: selectError } = await supabaseAdmin
+  const { data: existing, error: selectError } = await db
     .from('plans')
     .select('id')
     .eq('provider_id', data.provider_id)
@@ -314,7 +315,7 @@ export async function upsertPlan(data: {
 
   if (existing) {
     // Update existing record
-    const { data: result, error: updateError } = await supabaseAdmin
+    const { data: result, error: updateError } = await db
       .from('plans')
       .update(dbData)
       .eq('id', existing.id)
@@ -326,7 +327,7 @@ export async function upsertPlan(data: {
   }
 
   // Insert new record
-  const { data: result, error: insertError } = await supabaseAdmin
+  const { data: result, error: insertError } = await db
     .from('plans')
     .insert(dbData)
     .select()
@@ -395,7 +396,7 @@ export async function upsertProvider(data: {
   }
 
   // Check for additional columns that may exist
-  const { data: existing } = await supabaseAdmin
+  const { data: existing } = await db
     .from('providers')
     .select('*')
     .eq('slug', data.slug)
@@ -403,7 +404,7 @@ export async function upsertProvider(data: {
 
   if (existing) {
     // Update existing provider
-    const { data: updated, error } = await supabaseAdmin
+    const { data: updated, error } = await db
       .from('providers')
       .update({
         ...dbData,
@@ -418,7 +419,7 @@ export async function upsertProvider(data: {
   }
 
   // Create new
-  const { data: newProvider, error } = await supabaseAdmin
+  const { data: newProvider, error } = await db
     .from('providers')
     .insert(dbData)
     .select()
@@ -432,7 +433,7 @@ export async function upsertProvider(data: {
  * Get provider by slug
  */
 export async function getProviderBySlug(slug: string) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await db
     .from('providers')
     .select('*')
     .eq('slug', slug)
@@ -464,7 +465,7 @@ export async function getOrCreateProvider(data: {
  * Get all plans for a provider
  */
 export async function getPlansByProviderId(providerId: number) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await db
     .from('plans')
     .select('*')
     .eq('provider_id', providerId)
@@ -510,7 +511,7 @@ export async function updatePlan(planId: number, data: Partial<{
   currency?: string;
   price_unit?: string;
 }>) {
-  const { data: result, error } = await supabaseAdmin
+  const { data: result, error } = await db
     .from('plans')
     .update({
       ...data,
@@ -528,7 +529,7 @@ export async function updatePlan(planId: number, data: Partial<{
  * Delete a plan by ID
  */
 export async function deletePlan(planId: number) {
-  const { error } = await supabaseAdmin
+  const { error } = await db
     .from('plans')
     .delete()
     .eq('id', planId);
@@ -554,7 +555,7 @@ export async function deletePlan(planId: number) {
  * removed.
  */
 export async function cleanupOutdatedPlans(providerId: number, currentSlugs: string[]) {
-  const { data: existingPlans, error } = await supabaseAdmin
+  const { data: existingPlans, error } = await db
     .from('plans')
     .select('id, name, slug, source')
     .eq('provider_id', providerId)
@@ -582,7 +583,7 @@ export async function cleanupOutdatedPlans(providerId: number, currentSlugs: str
  * Get plan by provider and slug
  */
 export async function getPlanByProviderSlug(providerId: number, slug: string) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await db
     .from('plans')
     .select('*')
     .eq('provider_id', providerId)
@@ -641,7 +642,7 @@ export async function getPlansForModel(modelId: number) {
  * Delete model-plan relationship from model_plan_mapping table
  */
 export async function deleteModelPlanRelation(planId: number, modelId: number) {
-  const { error } = await supabaseAdmin
+  const { error } = await db
     .from('model_plan_mapping')
     .delete()
     .eq('plan_id', planId)
@@ -655,7 +656,7 @@ export async function deleteModelPlanRelation(planId: number, modelId: number) {
  */
 export async function getArenaBenchmarkTaskId(): Promise<number | null> {
   // Get the benchmark ID for Arena
-  const { data: benchmark } = await supabaseAdmin
+  const { data: benchmark } = await db
     .from('benchmarks')
     .select('id')
     .eq('slug', 'arena')
@@ -664,7 +665,7 @@ export async function getArenaBenchmarkTaskId(): Promise<number | null> {
   if (!benchmark) return null;
 
   // Get the benchmark version
-  const { data: version } = await supabaseAdmin
+  const { data: version } = await db
     .from('benchmark_versions')
     .select('id')
     .eq('benchmark_id', benchmark.id)
@@ -674,7 +675,7 @@ export async function getArenaBenchmarkTaskId(): Promise<number | null> {
   if (!version) return null;
 
   // Get the task
-  const { data: task } = await supabaseAdmin
+  const { data: task } = await db
     .from('benchmark_tasks')
     .select('id')
     .eq('benchmark_version_id', version.id)
@@ -687,7 +688,7 @@ export async function getArenaBenchmarkTaskId(): Promise<number | null> {
  * Get or create ELO metric ID
  */
 export async function getOrCreateEloMetricId(): Promise<number | null> {
-  const { data: existingMetric } = await supabaseAdmin
+  const { data: existingMetric } = await db
     .from('benchmark_metrics')
     .select('id')
     .eq('name', 'ELO')
@@ -696,7 +697,7 @@ export async function getOrCreateEloMetricId(): Promise<number | null> {
   if (existingMetric) return existingMetric.id;
 
   // Create the metric
-  const { data: newMetric, error } = await supabaseAdmin
+  const { data: newMetric, error } = await db
     .from('benchmark_metrics')
     .insert({
       name: 'ELO',
@@ -726,7 +727,7 @@ export async function upsertBenchmarkScore(data: {
   release_date?: string;
 }) {
   // Check if score exists
-  const { data: existing } = await supabaseAdmin
+  const { data: existing } = await db
     .from('model_benchmark_scores')
     .select('id, value')
     .eq('model_id', data.model_id)
@@ -736,7 +737,7 @@ export async function upsertBenchmarkScore(data: {
   if (existing) {
     // Update if different
     if (existing.value !== data.value) {
-      const { error } = await supabaseAdmin
+      const { error } = await db
         .from('model_benchmark_scores')
         .update({
           value: data.value,
@@ -751,7 +752,7 @@ export async function upsertBenchmarkScore(data: {
   }
 
   // Insert new
-  const { error } = await supabaseAdmin
+  const { error } = await db
     .from('model_benchmark_scores')
     .insert({
       model_id: data.model_id,
@@ -769,7 +770,7 @@ export async function upsertBenchmarkScore(data: {
  * Get model by slug
  */
 export async function getModelBySlug(slug: string) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await db
     .from('models')
     .select('id, name, slug, provider_ids, context_window, type')
     .eq('slug', slug)
@@ -793,7 +794,7 @@ export async function createModel(data: {
   description?: string;
   context_window?: number;
 }) {
-  const { data: newModel, error } = await supabaseAdmin
+  const { data: newModel, error } = await db
     .from('models')
     .insert({
       name: data.name,
@@ -817,7 +818,7 @@ export async function getModelArenaElo(modelId: number): Promise<number | null> 
   const taskId = await getArenaBenchmarkTaskId();
   if (!taskId) return null;
 
-  const { data } = await supabaseAdmin
+  const { data } = await db
     .from('model_benchmark_scores')
     .select('value')
     .eq('model_id', modelId)

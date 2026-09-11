@@ -13,7 +13,7 @@
  * Usage:
  *   DATABASE_URL=... npx tsx scripts/fix-provider-regions.ts [--dry-run]
  */
-import { supabaseAdmin } from './db/queries';
+import { db } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -78,7 +78,7 @@ const ALL: Classification[] = [...CN_PROVIDERS, ...GLOBAL_PROVIDERS];
 async function main() {
   console.log(`\n🌍 fix-provider-regions ${DRY_RUN ? '[DRY-RUN]' : '[APPLY]'}\n`);
 
-  const { data: providers, error } = await supabaseAdmin
+  const { data: providers, error } = await db
     .from('providers')
     .select('id, slug, name, region, access_from_china');
   if (error) throw error;
@@ -104,7 +104,7 @@ async function main() {
     console.log(`  🔧 ${badge} ${c.slug}: region=${p.region}→${c.region} access_from_china=${p.access_from_china}→${c.accessFromChina}`);
     console.log(`      ${c.reason}`);
     if (!DRY_RUN) {
-      const { error: upErr } = await supabaseAdmin
+      const { error: upErr } = await db
         .from('providers')
         .update({ region: c.region, access_from_china: c.accessFromChina, updated_at: new Date().toISOString() })
         .eq('id', p.id);
