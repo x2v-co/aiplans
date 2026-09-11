@@ -122,6 +122,17 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
     const data = await response.json();
     const models: OpenRouterModel[] = data.data || [];
 
+    // Dated snapshot ids (openai/gpt-4o-2024-05-13 at $5/$15) collapse onto
+    // the base model in our catalog and overwrite the current undated row.
+    // When the undated id exists, it is the canonical current price — skip
+    // the snapshot. Snapshots without a base id (claude-haiku-4-5-20251001)
+    // stay, because there the dated id is the only listing.
+    const ids = new Set(models.map(m => m.id));
+    const isDatedSnapshotOf = (id: string) => {
+      const match = id.match(/^(.*)-\d{4}-\d{2}-\d{2}$/);
+      return match != null && ids.has(match[1]);
+    };
+
     console.log(`📦 Found ${models.length} models from OpenRouter`);
 
     for (const model of models) {
@@ -130,6 +141,7 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
         // per-token price (openrouter/auto, openrouter/bodybuilder, etc.)
         // These would otherwise fail validation and poison the success flag.
         if (model.id.startsWith('openrouter/')) continue;
+        if (isDatedSnapshotOf(model.id)) continue;
 
         // Convert price per token ($/token) to price per 1M tokens
         // OpenRouter prices are in USD per token
