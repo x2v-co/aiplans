@@ -144,7 +144,8 @@ export default function ApiPricingView({
           p.slug,
           p.baseName,
           p.providers?.name,
-          ...p.versions.flatMap((cp) => [cp.providers?.name, cp.providers?.slug]),
+          ...Array.from(p.memberSlugs ?? []),
+          ...p.versions.flatMap((cp) => [cp.providers?.name, cp.providers?.slug, cp.model_slug]),
         ];
 
         if (!matchesSearch(deferredSearchQuery.trim(), searchValues)) return false;
@@ -419,8 +420,9 @@ export default function ApiPricingView({
                     versionsByChannel.get(key)!.push(cp);
                   });
 
-                  // 获取最便宜的官方价格（用于计算节省）
-                  const officialPrices = product.versions.filter(cp => (cp.providers.type === 'official' || cp.providers.type === 'producer') && cp.input_price_per_1m != null);
+                  // 获取最便宜的官方价格（用于计算节省）。只取标准型号行，
+                  // 避免 mini/batch 折扣行把基准价拉低。
+                  const officialPrices = product.versions.filter(cp => !cp.variant && (cp.providers.type === 'official' || cp.providers.type === 'producer') && cp.input_price_per_1m != null);
                   const cheapestOfficial = officialPrices.length > 0
                     ? officialPrices.reduce((min, cp) =>
                         // 折算成 USD 再比大小：官方渠道里同时有 CNY 和 USD 定价，
@@ -657,6 +659,21 @@ export default function ApiPricingView({
                                       <span className={cp === cheapestOfficial ? "font-medium" : ""}>
                                         {cp.providers.name}
                                       </span>
+                                      {(cp.variant ?? []).map(tag => {
+                                        const label = locale === 'zh'
+                                          ? { mini: '轻量', nano: 'Nano', batch: '批量' }[tag]
+                                          : tag.charAt(0).toUpperCase() + tag.slice(1);
+                                        return (
+                                          <Badge
+                                            key={tag}
+                                            variant="secondary"
+                                            className="ml-1 text-xs"
+                                            title={tag === 'batch' ? t('variantBatchTooltip') : undefined}
+                                          >
+                                            {label}
+                                          </Badge>
+                                        );
+                                      })}
                                       {cp.providers.access_from_china && (
                                         <Check className="w-3 h-3 text-green-600" />
                                       )}
