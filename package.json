@@ -17,6 +17,7 @@
     "audit": "tsx scripts/audit-data.ts",
     "audit:verbose": "tsx scripts/audit-data.ts --verbose",
     "audit:json": "tsx scripts/audit-data.ts --json",
+    "audit:alert": "tsx scripts/audit-alert.ts",
     "migrate": "tsx scripts/migrate-data-accuracy.ts",
     "fix:data": "tsx scripts/fix-data-audit.ts",
     "fix:data:dry-run": "tsx scripts/fix-data-audit.ts --dry-run",
