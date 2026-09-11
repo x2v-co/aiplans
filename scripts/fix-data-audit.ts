@@ -27,6 +27,8 @@ interface PriceUpdate {
   output: number;
   reason: string;
   currency?: string;
+  /** Correct the price but leave a soft-disabled (retired-model) row disabled. */
+  keepDisabled?: boolean;
 }
 
 interface PriceDisable {
@@ -144,10 +146,12 @@ const UPDATES: PriceUpdate[] = [
     reason: 'OpenRouter live API: $1.1/$4.4; row held :batch price $0.55/$2.2' },
   { modelSlug: 'gpt-3.5-turbo', providerSlug: 'openrouter', input: 0.5, output: 1.5,
     reason: 'OpenRouter live API: $0.5/$1.5; row held :batch price $0.25/$0.75' },
-  { modelSlug: 'glm-5.2', providerSlug: 'openrouter', input: 0.28, output: 0.88,
-    reason: 'OpenRouter live API z-ai/glm-5.2: $0.28/$0.88; row held $0.4875/$1.56' },
   { modelSlug: 'qwen3.6-35b-a3b', providerSlug: 'openrouter', input: 0.05, output: 0.7,
     reason: 'OpenRouter live API qwen/qwen3.6-35b-a3b: $0.05/$0.70 (C19 2026-09-11)' },
+  // NOTE: z-ai/glm-5.2 was here briefly, but OpenRouter reprices it
+  // dynamically (it moved $0.28 → $0.966 within hours on 2026-09-11).
+  // Aggregator dynamic prices must be owned by the scraper, never pinned
+  // here — the pin fought the next scrape and reverted the live price.
 
   // ─── Round 4 ─── Bailuan / Volcengine base-band CNY corrections (2026-09-10,
   // verified on the official CN pricing pages). The qwen positional extractor
@@ -168,6 +172,12 @@ const UPDATES: PriceUpdate[] = [
     reason: 'Ark standard output tier (output >0.2K tokens): ¥0.8/8; row held short-output ¥0.8/2' },
   { modelSlug: 'doubao-seed-1.8', providerSlug: 'seed', input: 0.8, output: 8, currency: 'CNY',
     reason: 'Ark standard output tier (output >0.2K tokens): ¥0.8/8; row held short-output ¥0.8/2' },
+
+  // ─── Round 5 ─── retired-model rows kept for history (stay disabled)
+  // docs.x.ai archived table (web.archive.org 2026-02 capture) lists
+  // grok-2-vision-1212 at $2/$10; the frozen 7/7 was a parser value.
+  { modelSlug: 'grok-2-vision-1212', providerSlug: 'grok', input: 2, output: 10,
+    reason: 'xAI archived pricing (Feb 2026): $2/$10; frozen disabled row held 7/7', keepDisabled: true },
 ];
 
 // ---------------------------------------------------------------------------
@@ -289,7 +299,7 @@ async function runUpdates() {
         .update({
           input_price_per_1m: u.input,
           output_price_per_1m: u.output,
-          is_available: true,
+          ...(u.keepDisabled ? {} : { is_available: true }),
           last_verified: new Date().toISOString(),
           // Ground-truth rows are USD unless the update entry says otherwise
           // (CN scrapers store their home currency).
