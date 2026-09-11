@@ -198,6 +198,8 @@ async function main() {
     return (modelSlug === 'qwen2.5-7b-instruct-turbo' && providerSlug === 'together-ai')
       || (modelSlug === 'gemma-2-27b' && providerSlug === 'openrouter')
       || (modelSlug === 'glm-4' && providerSlug === 'zhipu-china')
+      // Batch endpoints of the unified-priced Ministral family (50% of standard).
+      || (providerSlug === 'openrouter' && /^ministral-\d+b-batch$/.test(modelSlug))
       || (['mistral', 'openrouter'].includes(providerSlug ?? '')
         && ['ministral-3b', 'ministral-8b', 'ministral-14b'].includes(modelSlug ?? ''));
   };
@@ -324,7 +326,10 @@ async function main() {
         // ¥4/24, ¥1.2/12, ¥7/35 respectively), all superseded.
         || (providerSlug === 'qwen' && [
           'qwen3-max', 'qwen3.5-plus', 'qwen3.5-flash', 'qwen3-coder-plus',
-        ].includes(modelSlug));
+        ].includes(modelSlug))
+        // Together AI current page lists Qwen3.7-Max at $2/$6 (verified
+        // 2026-09-11); md's $1.25/$3.75 is the 2026-07-02 launch price.
+        || (providerSlug === 'together-ai' && modelSlug === 'qwen3.7-max');
       if (modelsDevVerified) continue;
       if (!isModelsDevComparable(providerSlug, modelSlug)) continue;
       if (typeof p.input_price_per_1m !== 'number' || typeof p.output_price_per_1m !== 'number') continue;
@@ -385,6 +390,9 @@ async function main() {
   }
   // producer coverage
   for (const [modelId, rows] of byModel) {
+    // *-batch models are OpenRouter-only products (50% async discount); no
+    // producer sells a "batch" SKU, so a missing official row is expected.
+    if ((modelById.get(modelId)?.slug ?? '').endsWith('-batch')) continue;
     const hasProducer = rows.some(r => {
       const prov = providerById.get(r.provider_id);
       return prov?.type === 'producer' || prov?.type === 'official';

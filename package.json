@@ -20,6 +20,8 @@
     "migrate": "tsx scripts/migrate-data-accuracy.ts",
     "fix:data": "tsx scripts/fix-data-audit.ts",
     "fix:data:dry-run": "tsx scripts/fix-data-audit.ts --dry-run",
+    "fix:variant-models": "tsx scripts/fix-add-variant-models.ts",
+    "fix:variant-models:dry-run": "tsx scripts/fix-add-variant-models.ts --dry-run",
     "fix:plans": "tsx scripts/fix-plans-audit.ts",
     "fix:plans:dry-run": "tsx scripts/fix-plans-audit.ts --dry-run",
     "fix:quotas": "tsx scripts/fix-plan-quotas.ts",

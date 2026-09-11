@@ -202,6 +202,9 @@ export function normalizeModelName(name: string): string {
   const base = extractBaseModel(name);
 
   // 常见模式匹配
+  // GPT-4.1 is its own family — without this the broad gpt-4 branch below
+  // collapses gpt-4.1 (and its batch id) onto gpt-4.
+  if (/^gpt-4\.1(?:-(?:mini|nano))?$/.test(lower)) return lower;
   // GPT-5.x family: mini/nano (incl. codex-mini) are distinct priced SKUs.
   // Return the dotted slug as-is so e.g. gpt-5.4-mini does not land on
   // gpt-5.4 and overwrite its channel price.
