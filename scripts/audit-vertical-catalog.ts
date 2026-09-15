@@ -90,6 +90,11 @@ const VERIFIED_CREATIVE_PLAN_EXPECTATIONS: VerifiedCreativePlanExpectation[] = [
   { providerSlug: 'luma-ai', modelSlug: 'luma-ray', slug: 'luma-plus-monthly-verified', price: 30, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 10000, sourceUrl: 'https://lumalabs.ai/dream-machine' },
   { providerSlug: 'luma-ai', modelSlug: 'luma-ray', slug: 'luma-pro-monthly-verified', price: 90, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 40000, sourceUrl: 'https://lumalabs.ai/dream-machine' },
   { providerSlug: 'luma-ai', modelSlug: 'luma-ray', slug: 'luma-premier-monthly-verified', price: 300, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 150000, sourceUrl: 'https://lumalabs.ai/dream-machine' },
+  { providerSlug: 'udio', modelSlug: 'udio', slug: 'udio-free-verified', price: 0, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 100, sourceUrl: 'https://www.udio.com/pricing' },
+  { providerSlug: 'udio', modelSlug: 'udio', slug: 'udio-standard-yearly-verified', price: 8, annualPrice: 96, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 2400, sourceUrl: 'https://www.udio.com/pricing' },
+  { providerSlug: 'udio', modelSlug: 'udio', slug: 'udio-pro-yearly-verified', price: 24, annualPrice: 288, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 6000, sourceUrl: 'https://www.udio.com/pricing' },
+  { providerSlug: 'udio', modelSlug: 'udio', slug: 'udio-100-credit-pack-verified', price: 3, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 100, sourceUrl: 'https://www.udio.com/pricing' },
+  { providerSlug: 'udio', modelSlug: 'udio', slug: 'udio-1000-credit-pack-verified', price: 25, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 1000, sourceUrl: 'https://www.udio.com/pricing' },
 ];
 
 const PRICING_UNIT_MAP: Record<AiPricingConfidence, string> = {
