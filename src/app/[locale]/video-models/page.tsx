@@ -9,12 +9,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: '/video-models',
     title: {
-      en: 'AI Video Models Compared · Veo, Kling, Runway, Pika | aiplans.dev',
-      zh: 'AI 视频模型对比 · Veo、Kling、Runway、Pika | aiplans.dev',
+      en: 'AI Video Model Catalog · Veo, Kling, Runway, Pika | aiplans.dev',
+      zh: 'AI 视频模型目录 · Veo、Kling、Runway、Pika | aiplans.dev',
     },
     description: {
-      en: 'Compare AI video generation models by text-to-video, image-to-video, max duration, resolution, camera control, character consistency, price unit and API availability.',
-      zh: '按文生视频、图生视频、最大时长、分辨率、镜头控制、角色一致性、价格单位和 API 可用性对比 AI 视频生成模型。',
+      en: 'Browse AI video generation models by text-to-video, image-to-video, Arena AI rank, VBench scores, pricing unit, API availability and official sources.',
+      zh: '按文生视频、图生视频、Arena AI 排名、VBench 分数、价格单位、API 可用性和官方来源浏览 AI 视频生成模型目录。',
     },
   });
 }
