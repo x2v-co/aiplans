@@ -1,6 +1,7 @@
 import { sql, TEXT_ARRAY } from '@/lib/db';
 import { catalogForKind, type AiBenchmarkSummary, type AiCatalogItem, type AiCatalogKind, type AiCatalogModality, type AiCatalogStatus } from '@/lib/ai-vertical-catalog';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
+import { getVerticalBenchmarkSummary } from '@/lib/vertical-benchmarks';
 
 const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, 'video' | 'music' | 'world'>> = {
   'video-model': 'video',
@@ -64,44 +65,13 @@ function toModalities(values: string[] | null): AiCatalogModality[] {
   return (values ?? []).filter((value): value is AiCatalogModality => MODALITIES.includes(value as AiCatalogModality));
 }
 
-async function getBenchmarkSummary(modelId: number): Promise<AiBenchmarkSummary[]> {
-  const rows = await sql<AiBenchmarkSummary[]>`
-    SELECT
-      b.slug AS "benchmarkSlug",
-      b.name AS "benchmarkName",
-      bt.name AS "taskName",
-      bm.name AS "metricName",
-      bm.unit,
-      s.value,
-      b.offical_url AS "officialUrl"
-    FROM model_benchmark_scores s
-    JOIN benchmark_tasks bt ON bt.id = s.benchmark_task_id
-    JOIN benchmark_versions bv ON bv.id = bt.benchmark_version_id AND bv.is_current = true
-    JOIN benchmarks b ON b.id = bv.benchmark_id
-    JOIN benchmark_metrics bm ON bm.id = s.metric_id
-    WHERE s.model_id = ${modelId}
-      AND s.value IS NOT NULL
-      AND bm.name IN ('TOTAL_SCORE', 'I2V_SCORE')
-    ORDER BY
-      CASE
-        WHEN bm.name = 'TOTAL_SCORE' THEN 0
-        WHEN bm.name = 'I2V_SCORE' THEN 1
-        ELSE 2
-      END,
-      b.name ASC,
-      bt.name ASC
-    LIMIT 2
-  `;
-  return rows;
-}
-
 async function getBenchmarkSummaries(modelIds: number[]): Promise<Map<number, AiBenchmarkSummary[]>> {
   const byModel = new Map<number, AiBenchmarkSummary[]>();
   await Promise.all(modelIds.map(async (modelId) => {
     try {
-      byModel.set(modelId, await getBenchmarkSummary(modelId));
+      byModel.set(modelId, await getVerticalBenchmarkSummary(modelId));
     } catch (error) {
-      console.warn(`getBenchmarkSummary(${modelId}) failed`, error);
+      console.warn(`getVerticalBenchmarkSummary(${modelId}) failed`, error);
       byModel.set(modelId, []);
     }
   }));
