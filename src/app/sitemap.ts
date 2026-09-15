@@ -128,6 +128,39 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('sitemap: failed to query models', err);
   }
 
+  // Dynamic: audited multimodal vertical detail pages.
+  try {
+    const verticalModels = await sql<Array<{
+      slug: string | null;
+      model_category: string | null;
+      updated_at: Date | string | null;
+    }>>`
+      SELECT slug, model_category, updated_at
+      FROM models
+      WHERE model_category IN ('video', 'music', 'world')
+      ORDER BY updated_at DESC NULLS LAST
+    `;
+    const categoryPath: Record<string, string> = {
+      video: 'video-models',
+      music: 'music-models',
+      world: 'world-models',
+    };
+    for (const m of verticalModels) {
+      if (!m.slug || !m.model_category || !categoryPath[m.model_category]) continue;
+      const lastMod = m.updated_at ? new Date(m.updated_at) : now;
+      for (const locale of LOCALES) {
+        urls.push({
+          url: `${BASE_URL}/${locale}/${categoryPath[m.model_category]}/${m.slug}`,
+          lastModified: lastMod,
+          changeFrequency: 'weekly',
+          priority: 0.68,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('sitemap: failed to query vertical models', err);
+  }
+
   // Dynamic: every LLM model that at least one subscription plan includes →
   // /[locale]/compare/plans/[model]. getPlanComparison only returns null for a
   // slug with no models row, so the page renders for any model that exists —
