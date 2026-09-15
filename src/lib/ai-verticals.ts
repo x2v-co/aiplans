@@ -350,12 +350,12 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
   return isZh
     ? {
         eyebrow: '新增模型类别',
-        title: 'AI 视频模型对比',
+        title: 'AI 视频模型目录',
         description:
-          '对比 Veo、Kling、Runway、Pika、Luma、Hailuo、Seedance、Wan 等视频生成模型，并保留 Sora 等历史模型状态。重点看输入方式、最大时长、分辨率、镜头控制、一致性、价格单位和 API 可用性。',
-        primaryCta: '查看 API 价格',
+          '浏览 Veo、Kling、Runway、Pika、Luma、Hailuo、Seedance、Wan 等视频生成模型，并保留 Sora 等历史模型状态。目录页重点追踪输入方式、Arena AI 排名、VBench 分数、价格单位、官方来源和 API 可用性。',
+        primaryCta: '对比视频模型',
         secondaryCta: '查看创作套餐',
-        cardsTitle: '视频模型的比较维度',
+        cardsTitle: '视频模型目录字段',
         cardsDescription: '视频模型不是“上下文窗口 + token 价格”。需要按产物能力和生成成本建立新维度。',
         cards: [
           {
@@ -391,12 +391,12 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
       }
     : {
         eyebrow: 'New model category',
-        title: 'AI Video Models Compared',
+        title: 'AI Video Model Catalog',
         description:
-          'Compare video generation models such as Veo, Kling, Runway, Pika, Luma, Hailuo, Seedance and Wan, while retaining historical status for discontinued entries such as Sora. The useful fields are input modes, max duration, resolution, camera control, consistency, pricing unit and API availability.',
-        primaryCta: 'View API pricing',
+          'Browse video generation models such as Veo, Kling, Runway, Pika, Luma, Hailuo, Seedance and Wan, while retaining historical status for discontinued entries such as Sora. The catalog tracks input modes, Arena AI rank, VBench scores, pricing unit, official sources and API availability.',
+        primaryCta: 'Compare video models',
         secondaryCta: 'View creative plans',
-        cardsTitle: 'What makes video models different',
+        cardsTitle: 'Video model catalog fields',
         cardsDescription: 'Video models are not context-window-plus-token-price products. They need output capability and generation-cost fields.',
         cards: [
           {
