@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import SiteHeader from '@/components/SiteHeader';
 import type { AiVerticalKind } from '@/lib/ai-verticals';
 import { verticalPageCopy } from '@/lib/ai-verticals';
-import { catalogForKind, isRigorousModelKind } from '@/lib/ai-vertical-catalog';
+import { catalogForKind, isRigorousModelKind, type AiCatalogItem } from '@/lib/ai-vertical-catalog';
 import { jsonLd, SITE_URL } from '@/lib/seo';
 
 const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> = {
@@ -17,10 +17,18 @@ const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> 
   'world-model': { primary: '/video-models', secondary: '/compare/models' },
 };
 
-export default function VerticalLandingPage({ locale, kind }: { locale: string; kind: AiVerticalKind }) {
+export default function VerticalLandingPage({
+  locale,
+  kind,
+  initialCatalog,
+}: {
+  locale: string;
+  kind: AiVerticalKind;
+  initialCatalog?: AiCatalogItem[];
+}) {
   const copy = verticalPageCopy(kind, locale);
   const links = CTA_LINKS[kind];
-  const catalog = catalogForKind(kind);
+  const catalog = initialCatalog ?? catalogForKind(kind);
   const rigorousModelCatalog = isRigorousModelKind(kind);
   const catalogJson = jsonLd({
     '@type': 'ItemList',

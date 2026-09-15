@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import VerticalLandingPage from '@/components/vertical-landing-page';
 import { buildMetadata, breadcrumbList, SITE_URL, type Locale } from '@/lib/seo';
+import { getVerticalModelCatalog } from '@/lib/vertical-models';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -25,11 +26,12 @@ export default async function MusicModelsPage({ params }: { params: Promise<{ lo
     { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
     { name: isZh ? '音乐模型' : 'Music Models', url: `${SITE_URL}/${locale}/music-models` },
   ]);
+  const catalog = await getVerticalModelCatalog('music-model');
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
-      <VerticalLandingPage locale={locale} kind="music-model" />
+      <VerticalLandingPage locale={locale} kind="music-model" initialCatalog={catalog} />
     </>
   );
 }
