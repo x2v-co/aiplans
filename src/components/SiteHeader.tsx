@@ -101,11 +101,12 @@ export default function SiteHeader({ locale }: { locale: string }) {
     { href: `/${locale}/coupons`, label: t('coupons'), active: pathname?.startsWith(`/${locale}/coupons`) },
   ];
 
-  const topLinks: NavItem[] = [
-    { href: `/${locale}`, label: t('home'), active: pathname === `/${locale}` },
+  const homeLink: NavItem = { href: `/${locale}`, label: t('home'), active: pathname === `/${locale}` };
+  const utilityLinks: NavItem[] = [
     { href: `/${locale}/agents`, label: t('agents'), active: pathname?.startsWith(`/${locale}/agents`) },
     { href: `/${locale}/calculator`, label: t('calculator'), active: pathname?.startsWith(`/${locale}/calculator`), icon: Calculator },
   ];
+  const mobileTopLinks = [homeLink, ...utilityLinks];
 
   const mobileGroups = [
     { label: locale === 'zh' ? '模型' : 'Models', items: modelLinks },
@@ -121,7 +122,16 @@ export default function SiteHeader({ locale }: { locale: string }) {
         </Link>
 
         <nav className="hidden items-center gap-5 xl:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>
-          {topLinks.map((item) => (
+          <Link
+            href={homeLink.href}
+            aria-current={homeLink.active ? 'page' : undefined}
+            className={navLinkClass(homeLink.active)}
+          >
+            {homeLink.label}
+          </Link>
+          <NavDropdown label={locale === 'zh' ? '模型' : 'Models'} active={Boolean(isModelsActive)} items={modelLinks} />
+          <NavDropdown label={locale === 'zh' ? '套餐' : 'Plans'} active={Boolean(isPlansActive)} items={planLinks} />
+          {utilityLinks.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -132,8 +142,6 @@ export default function SiteHeader({ locale }: { locale: string }) {
               {item.label}
             </Link>
           ))}
-          <NavDropdown label={locale === 'zh' ? '模型' : 'Models'} active={Boolean(isModelsActive)} items={modelLinks} />
-          <NavDropdown label={locale === 'zh' ? '套餐' : 'Plans'} active={Boolean(isPlansActive)} items={planLinks} />
           <button
             type="button"
             onClick={openSearch}
@@ -186,7 +194,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
           aria-label={locale === 'zh' ? '移动端主导航' : 'Mobile navigation'}
         >
           <div className="container mx-auto flex flex-col gap-5">
-            {topLinks.map((item) => (
+            {mobileTopLinks.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
