@@ -44,7 +44,9 @@
     "seed:vertical-models": "tsx scripts/seed-vertical-models.ts --apply",
     "seed:vertical-models:dry-run": "tsx scripts/seed-vertical-models.ts",
     "seed:vertical-pricing": "tsx scripts/seed-vertical-pricing-references.ts --apply",
-    "seed:vertical-pricing:dry-run": "tsx scripts/seed-vertical-pricing-references.ts"
+    "seed:vertical-pricing:dry-run": "tsx scripts/seed-vertical-pricing-references.ts",
+    "seed:verified-creative-plans": "tsx scripts/seed-verified-creative-plan-prices.ts --apply",
+    "seed:verified-creative-plans:dry-run": "tsx scripts/seed-verified-creative-plan-prices.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
