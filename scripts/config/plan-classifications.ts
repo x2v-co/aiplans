@@ -11,7 +11,7 @@
  */
 import type { ModelSelector } from '../../src/lib/plan-selector';
 
-export type PlanKind = 'chat' | 'coding' | 'agent' | 'token_pack' | 'api_tier' | 'bundle';
+export type PlanKind = 'chat' | 'coding' | 'agent' | 'creative' | 'token_pack' | 'api_tier' | 'bundle';
 
 export interface Classification {
   providerSlug: string;

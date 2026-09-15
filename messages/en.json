@@ -5,6 +5,11 @@
     "apiPricing": "API Pricing",
     "comparePlans": "Compare Plans",
     "compareModels": "Model Compare",
+    "agents": "Agents",
+    "creativePlans": "Creative",
+    "videoModels": "Video Models",
+    "musicModels": "Music Models",
+    "worldModels": "World Models",
     "coupons": "Coupons",
     "calculator": "Calculator"
   },

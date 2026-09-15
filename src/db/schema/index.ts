@@ -28,7 +28,8 @@ export const models = pgTable('models', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
-  type: text('type').notNull(), // 'llm', 'subscription', 'coding_tool'
+  type: text('type').notNull(), // legacy: 'llm', 'subscription', 'coding_tool'
+  modelCategory: text('model_category').notNull().default('text'), // 'text' | 'image' | 'video' | 'audio' | 'music' | 'world' | 'embedding' | 'speech' | 'agent'
   description: text('description'),
   contextWindow: integer('context_window'), // in tokens
   maxOutputTokens: bigint('max_output_tokens', { mode: 'number' }),
@@ -37,6 +38,10 @@ export const models = pgTable('models', {
   officalLink: text('offical_link'),
   inputType: text('input_type').array(),
   outputType: text('output_type').array(),
+  inputModalities: text('input_modalities').array().default([]),
+  outputModalities: text('output_modalities').array().default([]),
+  capabilities: text('capabilities').array().default([]),
+  pricingUnit: text('pricing_unit').default('per_1m_tokens'),
   parameters: text('parameters'),
   activeParameters: text('active parameters'),
   providerIds: integer('provider_ids').array(),
@@ -107,7 +112,8 @@ export const plans = pgTable('plans', {
 
   // Product line taxonomy — orthogonal to `tier`. Plans are only comparable
   // when planKind AND planLine match; tierRank orders the rungs within a line.
-  planKind: text('plan_kind').notNull().default('chat'), // 'chat' | 'coding' | 'agent' | 'token_pack' | 'api_tier' | 'bundle'
+  planKind: text('plan_kind').notNull().default('chat'), // 'chat' | 'coding' | 'agent' | 'creative' | 'token_pack' | 'api_tier' | 'bundle'
+  planCategory: text('plan_category').notNull().default('chatbot'), // 'chatbot' | 'coding' | 'agent' | 'creative' | 'api' | 'enterprise'
   planLine: text('plan_line'), // e.g. 'claude-code', 'minimax-highspeed'
   tierRank: integer('tier_rank'),
   secondaryKinds: text('secondary_kinds').array().default([]),
@@ -120,6 +126,8 @@ export const plans = pgTable('plans', {
   // Token-pack economics, so a pack price can be shown as $/1M tokens
   includedTokens: bigint('included_tokens', { mode: 'number' }),
   includedCredits: integer('included_credits'),
+  includedUsageUnit: text('included_usage_unit'), // token | credit | generation | second | minute | compute_hour | seat
+  includedUsageAmount: real('included_usage_amount'),
   packValidityDays: integer('pack_validity_days'),
 
   // The vendor's published allowance, verbatim, as one entry per stated limit:
@@ -151,6 +159,23 @@ export const apiChannelPrices = pgTable('api_channel_prices', {
 });
 
 // Price History - Significant channel price changes recorded by scrapers
+export const usagePrices = pgTable('usage_prices', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  modelId: integer('model_id').references(() => models.id),
+  providerId: integer('provider_id').references(() => providers.id),
+  planId: integer('plan_id').references(() => plans.id),
+  priceKind: text('price_kind').notNull(), // input_tokens | output_tokens | video_second | generation | credit | minute | compute_hour | seat
+  unit: text('unit').notNull(),
+  price: real('price'),
+  currency: varchar('currency').default('USD'),
+  constraints: jsonb('constraints_json'),
+  sourceUrl: text('source_url'),
+  isAvailable: boolean('is_available').default(true),
+  lastVerified: timestamp('last_verified', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
 export const priceHistory = pgTable('price_history', {
   id: bigserial('id', { mode: 'number' }).primaryKey(),
   channelPriceId: integer('channel_price_id').notNull(),
@@ -305,6 +330,7 @@ export type Provider = typeof providers.$inferSelect;
 export type Model = typeof models.$inferSelect;
 export type Plan = typeof plans.$inferSelect;
 export type ApiChannelPrice = typeof apiChannelPrices.$inferSelect;
+export type UsagePrice = typeof usagePrices.$inferSelect;
 export type PriceHistory = typeof priceHistory.$inferSelect;
 export type Click = typeof clicks.$inferSelect;
 export type ModelPlanMapping = typeof modelPlanMapping.$inferSelect;
