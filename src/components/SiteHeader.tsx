@@ -9,6 +9,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import GlobalSearch from '@/components/GlobalSearch';
@@ -21,6 +23,11 @@ type NavItem = {
   icon?: typeof Calculator;
 };
 
+type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
 function navLinkClass(active: boolean | null | undefined) {
   return `inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-600 ${active ? 'text-blue-600' : 'text-zinc-700 dark:text-zinc-200'}`;
 }
@@ -28,11 +35,11 @@ function navLinkClass(active: boolean | null | undefined) {
 function NavDropdown({
   label,
   active,
-  items,
+  groups,
 }: {
   label: string;
   active: boolean;
-  items: NavItem[];
+  groups: NavGroup[];
 }) {
   return (
     <DropdownMenu>
@@ -47,14 +54,22 @@ function NavDropdown({
           <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-52">
-        {items.map((item) => (
-          <DropdownMenuItem key={item.href} asChild>
-            <Link href={item.href} className={item.active ? 'text-blue-600' : ''}>
-              {item.icon && <item.icon className="h-4 w-4" />}
-              {item.label}
-            </Link>
-          </DropdownMenuItem>
+      <DropdownMenuContent align="start" className="min-w-64">
+        {groups.map((group, groupIndex) => (
+          <div key={group.label}>
+            {groupIndex > 0 && <DropdownMenuSeparator />}
+            <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              {group.label}
+            </DropdownMenuLabel>
+            {group.items.map((item) => (
+              <DropdownMenuItem key={item.href} asChild>
+                <Link href={item.href} className={item.active ? 'text-blue-600' : ''}>
+                  {item.icon && <item.icon className="h-4 w-4" />}
+                  {item.label}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </div>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -86,19 +101,39 @@ export default function SiteHeader({ locale }: { locale: string }) {
     pathname?.startsWith(`/${locale}/agents`) ||
     pathname?.startsWith(`/${locale}/creative-plans`);
 
-  const modelLinks: NavItem[] = [
-    { href: `/${locale}/compare/models`, label: t('compareModels'), active: pathname?.startsWith(`/${locale}/compare/models`) },
-    { href: `/${locale}/api-pricing`, label: t('apiPricing'), active: pathname?.startsWith(`/${locale}/api-pricing`) || pathname?.startsWith(`/${locale}/models/`) },
-    { href: `/${locale}/video-models`, label: t('videoModels'), active: pathname?.startsWith(`/${locale}/video-models`) },
-    { href: `/${locale}/music-models`, label: t('musicModels'), active: pathname?.startsWith(`/${locale}/music-models`) },
-    { href: `/${locale}/world-models`, label: t('worldModels'), active: pathname?.startsWith(`/${locale}/world-models`) },
+  const modelGroups: NavGroup[] = [
+    {
+      label: t('generalModelsGroup'),
+      items: [
+        { href: `/${locale}/compare/models`, label: t('generalModels'), active: pathname?.startsWith(`/${locale}/compare/models`) },
+        { href: `/${locale}/api-pricing`, label: t('apiModelPricing'), active: pathname?.startsWith(`/${locale}/api-pricing`) || pathname?.startsWith(`/${locale}/models/`) },
+      ],
+    },
+    {
+      label: t('multimodalModelsGroup'),
+      items: [
+        { href: `/${locale}/video-models`, label: t('videoModels'), active: pathname?.startsWith(`/${locale}/video-models`) },
+        { href: `/${locale}/music-models`, label: t('musicModels'), active: pathname?.startsWith(`/${locale}/music-models`) },
+        { href: `/${locale}/world-models`, label: t('worldModels'), active: pathname?.startsWith(`/${locale}/world-models`) },
+      ],
+    },
   ];
 
-  const planLinks: NavItem[] = [
-    { href: `/${locale}/compare/plans`, label: t('comparePlans'), active: pathname?.startsWith(`/${locale}/compare/plans`) },
-    { href: `/${locale}/plans`, label: t('plans'), active: pathname?.startsWith(`/${locale}/plans`) },
-    { href: `/${locale}/agents`, label: t('agents'), active: pathname?.startsWith(`/${locale}/agents`) },
-    { href: `/${locale}/creative-plans`, label: t('creativePlans'), active: pathname?.startsWith(`/${locale}/creative-plans`) },
+  const planGroups: NavGroup[] = [
+    {
+      label: t('subscriptionPlansGroup'),
+      items: [
+        { href: `/${locale}/compare/plans`, label: t('comparePlans'), active: pathname?.startsWith(`/${locale}/compare/plans`) },
+        { href: `/${locale}/plans`, label: t('plans'), active: pathname?.startsWith(`/${locale}/plans`) },
+      ],
+    },
+    {
+      label: t('specializedPlansGroup'),
+      items: [
+        { href: `/${locale}/agents`, label: t('agents'), active: pathname?.startsWith(`/${locale}/agents`) },
+        { href: `/${locale}/creative-plans`, label: t('creativePlans'), active: pathname?.startsWith(`/${locale}/creative-plans`) },
+      ],
+    },
   ];
 
   const homeLink: NavItem = { href: `/${locale}`, label: t('home'), active: pathname === `/${locale}` };
@@ -109,8 +144,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const mobileTopLinks = [homeLink, ...utilityLinks];
 
   const mobileGroups = [
-    { label: locale === 'zh' ? '模型' : 'Models', items: modelLinks },
-    { label: locale === 'zh' ? '套餐' : 'Plans', items: planLinks },
+    { label: locale === 'zh' ? '模型' : 'Models', groups: modelGroups },
+    { label: locale === 'zh' ? '套餐' : 'Plans', groups: planGroups },
   ];
 
   return (
@@ -129,8 +164,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
           >
             {homeLink.label}
           </Link>
-          <NavDropdown label={locale === 'zh' ? '模型' : 'Models'} active={Boolean(isModelsActive)} items={modelLinks} />
-          <NavDropdown label={locale === 'zh' ? '套餐' : 'Plans'} active={Boolean(isPlansActive)} items={planLinks} />
+          <NavDropdown label={locale === 'zh' ? '模型' : 'Models'} active={Boolean(isModelsActive)} groups={modelGroups} />
+          <NavDropdown label={locale === 'zh' ? '套餐' : 'Plans'} active={Boolean(isPlansActive)} groups={planGroups} />
           {utilityLinks.map((item) => (
             <Link
               key={item.href}
@@ -206,21 +241,28 @@ export default function SiteHeader({ locale }: { locale: string }) {
                 {item.label}
               </Link>
             ))}
-            {mobileGroups.map((group) => (
-              <div key={group.label} className="border-t pt-4">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">{group.label}</div>
-                <div className="grid gap-3 pl-1">
-                  {group.items.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      aria-current={item.active ? 'page' : undefined}
-                      className={navLinkClass(item.active)}
-                      onClick={() => setOpen(false)}
-                    >
-                      {item.icon && <item.icon className="h-4 w-4" />}
-                      {item.label}
-                    </Link>
+            {mobileGroups.map((section) => (
+              <div key={section.label} className="border-t pt-4">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">{section.label}</div>
+                <div className="grid gap-4 pl-1">
+                  {section.groups.map((group) => (
+                    <div key={group.label} className="grid gap-2">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{group.label}</div>
+                      <div className="grid gap-3 pl-2">
+                        {group.items.map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            aria-current={item.active ? 'page' : undefined}
+                            className={navLinkClass(item.active)}
+                            onClick={() => setOpen(false)}
+                          >
+                            {item.icon && <item.icon className="h-4 w-4" />}
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
