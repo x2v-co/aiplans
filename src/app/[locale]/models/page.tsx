@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ArrowRight, GitCompareArrows, ReceiptText } from 'lucide-react';
@@ -146,7 +145,11 @@ export default async function ModelsCatalogPage({ params }: { params: Promise<{ 
                     <CardContent className="flex h-full flex-col p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex min-w-0 items-center gap-3">
-                          {logo && <Image src={logo} alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-lg object-contain" />}
+                          {/* Provider logos are user/content data and may be local ICOs or remote
+                              vendor assets. Use a plain img here to avoid Next image optimizer
+                              400s on production for otherwise-valid logo URLs. */}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          {logo && <img src={logo} alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-lg object-contain" />}
                           <div className="min-w-0">
                             <h3 className="truncate text-lg font-semibold group-hover:text-blue-600">{formatModelName(model.name)}</h3>
                             <p className="truncate text-sm text-zinc-500">{model.providers?.name ?? (isZh ? '未知供应商' : 'Unknown provider')}</p>
