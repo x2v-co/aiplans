@@ -20,6 +20,7 @@ const STATIC_PAGE_DEFS: Array<{ slug: string; kind?: AiCatalogKind; title: strin
   { slug: 'agents', kind: 'agent', title: 'AI Agent Plans', zhTitle: 'AI Agent 套餐', baseKeywords: ['agent', 'coding agent'] },
   { slug: 'creative-plans', kind: 'creative-plan', title: 'AI Creative Plans', zhTitle: 'AI 创作套餐', baseKeywords: ['creative', 'video plan', 'image plan', 'music plan'] },
   { slug: 'video-models', kind: 'video-model', title: 'AI Video Models', zhTitle: 'AI 视频模型', baseKeywords: ['video', 'text to video', 'image to video'] },
+  { slug: 'compare/video-models', kind: 'video-model', title: 'Compare Video Models', zhTitle: '视频模型对比', baseKeywords: ['video compare', 'arena ai video', 'vbench'] },
   { slug: 'music-models', kind: 'music-model', title: 'AI Music Models', zhTitle: 'AI 音乐模型', baseKeywords: ['music', 'audio'] },
   { slug: 'world-models', kind: 'world-model', title: 'AI World Models', zhTitle: 'AI 世界模型', baseKeywords: ['world model', 'simulation'] },
 ];

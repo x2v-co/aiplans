@@ -15,7 +15,7 @@ import { verticalBenchmarkSummaryFallback } from '@/lib/vertical-benchmark-summa
 const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> = {
   agent: { primary: '/plans', secondary: '/compare/models' },
   'creative-plan': { primary: '/plans', secondary: '/video-models' },
-  'video-model': { primary: '/api-pricing', secondary: '/creative-plans' },
+  'video-model': { primary: '/compare/video-models', secondary: '/creative-plans' },
   'music-model': { primary: '/creative-plans', secondary: '/video-models' },
   'world-model': { primary: '/video-models', secondary: '/compare/models' },
 };

@@ -90,6 +90,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
   const isModelsActive =
     pathname?.startsWith(`/${locale}/compare/models`) ||
+    pathname?.startsWith(`/${locale}/compare/video-models`) ||
     pathname?.startsWith(`/${locale}/api-pricing`) ||
     pathname === `/${locale}/models` ||
     pathname?.startsWith(`/${locale}/models/`) ||
@@ -116,6 +117,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
       label: t('comparePricingGroup'),
       items: [
         { href: `/${locale}/compare/models`, label: t('compareModels'), active: pathname?.startsWith(`/${locale}/compare/models`) },
+        { href: `/${locale}/compare/video-models`, label: t('compareVideoModels'), active: pathname?.startsWith(`/${locale}/compare/video-models`) },
         { href: `/${locale}/api-pricing`, label: t('apiModelPricing'), active: pathname?.startsWith(`/${locale}/api-pricing`) },
       ],
     },
