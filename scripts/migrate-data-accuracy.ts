@@ -629,6 +629,76 @@ const MIGRATIONS: Migration[] = [
         ON audit_alert_state (check_name);
     `,
   },
+  {
+    name: '023_add_multimodal_vertical_taxonomy',
+    sql: `
+      -- Model taxonomy for non-text categories. Keep legacy models.type intact
+      -- so existing API pricing routes remain stable; model_category is the new
+      -- product axis for text/image/video/audio/music/world/agent comparisons.
+      ALTER TABLE models ADD COLUMN IF NOT EXISTS model_category text DEFAULT 'text';
+      ALTER TABLE models ALTER COLUMN model_category SET DEFAULT 'text';
+      UPDATE models SET model_category = 'text' WHERE model_category IS NULL;
+      ALTER TABLE models ALTER COLUMN model_category SET NOT NULL;
+      ALTER TABLE models DROP CONSTRAINT IF EXISTS models_model_category_chk;
+      ALTER TABLE models ADD CONSTRAINT models_model_category_chk
+        CHECK (model_category IN ('text','image','video','audio','music','world','embedding','speech','agent'));
+
+      ALTER TABLE models ADD COLUMN IF NOT EXISTS input_modalities text[] DEFAULT '{}';
+      ALTER TABLE models ADD COLUMN IF NOT EXISTS output_modalities text[] DEFAULT '{}';
+      ALTER TABLE models ADD COLUMN IF NOT EXISTS capabilities text[] DEFAULT '{}';
+      ALTER TABLE models ADD COLUMN IF NOT EXISTS pricing_unit text DEFAULT 'per_1m_tokens';
+      ALTER TABLE models DROP CONSTRAINT IF EXISTS models_pricing_unit_chk;
+      ALTER TABLE models ADD CONSTRAINT models_pricing_unit_chk
+        CHECK (pricing_unit IN ('per_1m_tokens','per_second','per_minute','per_generation','per_credit','per_compute_hour','subscription_only','unknown'));
+      CREATE INDEX IF NOT EXISTS models_model_category_idx ON models (model_category, slug);
+
+      -- Broaden plan taxonomy. plan_kind remains the existing comparison axis;
+      -- plan_category is a clearer top-level nav axis for chatbot/coding/agent/
+      -- creative/API/enterprise surfaces.
+      ALTER TABLE plans DROP CONSTRAINT IF EXISTS plans_plan_kind_chk;
+      ALTER TABLE plans ADD CONSTRAINT plans_plan_kind_chk
+        CHECK (plan_kind IN ('chat','coding','agent','creative','token_pack','api_tier','bundle'));
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS plan_category text DEFAULT 'chatbot';
+      ALTER TABLE plans ALTER COLUMN plan_category SET DEFAULT 'chatbot';
+      UPDATE plans
+         SET plan_category = CASE
+           WHEN plan_kind = 'coding' THEN 'coding'
+           WHEN plan_kind = 'agent' THEN 'agent'
+           WHEN plan_kind = 'creative' THEN 'creative'
+           WHEN plan_kind IN ('token_pack','api_tier') THEN 'api'
+           ELSE 'chatbot'
+         END
+       WHERE plan_category IS NULL OR plan_category = 'chatbot';
+      ALTER TABLE plans ALTER COLUMN plan_category SET NOT NULL;
+      ALTER TABLE plans DROP CONSTRAINT IF EXISTS plans_plan_category_chk;
+      ALTER TABLE plans ADD CONSTRAINT plans_plan_category_chk
+        CHECK (plan_category IN ('chatbot','coding','agent','creative','api','enterprise'));
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS included_usage_unit text;
+      ALTER TABLE plans ADD COLUMN IF NOT EXISTS included_usage_amount real;
+      CREATE INDEX IF NOT EXISTS plans_plan_category_idx ON plans (plan_category, plan_kind, plan_line);
+
+      -- Generic unit-price table for creative and agent products whose units are
+      -- seconds, generations, credits, compute hours or seats rather than tokens.
+      CREATE TABLE IF NOT EXISTS usage_prices (
+        id bigserial PRIMARY KEY,
+        model_id integer REFERENCES models(id),
+        provider_id integer REFERENCES providers(id),
+        plan_id integer REFERENCES plans(id),
+        price_kind text NOT NULL,
+        unit text NOT NULL,
+        price real,
+        currency varchar DEFAULT 'USD',
+        constraints_json jsonb,
+        source_url text,
+        is_available boolean DEFAULT true,
+        last_verified timestamptz,
+        created_at timestamptz DEFAULT now(),
+        updated_at timestamptz DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS usage_prices_model_provider_idx ON usage_prices (model_id, provider_id, price_kind);
+      CREATE INDEX IF NOT EXISTS usage_prices_plan_idx ON usage_prices (plan_id, price_kind);
+    `,
+  },
 ];
 
 async function main() {

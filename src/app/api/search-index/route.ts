@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { catalogForKind, type AiCatalogKind } from '@/lib/ai-vertical-catalog';
 
 /**
  * Lightweight site-search index for the header command palette: one request
@@ -13,6 +14,24 @@ export const dynamic = 'force-dynamic';
 type ModelRow = { slug: string; name: string; provider_name: string | null; provider_slug: string | null };
 type PlanRow = { id: number; name: string; provider_name: string; provider_slug: string };
 type ProviderRow = { slug: string; name: string };
+
+const STATIC_PAGE_DEFS: Array<{ slug: string; kind: AiCatalogKind; title: string; zhTitle: string; baseKeywords: string[] }> = [
+  { slug: 'agents', kind: 'agent', title: 'AI Agent Plans', zhTitle: 'AI Agent 套餐', baseKeywords: ['agent', 'coding agent'] },
+  { slug: 'creative-plans', kind: 'creative-plan', title: 'AI Creative Plans', zhTitle: 'AI 创作套餐', baseKeywords: ['creative', 'video plan', 'image plan', 'music plan'] },
+  { slug: 'video-models', kind: 'video-model', title: 'AI Video Models', zhTitle: 'AI 视频模型', baseKeywords: ['video', 'text to video', 'image to video'] },
+  { slug: 'music-models', kind: 'music-model', title: 'AI Music Models', zhTitle: 'AI 音乐模型', baseKeywords: ['music', 'audio'] },
+  { slug: 'world-models', kind: 'world-model', title: 'AI World Models', zhTitle: 'AI 世界模型', baseKeywords: ['world model', 'simulation'] },
+];
+
+const STATIC_PAGES = STATIC_PAGE_DEFS.map((page) => ({
+  slug: page.slug,
+  title: page.title,
+  zhTitle: page.zhTitle,
+  keywords: [
+    ...page.baseKeywords,
+    ...catalogForKind(page.kind).flatMap((item) => [item.name, item.provider, ...item.capabilities]),
+  ],
+}));
 
 export async function GET() {
   try {
@@ -65,6 +84,7 @@ export async function GET() {
         providerSlug: p.provider_slug,
       })),
       providers: providers.map((p) => ({ slug: p.slug, name: p.name })),
+      pages: STATIC_PAGES,
     };
 
     const response = NextResponse.json(payload);

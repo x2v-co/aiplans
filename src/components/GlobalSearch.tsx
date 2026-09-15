@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Cpu, CreditCard, Building2, CornerDownLeft, Search } from 'lucide-react';
+import { Cpu, CreditCard, Building2, CornerDownLeft, FileText, Search } from 'lucide-react';
 import { rankSearch } from '@/lib/search-match';
 import { useTranslations } from '@/lib/translations';
 import { trackAnalyticsEvent } from '@/lib/analytics';
@@ -11,9 +11,10 @@ type SearchIndex = {
   models: Array<{ slug: string; name: string; providerName: string | null; providerSlug: string | null }>;
   plans: Array<{ id: number; name: string; providerName: string; providerSlug: string }>;
   providers: Array<{ slug: string; name: string }>;
+  pages?: Array<{ slug: string; title: string; zhTitle: string; keywords: string[] }>;
 };
 
-type ResultKind = 'model' | 'plan' | 'provider';
+type ResultKind = 'model' | 'plan' | 'provider' | 'page';
 
 type Result = {
   kind: ResultKind;
@@ -49,7 +50,7 @@ function fetchIndex(): Promise<SearchIndex> {
   return inflight;
 }
 
-const LIMITS: Record<ResultKind, number> = { model: 6, plan: 5, provider: 5 };
+const LIMITS: Record<ResultKind, number> = { model: 6, plan: 5, provider: 5, page: 5 };
 
 export default function GlobalSearch({
   locale,
@@ -145,7 +146,16 @@ export default function GlobalSearch({
         score,
       }));
 
-    return [...rankedModels, ...rankedPlans, ...rankedProviders];
+    const rankedPages = rankSearch(q, index.pages ?? [], (p) => [p.title, p.zhTitle, p.slug, ...p.keywords])
+      .slice(0, LIMITS.page)
+      .map<Result>(({ item, score }) => ({
+        kind: 'page',
+        href: `/${locale}/${item.slug}`,
+        title: locale === 'zh' ? item.zhTitle : item.title,
+        score,
+      }));
+
+    return [...rankedPages, ...rankedModels, ...rankedPlans, ...rankedProviders];
   }, [index, query, locale]);
 
   useEffect(() => {
@@ -187,6 +197,7 @@ export default function GlobalSearch({
   };
 
   const groups: Array<{ kind: ResultKind; label: string; icon: typeof Cpu }> = [
+    { kind: 'page', label: t('pages'), icon: FileText },
     { kind: 'model', label: t('models'), icon: Cpu },
     { kind: 'plan', label: t('plans'), icon: CreditCard },
     { kind: 'provider', label: t('providers'), icon: Building2 },

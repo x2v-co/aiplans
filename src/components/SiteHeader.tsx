@@ -3,8 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Calculator, Github, Menu, Search, X } from 'lucide-react';
+import { Calculator, Github, Menu, MoreHorizontal, Search, X } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import GlobalSearch from '@/components/GlobalSearch';
 import { useTranslations } from '@/lib/translations';
 
@@ -25,14 +31,23 @@ export default function SiteHeader({ locale }: { locale: string }) {
     label: string;
     active: boolean | null | undefined;
     icon?: typeof Calculator;
+    overflow?: boolean;
   }> = [
     { href: `/${locale}`, label: t('home'), active: pathname === `/${locale}` },
     { href: `/${locale}/compare/plans`, label: t('comparePlans'), active: pathname?.startsWith(`/${locale}/compare/plans`) },
     { href: `/${locale}/compare/models`, label: t('compareModels'), active: pathname?.startsWith(`/${locale}/compare/models`) },
+    { href: `/${locale}/agents`, label: t('agents'), active: pathname?.startsWith(`/${locale}/agents`) },
+    { href: `/${locale}/video-models`, label: t('videoModels'), active: pathname?.startsWith(`/${locale}/video-models`) },
+    { href: `/${locale}/creative-plans`, label: t('creativePlans'), active: pathname?.startsWith(`/${locale}/creative-plans`), overflow: true },
+    { href: `/${locale}/music-models`, label: t('musicModels'), active: pathname?.startsWith(`/${locale}/music-models`), overflow: true },
+    { href: `/${locale}/world-models`, label: t('worldModels'), active: pathname?.startsWith(`/${locale}/world-models`), overflow: true },
     { href: `/${locale}/api-pricing`, label: t('apiPricing'), active: pathname?.startsWith(`/${locale}/api-pricing`) || pathname?.startsWith(`/${locale}/models/`) },
     { href: `/${locale}/calculator`, label: t('calculator'), active: pathname?.startsWith(`/${locale}/calculator`), icon: Calculator },
-    { href: `/${locale}/coupons`, label: t('coupons'), active: pathname?.startsWith(`/${locale}/coupons`) },
+    { href: `/${locale}/coupons`, label: t('coupons'), active: pathname?.startsWith(`/${locale}/coupons`), overflow: true },
   ];
+
+  const primaryLinks = links.filter((item) => !item.overflow);
+  const overflowLinks = links.filter((item) => item.overflow);
 
   const navLinks = links.map((item) => (
     <Link
@@ -55,8 +70,40 @@ export default function SiteHeader({ locale }: { locale: string }) {
           <span className="text-xl font-bold">aiplans.dev</span>
         </Link>
 
-        <nav className="hidden items-center gap-5 xl:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>
-          {navLinks}
+        <nav className="hidden items-center gap-4 xl:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>
+          {primaryLinks.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={item.active ? 'page' : undefined}
+              className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-600 ${item.active ? 'text-blue-600' : ''}`}
+            >
+              {item.icon && <item.icon className="h-4 w-4" />}
+              {item.label}
+            </Link>
+          ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-600 ${overflowLinks.some((item) => item.active) ? 'text-blue-600' : ''}`}
+                aria-label={locale === 'zh' ? '更多导航' : 'More navigation'}
+                title={locale === 'zh' ? '更多' : 'More'}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+                {locale === 'zh' ? '更多' : 'More'}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-44">
+              {overflowLinks.map((item) => (
+                <DropdownMenuItem key={item.href} asChild>
+                  <Link href={item.href} className={item.active ? 'text-blue-600' : ''}>
+                    {item.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
             type="button"
             onClick={openSearch}

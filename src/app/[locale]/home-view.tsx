@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, BarChart3, BookOpen, GitCompare, DollarSign, Globe, HelpCircle, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, BookOpen, Bot, Film, GitCompare, DollarSign, Globe, HelpCircle, Music, Palette, Sparkles } from "lucide-react";
 import SiteHeader from '@/components/SiteHeader';
 
 export type HotModel = {
@@ -152,6 +152,68 @@ export default function HomeView({
             </div>
           </section>
         )}
+
+        <section className="mb-16" aria-labelledby="new-verticals-heading">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <h2 id="new-verticals-heading" className="text-2xl font-bold">
+                {locale === 'zh' ? '新增 AI 垂直方向' : 'New AI verticals'}
+              </h2>
+              <p className="mt-2 max-w-3xl text-zinc-600 dark:text-zinc-400">
+                {locale === 'zh'
+                  ? '除了文本大模型和 API token 价格，下一步覆盖 Agent 套餐、创作套餐和视频模型。'
+                  : 'Beyond text LLMs and token pricing, aiplans.dev now has surfaces for agent plans, creative plans and video models.'}
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {[
+              {
+                href: `/${locale}/agents`,
+                icon: Bot,
+                title: locale === 'zh' ? 'Agent 套餐' : 'Agent Plans',
+                body: locale === 'zh' ? 'Coding agent、自主任务、浏览器、文件系统、并发和审批能力。' : 'Coding agents, autonomous tasks, browser access, filesystem access, concurrency and approvals.',
+              },
+              {
+                href: `/${locale}/creative-plans`,
+                icon: Palette,
+                title: locale === 'zh' ? '创作套餐' : 'Creative Plans',
+                body: locale === 'zh' ? '视频、图片、音乐产品的 credits、秒数、生成次数和商用授权。' : 'Credits, seconds, generations and commercial rights for video, image and music products.',
+              },
+              {
+                href: `/${locale}/video-models`,
+                icon: Film,
+                title: locale === 'zh' ? '视频模型' : 'Video Models',
+                body: locale === 'zh' ? 'Sora、Veo、Kling、Runway、Pika、Luma 等视频模型能力维度。' : 'Capability fields for Sora, Veo, Kling, Runway, Pika, Luma and related models.',
+              },
+              {
+                href: `/${locale}/music-models`,
+                icon: Music,
+                title: locale === 'zh' ? '音乐模型' : 'Music Models',
+                body: locale === 'zh' ? 'Suno、Udio、ElevenLabs 等音乐和音频生成模型。' : 'Music and audio generation models such as Suno, Udio and ElevenLabs.',
+              },
+              {
+                href: `/${locale}/world-models`,
+                icon: Globe,
+                title: locale === 'zh' ? '世界模型' : 'World Models',
+                body: locale === 'zh' ? 'Genie、Cosmos、World Labs 等交互世界与仿真模型。' : 'Interactive world and simulation models such as Genie, Cosmos and World Labs.',
+              },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Card className="h-full transition-shadow hover:shadow-lg">
+                    <CardContent className="p-6">
+                      <Icon className="mb-4 h-9 w-9 text-blue-600" />
+                      <h3 className="text-lg font-bold">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{item.body}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
 
         <section className="mb-16 border-y py-10" aria-labelledby="pricing-research-heading">
           <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-center">

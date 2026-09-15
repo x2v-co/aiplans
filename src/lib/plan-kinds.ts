@@ -20,7 +20,7 @@
  * a shared helper has to serve.
  */
 
-export type PlanKind = 'chat' | 'coding' | 'agent' | 'token_pack' | 'api_tier' | 'bundle';
+export type PlanKind = 'chat' | 'coding' | 'agent' | 'creative' | 'token_pack' | 'api_tier' | 'bundle';
 
 /**
  * Display order. Chat first because it is what most visitors arrive looking
@@ -31,6 +31,7 @@ export const PLAN_KIND_ORDER: readonly PlanKind[] = [
   'chat',
   'coding',
   'agent',
+  'creative',
   'token_pack',
   'api_tier',
   'bundle',
@@ -66,6 +67,13 @@ const PRESENTATION: Record<PlanKind, KindPresentation> = {
     zh: 'Agent 套餐',
     descriptionEn: 'Autonomous agent runs, usually capped by concurrent slots and a rolling window.',
     descriptionZh: '自主 Agent 任务，通常按并发数与滚动时间窗限额。',
+  },
+  creative: {
+    icon: '🎬',
+    en: 'Creative plans',
+    zh: '创作套餐',
+    descriptionEn: 'Video, image, music and audio generation plans, usually metered in credits, seconds or generations.',
+    descriptionZh: '视频、图片、音乐和音频生成套餐，通常按 credits、秒数或生成次数计量。',
   },
   token_pack: {
     icon: '🎟️',
