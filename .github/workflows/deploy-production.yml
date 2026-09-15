@@ -42,6 +42,9 @@ jobs:
         continue-on-error: true
         run: npm run lint
 
+      - name: Audit vertical catalog
+        run: npm run audit:verticals
+
       - name: Build production bundle
         env:
           NEXT_PUBLIC_GA_ID: ${{ vars.NEXT_PUBLIC_GA_ID }}
