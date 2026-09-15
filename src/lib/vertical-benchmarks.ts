@@ -32,10 +32,10 @@ export async function getVerticalBenchmarkScores(modelId: number): Promise<Model
 export async function getVerticalBenchmarkSummary(modelId: number): Promise<AiBenchmarkSummary[]> {
   const scores = await getVerticalBenchmarkScores(modelId);
   return scores
-    .filter((score) => score.metric_name === 'TOTAL_SCORE' || score.metric_name === 'I2V_SCORE')
+    .filter((score) => score.metric_name === 'ARENA_RANK' || score.metric_name === 'TOTAL_SCORE' || score.metric_name === 'I2V_SCORE')
     .sort((a, b) => {
-      const aMetricOrder = a.metric_name === 'TOTAL_SCORE' ? 0 : a.metric_name === 'I2V_SCORE' ? 1 : 2;
-      const bMetricOrder = b.metric_name === 'TOTAL_SCORE' ? 0 : b.metric_name === 'I2V_SCORE' ? 1 : 2;
+      const aMetricOrder = a.metric_name === 'ARENA_RANK' ? 0 : a.metric_name === 'TOTAL_SCORE' ? 1 : a.metric_name === 'I2V_SCORE' ? 2 : 3;
+      const bMetricOrder = b.metric_name === 'ARENA_RANK' ? 0 : b.metric_name === 'TOTAL_SCORE' ? 1 : b.metric_name === 'I2V_SCORE' ? 2 : 3;
       return aMetricOrder - bMetricOrder || a.benchmark_name.localeCompare(b.benchmark_name) || a.task_name.localeCompare(b.task_name);
     })
     .slice(0, 2)

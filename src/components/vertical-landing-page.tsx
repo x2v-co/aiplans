@@ -40,9 +40,9 @@ function formatBenchmarkSummary(summary: AiBenchmarkSummary, locale: string): st
   const value = Number.isFinite(summary.value)
     ? summary.value.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', { maximumFractionDigits: 1 })
     : '—';
-  return summary.unit === 'percent' || summary.unit === '%'
-    ? `${summary.benchmarkName} ${value}%`
-    : `${summary.benchmarkName} ${value}`;
+  if (summary.unit === 'percent' || summary.unit === '%') return `${summary.benchmarkName} ${value}%`;
+  if (summary.unit === 'rank') return `${summary.benchmarkName} #${value}`;
+  return `${summary.benchmarkName} ${value}`;
 }
 
 function findExampleHref(locale: string, kind: AiVerticalKind, catalog: AiCatalogItem[], provider: string, name: string): string | null {

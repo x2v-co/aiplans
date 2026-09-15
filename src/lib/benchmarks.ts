@@ -16,6 +16,7 @@ export interface ModelBenchmarkScore {
 
 const DISPLAY_ORDER = [
   'arena-agent',
+  'arena-ai-video',
   'gpqa-diamond',
   'humanitys-last-exam',
   'scicode',
@@ -44,6 +45,7 @@ export function benchmarkValue(score: ModelBenchmarkScore, locale = 'en'): strin
   if (score.unit === 'percent' || score.unit === '%') {
     return `${value.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', { maximumFractionDigits: 1 })}%`;
   }
+  if (score.unit?.toLowerCase() === 'rank') return `#${Math.round(value).toLocaleString()}`;
   if (score.unit?.toLowerCase() === 'elo') return Math.round(value).toLocaleString();
   return value.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', { maximumFractionDigits: 2 });
 }

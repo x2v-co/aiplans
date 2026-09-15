@@ -4,15 +4,16 @@
  *
  * Current scope:
  * - Video: VBench / VBench++ public leaderboard scores that can be traced to
- *   the VBench Gradio leaderboard/config.
- * - Music / World: no comparable public leaderboard is seeded here yet. We do
- *   not invent scores where no standard public benchmark exists.
+ *   the VBench Gradio leaderboard/config, plus Arena AI public video ranks.
+ * - Music / World: no comparable public leaderboard is seeded here yet. Arena AI
+ *   currently exposes video/image/search/chat/webdev ranks, not audio/music.
  */
 import { db } from './db/queries';
 
 const APPLY = process.argv.includes('--apply');
 const VERIFIED_DATE = '2026-09-15';
 const VBENCH_URL = 'https://vchitect-vbench-leaderboard.hf.space';
+const ARENA_URL = 'https://arena.ai/leaderboard/video';
 
 interface BenchmarkSeed {
   modelSlug: string;
@@ -27,7 +28,7 @@ interface BenchmarkSeed {
   task: string;
   releaseDate: string;
   sourceModelName: string;
-  metrics: Array<{ name: string; unit: string; description: string; value: number }>;
+  metrics: Array<{ name: string; unit: string; description: string; value: number; higherBetter?: boolean }>;
 }
 
 interface ModelRow { id: number; slug: string; name: string }
@@ -48,6 +49,15 @@ const VBENCH_PLUS = {
   officialUrl: VBENCH_URL,
   versionLabel: `leaderboard-${VERIFIED_DATE}`,
   notes: 'Scores copied from the public VBench++ leaderboard. Values are percentages and must not be mixed with token/text benchmarks.',
+};
+
+const ARENA_AI_VIDEO = {
+  slug: 'arena-ai-video',
+  name: 'Arena AI Video',
+  type: 'video',
+  officialUrl: ARENA_URL,
+  versionLabel: `leaderboard-${VERIFIED_DATE}`,
+  notes: 'Ranks copied from the public Arena AI video leaderboard embedded in arena.ai. Lower rank is better. Arena AI currently exposes no public audio/music rank in rankByModality.',
 };
 
 const SCORE_SEEDS: BenchmarkSeed[] = [
@@ -130,6 +140,36 @@ const SCORE_SEEDS: BenchmarkSeed[] = [
     { name: 'I2V_SCORE', unit: 'percent', description: 'VBench++ I2V Score', value: 95.65 },
     { name: 'QUALITY_SCORE', unit: 'percent', description: 'VBench++ Quality Score', value: 80.89 },
   ] },
+
+  // Arena AI public video leaderboard. Lower rank is better. Rows are mapped to
+  // our family-level catalog entries only when the vendor/model family is clear.
+  { modelSlug: 'seedance', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'dreamina-seedance-2.5-720p', metrics: [
+    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 5, higherBetter: false },
+  ] },
+  { modelSlug: 'veo', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'veo-3.1-audio', metrics: [
+    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 11, higherBetter: false },
+  ] },
+  { modelSlug: 'wan-video', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'wan2.7-t2v', metrics: [
+    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 18, higherBetter: false },
+  ] },
+  { modelSlug: 'runway-gen-4', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'runway-gen-4.5', metrics: [
+    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 26, higherBetter: false },
+  ] },
+  { modelSlug: 'kling', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'kling-2.5-turbo-1080p', metrics: [
+    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 27, higherBetter: false },
+  ] },
+  { modelSlug: 'luma-ray', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'ray-3', metrics: [
+    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 30, higherBetter: false },
+  ] },
+  { modelSlug: 'hailuo-video', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'hailuo-2.3', metrics: [
+    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 31, higherBetter: false },
+  ] },
+  { modelSlug: 'sora', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'sora', metrics: [
+    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 44, higherBetter: false },
+  ] },
+  { modelSlug: 'pika', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'pika-v2.2', metrics: [
+    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 46, higherBetter: false },
+  ] },
 ];
 
 async function loadModels(): Promise<Map<string, ModelRow>> {
@@ -189,7 +229,7 @@ async function ensureMetric(metric: BenchmarkSeed['metrics'][number]): Promise<n
   if (data) return data.id as number;
   console.log(`      ➕ metric ${metric.name}/${metric.unit}`);
   if (!APPLY) return -Math.floor(Math.random() * 1_000_000);
-  const res = await db.from('benchmark_metrics').insert({ name: metric.name, unit: metric.unit, description: metric.description, higher_better: true }).select('id').single();
+  const res = await db.from('benchmark_metrics').insert({ name: metric.name, unit: metric.unit, description: metric.description, higher_better: metric.higherBetter ?? true }).select('id').single();
   if (res.error) throw res.error;
   return res.data.id as number;
 }
