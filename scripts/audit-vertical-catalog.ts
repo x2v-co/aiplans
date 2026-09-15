@@ -308,13 +308,14 @@ async function auditDatabaseDrift() {
     const expectedSource = pricingSourceUrl(item);
     const expectedProviderId = expectedProvider?.id;
     const expectedPlanId = referencePlan?.id;
+    const expectedAvailability = item.status !== 'announced' && item.status !== 'discontinued';
     const hasUsageReference = usage.some((row) =>
       row.provider_id === expectedProviderId &&
       (expectedPlanId == null || row.plan_id === expectedPlanId) &&
       row.price_kind === referencePriceKind(item) &&
       row.unit === referenceUnit(item) &&
       row.source_url === expectedSource &&
-      row.is_available !== false
+      row.is_available === expectedAvailability
     );
     if (!hasUsageReference) {
       critical(item, `DB drift: missing usage_prices reference ${referencePriceKind(item)}/${referenceUnit(item)} from ${expectedSource}`);

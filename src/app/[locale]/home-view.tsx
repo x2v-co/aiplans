@@ -184,7 +184,7 @@ export default function HomeView({
                 href: `/${locale}/video-models`,
                 icon: Film,
                 title: locale === 'zh' ? '视频模型' : 'Video Models',
-                body: locale === 'zh' ? 'Sora、Veo、Kling、Runway、Pika、Luma 等视频模型能力维度。' : 'Capability fields for Sora, Veo, Kling, Runway, Pika, Luma and related models.',
+                body: locale === 'zh' ? 'Veo、Kling、Runway、Pika、Luma 等视频模型能力维度，并保留 Sora 等历史状态。' : 'Capability fields for Veo, Kling, Runway, Pika, Luma and related models, with historical status for Sora.'
               },
               {
                 href: `/${locale}/music-models`,

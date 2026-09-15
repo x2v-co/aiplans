@@ -9,8 +9,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: '/video-models',
     title: {
-      en: 'AI Video Models Compared · Sora, Veo, Kling, Runway | aiplans.dev',
-      zh: 'AI 视频模型对比 · Sora、Veo、Kling、Runway | aiplans.dev',
+      en: 'AI Video Models Compared · Veo, Kling, Runway, Pika | aiplans.dev',
+      zh: 'AI 视频模型对比 · Veo、Kling、Runway、Pika | aiplans.dev',
     },
     description: {
       en: 'Compare AI video generation models by text-to-video, image-to-video, max duration, resolution, camera control, character consistency, price unit and API availability.',

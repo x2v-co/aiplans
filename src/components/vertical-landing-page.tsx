@@ -17,6 +17,25 @@ const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> 
   'world-model': { primary: '/video-models', secondary: '/compare/models' },
 };
 
+function detailHrefForItem(locale: string, kind: AiVerticalKind, item: AiCatalogItem): string | null {
+  if (!item.slug) return null;
+  if (kind === 'video-model') return `/${locale}/video-models/${item.slug}`;
+  if (kind === 'music-model') return `/${locale}/music-models/${item.slug}`;
+  if (kind === 'world-model') return `/${locale}/world-models/${item.slug}`;
+  return null;
+}
+
+function findExampleHref(locale: string, kind: AiVerticalKind, catalog: AiCatalogItem[], provider: string, name: string): string | null {
+  const normalizedProvider = provider.toLowerCase();
+  const normalizedName = name.toLowerCase();
+  const item = catalog.find((entry) =>
+    entry.slug &&
+    (entry.provider.toLowerCase() === normalizedProvider || normalizedProvider.includes(entry.provider.toLowerCase())) &&
+    (entry.name.toLowerCase() === normalizedName || normalizedName.includes(entry.name.toLowerCase()) || entry.name.toLowerCase().includes(normalizedName))
+  );
+  return item ? detailHrefForItem(locale, kind, item) : null;
+}
+
 export default function VerticalLandingPage({
   locale,
   kind,
@@ -101,20 +120,24 @@ export default function VerticalLandingPage({
             <Badge variant="outline">{copy.examples.length}</Badge>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {copy.examples.map((example) => (
-              <Card key={`${example.provider}-${example.name}`} className="h-full">
-                <CardContent className="flex h-full flex-col p-5">
-                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{example.provider}</p>
-                  <h3 className="mt-1 text-lg font-bold">{example.name}</h3>
-                  <p className="mt-3 flex-1 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{example.note}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {example.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary">{tag}</Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {copy.examples.map((example) => {
+              const href = findExampleHref(locale, kind, catalog, example.provider, example.name);
+              const card = (
+                <Card key={`${example.provider}-${example.name}`} className="h-full transition-colors hover:border-blue-300 hover:bg-blue-50/40 dark:hover:border-blue-800 dark:hover:bg-blue-950/20">
+                  <CardContent className="flex h-full flex-col p-5">
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{example.provider}</p>
+                    <h3 className="mt-1 text-lg font-bold">{example.name}</h3>
+                    <p className="mt-3 flex-1 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{example.note}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {example.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary">{tag}</Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+              return href ? <Link key={`${example.provider}-${example.name}`} href={href} className="block h-full">{card}</Link> : card;
+            })}
           </div>
         </section>
 
@@ -147,14 +170,15 @@ export default function VerticalLandingPage({
                 </div>
               </div>
               {catalog.map((item) => {
-                const detailHref = item.slug
-                  ? `/${locale}/${kind === 'video-model' ? 'video-models' : kind === 'music-model' ? 'music-models' : kind === 'world-model' ? 'world-models' : 'models'}/${item.slug}`
-                  : null;
+                const detailHref = detailHrefForItem(locale, kind, item);
                 return (
-                <div key={`${item.provider}-${item.name}`} className="grid grid-cols-12 gap-3 border-b px-4 py-4 last:border-b-0">
-                  <div className="col-span-4 min-w-0">
+                <div key={`${item.provider}-${item.name}`} className="group relative grid grid-cols-12 gap-3 border-b px-4 py-4 transition-colors last:border-b-0 hover:bg-blue-50/50 dark:hover:bg-blue-950/20">
+                  {detailHref && (
+                    <Link href={detailHref} className="absolute inset-0 z-0" aria-label={`${locale === 'zh' ? '查看详情' : 'View details'}: ${item.name}`} />
+                  )}
+                  <div className="relative z-10 col-span-4 min-w-0 pointer-events-none">
                     <div className="truncate font-semibold">
-                      {detailHref ? <Link href={detailHref} className="hover:underline">{item.name}</Link> : item.name}
+                      {item.name}
                     </div>
                     <div className="truncate text-sm text-zinc-500">{item.provider}</div>
                     <div className="mt-2 flex flex-wrap gap-1 md:hidden">
@@ -163,10 +187,10 @@ export default function VerticalLandingPage({
                       ))}
                     </div>
                   </div>
-                  <div className="col-span-2 hidden sm:block">
-                    <Badge variant={item.status === 'available' ? 'secondary' : 'outline'}>{item.status}</Badge>
+                  <div className="relative z-10 col-span-2 hidden sm:block pointer-events-none">
+                    <Badge variant={item.status === 'available' ? 'secondary' : 'outline'} className={item.status === 'discontinued' ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300' : undefined}>{item.status}</Badge>
                   </div>
-                  <div className="col-span-3 hidden md:block text-sm text-zinc-600 dark:text-zinc-400">
+                  <div className="relative z-10 col-span-3 hidden md:block text-sm text-zinc-600 dark:text-zinc-400 pointer-events-none">
                     <div>{item.pricingUnit ?? item.unit}</div>
                     <div className="mt-1 text-xs text-zinc-500">{item.pricing}</div>
                     {rigorousModelCatalog && (
@@ -178,7 +202,7 @@ export default function VerticalLandingPage({
                       </div>
                     )}
                   </div>
-                  <div className="col-span-8 sm:col-span-6 md:col-span-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                  <div className="pointer-events-none relative z-10 col-span-8 text-sm leading-6 text-zinc-600 sm:col-span-6 md:col-span-3 dark:text-zinc-400">
                     {rigorousModelCatalog ? (
                       <>
                         <div>
@@ -189,7 +213,7 @@ export default function VerticalLandingPage({
                         </div>
                         <div className="mt-2 flex flex-wrap gap-1">
                           {item.sourceUrls?.slice(0, 2).map((source) => (
-                            <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
+                            <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="pointer-events-auto relative z-20">
                               <Badge variant="outline">{source.publisher}</Badge>
                             </a>
                           ))}

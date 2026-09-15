@@ -177,7 +177,7 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
       note: 'Numeric price intentionally null until parsed and verified from source.',
     },
     source_url: src,
-    is_available: item.status !== 'announced',
+    is_available: item.status !== 'announced' && item.status !== 'discontinued',
     last_verified: item.lastVerified ? new Date(item.lastVerified) : NOW,
     updated_at: NOW,
   };
