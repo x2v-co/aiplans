@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AiCatalogKind } from '@/lib/ai-vertical-catalog';
 import type { VerticalModelDetail } from '@/lib/vertical-model-detail';
+import ModelBenchmarkPanel from '@/components/model-benchmark-panel';
 import { verticalKindPath } from '@/lib/vertical-model-detail';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 
@@ -29,7 +30,7 @@ export default function VerticalModelDetailPage({
   detail: VerticalModelDetail;
 }) {
   const isZh = locale === 'zh';
-  const { item, plans, usagePrices } = detail;
+  const { item, plans, usagePrices, benchmarks } = detail;
   const parentPath = verticalKindPath(kind);
   const providerSlug = item.providerSlug ?? item.provider.toLowerCase().replace(/\/.*$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const providerLogo = item.providerLogoUrl ?? getVerticalProviderLogo(providerSlug);
@@ -103,6 +104,23 @@ export default function VerticalModelDetailPage({
               </div>
             </CardContent>
           </Card>
+        </section>
+
+        <section className="mt-10">
+          {benchmarks.length > 0 ? (
+            <ModelBenchmarkPanel scores={benchmarks} locale={locale} />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>{isZh ? '模型效果 Benchmark' : 'Model performance benchmarks'}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                {isZh
+                  ? '暂无可审计、可横向比较的公开 benchmark 分数。Music 和 World 模型当前没有统一排行榜；Video 模型会优先接入 VBench / VBench++ 等公开来源。'
+                  : 'No audited, comparable public benchmark score is available yet. Music and world models do not currently have a unified public leaderboard; video models are seeded from public sources such as VBench / VBench++ where available.'}
+              </CardContent>
+            </Card>
+          )}
         </section>
 
         <section className="mt-10 grid gap-6 lg:grid-cols-2">

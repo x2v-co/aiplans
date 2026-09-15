@@ -47,6 +47,8 @@
     "seed:vertical-pricing:dry-run": "tsx scripts/seed-vertical-pricing-references.ts",
     "seed:vertical-logos": "tsx scripts/seed-vertical-provider-logos.ts --apply",
     "seed:vertical-logos:dry-run": "tsx scripts/seed-vertical-provider-logos.ts",
+    "seed:vertical-benchmarks": "tsx scripts/seed-vertical-benchmarks.ts --apply",
+    "seed:vertical-benchmarks:dry-run": "tsx scripts/seed-vertical-benchmarks.ts",
     "seed:verified-creative-plans": "tsx scripts/seed-verified-creative-plan-prices.ts --apply",
     "seed:verified-creative-plans:dry-run": "tsx scripts/seed-verified-creative-plan-prices.ts"
   },
