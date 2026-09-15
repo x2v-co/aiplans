@@ -1,12 +1,12 @@
 {
   "nav": {
     "home": "Home",
-    "plans": "Plans",
+    "plans": "All Plans",
     "apiPricing": "API Pricing",
     "comparePlans": "Compare Plans",
     "compareModels": "Model Compare",
     "agents": "Agent Plans",
-    "creativePlans": "Creative",
+    "creativePlans": "Creative Plans",
     "videoModels": "Video Models",
     "musicModels": "Music Models",
     "worldModels": "World Models",
