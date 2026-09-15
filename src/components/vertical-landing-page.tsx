@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import SiteHeader from '@/components/SiteHeader';
 import type { AiVerticalKind } from '@/lib/ai-verticals';
 import { verticalPageCopy } from '@/lib/ai-verticals';
-import { catalogForKind, isRigorousModelKind, type AiCatalogItem } from '@/lib/ai-vertical-catalog';
+import { catalogForKind, isRigorousModelKind, type AiBenchmarkSummary, type AiCatalogItem } from '@/lib/ai-vertical-catalog';
 import { jsonLd, SITE_URL } from '@/lib/seo';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 
@@ -34,6 +34,15 @@ function detailHrefForItem(locale: string, kind: AiVerticalKind, item: AiCatalog
   if (kind === 'music-model') return `/${locale}/music-models/${item.slug}`;
   if (kind === 'world-model') return `/${locale}/world-models/${item.slug}`;
   return null;
+}
+
+function formatBenchmarkSummary(summary: AiBenchmarkSummary, locale: string): string {
+  const value = Number.isFinite(summary.value)
+    ? summary.value.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', { maximumFractionDigits: 1 })
+    : '—';
+  return summary.unit === 'percent' || summary.unit === '%'
+    ? `${summary.benchmarkName} ${value}%`
+    : `${summary.benchmarkName} ${value}`;
 }
 
 function findExampleHref(locale: string, kind: AiVerticalKind, catalog: AiCatalogItem[], provider: string, name: string): string | null {
@@ -183,7 +192,8 @@ export default function VerticalLandingPage({
                 <div className="col-span-4">{locale === 'zh' ? '产品' : 'Product'}</div>
                 <div className="col-span-2 hidden sm:block">{locale === 'zh' ? '状态' : 'Status'}</div>
                 <div className="col-span-3 hidden md:block">{locale === 'zh' ? '计价 / 访问' : 'Pricing / Access'}</div>
-                <div className="col-span-8 sm:col-span-6 md:col-span-3">
+                <div className="col-span-3 hidden lg:block">Benchmark</div>
+                <div className="col-span-8 sm:col-span-6 md:col-span-3 lg:hidden">
                   {rigorousModelCatalog ? (locale === 'zh' ? '模态 / 来源' : 'Modalities / Source') : (locale === 'zh' ? '适合场景' : 'Best for')}
                 </div>
               </div>
@@ -224,12 +234,21 @@ export default function VerticalLandingPage({
                       </div>
                     )}
                   </div>
-                  <div className="pointer-events-none relative z-10 col-span-8 text-sm leading-6 text-zinc-600 sm:col-span-6 md:col-span-3 dark:text-zinc-400">
+                  <div className="pointer-events-none relative z-10 col-span-8 text-sm leading-6 text-zinc-600 sm:col-span-6 md:col-span-3 lg:hidden dark:text-zinc-400">
                     {rigorousModelCatalog ? (
                       <>
                         <div>
                           {(item.inputModalities ?? []).join(', ')} → {(item.outputModalities ?? []).join(', ')}
                         </div>
+                        {item.benchmarkSummaries && item.benchmarkSummaries.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {item.benchmarkSummaries.slice(0, 2).map((summary) => (
+                              <Badge key={`${summary.benchmarkSlug}-${summary.taskName}-${summary.metricName}`} variant="secondary">
+                                {formatBenchmarkSummary(summary, locale)}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                         <div className="mt-1 text-xs text-zinc-500">
                           {locale === 'zh' ? '核验' : 'Verified'}: {item.lastVerified}
                         </div>
@@ -251,6 +270,29 @@ export default function VerticalLandingPage({
                         </div>
                       </>
                     )}
+                  </div>
+                  <div className="pointer-events-none relative z-10 col-span-3 hidden text-sm leading-6 text-zinc-600 lg:block dark:text-zinc-400">
+                    {item.benchmarkSummaries && item.benchmarkSummaries.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {item.benchmarkSummaries.slice(0, 2).map((summary) => (
+                          <Badge key={`${summary.benchmarkSlug}-${summary.taskName}-${summary.metricName}`} variant="secondary">
+                            {formatBenchmarkSummary(summary, locale)}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-zinc-400">{rigorousModelCatalog ? (locale === 'zh' ? '暂无统一公开榜单' : 'No public score yet') : '—'}</span>
+                    )}
+                    <div className="mt-2 text-xs text-zinc-500">
+                      {(item.inputModalities ?? []).join(', ')} → {(item.outputModalities ?? []).join(', ')}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {item.sourceUrls?.slice(0, 2).map((source) => (
+                        <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="pointer-events-auto relative z-20">
+                          <Badge variant="outline">{source.publisher}</Badge>
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 );

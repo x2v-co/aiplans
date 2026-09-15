@@ -12,6 +12,16 @@ export interface AiCatalogSource {
   publisher: string;
 }
 
+export interface AiBenchmarkSummary {
+  benchmarkSlug: string;
+  benchmarkName: string;
+  taskName: string;
+  metricName: string;
+  unit: string | null;
+  value: number;
+  officialUrl: string | null;
+}
+
 export interface AiCatalogItem {
   kind: AiCatalogKind;
   slug?: string;
@@ -36,6 +46,7 @@ export interface AiCatalogItem {
   sourceUrls?: AiCatalogSource[];
   lastVerified?: string;
   notes?: string;
+  benchmarkSummaries?: AiBenchmarkSummary[];
 }
 
 const VERIFIED_AT = '2026-09-15';
