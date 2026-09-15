@@ -1,4 +1,4 @@
-import { INT4_ARRAY, sql, TEXT_ARRAY } from '@/lib/db';
+import { sql, TEXT_ARRAY } from '@/lib/db';
 import { catalogForKind, type AiBenchmarkSummary, type AiCatalogItem, type AiCatalogKind, type AiCatalogModality, type AiCatalogStatus } from '@/lib/ai-vertical-catalog';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 
@@ -64,62 +64,47 @@ function toModalities(values: string[] | null): AiCatalogModality[] {
   return (values ?? []).filter((value): value is AiCatalogModality => MODALITIES.includes(value as AiCatalogModality));
 }
 
-interface DbBenchmarkSummaryRow extends AiBenchmarkSummary {
-  model_id: number;
+async function getBenchmarkSummary(modelId: number): Promise<AiBenchmarkSummary[]> {
+  const rows = await sql<AiBenchmarkSummary[]>`
+    SELECT
+      b.slug AS "benchmarkSlug",
+      b.name AS "benchmarkName",
+      bt.name AS "taskName",
+      bm.name AS "metricName",
+      bm.unit,
+      s.value,
+      b.offical_url AS "officialUrl"
+    FROM model_benchmark_scores s
+    JOIN benchmark_tasks bt ON bt.id = s.benchmark_task_id
+    JOIN benchmark_versions bv ON bv.id = bt.benchmark_version_id AND bv.is_current = true
+    JOIN benchmarks b ON b.id = bv.benchmark_id
+    JOIN benchmark_metrics bm ON bm.id = s.metric_id
+    WHERE s.model_id = ${modelId}
+      AND s.value IS NOT NULL
+      AND bm.name IN ('TOTAL_SCORE', 'I2V_SCORE')
+    ORDER BY
+      CASE
+        WHEN bm.name = 'TOTAL_SCORE' THEN 0
+        WHEN bm.name = 'I2V_SCORE' THEN 1
+        ELSE 2
+      END,
+      b.name ASC,
+      bt.name ASC
+    LIMIT 2
+  `;
+  return rows;
 }
 
 async function getBenchmarkSummaries(modelIds: number[]): Promise<Map<number, AiBenchmarkSummary[]>> {
-  if (modelIds.length === 0) return new Map();
-
-  const rows = await sql<DbBenchmarkSummaryRow[]>`
-    SELECT * FROM (
-      SELECT
-        s.model_id,
-        b.slug AS "benchmarkSlug",
-        b.name AS "benchmarkName",
-        bt.name AS "taskName",
-        bm.name AS "metricName",
-        bm.unit,
-        s.value,
-        b.offical_url AS "officialUrl",
-        ROW_NUMBER() OVER (
-          PARTITION BY s.model_id
-          ORDER BY
-            CASE
-              WHEN bm.name = 'TOTAL_SCORE' THEN 0
-              WHEN bm.name = 'I2V_SCORE' THEN 1
-              ELSE 2
-            END,
-            b.name ASC,
-            bt.name ASC
-        ) AS rank
-      FROM model_benchmark_scores s
-      JOIN benchmark_tasks bt ON bt.id = s.benchmark_task_id
-      JOIN benchmark_versions bv ON bv.id = bt.benchmark_version_id AND bv.is_current = true
-      JOIN benchmarks b ON b.id = bv.benchmark_id
-      JOIN benchmark_metrics bm ON bm.id = s.metric_id
-      WHERE s.model_id = ANY(${sql.array(modelIds, INT4_ARRAY)})
-        AND s.value IS NOT NULL
-        AND bm.name IN ('TOTAL_SCORE', 'I2V_SCORE')
-    ) ranked
-    WHERE rank <= 2
-    ORDER BY model_id ASC, rank ASC
-  `;
-
   const byModel = new Map<number, AiBenchmarkSummary[]>();
-  for (const row of rows) {
-    const entries = byModel.get(row.model_id) ?? [];
-    entries.push({
-      benchmarkSlug: row.benchmarkSlug,
-      benchmarkName: row.benchmarkName,
-      taskName: row.taskName,
-      metricName: row.metricName,
-      unit: row.unit,
-      value: row.value,
-      officialUrl: row.officialUrl,
-    });
-    byModel.set(row.model_id, entries);
-  }
+  await Promise.all(modelIds.map(async (modelId) => {
+    try {
+      byModel.set(modelId, await getBenchmarkSummary(modelId));
+    } catch (error) {
+      console.warn(`getBenchmarkSummary(${modelId}) failed`, error);
+      byModel.set(modelId, []);
+    }
+  }));
   return byModel;
 }
 
