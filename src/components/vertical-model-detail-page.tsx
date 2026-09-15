@@ -43,7 +43,7 @@ export default function VerticalModelDetailPage({
           <div>
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">{item.modelCategory}</Badge>
-              <Badge variant={item.status === 'available' ? 'secondary' : 'outline'}>{item.status}</Badge>
+              <Badge variant={item.status === 'available' ? 'secondary' : 'outline'} className={item.status === 'discontinued' ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300' : undefined}>{item.status}</Badge>
               <Badge variant="outline">{item.pricingConfidence}</Badge>
             </div>
             <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">{item.name}</h1>

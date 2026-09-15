@@ -1,5 +1,5 @@
 import { sql, TEXT_ARRAY } from '@/lib/db';
-import { catalogForKind, type AiCatalogItem, type AiCatalogKind, type AiCatalogModality } from '@/lib/ai-vertical-catalog';
+import { catalogForKind, type AiCatalogItem, type AiCatalogKind, type AiCatalogModality, type AiCatalogStatus } from '@/lib/ai-vertical-catalog';
 
 const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, 'video' | 'music' | 'world'>> = {
   'video-model': 'video',
@@ -35,6 +35,15 @@ function verifiedFromDescription(description: string | null): string | undefined
   return description?.match(/Last verified: (\d{4}-\d{2}-\d{2})\./i)?.[1];
 }
 
+function statusFromDescription(description: string | null, openSource: boolean | null): AiCatalogStatus {
+  const match = description?.match(/Status: ([^.]+)\./i);
+  const value = match?.[1];
+  if (value === 'available' || value === 'waitlist' || value === 'preview' || value === 'research' || value === 'announced' || value === 'discontinued') {
+    return value;
+  }
+  return openSource ? 'research' : 'available';
+}
+
 function sourcesFromDescription(description: string | null): AiCatalogItem['sourceUrls'] {
   const sources = description?.match(/Sources: ([\s\S]+)$/)?.[1];
   if (!sources) return undefined;
@@ -60,7 +69,7 @@ function dbRowToCatalogItem(kind: AiCatalogKind, row: DbVerticalModelRow): AiCat
     name: row.name,
     provider: row.provider_name ?? row.provider_slug ?? 'Unknown',
     providerSlug: row.provider_slug ?? undefined,
-    status: row.open_source ? 'research' : 'available',
+    status: statusFromDescription(row.description, row.open_source),
     pricing: pricingConfidence === 'not-commercial' ? 'Research / self-hosted compute' : 'See official source for current plan/API pricing',
     unit: row.pricing_unit ?? 'unknown',
     pricingUnit: row.pricing_unit ?? 'unknown',

@@ -66,7 +66,7 @@ function description(item: AiCatalogItem): string {
   const sources = item.sourceUrls?.map((source) => `${source.publisher}: ${source.url}`).join(' | ');
   return [
     item.bestFor,
-    `Pricing confidence: ${item.pricingConfidence}. Unit: ${item.pricingUnit}. Last verified: ${item.lastVerified}.`,
+    `Status: ${item.status}. Pricing confidence: ${item.pricingConfidence}. Unit: ${item.pricingUnit}. Last verified: ${item.lastVerified}.`,
     item.notes,
     sources ? `Sources: ${sources}` : undefined,
   ].filter(Boolean).join('\n');

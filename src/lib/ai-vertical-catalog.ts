@@ -1,6 +1,6 @@
 export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model';
 
-export type AiCatalogStatus = 'available' | 'waitlist' | 'preview' | 'research' | 'announced';
+export type AiCatalogStatus = 'available' | 'waitlist' | 'preview' | 'research' | 'announced' | 'discontinued';
 export type AiCatalogModality = 'text' | 'image' | 'video' | 'audio' | 'music' | '3d' | 'simulation' | 'code' | 'robotics';
 export type AiCatalogAccess = 'consumer-app' | 'api' | 'cloud-api' | 'open-weights' | 'research-preview' | 'enterprise' | 'waitlist';
 export type AiPricingConfidence = 'verified' | 'unit-only' | 'unknown' | 'not-commercial';
@@ -266,11 +266,11 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     name: 'Sora',
     provider: 'OpenAI',
     providerSlug: 'openai',
-    status: 'available',
-    pricing: 'Included in ChatGPT video generation allowances; API pricing is tracked separately when public.',
+    status: 'discontinued',
+    pricing: 'Discontinued by OpenAI; retained for historical tracking only.',
     unit: 'generations, seconds',
     capabilities: ['text-to-video', 'image-to-video', 'storyboard'],
-    bestFor: 'OpenAI-native video generation and ChatGPT workflows.',
+    bestFor: 'Historical OpenAI video generation tracking; use Sora 2 / current OpenAI video surfaces instead.',
     modelCategory: 'video',
     inputModalities: ['text', 'image', 'video'],
     outputModalities: ['video'],
@@ -282,7 +282,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
       { label: 'OpenAI pricing', url: 'https://openai.com/chatgpt/pricing/', publisher: 'OpenAI' },
     ],
     lastVerified: VERIFIED_AT,
-    notes: 'Listed as a consumer-app video model; exact per-generation economics vary by ChatGPT plan and are not normalized to token price.',
+    notes: 'OpenAI has discontinued the original Sora product page/model. This row is retained as a historical record and should not be treated as currently available.',
   },
   {
     kind: 'video-model',

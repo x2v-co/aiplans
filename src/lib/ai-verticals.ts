@@ -352,7 +352,7 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
         eyebrow: '新增模型类别',
         title: 'AI 视频模型对比',
         description:
-          '对比 Sora、Veo、Kling、Runway、Pika、Luma、Hailuo、Seedance、Wan 等视频生成模型。重点看输入方式、最大时长、分辨率、镜头控制、一致性、价格单位和 API 可用性。',
+          '对比 Veo、Kling、Runway、Pika、Luma、Hailuo、Seedance、Wan 等视频生成模型，并保留 Sora 等历史模型状态。重点看输入方式、最大时长、分辨率、镜头控制、一致性、价格单位和 API 可用性。',
         primaryCta: '查看 API 价格',
         secondaryCta: '查看创作套餐',
         cardsTitle: '视频模型的比较维度',
@@ -381,7 +381,7 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
         metrics: ['价格单位：秒 / 次 / credit', '最大时长与分辨率', '文生视频 / 图生视频 / 视频生视频', '镜头控制与角色一致性', 'API 可用性', '商用许可与地区可用性'],
         examplesTitle: '优先收录对象',
         examples: [
-          { name: 'Sora', provider: 'OpenAI', note: 'OpenAI 视频生成模型，重点看 ChatGPT 套餐权益和未来 API 价格。', tags: ['Text-to-video', 'OpenAI'] },
+          { name: 'Sora', provider: 'OpenAI', note: 'OpenAI 已停止的历史视频模型记录；不再作为当前可用模型展示。', tags: ['Historical', 'OpenAI'] },
           { name: 'Veo', provider: 'Google', note: 'Google 视频模型，需区分 Gemini App、Vertex AI 和 Ultra 权益。', tags: ['Video', 'Google'] },
           { name: 'Kling', provider: 'Kuaishou', note: '国内外都有使用入口，价格单位可能按 credits 和会员权益混合。', tags: ['China', 'Credits'] },
           { name: 'Runway Gen-4', provider: 'Runway', note: '成熟创作产品，适合优先补齐套餐、seconds 和 resolution。', tags: ['Creative', 'API'] },
@@ -393,7 +393,7 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
         eyebrow: 'New model category',
         title: 'AI Video Models Compared',
         description:
-          'Compare video generation models such as Sora, Veo, Kling, Runway, Pika, Luma, Hailuo, Seedance and Wan. The useful fields are input modes, max duration, resolution, camera control, consistency, pricing unit and API availability.',
+          'Compare video generation models such as Veo, Kling, Runway, Pika, Luma, Hailuo, Seedance and Wan, while retaining historical status for discontinued entries such as Sora. The useful fields are input modes, max duration, resolution, camera control, consistency, pricing unit and API availability.',
         primaryCta: 'View API pricing',
         secondaryCta: 'View creative plans',
         cardsTitle: 'What makes video models different',
@@ -422,7 +422,7 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
         metrics: ['Pricing unit: second / generation / credit', 'Max duration and resolution', 'Text-to-video / image-to-video / video-to-video', 'Camera control and character consistency', 'API availability', 'Commercial license and region availability'],
         examplesTitle: 'Priority models',
         examples: [
-          { name: 'Sora', provider: 'OpenAI', note: 'OpenAI video generation model. Track ChatGPT plan allowance and future API pricing.', tags: ['Text-to-video', 'OpenAI'] },
+          { name: 'Sora', provider: 'OpenAI', note: 'Historical OpenAI video model record; no longer shown as currently available.', tags: ['Historical', 'OpenAI'] },
           { name: 'Veo', provider: 'Google', note: 'Google video model. Separate Gemini App, Vertex AI and Ultra plan access.', tags: ['Video', 'Google'] },
           { name: 'Kling', provider: 'Kuaishou', note: 'Global and China access may diverge. Pricing can mix credits and membership allowances.', tags: ['China', 'Credits'] },
           { name: 'Runway Gen-4', provider: 'Runway', note: 'Mature creative product. Good first target for plans, seconds and resolution fields.', tags: ['Creative', 'API'] },
