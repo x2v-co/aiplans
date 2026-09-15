@@ -42,7 +42,9 @@
     "fetch-logos:force": "tsx scripts/fetch-provider-logos.ts --force",
     "seed:xiurouter": "tsx scripts/seed-xiurouter-provider.ts",
     "seed:vertical-models": "tsx scripts/seed-vertical-models.ts --apply",
-    "seed:vertical-models:dry-run": "tsx scripts/seed-vertical-models.ts"
+    "seed:vertical-models:dry-run": "tsx scripts/seed-vertical-models.ts",
+    "seed:vertical-pricing": "tsx scripts/seed-vertical-pricing-references.ts --apply",
+    "seed:vertical-pricing:dry-run": "tsx scripts/seed-vertical-pricing-references.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
