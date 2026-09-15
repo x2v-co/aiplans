@@ -200,7 +200,7 @@ async function ensureArenaLeaderboardModels() {
       input_modalities: ['text'],
       output_modalities: ['video'],
       capabilities: ['leaderboard-version', 'text-to-video'],
-      pricing_unit: 'source-dependent',
+      pricing_unit: 'unknown',
       open_source: entry.license ? /apache|mit|open/i.test(entry.license) : false,
       provider_ids: [providerId],
     };
