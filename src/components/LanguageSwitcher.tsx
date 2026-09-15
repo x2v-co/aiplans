@@ -30,6 +30,7 @@ export function LanguageSwitcher() {
       ? pathname.replace(/^\/(en|zh)/, `/${newLocale}`)
       : `/${newLocale}${pathname}`;
 
+    // eslint-disable-next-line react-hooks/immutability -- event handler intentionally persists the locale preference.
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
     router.push(newPathname);
   };
