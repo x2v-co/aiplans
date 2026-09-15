@@ -34,9 +34,16 @@ interface PlanRow {
   id: number;
   slug: string;
   provider_id: number | null;
+  price: number | null;
+  annual_price: number | null;
+  currency: string | null;
+  included_usage_unit: string | null;
+  included_usage_amount: number | null;
   plan_kind: string | null;
   plan_category: string | null;
   source: string | null;
+  last_verified: string | null;
+  notes: string | null;
 }
 
 interface MappingRow {
@@ -58,6 +65,32 @@ interface UsagePriceRow {
 const CHECK_DB = process.argv.includes('--db');
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const findings: Finding[] = [];
+
+interface VerifiedCreativePlanExpectation {
+  providerSlug: string;
+  modelSlug: string;
+  slug: string;
+  price: number | null;
+  annualPrice: number | null;
+  currency: string;
+  includedUsageUnit: string;
+  includedUsageAmount: number | null;
+  sourceUrl: string;
+}
+
+const VERIFIED_CREATIVE_PLAN_EXPECTATIONS: VerifiedCreativePlanExpectation[] = [
+  { providerSlug: 'runway', modelSlug: 'runway-gen-4', slug: 'runway-free-verified', price: 0, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 125, sourceUrl: 'https://runwayml.com/pricing' },
+  { providerSlug: 'runway', modelSlug: 'runway-gen-4', slug: 'runway-standard-yearly-verified', price: 12, annualPrice: 144, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 625, sourceUrl: 'https://runwayml.com/pricing' },
+  { providerSlug: 'runway', modelSlug: 'runway-gen-4', slug: 'runway-pro-yearly-verified', price: 28, annualPrice: 336, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 2250, sourceUrl: 'https://runwayml.com/pricing' },
+  { providerSlug: 'runway', modelSlug: 'runway-gen-4', slug: 'runway-max-yearly-verified', price: 76, annualPrice: 912, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 9500, sourceUrl: 'https://runwayml.com/pricing' },
+  { providerSlug: 'pika', modelSlug: 'pika', slug: 'pika-free-yearly-verified', price: 0, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: null, sourceUrl: 'https://pika.art/pricing' },
+  { providerSlug: 'pika', modelSlug: 'pika', slug: 'pika-basic-yearly-verified', price: 8, annualPrice: 96, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 80, sourceUrl: 'https://pika.art/pricing' },
+  { providerSlug: 'pika', modelSlug: 'pika', slug: 'pika-standard-yearly-verified', price: 28, annualPrice: 336, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 700, sourceUrl: 'https://pika.art/pricing' },
+  { providerSlug: 'pika', modelSlug: 'pika', slug: 'pika-pro-yearly-verified', price: 76, annualPrice: 912, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 2300, sourceUrl: 'https://pika.art/pricing' },
+  { providerSlug: 'luma-ai', modelSlug: 'luma-ray', slug: 'luma-plus-monthly-verified', price: 30, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 10000, sourceUrl: 'https://lumalabs.ai/dream-machine' },
+  { providerSlug: 'luma-ai', modelSlug: 'luma-ray', slug: 'luma-pro-monthly-verified', price: 90, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 40000, sourceUrl: 'https://lumalabs.ai/dream-machine' },
+  { providerSlug: 'luma-ai', modelSlug: 'luma-ray', slug: 'luma-premier-monthly-verified', price: 300, annualPrice: null, currency: 'USD', includedUsageUnit: 'credit', includedUsageAmount: 150000, sourceUrl: 'https://lumalabs.ai/dream-machine' },
+];
 
 const PRICING_UNIT_MAP: Record<AiPricingConfidence, string> = {
   verified: 'per_generation',
@@ -193,13 +226,16 @@ async function auditDatabaseDrift() {
   const strictRows = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind));
   const slugs = strictRows.map((item) => item.slug).filter(Boolean) as string[];
 
-  const planSlugs = strictRows.map(referencePlanSlug);
+  const planSlugs = [...new Set([
+    ...strictRows.map(referencePlanSlug),
+    ...VERIFIED_CREATIVE_PLAN_EXPECTATIONS.map((plan) => plan.slug),
+  ])];
   const [{ data: modelRows, error: modelError }, { data: providerRows, error: providerError }, { data: planRows, error: planError }] = await Promise.all([
     db.from('models')
       .select('id, slug, name, provider_ids, model_category, input_modalities, output_modalities, capabilities, pricing_unit, offical_link, open_source')
       .in('slug', slugs),
     db.from('providers').select('id, slug'),
-    db.from('plans').select('id, slug, provider_id, plan_kind, plan_category, source').in('slug', planSlugs),
+    db.from('plans').select('id, slug, provider_id, price, annual_price, currency, included_usage_unit, included_usage_amount, plan_kind, plan_category, source, last_verified, notes').in('slug', planSlugs),
   ]);
 
   if (modelError) throw new Error(`models query failed: ${modelError.message}`);
@@ -278,6 +314,44 @@ async function auditDatabaseDrift() {
     if (!hasUsageReference) {
       critical(item, `DB drift: missing usage_prices reference ${referencePriceKind(item)}/${referenceUnit(item)} from ${expectedSource}`);
     }
+  }
+
+  for (const expected of VERIFIED_CREATIVE_PLAN_EXPECTATIONS) {
+    const catalogItem = strictRows.find((item) => item.slug === expected.modelSlug);
+    if (!catalogItem) continue;
+    const model = modelBySlug.get(expected.modelSlug);
+    const provider = providerBySlug.get(expected.providerSlug);
+    const plan = planBySlug.get(expected.slug);
+
+    if (!model) {
+      critical(catalogItem, `DB drift: cannot verify ${expected.slug}; missing model ${expected.modelSlug}`);
+      continue;
+    }
+    if (!provider) {
+      critical(catalogItem, `DB drift: cannot verify ${expected.slug}; missing provider ${expected.providerSlug}`);
+      continue;
+    }
+    if (!plan) {
+      critical(catalogItem, `DB drift: missing verified creative plan ${expected.slug}; run npm run seed:verified-creative-plans`);
+      continue;
+    }
+
+    if (plan.provider_id !== provider.id) critical(catalogItem, `DB drift: ${expected.slug} provider_id ${plan.provider_id} != ${provider.id}`);
+    if (plan.price !== expected.price) critical(catalogItem, `DB drift: ${expected.slug} price ${plan.price} != ${expected.price}`);
+    if (plan.annual_price !== expected.annualPrice) critical(catalogItem, `DB drift: ${expected.slug} annual_price ${plan.annual_price} != ${expected.annualPrice}`);
+    if (plan.currency !== expected.currency) critical(catalogItem, `DB drift: ${expected.slug} currency ${plan.currency} != ${expected.currency}`);
+    if (plan.included_usage_unit !== expected.includedUsageUnit) critical(catalogItem, `DB drift: ${expected.slug} included_usage_unit ${plan.included_usage_unit} != ${expected.includedUsageUnit}`);
+    if (plan.included_usage_amount !== expected.includedUsageAmount) critical(catalogItem, `DB drift: ${expected.slug} included_usage_amount ${plan.included_usage_amount} != ${expected.includedUsageAmount}`);
+    if (plan.plan_kind !== 'creative') critical(catalogItem, `DB drift: ${expected.slug} plan_kind ${plan.plan_kind} != creative`);
+    if (plan.plan_category !== 'creative') critical(catalogItem, `DB drift: ${expected.slug} plan_category ${plan.plan_category} != creative`);
+    if (plan.source !== 'manual') critical(catalogItem, `DB drift: ${expected.slug} source ${plan.source} != manual`);
+    if (!plan.last_verified) critical(catalogItem, `DB drift: ${expected.slug} missing last_verified`);
+    if (!plan.notes?.includes(`Source: ${expected.sourceUrl}`)) critical(catalogItem, `DB drift: ${expected.slug} notes missing Source: ${expected.sourceUrl}`);
+
+    const hasMapping = (mappingRows ?? []).some((mapping: MappingRow) =>
+      mapping.model_id === model.id && mapping.plan_id === plan.id && mapping.source === 'manual'
+    );
+    if (!hasMapping) critical(catalogItem, `DB drift: missing manual mapping to verified creative plan ${expected.slug}`);
   }
 }
 

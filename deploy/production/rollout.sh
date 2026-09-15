@@ -53,6 +53,7 @@ fi
 "${compose[@]}" run --rm --no-deps migrate
 "${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-models
 "${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-pricing
+"${compose[@]}" run --rm --no-deps scraper npm run seed:verified-creative-plans
 "${compose[@]}" run --rm --no-deps scraper npm run audit:verticals:db
 "${compose[@]}" up -d --no-deps --remove-orphans app
 
