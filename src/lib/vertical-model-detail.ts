@@ -21,6 +21,9 @@ export interface VerticalModelPlanRow {
   included_usage_unit: string | null;
   included_usage_amount: number | null;
   is_contact_sales: boolean | null;
+  source: string | null;
+  notes: string | null;
+  last_verified: string | null;
   provider_name: string | null;
   provider_slug: string | null;
 }
@@ -66,6 +69,9 @@ async function getPlans(modelId: number): Promise<VerticalModelPlanRow[]> {
       pl.included_usage_unit,
       pl.included_usage_amount,
       pl.is_contact_sales,
+      pl.source,
+      pl.notes,
+      pl.last_verified::text AS last_verified,
       p.name AS provider_name,
       p.slug AS provider_slug
     FROM plans pl

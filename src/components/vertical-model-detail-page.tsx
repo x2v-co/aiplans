@@ -169,9 +169,27 @@ export default function VerticalModelDetailPage({
                     <div key={plan.id} className="rounded-lg border p-3 text-sm">
                       <div className="font-semibold">{plan.name}</div>
                       <div className="mt-1 text-zinc-500">{plan.provider_name} · {plan.tier ?? 'plan'}</div>
-                      <div className="mt-1">{plan.is_contact_sales ? (isZh ? '联系销售' : 'Contact sales') : `${formatMoney(plan.price, plan.currency)} ${plan.price_unit ?? ''}`}</div>
+                      <div className="mt-1">
+                        {plan.is_contact_sales
+                          ? (isZh ? '联系销售' : 'Contact sales')
+                          : plan.price == null
+                            ? (isZh ? '见官方价格来源' : 'See official pricing source')
+                            : `${formatMoney(plan.price, plan.currency)} ${plan.price_unit ?? ''}`}
+                      </div>
                       {plan.included_usage_unit && (
                         <div className="mt-1 text-zinc-500">{plan.included_usage_amount ?? '—'} {plan.included_usage_unit}</div>
+                      )}
+                      {plan.source === 'manual' && (
+                        <Badge variant="outline" className="mt-2">{isZh ? '人工核验引用' : 'manual reference'}</Badge>
+                      )}
+                      {plan.last_verified && (
+                        <div className="mt-2 text-xs text-zinc-500">{isZh ? '核验' : 'Verified'}: {plan.last_verified.slice(0, 10)}</div>
+                      )}
+                      {plan.notes?.match(/Source: (https:\/\/\S+)/)?.[1] && (
+                        <a className="mt-2 inline-flex items-center gap-1 text-blue-600 hover:underline" href={plan.notes.match(/Source: (https:\/\/\S+)/)?.[1]} target="_blank" rel="noreferrer">
+                          {isZh ? '官方价格来源' : 'Official pricing source'}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
                       )}
                     </div>
                   ))}
