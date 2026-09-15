@@ -66,7 +66,7 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
   if (kind === 'agent') {
     return isZh
       ? {
-          eyebrow: '新增垂直方向',
+          eyebrow: '套餐类别',
           title: 'AI Agent 与 Coding Agent 套餐对比',
           description:
             '比较 Devin、Claude Code、Codex、Replit Agent、Manus、Genspark 等以任务完成为核心的 AI Agent 套餐。重点不只是月费，而是并发、长任务、浏览器、代码执行、文件系统和人工审批能力。',
@@ -107,7 +107,7 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
           note: 'Agent 套餐的核心单位是任务、credit、compute hour 或 seat。把它硬塞进通用聊天套餐会误导用户，所以它应是 Plans 下的独立垂直方向。',
         }
       : {
-          eyebrow: 'New vertical',
+          eyebrow: 'Plan category',
           title: 'AI Agent and Coding Agent Plans Compared',
           description:
             'Compare task-oriented AI agent plans such as Devin, Claude Code, Codex, Replit Agent, Manus and Genspark. The useful comparison is not just monthly price. It is concurrency, long-running work, browser access, code execution, filesystem access and human approval flow.',
@@ -152,7 +152,7 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
   if (kind === 'creative-plan') {
     return isZh
       ? {
-          eyebrow: '新增垂直方向',
+          eyebrow: '套餐类别',
           title: 'AI 视频、图片、音乐创作套餐对比',
           description:
             '创作类 AI 的价格单位通常是 credit、秒数、生成次数或分钟数。这里统一对比 Runway、Kling、Pika、Luma、Suno、Udio、Midjourney、Ideogram 等产品的套餐权益。',
@@ -193,7 +193,7 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
           note: '先用 curated 数据覆盖主流产品，价格单位统一成“官方公布单位 + 可选折算”。不要用 token 价格表强行表达创作模型。',
         }
       : {
-          eyebrow: 'New vertical',
+          eyebrow: 'Plan category',
           title: 'AI Video, Image and Music Creation Plans Compared',
           description:
             'Creative AI products are priced in credits, seconds, generations or minutes. Compare plan allowances across Runway, Kling, Pika, Luma, Suno, Udio, Midjourney, Ideogram and similar products.',
