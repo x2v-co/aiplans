@@ -146,10 +146,16 @@ export default function VerticalLandingPage({
                   {rigorousModelCatalog ? (locale === 'zh' ? '模态 / 来源' : 'Modalities / Source') : (locale === 'zh' ? '适合场景' : 'Best for')}
                 </div>
               </div>
-              {catalog.map((item) => (
+              {catalog.map((item) => {
+                const detailHref = item.slug
+                  ? `/${locale}/${kind === 'video-model' ? 'video-models' : kind === 'music-model' ? 'music-models' : kind === 'world-model' ? 'world-models' : 'models'}/${item.slug}`
+                  : null;
+                return (
                 <div key={`${item.provider}-${item.name}`} className="grid grid-cols-12 gap-3 border-b px-4 py-4 last:border-b-0">
                   <div className="col-span-4 min-w-0">
-                    <div className="truncate font-semibold">{item.name}</div>
+                    <div className="truncate font-semibold">
+                      {detailHref ? <Link href={detailHref} className="hover:underline">{item.name}</Link> : item.name}
+                    </div>
                     <div className="truncate text-sm text-zinc-500">{item.provider}</div>
                     <div className="mt-2 flex flex-wrap gap-1 md:hidden">
                       {item.capabilities.slice(0, 2).map((capability) => (
@@ -201,7 +207,8 @@ export default function VerticalLandingPage({
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
