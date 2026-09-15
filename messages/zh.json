@@ -1,12 +1,12 @@
 {
   "nav": {
     "home": "首页",
-    "plans": "套餐",
+    "plans": "全部套餐",
     "apiPricing": "API 价格",
     "comparePlans": "对比套餐",
     "compareModels": "模型对比",
     "agents": "Agent 套餐",
-    "creativePlans": "创作",
+    "creativePlans": "创作套餐",
     "videoModels": "视频模型",
     "musicModels": "音乐模型",
     "worldModels": "世界模型",
