@@ -2,6 +2,7 @@ import { sql, TEXT_ARRAY } from '@/lib/db';
 import { catalogForKind, type AiBenchmarkSummary, type AiCatalogItem, type AiCatalogKind, type AiCatalogModality, type AiCatalogStatus } from '@/lib/ai-vertical-catalog';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 import { getVerticalBenchmarkSummary } from '@/lib/vertical-benchmarks';
+import { verticalBenchmarkSummaryFallback } from '@/lib/vertical-benchmark-summaries';
 
 const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, 'video' | 'music' | 'world'>> = {
   'video-model': 'video',
@@ -142,7 +143,10 @@ export async function getVerticalModelCatalog(kind: AiCatalogKind): Promise<AiCa
 
     if (rows.length === 0) return catalogForKind(kind);
     const benchmarkSummaries = await getBenchmarkSummaries(rows.map((row) => row.id));
-    return rows.map((row) => dbRowToCatalogItem(kind, row, benchmarkSummaries.get(row.id) ?? []));
+    return rows.map((row) => {
+      const summaries = benchmarkSummaries.get(row.id) ?? [];
+      return dbRowToCatalogItem(kind, row, summaries.length > 0 ? summaries : verticalBenchmarkSummaryFallback(row.slug));
+    });
   } catch (error) {
     console.warn(`getVerticalModelCatalog(${kind}) falling back to static catalog`, error);
     return catalogForKind(kind);
