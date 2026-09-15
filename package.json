@@ -19,6 +19,7 @@
     "audit:json": "tsx scripts/audit-data.ts --json",
     "audit:alert": "tsx scripts/audit-alert.ts",
     "audit:verticals": "tsx scripts/audit-vertical-catalog.ts",
+    "audit:verticals:db": "tsx scripts/audit-vertical-catalog.ts --db",
     "migrate": "tsx scripts/migrate-data-accuracy.ts",
     "fix:data": "tsx scripts/fix-data-audit.ts",
     "fix:data:dry-run": "tsx scripts/fix-data-audit.ts --dry-run",
