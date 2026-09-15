@@ -332,6 +332,7 @@ const MIGRATIONS: Migration[] = [
       --   chat       = consumer chat subscription (ChatGPT Plus, Claude Pro)
       --   coding     = IDE / CLI coding subscription (Copilot, Claude Code seats)
       --   agent      = autonomous-agent product (credits or task quotas)
+      --   creative   = image/video/music creative subscription or pricing reference
       --   token_pack = prepaid token bundle, no recurring entitlement
       --   api_tier   = rate-limit tier on a pay-as-you-go API account
       --   bundle     = one price covering more than one of the above
@@ -341,7 +342,7 @@ const MIGRATIONS: Migration[] = [
 
       ALTER TABLE plans DROP CONSTRAINT IF EXISTS plans_plan_kind_chk;
       ALTER TABLE plans ADD CONSTRAINT plans_plan_kind_chk
-        CHECK (plan_kind IN ('chat','coding','agent','token_pack','api_tier','bundle'));
+        CHECK (plan_kind IN ('chat','coding','agent','creative','token_pack','api_tier','bundle'));
 
       -- Named product line within a kind ('claude-code', 'minimax-highspeed').
       -- Two plans compare only when plan_kind AND plan_line match.
