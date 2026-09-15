@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Calculator, Github, Menu, MoreHorizontal, Search, X } from 'lucide-react';
+import { Calculator, ChevronDown, Github, Menu, Search, X } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import {
   DropdownMenu,
@@ -13,6 +13,53 @@ import {
 } from '@/components/ui/dropdown-menu';
 import GlobalSearch from '@/components/GlobalSearch';
 import { useTranslations } from '@/lib/translations';
+
+type NavItem = {
+  href: string;
+  label: string;
+  active: boolean | null | undefined;
+  icon?: typeof Calculator;
+};
+
+function navLinkClass(active: boolean | null | undefined) {
+  return `inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-600 ${active ? 'text-blue-600' : 'text-zinc-700 dark:text-zinc-200'}`;
+}
+
+function NavDropdown({
+  label,
+  active,
+  items,
+}: {
+  label: string;
+  active: boolean;
+  items: NavItem[];
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={navLinkClass(active)}
+          aria-label={label}
+          title={label}
+        >
+          {label}
+          <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-52">
+        {items.map((item) => (
+          <DropdownMenuItem key={item.href} asChild>
+            <Link href={item.href} className={item.active ? 'text-blue-600' : ''}>
+              {item.icon && <item.icon className="h-4 w-4" />}
+              {item.label}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export default function SiteHeader({ locale }: { locale: string }) {
   const pathname = usePathname();
@@ -26,41 +73,44 @@ export default function SiteHeader({ locale }: { locale: string }) {
     setSearchOpen(true);
   };
 
-  const links: Array<{
-    href: string;
-    label: string;
-    active: boolean | null | undefined;
-    icon?: typeof Calculator;
-    overflow?: boolean;
-  }> = [
-    { href: `/${locale}`, label: t('home'), active: pathname === `/${locale}` },
-    { href: `/${locale}/compare/plans`, label: t('comparePlans'), active: pathname?.startsWith(`/${locale}/compare/plans`) },
+  const isModelsActive =
+    pathname?.startsWith(`/${locale}/compare/models`) ||
+    pathname?.startsWith(`/${locale}/api-pricing`) ||
+    pathname?.startsWith(`/${locale}/models/`) ||
+    pathname?.startsWith(`/${locale}/video-models`) ||
+    pathname?.startsWith(`/${locale}/music-models`) ||
+    pathname?.startsWith(`/${locale}/world-models`);
+  const isPlansActive =
+    pathname?.startsWith(`/${locale}/compare/plans`) ||
+    pathname?.startsWith(`/${locale}/plans`) ||
+    pathname?.startsWith(`/${locale}/creative-plans`) ||
+    pathname?.startsWith(`/${locale}/coupons`);
+
+  const modelLinks: NavItem[] = [
     { href: `/${locale}/compare/models`, label: t('compareModels'), active: pathname?.startsWith(`/${locale}/compare/models`) },
-    { href: `/${locale}/agents`, label: t('agents'), active: pathname?.startsWith(`/${locale}/agents`) },
-    { href: `/${locale}/video-models`, label: t('videoModels'), active: pathname?.startsWith(`/${locale}/video-models`) },
-    { href: `/${locale}/creative-plans`, label: t('creativePlans'), active: pathname?.startsWith(`/${locale}/creative-plans`), overflow: true },
-    { href: `/${locale}/music-models`, label: t('musicModels'), active: pathname?.startsWith(`/${locale}/music-models`), overflow: true },
-    { href: `/${locale}/world-models`, label: t('worldModels'), active: pathname?.startsWith(`/${locale}/world-models`), overflow: true },
     { href: `/${locale}/api-pricing`, label: t('apiPricing'), active: pathname?.startsWith(`/${locale}/api-pricing`) || pathname?.startsWith(`/${locale}/models/`) },
-    { href: `/${locale}/calculator`, label: t('calculator'), active: pathname?.startsWith(`/${locale}/calculator`), icon: Calculator },
-    { href: `/${locale}/coupons`, label: t('coupons'), active: pathname?.startsWith(`/${locale}/coupons`), overflow: true },
+    { href: `/${locale}/video-models`, label: t('videoModels'), active: pathname?.startsWith(`/${locale}/video-models`) },
+    { href: `/${locale}/music-models`, label: t('musicModels'), active: pathname?.startsWith(`/${locale}/music-models`) },
+    { href: `/${locale}/world-models`, label: t('worldModels'), active: pathname?.startsWith(`/${locale}/world-models`) },
   ];
 
-  const primaryLinks = links.filter((item) => !item.overflow);
-  const overflowLinks = links.filter((item) => item.overflow);
+  const planLinks: NavItem[] = [
+    { href: `/${locale}/compare/plans`, label: t('comparePlans'), active: pathname?.startsWith(`/${locale}/compare/plans`) },
+    { href: `/${locale}/plans`, label: t('plans'), active: pathname?.startsWith(`/${locale}/plans`) },
+    { href: `/${locale}/creative-plans`, label: t('creativePlans'), active: pathname?.startsWith(`/${locale}/creative-plans`) },
+    { href: `/${locale}/coupons`, label: t('coupons'), active: pathname?.startsWith(`/${locale}/coupons`) },
+  ];
 
-  const navLinks = links.map((item) => (
-    <Link
-      key={item.href}
-      href={item.href}
-      aria-current={item.active ? 'page' : undefined}
-      className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-600 ${item.active ? 'text-blue-600' : ''}`}
-      onClick={() => setOpen(false)}
-    >
-      {item.icon && <item.icon className="h-4 w-4" />}
-      {item.label}
-    </Link>
-  ));
+  const topLinks: NavItem[] = [
+    { href: `/${locale}`, label: t('home'), active: pathname === `/${locale}` },
+    { href: `/${locale}/agents`, label: t('agents'), active: pathname?.startsWith(`/${locale}/agents`) },
+    { href: `/${locale}/calculator`, label: t('calculator'), active: pathname?.startsWith(`/${locale}/calculator`), icon: Calculator },
+  ];
+
+  const mobileGroups = [
+    { label: locale === 'zh' ? '模型' : 'Models', items: modelLinks },
+    { label: locale === 'zh' ? '套餐' : 'Plans', items: planLinks },
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur-sm dark:bg-black/90">
@@ -70,40 +120,20 @@ export default function SiteHeader({ locale }: { locale: string }) {
           <span className="text-xl font-bold">aiplans.dev</span>
         </Link>
 
-        <nav className="hidden items-center gap-4 xl:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>
-          {primaryLinks.map((item) => (
+        <nav className="hidden items-center gap-5 xl:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>
+          {topLinks.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               aria-current={item.active ? 'page' : undefined}
-              className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-600 ${item.active ? 'text-blue-600' : ''}`}
+              className={navLinkClass(item.active)}
             >
               {item.icon && <item.icon className="h-4 w-4" />}
               {item.label}
             </Link>
           ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-600 ${overflowLinks.some((item) => item.active) ? 'text-blue-600' : ''}`}
-                aria-label={locale === 'zh' ? '更多导航' : 'More navigation'}
-                title={locale === 'zh' ? '更多' : 'More'}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-                {locale === 'zh' ? '更多' : 'More'}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-44">
-              {overflowLinks.map((item) => (
-                <DropdownMenuItem key={item.href} asChild>
-                  <Link href={item.href} className={item.active ? 'text-blue-600' : ''}>
-                    {item.label}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NavDropdown label={locale === 'zh' ? '模型' : 'Models'} active={Boolean(isModelsActive)} items={modelLinks} />
+          <NavDropdown label={locale === 'zh' ? '套餐' : 'Plans'} active={Boolean(isPlansActive)} items={planLinks} />
           <button
             type="button"
             onClick={openSearch}
@@ -155,12 +185,42 @@ export default function SiteHeader({ locale }: { locale: string }) {
           className="border-t bg-white px-4 py-4 shadow-sm xl:hidden dark:bg-black"
           aria-label={locale === 'zh' ? '移动端主导航' : 'Mobile navigation'}
         >
-          <div className="container mx-auto flex flex-col gap-4">
-            {navLinks}
+          <div className="container mx-auto flex flex-col gap-5">
+            {topLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={item.active ? 'page' : undefined}
+                className={navLinkClass(item.active)}
+                onClick={() => setOpen(false)}
+              >
+                {item.icon && <item.icon className="h-4 w-4" />}
+                {item.label}
+              </Link>
+            ))}
+            {mobileGroups.map((group) => (
+              <div key={group.label} className="border-t pt-4">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">{group.label}</div>
+                <div className="grid gap-3 pl-1">
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={item.active ? 'page' : undefined}
+                      className={navLinkClass(item.active)}
+                      onClick={() => setOpen(false)}
+                    >
+                      {item.icon && <item.icon className="h-4 w-4" />}
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
             <button
               type="button"
               onClick={openSearch}
-              className="inline-flex items-center gap-2 text-left text-sm font-medium text-blue-600"
+              className="inline-flex items-center gap-2 border-t pt-4 text-left text-sm font-medium text-blue-600"
             >
               <Search className="h-4 w-4" /> {tSearch('openSearch')}
             </button>
