@@ -51,6 +51,7 @@ if [[ "$database_ready" != "1" ]]; then
 fi
 
 "${compose[@]}" run --rm --no-deps migrate
+"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-models
 "${compose[@]}" up -d --no-deps --remove-orphans app
 
 for _ in {1..45}; do
