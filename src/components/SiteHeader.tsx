@@ -84,8 +84,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
     pathname?.startsWith(`/${locale}/compare/plans`) ||
     pathname?.startsWith(`/${locale}/plans`) ||
     pathname?.startsWith(`/${locale}/agents`) ||
-    pathname?.startsWith(`/${locale}/creative-plans`) ||
-    pathname?.startsWith(`/${locale}/coupons`);
+    pathname?.startsWith(`/${locale}/creative-plans`);
 
   const modelLinks: NavItem[] = [
     { href: `/${locale}/compare/models`, label: t('compareModels'), active: pathname?.startsWith(`/${locale}/compare/models`) },
@@ -100,11 +99,11 @@ export default function SiteHeader({ locale }: { locale: string }) {
     { href: `/${locale}/plans`, label: t('plans'), active: pathname?.startsWith(`/${locale}/plans`) },
     { href: `/${locale}/agents`, label: t('agents'), active: pathname?.startsWith(`/${locale}/agents`) },
     { href: `/${locale}/creative-plans`, label: t('creativePlans'), active: pathname?.startsWith(`/${locale}/creative-plans`) },
-    { href: `/${locale}/coupons`, label: t('coupons'), active: pathname?.startsWith(`/${locale}/coupons`) },
   ];
 
   const homeLink: NavItem = { href: `/${locale}`, label: t('home'), active: pathname === `/${locale}` };
   const utilityLinks: NavItem[] = [
+    { href: `/${locale}/coupons`, label: t('coupons'), active: pathname?.startsWith(`/${locale}/coupons`) },
     { href: `/${locale}/calculator`, label: t('calculator'), active: pathname?.startsWith(`/${locale}/calculator`), icon: Calculator },
   ];
   const mobileTopLinks = [homeLink, ...utilityLinks];
