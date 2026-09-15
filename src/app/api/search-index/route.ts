@@ -14,6 +14,14 @@ type ModelRow = { slug: string; name: string; provider_name: string | null; prov
 type PlanRow = { id: number; name: string; provider_name: string; provider_slug: string };
 type ProviderRow = { slug: string; name: string };
 
+const STATIC_PAGES = [
+  { slug: 'agents', title: 'AI Agent Plans', zhTitle: 'AI Agent 套餐', keywords: ['agent', 'coding agent', 'devin', 'manus', 'claude code', 'codex'] },
+  { slug: 'creative-plans', title: 'AI Creative Plans', zhTitle: 'AI 创作套餐', keywords: ['creative', 'video plan', 'image plan', 'music plan', 'runway', 'kling', 'suno'] },
+  { slug: 'video-models', title: 'AI Video Models', zhTitle: 'AI 视频模型', keywords: ['video', 'sora', 'veo', 'kling', 'runway', 'pika', 'luma'] },
+  { slug: 'music-models', title: 'AI Music Models', zhTitle: 'AI 音乐模型', keywords: ['music', 'audio', 'suno', 'udio', 'elevenlabs'] },
+  { slug: 'world-models', title: 'AI World Models', zhTitle: 'AI 世界模型', keywords: ['world model', 'simulation', 'genie', 'cosmos', 'world labs'] },
+];
+
 export async function GET() {
   try {
     const [models, plans, providers] = await Promise.all([
@@ -65,6 +73,7 @@ export async function GET() {
         providerSlug: p.provider_slug,
       })),
       providers: providers.map((p) => ({ slug: p.slug, name: p.name })),
+      pages: STATIC_PAGES,
     };
 
     const response = NextResponse.json(payload);

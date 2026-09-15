@@ -35,6 +35,7 @@
     "models": "模型",
     "plans": "套餐",
     "providers": "供应商",
+    "pages": "页面",
     "noResults": "没有找到与“{query}”相关的结果",
     "hint": "可搜索模型、订阅套餐和供应商，试试“chatgpt”、“Claude”、“智谱”",
     "loading": "正在加载搜索索引…",
