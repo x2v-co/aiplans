@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AiCatalogKind } from '@/lib/ai-vertical-catalog';
 import type { VerticalModelDetail } from '@/lib/vertical-model-detail';
 import { verticalKindPath } from '@/lib/vertical-model-detail';
+import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 
 function formatMoney(value: number | null, currency: string | null): string {
   if (value == null) return '—';
@@ -29,6 +31,8 @@ export default function VerticalModelDetailPage({
   const isZh = locale === 'zh';
   const { item, plans, usagePrices } = detail;
   const parentPath = verticalKindPath(kind);
+  const providerSlug = item.providerSlug ?? item.provider.toLowerCase().replace(/\/.*$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const providerLogo = item.providerLogoUrl ?? getVerticalProviderLogo(providerSlug);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
@@ -46,8 +50,13 @@ export default function VerticalModelDetailPage({
               <Badge variant={item.status === 'available' ? 'secondary' : 'outline'} className={item.status === 'discontinued' ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300' : undefined}>{item.status}</Badge>
               <Badge variant="outline">{item.pricingConfidence}</Badge>
             </div>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">{item.name}</h1>
-            <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">{item.provider}</p>
+            <div className="mt-4 flex items-center gap-4">
+              {providerLogo && <Image src={providerLogo} alt="" width={56} height={56} className="h-14 w-14 rounded-2xl object-contain" />}
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{item.name}</h1>
+                <p className="mt-2 text-lg text-zinc-600 dark:text-zinc-400">{item.provider}</p>
+              </div>
+            </div>
             <p className="mt-6 max-w-3xl leading-8 text-zinc-700 dark:text-zinc-300">{item.bestFor}</p>
             <div className="mt-6 flex flex-wrap gap-3">
               {item.url && (

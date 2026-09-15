@@ -4,6 +4,7 @@ import {
   type AiCatalogItem,
   type AiPricingConfidence,
 } from '../src/lib/ai-vertical-catalog';
+import { VERTICAL_PROVIDER_LOGOS } from '../src/lib/vertical-provider-logos';
 
 interface Finding {
   level: 'critical' | 'warning';
@@ -28,6 +29,7 @@ interface DbModelRow {
 interface ProviderRow {
   id: number;
   slug: string;
+  logo_url: string | null;
 }
 
 interface PlanRow {
@@ -239,7 +241,7 @@ async function auditDatabaseDrift() {
     db.from('models')
       .select('id, slug, name, provider_ids, model_category, input_modalities, output_modalities, capabilities, pricing_unit, offical_link, open_source')
       .in('slug', slugs),
-    db.from('providers').select('id, slug'),
+    db.from('providers').select('id, slug, logo_url'),
     db.from('plans').select('id, slug, provider_id, price, annual_price, currency, included_usage_unit, included_usage_amount, plan_kind, plan_category, source, last_verified, notes').in('slug', planSlugs),
   ]);
 
@@ -283,8 +285,14 @@ async function auditDatabaseDrift() {
     const expectedProvider = providerBySlug.get(normalizeProviderSlug(item));
     if (!expectedProvider) {
       critical(item, `DB drift: provider ${normalizeProviderSlug(item)} missing`);
-    } else if (!(model.provider_ids ?? []).includes(expectedProvider.id)) {
-      critical(item, `DB drift: provider_ids missing ${normalizeProviderSlug(item)}#${expectedProvider.id}`);
+    } else {
+      if (!(model.provider_ids ?? []).includes(expectedProvider.id)) {
+        critical(item, `DB drift: provider_ids missing ${normalizeProviderSlug(item)}#${expectedProvider.id}`);
+      }
+      const expectedLogo = VERTICAL_PROVIDER_LOGOS[expectedProvider.slug];
+      if (expectedLogo && !expectedProvider.logo_url) {
+        critical(item, `DB drift: provider ${expectedProvider.slug} missing logo_url`);
+      }
     }
 
     const referencePlan = planBySlug.get(referencePlanSlug(item));

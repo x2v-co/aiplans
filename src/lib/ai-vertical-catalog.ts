@@ -18,6 +18,7 @@ export interface AiCatalogItem {
   name: string;
   provider: string;
   providerSlug?: string;
+  providerLogoUrl?: string;
   status: AiCatalogStatus;
   pricing: string;
   unit: string;

@@ -1,5 +1,6 @@
 import { sql, TEXT_ARRAY } from '@/lib/db';
 import { catalogForKind, type AiCatalogItem, type AiCatalogKind, type AiCatalogModality, type AiCatalogStatus } from '@/lib/ai-vertical-catalog';
+import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 
 const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, 'video' | 'music' | 'world'>> = {
   'video-model': 'video',
@@ -12,6 +13,8 @@ interface DbVerticalModelRow {
   slug: string;
   provider_name: string | null;
   provider_slug: string | null;
+  provider_logo: string | null;
+  provider_logo_url: string | null;
   description: string | null;
   offical_link: string | null;
   model_category: 'video' | 'music' | 'world';
@@ -69,6 +72,7 @@ function dbRowToCatalogItem(kind: AiCatalogKind, row: DbVerticalModelRow): AiCat
     name: row.name,
     provider: row.provider_name ?? row.provider_slug ?? 'Unknown',
     providerSlug: row.provider_slug ?? undefined,
+    providerLogoUrl: row.provider_logo_url ?? row.provider_logo ?? getVerticalProviderLogo(row.provider_slug),
     status: statusFromDescription(row.description, row.open_source),
     pricing: pricingConfidence === 'not-commercial' ? 'Research / self-hosted compute' : 'See official source for current plan/API pricing',
     unit: row.pricing_unit ?? 'unknown',
@@ -97,6 +101,8 @@ export async function getVerticalModelCatalog(kind: AiCatalogKind): Promise<AiCa
         m.slug,
         p.name AS provider_name,
         p.slug AS provider_slug,
+        p.logo AS provider_logo,
+        p.logo_url AS provider_logo_url,
         m.description,
         m.offical_link,
         m.model_category,
@@ -107,7 +113,7 @@ export async function getVerticalModelCatalog(kind: AiCatalogKind): Promise<AiCa
         m.open_source
       FROM models m
       LEFT JOIN LATERAL (
-        SELECT providers.name, providers.slug
+        SELECT providers.name, providers.slug, providers.logo, providers.logo_url
         FROM providers
         WHERE providers.id = ANY(m.provider_ids)
         ORDER BY providers.priority NULLS LAST, providers.id
