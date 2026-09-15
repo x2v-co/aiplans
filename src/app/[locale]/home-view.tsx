@@ -157,12 +157,12 @@ export default function HomeView({
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <h2 id="new-verticals-heading" className="text-2xl font-bold">
-                {locale === 'zh' ? '新增 AI 垂直方向' : 'New AI verticals'}
+                {locale === 'zh' ? '新增 Plans 与 Models 类别' : 'New plan and model categories'}
               </h2>
               <p className="mt-2 max-w-3xl text-zinc-600 dark:text-zinc-400">
                 {locale === 'zh'
-                  ? '除了文本大模型和 API token 价格，下一步覆盖 Agent 套餐、创作套餐和视频模型。'
-                  : 'Beyond text LLMs and token pricing, aiplans.dev now has surfaces for agent plans, creative plans and video models.'}
+                  ? 'Agent、Coding、Token、Creative 都是套餐类别；视频、音乐、世界模型是模型类别。两条主轴分开对比。'
+                  : 'Agent, coding, token and creative are plan categories. Video, music and world models are model categories. The two axes stay separate.'}
               </p>
             </div>
           </div>
