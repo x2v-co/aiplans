@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import type { AiVerticalKind } from '@/lib/ai-verticals';
 import { verticalPageCopy } from '@/lib/ai-verticals';
 import { catalogForKind, isRigorousModelKind, type AiCatalogItem } from '@/lib/ai-vertical-catalog';
 import { jsonLd, SITE_URL } from '@/lib/seo';
+import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 
 const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> = {
   agent: { primary: '/plans', secondary: '/compare/models' },
@@ -16,6 +18,15 @@ const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> 
   'music-model': { primary: '/creative-plans', secondary: '/video-models' },
   'world-model': { primary: '/video-models', secondary: '/compare/models' },
 };
+
+function normalizedProviderSlug(item: AiCatalogItem): string {
+  if (item.providerSlug) return item.providerSlug;
+  return item.provider.toLowerCase().replace(/\/.*$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function providerLogoForItem(item: AiCatalogItem): string | undefined {
+  return item.providerLogoUrl ?? getVerticalProviderLogo(normalizedProviderSlug(item));
+}
 
 function detailHrefForItem(locale: string, kind: AiVerticalKind, item: AiCatalogItem): string | null {
   if (!item.slug) return null;
@@ -125,8 +136,15 @@ export default function VerticalLandingPage({
               const card = (
                 <Card key={`${example.provider}-${example.name}`} className="h-full transition-colors hover:border-blue-300 hover:bg-blue-50/40 dark:hover:border-blue-800 dark:hover:bg-blue-950/20">
                   <CardContent className="flex h-full flex-col p-5">
-                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{example.provider}</p>
-                    <h3 className="mt-1 text-lg font-bold">{example.name}</h3>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const catalogItem = catalog.find((entry) => findExampleHref(locale, kind, [entry], example.provider, example.name));
+                        const logo = catalogItem ? providerLogoForItem(catalogItem) : undefined;
+                        return logo ? <Image src={logo} alt="" width={24} height={24} className="h-6 w-6 rounded-md object-contain" /> : null;
+                      })()}
+                      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{example.provider}</p>
+                    </div>
+                    <h3 className="mt-2 text-lg font-bold">{example.name}</h3>
                     <p className="mt-3 flex-1 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{example.note}</p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {example.tags.map((tag) => (
@@ -171,16 +189,20 @@ export default function VerticalLandingPage({
               </div>
               {catalog.map((item) => {
                 const detailHref = detailHrefForItem(locale, kind, item);
+                const providerLogo = providerLogoForItem(item);
                 return (
                 <div key={`${item.provider}-${item.name}`} className="group relative grid grid-cols-12 gap-3 border-b px-4 py-4 transition-colors last:border-b-0 hover:bg-blue-50/50 dark:hover:bg-blue-950/20">
                   {detailHref && (
                     <Link href={detailHref} className="absolute inset-0 z-0" aria-label={`${locale === 'zh' ? '查看详情' : 'View details'}: ${item.name}`} />
                   )}
                   <div className="relative z-10 col-span-4 min-w-0 pointer-events-none">
-                    <div className="truncate font-semibold">
-                      {item.name}
+                    <div className="flex min-w-0 items-center gap-3">
+                      {providerLogo && <Image src={providerLogo} alt="" width={32} height={32} className="h-8 w-8 shrink-0 rounded-lg object-contain" />}
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold">{item.name}</div>
+                        <div className="truncate text-sm text-zinc-500">{item.provider}</div>
+                      </div>
                     </div>
-                    <div className="truncate text-sm text-zinc-500">{item.provider}</div>
                     <div className="mt-2 flex flex-wrap gap-1 md:hidden">
                       {item.capabilities.slice(0, 2).map((capability) => (
                         <Badge key={capability} variant="outline">{capability}</Badge>
