@@ -3,6 +3,7 @@ import { sql, INT4_ARRAY } from '@/lib/db';
 import { catalogForKind, type AiCatalogItem, type AiCatalogKind } from '@/lib/ai-vertical-catalog';
 import { getVerticalModelCatalog } from '@/lib/vertical-models';
 import type { ModelBenchmarkScore } from '@/lib/benchmarks';
+import { getVerticalBenchmarkScores } from '@/lib/vertical-benchmarks';
 
 const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, 'video' | 'music' | 'world'>> = {
   'video-model': 'video',
@@ -83,33 +84,6 @@ async function getPlans(modelId: number): Promise<VerticalModelPlanRow[]> {
   `;
 }
 
-async function getBenchmarks(modelId: number): Promise<ModelBenchmarkScore[]> {
-  return sql<ModelBenchmarkScore[]>`
-    SELECT
-      b.slug AS benchmark_slug,
-      b.name AS benchmark_name,
-      b.type AS benchmark_type,
-      b.offical_url AS official_url,
-      bv.version_label,
-      bt.name AS task_name,
-      bm.name AS metric_name,
-      bm.unit,
-      bm.higher_better,
-      s.value,
-      s.release_date::text AS release_date,
-      s.model_id AS source_model_id,
-      m.slug AS source_model_slug
-    FROM model_benchmark_scores s
-    JOIN models m ON m.id = s.model_id
-    JOIN benchmark_tasks bt ON bt.id = s.benchmark_task_id
-    JOIN benchmark_versions bv ON bv.id = bt.benchmark_version_id AND bv.is_current = true
-    JOIN benchmarks b ON b.id = bv.benchmark_id
-    JOIN benchmark_metrics bm ON bm.id = s.metric_id
-    WHERE s.model_id = ${modelId} AND s.value IS NOT NULL
-    ORDER BY b.name ASC, bt.name ASC, bm.name ASC
-  `;
-}
-
 async function getUsagePrices(modelId: number): Promise<VerticalUsagePriceRow[]> {
   return sql<VerticalUsagePriceRow[]>`
     SELECT
@@ -144,7 +118,7 @@ export async function getVerticalModelDetail(kind: AiCatalogKind, slug: string):
     const catalog = await getVerticalModelCatalog(kind);
     const item = catalog.find((entry) => entry.slug === slug);
     if (!item) notFound();
-    const [plans, usagePrices, benchmarks] = await Promise.all([getPlans(model.id), getUsagePrices(model.id), getBenchmarks(model.id)]);
+    const [plans, usagePrices, benchmarks] = await Promise.all([getPlans(model.id), getUsagePrices(model.id), getVerticalBenchmarkScores(model.id)]);
     return { item, plans, usagePrices, benchmarks, source: 'db' };
   }
 
