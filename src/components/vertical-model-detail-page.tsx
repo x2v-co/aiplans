@@ -131,18 +131,20 @@ export default function VerticalModelDetailPage({
         <section className="mt-10 grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>{isZh ? '已验证 usage_prices' : 'Verified usage prices'}</CardTitle>
+              <CardTitle>{isZh ? '价格来源与用量单位' : 'Pricing sources and usage units'}</CardTitle>
             </CardHeader>
             <CardContent>
               {usagePrices.length === 0 ? (
                 <p className="text-sm text-zinc-500">
-                  {isZh ? '暂无可审计的数值价格；当前只展示官方计价单位和来源链接。' : 'No audited numeric usage price yet; showing official pricing unit and source links for now.'}
+                  {isZh ? '暂无结构化价格来源行；当前只展示官方计价单位和顶部来源链接。' : 'No structured pricing reference row yet; showing official pricing unit and source links above.'}
                 </p>
               ) : (
                 <div className="space-y-3">
                   {usagePrices.map((price) => (
                     <div key={price.id} className="rounded-lg border p-3 text-sm">
-                      <div className="font-semibold">{price.price_kind}: {formatMoney(price.price, price.currency)} / {price.unit}</div>
+                      <div className="font-semibold">
+                        {price.price_kind}: {price.price == null ? (isZh ? '见官方来源' : 'See official source') : formatMoney(price.price, price.currency)} / {price.unit}
+                      </div>
                       <div className="mt-1 text-zinc-500">{price.provider_name}{price.plan_name ? ` · ${price.plan_name}` : ''}</div>
                       {price.source_url && <a className="mt-1 inline-block text-blue-600 hover:underline" href={price.source_url} target="_blank" rel="noreferrer">{isZh ? '价格来源' : 'Price source'}</a>}
                     </div>
