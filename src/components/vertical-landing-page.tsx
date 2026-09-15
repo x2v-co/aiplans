@@ -10,6 +10,7 @@ import { verticalPageCopy } from '@/lib/ai-verticals';
 import { catalogForKind, isRigorousModelKind, type AiBenchmarkSummary, type AiCatalogItem } from '@/lib/ai-vertical-catalog';
 import { jsonLd, SITE_URL } from '@/lib/seo';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
+import { verticalBenchmarkSummaryFallback } from '@/lib/vertical-benchmark-summaries';
 
 const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> = {
   agent: { primary: '/plans', secondary: '/compare/models' },
@@ -43,6 +44,11 @@ function formatBenchmarkSummary(summary: AiBenchmarkSummary, locale: string): st
   if (summary.unit === 'percent' || summary.unit === '%') return `${summary.benchmarkName} ${value}%`;
   if (summary.unit === 'rank') return `${summary.benchmarkName} #${value}`;
   return `${summary.benchmarkName} ${value}`;
+}
+
+function benchmarkSummariesForItem(item: AiCatalogItem): AiBenchmarkSummary[] {
+  if (item.benchmarkSummaries && item.benchmarkSummaries.length > 0) return item.benchmarkSummaries;
+  return item.slug ? verticalBenchmarkSummaryFallback(item.slug) : [];
 }
 
 function findExampleHref(locale: string, kind: AiVerticalKind, catalog: AiCatalogItem[], provider: string, name: string): string | null {
@@ -200,6 +206,7 @@ export default function VerticalLandingPage({
               {catalog.map((item) => {
                 const detailHref = detailHrefForItem(locale, kind, item);
                 const providerLogo = providerLogoForItem(item);
+                const benchmarkSummaries = benchmarkSummariesForItem(item);
                 return (
                 <div key={`${item.provider}-${item.name}`} className="group relative grid grid-cols-12 gap-3 border-b px-4 py-4 transition-colors last:border-b-0 hover:bg-blue-50/50 dark:hover:bg-blue-950/20">
                   {detailHref && (
@@ -240,9 +247,9 @@ export default function VerticalLandingPage({
                         <div>
                           {(item.inputModalities ?? []).join(', ')} → {(item.outputModalities ?? []).join(', ')}
                         </div>
-                        {item.benchmarkSummaries && item.benchmarkSummaries.length > 0 && (
+                        {benchmarkSummaries.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-1">
-                            {item.benchmarkSummaries.slice(0, 2).map((summary) => (
+                            {benchmarkSummaries.slice(0, 2).map((summary) => (
                               <Badge key={`${summary.benchmarkSlug}-${summary.taskName}-${summary.metricName}`} variant="secondary">
                                 {formatBenchmarkSummary(summary, locale)}
                               </Badge>
@@ -272,9 +279,9 @@ export default function VerticalLandingPage({
                     )}
                   </div>
                   <div className="pointer-events-none relative z-10 col-span-3 hidden text-sm leading-6 text-zinc-600 lg:block dark:text-zinc-400">
-                    {item.benchmarkSummaries && item.benchmarkSummaries.length > 0 ? (
+                    {benchmarkSummaries.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
-                        {item.benchmarkSummaries.slice(0, 2).map((summary) => (
+                        {benchmarkSummaries.slice(0, 2).map((summary) => (
                           <Badge key={`${summary.benchmarkSlug}-${summary.taskName}-${summary.metricName}`} variant="secondary">
                             {formatBenchmarkSummary(summary, locale)}
                           </Badge>
