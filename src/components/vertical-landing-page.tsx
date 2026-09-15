@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import SiteHeader from '@/components/SiteHeader';
 import type { AiVerticalKind } from '@/lib/ai-verticals';
 import { verticalPageCopy } from '@/lib/ai-verticals';
-import { catalogForKind } from '@/lib/ai-vertical-catalog';
+import { catalogForKind, isRigorousModelKind } from '@/lib/ai-vertical-catalog';
 import { jsonLd, SITE_URL } from '@/lib/seo';
 
 const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> = {
@@ -21,6 +21,7 @@ export default function VerticalLandingPage({ locale, kind }: { locale: string; 
   const copy = verticalPageCopy(kind, locale);
   const links = CTA_LINKS[kind];
   const catalog = catalogForKind(kind);
+  const rigorousModelCatalog = isRigorousModelKind(kind);
   const catalogJson = jsonLd({
     '@type': 'ItemList',
     name: copy.title,
@@ -117,9 +118,13 @@ export default function VerticalLandingPage({ locale, kind }: { locale: string; 
                   {locale === 'zh' ? '目录追踪' : 'Catalog tracker'}
                 </h2>
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  {locale === 'zh'
-                    ? 'V1 先追踪公开产品、单位和能力；精确价格经验证后进入套餐和 usage_prices 表。'
-                    : 'V1 tracks public products, units and capabilities. Verified exact prices will move into plans and usage_prices.'}
+                  {rigorousModelCatalog
+                    ? locale === 'zh'
+                      ? '每条模型记录都标注输入/输出模态、访问方式、计价单位、价格置信度、官方来源和最后核验日期。'
+                      : 'Each model row tracks modalities, access paths, pricing unit, price confidence, official sources and last verification date.'
+                    : locale === 'zh'
+                      ? 'V1 先追踪公开产品、单位和能力；精确价格经验证后进入套餐和 usage_prices 表。'
+                      : 'V1 tracks public products, units and capabilities. Verified exact prices will move into plans and usage_prices.'}
                 </p>
               </div>
               <Badge variant="outline">{catalog.length}</Badge>
@@ -128,8 +133,10 @@ export default function VerticalLandingPage({ locale, kind }: { locale: string; 
               <div className="grid grid-cols-12 gap-3 border-b bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
                 <div className="col-span-4">{locale === 'zh' ? '产品' : 'Product'}</div>
                 <div className="col-span-2 hidden sm:block">{locale === 'zh' ? '状态' : 'Status'}</div>
-                <div className="col-span-3 hidden md:block">{locale === 'zh' ? '计价单位' : 'Unit'}</div>
-                <div className="col-span-8 sm:col-span-6 md:col-span-3">{locale === 'zh' ? '适合场景' : 'Best for'}</div>
+                <div className="col-span-3 hidden md:block">{locale === 'zh' ? '计价 / 访问' : 'Pricing / Access'}</div>
+                <div className="col-span-8 sm:col-span-6 md:col-span-3">
+                  {rigorousModelCatalog ? (locale === 'zh' ? '模态 / 来源' : 'Modalities / Source') : (locale === 'zh' ? '适合场景' : 'Best for')}
+                </div>
               </div>
               {catalog.map((item) => (
                 <div key={`${item.provider}-${item.name}`} className="grid grid-cols-12 gap-3 border-b px-4 py-4 last:border-b-0">
@@ -146,16 +153,44 @@ export default function VerticalLandingPage({ locale, kind }: { locale: string; 
                     <Badge variant={item.status === 'available' ? 'secondary' : 'outline'}>{item.status}</Badge>
                   </div>
                   <div className="col-span-3 hidden md:block text-sm text-zinc-600 dark:text-zinc-400">
-                    <div>{item.unit}</div>
+                    <div>{item.pricingUnit ?? item.unit}</div>
                     <div className="mt-1 text-xs text-zinc-500">{item.pricing}</div>
+                    {rigorousModelCatalog && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <Badge variant="outline">{item.pricingConfidence}</Badge>
+                        {item.access?.slice(0, 2).map((access) => (
+                          <Badge key={access} variant="secondary">{access}</Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="col-span-8 sm:col-span-6 md:col-span-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                    {item.bestFor}
-                    <div className="mt-2 hidden flex-wrap gap-1 md:flex">
-                      {item.capabilities.slice(0, 3).map((capability) => (
-                        <Badge key={capability} variant="outline">{capability}</Badge>
-                      ))}
-                    </div>
+                    {rigorousModelCatalog ? (
+                      <>
+                        <div>
+                          {(item.inputModalities ?? []).join(', ')} → {(item.outputModalities ?? []).join(', ')}
+                        </div>
+                        <div className="mt-1 text-xs text-zinc-500">
+                          {locale === 'zh' ? '核验' : 'Verified'}: {item.lastVerified}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {item.sourceUrls?.slice(0, 2).map((source) => (
+                            <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
+                              <Badge variant="outline">{source.publisher}</Badge>
+                            </a>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {item.bestFor}
+                        <div className="mt-2 hidden flex-wrap gap-1 md:flex">
+                          {item.capabilities.slice(0, 3).map((capability) => (
+                            <Badge key={capability} variant="outline">{capability}</Badge>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

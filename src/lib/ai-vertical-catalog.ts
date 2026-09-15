@@ -1,27 +1,56 @@
 export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model';
 
+export type AiCatalogStatus = 'available' | 'waitlist' | 'preview' | 'research' | 'announced';
+export type AiCatalogModality = 'text' | 'image' | 'video' | 'audio' | 'music' | '3d' | 'simulation' | 'code' | 'robotics';
+export type AiCatalogAccess = 'consumer-app' | 'api' | 'cloud-api' | 'open-weights' | 'research-preview' | 'enterprise' | 'waitlist';
+export type AiPricingConfidence = 'verified' | 'unit-only' | 'unknown' | 'not-commercial';
+export type AiModelCategory = 'video' | 'music' | 'world';
+
+export interface AiCatalogSource {
+  label: string;
+  url: string;
+  publisher: string;
+}
+
 export interface AiCatalogItem {
   kind: AiCatalogKind;
+  slug?: string;
   name: string;
   provider: string;
   providerSlug?: string;
-  status: 'available' | 'waitlist' | 'preview' | 'research' | 'announced';
+  status: AiCatalogStatus;
   pricing: string;
   unit: string;
   capabilities: string[];
   bestFor: string;
   url?: string;
+
+  /** Required for model-category catalog rows (video/music/world). */
+  modelCategory?: AiModelCategory;
+  inputModalities?: AiCatalogModality[];
+  outputModalities?: AiCatalogModality[];
+  access?: AiCatalogAccess[];
+  pricingUnit?: string;
+  pricingConfidence?: AiPricingConfidence;
+  sourceUrls?: AiCatalogSource[];
+  lastVerified?: string;
+  notes?: string;
 }
 
+const VERIFIED_AT = '2026-09-15';
+
 /**
- * Curated milestone catalog for the new vertical surfaces.
+ * Curated catalog for non-token AI categories.
  *
- * These entries are intentionally conservative: public-facing product names,
- * public status labels, and pricing-unit descriptions rather than exact prices.
- * Exact plan prices and scraped allowances will move into plans / usage_prices
- * after each vendor is verified. This lets the product ship with useful category
- * pages today without pretending that every creative or world-model unit is a
- * token price.
+ * Contract for video / music / world model rows:
+ * - product identity, modality, access path and pricing unit must be explicit;
+ * - priceConfidence distinguishes exact verified prices from unit-only tracking;
+ * - sourceUrls points to official vendor or research pages;
+ * - lastVerified records when this catalog entry was manually checked.
+ *
+ * This intentionally avoids pretending credits, generations, seconds and research
+ * previews are equivalent to token pricing. Exact numeric prices move into
+ * plans / usage_prices only after the source can be parsed and audited.
  */
 export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   // Agent / coding-agent plans
@@ -233,28 +262,54 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   // Video models
   {
     kind: 'video-model',
+    slug: 'sora',
     name: 'Sora',
     provider: 'OpenAI',
     providerSlug: 'openai',
     status: 'available',
-    pricing: 'ChatGPT plan allowance / future API',
+    pricing: 'Included in ChatGPT video generation allowances; API pricing is tracked separately when public.',
     unit: 'generations, seconds',
     capabilities: ['text-to-video', 'image-to-video', 'storyboard'],
     bestFor: 'OpenAI-native video generation and ChatGPT workflows.',
+    modelCategory: 'video',
+    inputModalities: ['text', 'image', 'video'],
+    outputModalities: ['video'],
+    access: ['consumer-app'],
+    pricingUnit: 'generation / seconds allowance',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Sora product page', url: 'https://openai.com/sora/', publisher: 'OpenAI' },
+      { label: 'OpenAI pricing', url: 'https://openai.com/chatgpt/pricing/', publisher: 'OpenAI' },
+    ],
+    lastVerified: VERIFIED_AT,
+    notes: 'Listed as a consumer-app video model; exact per-generation economics vary by ChatGPT plan and are not normalized to token price.',
   },
   {
     kind: 'video-model',
+    slug: 'veo',
     name: 'Veo',
     provider: 'Google',
     providerSlug: 'google',
     status: 'available',
-    pricing: 'Gemini / Vertex AI access',
+    pricing: 'Available through Gemini app tiers and Vertex AI / Google AI surfaces depending on model version.',
     unit: 'generations, seconds',
     capabilities: ['text-to-video', 'image-to-video', 'camera control'],
     bestFor: 'Google ecosystem video generation and API workflows.',
+    modelCategory: 'video',
+    inputModalities: ['text', 'image'],
+    outputModalities: ['video'],
+    access: ['consumer-app', 'cloud-api'],
+    pricingUnit: 'generation / second',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Google DeepMind Veo', url: 'https://deepmind.google/models/veo/', publisher: 'Google DeepMind' },
+      { label: 'Vertex AI generative AI pricing', url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', publisher: 'Google Cloud' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'video-model',
+    slug: 'kling',
     name: 'Kling',
     provider: 'Kuaishou',
     status: 'available',
@@ -262,9 +317,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'credits, generations',
     capabilities: ['text-to-video', 'image-to-video', 'motion control'],
     bestFor: 'High-quality clips with strong motion and character control.',
+    modelCategory: 'video',
+    inputModalities: ['text', 'image'],
+    outputModalities: ['video'],
+    access: ['consumer-app', 'api'],
+    pricingUnit: 'credits / generation',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Kling AI', url: 'https://klingai.com/', publisher: 'Kuaishou' },
+      { label: 'Kling API', url: 'https://app.klingai.com/global/dev/document-api', publisher: 'Kuaishou' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'video-model',
+    slug: 'runway-gen-4',
     name: 'Runway Gen-4',
     provider: 'Runway',
     status: 'available',
@@ -272,9 +339,22 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'credits, seconds',
     capabilities: ['video generation', 'editing', 'reference control'],
     bestFor: 'Professional creative teams and video iteration.',
+    modelCategory: 'video',
+    inputModalities: ['text', 'image', 'video'],
+    outputModalities: ['video'],
+    access: ['consumer-app', 'api'],
+    pricingUnit: 'credits / second',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Runway Gen-4', url: 'https://runwayml.com/research/introducing-runway-gen-4', publisher: 'Runway' },
+      { label: 'Runway pricing', url: 'https://runwayml.com/pricing', publisher: 'Runway' },
+      { label: 'Runway API docs', url: 'https://docs.dev.runwayml.com/', publisher: 'Runway' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'video-model',
+    slug: 'pika',
     name: 'Pika',
     provider: 'Pika',
     status: 'available',
@@ -282,9 +362,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'credits, generations',
     capabilities: ['video generation', 'effects', 'image-to-video'],
     bestFor: 'Short clips, effects and social formats.',
+    modelCategory: 'video',
+    inputModalities: ['text', 'image', 'video'],
+    outputModalities: ['video'],
+    access: ['consumer-app'],
+    pricingUnit: 'credits / generation',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Pika', url: 'https://pika.art/', publisher: 'Pika' },
+      { label: 'Pika pricing', url: 'https://pika.art/pricing', publisher: 'Pika' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'video-model',
+    slug: 'luma-ray',
     name: 'Luma Ray',
     provider: 'Luma AI',
     status: 'available',
@@ -292,20 +384,44 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'generations, credits',
     capabilities: ['video generation', 'cinematic motion', 'image-to-video'],
     bestFor: 'Cinematic outputs and fast creative iteration.',
+    modelCategory: 'video',
+    inputModalities: ['text', 'image'],
+    outputModalities: ['video'],
+    access: ['consumer-app', 'api'],
+    pricingUnit: 'generation / credits',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Dream Machine', url: 'https://lumalabs.ai/dream-machine', publisher: 'Luma AI' },
+      { label: 'Luma API docs', url: 'https://docs.lumalabs.ai/', publisher: 'Luma AI' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'video-model',
+    slug: 'hailuo-video',
     name: 'Hailuo Video',
     provider: 'MiniMax',
     providerSlug: 'minimax-china',
     status: 'available',
-    pricing: 'Credits / subscription',
+    pricing: 'Credits / subscription and API access',
     unit: 'credits, generations',
     capabilities: ['text-to-video', 'image-to-video', 'China access'],
     bestFor: 'China-accessible video generation workflows.',
+    modelCategory: 'video',
+    inputModalities: ['text', 'image'],
+    outputModalities: ['video'],
+    access: ['consumer-app', 'api'],
+    pricingUnit: 'credits / generation',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Hailuo AI', url: 'https://hailuoai.video/', publisher: 'MiniMax' },
+      { label: 'MiniMax platform', url: 'https://platform.minimaxi.com/', publisher: 'MiniMax' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'video-model',
+    slug: 'seedance',
     name: 'Seedance',
     provider: 'ByteDance / Volcano Engine',
     status: 'available',
@@ -313,9 +429,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'seconds, generations',
     capabilities: ['video generation', 'API', 'China access'],
     bestFor: 'Developer and enterprise video generation in ByteDance ecosystem.',
+    modelCategory: 'video',
+    inputModalities: ['text', 'image'],
+    outputModalities: ['video'],
+    access: ['cloud-api', 'enterprise'],
+    pricingUnit: 'seconds / generation',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Volcengine Ark', url: 'https://www.volcengine.com/product/ark', publisher: 'Volcengine' },
+      { label: 'Seedance model page', url: 'https://www.volcengine.com/docs/82379/1520757', publisher: 'Volcengine' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'video-model',
+    slug: 'wan-video',
     name: 'Wan / Tongyi Wanxiang Video',
     provider: 'Alibaba',
     providerSlug: 'qwen',
@@ -324,9 +452,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'seconds, generations',
     capabilities: ['text-to-video', 'image-to-video', 'China access'],
     bestFor: 'Alibaba Cloud and China-accessible video generation.',
+    modelCategory: 'video',
+    inputModalities: ['text', 'image'],
+    outputModalities: ['video'],
+    access: ['consumer-app', 'cloud-api'],
+    pricingUnit: 'generation / task',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Tongyi Wanxiang', url: 'https://tongyi.aliyun.com/wanxiang/', publisher: 'Alibaba' },
+      { label: 'Alibaba DashScope model studio', url: 'https://help.aliyun.com/zh/model-studio/', publisher: 'Alibaba Cloud' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'video-model',
+    slug: 'vidu',
     name: 'Vidu',
     provider: 'ShengShu',
     status: 'available',
@@ -334,11 +474,23 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'credits, generations',
     capabilities: ['video generation', 'image-to-video', 'character consistency'],
     bestFor: 'Video generation with character and reference control.',
+    modelCategory: 'video',
+    inputModalities: ['text', 'image'],
+    outputModalities: ['video'],
+    access: ['consumer-app', 'api'],
+    pricingUnit: 'credits / generation',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Vidu', url: 'https://www.vidu.com/', publisher: 'ShengShu' },
+      { label: 'Vidu API', url: 'https://platform.vidu.com/', publisher: 'ShengShu' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
 
   // Music / audio models
   {
     kind: 'music-model',
+    slug: 'suno',
     name: 'Suno',
     provider: 'Suno',
     status: 'available',
@@ -346,9 +498,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'credits, songs',
     capabilities: ['music generation', 'vocals', 'lyrics'],
     bestFor: 'Complete song generation with vocals.',
+    modelCategory: 'music',
+    inputModalities: ['text', 'audio'],
+    outputModalities: ['music', 'audio'],
+    access: ['consumer-app', 'api'],
+    pricingUnit: 'credits / song',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Suno', url: 'https://suno.com/', publisher: 'Suno' },
+      { label: 'Suno pricing', url: 'https://suno.com/pricing', publisher: 'Suno' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'music-model',
+    slug: 'udio',
     name: 'Udio',
     provider: 'Udio',
     status: 'available',
@@ -356,9 +520,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'credits, songs',
     capabilities: ['music generation', 'extend', 'remix'],
     bestFor: 'Music generation with editing and extension.',
+    modelCategory: 'music',
+    inputModalities: ['text', 'audio'],
+    outputModalities: ['music', 'audio'],
+    access: ['consumer-app'],
+    pricingUnit: 'credits / song',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Udio', url: 'https://www.udio.com/', publisher: 'Udio' },
+      { label: 'Udio pricing', url: 'https://www.udio.com/pricing', publisher: 'Udio' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'music-model',
+    slug: 'elevenlabs-music',
     name: 'ElevenLabs Music',
     provider: 'ElevenLabs',
     status: 'preview',
@@ -366,9 +542,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'minutes, generations',
     capabilities: ['music', 'voice', 'audio production'],
     bestFor: 'Audio workflows that combine music, voice and dubbing.',
+    modelCategory: 'music',
+    inputModalities: ['text', 'audio'],
+    outputModalities: ['music', 'audio'],
+    access: ['consumer-app', 'api'],
+    pricingUnit: 'minutes / characters / generations',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'ElevenLabs music', url: 'https://elevenlabs.io/music', publisher: 'ElevenLabs' },
+      { label: 'ElevenLabs pricing', url: 'https://elevenlabs.io/pricing', publisher: 'ElevenLabs' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'music-model',
+    slug: 'stable-audio',
     name: 'Stable Audio',
     provider: 'Stability AI',
     status: 'available',
@@ -376,9 +564,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'seconds, generations',
     capabilities: ['music', 'sound effects', 'API'],
     bestFor: 'Music and sound effects for apps and media.',
+    modelCategory: 'music',
+    inputModalities: ['text', 'audio'],
+    outputModalities: ['music', 'audio'],
+    access: ['consumer-app', 'api'],
+    pricingUnit: 'seconds / generation / credits',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Stable Audio', url: 'https://www.stableaudio.com/', publisher: 'Stability AI' },
+      { label: 'Stability AI API pricing', url: 'https://platform.stability.ai/pricing', publisher: 'Stability AI' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'music-model',
+    slug: 'minimax-audio',
     name: 'MiniMax Audio',
     provider: 'MiniMax',
     providerSlug: 'minimax-china',
@@ -387,9 +587,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'characters, minutes, generations',
     capabilities: ['speech', 'voice', 'audio'],
     bestFor: 'China-accessible audio and voice generation.',
+    modelCategory: 'music',
+    inputModalities: ['text', 'audio'],
+    outputModalities: ['audio'],
+    access: ['api'],
+    pricingUnit: 'characters / minutes',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'MiniMax platform', url: 'https://platform.minimaxi.com/', publisher: 'MiniMax' },
+      { label: 'MiniMax audio docs', url: 'https://platform.minimaxi.com/document/', publisher: 'MiniMax' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'music-model',
+    slug: 'seed-audio',
     name: 'Seed Audio',
     provider: 'ByteDance',
     status: 'preview',
@@ -397,9 +609,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'minutes, generations',
     capabilities: ['audio generation', 'speech', 'music research'],
     bestFor: 'ByteDance ecosystem audio generation and research tracking.',
+    modelCategory: 'music',
+    inputModalities: ['text', 'audio'],
+    outputModalities: ['audio', 'music'],
+    access: ['cloud-api', 'research-preview'],
+    pricingUnit: 'minutes / generation',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'Seed audio research', url: 'https://seed.bytedance.com/en/', publisher: 'ByteDance Seed' },
+      { label: 'Volcengine Ark', url: 'https://www.volcengine.com/product/ark', publisher: 'Volcengine' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'music-model',
+    slug: 'google-lyria',
     name: 'Google MusicFX / Lyria',
     provider: 'Google DeepMind',
     providerSlug: 'google',
@@ -408,9 +632,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'generations, minutes',
     capabilities: ['music generation', 'research', 'artist tools'],
     bestFor: 'Tracking Google music-generation capabilities as they productize.',
+    modelCategory: 'music',
+    inputModalities: ['text'],
+    outputModalities: ['music', 'audio'],
+    access: ['consumer-app', 'research-preview'],
+    pricingUnit: 'generation / availability',
+    pricingConfidence: 'unknown',
+    sourceUrls: [
+      { label: 'Google DeepMind Lyria', url: 'https://deepmind.google/technologies/lyria/', publisher: 'Google DeepMind' },
+      { label: 'MusicFX', url: 'https://aitestkitchen.withgoogle.com/tools/music-fx', publisher: 'Google' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'music-model',
+    slug: 'meta-musicgen',
     name: 'Meta MusicGen',
     provider: 'Meta',
     status: 'research',
@@ -418,11 +654,23 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'compute',
     capabilities: ['music generation', 'open weights', 'research'],
     bestFor: 'Open model research and self-hosted experimentation.',
+    modelCategory: 'music',
+    inputModalities: ['text', 'audio'],
+    outputModalities: ['music', 'audio'],
+    access: ['open-weights'],
+    pricingUnit: 'self-hosted compute',
+    pricingConfidence: 'not-commercial',
+    sourceUrls: [
+      { label: 'MusicGen paper/code', url: 'https://github.com/facebookresearch/audiocraft', publisher: 'Meta AI' },
+      { label: 'MusicGen model card', url: 'https://huggingface.co/facebook/musicgen-large', publisher: 'Meta AI' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
 
   // World models
   {
     kind: 'world-model',
+    slug: 'genie-2',
     name: 'Genie / Genie 2',
     provider: 'Google DeepMind',
     providerSlug: 'google',
@@ -431,9 +679,20 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'availability',
     capabilities: ['interactive worlds', 'prompt-to-environment', 'control'],
     bestFor: 'Tracking interactive world generation research.',
+    modelCategory: 'world',
+    inputModalities: ['text', 'image'],
+    outputModalities: ['simulation', 'video'],
+    access: ['research-preview'],
+    pricingUnit: 'not commercially priced',
+    pricingConfidence: 'not-commercial',
+    sourceUrls: [
+      { label: 'Genie 2', url: 'https://deepmind.google/discover/blog/genie-2-a-large-scale-foundation-world-model/', publisher: 'Google DeepMind' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'world-model',
+    slug: 'nvidia-cosmos',
     name: 'Cosmos',
     provider: 'NVIDIA',
     status: 'preview',
@@ -441,9 +700,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'compute, API',
     capabilities: ['robotics', 'simulation', 'physical AI'],
     bestFor: 'Robotics and physical-world simulation workflows.',
+    modelCategory: 'world',
+    inputModalities: ['text', 'image', 'video', 'robotics'],
+    outputModalities: ['video', 'simulation'],
+    access: ['open-weights', 'cloud-api', 'enterprise'],
+    pricingUnit: 'self-hosted compute / cloud API',
+    pricingConfidence: 'unit-only',
+    sourceUrls: [
+      { label: 'NVIDIA Cosmos', url: 'https://www.nvidia.com/en-us/ai/cosmos/', publisher: 'NVIDIA' },
+      { label: 'Cosmos models', url: 'https://build.nvidia.com/nvidia/cosmos', publisher: 'NVIDIA' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'world-model',
+    slug: 'world-labs',
     name: 'World Labs',
     provider: 'World Labs',
     status: 'preview',
@@ -451,9 +722,20 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'availability',
     capabilities: ['3D worlds', 'scene generation', 'spatial intelligence'],
     bestFor: '3D world generation and spatial AI tracking.',
+    modelCategory: 'world',
+    inputModalities: ['image', 'text'],
+    outputModalities: ['3d', 'simulation'],
+    access: ['research-preview', 'waitlist'],
+    pricingUnit: 'availability',
+    pricingConfidence: 'unknown',
+    sourceUrls: [
+      { label: 'World Labs', url: 'https://www.worldlabs.ai/', publisher: 'World Labs' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'world-model',
+    slug: 'jepa-world-models',
     name: 'JEPA-style world models',
     provider: 'Meta / research',
     status: 'research',
@@ -461,9 +743,21 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'availability',
     capabilities: ['representation learning', 'planning', 'world modeling'],
     bestFor: 'Research tracking rather than buyer comparison.',
+    modelCategory: 'world',
+    inputModalities: ['image', 'video'],
+    outputModalities: ['simulation'],
+    access: ['research-preview', 'open-weights'],
+    pricingUnit: 'not commercially priced',
+    pricingConfidence: 'not-commercial',
+    sourceUrls: [
+      { label: 'JEPA overview', url: 'https://ai.meta.com/blog/yann-lecun-ai-model-i-jepa/', publisher: 'Meta AI' },
+      { label: 'V-JEPA', url: 'https://ai.meta.com/blog/v-jepa-yann-lecun-ai-model-video-joint-embedding-predictive-architecture/', publisher: 'Meta AI' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'world-model',
+    slug: 'gamengen',
     name: 'GameNGen-style game worlds',
     provider: 'Research',
     status: 'research',
@@ -471,9 +765,20 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'availability',
     capabilities: ['game simulation', 'interactive video', 'world state'],
     bestFor: 'Tracking neural game and interactive environment generation.',
+    modelCategory: 'world',
+    inputModalities: ['video', 'simulation'],
+    outputModalities: ['video', 'simulation'],
+    access: ['research-preview'],
+    pricingUnit: 'not commercially priced',
+    pricingConfidence: 'not-commercial',
+    sourceUrls: [
+      { label: 'GameNGen project', url: 'https://gamengen.github.io/', publisher: 'Research project' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
   {
     kind: 'world-model',
+    slug: 'robotics-foundation-models',
     name: 'Robotics foundation models',
     provider: 'Multiple labs',
     status: 'preview',
@@ -481,9 +786,26 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     unit: 'API, compute, license',
     capabilities: ['robotics', 'policy learning', 'simulation'],
     bestFor: 'Enterprise robotics and embodied AI evaluation.',
+    modelCategory: 'world',
+    inputModalities: ['text', 'image', 'video', 'robotics'],
+    outputModalities: ['robotics', 'simulation'],
+    access: ['enterprise', 'research-preview'],
+    pricingUnit: 'enterprise license / compute',
+    pricingConfidence: 'unknown',
+    sourceUrls: [
+      { label: 'Google DeepMind robotics', url: 'https://deepmind.google/discover/blog/scaling-up-learning-across-many-different-robot-types/', publisher: 'Google DeepMind' },
+      { label: 'NVIDIA physical AI', url: 'https://www.nvidia.com/en-us/industries/robotics/', publisher: 'NVIDIA' },
+    ],
+    lastVerified: VERIFIED_AT,
   },
 ];
 
+export const RIGOROUS_MODEL_KINDS: AiCatalogKind[] = ['video-model', 'music-model', 'world-model'];
+
 export function catalogForKind(kind: AiCatalogKind): AiCatalogItem[] {
   return AI_VERTICAL_CATALOG.filter((item) => item.kind === kind);
+}
+
+export function isRigorousModelKind(kind: AiCatalogKind): boolean {
+  return RIGOROUS_MODEL_KINDS.includes(kind);
 }

@@ -12,6 +12,8 @@ on:
       - 'scripts/audit-data.ts'
       - 'scripts/fix-data-audit.ts'
       - 'scripts/fix-plans-audit.ts'
+      - 'scripts/audit-vertical-catalog.ts'
+      - 'src/lib/ai-vertical-catalog.ts'
       - 'src/db/schema/**'
 
 permissions:
@@ -41,6 +43,9 @@ jobs:
 
       - name: Type-check
         run: npx tsc --noEmit
+
+      - name: Audit vertical catalog
+        run: npm run audit:verticals
 
   # Manual recovery/inspection run against production, inside the compose
   # network — no database credentials need to live in GitHub secrets.
