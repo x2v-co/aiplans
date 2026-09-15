@@ -16,6 +16,7 @@ interface UrlEntry {
 
 const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['changeFrequency'] }[] = [
   { path: '', priority: 1.0, changefreq: 'daily' },
+  { path: '/models', priority: 0.9, changefreq: 'daily' },
   { path: '/api-pricing', priority: 0.9, changefreq: 'daily' },
   { path: '/calculator', priority: 0.9, changefreq: 'daily' },
   { path: '/compare/plans', priority: 0.9, changefreq: 'daily' },

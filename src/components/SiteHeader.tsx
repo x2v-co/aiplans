@@ -91,6 +91,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const isModelsActive =
     pathname?.startsWith(`/${locale}/compare/models`) ||
     pathname?.startsWith(`/${locale}/api-pricing`) ||
+    pathname === `/${locale}/models` ||
     pathname?.startsWith(`/${locale}/models/`) ||
     pathname?.startsWith(`/${locale}/video-models`) ||
     pathname?.startsWith(`/${locale}/music-models`) ||
@@ -103,18 +104,19 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
   const modelGroups: NavGroup[] = [
     {
-      label: t('generalModelsGroup'),
+      label: t('modelCatalogsGroup'),
       items: [
-        { href: `/${locale}/compare/models`, label: t('generalModels'), active: pathname?.startsWith(`/${locale}/compare/models`) },
-        { href: `/${locale}/api-pricing`, label: t('apiModelPricing'), active: pathname?.startsWith(`/${locale}/api-pricing`) || pathname?.startsWith(`/${locale}/models/`) },
-      ],
-    },
-    {
-      label: t('multimodalModelsGroup'),
-      items: [
+        { href: `/${locale}/models`, label: t('generalModelCatalog'), active: pathname === `/${locale}/models` || pathname?.startsWith(`/${locale}/models/`) },
         { href: `/${locale}/video-models`, label: t('videoModels'), active: pathname?.startsWith(`/${locale}/video-models`) },
         { href: `/${locale}/music-models`, label: t('musicModels'), active: pathname?.startsWith(`/${locale}/music-models`) },
         { href: `/${locale}/world-models`, label: t('worldModels'), active: pathname?.startsWith(`/${locale}/world-models`) },
+      ],
+    },
+    {
+      label: t('comparePricingGroup'),
+      items: [
+        { href: `/${locale}/compare/models`, label: t('compareModels'), active: pathname?.startsWith(`/${locale}/compare/models`) },
+        { href: `/${locale}/api-pricing`, label: t('apiModelPricing'), active: pathname?.startsWith(`/${locale}/api-pricing`) },
       ],
     },
   ];
