@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getVerticalModelCatalog } from '@/lib/vertical-models';
+import { arenaVideoLeaderboardCatalogItems } from '@/lib/arena-video-leaderboard';
 import { buildMetadata, breadcrumbList, faqPage, SITE_URL, type Locale } from '@/lib/seo';
 import VideoModelCompareView from './video-model-compare-view';
 
@@ -46,7 +47,13 @@ export default async function CompareVideoModelsPage({ params }: { params: Promi
   const { locale } = await params;
   const isZh = locale === 'zh';
   const loc = (locale === 'zh' ? 'zh' : 'en') as Locale;
-  const models = await getVerticalModelCatalog('video-model');
+  const catalogModels = await getVerticalModelCatalog('video-model');
+  const leaderboardModels = arenaVideoLeaderboardCatalogItems();
+  const leaderboardSlugs = new Set(leaderboardModels.map((model) => model.slug));
+  const models = [
+    ...leaderboardModels,
+    ...catalogModels.filter((model) => !model.slug || !leaderboardSlugs.has(model.slug)),
+  ];
   const crumbs = breadcrumbList([
     { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
     { name: isZh ? '视频模型对比' : 'Video model compare', url: `${SITE_URL}/${locale}/compare/video-models` },

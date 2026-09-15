@@ -9,11 +9,12 @@
  *   currently exposes video/image/search/chat/webdev ranks, not audio/music.
  */
 import { db } from './db/queries';
+import { ARENA_TEXT_TO_VIDEO_LEADERBOARD, ARENA_TEXT_TO_VIDEO_URL, arenaVideoSlug } from '../src/lib/arena-video-leaderboard';
 
 const APPLY = process.argv.includes('--apply');
 const VERIFIED_DATE = '2026-09-15';
 const VBENCH_URL = 'https://vchitect-vbench-leaderboard.hf.space';
-const ARENA_URL = 'https://arena.ai/leaderboard/video';
+const ARENA_URL = ARENA_TEXT_TO_VIDEO_URL;
 
 interface BenchmarkSeed {
   modelSlug: string;
@@ -33,6 +34,22 @@ interface BenchmarkSeed {
 
 interface ModelRow { id: number; slug: string; name: string }
 
+const ORG_PROVIDER: Record<string, { slug: string; name: string; website?: string }> = {
+  Google: { slug: 'google', name: 'Google', website: 'https://deepmind.google/' },
+  Alibaba: { slug: 'qwen', name: 'Alibaba / Qwen', website: 'https://tongyi.aliyun.com/' },
+  Bytedance: { slug: 'volcengine', name: 'ByteDance / Volcano Engine', website: 'https://www.volcengine.com/' },
+  OpenAI: { slug: 'openai', name: 'OpenAI', website: 'https://openai.com/' },
+  Runway: { slug: 'runway', name: 'Runway', website: 'https://runwayml.com/' },
+  KlingAI: { slug: 'kuaishou', name: 'Kuaishou / Kling', website: 'https://klingai.com/' },
+  'Luma AI': { slug: 'luma-ai', name: 'Luma AI', website: 'https://lumalabs.ai/' },
+  MiniMax: { slug: 'minimax-china', name: 'MiniMax', website: 'https://www.minimaxi.com/' },
+  Pika: { slug: 'pika', name: 'Pika', website: 'https://pika.art/' },
+  Meta: { slug: 'meta', name: 'Meta', website: 'https://ai.meta.com/' },
+  'Black Forest Labs': { slug: 'bfl', name: 'Black Forest Labs', website: 'https://blackforestlabs.ai/' },
+  SpaceXAI: { slug: 'xai', name: 'xAI', website: 'https://x.ai/' },
+  'Genmo AI': { slug: 'genmo', name: 'Genmo', website: 'https://www.genmo.ai/' },
+};
+
 const VBENCH = {
   slug: 'vbench',
   name: 'VBench',
@@ -51,13 +68,13 @@ const VBENCH_PLUS = {
   notes: 'Scores copied from the public VBench++ leaderboard. Values are percentages and must not be mixed with token/text benchmarks.',
 };
 
-const ARENA_AI_VIDEO = {
-  slug: 'arena-ai-video',
-  name: 'Arena AI Video',
+const ARENA_AI_TEXT_TO_VIDEO = {
+  slug: 'arena-ai-text-to-video',
+  name: 'Arena AI Text-to-Video',
   type: 'video',
   officialUrl: ARENA_URL,
   versionLabel: `leaderboard-${VERIFIED_DATE}`,
-  notes: 'Ranks copied from the public Arena AI video leaderboard embedded in arena.ai. Lower rank is better. Arena AI currently exposes no public audio/music rank in rankByModality.',
+  notes: 'Ranks and Elo ratings copied from the public Arena AI text-to-video leaderboard.entries payload. Entries are version-level rows; lower rank is better. Do not collapse them into family-level catalog rows.',
 };
 
 const SCORE_SEEDS: BenchmarkSeed[] = [
@@ -141,36 +158,78 @@ const SCORE_SEEDS: BenchmarkSeed[] = [
     { name: 'QUALITY_SCORE', unit: 'percent', description: 'VBench++ Quality Score', value: 80.89 },
   ] },
 
-  // Arena AI public video leaderboard. Lower rank is better. Rows are mapped to
-  // our family-level catalog entries only when the vendor/model family is clear.
-  { modelSlug: 'seedance', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'dreamina-seedance-2.5-720p', metrics: [
-    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 5, higherBetter: false },
-  ] },
-  { modelSlug: 'veo', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'veo-3.1-audio', metrics: [
-    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 11, higherBetter: false },
-  ] },
-  { modelSlug: 'wan-video', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'wan2.7-t2v', metrics: [
-    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 18, higherBetter: false },
-  ] },
-  { modelSlug: 'runway-gen-4', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'runway-gen-4.5', metrics: [
-    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 26, higherBetter: false },
-  ] },
-  { modelSlug: 'kling', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'kling-2.5-turbo-1080p', metrics: [
-    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 27, higherBetter: false },
-  ] },
-  { modelSlug: 'luma-ray', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'ray-3', metrics: [
-    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 30, higherBetter: false },
-  ] },
-  { modelSlug: 'hailuo-video', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'hailuo-2.3', metrics: [
-    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 31, higherBetter: false },
-  ] },
-  { modelSlug: 'sora', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'sora', metrics: [
-    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 44, higherBetter: false },
-  ] },
-  { modelSlug: 'pika', benchmark: ARENA_AI_VIDEO, task: 'Video leaderboard', releaseDate: VERIFIED_DATE, sourceModelName: 'pika-v2.2', metrics: [
-    { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI video leaderboard rank', value: 46, higherBetter: false },
-  ] },
+  ...ARENA_TEXT_TO_VIDEO_LEADERBOARD.map((entry): BenchmarkSeed => ({
+    modelSlug: arenaVideoSlug(entry.modelDisplayName),
+    benchmark: ARENA_AI_TEXT_TO_VIDEO,
+    task: 'Text-to-video leaderboard',
+    releaseDate: VERIFIED_DATE,
+    sourceModelName: entry.modelDisplayName,
+    metrics: [
+      { name: 'ARENA_RANK', unit: 'rank', description: 'Arena AI text-to-video leaderboard rank', value: entry.rank, higherBetter: false },
+      { name: 'ARENA_ELO', unit: 'elo', description: 'Arena AI text-to-video Elo rating', value: entry.rating },
+      { name: 'VOTES', unit: 'count', description: 'Arena AI text-to-video vote count', value: entry.votes },
+    ],
+  })),
 ];
+
+async function ensureProvider(slug: string, name: string, website?: string): Promise<number> {
+  const { data, error } = await db.from('providers').select('id').eq('slug', slug).maybeSingle();
+  if (error) throw error;
+  if (data) return data.id as number;
+  console.log(`  ➕ provider ${slug}`);
+  if (!APPLY) return -Math.floor(Math.random() * 1_000_000);
+  const res = await db.from('providers').insert({ slug, name, website, type: 'official', region: 'global', access_from_china: true }).select('id').single();
+  if (res.error) throw res.error;
+  return res.data.id as number;
+}
+
+async function ensureArenaLeaderboardModels() {
+  for (const entry of ARENA_TEXT_TO_VIDEO_LEADERBOARD) {
+    const provider = ORG_PROVIDER[entry.modelOrganization] ?? { slug: arenaVideoSlug(entry.modelOrganization || 'unknown'), name: entry.modelOrganization || 'Unknown' };
+    const providerId = await ensureProvider(provider.slug, provider.name, provider.website);
+    const slug = arenaVideoSlug(entry.modelDisplayName);
+    const description = `Version-level text-to-video leaderboard entry from Arena AI. Status: available. Pricing confidence: unknown. Last verified: ${VERIFIED_DATE}. Notes: Arena AI rank #${entry.rank}; Elo ${entry.rating.toFixed(1)}; votes ${entry.votes}. This is not collapsed into a family-level model. Sources: Arena AI: ${ARENA_URL}${entry.modelUrl ? ` | ${entry.modelOrganization}: ${entry.modelUrl}` : ''}`;
+    const existing = await db.from('models').select('id').eq('slug', slug).maybeSingle();
+    if (existing.error) throw existing.error;
+    const payload = {
+      name: entry.modelDisplayName,
+      type: 'video',
+      model_category: 'video',
+      description,
+      offical_link: entry.modelUrl ?? ARENA_URL,
+      input_modalities: ['text'],
+      output_modalities: ['video'],
+      capabilities: ['leaderboard-version', 'text-to-video'],
+      pricing_unit: 'source-dependent',
+      open_source: entry.license ? /apache|mit|open/i.test(entry.license) : false,
+      provider_ids: [providerId],
+    };
+    if (existing.data) {
+      console.log(`  ↻ arena model ${slug}`);
+      if (APPLY) {
+        const { error } = await db.from('models').update(payload).eq('id', existing.data.id);
+        if (error) throw error;
+      }
+    } else {
+      console.log(`  ➕ arena model ${slug}`);
+      if (APPLY) {
+        const { error } = await db.from('models').insert({ slug, ...payload });
+        if (error) throw error;
+      }
+    }
+  }
+}
+
+async function disableLegacyArenaFamilyBenchmark() {
+  const { data, error } = await db.from('benchmarks').select('id').eq('slug', 'arena-ai-video').maybeSingle();
+  if (error) throw error;
+  if (!data) return;
+  console.log('  ↻ disabling legacy series-level arena-ai-video benchmark versions');
+  if (APPLY) {
+    const { error: updateError } = await db.from('benchmark_versions').update({ is_current: false }).eq('benchmark_id', data.id);
+    if (updateError) throw updateError;
+  }
+}
 
 async function loadModels(): Promise<Map<string, ModelRow>> {
   const slugs = [...new Set(SCORE_SEEDS.map((seed) => seed.modelSlug))];
@@ -264,6 +323,8 @@ async function upsertScore(modelId: number, taskId: number, metricId: number, va
 
 async function main() {
   console.log(`\n📊 seed-vertical-benchmarks ${APPLY ? '[APPLY]' : '[DRY-RUN]'} (${SCORE_SEEDS.length} source rows)\n`);
+  await disableLegacyArenaFamilyBenchmark();
+  await ensureArenaLeaderboardModels();
   const models = await loadModels();
   const chainCache = new Map<string, { taskId: number; metrics: Map<string, number> }>();
   let processed = 0;

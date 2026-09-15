@@ -73,8 +73,16 @@ export default function VideoModelCompareView({ locale, models }: { locale: stri
 
   const comparisonRows = [
     {
-      label: isZh ? 'Arena AI 视频排名' : 'Arena AI video rank',
+      label: isZh ? 'Arena AI 文生视频排名' : 'Arena AI text-to-video rank',
       value: (item: AiCatalogItem) => summaryValue(item, (summary) => summary.metricName === 'ARENA_RANK'),
+    },
+    {
+      label: 'Arena AI Elo',
+      value: (item: AiCatalogItem) => summaryValue(item, (summary) => summary.metricName === 'ARENA_ELO'),
+    },
+    {
+      label: isZh ? 'Arena AI 投票数' : 'Arena AI votes',
+      value: (item: AiCatalogItem) => summaryValue(item, (summary) => summary.metricName === 'VOTES'),
     },
     {
       label: 'VBench',
@@ -126,8 +134,8 @@ export default function VideoModelCompareView({ locale, models }: { locale: stri
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             {isZh
-              ? '选择 2–4 个视频模型，对比 Arena AI 视频排名、VBench / VBench++、输入输出模态、访问方式和计价口径。排名和分数保留原始来源，不合成为站内总分。'
-              : 'Select 2–4 video models to compare Arena AI video rank, VBench / VBench++, modalities, access paths and pricing units. Scores keep their original source and are not merged into a site-wide score.'}
+              ? '选择 2–4 个视频模型，对比 Arena AI 文生视频版本级排名 / Elo、VBench / VBench++、输入输出模态、访问方式和计价口径。排名和分数保留原始来源，不合成为站内总分。'
+              : 'Select 2–4 video models to compare Arena AI text-to-video version rank / Elo, VBench / VBench++, modalities, access paths and pricing units. Scores keep their original source and are not merged into a site-wide score.'}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href={`/${locale}/video-models`}>
@@ -184,7 +192,7 @@ export default function VideoModelCompareView({ locale, models }: { locale: stri
               <Card>
                 <CardContent className="p-5">
                   <div className="text-3xl font-bold">{models.filter((item) => rankValue(item) != null).length}</div>
-                  <div className="mt-1 text-sm text-zinc-500">{isZh ? '有 Arena 排名' : 'with Arena rank'}</div>
+                  <div className="mt-1 text-sm text-zinc-500">{isZh ? '有 Arena 文生视频排名' : 'with Arena T2V rank'}</div>
                 </CardContent>
               </Card>
               <Card>

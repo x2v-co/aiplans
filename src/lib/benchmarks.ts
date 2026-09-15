@@ -16,6 +16,7 @@ export interface ModelBenchmarkScore {
 
 const DISPLAY_ORDER = [
   'arena-agent',
+  'arena-ai-text-to-video',
   'arena-ai-video',
   'gpqa-diamond',
   'humanitys-last-exam',
