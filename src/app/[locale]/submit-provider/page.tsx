@@ -24,29 +24,27 @@ export async function generateMetadata({
       zh: '提交 AI 供应商或专属优惠 | aiplans.dev',
     },
     description: {
-      en: 'Ask aiplans.dev to list your AI API provider, verify model pricing, or add an exclusive discount for developers.',
-      zh: '向 aiplans.dev 提交 AI API 供应商、校验模型价格，或为开发者提供专属优惠。',
+      en: 'Share a provider pricing API, model endpoint, public JSON, or exclusive discount so aiplans.dev can list and update your data accurately.',
+      zh: '提交供应商价格 API、模型接口、公开 JSON 或专属优惠，帮助 aiplans.dev 准确收录并自动更新数据。',
     },
   });
 }
 
 const fields = {
   en: [
-    'Provider name, website, and registration URL',
-    'Supported models, aliases, and availability',
-    'Input/output API pricing per 1M tokens, plus cache or media pricing if relevant',
-    'Billing currency, minimum top-up, and supported payment methods',
-    'Region availability and mainland China access',
-    'Official contact and verification sources',
+    'Preferred: pricing API, models API, public JSON, OpenAPI spec, or stable docs endpoint',
+    'Auth and rate-limit notes if the endpoint is not public',
+    'Registration or invite URL for users',
+    'Official contact for future pricing/model verification',
+    'Manual model and pricing details only when no data source exists',
     'Optional exclusive offer for aiplans.dev users',
   ],
   zh: [
-    '供应商名称、官网和注册入口',
-    '支持的模型、别名和可用状态',
-    '每 1M tokens 的输入/输出 API 价格，以及缓存、多媒体等价格',
-    '结算货币、最低充值额和支持的支付方式',
-    '区域可用性和中国大陆访问情况',
-    '官方联系方式和可验证来源',
+    '优先提供：价格 API、模型 API、公开 JSON、OpenAPI spec 或稳定文档接口',
+    '如果接口非公开，请说明鉴权方式和频率限制',
+    '用户注册入口或邀请链接',
+    '用于后续价格/模型校验的官方联系方式',
+    '只有没有数据源时，才需要人工填写模型和价格细节',
     '可选的 aiplans.dev 用户专属优惠',
   ],
 };
@@ -81,8 +79,8 @@ export default async function SubmitProviderPage({
     {
       question: isZh ? '提交后多久上线？' : 'How long does review take?',
       answer: isZh
-        ? '取决于信息完整度。包含模型列表、价格、地区、联系方式和验证来源的提交通常最容易处理。'
-        : 'It depends on completeness. Submissions with models, pricing, regions, contact details, and verification sources are easiest to review.',
+        ? '取决于信息完整度。最容易处理的是可机器读取的数据源，例如价格 API、模型 API、公开 JSON 或稳定文档接口；没有数据源时再人工提交模型和价格。'
+        : 'It depends on completeness. Machine-readable sources such as pricing APIs, model APIs, public JSON, or stable docs endpoints are easiest to review; manual model and price fields are the fallback.',
     },
   ]);
   const webPageJson = jsonLd({
@@ -90,8 +88,8 @@ export default async function SubmitProviderPage({
     name: isZh ? '提交 AI 供应商或专属优惠' : 'Submit an AI provider or exclusive offer',
     url: pageUrl,
     description: isZh
-      ? '提交 AI API 供应商、模型价格和专属优惠，帮助 aiplans.dev 保持价格数据准确。'
-      : 'Submit AI API providers, model pricing, and exclusive offers to help keep aiplans.dev accurate.',
+      ? '提交 AI API 供应商数据源、模型价格和专属优惠，帮助 aiplans.dev 保持价格数据准确并可持续更新。'
+      : 'Submit AI API provider data sources, model pricing, and exclusive offers to help keep aiplans.dev accurate and continuously updated.',
   });
 
   return (
@@ -107,12 +105,12 @@ export default async function SubmitProviderPage({
             {isZh ? '供应商与优惠提交' : 'Provider and deal submissions'}
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-            {isZh ? '提交 AI 供应商、价格或专属优惠' : 'Submit an AI provider, pricing update, or exclusive offer'}
+            {isZh ? '提交 AI 供应商数据源、价格或专属优惠' : 'Submit a provider data source, pricing update, or exclusive offer'}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
             {isZh
-              ? 'aiplans.dev 帮助开发者比较同一模型在官方、云厂商、聚合平台和转售渠道中的价格。欢迎供应商提交信息，帮助我们准确收录模型、价格、地区可用性和优惠。'
-              : 'aiplans.dev helps developers compare the same model across official, cloud, aggregator, and reseller channels. Providers can submit verified models, prices, regions, and deals for review.'}
+              ? 'aiplans.dev 帮助开发者比较同一模型在官方、云厂商、聚合平台和转售渠道中的价格。欢迎供应商优先提供可抓取的数据源，帮助我们准确收录并持续更新模型、价格、地区可用性和优惠。'
+              : 'aiplans.dev helps developers compare the same model across official, cloud, aggregator, and reseller channels. Providers can share machine-readable data sources first, so we can list and update models, prices, regions, and deals accurately.'}
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Button asChild size="lg">
@@ -166,8 +164,8 @@ export default async function SubmitProviderPage({
             </CardHeader>
             <CardContent className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
               {isZh
-                ? '后续价格或模型变化，可以通过邮件或 issue 更新。我们会保留最后验证时间。'
-                : 'Future model or price changes can be sent by email or issue. We keep last-verified timestamps visible where possible.'}
+                ? '最理想的是接入你们的价格 API、模型 API 或公开 JSON。后续价格或模型变化即可自动更新，并保留最后验证时间。'
+                : 'The best path is a pricing API, models API, or public JSON. Future model or price changes can then update automatically, with last-verified timestamps where possible.'}
             </CardContent>
           </Card>
         </section>
@@ -175,7 +173,7 @@ export default async function SubmitProviderPage({
         <section className="mt-12 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <Card>
             <CardHeader>
-              <CardTitle>{isZh ? '请准备这些信息' : 'What to include'}</CardTitle>
+              <CardTitle>{isZh ? '优先提供数据源' : 'Prefer data sources'}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="grid gap-3 text-sm text-zinc-700 dark:text-zinc-300">
