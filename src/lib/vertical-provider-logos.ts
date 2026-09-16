@@ -14,6 +14,8 @@ export const VERTICAL_PROVIDER_LOGOS: Record<string, string> = {
   qwen: 'https://www.google.com/s2/favicons?domain=qwenlm.github.io&sz=128',
   shengshu: 'https://www.google.com/s2/favicons?domain=vidu.com&sz=128',
   nvidia: 'https://www.google.com/s2/favicons?domain=nvidia.com&sz=128',
+  skyreels: 'https://www.google.com/s2/favicons?domain=skyreels.ai&sz=128',
+  mureka: 'https://www.google.com/s2/favicons?domain=mureka.ai&sz=128',
   'world-labs': 'https://www.google.com/s2/favicons?domain=worldlabs.ai&sz=128',
   meta: 'https://www.google.com/s2/favicons?domain=meta.com&sz=128',
   'stability-ai': 'https://www.google.com/s2/favicons?domain=stability.ai&sz=128',
