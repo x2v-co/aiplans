@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, SquarePen } from "lucide-react";
 import { sql, INT4_ARRAY } from "@/lib/db";
 import { formatPrice, CurrencyCode } from "@/lib/currency";
 import { getAllModelIdsForProvider, getPlanYearlyMonthly } from "@/lib/schema-adapters";
@@ -117,6 +117,8 @@ export default async function ProviderPlansPage({
   const providerCoupons = couponByProvider[providerSlug] ?? [];
   const providerData = providerInfo[providerSlug] || { name: provider.name, description: "" };
   const guideSlug = guideForProviderSlug(providerSlug);
+  const claimIssueUrl = `https://github.com/x2v-co/aiplans/issues/new?template=provider-listing.yml&title=${encodeURIComponent(`Provider listing: ${provider.name}`)}&provider_name=${encodeURIComponent(provider.name)}&website_url=${encodeURIComponent(provider.website || provider.pricing_url || '')}`;
+  const updateMailHref = `mailto:contact@aiplans.dev?subject=${encodeURIComponent(`Provider update: ${provider.name}`)}`;
 
   // Provider region is only the fallback. Each plan carries its own currency,
   // and a china-region provider can still sell a USD plan (and vice versa),
@@ -393,6 +395,38 @@ export default async function ProviderPlansPage({
             </CardContent>
           </Card>
         )}
+
+        <section className="mt-12 rounded-2xl border bg-white p-6 shadow-sm dark:bg-zinc-950">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-xl font-bold">
+                {isZh ? '代表这个供应商？' : 'Represent this provider?'}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                {isZh
+                  ? '提交价格更新、认领联系方式，或提供 aiplans.dev 用户专属优惠。我们会标记已验证信息，并保持价格比较中立透明。'
+                  : 'Submit pricing updates, claim official contact details, or add an exclusive offer for aiplans.dev users. Verified data is labeled, and comparisons stay neutral.'}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <a
+                href={claimIssueUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              >
+                <SquarePen className="h-4 w-4" />
+                {isZh ? '提交更新' : 'Submit update'}
+              </a>
+              <a
+                href={updateMailHref}
+                className="inline-flex items-center justify-center rounded-md border bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+              >
+                {isZh ? '邮件联系' : 'Email us'}
+              </a>
+            </div>
+          </div>
+        </section>
 
         {/* FAQ — visible mirror of the FAQPage JSON-LD, sourced from the
             same data-driven providerCopy so the two never drift apart. */}

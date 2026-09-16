@@ -21,7 +21,8 @@
     "musicModels": "Music Models",
     "worldModels": "World Models",
     "coupons": "Coupons",
-    "calculator": "Calculator"
+    "calculator": "Calculator",
+    "submitProvider": "Submit Provider"
   },
   "common": {
     "loading": "Loading...",
@@ -310,6 +311,7 @@
     "about": "About",
     "methodologyLink": "Methodology",
     "contact": "Contact",
+    "submitProvider": "Submit provider",
     "disclosure": "Affiliate disclosure",
     "privacy": "Privacy policy",
     "terms": "Terms of use",

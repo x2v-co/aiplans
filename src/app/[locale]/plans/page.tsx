@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, ArrowRight } from "lucide-react";
+import { Building2, ArrowRight, SquarePen } from "lucide-react";
 import { sql } from "@/lib/db";
 import { getActiveCouponMap } from "@/lib/coupons";
 import { CouponBadge } from "@/components/coupon-badge";
@@ -87,6 +87,13 @@ export default async function PlansIndexPage({
               ? '浏览所有 AI 服务供应商的订阅套餐，找到最适合你的方案'
               : 'Browse subscription plans from all AI service providers and find the best fit for you'}
           </p>
+          <Link
+            href={`/${locale}/submit-provider`}
+            className="inline-flex items-center gap-2 rounded-md border bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+          >
+            <SquarePen className="h-4 w-4" />
+            {isZh ? '提交供应商或专属优惠' : 'Submit a provider or exclusive offer'}
+          </Link>
         </div>
 
         {/* Providers Grid */}

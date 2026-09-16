@@ -100,6 +100,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const isPlansActive =
     pathname?.startsWith(`/${locale}/compare/plans`) ||
     pathname?.startsWith(`/${locale}/plans`) ||
+    pathname?.startsWith(`/${locale}/submit-provider`) ||
     pathname?.startsWith(`/${locale}/agents`) ||
     pathname?.startsWith(`/${locale}/creative-plans`);
 
@@ -129,6 +130,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
       items: [
         { href: `/${locale}/compare/plans`, label: t('comparePlans'), active: pathname?.startsWith(`/${locale}/compare/plans`) },
         { href: `/${locale}/plans`, label: t('plans'), active: pathname?.startsWith(`/${locale}/plans`) },
+        { href: `/${locale}/submit-provider`, label: t('submitProvider'), active: pathname?.startsWith(`/${locale}/submit-provider`) },
       ],
     },
     {

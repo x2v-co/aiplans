@@ -49,10 +49,12 @@ next-env.d.ts
 # playwright
 .playwright-mcp/
 
-# github — ignore everything except CI workflows (need to be tracked for GH Actions to run)
+# github — ignore everything except CI workflows and issue templates
 .github/*
 !.github/workflows/
 !.github/workflows/*.yml
+!.github/ISSUE_TEMPLATE/
+!.github/ISSUE_TEMPLATE/*.yml
 
 # pnpm
 pnpm-lock.yaml
