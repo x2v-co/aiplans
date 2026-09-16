@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { sql, INT4_ARRAY } from '@/lib/db';
 import { catalogForKind, type AiCatalogItem, type AiCatalogKind } from '@/lib/ai-vertical-catalog';
-import { arenaVideoLeaderboardCatalogItems } from '@/lib/arena-video-leaderboard';
 import { getVerticalModelCatalog } from '@/lib/vertical-models';
 import type { ModelBenchmarkScore } from '@/lib/benchmarks';
 import { getVerticalBenchmarkScores } from '@/lib/vertical-benchmarks';
@@ -11,12 +10,6 @@ const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, 'video' | 'music' | 'world
   'music-model': 'music',
   'world-model': 'world',
 };
-
-function staticFallbackCatalog(kind: AiCatalogKind): AiCatalogItem[] {
-  return kind === 'video-model'
-    ? [...arenaVideoLeaderboardCatalogItems(), ...catalogForKind(kind)]
-    : catalogForKind(kind);
-}
 
 export interface VerticalModelPlanRow {
   id: number;
@@ -123,13 +116,13 @@ export async function getVerticalModelDetail(kind: AiCatalogKind, slug: string):
 
   if (model) {
     const catalog = await getVerticalModelCatalog(kind);
-    const item = catalog.find((entry) => entry.slug === slug) ?? staticFallbackCatalog(kind).find((entry) => entry.slug === slug);
+    const item = catalog.find((entry) => entry.slug === slug);
     if (!item) notFound();
     const [plans, usagePrices, benchmarks] = await Promise.all([getPlans(model.id), getUsagePrices(model.id), getVerticalBenchmarkScores(model.id)]);
     return { item, plans, usagePrices, benchmarks, source: 'db' };
   }
 
-  const fallback = staticFallbackCatalog(kind).find((entry) => entry.slug === slug);
+  const fallback = catalogForKind(kind).find((entry) => entry.slug === slug);
   if (!fallback) notFound();
   return { item: fallback, plans: [], usagePrices: [], benchmarks: [], source: 'catalog' };
 }

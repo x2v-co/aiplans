@@ -91,14 +91,10 @@ export function arenaVideoSlug(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-export function arenaVideoModelSlug(value: string): string {
-  return `arena-t2v-${arenaVideoSlug(value)}`;
-}
-
 export function arenaVideoLeaderboardCatalogItems(): AiCatalogItem[] {
   return ARENA_TEXT_TO_VIDEO_LEADERBOARD.map((entry) => ({
     kind: 'video-model',
-    slug: arenaVideoModelSlug(entry.modelDisplayName),
+    slug: arenaVideoSlug(entry.modelDisplayName),
     name: entry.modelDisplayName,
     provider: entry.modelOrganization || 'Unknown',
     providerSlug: ORG_PROVIDER_SLUG[entry.modelOrganization],
