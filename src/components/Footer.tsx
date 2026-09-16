@@ -83,6 +83,7 @@ export default function Footer({ locale }: { locale: string }) {
             <ul className="space-y-2 text-sm">
               {[
                 ['about', t('about')],
+                ['submit-provider', t('submitProvider')],
                 ['methodology', t('methodologyLink')],
                 ['contact', t('contact')],
                 ['disclosure', t('disclosure')],

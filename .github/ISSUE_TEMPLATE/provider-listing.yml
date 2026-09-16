@@ -1,0 +1,131 @@
+name: Provider listing request
+description: Ask aiplans.dev to add or update an AI API provider, subscription plan, or exclusive offer
+title: "Provider listing: <provider name>"
+labels: ["provider-listing", "data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping keep aiplans.dev accurate. You can use this issue to add a new provider, update an existing listing, or submit a deal for our users.
+
+  - type: input
+    id: provider_name
+    attributes:
+      label: Provider name
+      placeholder: "Example: ExampleAPI"
+    validations:
+      required: true
+
+  - type: input
+    id: website_url
+    attributes:
+      label: Website URL
+      placeholder: "https://example.com"
+    validations:
+      required: true
+
+  - type: input
+    id: registration_url
+    attributes:
+      label: Registration or invite URL
+      description: Use your preferred tracking or campaign URL if you have one.
+      placeholder: "https://example.com/register?ref=aiplans"
+
+  - type: textarea
+    id: supported_models
+    attributes:
+      label: Supported models
+      description: List model names, aliases, variants, and whether each model is generally available.
+      placeholder: |
+        - claude-sonnet-4-6
+        - gpt-5.6
+        - deepseek-v4
+    validations:
+      required: true
+
+  - type: textarea
+    id: api_pricing
+    attributes:
+      label: API pricing
+      description: Prefer input/output price per 1M tokens. Include cache read/write, image, audio, or video prices if relevant.
+      placeholder: |
+        Currency: USD
+        gpt-5.6: input $x / 1M, output $y / 1M
+        claude-sonnet-4-6: input $x / 1M, output $y / 1M
+    validations:
+      required: true
+
+  - type: dropdown
+    id: region
+    attributes:
+      label: Primary region
+      options:
+        - Global
+        - China
+        - Other / mixed
+        - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: china_access
+    attributes:
+      label: Accessible from mainland China
+      options:
+        - "Yes"
+        - "No"
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: billing
+    attributes:
+      label: Billing and payments
+      placeholder: |
+        Billing model: prepaid / postpaid / subscription
+        Minimum top-up:
+        Payment methods: card, Alipay, WeChat Pay, bank transfer, crypto, etc.
+
+  - type: textarea
+    id: reliability
+    attributes:
+      label: Reliability, SLA, or routing notes
+      description: Optional. Share public SLA, provider routing, passthrough behavior, or model fidelity notes.
+
+  - type: textarea
+    id: contact
+    attributes:
+      label: Official contact
+      description: Email, Telegram, Discord, QQ group, WeChat, or a contact page.
+      placeholder: "support@example.com"
+    validations:
+      required: true
+
+  - type: textarea
+    id: exclusive_offer
+    attributes:
+      label: Exclusive offer for aiplans.dev users
+      description: Optional. We can display verified offers on provider pages and the deals section.
+      placeholder: |
+        Coupon code: AIPLANS
+        Offer: 10% off first top-up / $3 free credit / enterprise discount
+        Terms: new users only, expires ..., regions ...
+
+  - type: textarea
+    id: verification_sources
+    attributes:
+      label: Verification sources
+      description: Public pricing pages, docs, status pages, or screenshots we can use to verify data.
+      placeholder: |
+        Pricing: https://example.com/pricing
+        Docs: https://docs.example.com
+        Status: https://status.example.com
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I confirm the submitted information is accurate and can be listed publicly on aiplans.dev.
+          required: true

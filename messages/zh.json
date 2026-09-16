@@ -22,7 +22,8 @@
     "musicModels": "音乐模型",
     "worldModels": "世界模型",
     "coupons": "优惠码",
-    "calculator": "计算器"
+    "calculator": "计算器",
+    "submitProvider": "提交供应商"
   },
   "common": {
     "loading": "加载中...",
@@ -311,6 +312,7 @@
     "about": "关于我们",
     "methodologyLink": "价格方法论",
     "contact": "联系我们",
+    "submitProvider": "提交供应商",
     "disclosure": "联盟与广告披露",
     "privacy": "隐私政策",
     "terms": "使用条款",
