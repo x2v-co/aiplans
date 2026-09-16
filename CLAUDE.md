@@ -222,6 +222,12 @@ immune to `cleanupOutdatedPlans`. To add a new manual plan, put it in the
 
 ## Data Accuracy Infrastructure
 
+The **public** list of display-facing data sources (pricing pages, AA,
+LMArena, VBench, Arena AI) and the nightly-sync/verification explanation
+lives on the `/[locale]/methodology` info page (`src/app/[locale]/[info]/page.tsx`)
+— update it when adding/removing a displayed source. Internal-only
+verification sources (models.dev) are deliberately NOT named there.
+
 Three scripts form the feedback loop:
 
 1. `scripts/audit-data.ts` — 19 read-only checks:
@@ -294,9 +300,11 @@ rows from web ground truth so `/api-pricing` filter "🇨🇳 China" shows them.
   least one `is_available` channel (`/models/[slug]`), both locales. ~710 URLs.
   The filters are deliberate — a provider with no plans or a model with no
   available channel renders an empty page, and we don't ask Google to index
-  those. There must be **no `public/sitemap.xml`**: a static file there shadows
-  this route (that bug shipped from 2026-03 to 2026-08, serving 85 stale URLs
-  including 3 slugs that no longer existed).
+  those. **New public static routes must be added to `STATIC_PATHS`** in the
+  same PR (submit-provider was missed, 2026-09). There must be
+  **no `public/sitemap.xml`**: a static file there shadows this route (that
+  bug shipped from 2026-03 to 2026-08, serving 85 stale URLs including 3
+  slugs that no longer existed).
 
 ## Performance tuning (next.config.ts)
 
@@ -420,6 +428,17 @@ messages/
 
 ## Common gotchas
 
+- **Vertical seed order + Arena/family slug collisions.** rollout runs
+  `seed:vertical-models` → `seed:vertical-benchmarks` → `audit:verticals:db`
+  (a hard deploy gate). `ensureArenaLeaderboardModels()` upserts a model per
+  Arena T2V entry by slug; when an entry shares a slug with a curated family
+  catalog row (currently only `sora`), it must skip the model-row upsert —
+  otherwise the Arena version payload overwrites the family name/modalities/
+  capabilities/link (its payload doesn't set `updated_at`, so the row looks
+  stale-but-touched) and the audit fails 4 criticals, blocking every deploy.
+  Guard lives in `seed-vertical-benchmarks.ts` (`catalogSlugs`); benchmark
+  scores still attach to the family row via `SCORE_SEEDS`. If a new collision
+  appears, extend the guard rather than reordering the seeds.
 - **Never fetch a page's own data in a `useEffect`.** A `"use client"` component
   *is* server-rendered — the boundary controls hydration, not SSR — but an effect
   only runs in the browser, so the server renders the `loading` branch and ships
