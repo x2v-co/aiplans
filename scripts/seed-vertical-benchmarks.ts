@@ -9,7 +9,7 @@
  *   currently exposes video/image/search/chat/webdev ranks, not audio/music.
  */
 import { db } from './db/queries';
-import { ARENA_TEXT_TO_VIDEO_LEADERBOARD, ARENA_TEXT_TO_VIDEO_URL, arenaVideoModelSlug, arenaVideoSlug } from '../src/lib/arena-video-leaderboard';
+import { ARENA_TEXT_TO_VIDEO_LEADERBOARD, ARENA_TEXT_TO_VIDEO_URL, arenaVideoSlug } from '../src/lib/arena-video-leaderboard';
 
 const APPLY = process.argv.includes('--apply');
 const VERIFIED_DATE = '2026-09-15';
@@ -73,8 +73,8 @@ const ARENA_AI_TEXT_TO_VIDEO = {
   name: 'Arena AI Text-to-Video',
   type: 'video',
   officialUrl: ARENA_URL,
-  versionLabel: `leaderboard-${VERIFIED_DATE}-versioned-slugs`,
-  notes: 'Ranks and Elo ratings copied from the public Arena AI text-to-video leaderboard.entries payload. Entries are version-level rows with arena-t2v-* slugs; lower rank is better. Do not collapse them into family-level catalog rows.',
+  versionLabel: `leaderboard-${VERIFIED_DATE}`,
+  notes: 'Ranks and Elo ratings copied from the public Arena AI text-to-video leaderboard.entries payload. Entries are version-level rows; lower rank is better. Do not collapse them into family-level catalog rows.',
 };
 
 const SCORE_SEEDS: BenchmarkSeed[] = [
@@ -159,7 +159,7 @@ const SCORE_SEEDS: BenchmarkSeed[] = [
   ] },
 
   ...ARENA_TEXT_TO_VIDEO_LEADERBOARD.map((entry): BenchmarkSeed => ({
-    modelSlug: arenaVideoModelSlug(entry.modelDisplayName),
+    modelSlug: arenaVideoSlug(entry.modelDisplayName),
     benchmark: ARENA_AI_TEXT_TO_VIDEO,
     task: 'Text-to-video leaderboard',
     releaseDate: VERIFIED_DATE,
@@ -187,7 +187,7 @@ async function ensureArenaLeaderboardModels() {
   for (const entry of ARENA_TEXT_TO_VIDEO_LEADERBOARD) {
     const provider = ORG_PROVIDER[entry.modelOrganization] ?? { slug: arenaVideoSlug(entry.modelOrganization || 'unknown'), name: entry.modelOrganization || 'Unknown' };
     const providerId = await ensureProvider(provider.slug, provider.name, provider.website);
-    const slug = arenaVideoModelSlug(entry.modelDisplayName);
+    const slug = arenaVideoSlug(entry.modelDisplayName);
     const description = `Version-level text-to-video leaderboard entry from Arena AI. Status: available. Pricing confidence: unknown. Last verified: ${VERIFIED_DATE}. Notes: Arena AI rank #${entry.rank}; Elo ${entry.rating.toFixed(1)}; votes ${entry.votes}. This is not collapsed into a family-level model. Sources: Arena AI: ${ARENA_URL}${entry.modelUrl ? ` | ${entry.modelOrganization}: ${entry.modelUrl}` : ''}`;
     const existing = await db.from('models').select('id').eq('slug', slug).maybeSingle();
     if (existing.error) throw existing.error;
