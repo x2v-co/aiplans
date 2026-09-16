@@ -42,6 +42,7 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '/reports/api-price-index', priority: 0.8, changefreq: 'daily' },
   { path: '/privacy', priority: 0.3, changefreq: 'monthly' },
   { path: '/terms', priority: 0.3, changefreq: 'monthly' },
+  { path: '/submit-provider', priority: 0.4, changefreq: 'monthly' },
   // Note: /compare/api was removed because it only existed as a non-locale
   // route that proxy.ts redirected into a 404. /compare/models and /calculator
   // are locale routes and intentionally remain in the sitemap.
