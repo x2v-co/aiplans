@@ -5,7 +5,8 @@ import SiteHeader from '@/components/SiteHeader';
 import { buildMetadata, type Locale } from '@/lib/seo';
 
 type InfoSlug = 'about' | 'contact' | 'disclosure' | 'methodology' | 'privacy' | 'terms';
-type Section = { heading: string; paragraphs?: string[]; bullets?: string[] };
+type SourceLink = { label: string; url: string };
+type Section = { heading: string; paragraphs?: string[]; bullets?: string[]; links?: SourceLink[] };
 type PageContent = { title: string; description: string; intro: string; sections: Section[] };
 
 const UPDATED = 'September 3, 2026';
@@ -45,14 +46,22 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
       ],
     },
     methodology: {
-      title: 'Pricing Methodology',
-      description: 'How aiplans.dev collects, normalizes, verifies, and presents AI pricing data.',
-      intro: 'Our comparisons separate source facts from calculations and make the comparison baseline explicit.',
+      title: 'Data & Pricing Methodology',
+      description: 'How aiplans.dev collects, normalizes, verifies, and presents AI pricing, plan data, and benchmark scores.',
+      intro: 'Our comparisons separate source facts from our own calculations, keep every score attached to the benchmark it came from, and name the public sources below.',
       sections: [
-        { heading: 'Sources', paragraphs: ['We prioritize official pricing pages and documentation. Cloud platforms, aggregators, and resellers are tracked as distinct channels rather than presented as the model producer.'] },
-        { heading: 'Normalization', bullets: ['API prices are shown per one million tokens when the source supports token billing.', 'Native currency remains visible; USD-normalized values are used for cross-currency ordering and savings calculations.', 'Subscription prices keep their billing period and annual discount assumptions visible.', '“Official baseline” means the lowest tracked official or producer channel, not the cheapest channel overall.'] },
-        { heading: 'Updates and checks', paragraphs: ['Automated collectors run regularly and a read-only audit flags missing, stale, zero, inverted, or unusual prices. Automation can still be wrong, so every purchase decision should be checked against the linked source.'] },
-        { heading: 'Benchmarks', paragraphs: ['Benchmark scores are comparison signals, not guarantees of quality for every task. The benchmark name and scoring context are kept separate from price calculations.'] },
+        { heading: 'Pricing data sources', paragraphs: ['API token prices and subscription plan details come primarily from each provider’s own public pricing pages and API documentation. Cloud platforms (Azure OpenAI, AWS Bedrock, Vertex AI), aggregators (OpenRouter, SiliconFlow, Together AI and similar), and resellers are tracked as distinct channels and never presented as the model producer.'], links: [{ label: 'Browse all tracked channels', url: '/en/api-pricing' }, { label: 'Browse subscription plans', url: '/en/plans' }] },
+        { heading: 'Benchmark and leaderboard sources', paragraphs: ['We do not run the evaluations ourselves. Scores and ranks are synced nightly from the following public sources, and every displayed value retains its original benchmark name, version context, and snapshot date.'], bullets: ['Artificial Analysis — task benchmarks on the model leaderboard (GPQA Diamond, Humanity’s Last Exam, SciCode, Terminal-Bench Hard, IFBench, MMMU-Pro), the Coding Agent Index (an equal-weight combination of DeepSWE v1.1, Terminal-Bench 4.0 and SWE-Atlas-QnA pass@1, with measured cost and runtime per task), and the official per-million-token list prices used for price verification. Each coding-agent row is one agent × host-model configuration (e.g. Claude Code or Codex running a specific model), not a model-only score.', 'LMArena — crowdsourced human-preference Arena ELO scores for chat models.', 'VBench and VBench++ — standardized text-to-video and image-to-video benchmark scores, plus Arena AI’s public video leaderboard ranks for video models.'], links: [
+          { label: 'Artificial Analysis — model leaderboard', url: 'https://artificialanalysis.ai/leaderboards/models' },
+          { label: 'Artificial Analysis — coding agent leaderboard', url: 'https://artificialanalysis.ai/agents/coding-agents' },
+          { label: 'Coding Agent Index methodology', url: 'https://artificialanalysis.ai/methodology/coding-agents-benchmarking' },
+          { label: 'LMArena leaderboards', url: 'https://lmarena.ai/leaderboard' },
+          { label: 'VBench leaderboard', url: 'https://vchitect-vbench-leaderboard.hf.space' },
+          { label: 'Arena AI video leaderboard', url: 'https://arena.ai/leaderboard/video' },
+        ] },
+        { heading: 'Normalization', bullets: ['API prices are shown per one million tokens when the source supports token billing.', 'Native currency remains visible; USD-normalized values are used for cross-currency ordering and savings calculations, using cached published reference exchange rates.', 'Subscription prices keep their billing period and annual discount assumptions visible.', '“Official baseline” means the lowest tracked official or producer channel, not the cheapest channel overall.'] },
+        { heading: 'Updates and verification', paragraphs: ['An automated pipeline runs every night and syncs prices, plans, benchmark scores, and coding-agent results. A read-only audit flags missing, stale, zero, inverted, or statistically unusual prices, and cross-checks our official-channel prices against the independently published Artificial Analysis list prices. When an external sync fails, the previous snapshot remains published until the next successful run. Every leaderboard table shows the snapshot date.'] },
+        { heading: 'How to read benchmark scores', paragraphs: ['Benchmark scores are comparison signals measured on fixed task suites, not guarantees of quality for your workload. Leaderboards are re-run as agents and models ship versions, so values change over time; results from different benchmark versions are not directly comparable. Automation can still be wrong, so every purchase decision should be checked against the linked provider source.'] },
         { heading: 'Corrections', paragraphs: ['Corrections can be submitted through GitHub with a source URL. Material price changes are kept in the project price-history data where available.'] },
       ],
     },
@@ -119,14 +128,22 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
       ],
     },
     methodology: {
-      title: '价格方法论',
-      description: 'aiplans.dev 如何收集、换算、核验和展示 AI 价格数据。',
-      intro: '我们的比较会区分来源事实与计算结果，并明确说明比较基准。',
+      title: '数据与价格方法论',
+      description: 'aiplans.dev 如何收集、换算、核验和展示 AI 价格、套餐数据与基准分数。',
+      intro: '我们的比较会区分来源事实与本站计算，每个分数都保留其所属基准，并在下面具名公开数据来源。',
       sections: [
-        { heading: '数据来源', paragraphs: ['我们优先使用官方定价页和文档。云平台、聚合平台和转售商作为独立渠道记录，不会被描述为模型原厂。'] },
-        { heading: '统一口径', bullets: ['来源支持 token 计费时，API 价格统一展示为每百万 token。', '保留原币种展示；跨币种排序与节省比例使用美元换算值。', '订阅价格保留计费周期，并明确年付优惠假设。', '“官方基准”是追踪到的最低官方或原厂渠道价，不代表全渠道最低价。'] },
-        { heading: '更新与检查', paragraphs: ['自动采集任务定期运行，只读审计会标记缺失、过期、零值、输入输出倒挂或异常价格。自动化仍可能出错，因此重大购买决定应回到来源链接核实。'] },
-        { heading: '基准测试', paragraphs: ['基准分数只是比较信号，不保证适合所有任务。基准名称和评分语境与价格计算分开呈现。'] },
+        { heading: '价格数据来源', paragraphs: ['API token 价格和订阅套餐信息主要来自各厂商公开发布的定价页和 API 文档。云平台（Azure OpenAI、AWS Bedrock、Vertex AI）、聚合平台（OpenRouter、硅基流动、Together AI 等）和转售渠道作为独立渠道记录，不会被描述为模型原厂。'], links: [{ label: '查看全部渠道价格', url: '/zh/api-pricing' }, { label: '查看订阅套餐', url: '/zh/plans' }] },
+        { heading: '基准测试与排行榜来源', paragraphs: ['评测并非由我们自己运行。分数与排名每晚从以下公开来源同步，展示的每个值都保留原始基准名称、版本语境和快照日期。'], bullets: ['Artificial Analysis —— 模型排行榜上的任务基准（GPQA Diamond、Humanity’s Last Exam、SciCode、Terminal-Bench Hard、IFBench、MMMU-Pro）、编程智能体指数（DeepSWE v1.1、Terminal-Bench 4.0、SWE-Atlas-QnA 三项 pass@1 等权合成，含实测每任务成本与耗时），以及用于价格核验的官方每百万 token 报价。编程智能体榜单的每一行是一个「智能体 × 承载模型」配置（例如同一模型分别在 Claude Code、Codex 中运行），不是单纯模型分。', 'LMArena —— 众包人类偏好评测的对话模型 Arena ELO 分数。', 'VBench / VBench++ —— 标准化文生视频与图生视频基准分，视频模型另展示 Arena AI 公开视频榜排名。'], links: [
+          { label: 'Artificial Analysis —— 模型排行榜', url: 'https://artificialanalysis.ai/leaderboards/models' },
+          { label: 'Artificial Analysis —— 编程智能体榜', url: 'https://artificialanalysis.ai/agents/coding-agents' },
+          { label: '编程智能体指数方法论', url: 'https://artificialanalysis.ai/methodology/coding-agents-benchmarking' },
+          { label: 'LMArena 排行榜', url: 'https://lmarena.ai/leaderboard' },
+          { label: 'VBench 排行榜', url: 'https://vchitect-vbench-leaderboard.hf.space' },
+          { label: 'Arena AI 视频榜', url: 'https://arena.ai/leaderboard/video' },
+        ] },
+        { heading: '统一口径', bullets: ['来源支持 token 计费时，API 价格统一展示为每百万 token。', '保留原币种展示；跨币种排序与节省比例使用美元换算值，汇率取自缓存的公开参考汇率。', '订阅价格保留计费周期，并明确年付优惠假设。', '“官方基准”是追踪到的最低官方或原厂渠道价，不代表全渠道最低价。'] },
+        { heading: '更新与核验', paragraphs: ['自动流水线每晚运行，同步价格、套餐、基准分数和编程智能体结果。只读审计会标记缺失、过期、零值、输入输出倒挂或统计异常的价格，并把我们的官方渠道价与 Artificial Analysis 独立发布的官价交叉核验。外部同步失败时继续保留上一份快照直到下次成功运行；每张排行榜都显示快照日期。'] },
+        { heading: '如何理解基准分数', paragraphs: ['基准分数是固定任务集上的比较信号，不保证适合你的具体工作负载。排行榜会随智能体和模型发版持续重跑，数值会随时间变化，不同基准版本的结果不应直接比较。自动化仍可能出错，重大购买决定应回到来源链接核实。'] },
         { heading: '纠错', paragraphs: ['可在 GitHub 提交带来源链接的纠错。在条件允许时，重大价格变化会保留在项目的价格历史数据中。'] },
       ],
     },
@@ -216,6 +233,29 @@ export default async function InfoPage({
               {section.bullets && (
                 <ul className="mt-3 list-disc space-y-2 pl-5 leading-7 text-zinc-700 dark:text-zinc-300">
                   {section.bullets.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              )}
+              {section.links && (
+                <ul className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-5">
+                  {section.links.map((link) => (
+                    <li key={link.url}>
+                      {link.url.startsWith('http') ? (
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          {link.label}
+                          <span aria-hidden className="text-xs">↗</span>
+                        </a>
+                      ) : (
+                        <Link href={link.url} className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                          {link.label}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
                 </ul>
               )}
             </section>

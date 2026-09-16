@@ -75,6 +75,12 @@ export default async function CodingAgentsPage({ params }: { params: Promise<{ l
     name: `Artificial Analysis Coding Agent Index ${leaderboard.indexVersion ?? ''}`.trim(),
     itemListOrder: 'https://schema.org/ItemListOrderAscending',
     numberOfItems: leaderboard.rows.length,
+    // Scores and costs are reproduced from Artificial Analysis' public
+    // leaderboard; keep the source pages machine-visible too.
+    isBasedOn: [
+      { '@type': 'WebPage', name: 'Artificial Analysis Coding Agent Index', url: 'https://artificialanalysis.ai/agents/coding-agents' },
+      { '@type': 'WebPage', name: 'Coding Agent Index methodology', url: 'https://artificialanalysis.ai/methodology/coding-agents-benchmarking' },
+    ],
     itemListElement: leaderboard.rows.map((row, index) => ({
       '@type': 'ListItem',
       position: index + 1,
