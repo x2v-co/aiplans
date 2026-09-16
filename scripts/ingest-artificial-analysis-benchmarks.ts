@@ -13,6 +13,7 @@
  */
 import { databaseSql } from './db/postgres-admin';
 import { upsertBenchmarkScore } from './db/queries';
+import { AA_USER_AGENT, extractBalancedArray, parseNextFlight, resolveLocalModelId } from './utils/artificial-analysis';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const SOURCE_URL = 'https://artificialanalysis.ai/leaderboards/models';
@@ -31,6 +32,10 @@ interface AaModel {
   terminalbenchHard?: number | null;
   ifbench?: number | null;
   mmmuPro?: number | null;
+  price1mInputTokens?: number | null;
+  price1mOutputTokens?: number | null;
+  cacheHitPrice?: number | null;
+  cacheWritePrice?: number | null;
 }
 
 interface MetricSpec {
@@ -51,36 +56,8 @@ const METRICS: MetricSpec[] = [
   { field: 'mmmuPro', slug: 'mmmu-pro', name: 'MMMU-Pro', type: 'multimodal', task: 'Main', metric: 'ACCURACY' },
 ];
 
-function extractBalancedArray(text: string, start: number): string {
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  for (let index = start; index < text.length; index += 1) {
-    const char = text[index];
-    if (inString) {
-      if (escaped) escaped = false;
-      else if (char === '\\') escaped = true;
-      else if (char === '"') inString = false;
-      continue;
-    }
-    if (char === '"') inString = true;
-    else if (char === '[') depth += 1;
-    else if (char === ']') {
-      depth -= 1;
-      if (depth === 0) return text.slice(start, index + 1);
-    }
-  }
-  throw new Error('Artificial Analysis model array was truncated');
-}
-
 function parseModelsFromNextHtml(html: string): AaModel[] {
-  const chunks: string[] = [];
-  const scriptPattern = /self\.__next_f\.push\((\[[\s\S]*?\])\)<\/script>/g;
-  for (const match of html.matchAll(scriptPattern)) {
-    const payload = JSON.parse(match[1]) as [number, unknown];
-    if (typeof payload[1] === 'string') chunks.push(payload[1]);
-  }
-  const flight = chunks.join('');
+  const flight = parseNextFlight(html);
   const marker = '"models":[';
   let markerIndex = -1;
   let models: AaModel[] = [];
@@ -102,30 +79,128 @@ function parseModelsFromNextHtml(html: string): AaModel[] {
   return models;
 }
 
-function slugCandidates(value: string): string[] {
-  const base = value.toLowerCase().replace(/[^a-z0-9.]+/g, '-').replace(/^-|-$/g, '');
-  const candidates = new Set([base]);
-  candidates.add(base.replace(/-(\d+)-(\d+)(?=-|$)/g, '-$1.$2'));
-  const suffixes = [/-reasoning$/, /-non-reasoning$/, /-thinking$/, /-preview$/, /-latest$/, /-\d{8}$/, /-\d{4}-\d{2}-\d{2}$/];
-  for (let pass = 0; pass < 3; pass += 1) {
-    for (const candidate of [...candidates]) {
-      for (const suffix of suffixes) {
-        const stripped = candidate.replace(suffix, '');
-        if (stripped) candidates.add(stripped);
-      }
-      candidates.add(candidate.replace(/-(\d+)-(\d+)(?=-|$)/g, '-$1.$2'));
-    }
-  }
-  return [...candidates];
-}
-
 async function fetchModels(): Promise<AaModel[]> {
   const response = await fetch(SOURCE_URL, {
-    headers: { 'user-agent': 'aiplans.dev benchmark importer (+https://aiplans.dev/methodology)' },
+    headers: { 'user-agent': AA_USER_AGENT },
     signal: AbortSignal.timeout(90_000),
   });
   if (!response.ok) throw new Error(`Artificial Analysis returned HTTP ${response.status}`);
   return parseModelsFromNextHtml(await response.text());
+}
+
+/**
+ * Collapse AA's per-effort-variant rows (e.g. `gpt-5`, `gpt-5-high`,
+ * `gpt-5-xhigh`) into one official list-price reference per local model.
+ * Variants share a price in nearly every case; when they do not, the minimum
+ * non-null value wins so a premium reasoning tag can never masquerade as the
+ * model's list price in the divergence audit.
+ */
+interface PriceReference {
+  modelId: number;
+  sourceModelSlug: string;
+  inputPricePer1m: number | null;
+  outputPricePer1m: number | null;
+  cachedInputPricePer1m: number | null;
+  raw: AaModel;
+}
+
+/**
+ * AA slugs that must resolve to a differently-named local model. Verify
+ * against the vendor pricing page before adding anything here.
+ */
+const PRICE_SLUG_ALIASES = new Map<string, string>([
+  // The legacy deepseek-v4-flash model is retired and served by V4.1-Flash
+  // (verified 2026-09-15, api-docs.deepseek.com/quick_start/pricing); AA still
+  // carries both slugs, the legacy one at the retired $0.44/$1.32 rate.
+  ['deepseek-v4-1-flash', 'deepseek-v4-flash'],
+]);
+
+/**
+ * AA rows whose prices are known-stale snapshots that must not seed the
+ * reference table, even though they map to a model we price.
+ */
+const PRICE_SLUG_IGNORE = new Set<string>([
+  // Retired model kept at the old rate in AA; the V4.1 alias above supplies
+  // the current list price.
+  'deepseek-v4-flash',
+]);
+
+function buildPriceReferences(
+  aaModels: AaModel[],
+  bySlug: ReadonlyMap<string, { id: number }>,
+): { references: PriceReference[]; unmatched: string[] } {
+  const byModel = new Map<number, PriceReference>();
+  const unmatched: string[] = [];
+  for (const aaModel of aaModels) {
+    if (aaModel.deprecated) continue;
+    if (PRICE_SLUG_IGNORE.has(aaModel.slug)) continue;
+    // MMDD snapshots (deepseek-v4-pro-0424) are older dated model versions with
+    // their own prices, and non-reasoning is a separate SKU: either could
+    // understate the current list price after min-merging, so never use them
+    // as the official-price reference even when they map to a local model.
+    if (/-(?:0[1-9]|1[0-2])\d{2}(?:-non-reasoning)?$/.test(aaModel.slug)) continue;
+    if (/-non-reasoning$/.test(aaModel.slug)) continue;
+    const input = typeof aaModel.price1mInputTokens === 'number' ? aaModel.price1mInputTokens : null;
+    const output = typeof aaModel.price1mOutputTokens === 'number' ? aaModel.price1mOutputTokens : null;
+    const cacheHit = typeof aaModel.cacheHitPrice === 'number' ? aaModel.cacheHitPrice : null;
+    if (input === null && output === null) continue;
+    const local = resolveLocalModelId(aaModel.slug, bySlug, PRICE_SLUG_ALIASES);
+    if (!local) {
+      unmatched.push(aaModel.slug);
+      continue;
+    }
+    const existing = byModel.get(local.id);
+    const mergeMin = (a: number | null, b: number | null) =>
+      a === null ? b : b === null ? a : Math.min(a, b);
+    if (!existing) {
+      byModel.set(local.id, {
+        modelId: local.id,
+        sourceModelSlug: aaModel.slug,
+        inputPricePer1m: input,
+        outputPricePer1m: output,
+        cachedInputPricePer1m: cacheHit,
+        raw: aaModel,
+      });
+    } else {
+      existing.inputPricePer1m = mergeMin(existing.inputPricePer1m, input);
+      existing.outputPricePer1m = mergeMin(existing.outputPricePer1m, output);
+      existing.cachedInputPricePer1m = mergeMin(existing.cachedInputPricePer1m, cacheHit);
+    }
+  }
+  return { references: [...byModel.values()], unmatched };
+}
+
+async function upsertPriceReferences(references: PriceReference[], asOf: string): Promise<void> {
+  if (references.length < 20) {
+    throw new Error(`Only ${references.length} AA price references resolved; refusing a partial snapshot`);
+  }
+  await databaseSql.begin(async (transaction) => {
+    // postgres@3 types TransactionSql as Omit<Sql, …>, which drops the
+    // tagged-template call signature. Cast it back.
+    const tx = transaction as unknown as typeof databaseSql;
+    // Full-snapshot replacement: the representative AA variant per model can
+    // change between runs, and a model can leave the leaderboard. Upserting
+    // would leave stale rows behind in either case.
+    await tx`DELETE FROM external_price_references WHERE source = 'artificial-analysis'`;
+    const insertRows = references.map((ref) => ({
+      source: 'artificial-analysis' as const,
+      source_model_slug: ref.sourceModelSlug,
+      model_id: ref.modelId,
+      input_price_per_1m: ref.inputPricePer1m,
+      output_price_per_1m: ref.outputPricePer1m,
+      cached_input_price_per_1m: ref.cachedInputPricePer1m,
+      currency: 'USD' as const,
+      observed_date: asOf,
+      raw: databaseSql.json(ref.raw as unknown as Record<string, unknown>),
+    }));
+    await tx`
+      INSERT INTO external_price_references ${
+        tx(insertRows,
+          'source', 'source_model_slug', 'model_id', 'input_price_per_1m', 'output_price_per_1m',
+          'cached_input_price_per_1m', 'currency', 'observed_date', 'raw')
+      }
+    `;
+  });
 }
 
 async function ensureChain(spec: MetricSpec): Promise<{ taskId: number; metricId: number }> {
@@ -178,18 +253,21 @@ async function main() {
   console.log(`\nArtificial Analysis benchmark import ${DRY_RUN ? '[DRY RUN]' : '[APPLY]'}\n`);
   const aaModels = await fetchModels();
   const withScores = aaModels.filter((model) => METRICS.some((metric) => typeof model[metric.field] === 'number'));
+  const localModels = await databaseSql<Array<{ id: number; slug: string }>>`SELECT id, slug FROM models WHERE type ILIKE '%llm%'`;
+  const bySlug = new Map(localModels.map((model) => [model.slug, model]));
+  const { references: priceRefs, unmatched: unmatchedPriceSlugs } = buildPriceReferences(aaModels, bySlug);
   console.log(`Parsed ${aaModels.length} models; ${withScores.length} have at least one selected benchmark.`);
+  console.log(`Official list-price references: ${priceRefs.length} mapped models, ${unmatchedPriceSlugs.length} priced AA rows unmatched.`);
   if (DRY_RUN) {
     console.log(withScores.slice(0, 12).map((model) => `${model.slug}: ${METRICS.filter((metric) => model[metric.field] != null).length} scores`).join('\n'));
+    console.log(priceRefs.slice(0, 12).map((ref) => `${ref.sourceModelSlug}: in=$${ref.inputPricePer1m} out=$${ref.outputPricePer1m}`).join('\n'));
     return;
   }
 
-  const localModels = await databaseSql<Array<{ id: number; slug: string }>>`SELECT id, slug FROM models WHERE type ILIKE '%llm%'`;
-  const bySlug = new Map(localModels.map((model) => [model.slug, model]));
   const chosen = new Map<number, AaModel>();
   const unmatched: string[] = [];
   for (const aaModel of withScores) {
-    const local = slugCandidates(aaModel.slug).map((slug) => bySlug.get(slug)).find(Boolean);
+    const local = resolveLocalModelId(aaModel.slug, bySlug);
     if (!local) {
       unmatched.push(aaModel.slug);
       continue;
@@ -219,7 +297,9 @@ async function main() {
       written += 1;
     }
   }
+  await upsertPriceReferences(priceRefs, asOf);
   console.log(`Matched ${chosen.size} local models and processed ${written} benchmark scores.`);
+  console.log(`Upserted ${priceRefs.length} official list-price references for the divergence audit.`);
   console.log(`Unmatched source models: ${unmatched.length}${unmatched.length ? ` (first 30: ${unmatched.slice(0, 30).join(', ')})` : ''}`);
 }
 

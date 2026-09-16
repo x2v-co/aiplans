@@ -51,6 +51,9 @@ npm run migrate             # adds price_history, plans.notes, plans.source, etc
 
 # Arena leaderboard ingestion (requires DATABASE_URL)
 npm run ingest:arena        # writes top-60 ELO into model_benchmark_scores
+# Artificial Analysis ingestion (requires DATABASE_URL)
+npm run ingest:benchmarks       # task benchmark scores + official USD list-price snapshot
+npm run ingest:coding-agents    # Coding Agent Index (agent × model rows)
 
 # Provider logos
 npm run fetch-logos
@@ -125,6 +128,7 @@ DB_PREPARE                     # optional, defaults to true
 | `/[locale]/plans/[provider]` | One provider's full plan lineup |
 | `/[locale]/compare/plans` | Plan comparison landing + FAQ |
 | `/[locale]/compare/plans/[model]` | All plans that include a specific model |
+| `/[locale]/coding-agents` | Coding Agent Index leaderboard (agent × model, cost/time per task) |
 | `/[locale]/coupons` | Community discount codes |
 
 `src/proxy.ts` middleware redirects any non-locale path `/foo` → `/{locale}/foo`
@@ -220,14 +224,16 @@ immune to `cleanupOutdatedPlans`. To add a new manual plan, put it in the
 
 Three scripts form the feedback loop:
 
-1. `scripts/audit-data.ts` — 18 read-only checks:
+1. `scripts/audit-data.ts` — 19 read-only checks:
    `prices.zero_or_null`, `prices.output_lt_input`, `prices.input_eq_output`,
    `prices.cross_channel_outlier` (USD-normalized), `prices.stale`,
    `models.no_channel_price`, `models.no_producer_channel`,
    `models.unknown_provider_id`, `plans.stale`, `plans.missing_verified`,
    `providers.unknown_ref`, `mapping.orphan_model`, `mapping.orphan_plan`,
    `plans.missing_kind`, `plans.no_model_mapping`, `plans.selector_empty`,
-   `plans.selector_unknown_slug`, `plans.mapping_drift`.
+   `plans.selector_unknown_slug`, `plans.mapping_drift`,
+   `prices.aa_official_divergence` (C21; our USD official channel vs the
+   `external_price_references` snapshot; non-USD regional rows skipped).
    Exit code 0 = clean, 1 = critical, 2 = warnings only.
    `plans.mapping_drift` compares each plan's materialized mapping rows
    against a fresh selector resolution in both directions, so a broken/stale
@@ -253,7 +259,7 @@ rows from web ground truth so `/api-pricing` filter "🇨🇳 China" shows them.
   (self-hosted devbox runner, always builds with `BUILD_SCRAPER=1`, runs
   migrations, health-gates on `/api/health`).
 - `.github/workflows/data-audit.yml` — PRs touching scripts/scrapers/schema
-  get a DB-free `tsc --noEmit` gate; the real 18-check audit runs nightly on
+  get a DB-free `tsc --noEmit` gate; the real 19-check audit runs nightly on
   the devbox timer, with `workflow_dispatch` re-runnable on the self-hosted
   runner inside the compose network.
 - `.github/workflows/scrape-pricing.yml` — manual-only `workflow_dispatch`
@@ -340,6 +346,8 @@ scripts/
 ├── fix-siliconflow-currency.ts # one-shot historical repair
 ├── fix-currency-on-patched-rows.ts # one-shot currency alignment
 ├── ingest-arena-leaderboard.ts # ingest top-60 Arena scores
+├── ingest-artificial-analysis-benchmarks.ts # AA task benchmarks + official price snapshot
+├── ingest-coding-agents.ts     # AA Coding Agent Index → coding_agent_scores
 ├── add-arena-missing-models.ts # stub models for arena coverage
 ├── materialize-model-plan-mappings.ts # derive model_plan_mapping from selectors
 ├── fix-plan-kinds.ts           # backfill plan_kind/line/tier_rank/selector
@@ -358,7 +366,8 @@ scripts/
 │   ├── {anthropic,google-gemini,grok,seed,siliconflow,…}-dynamic.ts
 │   ├── plan-{openai,anthropic,mistral,qwen,...}-dynamic.ts
 │   └── openrouter.ts           # separate API-based scraper
-└── utils/                      # model-normalizer, validator, plan-validator
+└── utils/                      # model-normalizer, validator, plan-validator,
+                                # artificial-analysis (RSC flight parser, slug rules)
 
 messages/
 ├── en.json
@@ -461,6 +470,16 @@ messages/
 - **Arena ELO lives in `model_benchmark_scores`**, joined via
   `benchmark_metrics!inner(name).eq('name','ELO')`. Don't join through
   `benchmark_tasks.benchmark_id` — that column doesn't exist.
+- **`coding_agent_scores`** — Artificial Analysis Coding Agent Index snapshot
+  (`scripts/ingest-coding-agents.ts`): rows are **agent harness × host-model**
+  configs (Claude Code, Codex, Devin Fusion CLI, …), not model-only scores.
+  `source_record_id` is the AA record hash (upsert key); `model_id` is nullable
+  for hosts we don't price (e.g. Muse Spark). Feeds `/[locale]/coding-agents`
+  and the model-page section (migration 024).
+- **`external_price_references`** — independent official list-price snapshots
+  (source='artificial-analysis', full-snapshot replaced nightly by
+  `ingest:benchmarks`); the audit's `prices.aa_official_divergence` check
+  compares our USD official/producer channels against these.
 
 ## Memory for future sessions
 

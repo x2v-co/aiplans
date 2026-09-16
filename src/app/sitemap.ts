@@ -22,6 +22,7 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '/compare/plans', priority: 0.9, changefreq: 'daily' },
   { path: '/compare/models', priority: 0.8, changefreq: 'daily' },
   { path: '/compare/video-models', priority: 0.82, changefreq: 'weekly' },
+  { path: '/coding-agents', priority: 0.84, changefreq: 'weekly' },
   { path: '/plans', priority: 0.85, changefreq: 'daily' },
   { path: '/agents', priority: 0.86, changefreq: 'weekly' },
   { path: '/creative-plans', priority: 0.82, changefreq: 'weekly' },

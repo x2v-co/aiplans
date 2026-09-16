@@ -30,8 +30,10 @@ import { getActiveCouponMap } from "@/lib/coupons";
 import { formatModelName } from '@/lib/model-names';
 import { guideForModelSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import ModelBenchmarkPanel from '@/components/model-benchmark-panel';
+import CodingAgentModelSection from '@/components/coding-agent-model-section';
 import VariantBadges from '@/components/variant-badges';
 import { isArenaBenchmark, type ModelBenchmarkScore } from '@/lib/benchmarks';
+import { getCodingAgentRowsForModel } from '@/lib/coding-agents';
 
 const baseUrl = SITE_URL;
 
@@ -339,6 +341,9 @@ export default async function ModelPage({
   }
 
   const { product, channelPrices, plans, arenaElo, benchmarkScores, priceHistory, relatedModels } = data;
+  // Agent-harness results (Claude Code, Codex, ...) on this host model. Renders
+  // nothing for the vast majority of models that AA has not evaluated.
+  const codingAgentRows = await getCodingAgentRowsForModel(product.id);
   const isZh = locale === 'zh';
   const productName = formatModelName(product.name);
   const guideSlug = guideForModelSlug(product.slug);
@@ -611,6 +616,8 @@ export default async function ModelPage({
         </div>
 
         <ModelBenchmarkPanel scores={benchmarkScores} locale={locale} />
+
+        <CodingAgentModelSection rows={codingAgentRows} locale={locale} />
 
         {/* Quick Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
