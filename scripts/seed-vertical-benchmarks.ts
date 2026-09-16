@@ -10,6 +10,7 @@
  */
 import { db } from './db/queries';
 import { ARENA_TEXT_TO_VIDEO_LEADERBOARD, ARENA_TEXT_TO_VIDEO_URL, arenaVideoSlug } from '../src/lib/arena-video-leaderboard';
+import { catalogForKind, RIGOROUS_MODEL_KINDS } from '../src/lib/ai-vertical-catalog';
 
 const APPLY = process.argv.includes('--apply');
 const VERIFIED_DATE = '2026-09-15';
@@ -184,10 +185,23 @@ async function ensureProvider(slug: string, name: string, website?: string): Pro
 }
 
 async function ensureArenaLeaderboardModels() {
+  // Version-level Arena entries must never overwrite a family-level catalog
+  // row whose slug collides (e.g. Arena's "sora" vs the curated Sora family):
+  // the vertical catalog owns name, modalities, capabilities, link and
+  // provider on those rows. seed:vertical-models runs first and wins.
+  const catalogSlugs = new Set(
+    RIGOROUS_MODEL_KINDS.flatMap((kind) =>
+      catalogForKind(kind).map((item) => item.slug).filter((slug): slug is string => Boolean(slug)),
+    ),
+  );
   for (const entry of ARENA_TEXT_TO_VIDEO_LEADERBOARD) {
     const provider = ORG_PROVIDER[entry.modelOrganization] ?? { slug: arenaVideoSlug(entry.modelOrganization || 'unknown'), name: entry.modelOrganization || 'Unknown' };
     const providerId = await ensureProvider(provider.slug, provider.name, provider.website);
     const slug = arenaVideoSlug(entry.modelDisplayName);
+    if (catalogSlugs.has(slug)) {
+      console.log(`  • arena entry ${slug} shares a family catalog slug; keeping catalog fields`);
+      continue;
+    }
     const description = `Version-level text-to-video leaderboard entry from Arena AI. Status: available. Pricing confidence: unknown. Last verified: ${VERIFIED_DATE}. Notes: Arena AI rank #${entry.rank}; Elo ${entry.rating.toFixed(1)}; votes ${entry.votes}. This is not collapsed into a family-level model. Sources: Arena AI: ${ARENA_URL}${entry.modelUrl ? ` | ${entry.modelOrganization}: ${entry.modelUrl}` : ''}`;
     const existing = await db.from('models').select('id').eq('slug', slug).maybeSingle();
     if (existing.error) throw existing.error;
