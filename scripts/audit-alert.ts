@@ -30,6 +30,7 @@ type Finding = {
 
 const ALWAYS_ALERT_CHECKS = new Set([
   'prices.modelsdev_divergence',
+  'prices.aa_official_divergence',
   'plans.modelsdev_entitlements',
 ]);
 

@@ -64,6 +64,8 @@ fi
 arena_status=$?
 "${compose[@]}" run --rm scraper npm run ingest:benchmarks
 benchmarks_status=$?
+"${compose[@]}" run --rm scraper npm run ingest:coding-agents
+coding_agents_status=$?
 set -e
 
 # audit-data uses 2 for warnings-only; only critical findings or an execution
@@ -98,4 +100,8 @@ fi
 
 if [[ "$benchmarks_status" != "0" ]]; then
   echo "Warning: task benchmark update failed; keeping the previous benchmark snapshot." >&2
+fi
+
+if [[ "$coding_agents_status" != "0" ]]; then
+  echo "Warning: coding agent leaderboard update failed; keeping the previous snapshot." >&2
 fi

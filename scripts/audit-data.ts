@@ -35,6 +35,10 @@
  *                                   with a notice when models.dev is unreachable)
  *   C20 plans.modelsdev_entitlements — coding-plan lists models.dev includes that our plan
  *                                   selector omits (warn; closed-list products only)
+ *   C21 prices.aa_official_divergence — our official/producer channel price disagrees with
+ *                                   the Artificial Analysis model leaderboard list price
+ *                                   (warn; DB snapshot from ingest:benchmarks, skipped with
+ *                                   a notice when the snapshot is missing or stale)
  */
 import { db } from './db/queries';
 import { databaseSql } from './db/postgres-admin';
@@ -55,6 +59,9 @@ const OUTLIER_RATIO = 5; // 5x deviation from median triggers outlier
 const MODELSDEV_REL_TOLERANCE = 0.25;
 const MODELSDEV_FX_REL_TOLERANCE = 0.35;
 const MODELSDEV_ABS_FLOOR_USD = 0.05;
+// C21: the Artificial Analysis snapshot landed by ingest:benchmarks is only a
+// valid reference while fresh. A stale snapshot silently disagrees forever.
+const AA_SNAPSHOT_MAX_AGE_DAYS = 14;
 
 type Severity = 'critical' | 'warning';
 interface Finding {
@@ -72,6 +79,11 @@ function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+// Trim USD values for human reports: 3dp, trailing zeros removed.
+function fmtUsd(n: number): string {
+  return n.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
 }
 
 async function main() {
@@ -99,6 +111,15 @@ async function main() {
      WHERE table_name = 'model_plan_mapping' AND column_name = 'source'
   `;
   const MAPPING_SOURCES = mappingSourceRows.length === 1;
+
+  // external_price_references (migration 024) backs C21; skip the check on a
+  // pre-migration database rather than crashing the nightly audit.
+  const extPriceRefColumns = await databaseSql<{ column_name: string }[]>`
+    SELECT column_name FROM information_schema.columns
+     WHERE table_name = 'external_price_references'
+       AND column_name IN ('source', 'model_id', 'observed_date', 'input_price_per_1m', 'output_price_per_1m')
+  `;
+  const AA_PRICE_REFS = extPriceRefColumns.length === 5;
 
   // C19: external reference fetch, kicked off concurrently with the DB reads.
   // Network trouble must never gate the audit — it degrades to a skip notice.
@@ -295,7 +316,6 @@ async function main() {
   const modelsDevResult = await modelsDevPromise;
   let mdComparable = 0;
   let mdMatched = 0;
-  const fmtUsd = (n: number) => n.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
   if (modelsDevResult.error) {
     log(`⏭  Skipping C19 prices.modelsdev_divergence: models.dev unreachable (${modelsDevResult.error})\n`);
   } else {
@@ -380,6 +400,103 @@ async function main() {
       );
     }
     log(`models.dev reference: ${modelsDev.providerCount} providers / ${modelsDev.pricedEntryCount} priced entries; matched ${mdMatched}/${mdComparable} comparable rows\n`);
+  }
+
+  // ---------- C21: Artificial Analysis official list-price reference ----------
+  // AA publishes producer list prices alongside its model leaderboard; the
+  // nightly ingest:benchmarks run snapshots them into external_price_references.
+  // Both sides are compared in USD. Like C19, a finding is a "go verify against
+  // the vendor pricing page" signal — AA can itself be stale on brand-new cuts.
+  if (!AA_PRICE_REFS) {
+    log('⏭  Skipping C21 prices.aa_official_divergence: external_price_references not migrated yet\n');
+  } else {
+    const aaRows = await databaseSql<{
+      model_id: number;
+      source_model_slug: string;
+      input_price_per_1m: number | null;
+      output_price_per_1m: number | null;
+      observed_date: string;
+    }[]>`
+      SELECT DISTINCT ON (model_id)
+             model_id, source_model_slug, input_price_per_1m, output_price_per_1m, observed_date::text
+        FROM external_price_references
+       WHERE source = 'artificial-analysis' AND model_id IS NOT NULL
+       ORDER BY model_id, observed_date DESC
+    `;
+    const newestAa = aaRows.reduce((max, r) => r.observed_date > max ? r.observed_date : max, '');
+    const aaAgeDays = newestAa ? (Date.now() - Date.parse(newestAa)) / 86_400_000 : Infinity;
+    if (!aaRows.length) {
+      log('⏭  Skipping C21 prices.aa_official_divergence: no Artificial Analysis price snapshot loaded yet\n');
+    } else if (aaAgeDays > AA_SNAPSHOT_MAX_AGE_DAYS) {
+      log(`⏭  Skipping C21 prices.aa_official_divergence: snapshot is ${aaAgeDays.toFixed(0)}d old (newest ${newestAa})\n`);
+    } else {
+      let aaComparable = 0;
+      let aaMismatch = 0;
+      for (const ref of aaRows) {
+        const modelSlug = modelById.get(ref.model_id)?.slug;
+        if (!modelSlug) continue;
+        if (isFreeTier(ref.model_id) || isNonTokenPriced(ref.model_id)) continue;
+        if (/(^|[-/])(realtime|transcribe|live)(?=-|$)|stepaudio|step-1o-audio/.test(modelSlug)) continue;
+        // AA publishes global USD list prices. A CNY producer row (Bailuan,
+        // zhipu-china) reflects regional price discrimination that no FX rate
+        // normalizes, not data rot — compare our USD official rows only, and
+        // skip models whose only official channel is non-USD (C19 covers those).
+        const officialPrices = prices.filter((p) => {
+          if (p.model_id !== ref.model_id || isDisabled(p)) return false;
+          if (p.currency && p.currency !== 'USD') return false;
+          const prov = p.provider_id != null ? providerById.get(p.provider_id) : undefined;
+          return prov?.type === 'official' || prov?.type === 'producer';
+        });
+        if (!officialPrices.length) continue;
+        aaComparable++;
+        const fieldDiverges = (
+          refValue: number | null,
+          field: 'input_price_per_1m' | 'output_price_per_1m',
+        ): { ours: number; provider: string; ratio: number } | null => {
+          if (typeof refValue !== 'number' || refValue <= 0) return null;
+          let worst: { ours: number; provider: string; ratio: number } | null = null;
+          for (const p of officialPrices) {
+            const ours = toUSD(p[field], p.currency);
+            if (typeof ours !== 'number' || !Number.isFinite(ours) || ours <= 0) continue;
+            const agrees = Math.abs(ours - refValue) <= MODELSDEV_ABS_FLOOR_USD
+              || Math.abs(ours - refValue) / Math.max(refValue, 1e-9) <= MODELSDEV_REL_TOLERANCE;
+            if (agrees) return null;
+            const ratio = ours / Math.max(refValue, 1e-9);
+            if (!worst || Math.abs(Math.log(ratio)) > Math.abs(Math.log(worst.ratio))) {
+              worst = { ours, provider: providerById.get(p.provider_id!)?.slug ?? `provider#${p.provider_id}`, ratio };
+            }
+          }
+          return worst;
+        };
+        const badIn = fieldDiverges(ref.input_price_per_1m, 'input_price_per_1m');
+        const badOut = fieldDiverges(ref.output_price_per_1m, 'output_price_per_1m');
+        if (!badIn && !badOut) continue;
+        aaMismatch++;
+        add(
+          'prices.aa_official_divergence',
+          'warning',
+          `${modelSlug}: ours $${badIn ? fmtUsd(badIn.ours) : '—'}/$${badOut ? fmtUsd(badOut.ours) : '—'}`
+            + ` vs Artificial Analysis list $${ref.input_price_per_1m != null ? fmtUsd(ref.input_price_per_1m) : '—'}/$${ref.output_price_per_1m != null ? fmtUsd(ref.output_price_per_1m) : '—'}`
+            + ` (AA slug ${ref.source_model_slug}, snapshot ${ref.observed_date})`,
+          {
+            model: refModel(ref.model_id),
+            aa_source_slug: ref.source_model_slug,
+            our_usd: {
+              input: badIn ? Number(badIn.ours.toFixed(4)) : null,
+              output: badOut ? Number(badOut.ours.toFixed(4)) : null,
+              providers: [badIn?.provider, badOut?.provider].filter(Boolean),
+            },
+            aa_usd: { input: ref.input_price_per_1m, output: ref.output_price_per_1m },
+            ratio: {
+              input: badIn ? Number(badIn.ratio.toFixed(2)) : null,
+              output: badOut ? Number(badOut.ratio.toFixed(2)) : null,
+            },
+            snapshot_date: ref.observed_date,
+          },
+        );
+      }
+      log(`Artificial Analysis list-price reference: ${aaRows.length} models, snapshot ${newestAa}; ${aaMismatch} diverge of ${aaComparable} with official channels\n`);
+    }
   }
 
   // ---------- C7/C8: model coverage ----------
@@ -638,6 +755,7 @@ async function main() {
       'prices.input_eq_output',
       'prices.cross_channel_outlier',
       'prices.modelsdev_divergence',
+      'prices.aa_official_divergence',
       'prices.stale',
       'prices.missing_verified',
       'models.no_channel_price',

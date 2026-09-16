@@ -283,6 +283,54 @@ export const evaluationRun = pgTable('evaluation_run', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
+// Coding Agent Scores - Artificial Analysis Coding Agent Index snapshot
+// (agent harness x host-model rows; scripts/ingest-coding-agents.ts)
+export const codingAgentScores = pgTable('coding_agent_scores', {
+  id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+  sourceRecordId: text('source_record_id').notNull().unique(),
+  agentName: text('agent_name').notNull(),
+  agentDisplayLabel: text('agent_display_label').notNull(),
+  variantOf: text('variant_of'),
+  hostModelSlug: text('host_model_slug').notNull(),
+  modelId: integer('model_id').references(() => models.id),
+  providerSlug: text('provider_slug'),
+  indexVersion: text('index_version').notNull(),
+  indexScore: real('index_score').notNull(),
+  deepsweScore: real('deepswe_score'),
+  terminalbenchScore: real('terminalbench_score'),
+  sweatlasScore: real('sweatlas_score'),
+  costPerTaskUsd: real('cost_per_task_usd'),
+  wallTimePerTaskSec: real('wall_time_per_task_sec'),
+  stepsPerTask: real('steps_per_task'),
+  totalTokensPerTask: real('total_tokens_per_task'),
+  refusalRate: real('refusal_rate'),
+  isDefault: boolean('is_default'),
+  isHighlighted: boolean('is_highlighted'),
+  isUnavailable: boolean('is_unavailable'),
+  raw: jsonb('raw').notNull(),
+  sourceMaterializedAt: timestamp('source_materialized_at', { withTimezone: true }),
+  observedDate: date('observed_date').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
+// External Price References - independent official list-price snapshots used
+// by the audit's cross-source divergence checks
+export const externalPriceReferences = pgTable('external_price_references', {
+  id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+  source: text('source').notNull(),
+  sourceModelSlug: text('source_model_slug').notNull(),
+  modelId: integer('model_id').references(() => models.id),
+  inputPricePer1m: real('input_price_per_1m'),
+  outputPricePer1m: real('output_price_per_1m'),
+  cachedInputPricePer1m: real('cached_input_price_per_1m'),
+  currency: varchar('currency', { length: 3 }).notNull().default('USD'),
+  observedDate: date('observed_date').notNull(),
+  raw: jsonb('raw').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
 // Coupons - Discount codes
 export const coupons = pgTable('coupons', {
   id: serial('id').primaryKey(),

@@ -95,6 +95,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
     pathname === `/${locale}/models` ||
     pathname?.startsWith(`/${locale}/models/`) ||
     pathname?.startsWith(`/${locale}/video-models`) ||
+    pathname?.startsWith(`/${locale}/coding-agents`) ||
     pathname?.startsWith(`/${locale}/music-models`) ||
     pathname?.startsWith(`/${locale}/world-models`);
   const isPlansActive =
@@ -118,6 +119,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
       items: [
         { href: `/${locale}/compare/models`, label: t('compareModels'), active: pathname?.startsWith(`/${locale}/compare/models`) },
         { href: `/${locale}/compare/video-models`, label: t('compareVideoModels'), active: pathname?.startsWith(`/${locale}/compare/video-models`) },
+        { href: `/${locale}/coding-agents`, label: t('codingAgents'), active: pathname?.startsWith(`/${locale}/coding-agents`) },
         { href: `/${locale}/api-pricing`, label: t('apiModelPricing'), active: pathname?.startsWith(`/${locale}/api-pricing`) },
       ],
     },

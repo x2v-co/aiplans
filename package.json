@@ -37,6 +37,7 @@
     "mappings:materialize:dry-run": "tsx scripts/materialize-model-plan-mappings.ts --dry-run",
     "ingest:arena": "tsx scripts/ingest-arena-leaderboard.ts",
     "ingest:benchmarks": "tsx scripts/ingest-artificial-analysis-benchmarks.ts",
+    "ingest:coding-agents": "tsx scripts/ingest-coding-agents.ts",
     "indexnow": "tsx scripts/submit-indexnow.ts",
     "fetch-logos": "tsx scripts/fetch-provider-logos.ts",
     "fetch-logos:force": "tsx scripts/fetch-provider-logos.ts --force",

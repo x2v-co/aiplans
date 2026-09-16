@@ -700,6 +700,72 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS usage_prices_plan_idx ON usage_prices (plan_id, price_kind);
     `,
   },
+  {
+    name: '024_add_coding_agents_and_price_references',
+    sql: `
+      -- Artificial Analysis Coding Agent Index snapshot (scripts/ingest-coding-agents.ts).
+      -- Rows are agent-harness x host-model combinations; the natural key is the
+      -- 32-hex record id embedded in the source RSC payload. model_id is nullable
+      -- because some evaluated host models (e.g. Meta Muse Spark codenames) are
+      -- not in our token-pricing catalog.
+      CREATE TABLE IF NOT EXISTS coding_agent_scores (
+        id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        source_record_id text NOT NULL UNIQUE,
+        agent_name text NOT NULL,
+        agent_display_label text NOT NULL,
+        variant_of text,
+        host_model_slug text NOT NULL,
+        model_id integer REFERENCES models(id),
+        provider_slug text,
+        index_version text NOT NULL,
+        index_score real NOT NULL,
+        deepswe_score real,
+        terminalbench_score real,
+        sweatlas_score real,
+        cost_per_task_usd real,
+        wall_time_per_task_sec real,
+        steps_per_task real,
+        total_tokens_per_task real,
+        refusal_rate real,
+        is_default boolean,
+        is_highlighted boolean,
+        is_unavailable boolean,
+        raw jsonb NOT NULL,
+        source_materialized_at timestamptz,
+        observed_date date NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS coding_agent_scores_model_idx
+        ON coding_agent_scores (model_id);
+      CREATE INDEX IF NOT EXISTS coding_agent_scores_rank_idx
+        ON coding_agent_scores (index_score DESC)
+        WHERE is_unavailable IS NOT TRUE;
+
+      -- Independent official list-price snapshots used as a data-accuracy cross
+      -- check (audit prices.aa_official_divergence). Populated by
+      -- ingest-artificial-analysis-benchmarks.ts from the AA model leaderboard.
+      CREATE TABLE IF NOT EXISTS external_price_references (
+        id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        source text NOT NULL,
+        source_model_slug text NOT NULL,
+        model_id integer REFERENCES models(id),
+        input_price_per_1m real,
+        output_price_per_1m real,
+        cached_input_price_per_1m real,
+        currency char(3) NOT NULL DEFAULT 'USD',
+        observed_date date NOT NULL,
+        raw jsonb NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        UNIQUE (source, source_model_slug)
+      );
+      CREATE INDEX IF NOT EXISTS ext_price_refs_model_idx
+        ON external_price_references (model_id);
+      CREATE INDEX IF NOT EXISTS ext_price_refs_observed_idx
+        ON external_price_references (source, observed_date);
+    `,
+  },
 ];
 
 async function main() {
