@@ -239,9 +239,9 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
     return isZh
       ? {
           eyebrow: '新增模型类别',
-          title: 'AI 音乐与音频模型对比',
+          title: 'AI 音乐与音频模型目录',
           description:
-            '对比 Suno、Udio、Stable Audio、ElevenLabs、MiniMax Audio、Seed Audio 等音乐和音频生成模型。重点看生成时长、人声、伴奏、stem 导出、声音克隆、商用授权和 API 可用性。',
+            '浏览 Suno、Udio、Stable Audio、ElevenLabs、MiniMax Audio、Seed Audio 等音乐和音频生成模型。重点看生成时长、人声、伴奏、stem 导出、声音克隆、商用授权和 API 可用性。',
           primaryCta: '查看创作套餐',
           secondaryCta: '查看视频模型',
           cardsTitle: '音乐模型的比较维度',
@@ -255,7 +255,7 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
           metrics: ['价格单位：歌曲 / 分钟 / credit', '最大歌曲长度', '人声与伴奏支持', '歌词与风格控制', 'stem 导出和声音克隆', '商用许可与版权限制'],
           examplesTitle: '优先收录对象',
           examples: [
-            { name: 'Suno', provider: 'Suno', note: '音乐生成头部产品，按歌曲数量、credit 和商用权对比。', tags: ['Music', 'Songs'] },
+            { name: 'Suno', provider: 'Suno', note: '音乐生成头部产品，重点记录歌曲数量、credit 和商用权。', tags: ['Music', 'Songs'] },
             { name: 'Udio', provider: 'Udio', note: '音乐生成与编辑，重点看输出时长、续写和下载权益。', tags: ['Music', 'Editing'] },
             { name: 'ElevenLabs Music', provider: 'ElevenLabs', note: '语音和音乐能力可能跨多个套餐，需要拆清音频分钟和授权。', tags: ['Audio', 'Voice'] },
             { name: 'Stable Audio', provider: 'Stability AI', note: '音乐与音效生成，适合纳入 API/创作套餐双视角。', tags: ['Audio', 'API'] },
@@ -265,23 +265,23 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
         }
       : {
           eyebrow: 'New model category',
-          title: 'AI Music and Audio Models Compared',
+          title: 'AI Music and Audio Model Catalog',
           description:
-            'Compare music and audio generation models such as Suno, Udio, Stable Audio, ElevenLabs, MiniMax Audio and Seed Audio. Track duration, vocals, instrumentals, stems, voice cloning, commercial rights and API availability.',
+            'Browse music and audio generation models such as Suno, Udio, Stable Audio, ElevenLabs, MiniMax Audio and Seed Audio. Track duration, vocals, instrumentals, stems, voice cloning, commercial rights and API availability.',
           primaryCta: 'View creative plans',
           secondaryCta: 'View video models',
           cardsTitle: 'What makes music models different',
           cardsDescription: 'Music models are priced in songs, minutes, credits or subscription allowances, not text tokens.',
           cards: [
-            { title: 'Text-to-Music', description: 'Generate songs from prompts. Compare vocals, style control, lyrics, song length and commercial rights.', tags: ['Song', 'Vocals', 'Lyrics'], icon: Music2 },
-            { title: 'Audio Generation', description: 'Generate sound effects, background music, voiceover and audio clips. Compare duration, formats and API access.', tags: ['SFX', 'BGM', 'API'], icon: WandSparkles },
+            { title: 'Text-to-Music', description: 'Generate songs from prompts. Track vocals, style control, lyrics, song length and commercial rights.', tags: ['Song', 'Vocals', 'Lyrics'], icon: Music2 },
+            { title: 'Audio Generation', description: 'Generate sound effects, background music, voiceover and audio clips. Track duration, formats and API access.', tags: ['SFX', 'BGM', 'API'], icon: WandSparkles },
             { title: 'Voice / Stems', description: 'Voice cloning, stem export, editing and remix ability determine professional workflow value.', tags: ['Voice', 'Stems', 'Editing'], icon: Sparkles },
           ],
           metricsTitle: 'Fields to track',
           metrics: ['Pricing unit: song / minute / credit', 'Max song length', 'Vocals and instrumental support', 'Lyrics and style control', 'Stem export and voice cloning', 'Commercial rights and copyright limits'],
           examplesTitle: 'Priority products',
           examples: [
-            { name: 'Suno', provider: 'Suno', note: 'Leading music generator. Compare song counts, credits and commercial rights.', tags: ['Music', 'Songs'] },
+            { name: 'Suno', provider: 'Suno', note: 'Leading music generator. Track song counts, credits and commercial rights.', tags: ['Music', 'Songs'] },
             { name: 'Udio', provider: 'Udio', note: 'Music generation and editing. Track duration, extension and download rights.', tags: ['Music', 'Editing'] },
             { name: 'ElevenLabs Music', provider: 'ElevenLabs', note: 'Voice and music may span plans. Separate audio minutes from rights.', tags: ['Audio', 'Voice'] },
             { name: 'Stable Audio', provider: 'Stability AI', note: 'Music and sound generation. Useful in both API and creative-plan views.', tags: ['Audio', 'API'] },
