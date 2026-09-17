@@ -766,6 +766,69 @@ const MIGRATIONS: Migration[] = [
         ON external_price_references (source, observed_date);
     `,
   },
+  {
+    name: '025_add_api_channel_price_variants',
+    sql: `
+      -- Routers/resellers often expose multiple public prices for the same
+      -- model under service groups, quality tiers, or account classes. Keep
+      -- api_channel_prices as the headline comparison row, and store the full
+      -- provider/model/variant facts here.
+      CREATE TABLE IF NOT EXISTS api_channel_price_variants (
+        id bigserial PRIMARY KEY,
+        model_id integer REFERENCES models(id),
+        provider_id integer REFERENCES providers(id),
+        variant_key text NOT NULL,
+        variant_name text NOT NULL,
+        variant_kind text,
+        source_group_key text,
+        source_group_name text,
+        source_pricing_version text,
+        source_updated_at timestamptz,
+        source_url text,
+        input_price_per_1m real,
+        output_price_per_1m real,
+        cached_input_price_per_1m real,
+        cache_create_price_per_1m real,
+        currency varchar DEFAULT 'USD',
+        price_unit varchar DEFAULT 'per_1m_tokens',
+        is_available boolean DEFAULT true,
+        is_public boolean DEFAULT true,
+        is_self_service boolean DEFAULT true,
+        is_partner_only boolean DEFAULT false,
+        is_headline boolean DEFAULT false,
+        headline_rank integer,
+        headline_reason text,
+        constraints_json jsonb DEFAULT '{}'::jsonb,
+        raw_json jsonb DEFAULT '{}'::jsonb,
+        notes text,
+        last_verified timestamptz,
+        created_at timestamptz DEFAULT now(),
+        updated_at timestamptz DEFAULT now(),
+        UNIQUE (provider_id, model_id, variant_key)
+      );
+
+      ALTER TABLE api_channel_price_variants DROP CONSTRAINT IF EXISTS api_channel_price_variants_currency_check;
+      ALTER TABLE api_channel_price_variants ADD CONSTRAINT api_channel_price_variants_currency_check
+        CHECK (currency IN ('USD', 'CNY', 'EUR', 'GBP', 'JPY', 'KRW', 'SGD'));
+
+      ALTER TABLE api_channel_price_variants DROP CONSTRAINT IF EXISTS api_channel_price_variants_price_unit_check;
+      ALTER TABLE api_channel_price_variants ADD CONSTRAINT api_channel_price_variants_price_unit_check
+        CHECK (price_unit IN ('per_1m_tokens'));
+
+      CREATE UNIQUE INDEX IF NOT EXISTS api_channel_price_variants_provider_model_key_idx
+        ON api_channel_price_variants (provider_id, model_id, variant_key);
+      CREATE INDEX IF NOT EXISTS api_channel_price_variants_provider_model_idx
+        ON api_channel_price_variants (provider_id, model_id);
+      CREATE INDEX IF NOT EXISTS api_channel_price_variants_headline_idx
+        ON api_channel_price_variants (provider_id, model_id)
+        WHERE is_headline = true;
+      CREATE UNIQUE INDEX IF NOT EXISTS api_channel_price_variants_one_headline_idx
+        ON api_channel_price_variants (provider_id, model_id)
+        WHERE is_headline = true AND is_available = true;
+      CREATE INDEX IF NOT EXISTS api_channel_price_variants_verified_idx
+        ON api_channel_price_variants (last_verified DESC);
+    `,
+  },
 ];
 
 async function main() {

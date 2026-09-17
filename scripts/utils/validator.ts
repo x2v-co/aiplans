@@ -20,10 +20,41 @@ export interface ScrapedPrice {
   notes?: string;
 }
 
+export interface ScrapedPriceVariant {
+  modelName: string;
+  modelSlug: string;
+  variantKey: string;
+  variantName: string;
+  /** tier | service_group | upstream_provider | region | context_band | batch | other */
+  variantKind?: string;
+  sourceGroupKey?: string;
+  sourceGroupName?: string;
+  sourcePricingVersion?: string;
+  sourceUpdatedAt?: string;
+  sourceUrl?: string;
+  inputPricePer1M: number;
+  outputPricePer1M: number;
+  cachedInputPricePer1M?: number;
+  cacheCreatePricePer1M?: number;
+  currency?: CurrencyCode;
+  priceUnit?: string;
+  isAvailable: boolean;
+  isPublic?: boolean;
+  isSelfService?: boolean;
+  isPartnerOnly?: boolean;
+  isHeadline?: boolean;
+  headlineRank?: number;
+  headlineReason?: string;
+  constraints?: Record<string, unknown>;
+  raw?: Record<string, unknown>;
+  notes?: string;
+}
+
 export interface ScraperResult {
   source: string;
   success: boolean;
   prices: ScrapedPrice[];
+  variants?: ScrapedPriceVariant[];
   errors?: string[];
 }
 

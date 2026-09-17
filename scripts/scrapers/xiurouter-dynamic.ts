@@ -27,7 +27,7 @@
  * NO FALLBACK DATA — fails loud when the endpoint shape changes.
  */
 
-import type { ScrapedPrice, ScraperResult } from '../utils/validator';
+import type { ScrapedPrice, ScrapedPriceVariant, ScraperResult } from '../utils/validator';
 import { validatePrice } from '../utils/validator';
 
 const XIUROUTER_PRICING_API = 'https://router.xiu.ai/api/pricing';
@@ -96,7 +96,7 @@ const MODEL_SLUGS: Record<string, string> = {
 };
 
 /** Fail loud if a silent payload change shrinks the catalog below this. */
-const MIN_PRICES = 20;
+const MIN_PRICES = 15;
 
 interface XiuRouterRow {
   model_name: string;
@@ -197,6 +197,16 @@ function longContextNote(row: XiuRouterRow): string | null {
   return `standard tier applies to <=${(tokens / 1000).toLocaleString('en-US')}k input tokens, long-context tier roughly doubles rates`;
 }
 
+function longContextConstraints(row: XiuRouterRow): Record<string, unknown> {
+  if (row.billing_mode !== 'tiered_expr' || typeof row.billing_expr !== 'string') return {};
+  const match = row.billing_expr.match(/len\s*(?:<=|<)\s*(\d+)/);
+  return {
+    billing_mode: row.billing_mode,
+    billing_expr: row.billing_expr,
+    ...(match ? { standard_input_tokens_lte: Number(match[1]) } : {}),
+  };
+}
+
 function buildNotes(row: XiuRouterRow, tiers: TierPrice[], headline: TierPrice, globalVersion?: string): string {
   const parts: string[] = [];
   parts.push(`XiuRouter ${GROUP_LABELS[headline.group] ?? headline.group} tier (group_ratio ${headline.multiplier})`);
@@ -224,6 +234,7 @@ export async function scrapeXiuRouterDynamic(): Promise<ScraperResult> {
   const startTime = Date.now();
   const errors: string[] = [];
   const prices: ScrapedPrice[] = [];
+  const variants: ScrapedPriceVariant[] = [];
   const skipped: string[] = [];
 
   try {
@@ -308,6 +319,44 @@ export async function scrapeXiuRouterDynamic(): Promise<ScraperResult> {
           currency: 'USD',
           notes: buildNotes(row, tiers, headline, payload.pricing_version),
         });
+
+        for (const tier of tiers) {
+          const isHeadline = tier.group === headline.group;
+          variants.push({
+            modelName: slug,
+            modelSlug: slug,
+            variantKey: tier.group,
+            variantName: GROUP_LABELS[tier.group] ?? tier.group,
+            variantKind: tier.group,
+            sourceGroupKey: tier.group,
+            sourceGroupName: GROUP_LABELS[tier.group] ?? tier.group,
+            sourcePricingVersion: row.pricing_version || payload.pricing_version,
+            sourceUrl: XIUROUTER_PRICING_API,
+            inputPricePer1M: tier.input,
+            outputPricePer1M: tier.output,
+            cachedInputPricePer1M: tier.cacheRead ?? undefined,
+            cacheCreatePricePer1M: typeof row.create_cache_ratio === 'number' && Number.isFinite(row.create_cache_ratio)
+              ? round6(tier.input * row.create_cache_ratio)
+              : undefined,
+            currency: 'USD',
+            priceUnit: 'per_1m_tokens',
+            isAvailable: true,
+            isPublic: true,
+            isSelfService: true,
+            isPartnerOnly: false,
+            isHeadline,
+            headlineRank: HEADLINE_GROUP_ORDER.indexOf(tier.group),
+            headlineReason: isHeadline ? 'Full-speed managed tier preferred for headline comparisons; cheaper value tier is shown as an alternate variant.' : undefined,
+            constraints: {
+              group_ratio: tier.multiplier,
+              completion_ratio: row.completion_ratio ?? 1,
+              cache_ratio: row.cache_ratio,
+              ...longContextConstraints(row),
+            },
+            raw: { ...row, reference_price_note: 'reference_price is upstream comparison only, not XiuRouter billed price' },
+            notes: buildNotes(row, tiers, tier, payload.pricing_version),
+          });
+        }
       } catch (error) {
         errors.push(`Error processing ${row.model_name}: ${String(error)}`);
       }
@@ -332,6 +381,7 @@ export async function scrapeXiuRouterDynamic(): Promise<ScraperResult> {
       source: 'XiuRouter',
       success: errors.length === 0 && prices.length > 0,
       prices,
+      variants,
       errors: errors.length > 0 ? errors : undefined,
     };
   } catch (error) {

@@ -14,6 +14,21 @@ import { benchmarkKey, type ModelBenchmarkScore } from '@/lib/benchmarks';
  * directly; the route stays as a thin wrapper so its contract is unchanged.
  */
 
+export interface ChannelPriceVariant {
+  id: number;
+  variant_key: string;
+  variant_name: string;
+  variant_kind?: string | null;
+  input_price_per_1m: number;
+  output_price_per_1m: number;
+  cached_input_price_per_1m?: number | null;
+  currency: CurrencyCode;
+  price_unit: PriceUnit;
+  is_headline: boolean;
+  headline_reason?: string | null;
+  constraints_json?: Record<string, unknown> | null;
+}
+
 export interface ChannelPrice {
   id: number;
   model_id: number;
@@ -29,6 +44,7 @@ export interface ChannelPrice {
   model_slug?: string;
   /** Variant tags relative to the parent model, e.g. ['mini'], ['mini', 'batch']. */
   variant?: string[];
+  price_variants?: ChannelPriceVariant[];
   providers: {
     id: number;
     name: string;
@@ -130,6 +146,27 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
         cp.price_unit,
         cp.rate_limit,
         cp.is_available,
+        COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'id', v.id,
+            'variant_key', v.variant_key,
+            'variant_name', v.variant_name,
+            'variant_kind', v.variant_kind,
+            'input_price_per_1m', v.input_price_per_1m,
+            'output_price_per_1m', v.output_price_per_1m,
+            'cached_input_price_per_1m', v.cached_input_price_per_1m,
+            'currency', v.currency,
+            'price_unit', v.price_unit,
+            'is_headline', v.is_headline,
+            'headline_reason', v.headline_reason,
+            'constraints_json', v.constraints_json
+          ) ORDER BY v.is_headline DESC, v.headline_rank ASC NULLS LAST, v.input_price_per_1m ASC NULLS LAST)
+          FROM api_channel_price_variants v
+          WHERE v.model_id = cp.model_id
+            AND v.provider_id = cp.provider_id
+            AND v.is_available = true
+            AND v.is_public = true
+        ), '[]'::jsonb) AS price_variants,
         jsonb_build_object(
           'id', p.id,
           'name', p.name,

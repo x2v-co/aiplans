@@ -6,6 +6,265 @@ import { databaseSql, postgresAdmin } from './postgres-admin';
 export const db = postgresAdmin;
 
 // Query helpers
+export async function upsertChannelPriceVariant(data: {
+  model_id: number;
+  provider_id: number;
+  variant_key: string;
+  variant_name: string;
+  variant_kind?: string;
+  source_group_key?: string;
+  source_group_name?: string;
+  source_pricing_version?: string;
+  source_updated_at?: string;
+  source_url?: string;
+  input_price_per_1m: number;
+  output_price_per_1m: number;
+  cached_input_price_per_1m?: number;
+  cache_create_price_per_1m?: number;
+  currency?: string;
+  price_unit?: string;
+  is_available: boolean;
+  is_public?: boolean;
+  is_self_service?: boolean;
+  is_partner_only?: boolean;
+  is_headline?: boolean;
+  headline_rank?: number;
+  headline_reason?: string;
+  constraints_json?: Record<string, unknown>;
+  raw_json?: Record<string, unknown>;
+  notes?: string;
+  last_verified: Date;
+}) {
+  if (data.input_price_per_1m == null || data.output_price_per_1m == null) {
+    throw new Error(
+      `upsertChannelPriceVariant: null price rejected (model_id=${data.model_id} provider_id=${data.provider_id} variant=${data.variant_key})`
+    );
+  }
+  if (data.input_price_per_1m < 0 || data.output_price_per_1m < 0) {
+    throw new Error(
+      `upsertChannelPriceVariant: negative price rejected (model_id=${data.model_id} provider_id=${data.provider_id} variant=${data.variant_key})`
+    );
+  }
+  if (
+    data.input_price_per_1m > 0 &&
+    data.output_price_per_1m > 0 &&
+    data.output_price_per_1m < data.input_price_per_1m
+  ) {
+    throw new Error(
+      `upsertChannelPriceVariant: output (${data.output_price_per_1m}) < input (${data.input_price_per_1m}) for variant ${data.variant_key}`
+    );
+  }
+
+  if (data.is_headline) {
+    const { error: clearError } = await db
+      .from('api_channel_price_variants')
+      .update({ is_headline: false, updated_at: new Date() })
+      .eq('model_id', data.model_id)
+      .eq('provider_id', data.provider_id);
+    if (clearError) throw clearError;
+  }
+
+  const row = {
+    model_id: data.model_id,
+    provider_id: data.provider_id,
+    variant_key: data.variant_key,
+    variant_name: data.variant_name,
+    variant_kind: data.variant_kind,
+    source_group_key: data.source_group_key,
+    source_group_name: data.source_group_name,
+    source_pricing_version: data.source_pricing_version,
+    source_updated_at: data.source_updated_at,
+    source_url: data.source_url,
+    input_price_per_1m: data.input_price_per_1m,
+    output_price_per_1m: data.output_price_per_1m,
+    cached_input_price_per_1m: data.cached_input_price_per_1m,
+    cache_create_price_per_1m: data.cache_create_price_per_1m,
+    currency: data.currency ?? 'USD',
+    price_unit: data.price_unit ?? 'per_1m_tokens',
+    is_available: data.is_available,
+    is_public: data.is_public ?? true,
+    is_self_service: data.is_self_service ?? true,
+    is_partner_only: data.is_partner_only ?? false,
+    is_headline: data.is_headline ?? false,
+    headline_rank: data.headline_rank,
+    headline_reason: data.headline_reason,
+    constraints_json: data.constraints_json ?? {},
+    raw_json: data.raw_json ?? {},
+    notes: data.notes,
+    last_verified: data.last_verified,
+    updated_at: new Date(),
+  };
+
+  const { data: existing, error: selectError } = await db
+    .from('api_channel_price_variants')
+    .select('id')
+    .eq('model_id', data.model_id)
+    .eq('provider_id', data.provider_id)
+    .eq('variant_key', data.variant_key)
+    .single();
+
+  if (selectError && selectError.code !== 'PGRST116') throw selectError;
+
+  if (existing) {
+    const { data: result, error } = await db
+      .from('api_channel_price_variants')
+      .update(row)
+      .eq('id', existing.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return result;
+  }
+
+  const { data: result, error } = await db
+    .from('api_channel_price_variants')
+    .insert(row)
+    .select()
+    .single();
+  if (error) throw error;
+  return result;
+}
+
+export async function batchUpsertChannelPriceVariants(rows: Array<Parameters<typeof upsertChannelPriceVariant>[0]>): Promise<number> {
+  if (rows.length === 0) return 0;
+  for (const row of rows) {
+    if (row.input_price_per_1m == null || row.output_price_per_1m == null) {
+      throw new Error(`batchUpsertChannelPriceVariants: null price rejected (${row.model_id}/${row.provider_id}/${row.variant_key})`);
+    }
+    if (row.input_price_per_1m < 0 || row.output_price_per_1m < 0) {
+      throw new Error(`batchUpsertChannelPriceVariants: negative price rejected (${row.model_id}/${row.provider_id}/${row.variant_key})`);
+    }
+    if (row.input_price_per_1m > 0 && row.output_price_per_1m > 0 && row.output_price_per_1m < row.input_price_per_1m) {
+      throw new Error(`batchUpsertChannelPriceVariants: output < input (${row.model_id}/${row.provider_id}/${row.variant_key})`);
+    }
+  }
+
+  const deduped = new Map<string, typeof rows[number]>();
+  for (const row of rows) {
+    const key = `${row.provider_id}:${row.model_id}:${row.variant_key}`;
+    const existing = deduped.get(key);
+    if (!existing) {
+      deduped.set(key, row);
+      continue;
+    }
+    const existingScore = (existing.is_headline ? 1_000_000 : 0) + (existing.is_available ? 10_000 : 0) - existing.input_price_per_1m;
+    const rowScore = (row.is_headline ? 1_000_000 : 0) + (row.is_available ? 10_000 : 0) - row.input_price_per_1m;
+    if (rowScore > existingScore) deduped.set(key, row);
+  }
+  rows = [...deduped.values()];
+
+  const headlinePairs = new Set(rows.filter(r => r.is_headline).map(r => `${r.model_id}:${r.provider_id}`));
+  for (const pair of headlinePairs) {
+    const [modelId, providerId] = pair.split(':').map(Number);
+    await databaseSql`
+      UPDATE api_channel_price_variants
+         SET is_headline = false, updated_at = now()
+       WHERE model_id = ${modelId} AND provider_id = ${providerId}
+    `;
+  }
+
+  const data = rows.map(row => ({
+    model_id: row.model_id,
+    provider_id: row.provider_id,
+    variant_key: row.variant_key,
+    variant_name: row.variant_name,
+    variant_kind: row.variant_kind ?? null,
+    source_group_key: row.source_group_key ?? null,
+    source_group_name: row.source_group_name ?? null,
+    source_pricing_version: row.source_pricing_version ?? null,
+    source_updated_at: row.source_updated_at ?? null,
+    source_url: row.source_url ?? null,
+    input_price_per_1m: row.input_price_per_1m,
+    output_price_per_1m: row.output_price_per_1m,
+    cached_input_price_per_1m: row.cached_input_price_per_1m ?? null,
+    cache_create_price_per_1m: row.cache_create_price_per_1m ?? null,
+    currency: row.currency ?? 'USD',
+    price_unit: row.price_unit ?? 'per_1m_tokens',
+    is_available: row.is_available,
+    is_public: row.is_public ?? true,
+    is_self_service: row.is_self_service ?? true,
+    is_partner_only: row.is_partner_only ?? false,
+    is_headline: row.is_headline ?? false,
+    headline_rank: row.headline_rank ?? null,
+    headline_reason: row.headline_reason ?? null,
+    constraints_json: row.constraints_json ?? {},
+    raw_json: row.raw_json ?? {},
+    notes: row.notes ?? null,
+    last_verified: row.last_verified,
+    updated_at: new Date(),
+  }));
+
+  await databaseSql`
+    INSERT INTO api_channel_price_variants ${databaseSql(data,
+      'model_id', 'provider_id', 'variant_key', 'variant_name', 'variant_kind',
+      'source_group_key', 'source_group_name', 'source_pricing_version', 'source_updated_at', 'source_url',
+      'input_price_per_1m', 'output_price_per_1m', 'cached_input_price_per_1m', 'cache_create_price_per_1m',
+      'currency', 'price_unit', 'is_available', 'is_public', 'is_self_service', 'is_partner_only',
+      'is_headline', 'headline_rank', 'headline_reason', 'constraints_json', 'raw_json', 'notes', 'last_verified', 'updated_at'
+    )}
+    ON CONFLICT (provider_id, model_id, variant_key) DO UPDATE SET
+      variant_name = EXCLUDED.variant_name,
+      variant_kind = EXCLUDED.variant_kind,
+      source_group_key = EXCLUDED.source_group_key,
+      source_group_name = EXCLUDED.source_group_name,
+      source_pricing_version = EXCLUDED.source_pricing_version,
+      source_updated_at = EXCLUDED.source_updated_at,
+      source_url = EXCLUDED.source_url,
+      input_price_per_1m = EXCLUDED.input_price_per_1m,
+      output_price_per_1m = EXCLUDED.output_price_per_1m,
+      cached_input_price_per_1m = EXCLUDED.cached_input_price_per_1m,
+      cache_create_price_per_1m = EXCLUDED.cache_create_price_per_1m,
+      currency = EXCLUDED.currency,
+      price_unit = EXCLUDED.price_unit,
+      is_available = EXCLUDED.is_available,
+      is_public = EXCLUDED.is_public,
+      is_self_service = EXCLUDED.is_self_service,
+      is_partner_only = EXCLUDED.is_partner_only,
+      is_headline = EXCLUDED.is_headline,
+      headline_rank = EXCLUDED.headline_rank,
+      headline_reason = EXCLUDED.headline_reason,
+      constraints_json = EXCLUDED.constraints_json,
+      raw_json = EXCLUDED.raw_json,
+      notes = EXCLUDED.notes,
+      last_verified = EXCLUDED.last_verified,
+      updated_at = EXCLUDED.updated_at
+  `;
+  return rows.length;
+}
+
+export async function retireUnseenChannelPriceVariants(
+  providerId: number,
+  seen: Array<{ model_id: number; variant_key: string }>,
+  source: string,
+): Promise<number> {
+  const seenKeys = new Set(seen.map(item => `${item.model_id}:${item.variant_key}`));
+  const { data: activeRows, error } = await db
+    .from('api_channel_price_variants')
+    .select('id, model_id, variant_key, notes')
+    .eq('provider_id', providerId)
+    .eq('is_available', true);
+  if (error) throw error;
+
+  const unseen = (activeRows ?? []).filter(row => !seenKeys.has(`${row.model_id}:${row.variant_key}`));
+  if (unseen.length === 0) return 0;
+
+  const retiredAt = new Date().toISOString();
+  await Promise.all(unseen.map(async row => {
+    const retirementNote = `retired ${retiredAt}: absent from successful full-catalog ${source} variant scrape`;
+    const { error: updateError } = await db
+      .from('api_channel_price_variants')
+      .update({
+        is_available: false,
+        is_headline: false,
+        notes: row.notes ? `${row.notes} | ${retirementNote}` : retirementNote,
+        updated_at: retiredAt,
+      })
+      .eq('id', row.id);
+    if (updateError) throw updateError;
+  }));
+  return unseen.length;
+}
+
 export async function upsertChannelPrice(data: {
   model_id: number;
   provider_id: number;
