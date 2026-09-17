@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useDeferredValue } from "react";
+import { Fragment, useState, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
 import { useTranslations } from '@/lib/translations';
 import { Button } from "@/components/ui/button";
@@ -653,12 +653,18 @@ export default function ApiPricingView({
                                 : 0;
 
                               return (
-                                <TableRow key={`${cp.id}-${idx}`}>
+                                <Fragment key={`${cp.id}-${idx}`}>
+                                <TableRow>
                                   <TableCell>
                                     <div className="flex items-center gap-2">
                                       <span className={cp === cheapestOfficial ? "font-medium" : ""}>
                                         {cp.providers.name}
                                       </span>
+                                      {(cp.price_variants?.length ?? 0) > 1 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {cp.price_variants!.length} {locale === 'zh' ? '档报价' : 'variants'}
+                                        </Badge>
+                                      )}
                                       {(cp.variant ?? []).map(tag => {
                                         const label = locale === 'zh'
                                           ? { mini: '轻量', nano: 'Nano', batch: '批量' }[tag]
@@ -718,6 +724,32 @@ export default function ApiPricingView({
                                     />
                                   </TableCell>
                                 </TableRow>
+                                {(cp.price_variants?.length ?? 0) > 1 && (
+                                  <TableRow>
+                                    <TableCell colSpan={6} className="bg-zinc-50/70 dark:bg-zinc-900/50">
+                                      <details className="text-sm">
+                                        <summary className="cursor-pointer text-zinc-600 hover:text-blue-600">
+                                          {locale === 'zh' ? '展开全部报价变体' : 'Show all price variants'}
+                                        </summary>
+                                        <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                                          {cp.price_variants!.map((variant) => (
+                                            <div key={variant.id} className="rounded-md border bg-white p-3 dark:bg-zinc-950">
+                                              <div className="mb-1 flex items-center gap-2">
+                                                <span className="font-medium">{variant.variant_name}</span>
+                                                {variant.is_headline && <Badge className="text-xs">{locale === 'zh' ? '默认' : 'Default'}</Badge>}
+                                              </div>
+                                              <div className="font-mono text-xs text-zinc-600">
+                                                {formatPrice(variant.input_price_per_1m, variant.currency || 'USD', locale)} / {formatPrice(variant.output_price_per_1m, variant.currency || 'USD', locale)} per 1M
+                                              </div>
+                                              {variant.variant_kind && <div className="mt-1 text-xs text-zinc-500">{variant.variant_kind}</div>}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </details>
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                                </Fragment>
                               );
                             });
                           })}

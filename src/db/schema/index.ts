@@ -158,6 +158,40 @@ export const apiChannelPrices = pgTable('api_channel_prices', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
+// API channel price variants - per-tier/per-group billed prices for routers/resellers
+export const apiChannelPriceVariants = pgTable('api_channel_price_variants', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  modelId: integer('model_id').references(() => models.id),
+  providerId: integer('provider_id').references(() => providers.id),
+  variantKey: text('variant_key').notNull(),
+  variantName: text('variant_name').notNull(),
+  variantKind: text('variant_kind'),
+  sourceGroupKey: text('source_group_key'),
+  sourceGroupName: text('source_group_name'),
+  sourcePricingVersion: text('source_pricing_version'),
+  sourceUpdatedAt: timestamp('source_updated_at', { withTimezone: true }),
+  sourceUrl: text('source_url'),
+  inputPricePer1m: real('input_price_per_1m'),
+  outputPricePer1m: real('output_price_per_1m'),
+  cachedInputPricePer1m: real('cached_input_price_per_1m'),
+  cacheCreatePricePer1m: real('cache_create_price_per_1m'),
+  currency: varchar('currency').default('USD'),
+  priceUnit: varchar('price_unit').default('per_1m_tokens'),
+  isAvailable: boolean('is_available').default(true),
+  isPublic: boolean('is_public').default(true),
+  isSelfService: boolean('is_self_service').default(true),
+  isPartnerOnly: boolean('is_partner_only').default(false),
+  isHeadline: boolean('is_headline').default(false),
+  headlineRank: integer('headline_rank'),
+  headlineReason: text('headline_reason'),
+  constraints: jsonb('constraints_json').default({}),
+  raw: jsonb('raw_json').default({}),
+  notes: text('notes'),
+  lastVerified: timestamp('last_verified', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
 // Price History - Significant channel price changes recorded by scrapers
 export const usagePrices = pgTable('usage_prices', {
   id: bigserial('id', { mode: 'number' }).primaryKey(),
@@ -378,6 +412,7 @@ export type Provider = typeof providers.$inferSelect;
 export type Model = typeof models.$inferSelect;
 export type Plan = typeof plans.$inferSelect;
 export type ApiChannelPrice = typeof apiChannelPrices.$inferSelect;
+export type ApiChannelPriceVariant = typeof apiChannelPriceVariants.$inferSelect;
 export type UsagePrice = typeof usagePrices.$inferSelect;
 export type PriceHistory = typeof priceHistory.$inferSelect;
 export type Click = typeof clicks.$inferSelect;

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, CalendarDays, Check, ExternalLink, TrendingDown, Zap, Globe } from "lucide-react";
 import { sql, INT4_ARRAY } from "@/lib/db";
-import { use } from "react";
+import { Fragment, use } from "react";
 import { getPrimaryProvidersForModels } from "@/lib/schema-adapters";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { formatPrice, type CurrencyCode } from "@/lib/currency";
@@ -161,6 +161,27 @@ async function getProductWithChannels(slug: string) {
   const normalizedChannelPrices = await sql<any[]>`
     SELECT
       cp.*,
+      COALESCE((
+        SELECT jsonb_agg(jsonb_build_object(
+          'id', v.id,
+          'variant_key', v.variant_key,
+          'variant_name', v.variant_name,
+          'variant_kind', v.variant_kind,
+          'input_price_per_1m', v.input_price_per_1m,
+          'output_price_per_1m', v.output_price_per_1m,
+          'cached_input_price_per_1m', v.cached_input_price_per_1m,
+          'currency', v.currency,
+          'price_unit', v.price_unit,
+          'is_headline', v.is_headline,
+          'headline_reason', v.headline_reason,
+          'constraints_json', v.constraints_json
+        ) ORDER BY v.is_headline DESC, v.headline_rank ASC NULLS LAST, v.input_price_per_1m ASC NULLS LAST)
+        FROM api_channel_price_variants v
+        WHERE v.model_id = cp.model_id
+          AND v.provider_id = cp.provider_id
+          AND v.is_available = true
+          AND v.is_public = true
+      ), '[]'::jsonb) AS price_variants,
       jsonb_build_object(
         'id', p.id,
         'name', p.name,
@@ -947,10 +968,16 @@ export default async function ModelPage({
                     const savings = calculateSavings(cp);
 
                     return (
-                      <TableRow key={cp.id} className={isCheapest ? "bg-green-50 dark:bg-green-950/30" : ""}>
+                      <Fragment key={cp.id}>
+                      <TableRow className={isCheapest ? "bg-green-50 dark:bg-green-950/30" : ""}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             {cp.providers.name}
+                            {Array.isArray(cp.price_variants) && cp.price_variants.length > 1 && (
+                              <Badge variant="secondary" className="text-xs">
+                                {cp.price_variants.length} {isZh ? '档报价' : 'variants'}
+                              </Badge>
+                            )}
                             {isCheapest && (
                               <Badge className="bg-green-600 text-xs">💰 Best Price</Badge>
                             )}
@@ -1013,6 +1040,34 @@ export default async function ModelPage({
                           </div>
                         </TableCell>
                       </TableRow>
+                      {Array.isArray(cp.price_variants) && cp.price_variants.length > 1 && (
+                          <TableRow key={`${cp.id}-variants`} className="bg-zinc-50/70 dark:bg-zinc-900/50">
+                            <TableCell colSpan={8}>
+                              <details className="text-sm">
+                                <summary className="cursor-pointer text-zinc-600 hover:text-blue-600">
+                                  {isZh ? '查看该渠道的全部报价变体' : 'Show all price variants for this channel'}
+                                </summary>
+                                <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                                  {cp.price_variants.map((variant: any) => (
+                                    <div key={variant.id} className="rounded-md border bg-white p-3 dark:bg-zinc-950">
+                                      <div className="mb-1 flex items-center gap-2">
+                                        <span className="font-medium">{variant.variant_name}</span>
+                                        {variant.is_headline && <Badge className="text-xs">{isZh ? '默认' : 'Default'}</Badge>}
+                                      </div>
+                                      <div className="font-mono text-xs text-zinc-600">
+                                        {formatPrice(variant.input_price_per_1m, channelCurrency(variant), locale)} / {formatPrice(variant.output_price_per_1m, channelCurrency(variant), locale)} per 1M
+                                      </div>
+                                      {variant.variant_kind && (
+                                        <div className="mt-1 text-xs text-zinc-500">{variant.variant_kind}</div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
                     );
                   })}
                 </TableBody>

@@ -39,6 +39,8 @@
  *                                   the Artificial Analysis model leaderboard list price
  *                                   (warn; DB snapshot from ingest:benchmarks, skipped with
  *                                   a notice when the snapshot is missing or stale)
+ *   C22 variants.*              — channel price variant integrity (one headline,
+ *                                   no inverted prices, no stale active rows)
  */
 import { db } from './db/queries';
 import { databaseSql } from './db/postgres-admin';
@@ -121,6 +123,13 @@ async function main() {
   `;
   const AA_PRICE_REFS = extPriceRefColumns.length === 5;
 
+  const variantColumns = await databaseSql<{ column_name: string }[]>`
+    SELECT column_name FROM information_schema.columns
+     WHERE table_name = 'api_channel_price_variants'
+       AND column_name IN ('id', 'model_id', 'provider_id', 'variant_key', 'is_headline', 'input_price_per_1m', 'output_price_per_1m', 'is_available', 'is_public', 'is_partner_only', 'last_verified')
+  `;
+  const PRICE_VARIANTS = variantColumns.length === 11;
+
   // C19: external reference fetch, kicked off concurrently with the DB reads.
   // Network trouble must never gate the audit — it degrades to a skip notice.
   const modelsDevPromise = fetchModelsDevCatalog()
@@ -143,6 +152,27 @@ async function main() {
   const prices = pricesRes.data ?? [];
   const plans = plansRes.data ?? [];
   const mappings = mappingsRes.data ?? [];
+  const variants = PRICE_VARIANTS
+    ? await databaseSql<Array<{
+        id: number;
+        model_id: number | null;
+        provider_id: number | null;
+        variant_key: string;
+        variant_name: string;
+        input_price_per_1m: number | null;
+        output_price_per_1m: number | null;
+        is_available: boolean | null;
+        is_public: boolean | null;
+        is_partner_only: boolean | null;
+        is_headline: boolean | null;
+        last_verified: string | null;
+      }>>`
+        SELECT id, model_id, provider_id, variant_key, variant_name,
+               input_price_per_1m, output_price_per_1m, is_available,
+               is_public, is_partner_only, is_headline, last_verified::text
+          FROM api_channel_price_variants
+      `
+    : [];
 
   // Currency normalization to USD for cross-channel comparison.
   // Builds a lookup with the most recent active rate per currency.
@@ -191,7 +221,7 @@ async function main() {
   const now = Date.now();
   const staleCutoff = now - STALE_DAYS * 24 * 3600 * 1000;
 
-  log(`Loaded: ${models.length} models, ${providers.length} providers, ${prices.length} prices, ${plans.length} plans, ${mappings.length} mappings\n`);
+  log(`Loaded: ${models.length} models, ${providers.length} providers, ${prices.length} prices, ${variants.length} variants, ${plans.length} plans, ${mappings.length} mappings\n`);
 
   // Helper: should this row be skipped entirely (soft-disabled rows)?
   const isDisabled = (p: typeof prices[number]) => p.is_available === false;
@@ -499,6 +529,72 @@ async function main() {
     }
   }
 
+  // ---------- C22: channel price variant integrity ----------
+  if (!PRICE_VARIANTS) {
+    log('⏭  Skipping C22 variants.*: api_channel_price_variants not migrated yet\n');
+  } else {
+    const activeVariants = variants.filter(v => v.is_available !== false);
+    const variantsByModelProvider = new Map<string, typeof activeVariants>();
+    for (const v of activeVariants) {
+      const ctx = { variant_id: v.id, model: refModel(v.model_id), provider: refProvider(v.provider_id), variant_key: v.variant_key };
+      if (v.model_id != null && !modelById.has(v.model_id)) {
+        add('variants.orphan_model', 'critical', `api_channel_price_variants.model_id=${v.model_id} not in models`, ctx);
+      }
+      if (v.provider_id != null && !providerById.has(v.provider_id)) {
+        add('variants.orphan_provider', 'critical', `api_channel_price_variants.provider_id=${v.provider_id} not in providers`, ctx);
+      }
+      const freeVariant = isFreeTier(v.model_id) || isVerifiedFreePrice(v.model_id, v.provider_id);
+      if (!freeVariant && (v.input_price_per_1m == null || v.input_price_per_1m <= 0)) {
+        add('variants.zero_or_null', 'critical', `input_price_per_1m=${v.input_price_per_1m}`, ctx);
+      }
+      if (!freeVariant && (v.output_price_per_1m == null || v.output_price_per_1m <= 0)) {
+        add('variants.zero_or_null', 'critical', `output_price_per_1m=${v.output_price_per_1m}`, ctx);
+      }
+      if (
+        v.input_price_per_1m != null && v.output_price_per_1m != null &&
+        v.input_price_per_1m > 0 && v.output_price_per_1m > 0 &&
+        v.output_price_per_1m < v.input_price_per_1m
+      ) {
+        add('variants.output_lt_input', 'critical', `output (${v.output_price_per_1m}) < input (${v.input_price_per_1m})`, ctx);
+      }
+      if (v.is_public === true && v.is_partner_only === true) {
+        add('variants.partner_public', 'critical', 'partner-only variant is marked public', ctx);
+      }
+      if (!v.last_verified) {
+        add('variants.missing_verified', 'warning', 'variant.last_verified is null', ctx);
+      } else if (new Date(v.last_verified).getTime() < staleCutoff) {
+        const days = Math.floor((now - new Date(v.last_verified).getTime()) / (86400 * 1000));
+        add('variants.stale', 'warning', `variant.last_verified ${days}d ago`, { ...ctx, days });
+      }
+      if (v.model_id != null && v.provider_id != null) {
+        const key = `${v.model_id}:${v.provider_id}`;
+        if (!variantsByModelProvider.has(key)) variantsByModelProvider.set(key, []);
+        variantsByModelProvider.get(key)!.push(v);
+      }
+    }
+
+    for (const [key, rows] of variantsByModelProvider) {
+      const [modelId, providerId] = key.split(':').map(Number);
+      const headlines = rows.filter(r => r.is_headline === true);
+      if (headlines.length === 0) {
+        add('variants.no_headline', 'critical', 'active variant group has no headline variant', { model: refModel(modelId), provider: refProvider(providerId), variants: rows.length });
+      } else if (headlines.length > 1) {
+        add('variants.multiple_headline', 'critical', `active variant group has ${headlines.length} headline variants`, { model: refModel(modelId), provider: refProvider(providerId), variants: headlines.map(h => h.variant_key) });
+      }
+      const channel = prices.find(p => p.model_id === modelId && p.provider_id === providerId && p.is_available !== false);
+      if (!channel) {
+        add('variants.no_headline_channel_price', 'critical', 'variant group has no active api_channel_prices headline row', { model: refModel(modelId), provider: refProvider(providerId), variants: rows.length });
+      } else if (headlines.length === 1) {
+        const h = headlines[0];
+        const inputMatches = Math.abs(Number(channel.input_price_per_1m) - Number(h.input_price_per_1m)) < 1e-6;
+        const outputMatches = Math.abs(Number(channel.output_price_per_1m) - Number(h.output_price_per_1m)) < 1e-6;
+        if (!inputMatches || !outputMatches) {
+          add('variants.headline_drift', 'critical', `api_channel_prices headline ${channel.input_price_per_1m}/${channel.output_price_per_1m} differs from variant ${h.input_price_per_1m}/${h.output_price_per_1m}`, { model: refModel(modelId), provider: refProvider(providerId), variant_key: h.variant_key, price_id: channel.id });
+        }
+      }
+    }
+  }
+
   // ---------- C7/C8: model coverage ----------
   const pricedModelIds = new Set(prices.map(p => p.model_id).filter((x): x is number => x != null));
   for (const m of models) {
@@ -722,7 +818,7 @@ async function main() {
     console.log(JSON.stringify({
       generatedAt: new Date().toISOString(),
       config: { staleDays: STALE_DAYS, outlierRatio: OUTLIER_RATIO },
-      counts: { models: models.length, providers: providers.length, prices: prices.length, plans: plans.length, mappings: mappings.length },
+      counts: { models: models.length, providers: providers.length, prices: prices.length, variants: variants.length, plans: plans.length, mappings: mappings.length },
       reference: {
         source: 'models.dev',
         available: !modelsDevResult.error,
@@ -752,12 +848,23 @@ async function main() {
       'plans.selector_empty',
       'plans.selector_unknown_slug',
       'plans.mapping_drift',
+      'variants.orphan_model',
+      'variants.orphan_provider',
+      'variants.zero_or_null',
+      'variants.output_lt_input',
+      'variants.partner_public',
+      'variants.no_headline',
+      'variants.multiple_headline',
+      'variants.no_headline_channel_price',
+      'variants.headline_drift',
       'prices.input_eq_output',
       'prices.cross_channel_outlier',
       'prices.modelsdev_divergence',
       'prices.aa_official_divergence',
       'prices.stale',
       'prices.missing_verified',
+      'variants.stale',
+      'variants.missing_verified',
       'models.no_channel_price',
       'models.no_producer_channel',
       'models.unknown_provider_id',

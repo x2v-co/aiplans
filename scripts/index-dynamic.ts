@@ -36,9 +36,12 @@ import { scrapeMoonshotDynamic } from './scrapers/moonshot-dynamic';
 import { scrapeMiniMaxDynamic } from './scrapers/minimax-dynamic';
 import { scrapeZhipuDynamic } from './scrapers/zhipu-dynamic';
 import { scrapeXiuRouterDynamic } from './scrapers/xiurouter-dynamic';
+import { scrapeXycAiDynamic } from './scrapers/xycai-dynamic';
 
 import {
   upsertChannelPrice,
+  batchUpsertChannelPriceVariants,
+  retireUnseenChannelPriceVariants,
   upsertPlan,
   logPriceChange,
   logScrapeResult,
@@ -61,6 +64,8 @@ interface ScraperConfig {
   fn: () => Promise<ScraperResult>;
   priority: number; // 1=high, 2=medium, 3=low
   fullCatalog?: boolean;
+  /** Resellers/aggregators must not create canonical model rows from channel data. */
+  createProducts?: boolean;
 }
 
 /**
@@ -95,7 +100,8 @@ const API_SCRAPERS: ScraperConfig[] = [
   { name: 'Moonshot', fn: scrapeMoonshotDynamic, priority: 2, fullCatalog: true },
   { name: 'Minimax', fn: scrapeMiniMaxDynamic, priority: 2 },
   { name: 'Zhipu AI', fn: scrapeZhipuDynamic, priority: 2, fullCatalog: true },
-  { name: 'XiuRouter', fn: scrapeXiuRouterDynamic, priority: 2 },
+  { name: 'XiuRouter', fn: scrapeXiuRouterDynamic, priority: 2, fullCatalog: true, createProducts: false },
+  { name: 'XycAi', fn: scrapeXycAiDynamic, priority: 2, fullCatalog: true, createProducts: false },
 ];
 
 function printHelp(): void {
@@ -229,7 +235,8 @@ async function retireUnseenChannelPrices(
 async function processAPIScraper(
   result: ScraperResult,
   channelName: string,
-  fullCatalog = false
+  fullCatalog = false,
+  createProducts = true
 ) {
   console.log(`\n🔄 Processing ${result.source} API results...`);
 
@@ -238,9 +245,8 @@ async function processAPIScraper(
     return { updated: 0, errors: result.errors?.length || 0 };
   }
 
-  // Get the channel's provider ID from the mapping
-  const channelProviderKey = getChannelProviderKey(result.source);
-  const channelProviderId = PROVIDER_IDS[channelProviderKey];
+  // Get or create the channel's provider row.
+  const channelProviderId = await getChannelProviderId(result.source);
 
   if (!channelProviderId) {
     console.error(`❌ No provider ID found for channel: ${result.source}`);
@@ -253,52 +259,51 @@ async function processAPIScraper(
   let updatedCount = 0;
   let errorCount = 0;
   const seenModelIds = new Set<number>();
+  const modelIdBySlug = new Map<string, number>();
+  const headlinePriceByModelId = new Map<number, typeof result.prices[number]>();
+  const resolveProduct = async (price: { modelName: string; modelSlug?: string; contextWindow?: number; releasedAt?: string }) => {
+    const providerId = inferProviderId(price.modelName, channelName);
+    const normalizedName = normalizeModelName(price.modelName);
+    const normalizedSlug = price.modelSlug || normalizeSlug(price.modelName);
+    const OFFICIAL_PROVIDER_IDS = [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50];
 
-  for (const price of result.prices) {
-    try {
-      // Infer provider from model name AND channel name
-      const providerId = inferProviderId(price.modelName, channelName);
+    if (!createProducts || providerId === -1 || !OFFICIAL_PROVIDER_IDS.includes(providerId)) {
+      const { data: existingProduct } = await db
+        .from('models')
+        .select('*')
+        .eq('slug', normalizedSlug)
+        .single();
 
-      // Normalize model name for consistent product identification
-      const normalizedName = normalizeModelName(price.modelName);
-      const normalizedSlug = normalizeSlug(price.modelName);
-
-      // Official provider ID list - only these can create products
-      const OFFICIAL_PROVIDER_IDS = [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50];
-
-      // If not an official provider, try to find existing official product
-      let product;
-      if (providerId === -1 || !OFFICIAL_PROVIDER_IDS.includes(providerId)) {
-        const { data: existingProduct } = await db
-          .from('models')
-          .select('*')
-          .eq('slug', normalizedSlug)
-          .single();
-
-        if (existingProduct) {
-          product = await getOrCreateProduct({
-            name: existingProduct.name,
-            slug: existingProduct.slug,
-            provider_ids: existingProduct.provider_ids,
-            type: existingProduct.type || 'llm',
-            context_window: price.contextWindow,
-            released_at: price.releasedAt,
-          });
-        } else {
-          console.log(`⚠️ Skipping ${normalizedName} - unknown provider`);
-          continue;
-        }
-      } else {
-        // Official provider - get or create product
-        product = await getOrCreateProduct({
-          name: normalizedName,
-          slug: normalizedSlug,
-          provider_id: providerId,
-          type: 'llm',
+      if (existingProduct) {
+        return getOrCreateProduct({
+          name: existingProduct.name,
+          slug: existingProduct.slug,
+          provider_ids: existingProduct.provider_ids,
+          type: existingProduct.type || 'llm',
           context_window: price.contextWindow,
           released_at: price.releasedAt,
         });
       }
+      console.log(`⚠️ Skipping ${normalizedName} - unknown provider or model slug ${normalizedSlug}`);
+      return null;
+    }
+
+    return getOrCreateProduct({
+      name: normalizedName,
+      slug: normalizedSlug,
+      provider_id: providerId,
+      type: 'llm',
+      context_window: price.contextWindow,
+      released_at: price.releasedAt,
+    });
+  };
+
+  for (const price of result.prices) {
+    try {
+      const product = await resolveProduct(price);
+      if (!product) continue;
+      modelIdBySlug.set(price.modelSlug || normalizeSlug(price.modelName), product.id);
+      headlinePriceByModelId.set(product.id, price);
 
       // Get existing price for comparison
       const { data: existingPrice } = await db
@@ -355,6 +360,66 @@ async function processAPIScraper(
     }
   }
 
+  if ((result.variants?.length ?? 0) > 0 && errorCount === 0) {
+    const seenVariants: Array<{ model_id: number; variant_key: string }> = [];
+    const variantRows = [];
+    for (const variant of result.variants ?? []) {
+      const modelId = modelIdBySlug.get(variant.modelSlug || normalizeSlug(variant.modelName));
+      // Variants are details of an already-published headline channel price;
+      // they must never create/resolve products independently. This keeps
+      // aggregators like OpenRouter from doing thousands of duplicate DB
+      // lookups for endpoints whose base model was intentionally skipped.
+      if (!modelId) continue;
+      const headlinePrice = variant.isHeadline ? headlinePriceByModelId.get(modelId) : undefined;
+      variantRows.push({
+        model_id: modelId,
+        provider_id: channelProviderId,
+        variant_key: variant.variantKey,
+        variant_name: variant.variantName,
+        variant_kind: variant.variantKind,
+        source_group_key: variant.sourceGroupKey,
+        source_group_name: variant.sourceGroupName,
+        source_pricing_version: variant.sourcePricingVersion,
+        source_updated_at: variant.sourceUpdatedAt,
+        source_url: variant.sourceUrl,
+        input_price_per_1m: headlinePrice?.inputPricePer1M ?? variant.inputPricePer1M,
+        output_price_per_1m: headlinePrice?.outputPricePer1M ?? variant.outputPricePer1M,
+        cached_input_price_per_1m: headlinePrice?.cachedInputPricePer1M ?? variant.cachedInputPricePer1M,
+        cache_create_price_per_1m: variant.cacheCreatePricePer1M,
+        currency: headlinePrice?.currency || variant.currency || currency,
+        price_unit: variant.priceUnit || 'per_1m_tokens',
+        is_available: variant.isAvailable,
+        is_public: variant.isPublic,
+        is_self_service: variant.isSelfService,
+        is_partner_only: variant.isPartnerOnly,
+        is_headline: variant.isHeadline,
+        headline_rank: variant.headlineRank,
+        headline_reason: variant.headlineReason,
+        constraints_json: variant.constraints,
+        raw_json: variant.raw,
+        notes: variant.notes,
+        last_verified: new Date(),
+      });
+      seenVariants.push({ model_id: modelId, variant_key: variant.variantKey });
+    }
+    try {
+      const variantCount = await batchUpsertChannelPriceVariants(variantRows);
+      if (variantCount > 0) console.log(`✅ ${result.source}: Updated ${variantCount} price variants`);
+    } catch (error) {
+      console.error(`  ❌ Error batch-processing ${result.source} variants:`, error);
+      errorCount++;
+    }
+    if (fullCatalog && seenVariants.length > 0) {
+      try {
+        const retiredVariants = await retireUnseenChannelPriceVariants(channelProviderId, seenVariants, result.source);
+        if (retiredVariants > 0) console.log(`🧹 ${result.source}: Soft-disabled ${retiredVariants} variants absent from full-catalog scrape`);
+      } catch (error) {
+        console.error(`❌ ${result.source}: Failed to retire unseen variants:`, error);
+        errorCount++;
+      }
+    }
+  }
+
   if (fullCatalog && errorCount === 0 && seenModelIds.size > 0) {
     try {
       await retireUnseenChannelPrices(channelProviderId, seenModelIds, result.source);
@@ -403,6 +468,7 @@ function getChannelProviderKey(source: string): string {
     'Replicate': 'REPLICATE',
     'Anyscale': 'ANYSCALE',
     'XiuRouter': 'XIUROUTER',
+    'XycAi': 'XYCAI',
     'StepFun': 'STEPFUN',
     'DMXAPI': 'DMXAPI',
     'Grok': 'XAI',
@@ -412,6 +478,65 @@ function getChannelProviderKey(source: string): string {
     'Zhipu-AI': 'ZHIPU_CHINA',
   };
   return mapping[source] || '';
+}
+
+interface DynamicProviderMetadata {
+  name: string;
+  slug: string;
+  website_url: string;
+  region: 'china' | 'global';
+  type: 'official' | 'producer' | 'cloud' | 'aggregator' | 'reseller';
+  access_from_china: boolean;
+  pricing_url?: string;
+  api_docs_url?: string;
+  notes?: string;
+}
+
+const DYNAMIC_CHANNEL_PROVIDERS: Record<string, DynamicProviderMetadata> = {
+  XycAi: {
+    name: 'XycAi',
+    slug: 'xycai',
+    website_url: 'https://www.xyc.ai',
+    region: 'china',
+    type: 'reseller',
+    access_from_china: true,
+    pricing_url: 'https://www.xyc.ai/api/provider/pricing',
+    api_docs_url: 'https://docs.xyc.ai/',
+    notes: 'OpenAI-compatible API reseller/router with China-accessible xycai.cn and apicdn.xyc.ai endpoints. Pricing is ingested from its public machine-readable JSON endpoint.',
+  },
+};
+
+async function getChannelProviderId(source: string): Promise<number | null> {
+  const channelProviderKey = getChannelProviderKey(source);
+  const staticId = PROVIDER_IDS[channelProviderKey];
+  if (staticId) return staticId;
+
+  const metadata = DYNAMIC_CHANNEL_PROVIDERS[source];
+  if (!metadata) return null;
+
+  const provider = await getOrCreateProvider({
+    name: metadata.name,
+    slug: metadata.slug,
+    website_url: metadata.website_url,
+    region: metadata.region,
+  });
+
+  const updates = {
+    region: metadata.region,
+    type: metadata.type,
+    access_from_china: metadata.access_from_china,
+    pricing_url: metadata.pricing_url,
+    api_docs_url: metadata.api_docs_url,
+    notes: metadata.notes,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await db
+    .from('providers')
+    .update(updates)
+    .eq('id', provider.id);
+  if (error) throw error;
+
+  return provider.id;
 }
 
 type ScraperRunResult = { updated: number; errors: number };
@@ -437,7 +562,7 @@ async function runScraperQueue(
         const result = await scraper.fn();
         results[index] = {
           status: 'fulfilled',
-          value: await processAPIScraper(result, scraper.name, scraper.fullCatalog),
+          value: await processAPIScraper(result, scraper.name, scraper.fullCatalog, scraper.createProducts),
         };
       } catch (reason) {
         results[index] = { status: 'rejected', reason };

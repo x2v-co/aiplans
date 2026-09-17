@@ -38,6 +38,7 @@ const CN_PROVIDERS: Classification[] = [
   { slug: 'baidu',           region: 'china', accessFromChina: true, reason: 'Baidu ERNIE / 千帆 CN' },
   { slug: 'siliconflow',     region: 'china', accessFromChina: true, reason: '硅基流动 CN aggregator' },
   { slug: 'dmxapi',          region: 'china', accessFromChina: true, reason: 'DMXAPI CN reseller' },
+  { slug: 'xycai',           region: 'china', accessFromChina: true, reason: 'XycAi CN-accessible API reseller/router' },
   // Legacy slugs kept around by older scraper-inserted rows
   { slug: 'minimax',         region: 'china', accessFromChina: true, reason: 'Legacy MiniMax slug' },
   { slug: 'moonshot',        region: 'china', accessFromChina: true, reason: 'Legacy Moonshot slug' },

@@ -27,6 +27,27 @@ export async function GET(
     const channelPrices = await sql<any[]>`
       SELECT
         cp.*,
+        COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'id', v.id,
+            'variant_key', v.variant_key,
+            'variant_name', v.variant_name,
+            'variant_kind', v.variant_kind,
+            'input_price_per_1m', v.input_price_per_1m,
+            'output_price_per_1m', v.output_price_per_1m,
+            'cached_input_price_per_1m', v.cached_input_price_per_1m,
+            'currency', v.currency,
+            'price_unit', v.price_unit,
+            'is_headline', v.is_headline,
+            'headline_reason', v.headline_reason,
+            'constraints_json', v.constraints_json
+          ) ORDER BY v.is_headline DESC, v.headline_rank ASC NULLS LAST, v.input_price_per_1m ASC NULLS LAST)
+          FROM api_channel_price_variants v
+          WHERE v.model_id = cp.model_id
+            AND v.provider_id = cp.provider_id
+            AND v.is_available = true
+            AND v.is_public = true
+        ), '[]'::jsonb) AS price_variants,
         jsonb_build_object(
           'id', p.id,
           'name', p.name,
