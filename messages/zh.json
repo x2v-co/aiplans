@@ -288,6 +288,7 @@
     "submitCoupon": "提交优惠码",
     "percentOff": "{value}% 折扣",
     "creditAmount": "${value} 额度",
+    "referralLink": "邀请链接",
     "tokenCredit": "{value} Tokens",
     "dealsCount": "{count} 个优惠",
     "badgeToken": "{value} Tokens",
