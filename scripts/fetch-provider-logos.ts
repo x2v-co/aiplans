@@ -108,8 +108,9 @@ async function getBestLogoUrl(provider: Provider): Promise<string> {
  * 留空则自动从 Icon Horse/Clearbit 获取
  */
 const MANUAL_LOGOS: Record<string, string> = {
-  // 可以在这里手动指定特定的 logo URL
-  // 'openai': 'https://example.com/openai-logo.png',
+  // Provider-hosted logo discovered from https://www.xyc.ai/:
+  // <link rel="apple-touch-icon" href="/logo.png" />
+  xycai: 'https://www.xyc.ai/logo.png',
 };
 
 async function main() {
@@ -161,7 +162,7 @@ async function main() {
       // 3. 更新数据库
       const { error: updateError } = await database
         .from('providers')
-        .update({ logo: logoUrl })
+        .update({ logo: logoUrl, logo_url: logoUrl })
         .eq('id', provider.id);
 
       if (updateError) {

@@ -490,6 +490,7 @@ interface DynamicProviderMetadata {
   pricing_url?: string;
   api_docs_url?: string;
   invite_url?: string;
+  logo_url?: string;
   notes?: string;
 }
 
@@ -504,6 +505,7 @@ const DYNAMIC_CHANNEL_PROVIDERS: Record<string, DynamicProviderMetadata> = {
     pricing_url: 'https://www.xyc.ai/api/provider/pricing',
     api_docs_url: 'https://docs.xyc.ai/',
     invite_url: 'https://xyc.ai/register?aff=MFQl',
+    logo_url: 'https://www.xyc.ai/logo.png',
     notes: 'OpenAI-compatible API reseller/router with China-accessible xycai.cn and apicdn.xyc.ai endpoints. Pricing is ingested from its public machine-readable JSON endpoint.',
   },
 };
@@ -520,6 +522,7 @@ async function getChannelProviderId(source: string): Promise<number | null> {
     name: metadata.name,
     slug: metadata.slug,
     website_url: metadata.website_url,
+    logo_url: metadata.logo_url,
     region: metadata.region,
   });
 
@@ -530,6 +533,8 @@ async function getChannelProviderId(source: string): Promise<number | null> {
     pricing_url: metadata.pricing_url,
     api_docs_url: metadata.api_docs_url,
     invite_url: metadata.invite_url,
+    logo: metadata.logo_url,
+    logo_url: metadata.logo_url,
     notes: metadata.notes,
     updated_at: new Date().toISOString(),
   };

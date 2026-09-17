@@ -837,7 +837,7 @@ const MIGRATIONS: Migration[] = [
       -- If XycAi later provides an official code, replace this row or add the
       -- official offer with clearer copy.
       INSERT INTO providers
-        (name, slug, website, invite_url, region, type, access_from_china,
+        (name, slug, website, invite_url, logo, logo_url, region, type, access_from_china,
          pricing_url, api_docs_url, notes)
       VALUES
         (
@@ -845,6 +845,8 @@ const MIGRATIONS: Migration[] = [
           'xycai',
           'https://www.xyc.ai',
           'https://xyc.ai/register?aff=MFQl',
+          'https://www.xyc.ai/logo.png',
+          'https://www.xyc.ai/logo.png',
           'china',
           'reseller',
           true,
@@ -854,6 +856,8 @@ const MIGRATIONS: Migration[] = [
         )
       ON CONFLICT (slug) DO UPDATE SET
         invite_url = EXCLUDED.invite_url,
+        logo = EXCLUDED.logo,
+        logo_url = EXCLUDED.logo_url,
         pricing_url = COALESCE(providers.pricing_url, EXCLUDED.pricing_url),
         api_docs_url = COALESCE(providers.api_docs_url, EXCLUDED.api_docs_url),
         region = EXCLUDED.region,
