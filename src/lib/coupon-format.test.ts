@@ -15,15 +15,13 @@ const tt = (key: string, params?: Record<string, string | number>) => {
     creditAmount: '${value} CREDIT',
     tokenCredit: '{value} token grant',
     badgeToken: '{value} tokens',
-    referralLink: 'Referral link',
   };
   return (patterns[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(params?.[k] ?? ''));
 };
 
-test('percentage/fixed/referral formatting', () => {
+test('percentage/fixed formatting', () => {
   assert.equal(formatCouponDiscount({ discount_type: 'percentage', discount_value: 10 }, 'en', tt), '10% OFF');
   assert.equal(formatCouponDiscount({ discountType: 'fixed', discountValue: 5 }, 'en', tt), '$5 CREDIT');
-  assert.equal(formatCouponDiscount({ discountType: 'referral', discountValue: 0 }, 'en', tt), 'Referral link');
 });
 
 test('trial token packs compact per locale', () => {
@@ -33,14 +31,10 @@ test('trial token packs compact per locale', () => {
   assert.equal(formatCouponDiscount(c, 'en', tt, 'badgeToken'), '20M tokens');
 });
 
-test('copy target is the invite link for link-redeemed coupons, the code otherwise', () => {
+test('copy target is the invite link for trial coupons, the code otherwise', () => {
   assert.equal(
     couponCopyTarget({ code: 'BIGMODEL-INVITE-20M', discount_type: 'trial', offer_url: 'https://bigmodel.cn/x?icode=a' }),
     'https://bigmodel.cn/x?icode=a',
-  );
-  assert.equal(
-    couponCopyTarget({ code: 'XYCAI-REF-MFQL', discount_type: 'referral', offer_url: 'https://xyc.ai/register?aff=MFQl' }),
-    'https://xyc.ai/register?aff=MFQl',
   );
   assert.equal(
     couponCopyTarget({ code: 'ZAGRFMAR', discountType: 'percentage', offerUrl: 'https://volcengine.com/p' }),

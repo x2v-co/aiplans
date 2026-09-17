@@ -830,21 +830,18 @@ const MIGRATIONS: Migration[] = [
     `,
   },
   {
-    name: '026_add_xycai_referral_coupon',
+    name: '026_add_xycai_logo_remove_personal_referral',
     sql: `
-      -- XycAi referral link for API-token users. This is currently a personal
-      -- referral/invite link, not an official aiplans.dev-exclusive coupon.
-      -- If XycAi later provides an official code, replace this row or add the
-      -- official offer with clearer copy.
+      -- XycAi provider-hosted logo. Do not publish personal referral links as
+      -- coupons or provider CTAs; wait for an official provider-supplied deal.
       INSERT INTO providers
-        (name, slug, website, invite_url, logo, logo_url, region, type, access_from_china,
+        (name, slug, website, logo, logo_url, region, type, access_from_china,
          pricing_url, api_docs_url, notes)
       VALUES
         (
           'XycAi',
           'xycai',
           'https://www.xyc.ai',
-          'https://xyc.ai/register?aff=MFQl',
           'https://www.xyc.ai/logo.png',
           'https://www.xyc.ai/logo.png',
           'china',
@@ -855,7 +852,10 @@ const MIGRATIONS: Migration[] = [
           'OpenAI-compatible API reseller/router with China-accessible xycai.cn and apicdn.xyc.ai endpoints. Pricing is ingested from its public machine-readable JSON endpoint.'
         )
       ON CONFLICT (slug) DO UPDATE SET
-        invite_url = EXCLUDED.invite_url,
+        invite_url = CASE
+          WHEN providers.invite_url = 'https://xyc.ai/register?aff=MFQl' THEN NULL
+          ELSE providers.invite_url
+        END,
         logo = EXCLUDED.logo,
         logo_url = EXCLUDED.logo_url,
         pricing_url = COALESCE(providers.pricing_url, EXCLUDED.pricing_url),
@@ -866,27 +866,13 @@ const MIGRATIONS: Migration[] = [
         notes = COALESCE(providers.notes, EXCLUDED.notes),
         updated_at = now();
 
-      INSERT INTO coupons
-        (code, provider_id, description, discount_type, discount_value,
-         expires_at, is_verified, offer_url, scope)
-      SELECT
-        'XYCAI-REF-MFQL',
-        p.id,
-        'XycAi 邀请注册链接：通过此链接注册可关联邀请码 MFQl；当前为个人 referral link，非官方专属优惠码。 · XycAi referral signup link with invite code MFQl; personal referral link, not an official exclusive coupon.',
-        'referral', 0, NULL, true,
-        'https://xyc.ai/register?aff=MFQl',
-        'api'
-      FROM providers p
-      WHERE p.slug = 'xycai'
-      ON CONFLICT (code) DO UPDATE SET
-        provider_id    = EXCLUDED.provider_id,
-        description    = EXCLUDED.description,
-        discount_type  = EXCLUDED.discount_type,
-        discount_value = EXCLUDED.discount_value,
-        is_verified    = EXCLUDED.is_verified,
-        offer_url      = EXCLUDED.offer_url,
-        scope          = EXCLUDED.scope,
-        updated_at     = now();
+      DELETE FROM coupons WHERE code = 'XYCAI-REF-MFQL';
+
+      UPDATE providers
+         SET invite_url = NULL,
+             updated_at = now()
+       WHERE slug = 'xycai'
+         AND invite_url = 'https://xyc.ai/register?aff=MFQl';
     `,
   },
 ];

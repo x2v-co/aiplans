@@ -288,7 +288,6 @@
     "submitCoupon": "Submit a Coupon",
     "percentOff": "{value}% OFF",
     "creditAmount": "${value} CREDIT",
-    "referralLink": "Referral link",
     "tokenCredit": "{value} token grant",
     "dealsCount": "{count} deals",
     "badgeToken": "{value} tokens",

@@ -29,7 +29,6 @@ export function formatCouponDiscount(
   const value = coupon.discount_value ?? coupon.discountValue ?? 0;
   if (type === 'percentage') return t('percentOff', { value });
   if (type === 'fixed') return t('creditAmount', { value });
-  if (type === 'referral') return t('referralLink');
   if (type === 'trial') {
     return t(tokenKey, { value: compactTokenCount(value, locale) });
   }
@@ -43,14 +42,14 @@ type CopyTargetLike = DiscountLike & {
 };
 
 /**
- * Trial/referral coupons with an offer URL are redeemed by registering through
- * that link (the opaque code is not enterable at checkout), so copy copies the
+ * Trial coupons with an offer URL are redeemed by registering through that
+ * link (the opaque code is not enterable at checkout), so copy copies the
  * link; everything else copies the code.
  */
 export function couponCopyTarget(coupon: CopyTargetLike): string {
   const type = coupon.discount_type ?? coupon.discountType;
   const url = coupon.offer_url ?? coupon.offerUrl ?? null;
-  return (type === 'trial' || type === 'referral') && url ? url : coupon.code;
+  return type === 'trial' && url ? url : coupon.code;
 }
 
 /** Compact "host/path" label for a link-only coupon; the full URL stays in href/title/clipboard. */

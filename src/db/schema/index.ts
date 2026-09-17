@@ -371,7 +371,7 @@ export const coupons = pgTable('coupons', {
   code: text('code').notNull().unique(),
   providerId: integer('provider_id').references(() => providers.id),
   description: text('description'),
-  discountType: text('discount_type'), // 'percentage', 'fixed', 'trial', 'referral'
+  discountType: text('discount_type'), // 'percentage', 'fixed', 'trial'
   discountValue: real('discount_value'),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
   offerUrl: text('offer_url'), // per-coupon destination (may carry a referral code); falls back to providers.website
