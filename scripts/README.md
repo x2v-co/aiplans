@@ -174,10 +174,14 @@ surfaces staleness, not in-scraper defaults.
 Production scheduling runs on the VPS through the checked-in systemd service
 and timer:
 
-- **`planprice-scraper.timer`** — daily at 03:15 Asia/Singapore (plus up to
-  15 minutes randomized delay)
+- **`planprice-api-scraper.timer`** — API pricing and new-model refresh every
+  4 hours at 01/05/09/13/17/21:15 Asia/Singapore (plus up to 10 minutes
+  randomized delay)
+- **`planprice-scraper.timer`** — full daily refresh at 03:15 Asia/Singapore
+  (plus up to 15 minutes randomized delay)
 - **`run-scrapers.sh`** — refreshes API prices, plans, Agent Arena scores, and
-  runs the data audit inside the private Compose network
+  runs the data audit inside the private Compose network; API-only timer uses
+  skip flags to bypass plans, audits, and benchmark ingestions
 - **`scrape-pricing.yml`** — manual recovery only
 - **`data-audit.yml`** — pull-request and manual audit workflow
 

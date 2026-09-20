@@ -1,0 +1,11 @@
+[Unit]
+Description=Run PlanPrice API pricing refresh every 4 hours
+
+[Timer]
+OnCalendar=*-*-* 01,05,09,13,17,21:15:00 Asia/Singapore
+Persistent=true
+RandomizedDelaySec=10min
+Unit=planprice-api-scraper.service
+
+[Install]
+WantedBy=timers.target

@@ -33,39 +33,75 @@ else
   "${compose[@]}" run --rm scraper npm run scrape
   api_status=$?
 fi
-"${compose[@]}" run --rm scraper npm run scrape:plans
-plans_status=$?
+
+if [[ "${SKIP_PLANS:-0}" == "1" ]]; then
+  echo "SKIP_PLANS=1 — skipping plan scrapers"
+  plans_status=0
+else
+  "${compose[@]}" run --rm scraper npm run scrape:plans
+  plans_status=$?
+fi
 set -e
 
 set +e
-# Backfill plan_kind / plan_line / tier_rank / model_selector from the curated
-# classifications. Must precede the materializer, which derives links from
-# plans.model_selector -- a freshly-scraped plan has none until this runs.
-"${compose[@]}" run --rm scraper npm run fix:kinds
-kinds_status=$?
-# Re-derive model↔plan links from each plan's model_selector. Runs after the
-# plan scrapers so newly-scraped models and plans get linked, and before the
-# audit so plans.no_model_mapping reflects this run.
-"${compose[@]}" run --rm scraper npm run mappings:materialize
-mappings_status=$?
-"${compose[@]}" run --rm scraper npm run audit
-audit_status=$?
-
-# Alert on NEW critical / models.dev-reference findings. Runs after the audit
-# so audit_alert_state is current; dedup means a recurring finding never spams.
-# A second audit:json run costs ~seconds and keeps the exit-code run above.
-alert_text="$("${compose[@]}" run --rm -e AUDIT_ALERT_APPLY=1 scraper sh -c 'npm run audit:json --silent 2>/dev/null | npm run audit:alert --silent 2>/dev/null')"
-echo "$alert_text"
-if [[ "$alert_text" == *"NEW finding"* ]]; then
-  printf '%s\n' "$alert_text" | "${script_dir}/notify-audit-alert.sh" || true
+if [[ "${SKIP_PLAN_MAPPINGS:-0}" == "1" ]]; then
+  echo "SKIP_PLAN_MAPPINGS=1 — skipping plan kind backfill and model↔plan materialization"
+  kinds_status=0
+  mappings_status=0
+else
+  # Backfill plan_kind / plan_line / tier_rank / model_selector from the curated
+  # classifications. Must precede the materializer, which derives links from
+  # plans.model_selector -- a freshly-scraped plan has none until this runs.
+  "${compose[@]}" run --rm scraper npm run fix:kinds
+  kinds_status=$?
+  # Re-derive model↔plan links from each plan's model_selector. Runs after the
+  # plan scrapers so newly-scraped models and plans get linked, and before the
+  # audit so plans.no_model_mapping reflects this run. API-only runs keep this
+  # enabled so newly-discovered models are linked to existing subscription plans.
+  "${compose[@]}" run --rm scraper npm run mappings:materialize
+  mappings_status=$?
 fi
 
-"${compose[@]}" run --rm scraper npm run ingest:arena
-arena_status=$?
-"${compose[@]}" run --rm scraper npm run ingest:benchmarks
-benchmarks_status=$?
-"${compose[@]}" run --rm scraper npm run ingest:coding-agents
-coding_agents_status=$?
+if [[ "${SKIP_AUDIT:-0}" == "1" ]]; then
+  echo "SKIP_AUDIT=1 — skipping data audit and audit alerts"
+  audit_status=0
+else
+  "${compose[@]}" run --rm scraper npm run audit
+  audit_status=$?
+
+  # Alert on NEW critical / models.dev-reference findings. Runs after the audit
+  # so audit_alert_state is current; dedup means a recurring finding never spams.
+  # A second audit:json run costs ~seconds and keeps the exit-code run above.
+  alert_text="$("${compose[@]}" run --rm -e AUDIT_ALERT_APPLY=1 scraper sh -c 'npm run audit:json --silent 2>/dev/null | npm run audit:alert --silent 2>/dev/null')"
+  echo "$alert_text"
+  if [[ "$alert_text" == *"NEW finding"* ]]; then
+    printf '%s\n' "$alert_text" | "${script_dir}/notify-audit-alert.sh" || true
+  fi
+fi
+
+if [[ "${SKIP_ARENA:-0}" == "1" ]]; then
+  echo "SKIP_ARENA=1 — skipping Arena leaderboard ingestion"
+  arena_status=0
+else
+  "${compose[@]}" run --rm scraper npm run ingest:arena
+  arena_status=$?
+fi
+
+if [[ "${SKIP_BENCHMARKS:-0}" == "1" ]]; then
+  echo "SKIP_BENCHMARKS=1 — skipping task benchmark ingestion"
+  benchmarks_status=0
+else
+  "${compose[@]}" run --rm scraper npm run ingest:benchmarks
+  benchmarks_status=$?
+fi
+
+if [[ "${SKIP_CODING_AGENTS:-0}" == "1" ]]; then
+  echo "SKIP_CODING_AGENTS=1 — skipping coding agent leaderboard ingestion"
+  coding_agents_status=0
+else
+  "${compose[@]}" run --rm scraper npm run ingest:coding-agents
+  coding_agents_status=$?
+fi
 set -e
 
 # audit-data uses 2 for warnings-only; only critical findings or an execution

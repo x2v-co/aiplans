@@ -1,0 +1,19 @@
+[Unit]
+Description=PlanPrice high-frequency API pricing and new model refresh
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+OnFailure=planprice-scraper-failure.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/x2v/planprice
+Environment=DOCKER_CMD=/usr/bin/docker
+Environment=SKIP_PLANS=1
+Environment=SKIP_AUDIT=1
+Environment=SKIP_ARENA=1
+Environment=SKIP_BENCHMARKS=1
+Environment=SKIP_CODING_AGENTS=1
+ExecStart=/opt/x2v/planprice/deploy/production/run-scrapers.sh
+TimeoutStartSec=20min
+Nice=10
