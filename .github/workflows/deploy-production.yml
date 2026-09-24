@@ -78,6 +78,7 @@ jobs:
           sudo -n sed -i \
             -e '/^PLANPRICE_CATALOG_TOKEN=/d' \
             -e '/^PLANPRICE_SERVICE_ROLE=/d' \
+            -e '/^EXCHANGE_RATE_API_KEY=/d' \
             "$env_file"
           printf 'PLANPRICE_CATALOG_TOKEN=%s\nPLANPRICE_SERVICE_ROLE=public\n' \
             "$PLANPRICE_CATALOG_TOKEN" | sudo -n tee -a "$env_file" >/dev/null
