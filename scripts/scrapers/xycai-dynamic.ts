@@ -281,10 +281,12 @@ export async function scrapeXycAiDynamic(): Promise<ScraperResult> {
 
       const uniqueCandidates = dedupeCandidates(candidates);
       for (const candidate of uniqueCandidates) {
-        const isHeadline = candidate === headline
-          || (candidate.row.group_name === headline.row.group_name
-            && candidate.input === headline.input
-            && candidate.output === headline.output);
+        // A model/provider pair has exactly one active headline row in the
+        // database.  Do not mark same-priced aliases in the same upstream
+        // group as headlines: XycAi currently publishes rows such as a
+        // stable model id and its preview alias together, and the partial
+        // unique index would reject both rows in one batch.
+        const isHeadline = candidate === headline;
         variants.push({
           modelName: normalizeModelName(cleanModelId(candidate.row.model_name!)),
           modelSlug: slug,
