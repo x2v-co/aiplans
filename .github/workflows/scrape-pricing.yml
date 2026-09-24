@@ -44,6 +44,11 @@ jobs:
           sudo -n journalctl -u planprice-scraper.service -n 200 --no-pager || true
           sudo -n journalctl -u planprice-api-scraper.service -n 200 --no-pager || true
           sudo -n docker ps --format 'CODEX container {{.Names}} {{.Status}}' | sed -n '1,120p' || true
+          echo "CODEX lock probe:"
+          if flock -n "$base" true; then echo "lock=free"; else echo "lock=held"; fi
+          sudo -n fuser -v "$base" 2>&1 || true
+          sudo -n lslocks -o PID,COMMAND,PATH 2>/dev/null | grep '/opt/x2v/planprice' || true
+          sudo -n ps -eo pid,ppid,etime,stat,cmd | grep -E 'run-scrapers|docker compose.*scraper|npm run (scrape|refresh:fx|fix:kinds|mappings:materialize)' | grep -v grep || true
           exit 0
 
           # Share the timer's lock so a manual run never overlaps nightly work.
