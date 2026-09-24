@@ -136,6 +136,15 @@ if [[ "$mappings_status" != "0" ]]; then
   exit 1
 fi
 
+# Publish a new immutable v1 catalog only after the data and derived mappings
+# completed successfully. A failed scraper or FX refresh must leave the last
+# known-good catalog addressable rather than replacing it with a partial view.
+if [[ "$api_status" == "0" && "$plans_status" == "0" && "$fx_status" == "0" ]]; then
+  "${compose[@]}" run --rm scraper npm run publish:v1
+else
+  echo "Skipping v1 catalog publication: api=$api_status plans=$plans_status fx=$fx_status" >&2
+fi
+
 if [[ "$arena_status" != "0" ]]; then
   echo "Warning: Arena leaderboard update failed; keeping the previous ranking snapshot." >&2
 fi
