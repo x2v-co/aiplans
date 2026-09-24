@@ -33,6 +33,19 @@ export function rejectNonJsonAccept(request: Request): NextResponse | null {
   }, { status: 406, headers: { 'Cache-Control': 'no-store' } });
 }
 
+/** v1 exposes complete snapshots only; filtering and pagination are client-side. */
+export function rejectUnsupportedQuery(request: Request): NextResponse | null {
+  const { searchParams } = new URL(request.url);
+  if (searchParams.keys().next().done) return null;
+  return jsonResponse(request, {
+    schemaVersion: 'planprice-error/1',
+    code: 'invalid_query',
+    message: 'Query parameters are not supported by the v1 snapshot protocol',
+    retryable: false,
+    requestId: requestId(request),
+  }, { status: 400, headers: { 'Cache-Control': 'no-store' } });
+}
+
 export function unauthorized(request: Request): NextResponse {
   return jsonResponse(request, {
     schemaVersion: 'planprice-error/1',

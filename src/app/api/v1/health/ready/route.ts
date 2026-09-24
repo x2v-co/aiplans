@@ -1,6 +1,6 @@
 import { sql } from '@/lib/db';
 import { readPlanpriceV1Snapshot } from '@/lib/planprice-v1-snapshot';
-import { authorized, jsonResponse, methodNotAllowed, rejectNonJsonAccept, unauthorized } from '@/lib/planprice-v1-http';
+import { authorized, jsonResponse, methodNotAllowed, rejectNonJsonAccept, rejectUnsupportedQuery, unauthorized } from '@/lib/planprice-v1-http';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +8,8 @@ export async function GET(request: Request) {
   const unacceptable = rejectNonJsonAccept(request);
   if (unacceptable) return unacceptable;
   if (!authorized(request)) return unauthorized(request);
+  const invalidQuery = rejectUnsupportedQuery(request);
+  if (invalidQuery) return invalidQuery;
   try {
     const [result] = await sql<Array<{ ok: number }>>`SELECT 1 AS ok`;
     if (result?.ok !== 1) throw new Error('database unavailable');

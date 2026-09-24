@@ -1,5 +1,5 @@
 import { readPlanpriceV1SnapshotVersion, isPlanpriceV1Version } from '@/lib/planprice-v1-snapshot';
-import { authorized, jsonResponse, methodNotAllowed, rejectNonJsonAccept, requestId, unauthorized } from '@/lib/planprice-v1-http';
+import { authorized, jsonResponse, methodNotAllowed, rejectNonJsonAccept, rejectUnsupportedQuery, requestId, unauthorized } from '@/lib/planprice-v1-http';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,6 +7,8 @@ export async function GET(request: Request, context: { params: Promise<{ catalog
   const unacceptable = rejectNonJsonAccept(request);
   if (unacceptable) return unacceptable;
   if (!authorized(request)) return unauthorized(request);
+  const invalidQuery = rejectUnsupportedQuery(request);
+  if (invalidQuery) return invalidQuery;
   const { catalogVersion } = await context.params;
   if (!isPlanpriceV1Version(catalogVersion)) return jsonResponse(request, { schemaVersion: 'planprice-error/1', code: 'invalid_query', message: 'Invalid catalogVersion', retryable: false, requestId: requestId(request) }, { status: 400, headers: { 'Cache-Control': 'no-store' } });
   const snapshot = await readPlanpriceV1SnapshotVersion(catalogVersion);
