@@ -38,6 +38,14 @@ jobs:
           test -d "$base"
           sudo -n test -r "$base/deploy/production/.env.production"
 
+          echo "CODEX inspect: host=$(hostname) time=$(date -u +%FT%TZ)"
+          sudo -n systemctl --no-pager --full status planprice-scraper.service planprice-api-scraper.service planprice-scraper.timer planprice-api-scraper.timer --lines=80 || true
+          sudo -n systemctl show planprice-scraper.service planprice-api-scraper.service -p Id -p ActiveState -p SubState -p MainPID -p ExecMainStartTimestamp -p ExecMainExitTimestamp -p Result -p TimeoutStartUSec || true
+          sudo -n journalctl -u planprice-scraper.service -n 200 --no-pager || true
+          sudo -n journalctl -u planprice-api-scraper.service -n 200 --no-pager || true
+          sudo -n docker ps --format 'CODEX container {{.Names}} {{.Status}}' | sed -n '1,120p' || true
+          exit 0
+
           # Share the timer's lock so a manual run never overlaps nightly work.
           exec 9<"$base"
           flock -w 1800 9
