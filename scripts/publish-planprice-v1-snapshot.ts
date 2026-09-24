@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { sql } from '../src/lib/db';
 import { canonicalJson } from '../src/lib/planprice-v1-snapshot';
@@ -190,7 +190,11 @@ const offerings = prices.map((row) => {
   };
 });
 
-const payload = { schemaVersion: 'planprice-catalog/1', catalogVersion: `cat_${generatedAt.replace(/[^0-9]/g, '').slice(0, 14)}`, generatedAt, effectiveAt: generatedAt, expiresAt, baseCurrency: 'USD', offerings };
+// The timestamp is useful to operators, but is not unique at second
+// resolution. Keep every immutable snapshot addressable even when two
+// publishes start in the same second.
+const catalogVersion = `cat_${generatedAt.replace(/[^0-9]/g, '').slice(0, 14)}_${randomUUID().replace(/-/g, '').slice(0, 12)}`;
+const payload = { schemaVersion: 'planprice-catalog/1', catalogVersion, generatedAt, effectiveAt: generatedAt, expiresAt, baseCurrency: 'USD', offerings };
 const snapshot = { ...payload, digest: `sha256:${createHash('sha256').update(canonicalJson(payload), 'utf8').digest('hex')}` };
 const fxSnapshot = { schemaVersion: 'planprice-exchange-rates/1', base: 'USD', generatedAt, quotes };
 
