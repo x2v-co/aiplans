@@ -192,6 +192,10 @@ runs daily at 03:15 Asia/Singapore with up to 15 minutes of randomized delay.
 Each run refreshes USD FX from Frankfurter before scraping and republishes the
 current v1 catalog snapshot after deployment; a failed FX refresh leaves the
 previous rates in place and is reported in the scraper log.
+The deployment also installs `planprice-snapshot-cleanup.timer`, which runs
+daily at 04:15 Asia/Singapore and removes immutable v1 snapshots only after
+their 90-day retention window. `current.json` and unreadable snapshots are
+retained for audit.
 A host cron entry can provide an equivalent fallback without installing Node.js
 or browser packages on the VPS:
 

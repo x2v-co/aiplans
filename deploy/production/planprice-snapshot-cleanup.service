@@ -1,0 +1,13 @@
+[Unit]
+Description=Prune expired PlanPrice v1 catalog snapshots
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/x2v/planprice
+Environment=PLANPRICE_V1_SNAPSHOT_DIR=/var/lib/planprice/snapshots
+Environment=PLANPRICE_SNAPSHOT_RETENTION_DAYS=90
+ExecStart=/usr/bin/docker compose -p planprice-production -f /opt/x2v/planprice/deploy/production/compose.yml --env-file /opt/x2v/planprice/deploy/production/.env.production run --rm scraper npm run snapshots:cleanup
+TimeoutStartSec=10min
+Nice=10

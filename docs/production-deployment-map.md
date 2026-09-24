@@ -35,7 +35,7 @@ flowchart LR
    `validate:production-env` 和 `rollout.sh`。
 6. `rollout.sh` 构建镜像、启动 PostgreSQL、执行迁移、启动 app，并检查
    `/api/health`。失败就停止发布，不重启共享 Gateway 或 toolkit。
-7. runner 安装并重启 systemd scraper timers。
+7. runner 安装并重启 systemd scraper、API 和 90 天快照清理 timers。
 8. 发布后访问正式 `/v1/health/ready`、catalog 和 exchange-rates；AEEIS
    执行 `g3:preflight`，然后运行一次真实 Provider sandbox Run。
 

@@ -20,6 +20,8 @@
     "audit:alert": "tsx scripts/audit-alert.ts",
     "validate:production-env": "node scripts/validate-production-env.mjs",
     "scrape:status": "node scripts/check-scrape-status.mjs",
+    "snapshots:cleanup": "node scripts/cleanup-v1-snapshots.mjs",
+    "snapshots:cleanup:dry-run": "node scripts/cleanup-v1-snapshots.mjs --dry-run",
     "publish:v1": "tsx scripts/publish-planprice-v1-snapshot.ts",
     "refresh:fx": "tsx scripts/refresh-exchange-rates.ts",
     "audit:verticals": "tsx scripts/audit-vertical-catalog.ts",

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run PlanPrice v1 snapshot retention cleanup
+
+[Timer]
+OnCalendar=*-*-* 04:15:00 Asia/Singapore
+Persistent=true
+RandomizedDelaySec=15min
+Unit=planprice-snapshot-cleanup.service
+
+[Install]
+WantedBy=timers.target
