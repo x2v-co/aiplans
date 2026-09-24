@@ -1,5 +1,7 @@
 # Self-hosted deployment
 
+完整组件关系和发布顺序见 [`production-deployment-map.md`](./production-deployment-map.md)。
+
 planprice runs as an independent Docker Compose project beside toolkit on the
 same VPS. It owns its PostgreSQL volume and binds Next.js only to
 `127.0.0.1:3000`. The shared `x2v-gateway` project owns the public Cloudflare
@@ -44,6 +46,22 @@ chmod 600 deploy/production/.env.production
 Set a long random `POSTGRES_PASSWORD`. The database is available only on the
 private Compose network; only the app port is bound to the host loopback
 interface.
+
+Before rollout, validate the production environment from the same shell that
+will run Compose:
+
+```bash
+set -a; . deploy/production/.env.production; set +a
+npm run validate:production-env
+```
+
+The public catalog deployment must set `PLANPRICE_SERVICE_ROLE=public`,
+`PLANPRICE_CATALOG_TOKEN`, and no `EXCHANGE_RATE_API_KEY`. The separate admin
+deployment sets `PLANPRICE_SERVICE_ROLE=admin`, `PLANPRICE_ADMIN_HOST`, and its
+own exchange-rate key. Never copy the admin key into the public app environment.
+The snapshot directory is mounted from `/opt/x2v/planprice/snapshots`; the
+publisher writes `current.json`, immutable versioned snapshots, and
+`exchange-rates.json` there.
 
 ## Database cutover
 
@@ -162,13 +180,18 @@ groups with:
 DOCKER_CMD="sudo -n docker" /opt/x2v/planprice/deploy/production/run-scrapers.sh
 ```
 
-The script refreshes API prices, subscription plans, and the live Chatbot Arena
+The API pricing timer runs six times daily at 01:15, 05:15, 09:15, 13:15,
+17:15 and 21:15 Asia/Singapore, with up to 10 minutes of randomized delay.
+The full script runs once daily and refreshes API prices, subscription plans, and the live Chatbot Arena
 Agent leaderboard, then runs the read-only data audit. Arena outages are logged as a
 warning and preserve the last successful ranking; audit exit code 2 (warnings
 only) is accepted. It uses the same `flock` lock as deployments, so a scraper
 cannot overlap either the next daily run or a release. The production GitHub
 Actions deployment installs and enables the checked-in systemd units. The timer
 runs daily at 03:15 Asia/Singapore with up to 15 minutes of randomized delay.
+Each run refreshes USD FX from Frankfurter before scraping and republishes the
+current v1 catalog snapshot after deployment; a failed FX refresh leaves the
+previous rates in place and is reported in the scraper log.
 A host cron entry can provide an equivalent fallback without installing Node.js
 or browser packages on the VPS:
 
@@ -178,6 +201,15 @@ or browser packages on the VPS:
 
 The GitHub-hosted scraper workflow is manual recovery only, preventing two
 independent scheduled writers.
+
+Check freshness without consuming GitHub Actions minutes:
+
+```bash
+npm run scrape:status
+```
+
+The command reads the public exchange-rate timestamp and exits non-zero when
+the data is older than `PLANPRICE_MAX_RATE_AGE_HOURS` (default 30 hours).
 
 ## Gateway ownership
 

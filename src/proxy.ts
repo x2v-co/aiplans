@@ -57,7 +57,7 @@ export default function proxy(request: NextRequest) {
   }
 
   // For other paths without locale, redirect to default locale
-  if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.includes('.')) {
+  if (!pathname.startsWith('/api') && !pathname.startsWith('/v1') && !pathname.startsWith('/_next') && !pathname.includes('.')) {
     request.nextUrl.pathname = `/${defaultLocale}${pathname}`;
     return NextResponse.redirect(request.nextUrl);
   }
@@ -66,5 +66,5 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|go|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|v1|go|_next/static|_next/image|favicon.ico).*)'],
 };

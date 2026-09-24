@@ -57,6 +57,8 @@ fi
 "${compose[@]}" run --rm --no-deps scraper npm run seed:verified-creative-plans
 "${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-benchmarks
 "${compose[@]}" run --rm --no-deps scraper npm run audit:verticals:db
+"${compose[@]}" run --rm --no-deps scraper npm run refresh:fx
+"${compose[@]}" run --rm --no-deps scraper npm run publish:v1
 "${compose[@]}" up -d --no-deps --remove-orphans app
 
 for _ in {1..45}; do

@@ -85,6 +85,8 @@ jobs:
 
           test -d "$base"
           sudo -n test -r "$env_file"
+          sudo -n mkdir -p "$base/snapshots"
+          sudo -n chmod 0750 "$base/snapshots"
           # The timer uses the same stable directory inode as its flock target.
           exec 9<"$base"
           flock -w 1800 9
@@ -97,6 +99,11 @@ jobs:
           sudo -n tar -xzf "$archive" -C "$release_dir"
           sudo -n install -m 0600 "$env_file" "$release_dir/deploy/production/.env.production"
           sudo -n chown -R root:root "$release_dir"
+
+          set -a
+          . "$release_dir/deploy/production/.env.production"
+          set +a
+          node "$release_dir/scripts/validate-production-env.mjs"
 
           sudo -n env \
             DEPLOY_DIR="$release_dir" \

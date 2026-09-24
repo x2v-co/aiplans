@@ -34,8 +34,13 @@ services:
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-planprice}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-planprice}
+      PLANPRICE_V1_SNAPSHOT_PATH: ${PLANPRICE_V1_SNAPSHOT_PATH:-/var/lib/planprice/snapshots/current.json}
+      PLANPRICE_V1_SNAPSHOT_DIR: ${PLANPRICE_V1_SNAPSHOT_DIR:-/var/lib/planprice/snapshots}
+      PLANPRICE_V1_FX_PATH: ${PLANPRICE_V1_FX_PATH:-/var/lib/planprice/snapshots/exchange-rates.json}
     ports:
       - "127.0.0.1:${HOST_APP_PORT:-3000}:3000"
+    volumes:
+      - ${PLANPRICE_V1_SNAPSHOT_HOST_DIR:-/opt/x2v/planprice/snapshots}:/var/lib/planprice/snapshots:ro
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://' + require('os').hostname() + ':3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 15s
@@ -77,6 +82,12 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-planprice}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-planprice}
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      PLANPRICE_V1_SNAPSHOT_PATH: ${PLANPRICE_V1_SNAPSHOT_PATH:-/var/lib/planprice/snapshots/current.json}
+      PLANPRICE_V1_SNAPSHOT_DIR: ${PLANPRICE_V1_SNAPSHOT_DIR:-/var/lib/planprice/snapshots}
+      PLANPRICE_V1_FX_PATH: ${PLANPRICE_V1_FX_PATH:-/var/lib/planprice/snapshots/exchange-rates.json}
+      PLANPRICE_FX_MAX_AGE_HOURS: ${PLANPRICE_FX_MAX_AGE_HOURS:-30}
+    volumes:
+      - ${PLANPRICE_V1_SNAPSHOT_HOST_DIR:-/opt/x2v/planprice/snapshots}:/var/lib/planprice/snapshots
     command: ["npm", "run", "scrape"]
 
 volumes:

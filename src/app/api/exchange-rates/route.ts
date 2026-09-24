@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
 /**
@@ -6,7 +6,7 @@ import { sql } from '@/lib/db';
  * 每天更新一次汇率，简化版
  */
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Query exchange rates from database
     const rates = await sql<any[]>`
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'No exchange rates found in database',
-          hint: 'Use PUT /api/exchange-rates with authorization to fetch rates from Open Exchange Rates API',
+          hint: 'Ask the administrator to refresh exchange rates',
         },
         { status: 503 }
       );
@@ -62,118 +62,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * POST - 更新汇率（管理员功能，预留）
- */
-export async function POST(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('authorization');
-    const expectedKey = process.env.EXCHANGE_RATE_API_KEY || 'demo-update-key';
-    if (authHeader !== `Bearer ${expectedKey}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { from, to, rate } = body;
-
-    if (!from || !to || !rate) {
-      return NextResponse.json({ error: 'Missing required fields: from, to, rate' }, { status: 400 });
-    }
-
-    const [data] = await sql<any[]>`
-      INSERT INTO exchange_rates (
-        from_currency, to_currency, rate, source, is_active, valid_at, updated_at
-      ) VALUES (
-        ${from}, ${to}, ${parseFloat(rate)}, 'manual', true, NOW(), NOW()
-      )
-      ON CONFLICT (from_currency, to_currency) DO UPDATE SET
-        rate = EXCLUDED.rate,
-        source = EXCLUDED.source,
-        is_active = true,
-        valid_at = NOW(),
-        updated_at = NOW()
-      RETURNING *
-    `;
-
-    return NextResponse.json({
-      success: true,
-      rate: {
-        from,
-        to,
-      },
-      updated: data.updated_at,
-    });
-  } catch (error) {
-    console.error('Update exchange rate error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+// Public compatibility endpoint is read-only, regardless of credentials.
+function readOnly() {
+  return NextResponse.json({ error: 'Method not allowed' }, {
+    status: 405, headers: { Allow: 'GET', 'Cache-Control': 'no-store' },
+  });
 }
-
-/**
- * PUT - 刷新所有汇率（从 Open Exchange Rates API 获取）
- */
-export async function PUT(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('authorization');
-    const expectedKey = process.env.EXCHANGE_RATE_API_KEY || 'demo-update-key';
-    if (authHeader !== `Bearer ${expectedKey}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // 获取免费汇率数据
-    const ratesResponse = await fetch('https://openexchangerates.org/api/latest.json', {
-      headers: {
-        'User-Agent': 'PlanPrice-Scraper/1.0',
-      },
-    });
-
-    if (!ratesResponse.ok) {
-      throw new Error(`Failed to fetch rates: ${ratesResponse.statusText}`);
-    }
-
-    const ratesData = await ratesResponse.json();
-
-    // USD 是基准货币
-    const usdRates = ratesData.rates as Record<string, number>;
-    const currencies = ['CNY', 'EUR', 'GBP', 'JPY', 'KRW', 'SGD'];
-
-    // 批量更新汇率
-    const now = new Date().toISOString();
-    const updates = [];
-
-    for (const currency of currencies) {
-      if (!usdRates[currency]) continue;
-
-      const [data] = await sql<any[]>`
-        INSERT INTO exchange_rates (
-          from_currency, to_currency, rate, source, is_active, valid_at, updated_at
-        ) VALUES (
-          'USD', ${currency}, ${usdRates[currency]}, 'openexchangerates', true, NOW(), NOW()
-        )
-        ON CONFLICT (from_currency, to_currency) DO UPDATE SET
-          rate = EXCLUDED.rate,
-          source = EXCLUDED.source,
-          is_active = true,
-          valid_at = NOW(),
-          updated_at = NOW()
-        RETURNING id
-      `;
-
-      if (data) {
-        updates.push(`USD->${currency}: ${usdRates[currency]}`);
-      }
-    }
-
-    console.log(`✅ Updated ${updates.length} exchange rates from Open Exchange Rates`);
-
-    return NextResponse.json({
-      success: true,
-      updated: updates,
-      count: updates.length,
-      timestamp: now,
-    });
-  } catch (error) {
-    console.error('Refresh exchange rates error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
+export const POST = readOnly;
+export const PUT = readOnly;
+export const PATCH = readOnly;
+export const DELETE = readOnly;

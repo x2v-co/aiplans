@@ -26,6 +26,8 @@ if ! flock -n 9; then
 fi
 
 set +e
+"${compose[@]}" run --rm scraper npm run refresh:fx
+fx_status=$?
 if [[ "${SKIP_API:-0}" == "1" ]]; then
   echo "SKIP_API=1 — skipping API price scrapers"
   api_status=0
@@ -113,6 +115,10 @@ fi
 if [[ "$api_status" != "0" || "$plans_status" != "0" ]]; then
   echo "Scraper group failure: api=$api_status plans=$plans_status" >&2
   exit 1
+fi
+
+if [[ "$fx_status" != "0" ]]; then
+  echo "Exchange-rate refresh failed ($fx_status); the previous FX snapshot remains active." >&2
 fi
 
 # A plan whose slug is not in plan-classifications.ts simply gets no kind; the
