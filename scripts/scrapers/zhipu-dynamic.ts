@@ -37,9 +37,11 @@ class ZhipuScraper extends PlaywrightScraper {
   async scrape(): Promise<ScraperResult> {
     await this.navigate(ZHIPU_PRICING_URL);
     await this.page!.waitForFunction(() =>
-      Array.from(document.querySelectorAll('table')).some(table =>
-        /输入单价.*百万tokens/i.test((table.textContent ?? '').replace(/\s+/g, ''))
-      ),
+      Array.from(document.querySelectorAll('table')).some(table => {
+        const text = (table.textContent ?? '').replace(/\s+/g, '');
+        return /输入单价/.test(text) && /输出单价/.test(text)
+          && /(?:百万tokens|1M|百万)/i.test(text);
+      }),
       undefined,
       { timeout: 15_000 }
     );

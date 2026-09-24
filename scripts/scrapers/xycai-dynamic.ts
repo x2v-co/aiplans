@@ -18,7 +18,11 @@ import type { ScrapedPrice, ScrapedPriceVariant, ScraperResult } from '../utils/
 import { validatePrice, slugify } from '../utils/validator';
 import { normalizeModelName, normalizeSlug } from '../utils/model-normalizer';
 
-const XYCAI_PRICING_API = 'https://www.xyc.ai/api/provider/pricing';
+const XYCAI_PRICING_APIS = [
+  'https://www.xyc.ai/api/provider/pricing',
+  'https://apicdn.xyc.ai/api/provider/pricing',
+  'https://www.xycai.cn/api/provider/pricing',
+];
 const XYCAI_PRICING_PAGE = 'https://docs.xyc.ai/models.html';
 const XYCAI_DOCS = 'https://docs.xyc.ai/';
 
@@ -216,14 +220,31 @@ export async function scrapeXycAiDynamic(): Promise<ScraperResult> {
   try {
     console.log('🔄 Fetching XycAi pricing...');
 
-    const response = await fetch(XYCAI_PRICING_API, {
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'aiplans.dev pricing scraper (+https://aiplans.dev)',
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    let response: Response | null = null;
+    let pricingApi = XYCAI_PRICING_APIS[0];
+    let lastFetchError: unknown;
+    for (const endpoint of XYCAI_PRICING_APIS) {
+      try {
+        const candidate = await fetch(endpoint, {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'aiplans.dev pricing scraper (+https://aiplans.dev)',
+          },
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!candidate.ok) {
+          lastFetchError = new Error(`HTTP ${candidate.status}: ${candidate.statusText}`);
+          continue;
+        }
+        response = candidate;
+        pricingApi = endpoint;
+        break;
+      } catch (error) {
+        lastFetchError = error;
+      }
+    }
+    if (!response) {
+      throw lastFetchError ?? new Error('all XycAi pricing endpoints failed');
     }
 
     const payload = await response.json() as XycAiPayload;
@@ -296,7 +317,7 @@ export async function scrapeXycAiDynamic(): Promise<ScraperResult> {
           sourceGroupKey: groupKind(candidate.row.group_name),
           sourceGroupName: candidate.row.group_name,
           sourceUpdatedAt: payload.data.updated_at,
-          sourceUrl: XYCAI_PRICING_API,
+          sourceUrl: pricingApi,
           inputPricePer1M: candidate.input,
           outputPricePer1M: candidate.output,
           cachedInputPricePer1M: candidate.cachedInput ?? undefined,

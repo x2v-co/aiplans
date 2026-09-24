@@ -24,11 +24,24 @@ interface OpenAIPlan {
 /**
  * Fetch and parse OpenAI subscription plans from their website
  */
-async function fetchOpenAIPlans(): Promise<{ plans: OpenAIPlan[], errors: string[] }> {
+async function fetchOpenAIPlans(): Promise<{ plans: OpenAIPlan[], errors: string[], skipped?: boolean }> {
   const result = await fetchHTMLSmart(OPENAI_PLANS_URL);
   const errors: string[] = [];
 
   if (!result.success || !result.data) {
+    // OpenAI's consumer pricing page is currently behind a Cloudflare
+    // challenge for headless/VPS traffic. Treat that specific source outage as
+    // a non-destructive skip: an empty result never cleans existing plans, so
+    // the last verified OpenAI catalog remains in place. Other fetch failures
+    // still fail closed.
+    const blocked = result.status === 403 || /cloudflare|challenge|forbidden/i.test(result.error ?? '');
+    if (blocked) {
+      return {
+        plans: [],
+        errors: [],
+        skipped: true,
+      };
+    }
     return { plans: [], errors: ['Failed to fetch OpenAI plans page - no HTML returned'] };
   }
 
@@ -153,8 +166,19 @@ export async function scrapeOpenAIPlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching OpenAI subscription plans...');
 
-    const { plans: openaiPlans, errors: fetchErrors } = await fetchOpenAIPlans();
+    const { plans: openaiPlans, errors: fetchErrors, skipped } = await fetchOpenAIPlans();
     errors.push(...fetchErrors);
+
+    if (skipped) {
+      const warning = 'OpenAI plans page is blocked by an upstream anti-bot challenge; preserving last-known-good plans.';
+      console.warn(`⚠️ ${warning}`);
+      return {
+        source: 'OpenAI-Plans',
+        success: true,
+        plans: [],
+        errors: [warning],
+      };
+    }
 
     console.log(`📦 Found ${openaiPlans.length} plans from OpenAI`);
 

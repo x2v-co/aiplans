@@ -11,7 +11,12 @@ class AnthropicScraper extends PlaywrightScraper {
   async scrape(): Promise<ScraperResult> {
     await this.navigate(ANTHROPIC_PRICING_URL);
 
-    const cards = await this.page!.locator('.card_pricing_api_wrap').allInnerTexts();
+    // Anthropic moved the API cards to hashed ApiTab markup in 2026. Keep the
+    // old class as a fallback because regional/cached responses can still
+    // serve it, but prefer the stable semantic `modelCard` class fragment.
+    const cards = await this.page!
+      .locator('div[class*="modelCard"], .card_pricing_api_wrap')
+      .allInnerTexts();
     const prices: PriceData[] = [];
 
     for (const card of cards) {

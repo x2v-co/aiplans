@@ -32,9 +32,10 @@ class MoonshotScraper extends PlaywrightScraper {
     for (const url of PRICING_PAGES) {
       await this.navigate(url);
       await this.page!.waitForFunction(() =>
-        Array.from(document.querySelectorAll('table')).some(table =>
-          /^模型\s*计费单位/.test((table.textContent ?? '').replace(/\s+/g, ' ').trim())
-        ),
+        Array.from(document.querySelectorAll('table')).some(table => {
+          const text = (table.textContent ?? '').replace(/\s+/g, ' ').trim();
+          return /模型/.test(text) && /计费单位/.test(text) && /1M\s*tokens/i.test(text);
+        }),
         undefined,
         { timeout: 15_000 }
       );

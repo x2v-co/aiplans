@@ -17,20 +17,17 @@ class MistralScraper extends PlaywrightScraper {
 
   async scrape(): Promise<ScraperResult> {
     await this.navigate(MISTRAL_PRICING_URL);
-    await this.page!.waitForFunction(() =>
-      Array.from(document.querySelectorAll('mistral-block-card-model')).some(card =>
-        /Input.*\/M tokens/.test(card.textContent ?? '')
-          && /Output.*\/M tokens/.test(card.textContent ?? '')
-      ),
-      undefined,
-      { timeout: 15_000 }
-    );
+    // The cards are server-rendered custom elements, while their inner price
+    // labels are hydrated at slightly different times. Waiting for the
+    // element itself is more reliable than requiring one exact label string.
+    await this.page!.waitForSelector('mistral-block-card-model', { timeout: 15_000 });
+    await this.page!.waitForTimeout(1_000);
 
     const cards = await this.page!.locator('mistral-block-card-model').evaluateAll(elements =>
       elements.map(card => ({
         text: (card.textContent ?? '').replace(/\s+/g, ' ').trim(),
-        aliases: Array.from(card.querySelectorAll('label')).map(label =>
-          (label.textContent ?? '').replace(/\s+/g, ' ').trim()
+        names: Array.from(card.querySelectorAll('label, p.text-h5, h3, [class*="modelName"]')).map(name =>
+          (name.textContent ?? '').replace(/\s+/g, ' ').trim()
         ),
       }))
     );
@@ -38,7 +35,10 @@ class MistralScraper extends PlaywrightScraper {
     const prices: PriceData[] = [];
     const seen = new Set<string>();
     for (const card of cards) {
-      const alias = card.aliases.find(value => /^[a-z][a-z0-9-]+$/i.test(value));
+      // The current cards expose a human-readable model title in `p.text-h5`;
+      // older cards used a lower-case label. Both forms are valid model IDs
+      // after the shared normalizer has converted spaces to hyphens.
+      const alias = card.names.find(value => /^[a-z][a-z0-9 .+\-]+$/i.test(value));
       if (!alias) continue;
       const modelName = normalizeModelName(alias).toLowerCase();
       const input = dollar(card.text.match(/Input\s*\([^)]*\/M tokens\)\s*\$?[\d.]+/i)?.[0]);
