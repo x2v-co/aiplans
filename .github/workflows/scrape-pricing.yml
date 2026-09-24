@@ -38,10 +38,9 @@ jobs:
           test -d "$base"
           sudo -n test -r "$base/deploy/production/.env.production"
 
-          # Share the timer's lock so a manual run never overlaps nightly work.
-          exec 9<"$base"
-          flock -w 1800 9
-
+          # run-scrapers.sh owns the shared lock. Do not acquire it here: a
+          # wrapper-held flock is inherited by the script, whose non-blocking
+          # self-check would mistake this same invocation for another run.
           exec sudo -n env \
             DOCKER_CMD=/usr/bin/docker \
             LOCK_PATH="$base" \
