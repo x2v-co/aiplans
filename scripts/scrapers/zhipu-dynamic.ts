@@ -3,6 +3,32 @@ import { normalizeModelName } from '../utils/validator';
 import { PlaywrightScraper, type PriceData, type ScraperResult } from './lib/playwright-scraper';
 
 const ZHIPU_PRICING_URL = 'https://bigmodel.cn/pricing';
+const ZHIPU_PRICING_API = 'https://bigmodel.cn/api/biz/operation/query?ids=1160,1161';
+
+type RecordValue = Record<string, unknown>;
+
+function record(value: unknown): RecordValue | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as RecordValue : null;
+}
+
+function text(value: unknown): string {
+  if (typeof value === 'string' || typeof value === 'number') return String(value).trim();
+  const object = record(value);
+  return object ? text(object.value) : '';
+}
+
+function fieldValues(fields: unknown): Map<string, string> {
+  const values = new Map<string, string>();
+  if (!Array.isArray(fields)) return values;
+  for (const field of fields) {
+    const item = record(field);
+    if (!item) continue;
+    const label = text(item.label);
+    const value = Array.isArray(item.values) ? item.values.map(text).filter(Boolean).join(' / ') : text(item.value);
+    if (label && value) values.set(label, value);
+  }
+  return values;
+}
 
 function cny(text: string | undefined): number | null {
   if (/免费|free/i.test(text ?? '')) return 0;
@@ -35,50 +61,80 @@ class ZhipuScraper extends PlaywrightScraper {
   getSourceUrl(): string { return ZHIPU_PRICING_URL; }
 
   async scrape(): Promise<ScraperResult> {
-    await this.navigate(ZHIPU_PRICING_URL);
-    await this.page!.waitForFunction(() =>
-      Array.from(document.querySelectorAll('table')).some(table => {
-        const text = (table.textContent ?? '').replace(/\s+/g, '');
-        return /输入单价/.test(text) && /输出单价/.test(text)
-          && /(?:百万tokens|1M|百万)/i.test(text);
-      }),
-      undefined,
-      { timeout: 15_000 }
-    );
-    await this.page!.waitForTimeout(2_000);
-
-    const tables = await this.page!.locator('table').evaluateAll(elements =>
-      elements.map(table => Array.from(table.querySelectorAll('tr')).map(row =>
-        Array.from(row.querySelectorAll('th,td')).map(cell =>
-          (cell.textContent ?? '').replace(/\s+/g, ' ').trim()
-        )
-      ))
-    );
+    // The pricing page is now a Vue shell. Its public operation endpoint
+    // contains the same model cards as the rendered page and is much more
+    // stable than waiting for implementation-specific table markup.
+    const response = await fetch(ZHIPU_PRICING_API, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'aiplans.dev pricing scraper (+https://aiplans.dev)',
+      },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) throw new Error(`Zhipu pricing API returned HTTP ${response.status}`);
+    const body = record(await response.json());
+    const operations = body && Array.isArray(body.data) ? body.data : [];
 
     const prices: PriceData[] = [];
     const seen = new Set<string>();
-    for (let tableIndex = 0; tableIndex < tables.length - 1; tableIndex++) {
-      const header = tables[tableIndex][0] ?? [];
-      const modelIndex = header.findIndex(cell => /^模型名称$/.test(cell));
-      const contextIndex = header.findIndex(cell => /^上下文/.test(cell));
-      const inputIndex = header.findIndex(cell => /^输入单价.*百万tokens/i.test(cell));
-      const outputIndex = header.findIndex(cell => /^输出单价.*百万tokens/i.test(cell));
-      const cachedIndex = header.findIndex(cell => /^缓存命中.*百万tokens/i.test(cell));
-      if ([modelIndex, inputIndex, outputIndex].some(index => index < 0)) continue;
+    for (const operation of operations) {
+      const item = record(operation);
+      const operationId = text(item?.operationId);
+      if (!item || !['1160', '1161'].includes(operationId) || typeof item.content !== 'string') continue;
+      let payload: RecordValue | null;
+      try {
+        payload = record(JSON.parse(item.content));
+      } catch {
+        continue;
+      }
 
-      for (const cells of tables[tableIndex + 1]) {
-        const modelName = cleanModel(cells[modelIndex] ?? '');
-        if (!modelName || seen.has(modelName)) continue;
-        const input = cny(cells[inputIndex]);
-        const output = cny(cells[outputIndex]);
-        const cachedInput = cachedIndex >= 0 ? cny(cells[cachedIndex]) : null;
-        if (input == null || output == null || output < input) continue;
+      const cards: Array<{ modelName: string; fields: Map<string, string> }> = [];
+      if (operationId === '1160' && Array.isArray(payload?.list)) {
+        for (const card of payload.list) {
+          const cardRecord = record(card);
+          const table = record(cardRecord?.table);
+          const rows = Array.isArray(table?.modelList) ? table.modelList : [];
+          const fields = new Map<string, string>();
+          for (const row of rows) {
+            const rowRecord = record(row);
+            const values = rowRecord
+              ? Object.entries(rowRecord)
+                .filter(([key]) => key !== 'sort')
+                .map(([, value]) => text(value))
+                .filter(Boolean)
+              : [];
+            if (values.length >= 2) fields.set(values[0], values[values.length - 1]);
+          }
+          const modelName = text(cardRecord?.title);
+          if (modelName) cards.push({ modelName, fields });
+        }
+      }
+      if (operationId === '1161' && Array.isArray(payload?.tabs)) {
+        for (const tab of payload.tabs) {
+          const tabRecord = record(tab);
+          if (text(tabRecord?.title) !== '模型' || !Array.isArray(tabRecord?.cards)) continue;
+          for (const card of tabRecord.cards) {
+            const cardRecord = record(card);
+            const modelName = text(cardRecord?.title);
+            if (modelName) cards.push({ modelName, fields: fieldValues(cardRecord?.fieldList) });
+          }
+        }
+      }
+
+      for (const card of cards) {
+        const modelName = cleanModel(card.modelName);
+        const inputText = card.fields.get('输入单价') ?? card.fields.get('输入价格');
+        const outputText = card.fields.get('输出单价') ?? card.fields.get('输出价格');
+        const input = cny(inputText);
+        const output = cny(outputText);
+        const cachedInput = cny(card.fields.get('缓存命中'));
+        if (!modelName || seen.has(modelName) || input == null || output == null || output < input) continue;
         prices.push({
           modelName,
           inputPricePer1M: input,
           cachedInputPricePer1M: cachedInput ?? undefined,
           outputPricePer1M: output,
-          contextWindow: context(cells[contextIndex]),
+          contextWindow: context(card.fields.get('上下文')),
           isAvailable: true,
           currency: 'CNY',
         });
