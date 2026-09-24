@@ -237,8 +237,8 @@ export const CLASSIFICATIONS: Classification[] = [
       // qwen3-coder-plus, glm-4.7.
       only_extra: true,
       extra: [
-        'qwen3.7-plus', 'qwen3.6-plus', 'kimi-k2.5', 'glm-5', 'minimax-m2.5',
-        'qwen3.5-plus', 'qwen3-max', 'qwen3-coder-next', 'qwen3-coder-plus', 'glm-4.7',
+        'qwen3.7-plus', 'qwen3.6-plus', 'minimax-m2.5',
+        'qwen3.5-plus', 'qwen3-max', 'qwen3-coder-plus',
       ],
     },
     reason: '百炼 Coding Plan Pro: 官方闭列表 10 个模型（2026-09-11 核实）' },
