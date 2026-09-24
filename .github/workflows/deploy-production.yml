@@ -64,6 +64,26 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Ensure protected API credentials
+        env:
+          PLANPRICE_CATALOG_TOKEN: ${{ secrets.PLANPRICE_CATALOG_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$PLANPRICE_CATALOG_TOKEN"
+          test "${#PLANPRICE_CATALOG_TOKEN}" -ge 32
+          env_file="$DEPLOY_PATH/deploy/production/.env.production"
+          sudo -n test -f "$env_file"
+          # Replace only the protected settings. The token is supplied through
+          # the GitHub Environment secret and is never echoed by the runner.
+          sudo -n sed -i \
+            -e '/^PLANPRICE_CATALOG_TOKEN=/d' \
+            -e '/^PLANPRICE_SERVICE_ROLE=/d' \
+            "$env_file"
+          printf 'PLANPRICE_CATALOG_TOKEN=%s\nPLANPRICE_SERVICE_ROLE=public\n' \
+            "$PLANPRICE_CATALOG_TOKEN" | sudo -n tee -a "$env_file" >/dev/null
+          sudo -n chown root:root "$env_file"
+          sudo -n chmod 0600 "$env_file"
+
       - name: Validate runner access
         run: |
           set -euo pipefail
