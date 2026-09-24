@@ -32,6 +32,7 @@ if [[ "${BUILD_SCRAPER:-0}" == "1" ]]; then
   build_services+=(scraper)
 fi
 "${compose[@]}" build "${build_services[@]}"
+"${compose[@]}" run --rm --no-deps scraper npm run validate:production-env
 "${compose[@]}" up -d postgres
 
 database_ready=0

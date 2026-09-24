@@ -100,8 +100,6 @@ jobs:
           sudo -n install -m 0600 "$env_file" "$release_dir/deploy/production/.env.production"
           sudo -n chown -R root:root "$release_dir"
 
-          sudo -n env "PATH=$PATH" bash -c "set -a; . '$release_dir/deploy/production/.env.production'; set +a; node '$release_dir/scripts/validate-production-env.mjs'"
-
           sudo -n env \
             DEPLOY_DIR="$release_dir" \
             COMPOSE_FILE="$release_dir/deploy/production/compose.yml" \
