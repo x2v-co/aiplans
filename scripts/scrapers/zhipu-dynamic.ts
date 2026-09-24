@@ -38,13 +38,6 @@ function cny(text: string | undefined): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
-function yen(text: string | undefined): number | null {
-  const match = text?.match(/¥\s*([\d.]+)/);
-  if (!match) return null;
-  const value = Number(match[1]);
-  return Number.isFinite(value) ? value : null;
-}
-
 function context(text: string | undefined): number | null {
   const match = text?.trim().match(/^([\d.]+)\s*([KM])$/i);
   if (!match) return null;
@@ -140,28 +133,6 @@ class ZhipuScraper extends PlaywrightScraper {
         });
         seen.add(modelName);
       }
-    }
-
-    for (let tableIndex = 0; tableIndex < tables.length - 1; tableIndex++) {
-      const header = tables[tableIndex][0] ?? [];
-      const modelIndex = header.findIndex(cell => /^Model$/i.test(cell));
-      const contextIndex = header.findIndex(cell => /^Context$/i.test(cell));
-      const pricingIndex = header.findIndex(cell => /^Pricing$/i.test(cell));
-      if ([modelIndex, pricingIndex].some(index => index < 0)) continue;
-      const cells = tables[tableIndex + 1].find(row => /^GLM-4$/i.test(row[modelIndex] ?? ''));
-      if (!cells || seen.has('glm-4')) continue;
-      const unifiedPrice = yen(cells[pricingIndex]);
-      if (unifiedPrice == null) continue;
-      prices.push({
-        modelName: 'glm-4',
-        inputPricePer1M: unifiedPrice,
-        outputPricePer1M: unifiedPrice,
-        cachedInputPricePer1M: null,
-        contextWindow: context(cells[contextIndex]),
-        isAvailable: true,
-        currency: 'CNY',
-      });
-      seen.add('glm-4');
     }
 
     return {
