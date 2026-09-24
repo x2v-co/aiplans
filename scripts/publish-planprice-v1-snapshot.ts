@@ -33,6 +33,17 @@ const snapshotPath = process.env.PLANPRICE_V1_SNAPSHOT_PATH ?? '/var/lib/planpri
 const snapshotDir = process.env.PLANPRICE_V1_SNAPSHOT_DIR ?? snapshotPath.replace(/\/[^/]+$/, '');
 const fxPath = process.env.PLANPRICE_V1_FX_PATH ?? `${snapshotDir}/exchange-rates.json`;
 
+// Runtime capabilities are an explicit publication decision. The scraper's
+// model taxonomy does not prove that a provider endpoint is suitable for an
+// AEEIS agent run, so never infer `agent` from a generic LLM row. Production
+// may extend this allowlist only after a real provider probe succeeds.
+const runtimeAgentModels = new Set(
+  (process.env.PLANPRICE_RUNTIME_AGENT_MODELS ?? 'gemini-2.5-flash')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean),
+);
+
 function asString(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   const text = String(value);
@@ -146,6 +157,12 @@ const offerings = prices.map((row) => {
   const normalizationAvailable = Boolean(input && output && fx && componentPrices.input && componentPrices.output);
   const observedAt = iso(row.last_verified);
   const source = sourceUrl(row);
+  const capabilities = new Set(
+    (row.model_capabilities || [])
+      .map((value) => String(value).toLowerCase().replace(/[^a-z0-9_-]/g, '_'))
+      .filter(Boolean),
+  );
+  if (runtimeAgentModels.has(String(row.model_slug).toLowerCase())) capabilities.add('agent');
   return {
     offeringId: stableId('offering', row.channel_price_id),
     modelId: stableId('model', row.model_slug || row.model_id),
@@ -156,7 +173,7 @@ const offerings = prices.map((row) => {
     regionSetId: stableId('region', row.provider_region || 'global'),
     pricingVariantId: stableId('price', row.channel_price_id),
     regions: [String(row.provider_region || 'global').toLowerCase().replace(/[^a-z0-9_-]/g, '_')],
-    capabilities: [...new Set((row.model_capabilities || []).map((value) => String(value).toLowerCase().replace(/[^a-z0-9_-]/g, '_')).filter(Boolean))],
+    capabilities: [...capabilities].sort(),
     contextWindow: row.model_context_window || null,
     catalogStatus: normalizationAvailable ? 'available' : 'degraded',
     runtimeStatus: 'unknown', runtimeObservedAt: null, runtimeEvidenceRef: null,
