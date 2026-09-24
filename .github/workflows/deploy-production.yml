@@ -138,6 +138,8 @@ jobs:
             /etc/systemd/system/planprice-scraper.service
           sudo -n install -m 0644 "$base/deploy/production/planprice-api-scraper.service" \
             /etc/systemd/system/planprice-api-scraper.service
+          sudo -n install -m 0644 "$base/deploy/production/planprice-snapshot-cleanup.service" \
+            /etc/systemd/system/planprice-snapshot-cleanup.service
           sudo -n install -m 0644 "$base/deploy/production/planprice-scraper-failure.service" \
             /etc/systemd/system/planprice-scraper-failure.service
           # rsync already ships notify-failure.sh at its repo mode (0755);
@@ -147,9 +149,11 @@ jobs:
             /etc/systemd/system/planprice-scraper.timer
           sudo -n install -m 0644 "$base/deploy/production/planprice-api-scraper.timer" \
             /etc/systemd/system/planprice-api-scraper.timer
+          sudo -n install -m 0644 "$base/deploy/production/planprice-snapshot-cleanup.timer" \
+            /etc/systemd/system/planprice-snapshot-cleanup.timer
           sudo -n systemctl daemon-reload
-          sudo -n systemctl enable planprice-scraper.timer planprice-api-scraper.timer
-          sudo -n systemctl restart planprice-scraper.timer planprice-api-scraper.timer
+          sudo -n systemctl enable planprice-scraper.timer planprice-api-scraper.timer planprice-snapshot-cleanup.timer
+          sudo -n systemctl restart planprice-scraper.timer planprice-api-scraper.timer planprice-snapshot-cleanup.timer
           sudo -n docker compose -p planprice-production \
             -f "$base/deploy/production/compose.yml" \
             --env-file "$env_file" ps
