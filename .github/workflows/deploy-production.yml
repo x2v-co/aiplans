@@ -23,7 +23,9 @@ env:
 jobs:
   verify:
     name: Verify release
-    runs-on: ubuntu-latest
+    # Build/verify on the same self-hosted runner that deploys, so this release
+    # check consumes no GitHub-hosted (billable) minutes.
+    runs-on: [self-hosted, planprice-production]
     timeout-minutes: 15
     steps:
       - name: Checkout
