@@ -17,7 +17,7 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
     about: {
       title: 'About aiplans.dev',
       description: 'Who operates aiplans.dev and why we compare AI API and subscription pricing.',
-      intro: 'aiplans.dev is an independent pricing comparison product by x2v, an independent AI product studio operated by 北京未知维度科技中心（个体工商户） (USCC 92110114MADCWXLA1M).',
+      intro: 'aiplans.dev is an independent pricing comparison product by x2v, an independent AI product studio operated by Guanchen Lin.',
       sections: [
         { heading: 'What we do', paragraphs: ['We collect public pricing and plan information from AI providers, cloud platforms, aggregators, and resellers. We normalize those facts into comparable units so developers and teams can make informed purchasing decisions.'] },
         { heading: 'Editorial independence', paragraphs: ['Price order, comparison results, and recommendations are based on published data and product rules. Commercial relationships do not buy a better ranking. Sponsored placements, if introduced, will be labeled clearly.'] },
@@ -70,7 +70,7 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
       description: 'How aiplans.dev handles analytics, cookies, advertising, outbound clicks, and privacy choices.',
       intro: `Last updated: ${UPDATED}. This policy explains the limited information processed when you use aiplans.dev.`,
       sections: [
-        { heading: 'Data controller', paragraphs: ['The data controller for the personal data described in this policy is x2v, operated by 北京未知维度科技中心（个体工商户） (USCC 92110114MADCWXLA1M). Privacy requests can be sent through the contact methods on this site.'] },
+        { heading: 'Data controller', paragraphs: ['The data controller for the personal data described in this policy is Guanchen Lin, operating x2v. Privacy requests can be sent through the contact methods on this site.'] },
         { heading: 'Information we process', bullets: ['Language and privacy preferences stored in your browser.', 'Standard hosting and security logs, which may include IP address, browser details, requested URL, and time of access.', 'Aggregate referral events containing the campaign, source, product, and timestamp. The application does not add an IP address or account identifier to this referral table.', 'Google Analytics usage data only after you consent to analytics.'] },
         { heading: 'Cookies and local storage', paragraphs: ['A language cookie remembers the selected locale. A local-storage record remembers your privacy choices. With analytics consent, Google Analytics may set cookies such as _ga. You can change your choice at any time through Cookie settings in the footer.'] },
         { heading: 'Google Analytics', paragraphs: ['When analytics is accepted, Google Analytics helps us understand aggregate page usage, device categories, and approximate geography. Analytics does not load before consent through our site preference control. Google may process this data under its own privacy terms.'] },
@@ -86,13 +86,14 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
       description: 'Terms governing use of aiplans.dev pricing comparisons and related content.',
       intro: `Last updated: ${UPDATED}. By using aiplans.dev, you agree to these terms.`,
       sections: [
-        { heading: 'Service provider', paragraphs: ['aiplans.dev is provided by x2v, operated by 北京未知维度科技中心（个体工商户） (USCC 92110114MADCWXLA1M), which is the service provider under these terms.'] },
+        { heading: 'Service provider', paragraphs: ['aiplans.dev is provided by x2v, operated by Guanchen Lin, who is the service provider under these terms.'] },
         { heading: 'Informational service', paragraphs: ['Prices, benchmarks, availability notes, and plan details are provided for comparison and general information. They are not financial, legal, procurement, or contractual advice.'] },
         { heading: 'Accuracy and availability', paragraphs: ['We work to keep data current but do not guarantee that every value is complete, error-free, or available in every region. Provider terms and checkout prices control. Verify material decisions with the provider.'] },
         { heading: 'Acceptable use', bullets: ['Do not interfere with the service or attempt unauthorized access.', 'Do not use automated access in a way that materially degrades availability.', 'Do not misrepresent aiplans.dev data as an official statement from a provider.', 'Respect third-party rights and applicable law.'] },
         { heading: 'Third-party services', paragraphs: ['Provider links, advertisements, and external tools are controlled by third parties. aiplans.dev is not responsible for their availability, transactions, security, or terms.'] },
         { heading: 'Intellectual property', paragraphs: ['Provider names and marks belong to their respective owners. The aiplans.dev interface, original copy, and project code are protected by their applicable licenses and laws.'] },
         { heading: 'No warranty and limitation', paragraphs: ['The service is provided “as is” and “as available” to the extent permitted by law. aiplans.dev and x2v are not liable for losses caused by reliance on stale data, provider changes, outages, or third-party services.'] },
+        { heading: 'Governing law and disputes', paragraphs: ['These terms are governed by the laws of the Hong Kong Special Administrative Region. Disputes arising from these terms or the service shall be submitted to the courts of Hong Kong. Nothing in these terms limits any mandatory consumer protection rights you have under the law of your place of residence.'] },
         { heading: 'Changes and contact', paragraphs: ['We may change the service or these terms. Continued use after a revision means the revised terms apply. Questions can be submitted through the contact page.'] },
       ],
     },
@@ -101,7 +102,7 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
     about: {
       title: '关于 aiplans.dev',
       description: '了解 aiplans.dev 的运营方，以及我们为何比较 AI API 与订阅套餐价格。',
-      intro: 'aiplans.dev 是独立 AI 产品工作室 x2v 推出的价格比较产品。x2v 由北京未知维度科技中心（个体工商户）（统一社会信用代码 92110114MADCWXLA1M）运营。',
+      intro: 'aiplans.dev 是独立 AI 产品工作室 x2v 推出的价格比较产品。x2v 由林冠辰运营。',
       sections: [
         { heading: '我们做什么', paragraphs: ['我们收集 AI 厂商、云平台、聚合平台和转售渠道公开发布的价格与套餐信息，并统一成可比较的口径，帮助开发者和团队做出更清楚的采购决策。'] },
         { heading: '编辑独立性', paragraphs: ['价格排序、比较结果和推荐依据公开数据与统一规则生成。商业合作不能购买更高排名；未来如有赞助内容，会清楚标注。'] },
@@ -154,7 +155,7 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
       description: 'aiplans.dev 如何处理分析、Cookie、广告、外链点击和隐私选择。',
       intro: `最后更新：${UPDATED_ZH}。本政策说明使用 aiplans.dev 时会处理的有限信息。`,
       sections: [
-        { heading: '个人信息处理者', paragraphs: ['本政策所述个人信息的处理者（数据控制者）是 x2v，由北京未知维度科技中心（个体工商户）（统一社会信用代码 92110114MADCWXLA1M）运营。隐私请求可通过本站联系渠道提出。'] },
+        { heading: '个人信息处理者', paragraphs: ['本政策所述个人信息的处理者（数据控制者）是运营 x2v 的林冠辰。隐私请求可通过本站联系渠道提出。'] },
         { heading: '我们处理的信息', bullets: ['保存在浏览器中的语言与隐私偏好。', '标准托管和安全日志，可能包含 IP 地址、浏览器信息、请求网址与访问时间。', '包含活动、来源、产品和时间的汇总推荐点击事件；应用不会在该点击表中加入 IP 地址或账号标识。', '仅在你同意分析后产生的 Google Analytics 使用数据。'] },
         { heading: 'Cookie 与本地存储', paragraphs: ['语言 Cookie 用于记住所选语言，本地存储用于记住隐私选择。同意分析后，Google Analytics 可能设置 `_ga` 等 Cookie。你可以随时通过页脚的“Cookie 设置”修改选择。'] },
         { heading: 'Google Analytics', paragraphs: ['接受分析后，Google Analytics 帮助我们了解汇总页面使用情况、设备类别和大致地区。本站的偏好控件会在取得同意前阻止分析脚本加载；Google 也会依据其隐私条款处理相关数据。'] },
@@ -170,13 +171,14 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
       description: '使用 aiplans.dev 价格比较与相关内容时适用的条款。',
       intro: `最后更新：${UPDATED_ZH}。使用 aiplans.dev 即表示你同意本条款。`,
       sections: [
-        { heading: '服务提供方', paragraphs: ['aiplans.dev 由 x2v 提供。x2v 由北京未知维度科技中心（个体工商户）（统一社会信用代码 92110114MADCWXLA1M）运营，北京未知维度科技中心（个体工商户）是本条款下的服务提供方。'] },
+        { heading: '服务提供方', paragraphs: ['aiplans.dev 由 x2v 提供。x2v 由林冠辰运营，林冠辰是本条款下的服务提供方。'] },
         { heading: '信息服务', paragraphs: ['价格、基准分数、可用性和套餐信息仅用于比较及一般参考，不构成财务、法律、采购或合同建议。'] },
         { heading: '准确性与可用性', paragraphs: ['我们尽力保持数据及时，但不保证每个值都完整、无误或适用于所有地区。厂商条款和结算价格优先；重大决定请向厂商核实。'] },
         { heading: '可接受使用', bullets: ['不得干扰服务或尝试未经授权的访问。', '不得以明显损害服务可用性的方式自动访问。', '不得把 aiplans.dev 数据冒充为厂商官方声明。', '尊重第三方权利和适用法律。'] },
         { heading: '第三方服务', paragraphs: ['厂商链接、广告和外部工具由第三方控制，aiplans.dev 不对其可用性、交易、安全或条款负责。'] },
         { heading: '知识产权', paragraphs: ['厂商名称与商标归各自权利人所有。aiplans.dev 界面、原创文字和项目代码受相应许可与法律保护。'] },
         { heading: '不保证与责任限制', paragraphs: ['在法律允许范围内，服务按“现状”和“可用”提供。aiplans.dev 与 x2v 不对因过期数据、厂商变更、服务中断或第三方服务造成的损失负责。'] },
+        { heading: '适用法律和争议解决', paragraphs: ['本条款受中华人民共和国香港特别行政区法律管辖。因本条款或本服务产生的争议，提交香港法院解决。本条款不限制你依据惯常居住地法律享有的、不能通过约定排除的消费者保护权利。'] },
         { heading: '变更与联系', paragraphs: ['我们可能调整服务或本条款。修订后继续使用即表示新条款适用；问题可通过联系页面提出。'] },
       ],
     },
