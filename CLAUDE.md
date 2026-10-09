@@ -478,9 +478,8 @@ messages/
   (brain-*, morning-brief*, quant) use the personal bot. One alert per unit
   per 6h plus a ✅ recovery message. It is installed on the host, not by this
   repo; do not add `OnFailure=` to unit files here (it would double-alert).
-  `planprice-scraper-failure.service` + `notify-failure.sh` are legacy (no
-  unit references them any more); remove them together with the install
-  step in `deploy-production.yml` (needs a token with `workflow` scope).
+  The old `planprice-scraper-failure.service` + `notify-failure.sh` were
+  removed; the deploy deletes the stale unit from the host.
 - **`upsertChannelPrice` rejects `output < input`** — if a scraper's regex
   accidentally swaps columns, the write fails and you see it in logs. Fix
   the scraper, don't work around the check.
