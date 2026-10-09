@@ -3,9 +3,11 @@ Description=PlanPrice daily pricing, plans, audit, and Agent Arena refresh
 Wants=network-online.target
 After=network-online.target docker.service
 Requires=docker.service
-# Failure/recovery alerts come from the host-level drop-in
-# /etc/systemd/system/<unit>.service.d/10-notify.conf -> notify-failure@%n.service
-# (fleet-wide template, installed outside this repo since 2026-10-09).
+# Failure/recovery alerts come from the fleet-wide host drop-in (not this repo):
+# /etc/systemd/system/<unit>.service.d/10-notify.conf
+#   [Unit]    OnFailure=notify-failure@%n.service
+#   [Service] ExecStopPost=-+/usr/local/bin/notify-failure --post %n   (root; recovery notice)
+# routed by /etc/notify-failure/routes (planprice-* -> x2v_alerts_bot, [aiplans]).
 
 [Service]
 Type=oneshot
