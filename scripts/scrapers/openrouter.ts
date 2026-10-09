@@ -144,6 +144,34 @@ function endpointVariantKey(endpoint: OpenRouterEndpoint): string {
   return slugify(`${provider}${tag}${quant}${name}`) || 'upstream-provider';
 }
 
+/**
+ * Classify a model's headline pricing.
+ * - `variable`: any negative number. OpenRouter and third-party routers
+ *   (openrouter/auto, typesafe/jev-router, nvidia/switchyard, …) publish "-1"
+ *   as a sentinel for "price depends on the routed model". Nothing to record.
+ * - `invalid`: missing, non-numeric or absurdly large. Unexpected; reported as a
+ *   warning so a human looks at it, without discarding the rest of the catalog.
+ */
+export function classifyOpenRouterPricing(pricing: Partial<OpenRouterModel['pricing']> | undefined):
+  | { kind: 'ok'; input: number; output: number; cache?: number }
+  | { kind: 'variable' }
+  | { kind: 'invalid'; reason: string } {
+  const prompt = Number(pricing?.prompt);
+  const completion = Number(pricing?.completion);
+  if (pricing?.prompt == null || pricing?.completion == null || pricing.prompt === '' || pricing.completion === '') {
+    return { kind: 'invalid', reason: `missing price (prompt=${pricing?.prompt}, completion=${pricing?.completion})` };
+  }
+  if (prompt < 0 || completion < 0) return { kind: 'variable' };
+  const input = prompt * 1_000_000;
+  const output = completion * 1_000_000;
+  if (!validatePrice(input) || !validatePrice(output)) {
+    return { kind: 'invalid', reason: `prompt=${pricing.prompt}, completion=${pricing.completion}` };
+  }
+  const cacheRaw = pricing.input_cache_read ? Number(pricing.input_cache_read) * 1_000_000 : undefined;
+  const cache = cacheRaw != null && validatePrice(cacheRaw) ? cacheRaw : undefined;
+  return { kind: 'ok', input, output, cache };
+}
+
 function endpointPrice(endpoint: OpenRouterEndpoint): { input: number; output: number; cache?: number } | null {
   const prompt = endpoint.pricing?.prompt;
   const completion = endpoint.pricing?.completion;
@@ -243,6 +271,8 @@ async function fetchEndpointVariants(model: OpenRouterModel, headline: ScrapedPr
 export async function scrapeOpenRouter(): Promise<ScraperResult> {
   const startTime = Date.now();
   const errors: string[] = [];
+  const warnings: string[] = [];
+  const variablePriced: string[] = [];
   let prices: ScrapedPrice[] = [];
   let pricedModels: OpenRouterModel[] = [];
 
@@ -278,26 +308,18 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
         // These would otherwise fail validation and poison the success flag.
         if (model.id.startsWith('openrouter/')) continue;
         if (isDatedSnapshotOf(model.id)) continue;
-        // Third-party routers (e.g. typesafe/jev-router, nvidia/switchyard)
-        // publish "-1" as a sentinel for "price depends on the routed model".
-        // That is not a validation failure, just nothing to record.
-        if (model.pricing?.prompt === '-1' || model.pricing?.completion === '-1') continue;
-
-        // Convert price per token ($/token) to price per 1M tokens
-        // OpenRouter prices are in USD per token
-        const inputPrice = parseFloat(model.pricing.prompt) * 1_000_000;
-        const outputPrice = parseFloat(model.pricing.completion) * 1_000_000;
-
-        // Get cache price if available
-        const cachePrice = model.pricing.input_cache_read
-          ? parseFloat(model.pricing.input_cache_read) * 1_000_000
-          : undefined;
-
-        // Skip if prices are invalid
-        if (!validatePrice(inputPrice) || !validatePrice(outputPrice)) {
-          errors.push(`Invalid price for ${model.id}`);
+        const pricing = classifyOpenRouterPricing(model.pricing);
+        if (pricing.kind === 'variable') {
+          variablePriced.push(model.id);
           continue;
         }
+        if (pricing.kind === 'invalid') {
+          // One malformed listing must not discard the other ~460 prices; it is
+          // surfaced as a warning (and blocks full-catalog retirement) instead.
+          warnings.push(`Invalid price for ${model.id}: ${pricing.reason}`);
+          continue;
+        }
+        const { input: inputPrice, output: outputPrice, cache: cachePrice } = pricing;
 
         // Skip non-text-output models. OpenRouter exposes image-generation and
         // image-editing prices in the same prompt/completion fields, but those
@@ -363,6 +385,12 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
     console.log(`   - Models processed: ${prices.length}`);
     console.log(`   - Variants processed: ${variants.length}`);
     console.log(`   - Errors: ${errors.length}`);
+    if (variablePriced.length > 0) {
+      console.log(`   - Skipped ${variablePriced.length} router models without a fixed price: ${variablePriced.join(', ')}`);
+    }
+    if (warnings.length > 0) {
+      console.warn(`   - ⚠️ Warnings (${warnings.length}):\n     ${warnings.join('\n     ')}`);
+    }
 
     return {
       source: 'OpenRouter',
@@ -370,6 +398,7 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
       prices,
       variants,
       errors: errors.length > 0 ? errors : undefined,
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
   } catch (error) {
     console.error('❌ OpenRouter scrape failed:', error);
