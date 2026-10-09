@@ -213,7 +213,7 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     name: '阶跃星辰 (StepFun)',
     slug: 'stepfun',
     pricingType: 'API',
-    pricingUrl: 'https://platform.stepfun.com/docs/zh/pricing/details',
+    pricingUrl: 'https://platform.stepfun.com/docs/zh/guides/pricing/details',
     apiDocsUrl: 'https://platform.stepfun.com/docs/zh/overview/concept',
     website: 'https://platform.stepfun.com',
     type: 'official',

@@ -3,7 +3,11 @@ Description=PlanPrice high-frequency API pricing and new model refresh
 Wants=network-online.target
 After=network-online.target docker.service
 Requires=docker.service
-OnFailure=planprice-scraper-failure.service
+# Failure/recovery alerts come from the fleet-wide host drop-in (not this repo):
+# /etc/systemd/system/<unit>.service.d/10-notify.conf
+#   [Unit]    OnFailure=notify-failure@%n.service
+#   [Service] ExecStopPost=-+/usr/local/bin/notify-failure --post %n   (root; recovery notice)
+# routed by /etc/notify-failure/routes (planprice-* -> x2v_alerts_bot, [aiplans]).
 
 [Service]
 Type=oneshot

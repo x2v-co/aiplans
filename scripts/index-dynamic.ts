@@ -242,7 +242,12 @@ async function processAPIScraper(
 
   if (!result.success) {
     console.error(`❌ ${result.source} failed:`, result.errors);
-    return { updated: 0, errors: result.errors?.length || 0 };
+    return { updated: 0, errors: result.errors?.length || 0, warnings: 0 };
+  }
+
+  const warningCount = result.warnings?.length ?? 0;
+  if (warningCount > 0) {
+    console.warn(`⚠️ ${result.source}: ${warningCount} item(s) skipped:\n   ${result.warnings!.join('\n   ')}`);
   }
 
   // Get or create the channel's provider row.
@@ -250,7 +255,7 @@ async function processAPIScraper(
 
   if (!channelProviderId) {
     console.error(`❌ No provider ID found for channel: ${result.source}`);
-    return { updated: 0, errors: 1 };
+    return { updated: 0, errors: 1, warnings: warningCount };
   }
 
   // Infer currency based on channel region
@@ -420,7 +425,12 @@ async function processAPIScraper(
     }
   }
 
-  if (fullCatalog && errorCount === 0 && seenModelIds.size > 0) {
+  // A model skipped for a malformed price is absent from seenModelIds; retiring
+  // it would turn one bad listing into a soft-deleted price. Wait for a clean run.
+  if (fullCatalog && warningCount > 0) {
+    console.warn(`⚠️ ${result.source}: not retiring unseen prices this run (${warningCount} skipped item(s))`);
+  }
+  if (fullCatalog && errorCount === 0 && warningCount === 0 && seenModelIds.size > 0) {
     try {
       await retireUnseenChannelPrices(channelProviderId, seenModelIds, result.source);
     } catch (error) {
@@ -430,7 +440,7 @@ async function processAPIScraper(
   }
 
   console.log(`✅ ${result.source} API: Updated ${updatedCount} prices, ${errorCount} errors`);
-  return { updated: updatedCount, errors: errorCount };
+  return { updated: updatedCount, errors: errorCount, warnings: warningCount };
 }
 
 // Map scraper source names to provider keys
@@ -544,7 +554,19 @@ async function getChannelProviderId(source: string): Promise<number | null> {
   return provider.id;
 }
 
-type ScraperRunResult = { updated: number; errors: number };
+type ScraperRunResult = { updated: number; errors: number; warnings: number };
+
+/**
+ * Provider-level failures that are usually the network/page being slow rather
+ * than the scraper being broken (Playwright waits, navigation, fetch resets).
+ * devbox → CN/EU docs sites hits these a few times a week.
+ */
+const TRANSIENT_SCRAPER_ERROR = /Timeout \d+ms exceeded|timed? ?out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|socket hang up|fetch failed|net::ERR_|Target (page|closed)|browser has been closed/i;
+
+function isTransientFailure(result: ScraperResult | undefined, reason?: unknown): boolean {
+  const text = reason != null ? String(reason) : (result?.errors ?? []).join('\n');
+  return (reason != null || result?.success === false) && TRANSIENT_SCRAPER_ERROR.test(text);
+}
 
 /**
  * Keep browser-heavy scrapers below the machine's resource limit. Running all
@@ -564,7 +586,18 @@ async function runScraperQueue(
       if (index >= scrapers.length) return;
       const scraper = scrapers[index];
       try {
-        const result = await scraper.fn();
+        let result: ScraperResult;
+        try {
+          result = await scraper.fn();
+        } catch (reason) {
+          if (!isTransientFailure(undefined, reason)) throw reason;
+          console.warn(`🔁 ${scraper.name} crashed with a transient error, retrying once: ${String(reason).slice(0, 300)}`);
+          result = await scraper.fn();
+        }
+        if (isTransientFailure(result)) {
+          console.warn(`🔁 ${scraper.name} failed with a transient error, retrying once: ${(result.errors ?? []).join('; ').slice(0, 300)}`);
+          result = await scraper.fn();
+        }
         results[index] = {
           status: 'fulfilled',
           value: await processAPIScraper(result, scraper.name, scraper.fullCatalog, scraper.createProducts),
@@ -748,12 +781,14 @@ async function main() {
 
   let totalUpdated = 0;
   let totalErrors = 0;
+  let totalWarnings = 0;
 
   // Process priority 1 results
   apiResults.forEach((result, index) => {
     if (result.status === 'fulfilled') {
       totalUpdated += result.value.updated;
       totalErrors += result.value.errors;
+      totalWarnings += result.value.warnings;
     } else {
       console.error(`❌ Scraper ${priority1Scrapers[index].name} crashed:`, result.reason);
       totalErrors++;
@@ -770,6 +805,7 @@ async function main() {
       if (result.status === 'fulfilled') {
         totalUpdated += result.value.updated;
         totalErrors += result.value.errors;
+        totalWarnings += result.value.warnings;
       } else {
         console.error(`❌ Scraper ${priority2Scrapers[index].name} crashed:`, result.reason);
         totalErrors++;
@@ -782,10 +818,13 @@ async function main() {
   // Log overall result
   await logScrapeResult({
     source: 'all-dynamic',
-    status: totalErrors === 0 ? 'success' : totalUpdated > 0 ? 'partial' : 'failed',
+    status: totalErrors === 0 && totalWarnings === 0 ? 'success' : totalUpdated > 0 ? 'partial' : 'failed',
     models_found: totalUpdated,
     prices_updated: totalUpdated,
-    errors: totalErrors > 0 ? `${totalErrors} errors encountered` : undefined,
+    errors: totalErrors > 0 || totalWarnings > 0
+      ? [totalErrors > 0 ? `${totalErrors} errors encountered` : '', totalWarnings > 0 ? `${totalWarnings} items skipped (warnings)` : '']
+          .filter(Boolean).join('; ')
+      : undefined,
     started_at: new Date(startTime),
     completed_at: new Date(),
   });
@@ -793,6 +832,7 @@ async function main() {
   console.log(`\n✅ Scraping completed in ${duration}s`);
   console.log(`   - Total items updated: ${totalUpdated}`);
   console.log(`   - Total errors: ${totalErrors}`);
+  console.log(`   - Total warnings (skipped items, run not failed): ${totalWarnings}`);
 
   // Close Playwright browser
   await closeBrowser();

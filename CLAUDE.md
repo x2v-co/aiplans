@@ -467,10 +467,20 @@ messages/
   while working locally — exactly how every plan lost new-model links for
   three weeks in 2026-08/09. After Dockerfile changes, rebuild with
   `BUILD_SCRAPER=1 deploy/production/rollout.sh` (the default build skips the
-  scraper image). A failed `planprice-scraper.service` fires
-  `planprice-scraper-failure.service`, which sends a Telegram alert via
-  `deploy/production/notify-failure.sh` (credentials in
-  `/home/ubuntu/.config/brain-tg-bot/env`).
+  scraper image). A failed planprice timer unit fires the
+  host-level `notify-failure@<unit>.service` (drop-in
+  `/etc/systemd/system/<unit>.service.d/10-notify.conf`: `OnFailure=notify-failure@%n.service`
+  plus `ExecStopPost=-+/usr/local/bin/notify-failure --post %n` — the `+` runs the
+  recovery hook as root so units with `User=` can still send it). Routing v2
+  (`/etc/notify-failure/routes`, since 2026-10-09): `planprice-*`/`aiplans-*` go
+  to the x2v product-line bot `x2v_alerts_bot` tagged `[aiplans]`; any other
+  unit falls back to x2v_alerts_bot tagged `[<host>]`; only personal units
+  (brain-*, morning-brief*, quant) use the personal bot. One alert per unit
+  per 6h plus a ✅ recovery message. It is installed on the host, not by this
+  repo; do not add `OnFailure=` to unit files here (it would double-alert).
+  `planprice-scraper-failure.service` + `notify-failure.sh` are legacy (no
+  unit references them any more); remove them together with the install
+  step in `deploy-production.yml` (needs a token with `workflow` scope).
 - **`upsertChannelPrice` rejects `output < input`** — if a scraper's regex
   accidentally swaps columns, the write fails and you see it in logs. Fix
   the scraper, don't work around the check.
