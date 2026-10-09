@@ -25,7 +25,8 @@ class SeedScraper extends PlaywrightScraper {
     await this.navigate(SEED_PRICING_URL);
     await this.page!.waitForTimeout(5_000);
     const priceTable = this.page!.locator('table').filter({ hasText: 'doubao-seed-2.1-pro' }).first();
-    await priceTable.waitFor({ state: 'attached', timeout: 15_000 });
+    // devbox (SG) → volcengine.com docs hydrates slowly; 15s timed out on ~1 in 3 runs.
+    await priceTable.waitFor({ state: 'attached', timeout: 45_000 });
 
     const rows = await priceTable.locator('tr').evaluateAll(elements => elements.map(row =>
         Array.from(row.querySelectorAll('th,td')).map(cell => cell.textContent ?? '')

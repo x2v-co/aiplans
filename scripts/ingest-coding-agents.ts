@@ -142,13 +142,27 @@ function componentScore(record: AaCodingRecord, dataset: string): number | null 
   return typeof reward === 'number' && Number.isFinite(reward) ? reward : null;
 }
 
+const INDEX_VERSION_PATTERN = /Coding Agent Index v(\d+(?:\.\d+)+)/;
+
+/**
+ * The version label ("Coding Agent Index v1.5") used to live in the Next.js
+ * flight payload. Since early Oct 2026 AA renders it only in the server HTML
+ * (chart caption + JSON-LD description), so fall back to the raw page.
+ */
+function extractIndexVersion(flight: string, html: string): string {
+  const match = flight.match(INDEX_VERSION_PATTERN) ?? html.match(INDEX_VERSION_PATTERN);
+  if (!match) throw new Error('Could not locate Coding Agent Index version label in payload');
+  return `v${match[1]}`;
+}
+
 async function fetchSnapshot(): Promise<{ records: AaCodingRecord[]; indexVersion: string; materializedAt: string | null }> {
   const response = await fetch(SOURCE_URL, {
     headers: { 'user-agent': AA_USER_AGENT },
     signal: AbortSignal.timeout(90_000),
   });
   if (!response.ok) throw new Error(`Artificial Analysis returned HTTP ${response.status}`);
-  const flight = parseNextFlight(await response.text());
+  const html = await response.text();
+  const flight = parseNextFlight(html);
 
   const records = parseRecords(flight);
   if (records.length < MIN_RECORDS) {
@@ -161,9 +175,7 @@ async function fetchSnapshot(): Promise<{ records: AaCodingRecord[]; indexVersio
     throw new Error(`Only ${complete.length}/${records.length} records have the full 3-eval index; source format changed?`);
   }
 
-  const versionMatch = flight.match(/Coding Agent Index v(\d+(?:\.\d+)+)/);
-  if (!versionMatch) throw new Error('Could not locate Coding Agent Index version label in payload');
-  const indexVersion = `v${versionMatch[1]}`;
+  const indexVersion = extractIndexVersion(flight, html);
 
   const materializedAt = [...flight.matchAll(/"materializedAt":"([^"]+)"/g)].map((m) => m[1]).sort().at(-1) ?? null;
   return { records: complete, indexVersion, materializedAt };

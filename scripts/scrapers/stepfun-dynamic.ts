@@ -3,7 +3,7 @@
 import { normalizeModelName } from '../utils/validator';
 import { PlaywrightScraper, type PriceData, type ScraperResult } from './lib/playwright-scraper';
 
-const STEPFUN_PRICING_URL = 'https://platform.stepfun.com/docs/zh/pricing/details';
+const STEPFUN_PRICING_URL = 'https://platform.stepfun.com/docs/zh/guides/pricing/details';
 
 function parseCny(text: string | undefined): number | null {
   const match = text?.match(/([\d.]+)\s*元/);
@@ -80,7 +80,9 @@ class StepFunScraper extends PlaywrightScraper {
 }
 
 export async function scrapeStepFunDynamic(): Promise<ScraperResult> {
-  return new StepFunScraper().run();
+  // devbox (SG) → platform.stepfun.com routinely exceeds the 30s default on
+  // domcontentloaded; give the CN docs site more headroom.
+  return new StepFunScraper({ timeout: 60_000 }).run();
 }
 
 if (require.main === module) {
