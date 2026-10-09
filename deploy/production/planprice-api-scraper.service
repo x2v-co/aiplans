@@ -3,7 +3,9 @@ Description=PlanPrice high-frequency API pricing and new model refresh
 Wants=network-online.target
 After=network-online.target docker.service
 Requires=docker.service
-OnFailure=planprice-scraper-failure.service
+# Failure/recovery alerts come from the host-level drop-in
+# /etc/systemd/system/<unit>.service.d/10-notify.conf -> notify-failure@%n.service
+# (fleet-wide template, installed outside this repo since 2026-10-09).
 
 [Service]
 Type=oneshot

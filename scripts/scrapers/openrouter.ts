@@ -278,6 +278,10 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
         // These would otherwise fail validation and poison the success flag.
         if (model.id.startsWith('openrouter/')) continue;
         if (isDatedSnapshotOf(model.id)) continue;
+        // Third-party routers (e.g. typesafe/jev-router, nvidia/switchyard)
+        // publish "-1" as a sentinel for "price depends on the routed model".
+        // That is not a validation failure, just nothing to record.
+        if (model.pricing?.prompt === '-1' || model.pricing?.completion === '-1') continue;
 
         // Convert price per token ($/token) to price per 1M tokens
         // OpenRouter prices are in USD per token

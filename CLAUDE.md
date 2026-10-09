@@ -467,10 +467,15 @@ messages/
   while working locally — exactly how every plan lost new-model links for
   three weeks in 2026-08/09. After Dockerfile changes, rebuild with
   `BUILD_SCRAPER=1 deploy/production/rollout.sh` (the default build skips the
-  scraper image). A failed `planprice-scraper.service` fires
-  `planprice-scraper-failure.service`, which sends a Telegram alert via
-  `deploy/production/notify-failure.sh` (credentials in
-  `/home/ubuntu/.config/brain-tg-bot/env`).
+  scraper image). A failed planprice timer unit fires the
+  host-level `notify-failure@<unit>.service` (drop-in
+  `/etc/systemd/system/<unit>.service.d/10-notify.conf`, script
+  `/usr/local/bin/notify-failure`, Telegram creds in
+  `/home/ubuntu/.config/brain-tg-bot/env`): one alert per unit per 6h plus a
+  ✅ recovery message. It is installed on the host, not by this repo.
+  `planprice-scraper-failure.service` + `notify-failure.sh` are legacy (no
+  unit references them any more); remove them together with the install
+  step in `deploy-production.yml`.
 - **`upsertChannelPrice` rejects `output < input`** — if a scraper's regex
   accidentally swaps columns, the write fails and you see it in logs. Fix
   the scraper, don't work around the check.

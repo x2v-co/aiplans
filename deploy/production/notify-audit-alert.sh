@@ -3,7 +3,7 @@
 # or as $1. Wired from run-scrapers.sh after audit-alert reports fingerprints
 # not seen before (dedup table audit_alert_state, migration 022).
 #
-# Reuses the fleet Telegram bot credentials (same env as notify-failure.sh).
+# Reuses the fleet Telegram bot credentials (same env as the host notify-failure).
 # Never fails the scrape chain: credential/send problems log and exit 0.
 set -u
 
@@ -32,7 +32,7 @@ fi
 
 PAYLOAD="$MSG"
 if (( ${#PAYLOAD} > 3900 )); then
-  PAYLOAD="${PAYLOAD:0}${PAYLOAD:0:3700}
+  PAYLOAD="${PAYLOAD:0:3700}
 
 …(truncated)"
 fi
