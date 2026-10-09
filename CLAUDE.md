@@ -470,8 +470,9 @@ messages/
   scraper image). A failed planprice timer unit fires the
   host-level `notify-failure@<unit>.service` (drop-in
   `/etc/systemd/system/<unit>.service.d/10-notify.conf`, script
-  `/usr/local/bin/notify-failure`, Telegram creds in
-  `/home/ubuntu/.config/brain-tg-bot/env`): one alert per unit per 6h plus a
+  `/usr/local/bin/notify-failure`, routed by
+  `/etc/notify-failure/routes` to the x2v product-line bot `x2v_alerts_bot`
+  (creds `/home/ubuntu/.config/x2v-alerts/env`, messages tagged `[aiplans]`): one alert per unit per 6h plus a
   ✅ recovery message. It is installed on the host, not by this repo.
   `planprice-scraper-failure.service` + `notify-failure.sh` are legacy (no
   unit references them any more); remove them together with the install

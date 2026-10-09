@@ -3,17 +3,24 @@
 # or as $1. Wired from run-scrapers.sh after audit-alert reports fingerprints
 # not seen before (dedup table audit_alert_state, migration 022).
 #
-# Reuses the fleet Telegram bot credentials (same env as the host notify-failure).
 # Never fails the scrape chain: credential/send problems log and exit 0.
 set -u
 
 MSG="${1:-$(cat)}"
 [[ -z "$MSG" ]] && exit 0
 
-ENV_FILE="${BRAIN_TG_ENV:-/home/ubuntu/.config/brain-tg-bot/env}"
+# Channel: x2v product-line bot (x2v_alerts_bot), tagged [aiplans]. Override with
+# AIPLANS_TG_ENV (same fields: BRAIN_TG_TOKEN / BRAIN_TG_CHAT_ID). BRAIN_TG_ENV is
+# still honoured for older host configs; the personal brain bot is the last resort.
+X2V_ENV=/home/ubuntu/.config/x2v-alerts/env
+if [[ -n "${AIPLANS_TG_ENV:-}" ]]; then ENV_FILE="$AIPLANS_TG_ENV"
+elif [[ -n "${BRAIN_TG_ENV:-}" ]]; then ENV_FILE="$BRAIN_TG_ENV"
+elif [[ -f "$X2V_ENV" ]]; then ENV_FILE="$X2V_ENV"
+else ENV_FILE=/home/ubuntu/.config/brain-tg-bot/env; fi
+TAG="${AIPLANS_ALERT_TAG-[aiplans]}"
 HOST="$(hostname -s 2>/dev/null || hostname)"
 
-MSG="📊 planprice data audit on ${HOST}
+MSG="${TAG:+$TAG }📊 planprice data audit on ${HOST}
 
 ${MSG}"
 
