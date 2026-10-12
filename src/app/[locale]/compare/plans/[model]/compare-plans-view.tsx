@@ -467,6 +467,19 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider 
                                 )}
 
                                 {/* Features - Show more */}
+                                {plan.plan?.subscriptionContext && (
+                                  <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                                    <a href={plan.plan.subscriptionContext.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                      {locale === "zh"
+                                        ? `${plan.plan.subscriptionContext.surfaces.join(" / ")} 上下文 ${(plan.plan.subscriptionContext.contextWindow / 1000).toFixed(0)}K`
+                                        : `${(plan.plan.subscriptionContext.contextWindow / 1000).toFixed(0)}K context in ${plan.plan.subscriptionContext.surfaces.join(" / ")}`}
+                                      {" · "}
+                                      {plan.plan.subscriptionContext.longContextPricing === "included_in_subscription"
+                                        ? (locale === "zh" ? "长上下文订阅内含，无额外费用" : "long context included, no surcharge")
+                                        : (locale === "zh" ? "长上下文按 API 溢价计费" : "long-context API premium applies")}
+                                    </a>
+                                  </div>
+                                )}
                                 {plan.plan?.features && plan.plan.features.length > 0 && (
                                   <div className="mb-3 pt-2 border-t border-dashed">
                                     <p className="text-xs font-semibold text-zinc-500 mb-2">

@@ -9,6 +9,7 @@ import { getExchangeRateSync } from '@/lib/exchange-rates';
 import { getPrimaryProvidersForModels, getPlanYearlyMonthly } from '@/lib/schema-adapters';
 import { getProviderLogoFallback, getProviderLogoSrc } from '@/lib/provider-branding';
 import { groupPlansByKind, normalizePlanKind, type PlanKind } from '@/lib/plan-kinds';
+import { findSubscriptionContext } from '@/lib/subscription-context';
 import { planEconomics, type EconomicPlan, type Quota } from '@/lib/plan-economics';
 
 /**
@@ -137,6 +138,15 @@ export async function getPlanComparison(
           tierRank: plan.tier_rank ?? null,
           isOfficial,
           features: plan.features || [],
+          subscriptionContext: (() => {
+            const fact = findSubscriptionContext(products.map((p: { slug: string }) => p.slug), plan.plan_line);
+            return fact ? {
+              contextWindow: fact.contextWindow,
+              longContextPricing: fact.longContextPricing,
+              surfaces: fact.surfaces,
+              sourceUrl: fact.sourceUrls[0],
+            } : null;
+          })(),
         },
         // Locale-free on purpose: currency conversion happens here on the
         // server, while the client turns this into strings with its own
