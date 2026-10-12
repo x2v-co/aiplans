@@ -5,8 +5,10 @@ import { PlaywrightScraper, type PriceData, type ScraperResult } from './lib/pla
 
 const STEPFUN_PRICING_URL = 'https://platform.stepfun.com/docs/zh/guides/pricing/details';
 
-function parseCny(text: string | undefined): number | null {
-  const match = text?.match(/([\d.]+)\s*元/);
+function parseCny(text: string | undefined, bareNumberIsCny = false): number | null {
+  // Old layout: "7 元"; current layout (2026-10): bare "7" with the unit stated
+  // above the table ("单位：元／百万 tokens").
+  const match = text?.match(/([\d.]+)\s*元/) ?? (bareNumberIsCny ? text?.trim().match(/^([\d.]+)$/) : null);
   if (!match) return null;
   const value = Number(match[1]);
   return Number.isFinite(value) ? value : null;
@@ -28,30 +30,48 @@ class StepFunScraper extends PlaywrightScraper {
     );
 
     const tables = await this.page!.locator('table').evaluateAll(elements =>
-      elements.map(table => Array.from(table.querySelectorAll('tr')).map(row =>
-        Array.from(row.querySelectorAll('th,td')).map(cell =>
-          (cell.textContent ?? '').replace(/\s+/g, ' ').trim()
-        )
-      ))
+      elements.map(table => {
+        // Nearest preceding "单位：..." note, which now carries the billing unit.
+        let unitNote = '';
+        let node: Element | null = table;
+        for (let hops = 0; node && hops < 6 && !unitNote; hops++) {
+          let sib: Element | null = node.previousElementSibling;
+          for (let i = 0; sib && i < 4 && !unitNote; i++, sib = sib.previousElementSibling) {
+            const m = (sib.textContent ?? '').match(/单位[:：][^。\n]*/);
+            if (m) unitNote = m[0];
+          }
+          node = node.parentElement;
+        }
+        return {
+          unitNote,
+          rows: Array.from(table.querySelectorAll('tr')).map(row =>
+            Array.from(row.querySelectorAll('th,td')).map(cell =>
+              (cell.textContent ?? '').replace(/\s+/g, ' ').trim()
+            )
+          ),
+        };
+      })
     );
 
     const prices: PriceData[] = [];
     const seen = new Set<string>();
-    for (const rows of tables) {
+    for (const { unitNote, rows } of tables) {
       const header = rows[0] ?? [];
-      const modelIndex = header.findIndex(cell => /^模型$/.test(cell));
+      const modelIndex = header.findIndex(cell => /^(模型|Model ID)$/i.test(cell));
       const unitIndex = header.findIndex(cell => /^计费单位/.test(cell));
       const inputIndex = header.findIndex(cell => /输入价格.*缓存未命中/.test(cell));
       const cachedIndex = header.findIndex(cell => /输入价格.*缓存命中/.test(cell));
       const outputIndex = header.findIndex(cell => /^输出价格$/.test(cell));
-      if ([modelIndex, unitIndex, inputIndex, cachedIndex, outputIndex].some(index => index < 0)) continue;
+      if ([modelIndex, inputIndex, cachedIndex, outputIndex].some(index => index < 0)) continue;
+      const tablePerMillionCny = /元\s*[／/]\s*(百万|1M)\s*tokens/i.test(unitNote);
+      if (unitIndex < 0 && !tablePerMillionCny) continue;
 
       for (const cells of rows.slice(1)) {
-        if (!/1M\s*tokens/i.test(cells[unitIndex] ?? '')) continue;
+        if (unitIndex >= 0 && !/1M\s*tokens/i.test(cells[unitIndex] ?? '')) continue;
         const modelName = normalizeModelName(cells[modelIndex] ?? '').toLowerCase();
-        const input = parseCny(cells[inputIndex]);
-        const cachedInput = parseCny(cells[cachedIndex]);
-        const output = parseCny(cells[outputIndex]);
+        const input = parseCny(cells[inputIndex], tablePerMillionCny);
+        const cachedInput = parseCny(cells[cachedIndex], tablePerMillionCny);
+        const output = parseCny(cells[outputIndex], tablePerMillionCny);
         if (!modelName || seen.has(modelName) || input == null || output == null || output < input) continue;
 
         prices.push({

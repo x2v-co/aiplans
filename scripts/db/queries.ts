@@ -471,14 +471,10 @@ export async function getOrCreateProduct(data: {
 
   if (existingByName && existingByName.length > 0) {
     await backfillReleaseDate(existingByName[0]);
-    // Update the slug to match the normalized version
-    if (existingByName[0].slug !== data.slug) {
-      await db
-        .from('models')
-        .update({ slug: data.slug })
-        .eq('id', existingByName[0].id);
-      existingByName[0].slug = data.slug;
-    }
+    // Do NOT rewrite the slug here. Name matches are fuzzy (e.g. OpenRouter
+    // "qwen3-30b-a3b" and "qwen3-30b-a3b-instruct-2507" normalize to one
+    // name); renaming made the model's slug flip to whichever entry came last
+    // and defeated the exact-slug canonical pick in index-dynamic.
     return existingByName[0];
   }
 

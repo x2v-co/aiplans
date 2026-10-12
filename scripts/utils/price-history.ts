@@ -20,31 +20,56 @@ export interface ResolvedEntry<P> {
 }
 
 /**
- * Keep exactly one entry per productId. Preference: the entry whose scraped
- * slug equals the model's slug (the canonical listing); otherwise the first
- * one in scraper order. Returns the kept entries (in first-seen order) and the
- * dropped ones for logging.
+ * Comparable key for a slug: lowercase, `/` -> `-`, so OpenRouter's
+ * `qwen/qwen3-30b-a3b` and the catalog's `qwen-qwen3-30b-a3b` agree.
+ */
+export function slugKey(slug: string): string {
+  return slug.toLowerCase().replace(/\//g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+/** Same key with a leading provider segment dropped (`qwen-qwen3-30b-a3b` -> `qwen3-30b-a3b`). */
+function withoutProvider(key: string): string {
+  const i = key.indexOf('-');
+  return i > 0 ? key.slice(i + 1) : key;
+}
+
+/**
+ * 2 = scraped slug is the model's slug; 1 = equal once a provider prefix is
+ * dropped on either side; 0 = a variant that merely resolved to this model.
+ */
+export function matchRank(scrapedSlug: string, productSlug: string): number {
+  const a = slugKey(scrapedSlug);
+  const b = slugKey(productSlug);
+  if (a === b) return 2;
+  if (withoutProvider(a) === b || a === withoutProvider(b) || withoutProvider(a) === withoutProvider(b)) return 1;
+  return 0;
+}
+
+/**
+ * Keep exactly one entry per productId: the best-ranked match (see
+ * matchRank); ties keep scraper order. A variant can only win when no exact
+ * entry for that model is in the batch. Returns kept entries (first-seen
+ * order) and the dropped ones for logging.
  */
 export function pickCanonicalPerProduct<P>(entries: ResolvedEntry<P>[]): {
   kept: ResolvedEntry<P>[];
   dropped: ResolvedEntry<P>[];
 } {
-  const chosen = new Map<number, ResolvedEntry<P>>();
+  const chosen = new Map<number, { entry: ResolvedEntry<P>; rank: number }>();
   const order: number[] = [];
   for (const entry of entries) {
+    const rank = matchRank(entry.scrapedSlug, entry.productSlug);
     const current = chosen.get(entry.productId);
     if (!current) {
-      chosen.set(entry.productId, entry);
+      chosen.set(entry.productId, { entry, rank });
       order.push(entry.productId);
-      continue;
+    } else if (rank > current.rank) {
+      chosen.set(entry.productId, { entry, rank });
     }
-    const currentExact = current.scrapedSlug === current.productSlug;
-    const entryExact = entry.scrapedSlug === entry.productSlug;
-    if (!currentExact && entryExact) chosen.set(entry.productId, entry);
   }
-  const keptSet = new Set(chosen.values());
+  const keptSet = new Set([...chosen.values()].map((c) => c.entry));
   return {
-    kept: order.map((id) => chosen.get(id)!),
+    kept: order.map((id) => chosen.get(id)!.entry),
     dropped: entries.filter((e) => !keptSet.has(e)),
   };
 }
