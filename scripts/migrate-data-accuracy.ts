@@ -875,6 +875,20 @@ const MIGRATIONS: Migration[] = [
          AND invite_url = 'https://xyc.ai/register?aff=MFQl';
     `,
   },
+  {
+    name: '027_add_model_slug_redirects',
+    sql: `
+      -- Old model slugs (e.g. restored after the 2026-10 name-match rename
+      -- bug) keep resolving: the app 308s public URLs to the live slug and the
+      -- scrapers attach prices to the same model row.
+      CREATE TABLE IF NOT EXISTS model_slug_redirects (
+        old_slug   text PRIMARY KEY,
+        model_id   integer NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+        reason     text,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+    `,
+  },
 ];
 
 async function main() {

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { permanentRedirect } from 'next/navigation';
 import { sql } from '@/lib/db';
+import { findModelSlugRedirect } from '@/lib/model-slug-redirects';
 import { buildMetadata, type Locale } from '@/lib/seo';
 import { decodeSlugParam } from '@/lib/route-params';
 import { formatModelName } from '@/lib/model-names';
@@ -33,6 +35,10 @@ export async function generateMetadata({
     `,
   ]);
   const model = models[0];
+  if (!model) {
+    const target = await findModelSlugRedirect(modelSlug);
+    if (target) permanentRedirect(`/${locale}/compare/plans/${encodeURIComponent(target)}`);
+  }
   const modelName = formatModelName(model?.name ?? modelSlug);
   // Old releases, operational SKUs, and pages with fewer than two plans still
   // work for existing users, but should not compete with the useful current

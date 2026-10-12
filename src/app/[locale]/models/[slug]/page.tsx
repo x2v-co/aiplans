@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { findModelSlugRedirect } from "@/lib/model-slug-redirects";
 import { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -75,7 +76,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const [product] = await sql<Array<{ id: number; name: string }>>`
     SELECT id, name FROM models WHERE slug = ${slug} LIMIT 1
   `;
-  if (!product) notFound();
+  if (!product) {
+    const target = await findModelSlugRedirect(slug);
+    if (target) permanentRedirect(`/${locale}/models/${encodeURIComponent(target)}`);
+    notFound();
+  }
   const productName = formatModelName(product.name || slug);
 
   // A few real facts make the SERP snippet specific instead of a generic
@@ -358,6 +363,8 @@ export default async function ModelPage({
   ]);
 
   if (!data) {
+    const target = await findModelSlugRedirect(slug);
+    if (target) permanentRedirect(`/${locale}/models/${encodeURIComponent(target)}`);
     notFound();
   }
 

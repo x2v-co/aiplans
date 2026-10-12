@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getPlanComparison } from "@/lib/compare-plans";
+import { findModelSlugRedirect } from "@/lib/model-slug-redirects";
 import { getActiveCouponMap } from "@/lib/coupons";
 import type { CurrencyCode } from "@/lib/currency";
 import { breadcrumbList, faqPage, SITE_URL } from "@/lib/seo";
@@ -30,7 +31,11 @@ export default async function ComparePlansModelPage({
     getPlanComparison(modelSlug, "USD" as CurrencyCode),
     getActiveCouponMap('plan'),
   ]);
-  if (!data) notFound();
+  if (!data) {
+    const target = await findModelSlugRedirect(modelSlug);
+    if (target) permanentRedirect(`/${locale}/compare/plans/${encodeURIComponent(target)}`);
+    notFound();
+  }
 
   const isZh = locale === "zh";
   const crumbs = breadcrumbList([

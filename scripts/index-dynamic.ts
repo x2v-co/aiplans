@@ -279,7 +279,22 @@ async function processAPIScraper(
         .eq('slug', normalizedSlug)
         .single();
 
-      if (existingProduct) {
+      let found = existingProduct;
+      if (!found) {
+        // Slug repaired after the old name-match rename: the scraper's slug now
+        // lives in model_slug_redirects. Errors (table not migrated) are ignored.
+        const { data: redirect } = await db
+          .from('model_slug_redirects')
+          .select('model_id')
+          .eq('old_slug', normalizedSlug)
+          .single();
+        if (redirect?.model_id) {
+          const { data: redirected } = await db.from('models').select('*').eq('id', redirect.model_id).single();
+          found = redirected ?? null;
+        }
+      }
+      if (found) {
+        const existingProduct = found;
         return getOrCreateProduct({
           name: existingProduct.name,
           slug: existingProduct.slug,

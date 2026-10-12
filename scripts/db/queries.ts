@@ -460,6 +460,18 @@ export async function getOrCreateProduct(data: {
     return existingBySlug;
   }
 
+  // Then: a slug repaired after the old name-match rename (see
+  // model_slug_redirects). Errors (table not migrated) are ignored.
+  const { data: redirect } = await db
+    .from('model_slug_redirects')
+    .select('model_id')
+    .eq('old_slug', data.slug)
+    .single();
+  if (redirect?.model_id) {
+    const { data: redirected } = await db.from('models').select('*').eq('id', redirect.model_id).single();
+    if (redirected) return backfillReleaseDate(redirected);
+  }
+
   // Second: try to find by name (models table doesn't have provider_id column for products)
   // But there might be duplicates, so we order by id and take the first
   const { data: existingByName } = await db
