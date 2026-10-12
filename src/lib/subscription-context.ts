@@ -36,7 +36,9 @@ export const SUBSCRIPTION_CONTEXT_FACTS: SubscriptionContextFact[] = [
     // OpenAI Codex Day 7: default context for GPT-6.1 Sol in Codex & Work
     // raised from 272k to 500k; no long-context fees when drawing usage
     // from the subscription.
-    modelSlug: /^gpt-?6[.-]?1-sol(?:$|-)/i,
+    // Base model only (catalog slug `openai-gpt-6-1-sol`). -batch rows are
+    // API-only pricing; Sol Pro's subscription context is not documented.
+    modelSlug: /^(?:openai-)?gpt-?6[.-]?1-sol$/i,
     planLine: 'chatgpt',
     surfaces: ['Codex', 'ChatGPT Work'],
     contextWindow: 500_000,

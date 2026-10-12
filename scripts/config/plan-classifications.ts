@@ -59,6 +59,15 @@ const CLAUDE_FAMILIES = ['claude-opus', 'claude-sonnet', 'claude-haiku'];
 const CLAUDE_MAX_FAMILIES = [...CLAUDE_FAMILIES, 'claude-fable'];
 const GPT_CHAT_FAMILIES = ['gpt-4o', 'gpt-4.1', 'gpt-5'];
 
+// GPT-6.1 Sol: OpenAI lists it for Plus, Pro, Business, Enterprise and Edu in
+// ChatGPT Work and Codex; Free and Go are not included.
+// Sources: https://openai.com/index/introducing-gpt-6-1-sol/ ,
+// https://learn.chatgpt.com/docs/models.md (checked 2026-10-12).
+// The catalog row comes from OpenRouter as `openai-gpt-6-1-sol`, which no
+// `gpt-*` family prefix matches, so it is listed explicitly. Batch rows are
+// API-only and Sol Pro's subscription availability is not documented.
+const GPT_6_1_SOL = ['openai-gpt-6-1-sol'];
+
 // ────────────────────────────────────────────────────────────────────────────
 // The classification table
 // ────────────────────────────────────────────────────────────────────────────
@@ -74,23 +83,23 @@ export const CLASSIFICATIONS: Classification[] = [
     reason: 'Go is Plus minus the Pro reasoning model' },
   { providerSlug: 'openai', planSlug: 'chatgpt-plus', kind: 'chat', line: 'chatgpt', rank: 2,
     secondaryKinds: ['coding'],
-    selector: { families: GPT_CHAT_FAMILIES, exclude: ['*-pro'] },
+    selector: { families: GPT_CHAT_FAMILIES, extra: GPT_6_1_SOL, exclude: ['*-pro'] },
     reason: 'Plus keeps legacy 4o/4.1 selectable; GPT-5 Pro is Pro-tier only. Includes Codex' },
   { providerSlug: 'openai', planSlug: 'chatgpt-pro', kind: 'chat', line: 'chatgpt', rank: 3,
     secondaryKinds: ['coding'],
-    selector: { families: GPT_CHAT_FAMILIES },
+    selector: { families: GPT_CHAT_FAMILIES, extra: GPT_6_1_SOL },
     reason: 'Pro is the only individual tier with the GPT-5 Pro reasoning model' },
   { providerSlug: 'openai', planSlug: 'chatgpt-business', kind: 'chat', line: 'chatgpt', rank: 4,
     secondaryKinds: ['coding'],
-    selector: { families: GPT_CHAT_FAMILIES, exclude: ['*-pro'] },
+    selector: { families: GPT_CHAT_FAMILIES, extra: GPT_6_1_SOL, exclude: ['*-pro'] },
     reason: 'Business is Plus at org scale (tier=team expresses that); model set matches Plus' },
   { providerSlug: 'openai', planSlug: 'chatgpt-team', kind: 'chat', line: 'chatgpt', rank: 5,
     secondaryKinds: ['coding'],
-    selector: { families: GPT_CHAT_FAMILIES, exclude: ['*-pro'] },
+    selector: { families: GPT_CHAT_FAMILIES, extra: GPT_6_1_SOL, exclude: ['*-pro'] },
     reason: 'Team is the Business superset; same model set' },
   { providerSlug: 'openai', planSlug: 'chatgpt-enterprise', kind: 'chat', line: 'chatgpt', rank: 6,
     secondaryKinds: ['coding'],
-    selector: { families: GPT_CHAT_FAMILIES },
+    selector: { families: GPT_CHAT_FAMILIES, extra: GPT_6_1_SOL },
     reason: 'Enterprise includes the Pro reasoning model' },
 
   // ─ Anthropic — one chat line. Claude Code rides on Pro/Max/Team Premium but

@@ -12,4 +12,10 @@ test('ignores other lines and models', () => {
   assert.equal(findSubscriptionContext(['gpt-6.1-sol'], 'claude'), null);
   assert.equal(findSubscriptionContext(['gpt-6.1'], 'chatgpt'), null);
   assert.equal(findSubscriptionContext(['gpt-6.1-sol'], null), null);
+  assert.equal(findSubscriptionContext(['openai-gpt-6-1-sol-batch'], 'chatgpt'), null);
+  assert.equal(findSubscriptionContext(['openai-gpt-6-1-sol-pro'], 'chatgpt'), null);
+});
+
+test('matches the production catalog slug', () => {
+  assert.equal(findSubscriptionContext(['openai-gpt-6-1-sol'], 'chatgpt')?.contextWindow, 500_000);
 });

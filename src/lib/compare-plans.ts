@@ -139,7 +139,7 @@ export async function getPlanComparison(
           isOfficial,
           features: plan.features || [],
           subscriptionContext: (() => {
-            const fact = findSubscriptionContext(products.map((p: { slug: string }) => p.slug), plan.plan_line);
+            const fact = findSubscriptionContext([product.slug], plan.plan_line);
             return fact ? {
               contextWindow: fact.contextWindow,
               longContextPricing: fact.longContextPricing,

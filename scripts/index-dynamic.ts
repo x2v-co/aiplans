@@ -6,6 +6,7 @@
  */
 
 import { scrapeOpenRouter } from './scrapers/openrouter';
+import { describePriceChange, pickCanonicalPerProduct, type ResolvedEntry } from './utils/price-history';
 
 // Dynamic scrapers (Phase 1 - API-based, high priority ⭐⭐⭐)
 import { scrapeDeepSeekDynamic } from './scrapers/deepseek-dynamic';
@@ -49,7 +50,6 @@ import {
   getOrCreateProvider,
   db
 } from './db/queries';
-import { calculateChangePercent, isSignificantChange } from './utils/validator';
 import type { ScraperResult } from './utils/validator';
 import type { PlanScraperResult } from './utils/plan-validator';
 import { normalizeModelName, normalizeSlug } from './utils/model-normalizer';
@@ -303,11 +303,31 @@ async function processAPIScraper(
     });
   };
 
+  // Resolve every entry first, then keep one per model: several entries can
+  // map to the same model row, and upserting each in turn made price_history
+  // cycle between their prices within a single round.
+  const resolvedEntries: ResolvedEntry<typeof result.prices[number]>[] = [];
   for (const price of result.prices) {
     try {
       const product = await resolveProduct(price);
       if (!product) continue;
-      modelIdBySlug.set(price.modelSlug || normalizeSlug(price.modelName), product.id);
+      const scrapedSlug = price.modelSlug || normalizeSlug(price.modelName);
+      modelIdBySlug.set(scrapedSlug, product.id);
+      resolvedEntries.push({ productId: product.id, productSlug: product.slug, scrapedSlug, price });
+    } catch (error) {
+      console.error(`  ❌ Error resolving ${price.modelName}:`, error);
+      errorCount++;
+    }
+  }
+  const { kept: canonicalEntries, dropped: collapsedEntries } = pickCanonicalPerProduct(resolvedEntries);
+  if (collapsedEntries.length > 0) {
+    console.warn(`⚠️ ${result.source}: ${collapsedEntries.length} entr(ies) collapsed onto an already-priced model: ` +
+      collapsedEntries.map((e) => `${e.scrapedSlug}->${e.productSlug}`).join(', '));
+  }
+
+  for (const { productId, price } of canonicalEntries) {
+    try {
+      const product = { id: productId };
       headlinePriceByModelId.set(product.id, price);
 
       // Get existing price for comparison
@@ -339,12 +359,12 @@ async function processAPIScraper(
 
       // Log price change if significant
       if (existingPrice) {
-        const changePercent = calculateChangePercent(
-          existingPrice.input_price_per_1m,
-          price.inputPricePer1M
+        const { changed, changePercent } = describePriceChange(
+          { input: existingPrice.input_price_per_1m, output: existingPrice.output_price_per_1m },
+          { input: price.inputPricePer1M, output: price.outputPricePer1M },
         );
 
-        if (isSignificantChange(changePercent)) {
+        if (changed) {
           await logPriceChange({
             channel_price_id: newPrice.id,
             old_input_price: existingPrice.input_price_per_1m,
@@ -352,6 +372,7 @@ async function processAPIScraper(
             old_output_price: existingPrice.output_price_per_1m,
             new_output_price: price.outputPricePer1M,
             change_percent: changePercent,
+            currency: priceCurrency,
           });
 
           console.log(`  💰 Price change detected for ${price.modelName}: ${changePercent.toFixed(1)}%`);

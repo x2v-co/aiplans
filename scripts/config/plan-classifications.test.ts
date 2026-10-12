@@ -52,3 +52,22 @@ test('GLM Coding Plans use the closed two-model entitlement list', () => {
     assert.deepEqual(slugs, expected, `${provider}/${plan} claims unentitled models`);
   }
 });
+
+test('GPT-6.1 Sol maps to Plus/Pro/Business/Team/Enterprise only, never batch', () => {
+  const openaiCatalog: SelectableModel[] = [
+    { id: 3363, slug: 'openai-gpt-6-1-sol', providerSlugs: ['openai'], elo: null },
+    { id: 3364, slug: 'openai-gpt-6-1-sol-batch', providerSlugs: ['openai'], elo: null },
+    { id: 3365, slug: 'openai-gpt-6-1-sol-pro', providerSlugs: ['openai'], elo: null },
+  ];
+  const slugsFor = (planSlug: string) => {
+    const c = CLASSIFICATIONS.find((e) => e.providerSlug === 'openai' && e.planSlug === planSlug);
+    assert.ok(c, planSlug);
+    return resolveSelector(c.selector, openaiCatalog, ['openai']).models.map((m) => m.slug);
+  };
+  for (const plan of ['chatgpt-plus', 'chatgpt-pro', 'chatgpt-business', 'chatgpt-team', 'chatgpt-enterprise']) {
+    assert.deepEqual(slugsFor(plan), ['openai-gpt-6-1-sol'], plan);
+  }
+  for (const plan of ['chatgpt-free', 'chatgpt-go']) {
+    assert.deepEqual(slugsFor(plan), [], plan);
+  }
+});
