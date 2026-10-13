@@ -24,6 +24,8 @@ export interface SubscriptionSeed {
   planCategory: 'chatbot' | 'coding';
   planLine: string;
   modelSlugs: string[];
+  modelSelector: { providers?: string[]; families?: string[]; current_only?: boolean } | null;
+  quotas: Array<{ amount: number; unit: 'prompt'; period: '5h'; derived_from?: string; multiplier?: number; note?: string }>;
   features: string[];
   quotaNote: string;
   noteLines: string[];
@@ -38,6 +40,10 @@ const xai = (slug: string, name: string, tier: string, tierRank: number, price: 
   providerSlug: 'xai', slug, name, tier, tierRank, price,
   planKind: 'bundle', planCategory: 'chatbot', planLine: 'x-subscription',
   modelSlugs: [],
+  // Grok-family models; resolved into model_plan_mapping by materialize-model-plan-mappings.
+  modelSelector: tierRank === 0 ? null : { providers: ['xai'], families: ['grok'], current_only: true },
+  // xAI publishes only relative multipliers (4x/15x/50x Plus), no absolute number.
+  quotas: [],
   features: [usage, ...features, ...(thirdParty ? ['3rd party models available in Cursor, billed separately'] : [])],
   quotaNote: `${usage}. ${tierRank === 0 ? 'Limited free usage.' : XAI_POOL}`,
   noteLines: [
@@ -58,6 +64,9 @@ export const X_SUBSCRIPTION_PLANS: SubscriptionSeed[] = [
   xai('x-subscription-ultra', 'The X Subscription Ultra', 'ultra', 4, 200, '50x more usage compared to Plus', ['Everything in Super', 'Earliest access to all products & models'], true),
 ];
 
+/** Only plans created before the launch are legacy; later rows are never auto-closed. */
+export const LEGACY_CREATED_BEFORE_ISO = '2026-10-12T00:00:00.000Z';
+
 /** Old plans to keep but mark closed to new signups. Matched by provider + name regex. */
 export const LEGACY_CLOSED_RULES = [
   { providerSlugs: ['xai'], nameRe: /super\s*grok/i, label: 'SuperGrok' },
@@ -71,6 +80,10 @@ const muse = (slug: string, name: string, tierRank: number, price: number, usage
   providerSlug: 'meta', slug, name, tier: ['basic', 'pro', 'max', 'ultra'][tierRank], tierRank, price,
   planKind: 'coding', planCategory: 'coding', planLine: 'muse-code',
   modelSlugs: ['muse-wonder'],
+  modelSelector: null,
+  quotas: tierRank === 0
+    ? [{ amount: 50, unit: 'prompt', period: '5h', note: 'Vendor states 10-50 prompts per 5 hours; upper bound stored' }]
+    : [{ amount: 50 * [1, 5, 20, 80][tierRank], unit: 'prompt', period: '5h', derived_from: 'muse-code-everyday', multiplier: [1, 5, 20, 80][tierRank], note: 'Upper bound derived from Everyday 10-50' }],
   features: [usage, 'Muse Wonder', ...(full ? ['Muse Wonder Full'] : []), 'Muse Code CLI only (subscription credential); extra API keys billed pay-as-you-go'],
   quotaNote: usage,
   noteLines: [

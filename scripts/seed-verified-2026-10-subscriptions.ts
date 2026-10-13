@@ -6,7 +6,7 @@
  */
 import { db } from './db/queries';
 import {
-  LEGACY_CLOSED_MARKER, LEGACY_CLOSED_NOTE, LEGACY_CLOSED_RULES, MUSE_CODE_PLANS, MUSE_WONDER_MODEL,
+  LEGACY_CLOSED_MARKER, LEGACY_CLOSED_NOTE, LEGACY_CREATED_BEFORE_ISO, LEGACY_CLOSED_RULES, MUSE_CODE_PLANS, MUSE_WONDER_MODEL,
   VERIFIED_AT_ISO, X_SUBSCRIPTION_PLANS, type SubscriptionSeed,
 } from './data/verified-2026-10-subscriptions';
 
@@ -85,8 +85,8 @@ function planRow(seed: SubscriptionSeed, provider: ProviderRow) {
     access_from_china: false, region: 'global', source: 'manual',
     plan_kind: seed.planKind, plan_category: seed.planCategory, plan_line: seed.planLine,
     billing_granularity: 'flat_monthly', features: seed.features,
-    // Vendor publishes relative multipliers only, no absolute number.
-    quotas: [],
+    quotas: seed.quotas,
+    model_selector: seed.modelSelector,
     notes: [...seed.noteLines, `Allowance: ${seed.quotaNote}`, `Source quote: ${seed.sourceQuote}`, `Source: ${seed.sourceUrl}`].join('\n'),
     last_verified: VERIFIED_AT, updated_at: NOW,
   };
@@ -118,7 +118,7 @@ async function markLegacy(providers: Map<string, ProviderRow>) {
   for (const rule of LEGACY_CLOSED_RULES) {
     const ids = rule.providerSlugs.map((s) => providers.get(s)?.id).filter((id): id is number => id != null);
     if (!ids.length) { console.log(`  ⚠ legacy ${rule.label}: no provider among ${rule.providerSlugs.join('/')}`); continue; }
-    const { data, error } = await db.from('plans').select('id, slug, name, notes').in('provider_id', ids);
+    const { data, error } = await db.from('plans').select('id, slug, name, notes').in('provider_id', ids).lt('created_at', LEGACY_CREATED_BEFORE_ISO);
     if (error) throw error;
     const hits = (data ?? []).filter((p: { slug: string; name: string }) => !newSlugs.has(p.slug) && rule.nameRe.test(p.name));
     if (!hits.length) console.log(`  ⚠ legacy ${rule.label}: no matching plans`);

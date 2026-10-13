@@ -25,3 +25,9 @@ test('legacy rules never match the new X Subscription plans', () => {
   for (const p of X_SUBSCRIPTION_PLANS) for (const r of LEGACY_CLOSED_RULES.filter((r) => r.providerSlugs.includes(p.providerSlug)))
     assert.ok(!r.nameRe.test(p.name), `${r.label} matches ${p.name}`);
 });
+
+test('Muse quotas scale from Everyday; paid X tiers carry a Grok selector', () => {
+  assert.deepEqual(MUSE_CODE_PLANS.map((p) => p.quotas[0].amount), [50, 250, 1000, 4000]);
+  assert.equal(X_SUBSCRIPTION_PLANS[0].modelSelector, null);
+  for (const p of X_SUBSCRIPTION_PLANS.slice(1)) assert.deepEqual(p.modelSelector?.providers, ['xai']);
+});
