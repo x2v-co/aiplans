@@ -466,7 +466,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     },
     priceTable: false,
     queryPatterns: [],
-    providerSlugs: ['cursor', 'xai'],
+    providerSlugs: ['xai'],
     reviewedAt: '2026-10-13',
     planTable: [
       {
