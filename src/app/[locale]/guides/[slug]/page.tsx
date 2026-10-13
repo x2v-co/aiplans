@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatPrice, type CurrencyCode } from '@/lib/currency';
 import {
   PRICING_GUIDES,
+  latestGuideDate,
   getPricingGuideModels,
   isPricingGuideSlug,
 } from '@/lib/pricing-guides';
@@ -72,7 +73,7 @@ export default async function PricingGuidePage({
     headline: guide.title[locale],
     description: guide.description[locale],
     mainEntityOfPage: `${SITE_URL}/${locale}/guides/${slug}`,
-    dateModified: guide.reviewedAt ?? (latestVerified ? new Date(latestVerified).toISOString() : undefined),
+    dateModified: latestGuideDate(guide.reviewedAt, latestVerified),
     inLanguage: locale === 'zh' ? 'zh-CN' : 'en',
     citation: guide.sources?.map((source) => source.url),
     author: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
@@ -201,8 +202,8 @@ export default async function PricingGuidePage({
           <section className="max-w-4xl border-t py-9" aria-labelledby="guide-faq">
             <h2 id="guide-faq" className="text-2xl font-semibold">{locale === 'zh' ? '常见问题' : 'Frequently asked questions'}</h2>
             <div className="mt-5 space-y-6">
-              {faqs.map((faq) => (
-                <div key={faq.question}>
+              {faqs.map((faq, index) => (
+                <div key={`${index}-${faq.question}`}>
                   <h3 className="font-semibold">{faq.question}</h3>
                   <p className="mt-2 leading-7 text-zinc-600 dark:text-zinc-400">{faq.answer}</p>
                 </div>
@@ -224,7 +225,7 @@ export default async function PricingGuidePage({
             <ul className="mt-4 space-y-3">
               {guide.sources.map((source) => (
                 <li key={source.url}>
-                  <a href={source.url} className="text-blue-600 hover:underline">{source.label[locale]}</a>
+                  <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{source.label[locale]}</a>
                 </li>
               ))}
             </ul>

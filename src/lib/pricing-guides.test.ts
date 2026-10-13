@@ -7,6 +7,7 @@ import {
   guideForModelSlug,
   guideForProviderSlug,
   isPricingGuideSlug,
+  latestGuideDate,
   summarizeGuidePrices,
 } from './pricing-guides';
 import { buildMetadata, faqPage } from './seo';
@@ -133,4 +134,28 @@ test('does not publish invalid input prices and limits the snapshot to 12 models
   assert.equal(models.length, 12);
   assert.equal(models[0].slug, 'gpt-test-0');
   assert.equal(models[11].slug, 'gpt-test-11');
+});
+
+test('OpenAI guide does not capture gpt-oss third-party hosting or loose gpt slugs', () => {
+  assert.equal(guideForModelSlug('gpt-oss-120b'), null);
+  assert.equal(guideForModelSlug('openai-gpt-oss-20b'), null);
+  assert.equal(guideForModelSlug('community-gpt-tuned'), null);
+  const guide = PRICING_GUIDES['openai-api-pricing'];
+  assert.ok(!guide.queryPatterns.includes('%gpt%'));
+  assert.deepEqual(guide.excludePatterns, ['%gpt-oss%']);
+});
+
+test('guide price query keeps legacy rows with NULL price_unit and ignores models.type', () => {
+  const source = readFileSync(new URL('./pricing-guides.ts', import.meta.url), 'utf8');
+  const query = source.slice(source.indexOf('export async function getPricingGuideModels'), source.indexOf('export function summarizeGuidePrices'));
+  assert.match(query, /COALESCE\(cp\.price_unit, 'per_1m_tokens'\) = 'per_1m_tokens'/);
+  assert.doesNotMatch(query, /AND cp\.price_unit = /);
+  assert.doesNotMatch(query, /m\.type = 'llm'/);
+});
+
+test('dateModified uses the newer of reviewedAt and latest data verification', () => {
+  assert.equal(latestGuideDate('2026-10-13', '2026-11-02T08:00:00Z'), '2026-11-02T08:00:00.000Z');
+  assert.equal(latestGuideDate('2026-10-13', '2026-09-01T00:00:00Z'), '2026-10-13T00:00:00.000Z');
+  assert.equal(latestGuideDate('2026-10-13', null), '2026-10-13T00:00:00.000Z');
+  assert.equal(latestGuideDate(undefined, null), undefined);
 });
