@@ -5,6 +5,8 @@ const ORIGIN = `https://${HOST}`;
 const RESEARCH_PATHS = [
   '/en/guides',
   '/zh/guides',
+  '/en/guides/openai-api-pricing',
+  '/zh/guides/openai-api-pricing',
   '/en/guides/glm-chatglm-api-pricing',
   '/zh/guides/glm-chatglm-api-pricing',
   '/en/guides/claude-anthropic-pricing',
