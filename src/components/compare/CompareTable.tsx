@@ -1,5 +1,6 @@
 "use client";
 
+import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
@@ -334,17 +335,26 @@ function PlanRow({ plan, isBaseline, currency: _currency, showYearly }: {
           <div>
             <div className="flex items-center gap-2">
               <h4 className="font-bold text-lg">{plan.channel.name}</h4>
-              {(plan.channel.inviteUrl || plan.channel.website) && (
+              {(() => {
+                const outbound = resolveOutboundLink(plan.channel.inviteUrl || plan.channel.website);
+                if (!outbound) return null;
+                return (
+                  <>
                 <a
-                  href={plan.channel.inviteUrl || plan.channel.website || undefined}
+                  href={outbound.href}
                   target="_blank"
-                  rel={getProviderVisitRel(plan.channel, 'plan')}
+                  rel={outbound.affiliate ? AFFILIATE_LINK_REL : getProviderVisitRel(plan.channel, 'plan')}
                   className="text-blue-600 hover:text-blue-800"
                   title="Visit website"
                 >
                   <ExternalLink className="w-4 h-4" />
                 </a>
-              )}
+                    {outbound.affiliate && (
+                      <span className="block text-[10px] text-zinc-500">{affiliateDisclosureText('en')}</span>
+                    )}
+                  </>
+                );
+              })()}
               {isBaseline && (
                 <Badge variant="secondary" className="text-xs">
                   🏛️ Official Baseline
@@ -362,16 +372,25 @@ function PlanRow({ plan, isBaseline, currency: _currency, showYearly }: {
           {plan.channel.region === "global" && (
             <Badge variant="outline" className="text-xs">🌍 Global</Badge>
           )}
-          {(plan.channel.inviteUrl || plan.channel.website) && (
+          {(() => {
+            const outbound = resolveOutboundLink(plan.channel.inviteUrl || plan.channel.website);
+            if (!outbound) return null;
+            return (
+              <>
             <a
-              href={plan.channel.inviteUrl || plan.channel.website || undefined}
+              href={outbound.href}
               target="_blank"
-              rel={getProviderVisitRel(plan.channel, 'plan')}
+              rel={outbound.affiliate ? AFFILIATE_LINK_REL : getProviderVisitRel(plan.channel, 'plan')}
               className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             >
               Subscribe
             </a>
-          )}
+                {outbound.affiliate && (
+                  <span className="block text-[10px] text-zinc-500">{affiliateDisclosureText('en')}</span>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 

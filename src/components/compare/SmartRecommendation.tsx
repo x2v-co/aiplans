@@ -1,5 +1,6 @@
 "use client";
 
+import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
@@ -92,16 +93,25 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
             <div className="space-y-2">
               <div className="flex items-center gap-1">
                 <p className="font-semibold text-lg">{cheapestPlan.channel.name}</p>
-                {(cheapestPlan.channel.inviteUrl || cheapestPlan.channel.website) && (
+                {(() => {
+                  const outbound = resolveOutboundLink(cheapestPlan.channel.inviteUrl || cheapestPlan.channel.website);
+                  if (!outbound) return null;
+                  return (
+                    <>
                   <a
-                    href={cheapestPlan.channel.inviteUrl || cheapestPlan.channel.website || undefined}
+                    href={outbound.href}
                     target="_blank"
-                    rel={getProviderVisitRel(cheapestPlan.channel, 'plan')}
+                    rel={outbound.affiliate ? AFFILIATE_LINK_REL : getProviderVisitRel(cheapestPlan.channel, 'plan')}
                     className="text-blue-600 hover:text-blue-800"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
-                )}
+                      {outbound.affiliate && (
+                        <span className="block text-[10px] text-zinc-500">{affiliateDisclosureText('en')}</span>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">{cheapestPlan.plan.name}</p>
               {cheapestPlan.estimatedCost && (
@@ -130,16 +140,25 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
               <div className="space-y-2">
                 <div className="flex items-center gap-1">
                   <p className="font-semibold text-lg">{officialPlan.channel.name}</p>
-                  {(officialPlan.channel.inviteUrl || officialPlan.channel.website) && (
+                  {(() => {
+                    const outbound = resolveOutboundLink(officialPlan.channel.inviteUrl || officialPlan.channel.website);
+                    if (!outbound) return null;
+                    return (
+                      <>
                     <a
-                      href={officialPlan.channel.inviteUrl || officialPlan.channel.website || undefined}
+                      href={outbound.href}
                       target="_blank"
-                      rel={getProviderVisitRel(officialPlan.channel, 'plan')}
+                      rel={outbound.affiliate ? AFFILIATE_LINK_REL : getProviderVisitRel(officialPlan.channel, 'plan')}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
-                  )}
+                        {outbound.affiliate && (
+                          <span className="block text-[10px] text-zinc-500">{affiliateDisclosureText('en')}</span>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">{officialPlan.plan.name}</p>
                 {officialPlan.estimatedCost && (
@@ -167,16 +186,25 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
               <div className="space-y-2">
                 <div className="flex items-center gap-1">
                   <p className="font-semibold text-lg">{bestChinaPlan.channel.name}</p>
-                  {(bestChinaPlan.channel.inviteUrl || bestChinaPlan.channel.website) && (
+                  {(() => {
+                    const outbound = resolveOutboundLink(bestChinaPlan.channel.inviteUrl || bestChinaPlan.channel.website);
+                    if (!outbound) return null;
+                    return (
+                      <>
                     <a
-                      href={bestChinaPlan.channel.inviteUrl || bestChinaPlan.channel.website || undefined}
+                      href={outbound.href}
                       target="_blank"
-                      rel={getProviderVisitRel(bestChinaPlan.channel, 'plan')}
+                      rel={outbound.affiliate ? AFFILIATE_LINK_REL : getProviderVisitRel(bestChinaPlan.channel, 'plan')}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
-                  )}
+                        {outbound.affiliate && (
+                          <span className="block text-[10px] text-zinc-500">{affiliateDisclosureText('en')}</span>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">{bestChinaPlan.plan.name}</p>
                 {bestChinaPlan.estimatedCost && (
@@ -204,16 +232,25 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
               <div className="space-y-2">
                 <div className="flex items-center gap-1">
                   <p className="font-semibold text-lg">{bestValuePlan.channel.name}</p>
-                  {(bestValuePlan.channel.inviteUrl || bestValuePlan.channel.website) && (
+                  {(() => {
+                    const outbound = resolveOutboundLink(bestValuePlan.channel.inviteUrl || bestValuePlan.channel.website);
+                    if (!outbound) return null;
+                    return (
+                      <>
                     <a
-                      href={bestValuePlan.channel.inviteUrl || bestValuePlan.channel.website || undefined}
+                      href={outbound.href}
                       target="_blank"
-                      rel={getProviderVisitRel(bestValuePlan.channel, 'plan')}
+                      rel={outbound.affiliate ? AFFILIATE_LINK_REL : getProviderVisitRel(bestValuePlan.channel, 'plan')}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
-                  )}
+                        {outbound.affiliate && (
+                          <span className="block text-[10px] text-zinc-500">{affiliateDisclosureText('en')}</span>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">{bestValuePlan.plan.name}</p>
                 <p className="text-xs text-zinc-500">

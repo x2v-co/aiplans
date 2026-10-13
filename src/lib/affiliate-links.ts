@@ -13,7 +13,7 @@ export const AFFILIATE_LINK_REL = 'sponsored nofollow noopener noreferrer';
 const AFFILIATE_LINKS: Record<string, { url: string; hosts: string[] }> = {
   elevenlabs: {
     url: 'https://try.elevenlabs.io/te0zrkmvym3j',
-    hosts: ['elevenlabs.io', 'www.elevenlabs.io'],
+    hosts: ['elevenlabs.io'],
   },
 };
 
@@ -33,8 +33,9 @@ export function getAffiliateUrl(providerSlug: string | undefined | null): string
 }
 
 /**
- * Resolve a user-facing outbound link: official vendor URLs for partner
- * providers are swapped for the affiliate URL.
+ * Resolve a user-facing outbound link: any link that points at a partner's
+ * domain, or belongs to a partner provider (by slug), is swapped for the
+ * affiliate URL. Do NOT use for data-source citations.
  */
 export function resolveOutboundLink(
   url: string | undefined | null,
@@ -42,7 +43,7 @@ export function resolveOutboundLink(
 ): { href: string; affiliate: boolean } | null {
   const host = hostOf(url);
   for (const [slug, entry] of Object.entries(AFFILIATE_LINKS)) {
-    if ((host && entry.hosts.includes(host)) || (!url && providerSlug?.toLowerCase() === slug)) {
+    if ((host && entry.hosts.some((h) => host === h || host.endsWith(`.${h}`))) || providerSlug?.toLowerCase() === slug) {
       return { href: entry.url, affiliate: true };
     }
   }

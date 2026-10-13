@@ -1,5 +1,6 @@
 "use client";
 
+import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
@@ -51,17 +52,26 @@ export function ModelInfoCard({ model, planCount, lowestPrice }: ModelInfoCardPr
               <div className="flex items-center gap-1">
                 <span className="font-medium">Provider:</span>
                 <span>{model.provider.name}</span>
-                {(model.provider.inviteUrl || model.provider.website) && (
+                {(() => {
+                  const outbound = resolveOutboundLink(model.provider.inviteUrl || model.provider.website);
+                  if (!outbound) return null;
+                  return (
+                    <>
                   <a
-                    href={model.provider.inviteUrl || model.provider.website || undefined}
+                    href={outbound.href}
                     target="_blank"
-                    rel={getProviderVisitRel(model.provider, 'plan')}
+                    rel={outbound.affiliate ? AFFILIATE_LINK_REL : getProviderVisitRel(model.provider, 'plan')}
                     className="text-blue-600 hover:text-blue-800"
                     title="Visit website"
                   >
                     <ExternalLink className="w-3 h-3" />
                   </a>
-                )}
+                      {outbound.affiliate && (
+                        <span className="block text-[10px] text-zinc-500">{affiliateDisclosureText('en')}</span>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <div>
                 <span className="font-medium">Context:</span> {(model.contextWindow / 1000).toFixed(0)}K tokens

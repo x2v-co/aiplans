@@ -226,6 +226,21 @@ export default function VerticalLandingPage({
                         <Badge key={capability} variant="outline">{capability}</Badge>
                       ))}
                     </div>
+                    {(() => {
+                      const outbound = resolveOutboundLink(item.url, item.providerSlug ?? item.provider.toLowerCase().replace(/[^a-z0-9]+/g, ''));
+                      if (!outbound?.affiliate) return null;
+                      return (
+                        <div className="mt-2">
+                          <a href={outbound.href} target="_blank" rel={AFFILIATE_LINK_REL} className="pointer-events-auto relative z-20">
+                            <Button variant="outline" size="sm">{locale === 'zh' ? '前往官网（联盟链接）' : 'Visit website (affiliate link)'}</Button>
+                          </a>
+                          <div className="mt-1 text-xs text-zinc-500">
+                            {affiliateDisclosureText(locale)}{' '}
+                            <Link href={`/${locale}/disclosure`} className="pointer-events-auto relative z-20 underline">{locale === 'zh' ? '披露说明' : 'Disclosure'}</Link>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="relative z-10 col-span-2 hidden sm:block pointer-events-none">
                     <Badge variant={item.status === 'available' ? 'secondary' : 'outline'} className={item.status === 'discontinued' ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300' : undefined}>{item.status}</Badge>
@@ -276,22 +291,6 @@ export default function VerticalLandingPage({
                             <Badge key={capability} variant="outline">{capability}</Badge>
                           ))}
                         </div>
-                        {(() => {
-                          if (item.kind !== 'creative-plan') return null;
-                          const outbound = resolveOutboundLink(item.url, item.providerSlug ?? item.provider.toLowerCase().replace(/[^a-z0-9]+/g, ''));
-                          if (!outbound?.affiliate) return null;
-                          return (
-                            <div className="mt-2">
-                              <a href={outbound.href} target="_blank" rel={AFFILIATE_LINK_REL} className="pointer-events-auto relative z-20">
-                                <Button variant="outline" size="sm">{locale === 'zh' ? '前往官网（联盟链接）' : 'Visit website (affiliate link)'}</Button>
-                              </a>
-                              <div className="mt-1 text-xs text-zinc-500">
-                                {affiliateDisclosureText(locale)}{' '}
-                                <Link href={`/${locale}/disclosure`} className="pointer-events-auto relative z-20 underline">{locale === 'zh' ? '披露说明' : 'Disclosure'}</Link>
-                              </div>
-                            </div>
-                          );
-                        })()}
                       </>
                     )}
                   </div>

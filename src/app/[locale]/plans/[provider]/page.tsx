@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from "@/lib/affiliate-links";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -371,20 +372,36 @@ export default async function ProviderPlansPage({
                       </div>
                     </div>
 
-                    {(provider.pricing_url || provider.website || provider.invite_url) && (
-                      <a
-                        href={provider.pricing_url || provider.invite_url || provider.website}
-                        target="_blank"
-                        rel={provider.invite_url && (provider.pricing_url || provider.invite_url || provider.website) === provider.invite_url
+                    {(() => {
+                      const rawHref = provider.pricing_url || provider.invite_url || provider.website;
+                      const outbound = resolveOutboundLink(rawHref, providerSlug);
+                      if (!outbound) return null;
+                      const rel = outbound.affiliate
+                        ? AFFILIATE_LINK_REL
+                        : provider.invite_url && rawHref === provider.invite_url
                           ? 'noopener noreferrer sponsored'
-                          : 'noopener noreferrer'}
-                        className="mt-4 block w-full text-center rounded-md bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
-                      >
-                        {plan.is_contact_sales
-                          ? (isZh ? '联系销售 →' : 'Contact Sales →')
-                          : (isZh ? '去订阅 →' : 'Subscribe →')}
-                      </a>
-                    )}
+                          : 'noopener noreferrer';
+                      return (
+                        <>
+                          <a
+                            href={outbound.href}
+                            target="_blank"
+                            rel={rel}
+                            className="mt-4 block w-full text-center rounded-md bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
+                          >
+                            {plan.is_contact_sales
+                              ? (isZh ? '联系销售 →' : 'Contact Sales →')
+                              : (isZh ? '去订阅 →' : 'Subscribe →')}
+                          </a>
+                          {outbound.affiliate && (
+                            <p className="mt-2 text-xs text-zinc-500">
+                              {affiliateDisclosureText(isZh ? 'zh' : 'en')}{' '}
+                              <Link href={`/${isZh ? 'zh' : 'en'}/disclosure`} className="underline">{isZh ? '披露说明' : 'Disclosure'}</Link>
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
                   ))}
