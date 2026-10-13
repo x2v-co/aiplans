@@ -1,0 +1,34 @@
+name: PR check
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/pr-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Type-check, guide tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Type-check
+        run: npx tsc --noEmit
+      - name: Pricing guide tests
+        run: npx tsx --test src/lib/pricing-guides.test.ts
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: postgres://ci:ci@127.0.0.1:1/ci

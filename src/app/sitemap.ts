@@ -35,6 +35,7 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '/disclosure', priority: 0.3, changefreq: 'monthly' },
   { path: '/methodology', priority: 0.6, changefreq: 'monthly' },
   { path: '/guides', priority: 0.75, changefreq: 'weekly' },
+  { path: '/guides/openai-api-pricing', priority: 0.75, changefreq: 'daily' },
   { path: '/guides/glm-chatglm-api-pricing', priority: 0.75, changefreq: 'daily' },
   { path: '/guides/claude-anthropic-pricing', priority: 0.75, changefreq: 'daily' },
   { path: '/guides/grok-pricing', priority: 0.75, changefreq: 'daily' },
