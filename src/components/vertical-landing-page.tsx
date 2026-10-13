@@ -11,6 +11,7 @@ import { catalogForKind, isRigorousModelKind, type AiBenchmarkSummary, type AiCa
 import { jsonLd, SITE_URL } from '@/lib/seo';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 import { verticalBenchmarkSummaryFallback } from '@/lib/vertical-benchmark-summaries';
+import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 
 const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> = {
   agent: { primary: '/plans', secondary: '/compare/models' },
@@ -275,6 +276,22 @@ export default function VerticalLandingPage({
                             <Badge key={capability} variant="outline">{capability}</Badge>
                           ))}
                         </div>
+                        {(() => {
+                          if (item.kind !== 'creative-plan') return null;
+                          const outbound = resolveOutboundLink(item.url, item.providerSlug ?? item.provider.toLowerCase().replace(/[^a-z0-9]+/g, ''));
+                          if (!outbound?.affiliate) return null;
+                          return (
+                            <div className="mt-2">
+                              <a href={outbound.href} target="_blank" rel={AFFILIATE_LINK_REL} className="pointer-events-auto relative z-20">
+                                <Button variant="outline" size="sm">{locale === 'zh' ? '前往官网（联盟链接）' : 'Visit website (affiliate link)'}</Button>
+                              </a>
+                              <div className="mt-1 text-xs text-zinc-500">
+                                {affiliateDisclosureText(locale)}{' '}
+                                <Link href={`/${locale}/disclosure`} className="pointer-events-auto relative z-20 underline">{locale === 'zh' ? '披露说明' : 'Disclosure'}</Link>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </>
                     )}
                   </div>
