@@ -31,7 +31,7 @@ test('maps relevant providers and validates only own guide slugs', () => {
   assert.equal(guideForProviderSlug('anthropic'), 'claude-anthropic-pricing');
   assert.equal(guideForProviderSlug('moonshot-china'), 'kimi-api-pricing');
   assert.equal(guideForProviderSlug('openai'), 'openai-api-pricing');
-  assert.equal(guideForProviderSlug('cursor'), 'cursor-x-subscription-pricing');
+  assert.equal(guideForProviderSlug('cursor'), null);
   assert.equal(guideForProviderSlug('xai'), 'cursor-x-subscription-pricing');
   assert.equal(guideForProviderSlug('openrouter'), null);
   assert.equal(isPricingGuideSlug('openai-api-pricing'), true);
