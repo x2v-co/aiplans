@@ -6,9 +6,10 @@
  */
 import { db } from './db/queries';
 import {
-  LEGACY_CLOSED_MARKER, LEGACY_CLOSED_NOTE, LEGACY_CREATED_BEFORE_ISO, LEGACY_CLOSED_RULES, MUSE_CODE_PLANS, MUSE_WONDER_MODEL,
+  MUSE_CODE_PLANS, MUSE_WONDER_MODEL,
   VERIFIED_AT_ISO, X_SUBSCRIPTION_PLANS, type SubscriptionSeed,
 } from './data/verified-2026-10-subscriptions';
+import { markLegacyPlans } from './data/mark-legacy-plans';
 
 const APPLY = process.argv.includes('--apply');
 const NOW = new Date();
@@ -114,23 +115,7 @@ async function mapModel(modelId: number, planId: number, label: string) {
 }
 
 async function markLegacy(providers: Map<string, ProviderRow>) {
-  const newSlugs = new Set(X_SUBSCRIPTION_PLANS.map((p) => p.slug));
-  for (const rule of LEGACY_CLOSED_RULES) {
-    const ids = rule.providerSlugs.map((s) => providers.get(s)?.id).filter((id): id is number => id != null);
-    if (!ids.length) { console.log(`  ⚠ legacy ${rule.label}: no provider among ${rule.providerSlugs.join('/')}`); continue; }
-    const { data, error } = await db.from('plans').select('id, slug, name, notes').in('provider_id', ids).lt('created_at', LEGACY_CREATED_BEFORE_ISO);
-    if (error) throw error;
-    const hits = (data ?? []).filter((p: { slug: string; name: string }) => !newSlugs.has(p.slug) && rule.nameRe.test(p.name));
-    if (!hits.length) console.log(`  ⚠ legacy ${rule.label}: no matching plans`);
-    for (const p of hits) {
-      if ((p.notes ?? '').includes(LEGACY_CLOSED_MARKER)) { console.log(`  = legacy ${p.slug} already marked`); continue; }
-      console.log(`  ⛔ legacy ${p.slug} (${p.name}) → closed to new users (kept)`);
-      if (APPLY) {
-        const { error: e } = await db.from('plans').update({ notes: [p.notes, LEGACY_CLOSED_NOTE].filter(Boolean).join('\n'), updated_at: NOW }).eq('id', p.id);
-        if (e) throw e;
-      }
-    }
-  }
+  await markLegacyPlans(db, providers, { apply: APPLY, now: NOW });
 }
 
 async function main() {

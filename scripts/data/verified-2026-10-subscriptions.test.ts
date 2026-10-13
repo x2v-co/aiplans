@@ -26,6 +26,14 @@ test('legacy rules never match the new X Subscription plans', () => {
     assert.ok(!r.nameRe.test(p.name), `${r.label} matches ${p.name}`);
 });
 
+test('legacy xAI rules cover both xai and grok vendor slugs', () => {
+  const xaiRules = LEGACY_CLOSED_RULES.filter((r) => r.label === 'SuperGrok' || r.label === 'X Premium');
+  for (const r of xaiRules) {
+    assert.ok(r.providerSlugs.includes('xai'), r.label);
+    assert.ok(r.providerSlugs.includes('grok'), r.label);
+  }
+});
+
 test('Muse quotas scale from Everyday; paid X tiers carry a Grok selector', () => {
   assert.deepEqual(MUSE_CODE_PLANS.map((p) => p.quotas[0].amount), [50, 250, 1000, 4000]);
   assert.equal(X_SUBSCRIPTION_PLANS[0].modelSelector, null);

@@ -69,8 +69,10 @@ export const LEGACY_CREATED_BEFORE_ISO = '2026-10-12T00:00:00.000Z';
 
 /** Old plans to keep but mark closed to new signups. Matched by provider + name regex. */
 export const LEGACY_CLOSED_RULES = [
-  { providerSlugs: ['xai'], nameRe: /super\s*grok/i, label: 'SuperGrok' },
-  { providerSlugs: ['xai', 'x', 'twitter'], nameRe: /(^|\b)x\s*premium/i, label: 'X Premium' },
+  // grok and xai are both xAI vendor rows in prod (both currently have 0 plans).
+  { providerSlugs: ['xai', 'grok'], nameRe: /super\s*grok/i, label: 'SuperGrok' },
+  { providerSlugs: ['xai', 'grok', 'x', 'twitter'], nameRe: /(^|\b)x\s*premium/i, label: 'X Premium' },
+  // No Cursor vendor today: markLegacy warns and skips; do not create one.
   { providerSlugs: ['cursor', 'anysphere'], nameRe: /./, label: 'Cursor (pre-X-Subscription plans)' },
 ];
 export const LEGACY_CLOSED_NOTE = `${LEGACY_CLOSED_MARKER} No longer available to new subscribers since The X Subscription launch (2026-10-12); existing subscribers may stay or switch. Source: https://forum.cursor.com/t/introducing-the-x-subscription/174450`;
