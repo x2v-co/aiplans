@@ -5,7 +5,7 @@ export interface ScrapedPrice {
   modelSlug: string;
   inputPricePer1M: number;
   outputPricePer1M: number;
-  cachedInputPricePer1M?: number;
+  cachedInputPricePer1M?: number | null;
   contextWindow?: number;
   rateLimit?: string | number;
   isAvailable: boolean;
