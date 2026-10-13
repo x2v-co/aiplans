@@ -39,7 +39,7 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
       description: 'How affiliate links, sponsorships, and advertising may support aiplans.dev.',
       intro: 'aiplans.dev may earn compensation from some outbound links or clearly labeled advertising, at no additional cost to the user.',
       sections: [
-        { heading: 'Affiliate links', paragraphs: ['Some links to AI providers may contain referral parameters. If a user signs up or purchases through one of those links, aiplans.dev may receive a commission or account credit.'] },
+        { heading: 'Affiliate links', paragraphs: ['Some links to AI providers may contain referral parameters. If a user signs up or purchases through one of those links, aiplans.dev may receive a commission or account credit.', 'aiplans.dev participates in the ElevenLabs affiliate program. Links to ElevenLabs marked "Affiliate link" are affiliate links, and aiplans.dev may earn a commission from qualifying sign-ups or purchases. Affiliate links carry rel="sponsored nofollow" and do not change how ElevenLabs is listed, described, or compared.'] },
         { heading: 'Ranking independence', paragraphs: ['Compensation does not determine model rankings, cheapest-price calculations, benchmark values, or inclusion in comparison tables. These results are generated from the same published data rules for every provider.'] },
         { heading: 'Advertising', paragraphs: ['Advertising, if enabled, will be visually distinguishable from pricing data and controls. Ads will not be placed in a way that suggests they are a provider ranking, a download button, or a required navigation action.'] },
         { heading: 'Verify before buying', paragraphs: ['Provider prices, availability, taxes, and promotions can change. Confirm the final terms on the provider website before purchasing.'] },
@@ -124,7 +124,7 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
       description: 'aiplans.dev 如何通过联盟链接、赞助和广告获得支持。',
       intro: 'aiplans.dev 可能从部分外链或清楚标注的广告中获得收益，用户无需因此支付额外费用。',
       sections: [
-        { heading: '联盟链接', paragraphs: ['部分 AI 厂商链接可能带有推荐参数。用户通过这些链接注册或购买时，aiplans.dev 可能获得佣金或账户额度。'] },
+        { heading: '联盟链接', paragraphs: ['部分 AI 厂商链接可能带有推荐参数。用户通过这些链接注册或购买时，aiplans.dev 可能获得佣金或账户额度。', 'aiplans.dev 参与了 ElevenLabs 联盟推广计划。标注「联盟推广链接」的 ElevenLabs 链接为联盟链接，用户通过其注册或购买时，aiplans.dev 可能获得佣金。联盟链接带有 rel="sponsored nofollow" 标记，不影响 ElevenLabs 的收录、描述或比较方式。'] },
         { heading: '排名独立', paragraphs: ['合作收益不会影响模型排名、最低价计算、基准分数或是否进入比较表。所有厂商使用相同的数据规则。'] },
         { heading: '广告', paragraphs: ['广告启用后会与价格数据及操作控件保持清楚的视觉区别，不会伪装成厂商排名、下载按钮或必要导航。'] },
         { heading: '购买前核实', paragraphs: ['厂商价格、可用地区、税费与促销可能随时变化，请在购买前以厂商结算页和条款为准。'] },

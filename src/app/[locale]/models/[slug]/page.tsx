@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 import { notFound, permanentRedirect } from "next/navigation";
 import { findModelSlugRedirect } from "@/lib/model-slug-redirects";
 import { Metadata } from "next";
@@ -1036,17 +1037,26 @@ export default async function ModelPage({
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col items-end gap-1.5">
-                            {cp.providers.website && (
-                              <a
-                                href={cp.providers.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <Button variant="outline" size="sm" className="gap-1">
-                                  Visit <ExternalLink className="w-3 h-3" />
-                                </Button>
-                              </a>
-                            )}
+                            {cp.providers.website && (() => {
+                              const outbound = resolveOutboundLink(cp.providers.website);
+                              if (!outbound) return null;
+                              return (
+                                <>
+                                  <a
+                                    href={outbound.href}
+                                    target="_blank"
+                                    rel={outbound.affiliate ? AFFILIATE_LINK_REL : 'noopener noreferrer'}
+                                  >
+                                    <Button variant="outline" size="sm" className="gap-1">
+                                      Visit <ExternalLink className="w-3 h-3" />
+                                    </Button>
+                                  </a>
+                                  {outbound.affiliate && (
+                                    <span className="text-[10px] text-zinc-500">{affiliateDisclosureText(locale)}</span>
+                                  )}
+                                </>
+                              );
+                            })()}
                             <CouponBadge
                               coupons={couponByProvider[cp.providers.slug] ?? []}
                               locale={locale}

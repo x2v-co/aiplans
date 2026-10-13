@@ -11,6 +11,7 @@ import ModelBenchmarkPanel from '@/components/model-benchmark-panel';
 import { verticalKindPath } from '@/lib/vertical-model-detail';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 import { PlanCoverage } from '@/components/plan-coverage';
+import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 
 function formatMoney(value: number | null, currency: string | null): string {
   if (value == null) return '—';
@@ -35,6 +36,7 @@ export default function VerticalModelDetailPage({
   const parentPath = verticalKindPath(kind);
   const providerSlug = item.providerSlug ?? item.provider.toLowerCase().replace(/\/.*$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const providerLogo = item.providerLogoUrl ?? getVerticalProviderLogo(providerSlug);
+  const outbound = resolveOutboundLink(item.url, providerSlug);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
@@ -61,10 +63,12 @@ export default function VerticalModelDetailPage({
             </div>
             <p className="mt-6 max-w-3xl leading-8 text-zinc-700 dark:text-zinc-300">{item.bestFor}</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              {item.url && (
-                <a href={item.url} target="_blank" rel="noreferrer">
+              {outbound && (
+                <a href={outbound.href} target="_blank" rel={outbound.affiliate ? AFFILIATE_LINK_REL : 'noreferrer'}>
                   <Button className="gap-2">
-                    {isZh ? '打开官方页面' : 'Open official page'}
+                    {outbound.affiliate
+                      ? (isZh ? '前往官网（联盟链接）' : 'Visit website (affiliate link)')
+                      : (isZh ? '打开官方页面' : 'Open official page')}
                     <ExternalLink className="h-4 w-4" />
                   </Button>
                 </a>
@@ -78,6 +82,12 @@ export default function VerticalModelDetailPage({
                 </a>
               ))}
             </div>
+            {outbound?.affiliate && (
+              <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+                {affiliateDisclosureText(locale)}{' '}
+                <Link href={`/${locale}/disclosure`} className="underline">{isZh ? '披露说明' : 'Disclosure'}</Link>
+              </p>
+            )}
           </div>
 
           <Card>
