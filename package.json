@@ -57,7 +57,9 @@
     "seed:vertical-benchmarks": "tsx scripts/seed-vertical-benchmarks.ts --apply",
     "seed:vertical-benchmarks:dry-run": "tsx scripts/seed-vertical-benchmarks.ts",
     "seed:verified-creative-plans": "tsx scripts/seed-verified-creative-plan-prices.ts --apply",
-    "seed:verified-creative-plans:dry-run": "tsx scripts/seed-verified-creative-plan-prices.ts"
+    "seed:verified-creative-plans:dry-run": "tsx scripts/seed-verified-creative-plan-prices.ts",
+    "seed:verified-2026-10": "tsx scripts/seed-verified-2026-10-subscriptions.ts --apply",
+    "seed:verified-2026-10:dry-run": "tsx scripts/seed-verified-2026-10-subscriptions.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

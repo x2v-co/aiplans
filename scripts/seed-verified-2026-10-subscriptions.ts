@@ -1,0 +1,154 @@
+#!/usr/bin/env tsx
+/**
+ * Seed The X Subscription tiers, Muse Code tiers and muse-wonder-1.0 API price,
+ * and mark legacy SuperGrok / X Premium / Cursor plans closed to new users
+ * (kept, not deleted). Dry-run by default; --apply writes.
+ */
+import { db } from './db/queries';
+import {
+  LEGACY_CLOSED_MARKER, LEGACY_CLOSED_NOTE, LEGACY_CLOSED_RULES, MUSE_CODE_PLANS, MUSE_WONDER_MODEL,
+  VERIFIED_AT_ISO, X_SUBSCRIPTION_PLANS, type SubscriptionSeed,
+} from './data/verified-2026-10-subscriptions';
+
+const APPLY = process.argv.includes('--apply');
+const NOW = new Date();
+const VERIFIED_AT = new Date(VERIFIED_AT_ISO);
+const META_SLUGS = ['meta', 'meta-ai', 'meta-llama'];
+
+interface ProviderRow { id: number; slug: string; name: string }
+let failures = 0;
+
+async function loadProviders() {
+  const { data, error } = await db.from('providers').select('id, slug, name');
+  if (error) throw error;
+  return new Map((data ?? []).map((p: ProviderRow) => [p.slug, p]));
+}
+
+async function ensureMetaProvider(providers: Map<string, ProviderRow>): Promise<ProviderRow | null> {
+  for (const slug of META_SLUGS) { const p = providers.get(slug); if (p) return p; }
+  console.log('  ➕ provider meta (Meta Model API)');
+  if (!APPLY) return { id: -1, slug: 'meta', name: 'Meta' };
+  const { data, error } = await db.from('providers').insert({
+    name: 'Meta', slug: 'meta', website: 'https://dev.meta.ai', pricing_url: 'https://dev.meta.ai/docs/overview',
+    region: 'global', type: 'official', access_from_china: false,
+  }).select('id, slug, name').single();
+  if (error) throw error;
+  return data as ProviderRow;
+}
+
+async function ensureModel(provider: ProviderRow): Promise<number> {
+  const m = MUSE_WONDER_MODEL;
+  const row = {
+    name: m.name, slug: m.slug, type: 'llm', model_category: 'text', context_window: m.contextWindow,
+    open_source: m.openSource, offical_link: 'https://research.meta.ai/blog/muse-wonder',
+    input_modalities: ['text', 'image', 'video', 'audio'], output_modalities: ['text'],
+    released_at: m.releasedAt, updated_at: NOW,
+    ...(provider.id > 0 ? { provider_ids: [provider.id] } : {}),
+  };
+  const existing = await db.from('models').select('id').eq('slug', m.slug).maybeSingle();
+  if (existing.error) throw existing.error;
+  if (existing.data) {
+    console.log(`  ↻ model ${m.slug} (ctx ${m.contextWindow})`);
+    if (APPLY) { const { error } = await db.from('models').update({ context_window: m.contextWindow, updated_at: NOW }).eq('id', existing.data.id); if (error) throw error; }
+    return existing.data.id;
+  }
+  console.log(`  ➕ model ${m.slug} (ctx ${m.contextWindow})`);
+  if (!APPLY) return -1;
+  const { data, error } = await db.from('models').insert(row).select('id').single();
+  if (error) throw error;
+  return data.id;
+}
+
+async function upsertApiPrice(modelId: number, provider: ProviderRow) {
+  const m = MUSE_WONDER_MODEL;
+  console.log(`  ${modelId < 0 ? '➕' : '↻'} api price ${provider.slug}/${m.apiModelId}: in $${m.inputPricePer1m} / cached $${m.cachedInputPricePer1m} / out $${m.outputPricePer1m} per 1M`);
+  if (!APPLY) return;
+  const row = {
+    model_id: modelId, provider_id: provider.id, input_price_per_1m: m.inputPricePer1m,
+    cached_input_price_per_1m: m.cachedInputPricePer1m, output_price_per_1m: m.outputPricePer1m,
+    currency: 'USD', price_unit: 'per_1m_tokens', is_available: true, notes: m.notes,
+    last_verified: VERIFIED_AT, updated_at: NOW,
+  };
+  const existing = await db.from('api_channel_prices').select('id').eq('model_id', modelId).eq('provider_id', provider.id).maybeSingle();
+  if (existing.error) throw existing.error;
+  const { error } = existing.data
+    ? await db.from('api_channel_prices').update(row).eq('id', existing.data.id)
+    : await db.from('api_channel_prices').insert(row);
+  if (error) throw error;
+}
+
+function planRow(seed: SubscriptionSeed, provider: ProviderRow) {
+  return {
+    provider_id: provider.id, product_id: provider.id, name: seed.name, slug: seed.slug,
+    pricing_model: 'subscription', price: seed.price, currency: 'USD', price_unit: 'per_month',
+    tier: seed.tier, tier_rank: seed.tierRank, is_official: true, is_contact_sales: false,
+    access_from_china: false, region: 'global', source: 'manual',
+    plan_kind: seed.planKind, plan_category: seed.planCategory, plan_line: seed.planLine,
+    billing_granularity: 'flat_monthly', features: seed.features,
+    // Vendor publishes relative multipliers only, no absolute number.
+    quotas: [],
+    notes: [...seed.noteLines, `Allowance: ${seed.quotaNote}`, `Source quote: ${seed.sourceQuote}`, `Source: ${seed.sourceUrl}`].join('\n'),
+    last_verified: VERIFIED_AT, updated_at: NOW,
+  };
+}
+
+async function upsertPlan(seed: SubscriptionSeed, provider: ProviderRow): Promise<number> {
+  const existing = provider.id < 0 ? { data: null, error: null } : await db.from('plans').select('id').eq('provider_id', provider.id).eq('slug', seed.slug).maybeSingle();
+  if (existing.error) throw existing.error;
+  console.log(`  ${existing.data ? '↻' : '➕'} plan ${provider.slug}/${seed.slug}: USD ${seed.price}/mo`);
+  if (!APPLY) return existing.data?.id ?? -1;
+  const row = planRow(seed, provider);
+  if (existing.data) { const { error } = await db.from('plans').update(row).eq('id', existing.data.id); if (error) throw error; return existing.data.id; }
+  const { data, error } = await db.from('plans').insert(row).select('id').single();
+  if (error) throw error;
+  return data.id;
+}
+
+async function mapModel(modelId: number, planId: number, label: string) {
+  if (modelId < 0 || planId < 0) { console.log(`    ↳ map ${label}`); return; }
+  const existing = await db.from('model_plan_mapping').select('id').eq('model_id', modelId).eq('plan_id', planId).maybeSingle();
+  if (existing.error) throw existing.error;
+  if (existing.data) return;
+  console.log(`    ↳ map ${label}`);
+  if (APPLY) { const { error } = await db.from('model_plan_mapping').insert({ model_id: modelId, plan_id: planId, priority: 20, source: 'manual' }); if (error) throw error; }
+}
+
+async function markLegacy(providers: Map<string, ProviderRow>) {
+  const newSlugs = new Set(X_SUBSCRIPTION_PLANS.map((p) => p.slug));
+  for (const rule of LEGACY_CLOSED_RULES) {
+    const ids = rule.providerSlugs.map((s) => providers.get(s)?.id).filter((id): id is number => id != null);
+    if (!ids.length) { console.log(`  ⚠ legacy ${rule.label}: no provider among ${rule.providerSlugs.join('/')}`); continue; }
+    const { data, error } = await db.from('plans').select('id, slug, name, notes').in('provider_id', ids);
+    if (error) throw error;
+    const hits = (data ?? []).filter((p: { slug: string; name: string }) => !newSlugs.has(p.slug) && rule.nameRe.test(p.name));
+    if (!hits.length) console.log(`  ⚠ legacy ${rule.label}: no matching plans`);
+    for (const p of hits) {
+      if ((p.notes ?? '').includes(LEGACY_CLOSED_MARKER)) { console.log(`  = legacy ${p.slug} already marked`); continue; }
+      console.log(`  ⛔ legacy ${p.slug} (${p.name}) → closed to new users (kept)`);
+      if (APPLY) {
+        const { error: e } = await db.from('plans').update({ notes: [p.notes, LEGACY_CLOSED_NOTE].filter(Boolean).join('\n'), updated_at: NOW }).eq('id', p.id);
+        if (e) throw e;
+      }
+    }
+  }
+}
+
+async function main() {
+  console.log(`\n💵 seed-verified-2026-10-subscriptions ${APPLY ? '[APPLY]' : '[DRY-RUN]'}\n`);
+  const providers = await loadProviders();
+  const xai = providers.get('xai');
+  if (!xai) { console.log('  ⚠ missing provider xai'); failures++; }
+  else for (const seed of X_SUBSCRIPTION_PLANS) await upsertPlan(seed, xai);
+  await markLegacy(providers);
+
+  const meta = await ensureMetaProvider(providers);
+  if (meta) {
+    const modelId = await ensureModel(meta);
+    await upsertApiPrice(modelId, meta);
+    for (const seed of MUSE_CODE_PLANS) { const planId = await upsertPlan(seed, meta); await mapModel(modelId, planId, `muse-wonder → ${seed.slug}`); }
+  }
+  if (!APPLY) console.log('\nDry-run only. Re-run with --apply to write.');
+  if (failures) process.exitCode = 1;
+}
+
+main().catch((e) => { console.error(e); process.exit(1); });
