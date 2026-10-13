@@ -24,8 +24,6 @@ export type PricingGuide = {
   faqs?: Array<{ question: LocalizedText; answer: LocalizedText }>;
   sources?: Array<{ label: LocalizedText; url: string }>;
   reviewedAt?: string;
-  /** lower(slug) LIKE patterns removed after queryPatterns match. */
-  excludePatterns?: string[];
 };
 
 export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
@@ -40,8 +38,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       en: 'Start with how you will use OpenAI: an application calling an API key is billed differently from ChatGPT or Codex using a subscription. Below, compare tracked GPT model variants, then use the cost formula and official sources to check the bill for your own workload. The table is a database snapshot, not a guarantee of endpoint availability or a complete OpenAI rate card.',
       zh: '先确定你如何使用 OpenAI：应用通过 API Key 调用，与通过订阅使用 ChatGPT 或 Codex，采用不同的计费方式。下表对比已追踪的 GPT 模型版本；随后可用成本公式和官方来源核对自己的用量。表格是数据库快照，不保证接口可用，也不是 OpenAI 全量价目表。',
     },
-    queryPatterns: ['gpt-%', 'openai-gpt-%'],
-    excludePatterns: ['%gpt-oss%'],
+    queryPatterns: ['%gpt%'],
     providerSlugs: ['openai'],
     reviewedAt: '2026-10-13',
     sections: [
@@ -256,7 +253,7 @@ export function guideForModelSlug(modelSlug: string): PricingGuideSlug | null {
   if (slug.includes('claude')) return 'claude-anthropic-pricing';
   if (slug.includes('grok')) return 'grok-pricing';
   if (slug.includes('kimi') || slug.includes('moonshot')) return 'kimi-api-pricing';
-  if (/^(openai-)?gpt-/.test(slug) && !slug.includes('gpt-oss')) return 'openai-api-pricing';
+  if (slug.includes('gpt')) return 'openai-api-pricing';
   return null;
 }
 
@@ -312,9 +309,11 @@ export async function getPricingGuideModels(guide: PricingGuide): Promise<GuideM
     JOIN api_channel_prices cp ON cp.model_id = m.id AND cp.is_available = true
     JOIN providers p ON p.id = cp.provider_id
     WHERE lower(m.slug) LIKE ANY(${sql.array(guide.queryPatterns, TEXT_ARRAY)})
-      AND NOT (lower(m.slug) LIKE ANY(${sql.array(guide.excludePatterns ?? [], TEXT_ARRAY)}))
-      -- models.type is a legacy field ('llm'/'subscription'/'coding_tool'); do not filter on it.
-      -- The per-token price_unit below already limits rows to token-billed API prices.
+      -- Language models only: model_category is the current taxonomy (migration 023);
+      -- legacy models.type may be 'llm' or 'coding_tool' etc., so only drop subscription rows.
+      AND COALESCE(m.model_category, 'text') = 'text'
+      AND m.type IS DISTINCT FROM 'subscription'
+      -- Keep excluding non-token pricing; NULL keeps the project default per_1m_tokens.
       -- price_unit may be NULL on legacy rows; treat NULL as the default per-1M-token unit.
       AND COALESCE(cp.price_unit, 'per_1m_tokens') = 'per_1m_tokens'
     ORDER BY m.released_at DESC NULLS LAST, m.updated_at DESC NULLS LAST, m.id, p.slug

@@ -136,21 +136,13 @@ test('does not publish invalid input prices and limits the snapshot to 12 models
   assert.equal(models[11].slug, 'gpt-test-11');
 });
 
-test('OpenAI guide does not capture gpt-oss third-party hosting or loose gpt slugs', () => {
-  assert.equal(guideForModelSlug('gpt-oss-120b'), null);
-  assert.equal(guideForModelSlug('openai-gpt-oss-20b'), null);
-  assert.equal(guideForModelSlug('community-gpt-tuned'), null);
-  const guide = PRICING_GUIDES['openai-api-pricing'];
-  assert.ok(!guide.queryPatterns.includes('%gpt%'));
-  assert.deepEqual(guide.excludePatterns, ['%gpt-oss%']);
-});
-
-test('guide price query keeps legacy rows with NULL price_unit and ignores models.type', () => {
+test('guide price query keeps legacy rows with NULL price_unit and does not require legacy models.type = llm', () => {
   const source = readFileSync(new URL('./pricing-guides.ts', import.meta.url), 'utf8');
   const query = source.slice(source.indexOf('export async function getPricingGuideModels'), source.indexOf('export function summarizeGuidePrices'));
   assert.match(query, /COALESCE\(cp\.price_unit, 'per_1m_tokens'\) = 'per_1m_tokens'/);
   assert.doesNotMatch(query, /AND cp\.price_unit = /);
   assert.doesNotMatch(query, /m\.type = 'llm'/);
+  assert.match(query, /COALESCE\(m\.model_category, 'text'\) = 'text'/);
 });
 
 test('dateModified uses the newer of reviewedAt and latest data verification', () => {
