@@ -51,7 +51,7 @@ export default async function PricingGuidePage({
   if (!isPricingGuideSlug(slug)) notFound();
   const locale: Locale = rawLocale === 'zh' ? 'zh' : 'en';
   const guide = PRICING_GUIDES[slug];
-  const models = await getPricingGuideModels(guide);
+  const models = guide.priceTable === false ? [] : await getPricingGuideModels(guide);
   const latestVerified = models
     .map((model) => model.lastVerified)
     .filter(Boolean)
@@ -96,7 +96,11 @@ export default async function PricingGuidePage({
 
         <header className="mt-7 max-w-4xl border-b pb-9">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{locale === 'zh' ? '实时价格研究' : 'Live pricing research'}</Badge>
+            <Badge variant="outline">
+              {guide.priceTable === false
+                ? (locale === 'zh' ? '订阅套餐对比' : 'Subscription plan comparison')
+                : (locale === 'zh' ? '实时价格研究' : 'Live pricing research')}
+            </Badge>
             {updatedLabel && (
               <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
                 <Clock3 className="h-3.5 w-3.5" />
@@ -108,70 +112,118 @@ export default async function PricingGuidePage({
           <p className="mt-4 text-base leading-7 text-zinc-600 dark:text-zinc-400">{guide.intro[locale]}</p>
         </header>
 
-        <section className="py-9" aria-labelledby="live-prices">
-          <div className="max-w-3xl">
-            <h2 id="live-prices" className="text-2xl font-semibold">
-              {locale === 'zh' ? '当前 API 价格快照' : 'Current API price snapshot'}
-            </h2>
-            <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">
-              {locale === 'zh'
-                ? '最多展示 12 个已追踪的语言模型，按美元换算后的最低输入单价选择渠道，不代表总成本最低。示例用量为 100 万输入加 25 万输出 token；不额外应用缓存、批处理或上下文档位调整，也不含工具等费用。不同处理模式的版本不可直接等同，输出价未知时不计算总额。'
-                : 'Up to 12 tracked language models are shown. Channels are selected by lowest input rate normalized to USD, not lowest total cost. Examples use 1M input plus 250K output tokens, without additional cache, batch or context-tier adjustments or tool fees. Processing-mode variants are not interchangeable; no total is shown when output pricing is unknown.'}
-            </p>
-          </div>
+        <nav aria-label={locale === 'zh' ? '价格对比入口' : 'Pricing comparison links'} className="mt-7 flex flex-wrap gap-4 rounded-md border border-blue-200 bg-blue-50 p-5 dark:border-blue-900 dark:bg-blue-950/30">
+          <Link href={`/${locale}/compare/models`} className="inline-flex items-center gap-2 font-semibold text-blue-700 hover:underline dark:text-blue-400">
+            {locale === 'zh' ? '对比渠道' : 'Compare channels'} <ArrowRight className="h-4 w-4" />
+          </Link>
+          {guide.priceTable === false && (
+            <Link href={`/${locale}/compare/plans`} className="inline-flex items-center gap-2 font-semibold text-blue-700 hover:underline dark:text-blue-400">
+              {locale === 'zh' ? '对比订阅套餐' : 'Compare subscription plans'} <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
+        </nav>
 
-          <div className="mt-6 overflow-x-auto rounded-md border bg-white dark:bg-zinc-900">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{locale === 'zh' ? '模型' : 'Model'}</TableHead>
-                  <TableHead>{locale === 'zh' ? '最低输入价渠道' : 'Lowest-input-rate channel'}</TableHead>
-                  <TableHead>{locale === 'zh' ? '输入 / 1M' : 'Input / 1M'}</TableHead>
-                  <TableHead>{locale === 'zh' ? '输出 / 1M' : 'Output / 1M'}</TableHead>
-                  <TableHead>{locale === 'zh' ? '示例成本（USD）' : 'Example cost (USD)'}</TableHead>
-                  <TableHead>{locale === 'zh' ? '渠道数' : 'Channels'}</TableHead>
-                  <TableHead>{locale === 'zh' ? '该报价核验日期' : 'Selected price verified'}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {models.length === 0 && (
+        {guide.priceTable !== false && (
+          <section className="py-9" aria-labelledby="live-prices">
+            <div className="max-w-3xl">
+              <h2 id="live-prices" className="text-2xl font-semibold">
+                {locale === 'zh' ? '当前 API 价格快照' : 'Current API price snapshot'}
+              </h2>
+              <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">
+                {locale === 'zh'
+                  ? '最多展示 12 个已追踪的语言模型，按美元换算后的最低输入单价选择渠道，不代表总成本最低。示例用量为 100 万输入加 25 万输出 token；不额外应用缓存、批处理或上下文档位调整，也不含工具等费用。不同处理模式的版本不可直接等同，输出价未知时不计算总额。'
+                  : 'Up to 12 tracked language models are shown. Channels are selected by lowest input rate normalized to USD, not lowest total cost. Examples use 1M input plus 250K output tokens, without additional cache, batch or context-tier adjustments or tool fees. Processing-mode variants are not interchangeable; no total is shown when output pricing is unknown.'}
+              </p>
+            </div>
+
+            <div className="mt-6 overflow-x-auto rounded-md border bg-white dark:bg-zinc-900">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="py-8 text-center text-zinc-500">
-                      {locale === 'zh' ? '暂无可用的 token 报价，请核对官方来源。' : 'No token prices are currently available. Check the official sources.'}
-                    </TableCell>
+                    <TableHead>{locale === 'zh' ? '模型' : 'Model'}</TableHead>
+                    <TableHead>{locale === 'zh' ? '最低输入价渠道' : 'Lowest-input-rate channel'}</TableHead>
+                    <TableHead>{locale === 'zh' ? '输入 / 1M' : 'Input / 1M'}</TableHead>
+                    <TableHead>{locale === 'zh' ? '输出 / 1M' : 'Output / 1M'}</TableHead>
+                    <TableHead>{locale === 'zh' ? '示例成本（USD）' : 'Example cost (USD)'}</TableHead>
+                    <TableHead>{locale === 'zh' ? '渠道数' : 'Channels'}</TableHead>
+                    <TableHead>{locale === 'zh' ? '该报价核验日期' : 'Selected price verified'}</TableHead>
                   </TableRow>
-                )}
-                {models.map((model) => (
-                  <TableRow key={model.slug}>
-                    <TableCell className="font-medium">
-                      <Link href={`/${locale}/models/${model.slug}`} className="text-blue-600 hover:underline">
-                        {model.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{model.cheapest.providerName}</TableCell>
-                    <TableCell>{formatPrice(model.cheapest.inputPrice, model.cheapest.currency as CurrencyCode, locale)}</TableCell>
-                    <TableCell>
-                      {model.cheapest.outputPrice == null
-                        ? '-'
-                        : formatPrice(model.cheapest.outputPrice, model.cheapest.currency as CurrencyCode, locale)}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {model.exampleCostUsd == null
-                        ? (locale === 'zh' ? '无法估算' : 'Unavailable')
-                        : formatUsd(model.exampleCostUsd, locale)}
-                    </TableCell>
-                    <TableCell>{model.channelCount}</TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {model.lastVerified
-                        ? new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', { dateStyle: 'medium' }).format(new Date(model.lastVerified))
-                        : (locale === 'zh' ? '未知' : 'Unknown')}
-                    </TableCell>
+                </TableHeader>
+                <TableBody>
+                  {models.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-8 text-center text-zinc-500">
+                        {locale === 'zh' ? '暂无可用的 token 报价，请核对官方来源。' : 'No token prices are currently available. Check the official sources.'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {models.map((model) => (
+                    <TableRow key={model.slug}>
+                      <TableCell className="font-medium">
+                        <Link href={`/${locale}/models/${model.slug}`} className="text-blue-600 hover:underline">
+                          {model.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{model.cheapest.providerName}</TableCell>
+                      <TableCell>{formatPrice(model.cheapest.inputPrice, model.cheapest.currency as CurrencyCode, locale)}</TableCell>
+                      <TableCell>
+                        {model.cheapest.outputPrice == null
+                          ? '-'
+                          : formatPrice(model.cheapest.outputPrice, model.cheapest.currency as CurrencyCode, locale)}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {model.exampleCostUsd == null
+                          ? (locale === 'zh' ? '无法估算' : 'Unavailable')
+                          : formatUsd(model.exampleCostUsd, locale)}
+                      </TableCell>
+                      <TableCell>{model.channelCount}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {model.lastVerified
+                          ? new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', { dateStyle: 'medium' }).format(new Date(model.lastVerified))
+                          : (locale === 'zh' ? '未知' : 'Unknown')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </section>
+        )}
+
+        {guide.planTable && (
+          <section className="py-9" aria-labelledby="plan-comparison">
+            <h2 id="plan-comparison" className="text-2xl font-semibold">
+              {locale === 'zh' ? '新旧订阅套餐对比' : 'New and legacy subscription plans'}
+            </h2>
+            <p className="mt-3 max-w-3xl leading-7 text-zinc-600 dark:text-zinc-400">
+              {locale === 'zh'
+                ? '静态月费对比，币种为 USD，不含税。新套餐倍数描述 Cursor/Grok 共享用量，不是第三方模型额度；旧个人套餐列出的金额为第三方 Other Models 内含用量。购买或切换前请复核官方来源。'
+                : 'Static monthly prices in USD, excluding tax. New-plan multiples describe the shared Cursor/Grok pool, not a third-party allowance; legacy individual-plan amounts describe included Other Models usage. Recheck official sources before purchasing or switching.'}
+            </p>
+            <div className="mt-6 overflow-x-auto rounded-md border bg-white dark:bg-zinc-900">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{locale === 'zh' ? '套餐' : 'Plan'}</TableHead>
+                    <TableHead>{locale === 'zh' ? '月费（USD）' : 'Monthly price (USD)'}</TableHead>
+                    <TableHead>{locale === 'zh' ? '内含用量' : 'Included usage'}</TableHead>
+                    <TableHead>{locale === 'zh' ? '第三方模型' : 'Third-party models'}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </section>
+                </TableHeader>
+                <TableBody>
+                  {guide.planTable.map((row) => (
+                    <TableRow key={row.plan.en}>
+                      <TableCell className="font-medium">{row.plan[locale]}</TableCell>
+                      <TableCell className="whitespace-nowrap">{row.monthlyPrice[locale]}</TableCell>
+                      <TableCell>{row.includedUsage[locale]}</TableCell>
+                      <TableCell>{row.thirdPartyModels[locale]}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </section>
+        )}
 
         <div className="divide-y border-y">
           {guide.sections.map((section) => (
@@ -186,9 +238,13 @@ export default async function PricingGuidePage({
           <h2 className="text-xl font-semibold">{locale === 'zh' ? '如何使用这些数据' : 'How to use this data'}</h2>
           <ul className="mt-4 grid gap-3 text-sm leading-6 text-zinc-700 dark:text-zinc-300 md:grid-cols-3">
             {[
-              locale === 'zh' ? '按实际输入与输出 token 比例重新计算。' : 'Recalculate with your real input/output token mix.',
-              locale === 'zh' ? '核对渠道地区、速率限制和支付方式。' : 'Check region, rate limits, and payment method.',
-              locale === 'zh' ? '购买前打开模型详情中的来源链接复核。' : 'Verify the linked source before purchasing.',
+              guide.priceTable === false
+                ? (locale === 'zh' ? '按实际第三方模型支出与内含额度重新计算。' : 'Recalculate with actual third-party spending and included allowances.')
+                : (locale === 'zh' ? '按实际输入与输出 token 比例重新计算。' : 'Recalculate with your real input/output token mix.'),
+              guide.priceTable === false
+                ? (locale === 'zh' ? '核对每周限额、税费和切换规则。' : 'Check weekly limits, taxes and switching rules.')
+                : (locale === 'zh' ? '核对渠道地区、速率限制和支付方式。' : 'Check region, rate limits, and payment method.'),
+              locale === 'zh' ? '购买或切换前复核官方来源。' : 'Recheck official sources before purchasing or switching.',
             ].map((item) => (
               <li key={item} className="flex gap-2">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
@@ -219,7 +275,7 @@ export default async function PricingGuidePage({
               <p className="mt-3 text-sm text-zinc-500">
                 {locale === 'zh' ? '本文计费规则核对日期：' : 'Billing guidance reviewed: '}
                 <time dateTime={guide.reviewedAt}>{guide.reviewedAt}</time>
-                {locale === 'zh' ? '。价格快照的核验日期单独列于表格中。' : '. Price verification dates are listed separately in the table.'}
+                {guide.priceTable !== false && (locale === 'zh' ? '。价格快照的核验日期单独列于表格中。' : '. Price verification dates are listed separately in the table.')}
               </p>
             )}
             <ul className="mt-4 space-y-3">

@@ -6,6 +6,7 @@ import {
   PRICING_GUIDE_SLUGS,
   guideForModelSlug,
   guideForProviderSlug,
+  getPricingGuideModels,
   isPricingGuideSlug,
   isOpenAIModelSlug,
   OPENAI_MODEL_SLUG_PREFIXES,
@@ -23,12 +24,15 @@ test('maps search-opportunity model families to their pricing guides', () => {
   assert.equal(guideForModelSlug('openai-gpt-6-1-sol'), 'openai-api-pricing');
   assert.equal(guideForModelSlug('GPT-4.1'), 'openai-api-pricing');
   assert.equal(guideForModelSlug('deepseek-v3'), null);
+  assert.equal(guideForModelSlug('cursor'), null);
 });
 
 test('maps relevant providers and validates only own guide slugs', () => {
   assert.equal(guideForProviderSlug('anthropic'), 'claude-anthropic-pricing');
   assert.equal(guideForProviderSlug('moonshot-china'), 'kimi-api-pricing');
   assert.equal(guideForProviderSlug('openai'), 'openai-api-pricing');
+  assert.equal(guideForProviderSlug('cursor'), 'cursor-x-subscription-pricing');
+  assert.equal(guideForProviderSlug('xai'), 'cursor-x-subscription-pricing');
   assert.equal(guideForProviderSlug('openrouter'), null);
   assert.equal(isPricingGuideSlug('openai-api-pricing'), true);
   assert.equal(isPricingGuideSlug('grok-pricing'), true);
@@ -37,23 +41,69 @@ test('maps relevant providers and validates only own guide slugs', () => {
   }
 });
 
-test('every guide is discoverable through the sitemap and both IndexNow locales', () => {
+test('the sitemap and guides index discover every slug from the shared catalog', () => {
   const sitemap = readFileSync(new URL('../app/sitemap.ts', import.meta.url), 'utf8');
+  const index = readFileSync(new URL('../app/[locale]/guides/page.tsx', import.meta.url), 'utf8');
+  assert.match(sitemap, /PRICING_GUIDE_SLUGS\.map/);
+  assert.ok(sitemap.includes('`/guides/${slug}`'));
+  assert.match(index, /PRICING_GUIDE_SLUGS\.map/);
+  assert.ok(index.includes('`/${locale}/guides/${slug}`'));
+  for (const slug of PRICING_GUIDE_SLUGS) {
+    assert.equal(PRICING_GUIDES[slug].slug, slug);
+    assert.equal(isPricingGuideSlug(slug), true);
+  }
+});
+
+test('API research guides remain discoverable in both IndexNow locales', () => {
   const indexnow = readFileSync(new URL('../../scripts/submit-indexnow.ts', import.meta.url), 'utf8');
   for (const slug of PRICING_GUIDE_SLUGS) {
-    assert.ok(sitemap.includes(`'/guides/${slug}'`), `sitemap missing ${slug}`);
+    // The submission script has a curated API research list, separate from the full sitemap.
+    if (PRICING_GUIDES[slug].priceTable === false) continue;
     for (const locale of ['en', 'zh'] as const) {
       assert.ok(indexnow.includes(`'/${locale}/guides/${slug}'`));
-      const guide = PRICING_GUIDES[slug];
-      assert.ok(guide.title[locale]);
-      assert.ok(guide.description[locale]);
-      assert.ok(guide.intro[locale]);
-      for (const section of guide.sections) {
-        assert.ok(section.heading[locale]);
-        assert.ok(section.body[locale]);
-      }
     }
   }
+});
+
+test('every guide has reviewed sources, at least three FAQs and complete bilingual text', () => {
+  const checkText = (value: unknown, path: string): void => {
+    if (typeof value === 'string') {
+      assert.ok(value.trim().length > 0, `empty text at ${path}`);
+      assert.doesNotMatch(value, /最低价|the cheapest/i, `unsupported price claim at ${path}`);
+    } else if (Array.isArray(value)) {
+      value.forEach((item, index) => checkText(item, `${path}[${index}]`));
+    } else if (value && typeof value === 'object') {
+      if ('en' in value || 'zh' in value) {
+        for (const locale of ['en', 'zh'] as const) {
+          assert.ok(locale in value, `missing ${locale} at ${path}`);
+          const localizedText: unknown = (value as Record<string, unknown>)[locale];
+          assert.ok(typeof localizedText === 'string', `invalid ${locale} at ${path}`);
+          assert.ok(localizedText.trim().length > 0, `empty ${locale} at ${path}`);
+        }
+      }
+      Object.entries(value).forEach(([key, item]) => checkText(item, `${path}.${key}`));
+    }
+  };
+  for (const slug of PRICING_GUIDE_SLUGS) {
+    const guide = PRICING_GUIDES[slug];
+    assert.ok(guide.sources && guide.sources.length >= 1, `missing sources for ${slug}`);
+    assert.equal(guide.reviewedAt, '2026-10-13');
+    assert.ok(guide.reviewedAt && Number.isFinite(Date.parse(guide.reviewedAt)));
+    assert.ok(guide.faqs && guide.faqs.length >= 3, `missing FAQs for ${slug}`);
+    guide.sources.forEach((source) => assert.equal(new URL(source.url).protocol, 'https:'));
+    checkText(guide, slug);
+  }
+});
+
+test('Cursor is a static subscription guide and empty patterns never load model prices', async () => {
+  const guide = PRICING_GUIDES['cursor-x-subscription-pricing'];
+  assert.equal(guide.priceTable, false);
+  assert.deepEqual(guide.queryPatterns, []);
+  assert.deepEqual(guide.providerSlugs, ['cursor', 'xai']);
+  assert.ok(guide.planTable && guide.planTable.length > 0);
+  assert.equal(guide.faqs?.length, 4);
+  assert.deepEqual(await getPricingGuideModels(guide), []);
+  assert.deepEqual(await getPricingGuideModels({ ...PRICING_GUIDES['openai-api-pricing'], queryPatterns: [] }), []);
 });
 
 test('OpenAI guide has bilingual FAQ, official citations and locale metadata', () => {

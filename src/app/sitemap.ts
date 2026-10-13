@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { sql } from '@/lib/db';
 import { selectIndexablePlanComparisons } from '@/lib/search-indexing';
+import { PRICING_GUIDE_SLUGS } from '@/lib/pricing-guides';
 
 const BASE_URL = 'https://aiplans.dev';
 const LOCALES = ['en', 'zh'] as const;
@@ -35,11 +36,7 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '/disclosure', priority: 0.3, changefreq: 'monthly' },
   { path: '/methodology', priority: 0.6, changefreq: 'monthly' },
   { path: '/guides', priority: 0.75, changefreq: 'weekly' },
-  { path: '/guides/openai-api-pricing', priority: 0.75, changefreq: 'daily' },
-  { path: '/guides/glm-chatglm-api-pricing', priority: 0.75, changefreq: 'daily' },
-  { path: '/guides/claude-anthropic-pricing', priority: 0.75, changefreq: 'daily' },
-  { path: '/guides/grok-pricing', priority: 0.75, changefreq: 'daily' },
-  { path: '/guides/kimi-api-pricing', priority: 0.75, changefreq: 'daily' },
+  ...PRICING_GUIDE_SLUGS.map((slug) => ({ path: `/guides/${slug}`, priority: 0.75, changefreq: 'daily' as const })),
   { path: '/reports/api-price-index', priority: 0.8, changefreq: 'daily' },
   { path: '/privacy', priority: 0.3, changefreq: 'monthly' },
   { path: '/terms', priority: 0.3, changefreq: 'monthly' },

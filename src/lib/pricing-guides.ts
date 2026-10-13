@@ -9,7 +9,8 @@ export type PricingGuideSlug =
   | 'claude-anthropic-pricing'
   | 'grok-pricing'
   | 'kimi-api-pricing'
-  | 'openai-api-pricing';
+  | 'openai-api-pricing'
+  | 'cursor-x-subscription-pricing';
 
 type LocalizedText = Record<Locale, string>;
 
@@ -19,6 +20,13 @@ export type PricingGuide = {
   description: LocalizedText;
   intro: LocalizedText;
   queryPatterns: string[];
+  priceTable?: false;
+  planTable?: Array<{
+    plan: LocalizedText;
+    monthlyPrice: LocalizedText;
+    includedUsage: LocalizedText;
+    thirdPartyModels: LocalizedText;
+  }>;
   providerSlugs: string[];
   sections: Array<{ heading: LocalizedText; body: LocalizedText }>;
   faqs?: Array<{ question: LocalizedText; answer: LocalizedText }>;
@@ -74,6 +82,13 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
         },
       },
       {
+        heading: { en: 'Usage example: repeated GPT prompts', zh: '用量示例：重复的 GPT 提示词' },
+        body: {
+          en: 'Assume 10,000 standard, short-context text requests, each with 1,000 input and 250 billable output tokens. Assume usage reports confirm 8M cache-hit input tokens and 2M ordinary input tokens, on a model without separately billed cache writes. Let I, C and O be its current ordinary-input, cached-input and output rates per million tokens: the illustration costs 2 × I + 8 × C + 2.5 × O. It excludes tools, retries and regional uplifts, and uses no batch discount. If caching misses, move those tokens back to I; if the model bills cache writes, account for them at their own rate. Use the Compare channels entry and each model link to check the same processing mode before choosing a channel.',
+          zh: '假设有 10,000 次标准处理、短上下文文本请求，每次输入 1,000、计费输出 250 token；用量报告确认其中 800 万输入命中缓存、200 万为普通输入，且所选模型没有单独计费的缓存写入。以当前每百万普通输入、缓存输入、输出单价分别记作 I、C、O，则示例成本为 2 × I + 8 × C + 2.5 × O。此演算不含工具、重试和地区加价，不采用批处理折扣。缓存未命中的 token 应改按 I 计算；模型若收取缓存写入费，应按对应费率另计。通过“对比渠道”入口和每行模型链接，先核对相同处理模式再选择渠道。',
+        },
+      },
+      {
         heading: { en: 'Caching, batch and long-context pricing', zh: '缓存、批处理与长上下文计费' },
         body: {
           en: 'The official rate card distinguishes ordinary input, cached input, cache writes for applicable models, and output. It also lists processing modes and short- versus long-context rates. Choose the row that matches your model and request, not simply the smallest number on the page. A batch variant is not a like-for-like replacement for an interactive endpoint. Our snapshot does not apply extra discounts or context-tier adjustments to the stored price.',
@@ -88,7 +103,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
         },
       },
       {
-        heading: { en: 'What the token estimate leaves out', zh: 'token 估算没有包含什么' },
+        heading: { en: 'Easy-to-miss costs beyond text tokens', zh: '容易忽略的成本：文本 token 之外' },
         body: {
           en: 'Tools such as web search, file search and hosted containers can add charges beyond the basic text-token estimate. Image, audio and realtime workloads have their own pricing dimensions. Regional processing can also change the applicable rate. Check the official pricing documentation and the provider invoice before setting a production budget. Start with a measured sample of real requests, then include retries and multi-step runs in your forecast.',
           zh: '网页搜索、文件搜索和托管容器等工具，可能在基础文本 token 费用之外产生收费。图像、音频和实时语音也有各自的计价维度，区域处理还可能改变适用费率。制定生产预算前，应核对官方价格文档及渠道账单。先测量一批真实请求，再把重试、多步骤运行计入预测。',
@@ -111,7 +126,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
         },
       },
       {
-        question: { en: 'Is the lowest input price always the cheapest option?', zh: '输入单价最低就一定最便宜吗？' },
+        question: { en: 'Is the lowest input rate enough to compare total cost?', zh: '输入单价最低就一定最便宜吗？' },
         answer: {
           en: 'No. Multiply both input and output rates by your measured token volumes, then add applicable tool and service fees. A low input rate alone cannot establish the lowest total cost, and a missing output rate is unknown, not zero.',
           zh: '不一定。需要把输入和输出单价分别乘以实测用量，再加上适用的工具与服务费用。仅凭低输入价不能确定最低总成本；输出价格缺失表示未知，不代表免费。',
@@ -134,6 +149,10 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
         label: { en: 'OpenAI Codex pricing: subscription usage versus API-key billing', zh: 'OpenAI Codex 官方计费：订阅用量与 API Key 的区别' },
         url: 'https://developers.openai.com/codex/pricing/',
       },
+      {
+        label: { en: 'OpenAI prompt caching: cache hits and writes', zh: 'OpenAI 提示词缓存：缓存命中与写入' },
+        url: 'https://developers.openai.com/api/docs/guides/prompt-caching',
+      },
     ],
   },
   'glm-chatglm-api-pricing': {
@@ -144,11 +163,12 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       zh: '对比 GLM 与 ChatGLM 当前 API 价格、免费版本、中国大陆访问、官方渠道和 token 成本示例。',
     },
     intro: {
-      en: 'GLM models appear through both Zhipu AI and international aggregators. The cheapest listing is not always the official endpoint, and “free” variants can have different limits or availability. This guide keeps those channels separate and calculates a consistent workload example.',
+      en: 'GLM models appear through Zhipu AI, Z.AI and international aggregators. A low listed rate does not establish the total bill, and “free” variants can have different limits or availability. This guide keeps those channels separate and calculates a consistent workload example.',
       zh: 'GLM 模型同时出现在智谱官方渠道和国际聚合平台。最低标价不一定来自官方接口，“免费”版本的限额与可用性也可能不同。本指南区分这些渠道，并用统一用量示例计算成本。',
     },
     queryPatterns: ['%glm%', '%chatglm%'],
     providerSlugs: ['zhipu-china', 'zhipu-global'],
+    reviewedAt: '2026-10-13',
     sections: [
       {
         heading: { en: 'Official versus free endpoints', zh: '官方接口与免费渠道' },
@@ -164,6 +184,49 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
           zh: '智谱国内服务通常是大陆用户的直连选择。国际渠道在支付方式、数据位置、模型命名和发布时间上可能不同，接入前应核对具体渠道行。',
         },
       },
+      {
+        heading: { en: 'Cost formula: keep CNY and USD ledgers separate', zh: '成本公式：人民币与美元账单分开算' },
+        body: {
+          en: 'For metered GLM calls, cost = ordinary input ÷ 1M × input rate + cache-hit input ÷ 1M × cached rate + output ÷ 1M × output rate + applicable cache storage and tool charges. Use CNY rates on the China BigModel site and USD rates on Z.AI; convert only after calculating each bill. Resource packs are prepaid purchases with model coverage and validity conditions: allocate their purchase cost to covered usage, then add uncovered metered usage, without charging the covered tokens twice. A GLM Coding Plan has its own endpoint and quota rules; its subscription price is not a general API token allowance.',
+          zh: 'GLM 按量调用成本 = 普通输入 ÷ 100 万 × 输入单价 + 缓存命中输入 ÷ 100 万 × 缓存单价 + 输出 ÷ 100 万 × 输出单价 + 适用的缓存存储与工具费。国内 BigModel 按人民币价目表、Z.AI 按美元价目表分别计算，最后再换汇。资源包属于预付购买，须核对覆盖模型与有效期；将购买成本分摊至覆盖用量，再加上未覆盖的按量费用，避免对已覆盖 token 重复计费。GLM Coding Plan 有独立接口与配额规则，订阅月费不能换算成通用 API token 额度。',
+        },
+      },
+      {
+        heading: { en: 'Usage example: a paid route and a Flash evaluation', zh: '用量示例：付费接口与 Flash 评估' },
+        body: {
+          en: 'Assume 2,000 paid GLM requests averaging 2,000 input and 500 output tokens, with no cache hits, tools or resource pack. The illustration uses 4M input and 1M output: cost = 4 × I + O, where I and O are the exact model’s live rates in the chosen site’s currency. A separate evaluation using a variant explicitly listed as free can have zero model-token charges within its limits; do not carry that assumption over to every model containing “Flash”. If a resource pack covers some requests, calculate its allocated cost and the uncovered requests separately.',
+          zh: '假设有 2,000 次付费 GLM 请求，平均每次输入 2,000、输出 500 token，没有缓存命中、工具或资源包。此演算共 400 万输入、100 万输出，成本 = 4 × I + O；I、O 取所选站点、具体模型的实时单价及币种。若另外使用官方明确标为免费的版本进行评估，在限额内模型 token 费用可为零，但不能把这个假设套用于所有名称含“Flash”的模型。资源包若覆盖部分请求，应将其分摊成本与未覆盖请求分开计算。',
+        },
+      },
+      {
+        heading: { en: 'Easy-to-miss costs: packs, tools and free-route limits', zh: '容易忽略的成本：资源包、工具与免费接口限制' },
+        body: {
+          en: 'Check resource-pack expiry and supported models before prepaying; unused quota changes your effective cost. A free Flash variant still has rate and concurrency limits, and a paid fallback creates a separate bill. Tool calls and cache storage have their own pricing entries. Coding Plan quotas do not remove ordinary API charges, and a currency conversion on this page does not change the currency charged by either official site.',
+          zh: '预付前核对资源包有效期与适用模型，未用完的额度会改变实际单位成本。免费 Flash 版本仍有速率与并发限制，切换付费后备接口会另产生账单。工具调用和缓存存储有各自的价格项。Coding Plan 配额不会免除普通 API 费用，本页换汇展示也不会改变官方站点的实际扣款币种。',
+        },
+      },
+    ],
+    faqs: [
+      {
+        question: { en: 'Are BigModel and Z.AI prices in the same currency?', zh: 'BigModel 与 Z.AI 使用同一种计费币种吗？' },
+        answer: { en: 'The China site lists CNY prices; Z.AI lists USD prices. Match the exact model, token unit and endpoint before converting the resulting totals.', zh: '国内站列人民币价格，Z.AI 列美元价格。换算总额之前，先匹配具体模型、token 单位与接口。' },
+      },
+      {
+        question: { en: 'Is every GLM Flash model free?', zh: '所有 GLM Flash 模型都免费吗？' },
+        answer: { en: 'No. Use only variants explicitly marked free in the official table, and check their limits. Flash and FlashX names alone do not establish a zero rate.', zh: '不是。以官方表格中明确标为免费的具体版本为准，并核对限额。仅凭 Flash 或 FlashX 名称不能判断零单价。' },
+      },
+      {
+        question: { en: 'Does a Coding Plan cover ordinary API calls?', zh: 'Coding Plan 覆盖普通 API 调用吗？' },
+        answer: { en: 'Treat the coding subscription and metered API as separate products. Check the coding endpoint and allowed usage rather than deducting its monthly price from an API bill.', zh: '编程订阅与按量 API 应作为独立产品。核对编程专用接口和允许的用法，不要从 API 账单中扣除订阅月费。' },
+      },
+      {
+        question: { en: 'How should I budget for a resource pack?', zh: '如何为资源包做预算？' },
+        answer: { en: 'Check coverage and expiry, allocate the prepaid cost across usage you expect to consume, then add charges outside the pack. Unused capacity is still part of your purchase cost.', zh: '核对覆盖范围与有效期，将预付费用分摊到预计实际消耗，再加上包外费用。未使用的容量仍属于购买成本。' },
+      },
+    ],
+    sources: [
+      { label: { en: 'Zhipu BigModel official pricing (China)', zh: '智谱 BigModel 国内官方价格' }, url: 'https://open.bigmodel.cn/pricing' },
+      { label: { en: 'Z.AI official API pricing (global)', zh: 'Z.AI 国际站官方 API 价格' }, url: 'https://docs.z.ai/guides/overview/pricing' },
     ],
   },
   'claude-anthropic-pricing': {
@@ -179,6 +242,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     },
     queryPatterns: ['%claude%'],
     providerSlugs: ['anthropic'],
+    reviewedAt: '2026-10-13',
     sections: [
       {
         heading: { en: 'API cost versus subscription price', zh: 'API 成本与订阅价格' },
@@ -194,6 +258,48 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
           zh: 'AWS Bedrock、Google Vertex AI 与聚合平台可能提供同系列 Claude，但地区、合同、限速和账单规则不同。价格只是选择因素之一，并不代表渠道完全等价。',
         },
       },
+      {
+        heading: { en: 'Cost formula: cache writes and reads are different', zh: '成本公式：缓存写入与读取分开计费' },
+        body: {
+          en: 'Claude cost = (ordinary input × I + cache writes × W + cache reads × R + output × O) ÷ 1M + tool charges. I, W, R and O are the current rates for the exact model, cache lifetime and context tier. Writes use a premium over base input; reads use a lower multiplier, which can vary by model. Count each input category once. Eligible asynchronous Batch API input and output receive a 50% discount; choose the batch rate entries rather than applying another discount to rates already stored as batch prices.',
+          zh: 'Claude 成本 =（普通输入 × I + 缓存写入 × W + 缓存读取 × R + 输出 × O）÷ 100 万 + 工具费。I、W、R、O 取具体模型、缓存存续时间和上下文档位的当前费率。写入相对基础输入加价，读取采用较低的倍率，具体倍率可能因模型而异；各类输入只计一次。符合条件的异步 Batch API 输入与输出享有 50% 折扣，应直接选择批处理价格项，不要对已按批处理存储的价格再次打折。',
+        },
+      },
+      {
+        heading: { en: 'Usage example: reuse a cached document', zh: '用量示例：重复读取缓存文档' },
+        body: {
+          en: 'Assume 100 requests within one cache lifetime, each with the same 20,000-token document, 1,000 new input tokens and 500 output tokens, below the selected model’s context-tier threshold. Assume one successful cache write followed by 99 hits, with no tools or batch processing. The illustration costs 0.1 × I + 0.02 × W + 1.98 × R + 0.05 × O. Without caching it is 2.1 × I + 0.05 × O. Compare using the live rates; misses or expiry create more writes or ordinary input and change the result.',
+          zh: '假设同一缓存存续期内有 100 次请求，每次包含同一份 20,000 token 文档、1,000 个新增输入 token 和 500 个输出 token，未超过所选模型的上下文计价阈值。假设首次写入成功、随后 99 次命中，不使用工具或批处理。此演算成本为 0.1 × I + 0.02 × W + 1.98 × R + 0.05 × O；不用缓存则为 2.1 × I + 0.05 × O。请代入实时费率比较；未命中或到期会增加写入或普通输入，结果随之变化。',
+        },
+      },
+      {
+        heading: { en: 'Easy-to-miss costs: context tiers and cloud regions', zh: '容易忽略的成本：上下文档位与云平台地区' },
+        body: {
+          en: 'Check whether the selected model has a long-context tier; do not assume every Claude version does. Cache reads and writes can count toward the prompt-length threshold. Cache lifetime changes write pricing. Bedrock and Vertex AI regional or multi-region endpoints can have different rates from global routing; use the cloud provider’s rate card and invoice. Server-side tools add charges beyond the token estimate.',
+          zh: '核对所选模型是否有长上下文计价档位，不要假定所有 Claude 版本都适用。缓存读取与写入也可能计入提示词长度阈值；缓存存续时间会改变写入价格。Bedrock 与 Vertex AI 的地区或多地区接口可能与全球路由费率不同，应核对云平台价目表及账单。服务端工具还会在 token 估算之外收费。',
+        },
+      },
+    ],
+    faqs: [
+      {
+        question: { en: 'Does every cached token use the read rate?', zh: '所有缓存 token 都按读取价收费吗？' },
+        answer: { en: 'No. A cache creation uses the write rate for its lifetime; later hits use the read rate. Use the separate usage counters and model-specific multipliers.', zh: '不是。创建缓存按对应存续时间的写入价计费，后续命中才按读取价计费。应使用独立用量计数及具体模型的倍率。' },
+      },
+      {
+        question: { en: 'Can I use the batch discount for interactive calls?', zh: '交互式调用能用批处理折扣吗？' },
+        answer: { en: 'The 50% input/output discount applies to eligible asynchronous Batch API usage. A standard interactive request uses its standard rates.', zh: '输入与输出 50% 折扣适用于符合条件的异步 Batch API。普通交互请求按对应标准费率计费。' },
+      },
+      {
+        question: { en: 'Does long context always increase Claude rates?', zh: 'Claude 长上下文一定加价吗？' },
+        answer: { en: 'It depends on the model. Check its current threshold and rate entries, including whether cached input contributes to prompt length.', zh: '取决于具体模型。核对当前阈值和价格项，以及缓存输入是否计入提示词长度。' },
+      },
+      {
+        question: { en: 'Are Bedrock and Vertex AI rates identical to direct API rates?', zh: 'Bedrock、Vertex AI 与直连 API 价格完全相同吗？' },
+        answer: { en: 'Check the exact region, endpoint type and cloud contract. Regional pricing and billing terms can differ from the direct Claude API.', zh: '须核对具体地区、接口类型和云合同。地区价格与账单条款可能不同于直连 Claude API。' },
+      },
+    ],
+    sources: [
+      { label: { en: 'Anthropic official Claude pricing and billing mechanisms', zh: 'Anthropic 官方 Claude 价格与计费机制' }, url: 'https://docs.anthropic.com/en/docs/about-claude/pricing' },
     ],
   },
   'grok-pricing': {
@@ -209,6 +315,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     },
     queryPatterns: ['%grok%'],
     providerSlugs: ['grok'],
+    reviewedAt: '2026-10-13',
     sections: [
       {
         heading: { en: 'Choose the right billing product', zh: '先区分计费产品' },
@@ -224,6 +331,50 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
           zh: 'Fast、mini、推理版和日期版本的 Grok 可能采用不同 token 单价与限额。比较总成本前，应先确认接入使用的准确模型标识。',
         },
       },
+      {
+        heading: { en: 'Cost formula: include reasoning and search', zh: '成本公式：计入推理与搜索' },
+        body: {
+          en: 'Grok API cost = ordinary input ÷ 1M × I + cached input ÷ 1M × C + billable output ÷ 1M × O + separately billed search and tool usage. Reasoning tokens are billed as output: if the output total already includes reasoning, do not add it twice. Live search and server-side tools have their own billing units, which may be calls or retrieved items; use the current tool entry. Consumer subscription access is a separate entitlement, not an interchangeable API credit balance; check any subscription-linked API allowance explicitly.',
+          zh: 'Grok API 成本 = 普通输入 ÷ 100 万 × I + 缓存输入 ÷ 100 万 × C + 计费输出 ÷ 100 万 × O + 独立计费的搜索与工具用量。推理 token 按输出计费；输出总量若已包含推理，就不要再加一次。实时搜索与服务端工具有独立计费单位，可能按调用或检索条目收费，应以当前工具价格项为准。消费级订阅访问是独立权益，不能视为可互换的 API 余额；如有订阅关联的 API 用量，须明确核对其范围。',
+        },
+      },
+      {
+        heading: { en: 'Usage example: a reasoning agent with search', zh: '用量示例：带搜索的推理 Agent' },
+        body: {
+          en: 'Assume 1,000 agent requests with measured totals of 2M input tokens, including 0.5M cache hits, plus 0.25M visible completion and 0.75M reasoning tokens. Assume all search-result tokens are already in those input totals, no batch discount, and 200 billable web-search calls on a tool priced per call. The illustration costs 1.5 × I + 0.5 × C + 1 × O + 200 × S, where S is that tool’s current per-call rate. If the selected search tool bills retrieved items instead, replace the last term with the measured item count and its rate.',
+          zh: '假设有 1,000 次 Agent 请求，实测总输入 200 万 token，其中 50 万命中缓存；另有 25 万可见回答、75 万推理 token。假设搜索结果 token 已计入上述输入，不采用批处理折扣，并使用一个按次收费的网页搜索工具，共产生 200 次计费调用。此演算成本 = 1.5 × I + 0.5 × C + 1 × O + 200 × S，S 为该工具当前每次调用费。若所选搜索工具按检索条目收费，则将末项改为实测条目数乘以对应费率。',
+        },
+      },
+      {
+        heading: { en: 'Easy-to-miss costs: hidden output and repeated tools', zh: '容易忽略的成本：推理输出与反复调用工具' },
+        body: {
+          en: 'A short final answer can still carry substantial billed reasoning output. One user request can trigger multiple search or tool operations, and tool results enlarge later prompts. Cache-hit rates apply only to confirmed hits, not every repeated conversation. Keep a subscription’s usage pool separate from metered API spending and verify how any linked API access is charged. Budget from usage records rather than visible answer length.',
+          zh: '最终回答很短，也可能产生较多的计费推理输出。一条用户请求可触发多次搜索或工具操作，工具结果还会扩大后续提示词。缓存命中价仅适用于已确认命中的部分，并非所有重复对话。订阅用量池与按量 API 支出应分开记录，并核对关联 API 访问的收费方式。预算应依据用量记录，而不是可见回答长度。',
+        },
+      },
+    ],
+    faqs: [
+      {
+        question: { en: 'Is a Grok subscription the same as API credit?', zh: 'Grok 订阅等于 API 额度吗？' },
+        answer: { en: 'No. Subscription entitlements and metered API billing are different. Verify any explicitly included API access and its limits instead of treating the monthly fee as cash credit.', zh: '不等于。订阅权益与按量 API 计费不同。须核对明确包含的 API 访问及限额，不要把月费当成现金余额。' },
+      },
+      {
+        question: { en: 'Are reasoning tokens charged when they are not visible?', zh: '不可见的推理 token 也收费吗？' },
+        answer: { en: 'Reasoning tokens are billable output. Use the reported output total and avoid adding reasoning a second time when it is already included.', zh: '推理 token 属于计费输出。应使用报告的输出总量，已包含推理时避免再次累加。' },
+      },
+      {
+        question: { en: 'Is live search included in the token rate?', zh: '实时搜索包含在 token 单价中吗？' },
+        answer: { en: 'Search and server-side tools have separate charges as well as associated token usage. Check whether the selected tool bills calls or retrieved items.', zh: '搜索与服务端工具除相关 token 用量外，还可能独立收费。须核对所选工具按调用还是检索条目计费。' },
+      },
+      {
+        question: { en: 'Can I apply cached-input pricing to all history?', zh: '所有历史对话都能按缓存输入价算吗？' },
+        answer: { en: 'Apply it only to input confirmed as cached in usage metrics. The remaining history uses the ordinary input rate for the selected model.', zh: '仅对用量指标确认已缓存的输入采用缓存价，其余历史按所选模型的普通输入价计费。' },
+      },
+    ],
+    sources: [
+      { label: { en: 'xAI official Grok models and prices', zh: 'xAI 官方 Grok 模型与价格' }, url: 'https://docs.x.ai/docs/models' },
+      { label: { en: 'xAI API pricing: tokens and tool charges', zh: 'xAI API 官方计费：token 与工具费用' }, url: 'https://docs.x.ai/developers/pricing' },
+      { label: { en: 'xAI prompt caching and reasoning usage example', zh: 'xAI 官方提示词缓存与推理用量示例' }, url: 'https://docs.x.ai/cookbook/examples/prompt-caching' },
     ],
   },
   'kimi-api-pricing': {
@@ -239,6 +390,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     },
     queryPatterns: ['%kimi%', '%moonshot%'],
     providerSlugs: ['moonshot', 'moonshot-china', 'moonshot-global'],
+    reviewedAt: '2026-10-13',
     sections: [
       {
         heading: { en: 'China and global services', zh: '国内与国际服务' },
@@ -254,6 +406,196 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
           zh: 'API 计费适合软件集成，并随 token 用量变化。Kimi 订阅覆盖应用内功能和使用额度，应在关联套餐页中单独比较。',
         },
       },
+      {
+        heading: { en: 'Cost formula: currency, cache and context length', zh: '成本公式：币种、缓存与上下文长度' },
+        body: {
+          en: 'Kimi cost = ordinary input ÷ 1M × I + cache-hit input ÷ 1M × C + output ÷ 1M × O + applicable cache-write or storage charges + billable web-search usage × its tool rate. Use the China site’s CNY rate card or the global site’s USD rate card. For models with context-length pricing, determine the tier from the full request, including history and documents; automatic context selection and named context-length variants can lead to different applicable rates. Use the exact model’s current rules rather than a single rate for every Moonshot or Kimi request.',
+          zh: 'Kimi 成本 = 普通输入 ÷ 100 万 × I + 缓存命中输入 ÷ 100 万 × C + 输出 ÷ 100 万 × O + 适用的缓存写入或存储费 + 计费网页搜索用量 × 工具单价。国内站使用人民币价目表，国际站使用美元价目表。对按上下文长度定价的模型，须按包含历史和文档的完整请求确定档位；自动选择上下文与指定上下文长度的不同版本，可能采用不同费率。应使用具体模型的当前规则，不能把所有 Moonshot 或 Kimi 请求套用一个单价。',
+        },
+      },
+      {
+        heading: { en: 'Usage example: document questions with cached context', zh: '用量示例：带上下文缓存的文档问答' },
+        body: {
+          en: 'Assume 1,000 document-Q&A requests with measured totals of 3M input tokens, including 1M cache hits, and 0.5M output tokens. Assume every request stays within the selected model’s same context-price tier, uses a cache mechanism without separate write or storage charges, and makes 40 billable web-search calls. The illustration costs 2 × I + C + 0.5 × O + 40 × S in the chosen site’s currency. Search-result tokens are already included in the input total. If your model bills cache writes or storage, add those charges; if some requests enter another context tier, calculate that subset separately.',
+          zh: '假设有 1,000 次文档问答请求，实测总输入 300 万 token，其中 100 万命中缓存，另有 50 万输出。假设所有请求都落在所选模型同一上下文计价档位，使用不另收写入或存储费的缓存机制，并产生 40 次计费网页搜索调用。此演算成本为 2 × I + C + 0.5 × O + 40 × S，使用所选站点币种；搜索结果 token 已包含在输入总量中。模型若收取缓存写入或存储费，应另加；部分请求若进入其他上下文档位，应将该部分单独计算。',
+        },
+      },
+      {
+        heading: { en: 'Easy-to-miss costs: search, context growth and recharge limits', zh: '容易忽略的成本：搜索、上下文增长与充值限速' },
+        body: {
+          en: 'Web search can add a tool fee and more input tokens when results are sent back to the model. Repeated document content is still billable input unless it qualifies for a cache hit, and longer history can change a context-priced model’s rate. Check cache lifetime and any write or storage line items. Recharge or account tiers determine rate limits under the selected site’s rules; prepaid balance does not guarantee unlimited concurrency. Compare China and global invoices in their original currencies before conversion.',
+          zh: '网页搜索可能产生工具费，将结果发回模型还会增加输入 token。重复文档内容只有符合缓存命中条件时才能按缓存价计费；更长的历史可能改变按上下文定价模型的费率。还须核对缓存存续时间及写入、存储价格项。充值或账号档位按所选站点规则决定速率限制，预付余额不代表无限并发。比较国内与国际账单时，应先分别按原币种核算，再换汇。',
+        },
+      },
+    ],
+    faqs: [
+      {
+        question: { en: 'Can I reuse China-site prices for the global API?', zh: '国际 API 可以直接套国内站价格吗？' },
+        answer: { en: 'Use each site’s own model rates and billing currency: CNY for China and USD for global. Compare totals only after matching models and converting currencies.', zh: '应使用各站自己的模型费率和币种：国内站为人民币，国际站为美元。匹配模型并换汇后再比较总额。' },
+      },
+      {
+        question: { en: 'Does automatic context selection mean one fixed price?', zh: '自动选择上下文就代表固定单价吗？' },
+        answer: { en: 'No. For context-priced models, inspect the applicable length tier or named variant. Other models may use a flat rate across their supported context; follow the exact model’s documentation.', zh: '不代表。按上下文定价的模型须核对适用长度档位或指定版本；其他模型可能在支持的上下文内使用固定费率，应以具体模型文档为准。' },
+      },
+      {
+        question: { en: 'Does context caching remove web-search charges?', zh: '上下文缓存会免掉网页搜索费吗？' },
+        answer: { en: 'No. Cache pricing concerns model input, while web search has its own tool fee. Search results passed into a later request also contribute to input usage.', zh: '不会。缓存价格针对模型输入，网页搜索有独立工具费。搜索结果传入后续请求时，也会计入输入用量。' },
+      },
+      {
+        question: { en: 'Does recharging unlock unlimited requests?', zh: '充值后可以无限调用吗？' },
+        answer: { en: 'No. Check the site’s recharge or account-tier rate limits and your current quota. API balance and Kimi application subscriptions are separate products.', zh: '不能。应核对站点的充值或账号档位限速及当前配额。API 余额与 Kimi 应用订阅属于独立产品。' },
+      },
+    ],
+    sources: [
+      { label: { en: 'Moonshot official API pricing (China)', zh: '月之暗面国内站官方 API 价格' }, url: 'https://platform.moonshot.cn/docs/pricing/chat' },
+      { label: { en: 'Moonshot official API pricing (global)', zh: '月之暗面国际站官方 API 价格' }, url: 'https://platform.moonshot.ai/docs/pricing/chat' },
+      { label: { en: 'Kimi official web-search billing', zh: 'Kimi 官方网页搜索计费' }, url: 'https://platform.kimi.ai/docs/pricing/websearch' },
+      { label: { en: 'Kimi official recharge and rate limits', zh: 'Kimi 官方充值与速率限制' }, url: 'https://platform.kimi.ai/docs/pricing/limits' },
+    ],
+  },
+  'cursor-x-subscription-pricing': {
+    slug: 'cursor-x-subscription-pricing',
+    title: { en: "Cursor's X Subscription vs Legacy Plans: Cost Comparison", zh: 'Cursor 新套餐（The X Subscription）与旧套餐对比' },
+    description: {
+      en: 'Compare Cursor’s X Subscription and legacy monthly plans, included third-party usage, API-list-price charges and the permanent switch, with illustrative monthly budgets.',
+      zh: '对比 Cursor 新 X Subscription 与旧套餐的月费、第三方模型额度、API 标价收费和永久切换规则，并用明确假设演算月度预算。',
+    },
+    intro: {
+      en: 'This is a subscription comparison, not a token price table. The X Subscription shares an included usage pool across Cursor and Grok, refreshed weekly. Premium and above make third-party models such as Claude and GPT available, but none of their usage is included: API list prices apply from the first use, paid from prepaid credit. Existing Cursor plans retain their included third-party usage until you switch. The monthly prices below exclude tax and were reviewed on 2026-10-13.',
+      zh: '本页比较订阅套餐，不是 token 价目表。The X Subscription 的内含用量池由 Cursor 与 Grok 共享，每周刷新。Premium 及以上可使用 Claude、GPT 等第三方模型，但这些用量不包含在套餐额度中：从首次使用起按 API 标价计费，从预付余额扣款。现有 Cursor 旧套餐的第三方内含用量会持续保留，直到你切换。下表月费不含税，核对日期为 2026-10-13。',
+    },
+    priceTable: false,
+    queryPatterns: [],
+    providerSlugs: ['cursor', 'xai'],
+    reviewedAt: '2026-10-13',
+    planTable: [
+      {
+        plan: { en: 'X Subscription Free', zh: '新套餐 Free' },
+        monthlyPrice: { en: '$0', zh: '$0' },
+        includedUsage: { en: 'Limited usage', zh: '有限用量' },
+        thirdPartyModels: { en: 'Check official model availability', zh: '以官方模型可用范围为准' },
+      },
+      {
+        plan: { en: 'X Subscription Plus', zh: '新套餐 Plus' },
+        monthlyPrice: { en: '$8', zh: '$8' },
+        includedUsage: { en: 'Basic usage; Grok models only', zh: '基础用量；仅 Grok 模型' },
+        thirdPartyModels: { en: 'Unavailable', zh: '不可用' },
+      },
+      {
+        plan: { en: 'X Subscription Premium', zh: '新套餐 Premium' },
+        monthlyPrice: { en: '$30', zh: '$30' },
+        includedUsage: { en: '4× Plus; shared Cursor/Grok pool', zh: 'Plus 的 4 倍；Cursor/Grok 共享池' },
+        thirdPartyModels: { en: 'No allowance; API list price from first use', zh: '无内含额度；首次使用起按 API 标价另付' },
+      },
+      {
+        plan: { en: 'X Subscription Super', zh: '新套餐 Super' },
+        monthlyPrice: { en: '$100', zh: '$100' },
+        includedUsage: { en: '15× Plus; shared Cursor/Grok pool', zh: 'Plus 的 15 倍；Cursor/Grok 共享池' },
+        thirdPartyModels: { en: 'No allowance; API list price from first use', zh: '无内含额度；首次使用起按 API 标价另付' },
+      },
+      {
+        plan: { en: 'X Subscription Ultra', zh: '新套餐 Ultra' },
+        monthlyPrice: { en: '$200', zh: '$200' },
+        includedUsage: { en: '50× Plus; shared Cursor/Grok pool', zh: 'Plus 的 50 倍；Cursor/Grok 共享池' },
+        thirdPartyModels: { en: 'No allowance; API list price from first use', zh: '无内含额度；首次使用起按 API 标价另付' },
+      },
+      {
+        plan: { en: 'X Subscription Teams', zh: '新套餐 Teams' },
+        monthlyPrice: { en: '$30+ / user', zh: '$30 起 / 用户' },
+        includedUsage: { en: 'Check the selected seat tier', zh: '核对所选席位档位' },
+        thirdPartyModels: { en: 'Billed separately at API list price', zh: '按 API 标价另付' },
+      },
+      {
+        plan: { en: 'Legacy Cursor Pro', zh: '旧套餐 Cursor Pro' },
+        monthlyPrice: { en: '$20', zh: '$20' },
+        includedUsage: { en: '$20 of Other Models usage', zh: '$20 第三方（Other Models）用量' },
+        thirdPartyModels: { en: 'Included allowance, then metered overage', zh: '先使用内含额度，超出另计' },
+      },
+      {
+        plan: { en: 'Legacy Cursor Pro+', zh: '旧套餐 Cursor Pro+' },
+        monthlyPrice: { en: '$60', zh: '$60' },
+        includedUsage: { en: '$70 of Other Models usage', zh: '$70 第三方（Other Models）用量' },
+        thirdPartyModels: { en: 'Included allowance, then metered overage', zh: '先使用内含额度，超出另计' },
+      },
+      {
+        plan: { en: 'Legacy Cursor Ultra', zh: '旧套餐 Cursor Ultra' },
+        monthlyPrice: { en: '$200', zh: '$200' },
+        includedUsage: { en: '$400 of Other Models usage', zh: '$400 第三方（Other Models）用量' },
+        thirdPartyModels: { en: 'Included allowance, then metered overage', zh: '先使用内含额度，超出另计' },
+      },
+      {
+        plan: { en: 'Legacy Cursor Teams Standard', zh: '旧套餐 Cursor Teams Standard' },
+        monthlyPrice: { en: '$40 / user', zh: '$40 / 用户' },
+        includedUsage: { en: 'Check the current plan allowance', zh: '核对当前套餐额度' },
+        thirdPartyModels: { en: 'Check the team’s billing terms', zh: '核对团队计费条款' },
+      },
+      {
+        plan: { en: 'Legacy Cursor Teams Premium', zh: '旧套餐 Cursor Teams Premium' },
+        monthlyPrice: { en: '$120 / user', zh: '$120 / 用户' },
+        includedUsage: { en: 'Check the current plan allowance', zh: '核对当前套餐额度' },
+        thirdPartyModels: { en: 'Check the team’s billing terms', zh: '核对团队计费条款' },
+      },
+    ],
+    sections: [
+      {
+        heading: { en: 'Who should consider staying on legacy plans?', zh: '哪些用户应考虑保留旧套餐？' },
+        body: {
+          en: 'If your Cursor work regularly uses Claude, GPT or other third-party models, compare the value of your current Other Models allowance before switching. Legacy Pro, Pro+ and Ultra include $20, $70 and $400 respectively; that included third-party usage continues until you switch. Existing customers can still upgrade or downgrade among their current Cursor plans without adopting The X Subscription, except Apple App Store billed plans, which must switch first. Staying preserves the option to review your actual usage before making a permanent change.',
+          zh: '如果你在 Cursor 中经常使用 Claude、GPT 等第三方模型，切换前先计算当前 Other Models 额度的价值。旧 Pro、Pro+、Ultra 分别内含 $20、$70、$400 第三方用量，这些额度会持续保留至切换时。现有用户仍可在当前 Cursor 套餐之间升级或降级，无须采用 The X Subscription；Apple App Store 计费的套餐除外，须先切换。保留旧套餐可让你先核对真实用量，再决定是否永久改变计费方式。',
+        },
+      },
+      {
+        heading: { en: 'Who should consider switching?', zh: '哪些用户可考虑切换？' },
+        body: {
+          en: 'If your work mainly uses Grok and you want to share included usage across Cursor and Grok, compare the new pool sizes against your weekly workload. Plus is Grok-only; Premium and above allow third-party models with separate payment at API list price. A lower subscription fee alone does not establish a lower monthly bill. Compare the subscription and third-party spending together, and set the available spending caps for prepaid third-party usage. Switching is optional and permanent: it cannot be undone, including by Support.',
+          zh: '如果主要使用 Grok，并希望在 Cursor 与 Grok 之间共享内含用量，可按每周工作量比较新套餐的用量池。Plus 仅支持 Grok；Premium 及以上允许另付 API 标价使用第三方模型。仅月费较低，不能说明月度总账单较低。应合并比较订阅费与第三方支出，并使用可用的支出上限管理预付第三方用量。切换是自愿且永久的，无法撤销，Support 也无法恢复旧套餐。',
+        },
+      },
+      {
+        heading: { en: 'Monthly cost formula: allowance versus first-use billing', zh: '月度成本公式：内含额度与首次使用即收费' },
+        body: {
+          en: 'For the legacy individual plans, monthly cost = plan price + max(0, third-party API-list-price usage − included third-party allowance). For the new plans with third-party access, monthly cost = plan price + all third-party usage at API list price. The new shared Grok pool does not offset Claude or GPT spending. These formulas isolate the subscription and third-party model components; add any applicable tax and paid top-offs for included-pool usage separately.',
+          zh: '旧个人套餐：月度成本 = 套餐月费 + max(0, 按 API 标价计算的第三方用量 − 内含第三方额度)。支持第三方模型的新套餐：月度成本 = 套餐月费 + 全部第三方用量的 API 标价费用。新的 Grok 共享池不能抵扣 Claude 或 GPT 支出。这些公式只比较订阅与第三方模型部分，适用税费和共享池额外 top-off 用量须另加。',
+        },
+      },
+      {
+        heading: { en: 'Worked examples: $70 and $150 of third-party usage', zh: '演算示例：$70 与 $150 第三方用量' },
+        body: {
+          en: 'Assume monthly billing in USD, third-party usage valued at API list price, no tax or shared-pool top-offs, and otherwise identical workloads. At $70 of third-party usage, legacy Pro+ costs $60 + max(0, $70 − $70) = $60, while new Premium costs $30 + $70 = $100. At $150, legacy Pro+ costs $60 + $80 = $140, while new Premium costs $30 + $150 = $180. These are illustrations of the billing formulas, not forecasts or a claim that the plans have identical features or Grok usage allowances.',
+          zh: '假设按月以美元计费，第三方用量按 API 标价折算，无税费、无共享池 top-off，其他工作量相同。第三方用量为 $70 时，旧 Pro+ 成本为 $60 + max(0, $70 − $70) = $60；新 Premium 为 $30 + $70 = $100。用量为 $150 时，旧 Pro+ 为 $60 + $80 = $140；新 Premium 为 $30 + $150 = $180。以上仅用于演示计费公式，不是用量预测，也不表示套餐功能或 Grok 内含额度相同。',
+        },
+      },
+      {
+        heading: { en: 'Easy-to-miss costs and switching rules', zh: '容易忽略的成本与切换规则' },
+        body: {
+          en: 'Prices exclude tax. The shared Cursor/Grok allowance refreshes weekly; reaching its limit means waiting for the refresh or buying top-offs. Third-party models are paid from prepaid credit from first use on Premium and above. Switching permanently removes the old plan choice, and Support cannot reverse it. Selected old subscriptions are cancelled with an automatic prorated refund, except App Store subscriptions; a new billing cycle starts on the switch day. Cursor cannot cancel or refund Apple App Store billing: manage cancellation and any refund with Apple to avoid continued old charges, and remember those plans must switch before changing tiers.',
+          zh: '标价不含税。Cursor/Grok 共享额度每周刷新，达到限额后须等待刷新或购买 top-off。Premium 及以上的第三方模型从首次使用起从预付余额扣款。切换会永久失去旧套餐选择，Support 也不能撤销。选中的旧订阅会取消并自动按比例退款，App Store 订阅除外；新计费周期从切换当天开始。Cursor 不能取消或退款 Apple App Store 账单，应向 Apple 管理取消及退款，以免旧订阅继续扣款；这些套餐更换档位前也须先切换。',
+        },
+      },
+    ],
+    faqs: [
+      {
+        question: { en: 'Must I switch, and can Support undo the switch?', zh: '必须切换吗？Support 能撤销切换吗？' },
+        answer: { en: 'Switching is optional, but permanent once completed. It cannot be undone, and Support cannot restore the legacy plan. Included third-party usage on your existing Cursor plan continues until you switch.', zh: '切换是自愿的，但完成后永久生效，无法撤销，Support 也不能恢复旧套餐。现有 Cursor 套餐的第三方内含用量会持续保留至切换时。' },
+      },
+      {
+        question: { en: 'Does Premium include Claude or GPT usage?', zh: 'Premium 包含 Claude 或 GPT 用量吗？' },
+        answer: { en: 'No third-party allowance is included. Premium and above make those models available at API list price from first use, paid from prepaid credit; spending caps are available. Plus supports Grok models only.', zh: '不含第三方额度。Premium 及以上可使用这些模型，但首次使用起就按 API 标价从预付余额扣款，并可设置支出上限。Plus 仅支持 Grok 模型。' },
+      },
+      {
+        question: { en: 'Can I change a legacy Cursor tier without switching?', zh: '不切换也能更换旧 Cursor 套餐档位吗？' },
+        answer: { en: 'Existing Cursor customers can upgrade or downgrade among their current Cursor plans without switching. Apple App Store billed plans are the exception and must switch first.', zh: '现有 Cursor 用户可以在当前 Cursor 套餐之间升级或降级，无须切换。Apple App Store 计费套餐除外，须先切换。' },
+      },
+      {
+        question: { en: 'What happens to refunds, billing dates and weekly limits?', zh: '退款、计费日期与每周限额如何处理？' },
+        answer: { en: 'Switching cancels selected old subscriptions with automatic prorated refunds, except App Store billing, and starts a new billing cycle that day. The new shared Cursor/Grok pool refreshes weekly; after the limit, wait or pay for top-offs. Taxes are additional.', zh: '切换会取消选中的旧订阅并自动按比例退款，App Store 计费除外；当天开始新的计费周期。新 Cursor/Grok 共享池每周刷新，超限后可等待或付费 top-off，税费另计。' },
+      },
+    ],
+    sources: [
+      { label: { en: 'Cursor official X Subscription pricing', zh: 'Cursor 官方 X Subscription 价格' }, url: 'https://cursor.com/pricing' },
+      { label: { en: 'Cursor official legacy pricing and plans', zh: 'Cursor 官方旧套餐与价格' }, url: 'https://cursor.com/help/account-and-billing/pricing.md' },
+      { label: { en: 'Cursor official X Subscription switching rules', zh: 'Cursor 官方 X Subscription 切换规则' }, url: 'https://cursor.com/help/the-x-subscription/overview' },
+      { label: { en: 'xAI official X Subscription announcement', zh: 'xAI 官方 X Subscription 公告' }, url: 'https://x.ai/news/x-subscription' },
     ],
   },
 };
@@ -317,6 +659,8 @@ export type GuideModelPrice = {
 };
 
 export async function getPricingGuideModels(guide: PricingGuide): Promise<GuideModelPrice[]> {
+  if (guide.queryPatterns.length === 0) return [];
+
   const rows = await sql<PriceRow[]>`
     SELECT m.id AS model_id, m.name AS model_name, m.slug AS model_slug,
            m.released_at, p.name AS provider_name, p.slug AS provider_slug,
