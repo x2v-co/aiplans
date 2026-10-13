@@ -26,6 +26,23 @@ export type PricingGuide = {
   reviewedAt?: string;
 };
 
+/**
+ * Single definition of the OpenAI model family (incl. third-party gpt-oss hosting).
+ * Used by both the guide SQL (queryPatterns) and guideForModelSlug() internal links.
+ */
+export const OPENAI_MODEL_SLUG_PREFIXES = ['gpt-', 'openai-gpt-', '~openai-gpt-'] as const;
+
+/** Strip known vendor/aggregator prefixes so 'openai-gpt-5' / '~openai-gpt-oss-20b' → 'gpt-…'. */
+export function normalizeOpenAIModelSlug(modelSlug: string): string {
+  return modelSlug.toLowerCase().replace(/^~/, '').replace(/^openai-/, '');
+}
+
+export function isOpenAIModelSlug(modelSlug: string): boolean {
+  const slug = modelSlug.toLowerCase();
+  return OPENAI_MODEL_SLUG_PREFIXES.some((prefix) => slug.startsWith(prefix))
+    && normalizeOpenAIModelSlug(slug).startsWith('gpt-');
+}
+
 export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
   'openai-api-pricing': {
     slug: 'openai-api-pricing',
@@ -38,7 +55,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       en: 'Start with how you will use OpenAI: an application calling an API key is billed differently from ChatGPT or Codex using a subscription. Below, compare tracked GPT model variants, then use the cost formula and official sources to check the bill for your own workload. The table is a database snapshot, not a guarantee of endpoint availability or a complete OpenAI rate card.',
       zh: '先确定你如何使用 OpenAI：应用通过 API Key 调用，与通过订阅使用 ChatGPT 或 Codex，采用不同的计费方式。下表对比已追踪的 GPT 模型版本；随后可用成本公式和官方来源核对自己的用量。表格是数据库快照，不保证接口可用，也不是 OpenAI 全量价目表。',
     },
-    queryPatterns: ['%gpt%'],
+    queryPatterns: OPENAI_MODEL_SLUG_PREFIXES.map((prefix) => `${prefix}%`),
     providerSlugs: ['openai'],
     reviewedAt: '2026-10-13',
     sections: [
@@ -253,7 +270,7 @@ export function guideForModelSlug(modelSlug: string): PricingGuideSlug | null {
   if (slug.includes('claude')) return 'claude-anthropic-pricing';
   if (slug.includes('grok')) return 'grok-pricing';
   if (slug.includes('kimi') || slug.includes('moonshot')) return 'kimi-api-pricing';
-  if (slug.includes('gpt')) return 'openai-api-pricing';
+  if (isOpenAIModelSlug(slug)) return 'openai-api-pricing';
   return null;
 }
 

@@ -7,6 +7,8 @@ import {
   guideForModelSlug,
   guideForProviderSlug,
   isPricingGuideSlug,
+  isOpenAIModelSlug,
+  OPENAI_MODEL_SLUG_PREFIXES,
   latestGuideDate,
   summarizeGuidePrices,
 } from './pricing-guides';
@@ -150,4 +152,24 @@ test('dateModified uses the newer of reviewedAt and latest data verification', (
   assert.equal(latestGuideDate('2026-10-13', '2026-09-01T00:00:00Z'), '2026-10-13T00:00:00.000Z');
   assert.equal(latestGuideDate('2026-10-13', null), '2026-10-13T00:00:00.000Z');
   assert.equal(latestGuideDate(undefined, null), undefined);
+});
+
+test('OpenAI family: SQL patterns and internal links share one definition', () => {
+  const guide = PRICING_GUIDES['openai-api-pricing'];
+  assert.deepEqual(guide.queryPatterns, OPENAI_MODEL_SLUG_PREFIXES.map((p) => `${p}%`));
+  const likeToRegex = (p: string) => new RegExp(`^${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/g, '.*').replace(/_/g, '.')}$`);
+  const sqlMatches = (slug: string) => guide.queryPatterns.some((p) => likeToRegex(p).test(slug.toLowerCase()));
+  const family = [
+    'gpt-5', 'gpt-4.1-mini', 'gpt-4o', 'GPT-4.1', 'gpt-oss-120b', 'gpt-oss-20b',
+    'openai-gpt-6-1-sol', 'openai-gpt-oss-120b', '~openai-gpt-5', '~openai-gpt-oss-20b',
+  ];
+  for (const slug of family) {
+    assert.equal(sqlMatches(slug), true, `SQL should match ${slug}`);
+    assert.equal(isOpenAIModelSlug(slug), true, slug);
+    assert.equal(guideForModelSlug(slug), 'openai-api-pricing', slug);
+  }
+  for (const slug of ['community-gpt-tuned', 'chatgpt-clone', 'deepseek-v3', 'claude-opus-5']) {
+    assert.equal(sqlMatches(slug), isOpenAIModelSlug(slug), slug);
+    assert.notEqual(guideForModelSlug(slug), 'openai-api-pricing', slug);
+  }
 });
