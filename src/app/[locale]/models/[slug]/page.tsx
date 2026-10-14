@@ -1003,11 +1003,11 @@ export default async function ModelPage({
                             )}
                           </div>
                           {isIntroductoryPriceActive(cp, now) && cp.regular_input_price_per_1m != null && cp.regular_output_price_per_1m != null && (
-                            <p className="mt-1 text-xs font-normal text-zinc-500">
+                            <p className="mt-1 max-w-xs whitespace-normal text-xs font-normal text-zinc-500">
                               {promoMessages('introductoryPrice', {
                                 date: introductoryEndDate(cp.promo_ends_at, locale),
-                                input: new Intl.NumberFormat(locale, { style: 'currency', currency: channelCurrency(cp), minimumFractionDigits: 0 }).format(cp.regular_input_price_per_1m),
-                                output: new Intl.NumberFormat(locale, { style: 'currency', currency: channelCurrency(cp), minimumFractionDigits: 0 }).format(cp.regular_output_price_per_1m),
+                                input: new Intl.NumberFormat(locale, { style: 'currency', currency: channelCurrency(cp), currencyDisplay: 'narrowSymbol', minimumFractionDigits: 0, maximumFractionDigits: 6 }).format(cp.regular_input_price_per_1m),
+                                output: new Intl.NumberFormat(locale, { style: 'currency', currency: channelCurrency(cp), currencyDisplay: 'narrowSymbol', minimumFractionDigits: 0, maximumFractionDigits: 6 }).format(cp.regular_output_price_per_1m),
                               })}
                             </p>
                           )}

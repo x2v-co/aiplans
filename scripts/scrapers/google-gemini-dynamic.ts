@@ -1,7 +1,7 @@
 /** Google Gemini API standard token pricing from the official pricing tables. */
 import type { ScraperResult } from '../utils/validator';
 import { parseGooglePriceCell } from './lib/google-price-parser';
-import { PlaywrightScraper } from './lib/playwright-scraper';
+import { PlaywrightScraper, type PriceData, type ScraperResult as BrowserScraperResult } from './lib/playwright-scraper';
 
 const GOOGLE_PRICING_URL = 'https://ai.google.dev/gemini-api/docs/pricing';
 
@@ -17,10 +17,13 @@ function canonicalModel(heading: string): string | null {
     .replace(/^-|-$/g, '');
 }
 
+type GooglePrice = ScraperResult['prices'][number] & PriceData;
+type GoogleScraperResult = ScraperResult & BrowserScraperResult;
+
 export interface GooglePricingTable { model: string; tier: string; rows: string[][] }
 
-export function parseGooglePricingTables(tables: GooglePricingTable[], now = new Date()): ScraperResult['prices'] {
-  const prices: ScraperResult['prices'] = [];
+export function parseGooglePricingTables(tables: GooglePricingTable[], now = new Date()): GooglePrice[] {
+  const prices: GooglePrice[] = [];
   const seen = new Set<string>();
   for (const table of tables) {
     if (table.tier !== 'Standard') continue;
@@ -58,7 +61,7 @@ class GeminiScraper extends PlaywrightScraper {
   getSourceName(): string { return 'Google-Gemini-API'; }
   getSourceUrl(): string { return GOOGLE_PRICING_URL; }
 
-  async scrape(): Promise<ScraperResult> {
+  async scrape(): Promise<GoogleScraperResult> {
     await this.navigate(GOOGLE_PRICING_URL);
     await this.page!.waitForFunction(() =>
       Array.from(document.querySelectorAll('table')).some(table =>
@@ -104,7 +107,8 @@ class GeminiScraper extends PlaywrightScraper {
 }
 
 export async function scrapeGoogleDynamic(): Promise<ScraperResult> {
-  return new GeminiScraper().run();
+  // The browser wrapper preserves this subclass's stricter price/result shape.
+  return new GeminiScraper().run() as Promise<GoogleScraperResult>;
 }
 
 if (require.main === module) {

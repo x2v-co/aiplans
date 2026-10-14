@@ -68,3 +68,10 @@ test('Argon keeps its identity through normalizer and auto-create guard', () => 
   assert.equal(slug, name);
   assert.deepEqual(checkModelIdentity(name, slug), { ok: true, reasons: [] });
 });
+
+test('Pacific midnight uses daylight saving offset for summer introductory periods', () => {
+  const cell = '$1.00 through June 30, 2026. $2.00 starting July 1, 2026.';
+  assert.equal(parseGooglePriceCell(cell, new Date('2026-07-01T06:59:59Z')).current, 1);
+  assert.deepEqual(parseGooglePriceCell(cell, new Date('2026-07-01T07:00:00Z')),
+    { current: 2, regular: 2, promoEndsAt: '2026-07-01T07:00:00.000Z' });
+});
