@@ -2,7 +2,7 @@
 
 ## 2026-09-16 initial API-first outreach
 
-Sender: `linguanchen@x2v.co`
+Sender: `service@x2v.co`
 
 | Provider | Recipient | Language | Subject | Status | Sent date | Follow-up date | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
