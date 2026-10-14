@@ -96,6 +96,7 @@ export default function ApiPricingView({
   initialQuery,
   initialFilters,
   stats,
+  copy,
   faqs,
   couponByProvider,
 }: {
@@ -106,6 +107,7 @@ export default function ApiPricingView({
   /** Initial sort/filter state, e.g. from ?sort=context&china=1 deep links. */
   initialFilters?: ApiPricingInitialFilters;
   stats: ApiPricingStats;
+  copy: { heading: string; introduction: string; updatedOn: string | null };
   faqs: FaqItem[];
   /** Active api-scoped coupons keyed by provider slug. */
   couponByProvider: Record<string, CouponOffer[]>;
@@ -251,10 +253,16 @@ export default function ApiPricingView({
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <h1 className="text-3xl font-bold mb-2">{copy.heading}</h1>
           <p className="text-zinc-600 dark:text-zinc-400 mb-6">
-            {t('subtitle')}
+            {copy.introduction}
           </p>
+          {copy.updatedOn && (
+            <p className="mb-6 text-sm text-zinc-500">
+              {isZh ? '价格数据更新于：' : 'Price data updated on: '}
+              <time dateTime={copy.updatedOn}>{copy.updatedOn}</time> (UTC)
+            </p>
+          )}
           <div className="mb-6 flex flex-wrap gap-4 text-sm font-medium">
             <Link href={`/${locale}/guides`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline">
               <BookOpen className="h-4 w-4" />

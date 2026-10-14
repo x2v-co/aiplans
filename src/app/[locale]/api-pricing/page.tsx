@@ -1,7 +1,8 @@
-import { getGroupedProducts } from "@/lib/grouped-products";
+import { getApiPricingSeoData } from "@/lib/pricing-seo-data";
+import { buildApiPricingSeo } from "@/lib/pricing-seo";
 import { getActiveCouponMap } from "@/lib/coupons";
 import { breadcrumbList, faqPage, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
-import { computeApiPricingStats, buildApiPricingFaqs } from "@/lib/api-pricing-copy";
+import { computeApiPricingStats } from "@/lib/api-pricing-copy";
 import ApiPricingView from "./api-pricing-view";
 
 /**
@@ -29,8 +30,8 @@ export default async function ApiPricingPage({
 }) {
   const { locale } = await params;
   const { q, sort, order, china, region, channel } = await searchParams;
-  const [products, couponByProvider] = await Promise.all([
-    getGroupedProducts("llm"),
+  const [{ products, updatedAt }, couponByProvider] = await Promise.all([
+    getApiPricingSeoData(),
     getActiveCouponMap('api'),
   ]);
 
@@ -54,7 +55,8 @@ export default async function ApiPricingPage({
   // Data-driven FAQ + stats, shared between the visible section and the JSON-LD.
   const loc = (locale === "zh" ? "zh" : "en") as Locale;
   const stats = computeApiPricingStats(products);
-  const faqs = buildApiPricingFaqs(stats, loc);
+  const copy = buildApiPricingSeo(products, updatedAt, loc);
+  const faqs = copy.faqs;
 
   const crumbs = breadcrumbList([
     { name: loc === "zh" ? "首页" : "Home", url: `${SITE_URL}/${locale}` },
@@ -90,6 +92,7 @@ export default async function ApiPricingPage({
         initialQuery={q}
         initialFilters={initialFilters}
         stats={stats}
+        copy={copy}
         faqs={faqs}
         couponByProvider={couponByProvider}
       />

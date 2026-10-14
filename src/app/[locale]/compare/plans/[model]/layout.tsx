@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
-import { permanentRedirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { findModelSlugRedirect } from '@/lib/model-slug-redirects';
 import { buildMetadata, type Locale } from '@/lib/seo';
 import { decodeSlugParam } from '@/lib/route-params';
 import { formatModelName } from '@/lib/model-names';
 import { selectIndexablePlanComparisons } from '@/lib/search-indexing';
+import { buildComparisonPricingCopy } from '@/lib/pricing-seo';
+import { getComparisonSeoData } from '@/lib/pricing-seo-data';
 
 export async function generateMetadata({
   params,
@@ -15,10 +17,8 @@ export async function generateMetadata({
   const { locale, model: rawModel } = await params;
   const modelSlug = decodeSlugParam(rawModel);
 
-  const [models, comparable] = await Promise.all([
-    sql<Array<{ name: string }>>`
-      SELECT name FROM models WHERE slug = ${modelSlug} LIMIT 1
-    `,
+  const [data, comparable] = await Promise.all([
+    getComparisonSeoData(modelSlug),
     sql<Array<{
       slug: string;
       released_at: Date | string | null;
@@ -34,12 +34,14 @@ export async function generateMetadata({
       GROUP BY models.id, models.slug, models.released_at, models.updated_at
     `,
   ]);
-  const model = models[0];
-  if (!model) {
+  if (!data) {
     const target = await findModelSlugRedirect(modelSlug);
     if (target) permanentRedirect(`/${locale}/compare/plans/${encodeURIComponent(target)}`);
+    notFound();
   }
-  const modelName = formatModelName(model?.name ?? modelSlug);
+  const modelName = formatModelName(data.model.name);
+  const en = buildComparisonPricingCopy(modelName, data.plans, 'en');
+  const zh = buildComparisonPricingCopy(modelName, data.plans, 'zh');
   // Old releases, operational SKUs, and pages with fewer than two plans still
   // work for existing users, but should not compete with the useful current
   // comparison in search results.
@@ -49,14 +51,8 @@ export async function generateMetadata({
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: `/compare/plans/${modelSlug}`,
-    title: {
-      en: `${modelName} Subscription Plans Compared | aiplans.dev`,
-      zh: `${modelName} 订阅计划对比 | aiplans.dev`,
-    },
-    description: {
-      en: `Side-by-side comparison of every subscription plan that includes ${modelName}. Monthly vs annual pricing, message limits, rate limits, and team/enterprise tiers across OpenAI, Anthropic, Google, Mistral and more.`,
-      zh: `横向对比包含 ${modelName} 的全部订阅计划。月付/年付价格、消息限额、速率限制、团队/企业档位——涵盖 OpenAI、Anthropic、Google、Mistral 等。`,
-    },
+    title: { en: en.title, zh: zh.title },
+    description: { en: en.description, zh: zh.description },
     noindex: !isIndexable,
   });
 }

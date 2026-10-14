@@ -9,6 +9,9 @@ import { buildCompareFaqs } from "./faqs";
 import { decodeSlugParam } from "@/lib/route-params";
 import { formatModelName } from '@/lib/model-names';
 
+// Metadata prices and plan counts are read on each request.
+export const dynamic = 'force-dynamic';
+
 /**
  * Server component. This page used to be a client component that fetched
  * `/api/compare/plans` from the browser, which meant crawlers got an empty

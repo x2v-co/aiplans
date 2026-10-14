@@ -28,6 +28,10 @@ import SiteHeader from '@/components/SiteHeader';
 import { CouponBadge } from '@/components/coupon-badge';
 import { getActiveCouponMap } from '@/lib/coupons';
 import { guideForProviderSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
+import { buildProviderPricingCopy } from '@/lib/pricing-seo';
+import { getProviderSeoPlans } from '@/lib/pricing-seo-data';
+
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -36,8 +40,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, slug: rawProvider } = await params;
   const providerSlug = decodeSlugParam(rawProvider);
-  const [provider] = await sql<Array<Pick<ProviderRecord, 'name'>>>`
-    SELECT name
+  const [provider] = await sql<Array<Pick<ProviderRecord, 'id' | 'name'>>>`
+    SELECT id, name
     FROM providers
     WHERE slug = ${providerSlug}
     LIMIT 1
@@ -48,15 +52,14 @@ export async function generateMetadata({
   // first, which turns the page's own notFound() into a 200 soft 404.
   if (!provider) notFound();
   const providerName = provider.name ?? providerSlug;
-  const [en, zh] = await Promise.all([
-    getTranslations({ locale: 'en', namespace: 'providerPage' }),
-    getTranslations({ locale: 'zh', namespace: 'providerPage' }),
-  ]);
+  const plans = await getProviderSeoPlans(provider.id);
+  const en = buildProviderPricingCopy(providerName, plans, 'en');
+  const zh = buildProviderPricingCopy(providerName, plans, 'zh');
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: `/providers/${encodeURIComponent(providerSlug)}`,
-    title: { en: en('metaTitle', { name: providerName }), zh: zh('metaTitle', { name: providerName }) },
-    description: { en: en('metaDescription', { name: providerName }), zh: zh('metaDescription', { name: providerName }) },
+    title: { en: en.title, zh: zh.title },
+    description: { en: en.description, zh: zh.description },
   });
 }
 
@@ -512,5 +515,3 @@ export default async function ProviderPage({
   );
 }
 
-// Resolve scheduled API rates on every request.
-export const dynamic = 'force-dynamic';

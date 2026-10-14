@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { buildMetadata, type Locale } from '@/lib/seo';
+import { buildApiPricingSeo } from '@/lib/pricing-seo';
+import { getApiPricingSeoData } from '@/lib/pricing-seo-data';
 
 /**
  * Route-level metadata (canonical/hreflang/OG) for /api-pricing.
@@ -17,17 +19,14 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const { products, updatedAt } = await getApiPricingSeoData();
+  const en = buildApiPricingSeo(products, updatedAt, 'en');
+  const zh = buildApiPricingSeo(products, updatedAt, 'zh');
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: '/api-pricing',
-    title: {
-      en: 'API Pricing Comparison · Cheapest AI API Channels | aiplans.dev',
-      zh: 'API 价格对比 · 最便宜的 AI API 渠道汇总 | aiplans.dev',
-    },
-    description: {
-      en: 'Compare GPT-4o, Claude, DeepSeek, Gemini, Qwen API pricing across official providers, Azure, AWS Bedrock, OpenRouter, SiliconFlow and more. Updated daily with audited data.',
-      zh: '对比 GPT-4o、Claude、DeepSeek、Gemini、通义千问等 API 价格在官方渠道、Azure、AWS Bedrock、OpenRouter、硅基流动等的差异。每日更新，数据经过准确性审计。',
-    },
+    title: { en: en.title, zh: zh.title },
+    description: { en: en.description, zh: zh.description },
   });
 }
 

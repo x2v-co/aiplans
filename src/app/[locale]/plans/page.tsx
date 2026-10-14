@@ -9,6 +9,10 @@ import { CouponBadge } from "@/components/coupon-badge";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 import SiteHeader from '@/components/SiteHeader';
+import { buildPlansIndexPricingCopy } from '@/lib/pricing-seo';
+import { getPlansSeoProviders } from '@/lib/pricing-seo-data';
+
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -16,17 +20,14 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const providers = await getPlansSeoProviders();
+  const en = buildPlansIndexPricingCopy(providers, 'en');
+  const zh = buildPlansIndexPricingCopy(providers, 'zh');
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: '/plans',
-    title: {
-      en: 'AI Subscription Plans by Provider | aiplans.dev',
-      zh: 'AI 服务供应商订阅套餐总览 | aiplans.dev',
-    },
-    description: {
-      en: 'Browse all subscription plans from OpenAI, Anthropic, Google, Mistral, MiniMax, Moonshot Kimi, Zhipu GLM and more. Pricing audited daily.',
-      zh: '浏览 OpenAI、Anthropic、Google、Mistral、MiniMax、Kimi、智谱 GLM 等所有 AI 服务订阅套餐。价格每日审计。',
-    },
+    title: { en: en.title, zh: zh.title },
+    description: { en: en.description, zh: zh.description },
   });
 }
 
@@ -52,6 +53,7 @@ export default async function PlansIndexPage({
   ]);
 
   const isZh = locale === 'zh';
+  const copy = buildPlansIndexPricingCopy(providers, isZh ? 'zh' : 'en');
 
   // Structured data: breadcrumb + ItemList of providers
   const breadcrumbJson = breadcrumbList([
@@ -80,12 +82,10 @@ export default async function PlansIndexPage({
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">
-            {isZh ? '📋 所有供应商订阅计划' : '📋 All Provider Subscription Plans'}
+            {copy.title}
           </h1>
           <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-8">
-            {isZh
-              ? '浏览所有 AI 服务供应商的订阅套餐，找到最适合你的方案'
-              : 'Browse subscription plans from all AI service providers and find the best fit for you'}
+            {copy.description}
           </p>
           <Link
             href={`/${locale}/submit-provider`}
