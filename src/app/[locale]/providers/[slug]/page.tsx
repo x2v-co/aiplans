@@ -15,7 +15,7 @@ import { groupPlansByKind, planKindDescription, planKindIcon, planKindLabel } fr
 import { describeEconomics, planEconomics, type EconomicPlan } from "@/lib/plan-economics";
 import { PlanRate } from "@/components/plan-rate";
 import { PlanCoverage } from "@/components/plan-coverage";
-import { buildMetadata, breadcrumbList, productOffer, faqPage, SITE_URL, type Locale } from "@/lib/seo";
+import { buildMetadata, breadcrumbList, priceItemList, faqPage, SITE_URL, type Locale } from "@/lib/seo";
 import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
 import { getTranslations } from 'next-intl/server';
 import { getGroupedProducts } from '@/lib/grouped-products';
@@ -137,34 +137,33 @@ export default async function ProviderPage({
   const economicsFor = (plan: EconomicPlan) =>
     describeEconomics(planEconomics(plan, (slug) => planBySlug.get(slug)), locale);
 
-  // Structured data: breadcrumb + Product/Offer per plan
+  // Structured data: breadcrumb + ItemList of Offers (one per plan)
   const isZh = locale === 'zh';
   const breadcrumbJson = breadcrumbList([
     { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
     { name: provider.name, url: `${SITE_URL}/${locale}/providers/${providerSlug}` },
   ]);
-  const planJsonLdItems = plans
+  // This page is a plan comparison, so plans go out as one ItemList of Offers
+  // (itemOffered: Service), not one Product per plan. A Product here made
+  // Search Console ask for aggregateRating/review, which we do not have and
+  // will not invent.
+  const pricedPlans = plans
     // Contact-sales rows are omitted rather than emitted with a price.
-    // They store price=0 to mean "no public price", and productOffer
-    // serialises both 0 and null as "0" -- so including them told search
-    // engines that ChatGPT Enterprise and Claude Enterprise are free.
-    .filter(p => p.price != null && !p.is_contact_sales)
-    .map(p => productOffer({
+    // They store price=0 to mean "no public price", so including them would
+    // tell search engines that ChatGPT Enterprise and Claude Enterprise are free.
+    .filter(p => p.price != null && !p.is_contact_sales);
+  const planListJson = pricedPlans.length === 0 ? null : priceItemList(
+    isZh ? `${provider.name} 套餐价格` : `${provider.name} plan pricing`,
+    pricedPlans.map((p, i) => ({
+      position: i + 1,
       name: `${provider.name} ${p.name}`,
-      price: p.price ?? null,
+      price: p.price as number | string,
       currency: p.currency ?? currency,
-      // Google requires Product.image, and it was missing site-wide. This
-      // route's opengraph-image.tsx already renders a real 1200x630 card and
-      // its extensionless URL serves image/png. The provider icons in
-      // public/providers/ are mostly .ico, which Google does not accept.
-      image: `${SITE_URL}/${locale}/providers/${providerSlug}/opengraph-image`,
-      // Stands in for the GTIN/MPN we will never have — these are
-      // subscriptions, not retail goods with a barcode.
-      brand: provider.name,
+      seller: provider.name,
       url: `${SITE_URL}/${locale}/providers/${providerSlug}#${p.slug}`,
       description: p.notes ?? `${provider.name} ${p.name} subscription plan`,
-      category: 'AI Subscription',
-    }));
+    })),
+  );
 
   // Data-driven summary + FAQ for GEO. Built from the same plan rows the page
   // already renders — no invented facts. The visible FAQ and the FAQPage
@@ -200,9 +199,9 @@ export default async function ProviderPage({
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJson }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage(providerCopy.faqs) }} />
-      {planJsonLdItems.map((ld, i) => (
-        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />
-      ))}
+      {planListJson && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: planListJson }} />
+      )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: providerOrganization(provider, locale) }} />
       <SiteHeader locale={locale} />
 

@@ -144,6 +144,22 @@ interface OfferInput {
 }
 
 /**
+ * `Offer.priceValidUntil` for prices we republish from vendor pages.
+ *
+ * Google's Product snippet report flags offers without it. We never know the
+ * vendor's real expiry, so this is a short rolling window rather than a claim
+ * about the vendor's terms: every page that emits offers is force-dynamic, so
+ * the date is recomputed on each request and is always in the future. Do not
+ * stretch it — a long window would assert the price holds for longer than we
+ * can vouch for. Returns an ISO 8601 date (YYYY-MM-DD).
+ */
+export const PRICE_VALID_DAYS = 30;
+export function priceValidUntil(now: Date = new Date(), days: number = PRICE_VALID_DAYS): string {
+  const d = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
  * Build a Product JSON-LD for a single subscription / API plan.
  * Use price=null for contact-sales plans.
  *
@@ -182,6 +198,7 @@ export function productOffer(input: OfferInput): string {
     offer.price = String(input.price);
   }
   if (input.url) offer.url = input.url;
+  offer.priceValidUntil = priceValidUntil();
 
   return jsonLd({
     '@type': 'Product',
@@ -200,6 +217,9 @@ interface PriceListItem {
   url: string;
   price: number | string;
   currency?: string;
+  /** Vendor name; rendered as the offer's seller. */
+  seller?: string;
+  description?: string;
 }
 
 /**
@@ -247,10 +267,16 @@ export function pickOfferCurrency(currencies: string[]): string | null {
 }
 
 /**
- * Build an ItemList JSON-LD for a price comparison table.
- * Used on /api-pricing and /plans pages.
+ * Build an ItemList of Offers for a plan / price comparison table.
+ *
+ * Each list item is an `Offer` whose `itemOffered` is a `Service`, not a
+ * `Product`. A comparison page is a list of priced plans, not a product page,
+ * and a nested `Product` is what makes Search Console demand
+ * `aggregateRating`/`review` — which we don't have and must never invent.
+ * Used on /providers/[slug].
  */
 export function priceItemList(name: string, items: PriceListItem[]): string {
+  const validUntil = priceValidUntil();
   return jsonLd({
     '@type': 'ItemList',
     name,
@@ -259,13 +285,19 @@ export function priceItemList(name: string, items: PriceListItem[]): string {
       '@type': 'ListItem',
       position: it.position,
       item: {
-        '@type': 'Product',
+        '@type': 'Offer',
         name: it.name,
         url: it.url,
-        offers: {
-          '@type': 'Offer',
-          priceCurrency: it.currency ?? 'USD',
-          price: String(it.price),
+        priceCurrency: it.currency ?? 'USD',
+        price: String(it.price),
+        priceValidUntil: validUntil,
+        availability: 'https://schema.org/InStock',
+        ...(it.seller ? { seller: { '@type': 'Organization', name: it.seller } } : {}),
+        itemOffered: {
+          '@type': 'Service',
+          name: it.name,
+          ...(it.description ? { description: it.description } : {}),
+          ...(it.seller ? { provider: { '@type': 'Organization', name: it.seller } } : {}),
         },
       },
     })),

@@ -2,7 +2,7 @@ import { CURRENCY_INFO, type CurrencyCode } from './currency';
 import { convertToUSD } from './currency-conversion';
 import { effectivePrice, type ScheduledChannelPrice } from './effective-price';
 import { modelAliases } from './model-aliases';
-import { pickOfferCurrency, SITE_URL, type Locale } from './seo';
+import { pickOfferCurrency, priceValidUntil, SITE_URL, type Locale } from './seo';
 
 export interface PricingChannel extends ScheduledChannelPrice {
   id?: number;
@@ -62,6 +62,7 @@ export function buildModelPricingSeo(
   const offerCurrency = pickOfferCurrency(pricedChannels.map(row => row.currency || 'USD'));
   const offerChannels = pricedChannels.filter(row => (row.currency || 'USD') === offerCurrency);
   const prices = offerChannels.map(row => row.input_price_per_1m!);
+  const offerValidUntil = priceValidUntil();
   const aggregateOffer = offerCurrency == null ? undefined : {
     '@type': 'AggregateOffer', priceCurrency: offerCurrency,
     lowPrice: String(Math.min(...prices)), highPrice: String(Math.max(...prices)), offerCount: prices.length,
@@ -72,6 +73,7 @@ export function buildModelPricingSeo(
         price: String(row.input_price_per_1m), unitText: 'per 1M input tokens' },
       availability: 'https://schema.org/InStock',
       url: `${SITE_URL}/${locale}/models/${encodeURIComponent(model.slug)}`,
+      priceValidUntil: offerValidUntil,
       ...(row.providers?.name ? { seller: { '@type': 'Organization', name: row.providers.name,
         url: row.providers.website ?? undefined } } : {}),
       category: row.providers?.type ?? undefined,

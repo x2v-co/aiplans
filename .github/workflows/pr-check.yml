@@ -27,7 +27,7 @@ jobs:
       - name: Type-check
         run: npx tsc --noEmit
       - name: Pricing guide tests
-        run: npx tsx --test src/lib/pricing-guides.test.ts src/lib/analytics.test.ts scripts/utils/model-identity-guard.test.ts scripts/data/verified-2026-10-openrouter-cached.test.ts scripts/scrapers/openrouter.test.ts scripts/scrapers/aws-bedrock-dynamic.test.ts
+        run: npx tsx --test src/lib/seo-offers.test.ts src/lib/pricing-guides.test.ts src/lib/analytics.test.ts scripts/utils/model-identity-guard.test.ts scripts/data/verified-2026-10-openrouter-cached.test.ts scripts/scrapers/openrouter.test.ts scripts/scrapers/aws-bedrock-dynamic.test.ts
       - name: Model shutdown tests
         run: npx tsx --test src/lib/model-shutdown.test.ts scripts/data/openai-shutdowns.test.ts
       - name: Build
