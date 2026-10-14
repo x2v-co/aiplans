@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { classifyOpenRouterPricing, generateOpenRouterSlug, scrapeOpenRouter, openRouterProducerSlug } from './openrouter';
+import { LFM_OPENROUTER_ID, LFM_SLUG } from '../data/lfm2-5-24b-a2b';
 import { parseMistralPriceCell } from './mistral-dynamic';
 
 test('OpenRouter slug generation uses canonical Argon base and batch identities', () => {
@@ -145,4 +146,39 @@ test('DeepSeek window normalization is scoped to StreamLake endpoints and unambi
     assert.ok(!buildOpenRouterVariants(model, headline(), endpoints)[0].deepseekWindow);
   }
   assert.ok(!buildOpenRouterVariants({ ...model, id: 'other/model' }, headline(), [streamlake])[0].deepseekWindow);
+});
+
+test('OpenRouter ingests Liquid text prices and endpoints with the exact seeded slug', async t => {
+  const listing = {
+    id: LFM_OPENROUTER_ID, canonical_slug: `${LFM_OPENROUTER_ID}-20261012`,
+    name: 'LiquidAI: LFM2.5-24B-A2B', context_length: 128_000,
+    created: 1791912025,
+    architecture: { modality: 'text->text', output_modalities: ['text'] },
+    pricing: { prompt: '0.00000005', completion: '0.0000007', input_cache_read: '0.000000025' },
+  };
+  const requested: string[] = [];
+  t.mock.method(globalThis, 'fetch', async (url: string) => {
+    requested.push(url);
+    if (url === 'https://openrouter.ai/api/v1/models') return Response.json({ data: [listing] });
+    assert.equal(url, `https://openrouter.ai/api/v1/models/${LFM_OPENROUTER_ID}/endpoints`);
+    return Response.json({ data: { ...listing, endpoints: [{
+      provider_name: 'Liquid', name: 'Liquid', status: 0,
+      context_length: 128_000, pricing: listing.pricing,
+    }] } });
+  });
+  const result = await scrapeOpenRouter();
+  assert.equal(result.success, true);
+  assert.equal(result.prices.length, 1);
+  const price = result.prices[0];
+  assert.equal(price.modelSlug, LFM_SLUG);
+  assert.equal(price.modelName, 'LFM2.5-24B-A2B');
+  assert.equal(price.contextWindow, 128_000);
+  assert.equal(price.releasedAt?.slice(0, 10), '2026-10-13');
+  assert.ok(Math.abs(price.inputPricePer1M - 0.05) < 1e-9);
+  assert.ok(Math.abs(price.outputPricePer1M - 0.7) < 1e-9);
+  assert.ok(Math.abs((price.cachedInputPricePer1M ?? 0) - 0.025) < 1e-9);
+  assert.equal(result.variants?.length, 2);
+  assert.ok(result.variants?.every(variant => variant.modelSlug === LFM_SLUG));
+  assert.equal(result.variants?.find(variant => variant.variantKind === 'upstream_provider')?.sourceGroupName, 'Liquid');
+  assert.equal(requested.length, 2);
 });
