@@ -71,6 +71,10 @@ Both fix scripts support `--dry-run`.
 
 Re-run any time; all steps use `IF NOT EXISTS` / no-op guards.
 
+The Gemini introductory-price migration and Argon seed are documented in
+[`docs/gemini-4-argon.md`](../docs/gemini-4-argon.md), including rollout order,
+field-level dry-run output, the Pacific cutoff assumption, and operator commands.
+
 ## Arena leaderboard
 
 `ingest-arena-leaderboard.ts` reads the live Chatbot Arena Agent leaderboard
