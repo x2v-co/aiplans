@@ -36,7 +36,7 @@
   },
   "src/app/[locale]/models/[slug]/page.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 21
+      "count": 20
     }
   },
   "src/app/[locale]/plans/[provider]/opengraph-image.tsx": {

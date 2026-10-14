@@ -1,4 +1,4 @@
-import { effectivePrice, introductoryEndDate, isIntroductoryPriceActive, type PriceSchedule } from '@/lib/effective-price';
+import { effectivePrice, introductoryEndDate, isIntroductoryPriceActive } from '@/lib/effective-price';
 import { getTranslations } from 'next-intl/server';
 import Link from "next/link";
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
@@ -24,7 +24,7 @@ import {
   planKindIcon,
   planKindLabel,
 } from "@/lib/plan-kinds";
-import { buildMetadata, breadcrumbList, jsonLd, pickOfferCurrency, faqPage, SITE_URL, type Locale } from "@/lib/seo";
+import { buildMetadata, breadcrumbList, jsonLd, faqPage, SITE_URL, type Locale } from "@/lib/seo";
 import { buildModelCopy } from "@/lib/model-copy";
 import PriceHistoryChart, { type PriceHistoryPoint } from "@/components/price-history-chart";
 import { decodeSlugParam } from "@/lib/route-params";
@@ -41,7 +41,8 @@ import { getCodingAgentRowsForModel } from '@/lib/coding-agents';
 import { PlanCoverage } from '@/components/plan-coverage';
 import type { PlanCoverageFields } from '@/lib/third-party-coverage';
 
-const baseUrl = SITE_URL;
+import { buildModelPricingSeo, type PricingChannel } from '@/lib/model-pricing-seo';
+import ModelPricingSummary from '@/components/model-pricing-summary';
 
 /** The columns the plan cards read out of the `plans` query below. */
 interface PlanRow extends PlanCoverageFields {
@@ -78,8 +79,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   // status — crawlers get a 200 with an empty skeleton (a soft 404). Verified:
   // with `[locale]/loading.tsx` present every unknown slug returned 200; with
   // it removed and this check here they return 404 + the not-found UI.
-  const [product] = await sql<Array<{ id: number; name: string }>>`
-    SELECT id, name FROM models WHERE slug = ${slug} LIMIT 1
+  const [product] = await sql<Array<{ id: number; name: string; updated_at: Date | null }>>`
+    SELECT id, name, updated_at FROM models WHERE slug = ${slug} LIMIT 1
   `;
   if (!product) {
     const target = await findModelSlugRedirect(slug);
@@ -88,42 +89,25 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   }
   const productName = formatModelName(product.name || slug);
 
-  // A few real facts make the SERP snippet specific instead of a generic
-  // template repeated across 400+ model pages: how many channels, and the
-  // cheapest USD-normalised input price. Cheap one-row aggregate.
-  const statsRows = await sql<Array<PriceSchedule & { input_price_per_1m: number | null; currency: string | null }>>`
-    SELECT cp.* FROM api_channel_prices cp
+  const statsRows = await sql<PricingChannel[]>`
+    SELECT cp.*, jsonb_build_object('name', p.name, 'type', p.type) AS providers
+    FROM api_channel_prices cp JOIN providers p ON p.id = cp.provider_id
     WHERE cp.model_id = ${product.id} AND cp.is_available = true
   `;
-  const now = new Date();
-  const statsPrices = statsRows.map(cp => effectivePrice(cp, now));
-  const channelCount = statsPrices.length;
-  const usdPrices = statsPrices.filter(cp => cp.input_price_per_1m != null && cp.input_price_per_1m > 0)
-    .map(cp => convertToUSD(cp.input_price_per_1m!, (cp.currency || 'USD') as CurrencyCode));
-  const cheapestUsd = usdPrices.length ? Math.min(...usdPrices) : null;
-  const cheapestLabel =
-    cheapestUsd != null && Number.isFinite(cheapestUsd) && cheapestUsd > 0
-      ? `$${cheapestUsd < 1 ? cheapestUsd.toFixed(3) : cheapestUsd.toFixed(2)}/1M tokens`
-      : null;
-
-  const enDesc =
-    `Compare ${productName} API pricing${cheapestLabel ? ` from ${cheapestLabel}` : ''} across ${
-      channelCount || 'all available'
-    } channels — official, Azure, AWS Bedrock, Vertex AI, OpenRouter, SiliconFlow and more. Find the cheapest ${productName} provider, with subscription plans and daily-updated, audited prices.`;
-  const zhDesc =
-    `对比 ${productName} 在${channelCount || '全部'}个 API 渠道的价格${
-      cheapestLabel ? `（低至 ${cheapestLabel}）` : ''
-    }：官方、Azure、AWS Bedrock、Vertex AI、OpenRouter、硅基流动等，含订阅套餐。每日更新、数据经审计。`;
-
-  return buildMetadata({
-    locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
-    path: `/models/${slug}`,
-    title: {
-      en: `${productName} API Price Comparison · All Channels | aiplans.dev`,
-      zh: `${productName} API 价格对比 · 各渠道价格 | aiplans.dev`,
-    },
-    description: { en: enDesc, zh: zhDesc },
-  });
+  const pricing = buildModelPricingSeo({ ...product, name: productName, slug }, statsRows,
+    locale === 'zh' ? 'zh' : 'en');
+  return {
+    ...buildMetadata({
+      locale: locale === 'zh' ? 'zh' : 'en',
+      path: `/models/${slug}`,
+      title: {
+        en: `${productName} API Pricing / Price per 1M tokens | aiplans.dev`,
+        zh: `${productName} 价格 / 多少钱 / API 定价 | aiplans.dev`,
+      },
+      description: { en: pricing.description, zh: pricing.description },
+    }),
+    keywords: [productName, ...pricing.aliases],
+  };
 }
 
 // Channel type labels
@@ -149,7 +133,7 @@ async function getProductWithChannels(slug: string) {
   // Get model with provider info
   const [model] = await sql<any[]>`
     SELECT id, name, slug, type, description, context_window, max_output_tokens,
-           provider_ids, released_at, created_at
+           provider_ids, released_at, created_at, updated_at
     FROM models
     WHERE slug = ${slug}
     LIMIT 1
@@ -380,6 +364,8 @@ export default async function ModelPage({
   const now = new Date();
   const productName = formatModelName(product.name);
   const guideSlug = guideForModelSlug(product.slug);
+  const pricing = buildModelPricingSeo({ ...product, name: productName }, channelPrices,
+    isZh ? 'zh' : 'en', now);
 
   // Plans can come from several providers (a bundled plan may include
   // third-party models), so normalize to USD before ordering — otherwise a
@@ -430,7 +416,7 @@ export default async function ModelPage({
     const bUsd = b.input_price_per_1m == null ? Infinity : convertToUSD(Number(b.input_price_per_1m), channelCurrency(b));
     return aUsd - bUsd;
   });
-  const cheapestChannel = sortedChannelPrices[0];
+  const cheapestChannel = pricing.cheapest && sortedChannelPrices.find(cp => cp.id === pricing.cheapest!.id);
 
   const officialHistoryProviderSlugs: string[] = [...new Set(
     sortedChannelPrices
@@ -458,63 +444,11 @@ export default async function ModelPage({
     (locale === 'zh' ? 'zh' : 'en') as Locale,
   );
 
-  // JSON-LD: Product + AggregateOffer + BreadcrumbList
-  // AggregateOffer packages the channel input_price_per_1m figures so Google can
-  // show a price range in the SERP snippet.
-  //
-  // It carries a single priceCurrency, and channels are stored in whatever the
-  // vendor publishes, so we quote the model in its dominant channel currency
-  // (see pickOfferCurrency) and restrict both the aggregate and the per-channel
-  // Offer[] to that one currency. Restricting both matters: this used to filter
-  // the aggregate to USD but not the nested offers, so a ¥ Offer sat inside a
-  // priceCurrency:"USD" AggregateOffer.
-  const pricedChannels = (channelPrices as any[]).filter(
-    (cp) => typeof cp.input_price_per_1m === 'number' && cp.input_price_per_1m > 0,
-  );
-  const offerCurrency = pickOfferCurrency(pricedChannels.map((cp) => cp.currency ?? 'USD'));
-  const offerChannels = pricedChannels.filter((cp) => (cp.currency ?? 'USD') === offerCurrency);
-  const offerPrices = offerChannels
-    .map((cp) => cp.input_price_per_1m as number)
-    .sort((a, b) => a - b);
-
-  // Build individual Offer entries per channel. AggregateOffer alone can't
-  // tell Google which seller has which price — the per-channel Offer array
-  // is what lets the SERP show "OpenAI $2.50 / SiliconFlow $1.08 / Azure
-  // $2.50" style breakdown.
-  const individualOffers = offerChannels.map((cp) => ({
-    '@type': 'Offer',
-    priceCurrency: offerCurrency,
-    price: String(cp.input_price_per_1m),
-    priceSpecification: {
-      '@type': 'UnitPriceSpecification',
-      priceCurrency: offerCurrency,
-      price: String(cp.input_price_per_1m),
-      unitText: 'per 1M input tokens',
-    },
-    availability: cp.is_available !== false
-      ? 'https://schema.org/InStock'
-      : 'https://schema.org/Discontinued',
-    seller: cp.providers?.name
-      ? {
-          '@type': 'Organization',
-          name: cp.providers.name,
-          url: cp.providers.website ?? undefined,
-        }
-      : undefined,
-    url: `${baseUrl}/${locale}/models/${product.slug}`,
-    category: cp.providers?.type ?? undefined,
-  }));
-
-  // No priced channel means there is no offer to advertise, and a Product with
-  // no offers/review/aggregateRating is exactly what Search Console rejects
-  // ("应指定 offers、review 或 aggregateRating"). Emit no Product at all in that
-  // case rather than an empty shell — the breadcrumb still ships below.
-  //
-  // Don't reach for aggregateRating to satisfy the one-of-three rule: we have no
-  // ratings, and the Arena ELO below is not a 1-5 rating scale.
-  const productJsonLd = offerCurrency == null ? null : jsonLd({
+  // Extend the existing Product and FAQPage rather than emitting duplicate schemas.
+  const productJsonLd = !pricing.aggregateOffer ? null : jsonLd({
     '@type': 'Product',
     name: productName,
+    alternateName: pricing.aliases,
     description: product.description ?? `${productName} — ${product.context_window?.toLocaleString() ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
     // Required by Google, and missing site-wide until now. The route's own
     // opengraph-image.tsx already renders a real 1200x630 card for this model,
@@ -524,19 +458,7 @@ export default async function ModelPage({
       ? { '@type': 'Brand', name: product.providers.name }
       : undefined,
     category: 'AI Model API',
-    offers: {
-      '@type': 'AggregateOffer',
-      priceCurrency: offerCurrency,
-      lowPrice: String(offerPrices[0]),
-      highPrice: String(offerPrices[offerPrices.length - 1]),
-      offerCount: offerPrices.length,
-      priceSpecification: {
-        '@type': 'UnitPriceSpecification',
-        priceCurrency: offerCurrency,
-        unitText: 'per 1M input tokens',
-      },
-      offers: individualOffers,
-    },
+    offers: pricing.aggregateOffer,
     // Benchmarks remain custom properties, not AggregateRating: they use
     // different scales and are evaluation results rather than user ratings.
     ...(benchmarkScores.length > 0
@@ -579,10 +501,10 @@ export default async function ModelPage({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd }} />
       )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
-      {modelCopy.faqs.length > 0 && (
+      {pricing.faqs.length > 0 && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: faqPage(modelCopy.faqs) }}
+          dangerouslySetInnerHTML={{ __html: faqPage(pricing.faqs) }}
         />
       )}
       <SiteHeader locale={locale} />
@@ -610,12 +532,14 @@ export default async function ModelPage({
             )}
             <div>
               <h1 className="text-3xl font-bold flex flex-wrap items-center gap-2">
-                {productName}
+                {pricing.title}
                 <VariantBadges slug={product.slug} locale={locale} />
               </h1>
-              <p className="text-zinc-600">{product.providers?.name} • API Price Comparison</p>
+              <p className="text-zinc-600">{product.providers?.name} • {isZh ? 'API 定价对比' : 'API Price Comparison'}</p>
             </div>
           </div>
+          <p className="mb-3 text-sm text-zinc-500">{isZh ? '也称' : 'Also known as'}: {pricing.aliases.join(' · ')}</p>
+          <ModelPricingSummary pricing={pricing} locale={locale} now={now} />
           <div className="flex flex-wrap gap-3">
             {product.context_window && (
               <Badge variant="outline" className="text-sm">
@@ -1194,13 +1118,13 @@ export default async function ModelPage({
 
         {/* FAQ — visible mirror of the FAQPage JSON-LD emitted in <head>.
             Direct, factual answers are what answer engines (GEO) extract. */}
-        {modelCopy.faqs.length > 0 && (
+        {pricing.faqs.length > 0 && (
           <section className="mt-8">
             <h2 className="text-2xl font-bold mb-4">
               {isZh ? `关于 ${product.name} 的常见问题` : `Frequently asked questions about ${product.name}`}
             </h2>
             <div className="space-y-4">
-              {modelCopy.faqs.map((faq, idx) => (
+              {pricing.faqs.map((faq, idx) => (
                 <Card key={idx}>
                   <CardContent className="pt-6">
                     <h3 className="font-semibold text-lg mb-2">{faq.question}</h3>

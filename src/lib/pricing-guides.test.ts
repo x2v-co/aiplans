@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+// Keep model pricing coverage in the existing PR-check test entrypoint.
+import './model-pricing-seo.test';
 import {
   PRICING_GUIDES,
   PRICING_GUIDE_SLUGS,
