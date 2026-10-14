@@ -324,5 +324,8 @@
     "github": "GitHub 仓库",
     "methodology": "每日从官方定价页面和已验证渠道审计价格。",
     "copyright": "© x2v"
+  },
+  "modelPricing": {
+    "introductoryPrice": "入门价截至 {date}（太平洋时间），之后 {input} / {output} 每百万 token"
   }
 }

@@ -96,3 +96,6 @@ export default async function ApiPricingPage({
     </>
   );
 }
+
+// Scheduled API prices are resolved on each request.
+export const dynamic = 'force-dynamic';

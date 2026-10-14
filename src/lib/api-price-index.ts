@@ -1,10 +1,11 @@
+import { effectivePrice, type PriceSchedule } from '@/lib/effective-price';
 import { sql } from '@/lib/db';
 import type { CurrencyCode } from '@/lib/currency';
 import { convertToUSD } from '@/lib/currency-conversion';
 import { isPrimaryModelVariant } from '@/lib/model-freshness';
 import { formatModelName } from '@/lib/model-names';
 
-type CurrentPriceRow = {
+type CurrentPriceRow = PriceSchedule & {
   model_id: number;
   model_name: string;
   model_slug: string;
@@ -79,7 +80,9 @@ export async function getPriceIndexSnapshot(): Promise<PriceIndexSnapshot> {
       SELECT m.id AS model_id, m.name AS model_name, m.slug AS model_slug,
              p.name AS provider_name, p.slug AS provider_slug,
              cp.input_price_per_1m AS input_price,
-             cp.output_price_per_1m AS output_price, cp.currency
+             cp.output_price_per_1m AS output_price,
+             cp.promo_ends_at, cp.regular_input_price_per_1m,
+             cp.regular_output_price_per_1m, cp.regular_cached_input_price_per_1m, cp.currency
       FROM models m
       JOIN api_channel_prices cp ON cp.model_id = m.id AND cp.is_available = true
       JOIN providers p ON p.id = cp.provider_id
@@ -110,7 +113,11 @@ export async function getPriceIndexSnapshot(): Promise<PriceIndexSnapshot> {
   ]);
 
   const cheapestByModel = new Map<number, CurrentPriceRow & { inputUsd: number }>();
-  for (const row of currentPrices) {
+  const now = new Date();
+  for (const rawRow of currentPrices) {
+    const price = effectivePrice({ ...rawRow, input_price_per_1m: rawRow.input_price,
+      output_price_per_1m: rawRow.output_price }, now);
+    const row = { ...rawRow, input_price: price.input_price_per_1m, output_price: price.output_price_per_1m };
     if (!isPrimaryModelVariant(row.model_slug)) continue;
     const currency = (row.currency || 'USD') as CurrencyCode;
     const inputUsd = convertToUSD(Number(row.input_price), currency);

@@ -324,5 +324,8 @@
     "github": "GitHub repository",
     "methodology": "Prices audited daily from official provider pages and verified channels.",
     "copyright": "© x2v"
+  },
+  "modelPricing": {
+    "introductoryPrice": "Introductory price until {date} (Pacific time), then {input} / {output} per 1M"
   }
 }

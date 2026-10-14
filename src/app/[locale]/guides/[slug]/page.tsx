@@ -330,3 +330,6 @@ export default async function PricingGuidePage({
     </div>
   );
 }
+
+// Scheduled API prices are resolved on each request.
+export const dynamic = 'force-dynamic';

@@ -1,9 +1,10 @@
+import { effectivePrice, priceSnapshotExpiresAt, type PriceSchedule } from '../src/lib/effective-price';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { sql } from '../src/lib/db';
 import { canonicalJson } from '../src/lib/planprice-v1-snapshot';
 
-type PriceRow = {
+type PriceRow = PriceSchedule & {
   channel_price_id: number;
   model_id: number;
   model_slug: string;
@@ -27,7 +28,7 @@ type FxRow = { to_currency: string; rate: number | string; source: string; valid
 
 const now = new Date();
 const generatedAt = now.toISOString();
-const expiresAt = new Date(now.getTime() + 6 * 60 * 60 * 1000).toISOString();
+const nominalExpiry = new Date(now.getTime() + 6 * 60 * 60 * 1000);
 const fxMaxAgeHours = Number(process.env.PLANPRICE_FX_MAX_AGE_HOURS ?? 30);
 const snapshotPath = process.env.PLANPRICE_V1_SNAPSHOT_PATH ?? '/var/lib/planprice/snapshots/current.json';
 const snapshotDir = process.env.PLANPRICE_V1_SNAPSHOT_DIR ?? snapshotPath.replace(/\/[^/]+$/, '');
@@ -106,13 +107,15 @@ const prices = await sql<PriceRow[]>`
          m.context_window AS model_context_window, m.capabilities AS model_capabilities,
          c.provider_id, p.slug AS provider_slug, p.region AS provider_region,
          p.pricing_url, p.website, c.input_price_per_1m, c.output_price_per_1m,
-         c.cached_input_price_per_1m, c.currency, c.is_available, c.last_verified
+         c.cached_input_price_per_1m, c.promo_ends_at, c.regular_input_price_per_1m,
+         c.regular_output_price_per_1m, c.regular_cached_input_price_per_1m, c.currency, c.is_available, c.last_verified
   FROM api_channel_prices c
   JOIN models m ON m.id = c.model_id
   JOIN providers p ON p.id = c.provider_id
   WHERE c.is_available = true
   ORDER BY c.id
 `;
+const expiresAt = priceSnapshotExpiresAt(prices, nominalExpiry, now);
 const fxRows = await sql<FxRow[]>`
   SELECT DISTINCT ON (to_currency) to_currency, rate, source, valid_at, updated_at
   FROM exchange_rates
@@ -135,7 +138,12 @@ const quotes = fxRows.flatMap((row) => {
   }];
 });
 
-const offerings = prices.map((row) => {
+const offerings = prices.map((rawRow) => {
+  const row = effectivePrice({ ...rawRow,
+    input_price_per_1m: rawRow.input_price_per_1m == null ? null : Number(rawRow.input_price_per_1m),
+    output_price_per_1m: rawRow.output_price_per_1m == null ? null : Number(rawRow.output_price_per_1m),
+    cached_input_price_per_1m: rawRow.cached_input_price_per_1m == null ? null : Number(rawRow.cached_input_price_per_1m),
+  }, now);
   const currency = (row.currency || 'USD').toUpperCase();
   const input = asString(row.input_price_per_1m);
   const output = asString(row.output_price_per_1m);

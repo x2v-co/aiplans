@@ -1,3 +1,4 @@
+import { effectivePrice, type PriceSchedule } from '@/lib/effective-price';
 import { sql, TEXT_ARRAY } from '@/lib/db';
 import { convertToUSD } from '@/lib/currency-conversion';
 import type { CurrencyCode } from '@/lib/currency';
@@ -623,7 +624,7 @@ export function guideForProviderSlug(providerSlug: string): PricingGuideSlug | n
   ) ?? null;
 }
 
-type PriceRow = {
+type PriceRow = PriceSchedule & {
   model_id: number;
   model_name: string;
   model_slug: string;
@@ -666,7 +667,9 @@ export async function getPricingGuideModels(guide: PricingGuide): Promise<GuideM
     SELECT m.id AS model_id, m.name AS model_name, m.slug AS model_slug,
            m.released_at, p.name AS provider_name, p.slug AS provider_slug,
            p.type AS provider_type, cp.input_price_per_1m AS input_price,
-           cp.output_price_per_1m AS output_price, cp.currency, cp.last_verified
+           cp.output_price_per_1m AS output_price,
+             cp.promo_ends_at, cp.regular_input_price_per_1m,
+             cp.regular_output_price_per_1m, cp.regular_cached_input_price_per_1m, cp.currency, cp.last_verified
     FROM models m
     JOIN api_channel_prices cp ON cp.model_id = m.id AND cp.is_available = true
     JOIN providers p ON p.id = cp.provider_id
@@ -684,9 +687,12 @@ export async function getPricingGuideModels(guide: PricingGuide): Promise<GuideM
   return summarizeGuidePrices(rows);
 }
 
-export function summarizeGuidePrices(rows: PriceRow[]): GuideModelPrice[] {
+export function summarizeGuidePrices(rows: PriceRow[], now = new Date()): GuideModelPrice[] {
   const grouped = new Map<number, PriceRow[]>();
-  for (const row of rows) {
+  for (const rawRow of rows) {
+    const price = effectivePrice({ ...rawRow, input_price_per_1m: rawRow.input_price,
+      output_price_per_1m: rawRow.output_price }, now);
+    const row = { ...rawRow, input_price: price.input_price_per_1m, output_price: price.output_price_per_1m };
     const current = grouped.get(row.model_id) ?? [];
     current.push(row);
     grouped.set(row.model_id, current);

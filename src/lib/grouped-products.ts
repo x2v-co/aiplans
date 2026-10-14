@@ -1,3 +1,4 @@
+import { effectivePrice, type PriceSchedule } from '@/lib/effective-price';
 import { sql } from '@/lib/db';
 import { attachPrimaryProvidersToModels } from '@/lib/schema-adapters';
 import type { CurrencyCode, PriceUnit } from '@/lib/currency';
@@ -29,7 +30,7 @@ export interface ChannelPriceVariant {
   constraints_json?: Record<string, unknown> | null;
 }
 
-export interface ChannelPrice {
+export interface ChannelPrice extends PriceSchedule {
   id: number;
   model_id: number;
   provider_id: number;
@@ -142,6 +143,10 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
         cp.input_price_per_1m,
         cp.output_price_per_1m,
         cp.cached_input_price_per_1m,
+        cp.promo_ends_at,
+        cp.regular_input_price_per_1m,
+        cp.regular_output_price_per_1m,
+        cp.regular_cached_input_price_per_1m,
         cp.currency,
         cp.price_unit,
         cp.rate_limit,
@@ -206,6 +211,8 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
     `,
   ]);
 
+  const now = new Date();
+  const effectiveChannelPrices = channelPrices.map(cp => effectivePrice(cp, now));
   const products = await attachPrimaryProvidersToModels(modelsData as any[]);
 
   // Create benchmark map: model_id -> highest value (for arena elo)
@@ -260,7 +267,7 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
       variant ? variantOf(product.slug)!.parent : product.slug,
     ).toLowerCase();
 
-    let productPrices = channelPrices.filter(cp => cp.model_id === product.id)
+    let productPrices = effectiveChannelPrices.filter(cp => cp.model_id === product.id)
       .map(cp => ({
         ...cp,
         model_slug: slugById.get(cp.model_id) ?? product.slug,

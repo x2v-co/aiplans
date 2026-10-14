@@ -1,3 +1,5 @@
+import { effectivePrice, introductoryEndDate, isIntroductoryPriceActive, type PriceSchedule } from '@/lib/effective-price';
+import { getTranslations } from 'next-intl/server';
 import Link from "next/link";
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 import { notFound, permanentRedirect } from "next/navigation";
@@ -89,23 +91,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   // A few real facts make the SERP snippet specific instead of a generic
   // template repeated across 400+ model pages: how many channels, and the
   // cheapest USD-normalised input price. Cheap one-row aggregate.
-  const [stats] = await sql<Array<{ channel_count: number; cheapest_usd: number | null }>>`
-    SELECT count(*)::int AS channel_count,
-           min(
-             CASE WHEN cp.input_price_per_1m > 0
-               THEN cp.input_price_per_1m /
-                    CASE upper(coalesce(cp.currency,'USD'))
-                      WHEN 'CNY' THEN 6.90 WHEN 'EUR' THEN 0.92
-                      WHEN 'GBP' THEN 0.79 WHEN 'JPY' THEN 149.5
-                      WHEN 'KRW' THEN 1320 WHEN 'SGD' THEN 1.35
-                      ELSE 1 END
-             END
-           ) AS cheapest_usd
-      FROM api_channel_prices cp
-     WHERE cp.model_id = ${product.id} AND cp.is_available = true
+  const statsRows = await sql<Array<PriceSchedule & { input_price_per_1m: number | null; currency: string | null }>>`
+    SELECT cp.* FROM api_channel_prices cp
+    WHERE cp.model_id = ${product.id} AND cp.is_available = true
   `;
-  const channelCount = stats?.channel_count ?? 0;
-  const cheapestUsd = stats?.cheapest_usd;
+  const now = new Date();
+  const statsPrices = statsRows.map(cp => effectivePrice(cp, now));
+  const channelCount = statsPrices.length;
+  const usdPrices = statsPrices.filter(cp => cp.input_price_per_1m != null && cp.input_price_per_1m > 0)
+    .map(cp => convertToUSD(cp.input_price_per_1m!, (cp.currency || 'USD') as CurrencyCode));
+  const cheapestUsd = usdPrices.length ? Math.min(...usdPrices) : null;
   const cheapestLabel =
     cheapestUsd != null && Number.isFinite(cheapestUsd) && cheapestUsd > 0
       ? `$${cheapestUsd < 1 ? cheapestUsd.toFixed(3) : cheapestUsd.toFixed(2)}/1M tokens`
@@ -166,7 +161,7 @@ async function getProductWithChannels(slug: string) {
   const modelProvider = modelProviders.get(model.id) || null;
 
   // Get API channel prices
-  const normalizedChannelPrices = await sql<any[]>`
+  const rawChannelPrices = await sql<any[]>`
     SELECT
       cp.*,
       COALESCE((
@@ -207,6 +202,9 @@ async function getProductWithChannels(slug: string) {
     WHERE cp.model_id = ${model.id} AND cp.is_available = true
     ORDER BY cp.input_price_per_1m ASC NULLS LAST
   `;
+
+  const now = new Date();
+  const normalizedChannelPrices = rawChannelPrices.map(cp => effectivePrice(cp, now));
 
   // Related models from the same producer (provider_ids[1] is the primary
   // producer in our data). Internal links distribute crawl equity and give
@@ -378,6 +376,8 @@ export default async function ModelPage({
   // nothing for the vast majority of models that AA has not evaluated.
   const codingAgentRows = await getCodingAgentRowsForModel(product.id);
   const isZh = locale === 'zh';
+  const promoMessages = await getTranslations({ locale, namespace: 'modelPricing' });
+  const now = new Date();
   const productName = formatModelName(product.name);
   const guideSlug = guideForModelSlug(product.slug);
 
@@ -1002,6 +1002,15 @@ export default async function ModelPage({
                               <Badge variant="outline" className="text-xs">🏢 Official</Badge>
                             )}
                           </div>
+                          {isIntroductoryPriceActive(cp, now) && cp.regular_input_price_per_1m != null && cp.regular_output_price_per_1m != null && (
+                            <p className="mt-1 text-xs font-normal text-zinc-500">
+                              {promoMessages('introductoryPrice', {
+                                date: introductoryEndDate(cp.promo_ends_at, locale),
+                                input: new Intl.NumberFormat(locale, { style: 'currency', currency: channelCurrency(cp), minimumFractionDigits: 0 }).format(cp.regular_input_price_per_1m),
+                                output: new Intl.NumberFormat(locale, { style: 'currency', currency: channelCurrency(cp), minimumFractionDigits: 0 }).format(cp.regular_output_price_per_1m),
+                              })}
+                            </p>
+                          )}
                         </TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${channelTypeLabels[cp.providers.type]?.color || 'bg-gray-100'}`}>
@@ -1240,3 +1249,6 @@ export default async function ModelPage({
     </div>
   );
 }
+
+// Scheduled API prices are resolved on each request.
+export const dynamic = 'force-dynamic';

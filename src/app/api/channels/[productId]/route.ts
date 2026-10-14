@@ -1,3 +1,4 @@
+import { effectivePrice } from '@/lib/effective-price';
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { getPrimaryProvidersForModels, getProvidersByIds } from '@/lib/schema-adapters';
@@ -11,7 +12,7 @@ export async function GET(
     const { productId } = await params;
     const productIdNum = parseInt(productId);
 
-    const data = await sql<any[]>`
+    const rawPrices = await sql<any[]>`
       SELECT
         cp.*,
         COALESCE((
@@ -57,6 +58,10 @@ export async function GET(
         AND cp.is_available = true
       ORDER BY cp.input_price_per_1m ASC NULLS LAST
     `;
+
+    const now = new Date();
+    const data = rawPrices.map(cp => effectivePrice(cp, now))
+      .sort((a, b) => (a.input_price_per_1m ?? Infinity) - (b.input_price_per_1m ?? Infinity));
 
     // If we have data, fetch the model's official providers separately
     if (data && data.length > 0 && data[0].models) {

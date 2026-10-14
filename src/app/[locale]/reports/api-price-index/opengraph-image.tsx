@@ -57,3 +57,6 @@ export default async function Image({
     size,
   );
 }
+
+// Scheduled API prices are resolved on each request.
+export const dynamic = 'force-dynamic';

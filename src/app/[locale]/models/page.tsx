@@ -194,3 +194,6 @@ export default async function ModelsCatalogPage({ params }: { params: Promise<{ 
     </div>
   );
 }
+
+// Scheduled API prices are resolved on each request.
+export const dynamic = 'force-dynamic';

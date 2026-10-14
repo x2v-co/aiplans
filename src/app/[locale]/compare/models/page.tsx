@@ -60,3 +60,6 @@ export default async function CompareModelsPage({
     </>
   );
 }
+
+// Scheduled API prices are resolved on each request.
+export const dynamic = 'force-dynamic';

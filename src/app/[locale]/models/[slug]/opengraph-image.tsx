@@ -1,3 +1,4 @@
+import { effectivePrice } from '@/lib/effective-price';
 import { ImageResponse } from 'next/og';
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og-template';
 import { sql } from '@/lib/db';
@@ -45,7 +46,7 @@ export default async function Image({
   // Compute min USD price across the model's channels
   const [modelChannels, arena] = await Promise.all([
     sql<any[]>`
-      SELECT input_price_per_1m, currency
+      SELECT input_price_per_1m, currency, promo_ends_at, regular_input_price_per_1m
       FROM api_channel_prices
       WHERE model_id = ${model.id} AND is_available = true
     `,
@@ -58,7 +59,8 @@ export default async function Image({
       LIMIT 1
     `,
   ]);
-  const usdPrices = modelChannels
+  const now = new Date();
+  const usdPrices = modelChannels.map(c => effectivePrice(c, now))
     .filter((c: any) => (c.currency ?? 'USD') === 'USD' && typeof c.input_price_per_1m === 'number' && c.input_price_per_1m > 0)
     .map((c: any) => c.input_price_per_1m as number)
     .sort((a: number, b: number) => a - b);
@@ -97,3 +99,6 @@ export default async function Image({
     size,
   );
 }
+
+// Scheduled API prices are resolved on each request.
+export const dynamic = 'force-dynamic';

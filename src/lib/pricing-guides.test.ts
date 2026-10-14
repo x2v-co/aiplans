@@ -222,3 +222,13 @@ test('OpenAI family: SQL patterns and internal links share one definition', () =
     assert.notEqual(guideForModelSlug(slug), 'openai-api-pricing', slug);
   }
 });
+
+test('guide examples and cheapest selection use scheduled regular prices after introductory expiry', () => {
+  const prices = [row({ provider_slug: 'google', input_price: 2, output_price: 10,
+    promo_ends_at: '2026-12-01T08:00:00Z', regular_input_price_per_1m: 4, regular_output_price_per_1m: 20 }),
+    row({ provider_slug: 'other', input_price: 3, output_price: 15 })];
+  assert.equal(summarizeGuidePrices(prices, new Date('2026-12-01T07:59:59Z'))[0].cheapest.providerSlug, 'google');
+  const after = summarizeGuidePrices(prices, new Date('2026-12-01T08:00:00Z'))[0];
+  assert.equal(after.cheapest.providerSlug, 'other');
+  assert.equal(after.exampleCostUsd, 6.75);
+});

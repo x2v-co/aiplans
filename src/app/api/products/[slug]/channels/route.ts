@@ -1,3 +1,4 @@
+import { effectivePrice } from '@/lib/effective-price';
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { getPrimaryProvidersForModels } from '@/lib/schema-adapters';
@@ -24,7 +25,7 @@ export async function GET(
     };
 
     // 获取该模型在所有渠道的价格
-    const channelPrices = await sql<any[]>`
+    const rawPrices = await sql<any[]>`
       SELECT
         cp.*,
         COALESCE((
@@ -65,6 +66,10 @@ export async function GET(
         AND cp.is_available = true
       ORDER BY cp.input_price_per_1m ASC NULLS LAST
     `;
+
+    const now = new Date();
+    const channelPrices = rawPrices.map(cp => effectivePrice(cp, now))
+      .sort((a, b) => (a.input_price_per_1m ?? Infinity) - (b.input_price_per_1m ?? Infinity));
 
     // 计算价格对比数据
     const enrichedPrices = channelPrices.map((cp: any) => {
