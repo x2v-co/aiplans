@@ -22,8 +22,10 @@ export default function Footer({ locale }: { locale: string }) {
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link href={`/${locale}`} className="flex items-center gap-2 mb-3">
-              <span className="text-2xl">💰</span>
-              <span className="text-lg font-bold">aiplans.dev</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/lockup.svg" alt="aiplans" width={113} height={36} className="h-9 w-auto dark:hidden" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/lockup-dark.svg" alt="aiplans" width={113} height={36} className="hidden h-9 w-auto dark:block" />
             </Link>
             <p className="text-sm text-zinc-500 max-w-xs">{t('tagline')}</p>
           </div>

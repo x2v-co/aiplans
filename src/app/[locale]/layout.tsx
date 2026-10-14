@@ -93,10 +93,11 @@ export async function generateMetadata({
     },
     icons: {
       icon: [
-        { url: '/favicon.ico', sizes: 'any' },
-        { url: '/logo.png', type: 'image/png' },
+        { url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+        { url: '/favicon.svg', type: 'image/svg+xml' },
+        { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
       ],
-      apple: '/logo.png',
+      apple: { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     },
     openGraph: {
       type: 'website',
@@ -162,7 +163,7 @@ async function LocaleLayoutContent({
               name: 'aiplans.dev',
               alternateName: isZh ? 'AI Plans 价格对比' : 'AI Plans',
               url: SITE_URL,
-              logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo.png` },
+              logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo.png`, width: 300, height: 300 },
               description: isZh
                 ? '全网最专业的 AI 价格对比平台'
                 : 'The most comprehensive AI pricing comparison platform',
@@ -205,7 +206,7 @@ async function LocaleLayoutContent({
                 '@type': 'Organization',
                 name: 'aiplans.dev',
                 url: SITE_URL,
-                logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo.png` },
+                logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo.png`, width: 300, height: 300 },
               },
             }),
           }}

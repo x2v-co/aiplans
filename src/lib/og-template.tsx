@@ -84,7 +84,8 @@ export function ogTemplate(input: OgTemplateInput): React.ReactElement {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ fontSize: '36px' }}>💰</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={OG_LOGO_SRC} width={44} height={44} alt="" />
           <div style={{ fontSize: '28px', fontWeight: 700 }}>aiplans.dev</div>
         </div>
         <div
@@ -175,3 +176,6 @@ export function ogTemplate(input: OgTemplateInput): React.ReactElement {
     </div>
   );
 }
+
+const OG_LOGO_SRC =
+  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3QgeD0iNiIgeT0iMTYiIHdpZHRoPSIxMyIgaGVpZ2h0PSI0MCIgcng9IjMiIGZpbGw9IiM2NDc0OGIiLz48cmVjdCB4PSIyNS41IiB5PSI0MCIgd2lkdGg9IjEzIiBoZWlnaHQ9IjE2IiByeD0iMyIgZmlsbD0iIzI1NjNlYiIvPjxjaXJjbGUgY3g9IjMyLjAiIGN5PSIzMCIgcj0iNi41IiBmaWxsPSIjMjU2M2ViIi8+PHJlY3QgeD0iNDUiIHk9IjI2IiB3aWR0aD0iMTMiIGhlaWdodD0iMzAiIHJ4PSIzIiBmaWxsPSIjNjQ3NDhiIi8+PC9zdmc+';

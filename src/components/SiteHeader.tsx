@@ -160,8 +160,10 @@ export default function SiteHeader({ locale }: { locale: string }) {
     <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur-sm dark:bg-black/90">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href={`/${locale}`} className="flex items-center gap-2" aria-label="aiplans.dev home">
-          <span className="text-2xl" aria-hidden="true">💰</span>
-          <span className="text-xl font-bold">aiplans.dev</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/lockup.svg" alt="aiplans" width={125} height={40} className="h-10 w-auto dark:hidden" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/lockup-dark.svg" alt="aiplans" width={125} height={40} className="hidden h-10 w-auto dark:block" />
         </Link>
 
         <nav className="hidden items-center gap-5 xl:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>

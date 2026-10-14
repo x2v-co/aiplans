@@ -7,7 +7,7 @@ import type { Metadata } from 'next';
 
 export const SITE_URL = 'https://aiplans.dev';
 export const SITE_NAME = 'aiplans.dev';
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/logo.png`;
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-logo.png`;
 
 export type Locale = 'en' | 'zh';
 
