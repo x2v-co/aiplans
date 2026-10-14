@@ -71,3 +71,15 @@ test('GPT-6.1 Sol maps to Plus/Pro/Business/Team/Enterprise only, never batch', 
     assert.deepEqual(slugsFor(plan), [], plan);
   }
 });
+
+test('Google Free and AI Pro do not claim API-first Gemini 4 Argon', () => {
+  const googleModels: SelectableModel[] = [
+    { id: 1, slug: 'gemini-4-argon', providerSlugs: ['google'], elo: null },
+    { id: 2, slug: 'gemini-3.8-flash', providerSlugs: ['google'], elo: null },
+  ];
+  for (const slug of ['gemini-free', 'gemini-advanced']) {
+    const c = CLASSIFICATIONS.find(p => p.providerSlug === 'google' && p.planSlug === slug);
+    assert.ok(c);
+    assert.deepEqual(resolveSelector(c.selector, googleModels, ['google']).models.map(m => m.slug), ['gemini-3.8-flash']);
+  }
+});

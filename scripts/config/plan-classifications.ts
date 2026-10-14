@@ -151,13 +151,13 @@ export const CLASSIFICATIONS: Classification[] = [
 
   // ─ Google — two genuinely separate product lines sold from one account.
   { providerSlug: 'google', planSlug: 'gemini-free', kind: 'chat', line: 'google-one', rank: 0,
-    selector: { families: ['gemini'], current_only: true, exclude: [...GOOGLE_NOISE, '*-pro*'] },
+    selector: { families: ['gemini'], current_only: true, exclude: [...GOOGLE_NOISE, '*-pro*', 'gemini-4-argon'] },
     reason: 'Free tier is Flash-class only; Pro-class models require a paid AI plan' },
   { providerSlug: 'google', planSlug: 'google-ai-plus', kind: 'chat', line: 'google-one', rank: 1,
     selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
     reason: 'AI Plus is the entry paid tier with the full Gemini chat catalog at lower quota' },
   { providerSlug: 'google', planSlug: 'gemini-advanced', kind: 'chat', line: 'google-one', rank: 2,
-    selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
+    selector: { families: ['gemini'], exclude: [...GOOGLE_NOISE, 'gemini-4-argon'] },
     reason: 'Google AI Pro (formerly Gemini Advanced)' },
   { providerSlug: 'google', planSlug: 'google-ai-ultra', kind: 'chat', line: 'google-one', rank: 3,
     selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
