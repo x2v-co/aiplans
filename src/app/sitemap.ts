@@ -60,14 +60,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       push(`/${locale}${path}`, priority, changefreq);
     }
   }
-  // Dynamic: every provider that actually has plans → /plans/[provider].
-  // The page renders for any existing provider slug, but one with zero plan
-  // rows is a blank lineup — thin content we shouldn't be asking Google to
-  // index. 17 of 29 providers were in that state when this filter was added.
+  // Provider pages have useful content with plans or available API pricing.
   try {
     const providers = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
       SELECT slug, updated_at FROM providers
       WHERE EXISTS (SELECT 1 FROM plans WHERE plans.provider_id = providers.id)
+         OR EXISTS (SELECT 1 FROM api_channel_prices cp WHERE cp.provider_id = providers.id AND cp.is_available = true)
       ORDER BY priority ASC NULLS LAST
     `;
     for (const p of providers) {
@@ -75,7 +73,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const lastMod = p.updated_at ? new Date(p.updated_at) : now;
       for (const locale of LOCALES) {
         urls.push({
-          url: `${BASE_URL}/${locale}/plans/${p.slug}`,
+          url: `${BASE_URL}/${locale}/providers/${p.slug}`,
           lastModified: lastMod,
           changeFrequency: 'weekly',
           priority: 0.8,

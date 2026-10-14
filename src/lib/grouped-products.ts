@@ -80,6 +80,7 @@ export interface GroupedProduct {
     region?: string;
     access_from_china?: boolean;
   };
+  modelCategory?: string | null;
   baseName: string;
   versions: ChannelPrice[];
   hasChinaVersion: boolean;
@@ -126,13 +127,21 @@ export function isCanonicalSlug(slug: string): boolean {
     && !/\d+\.\d+\.\d+$/.test(slug);
 }
 
-export async function getGroupedProducts(type?: string | null): Promise<GroupedProduct[]> {
-  // 获取所有 LLM 产品及其渠道价格
+export async function getGroupedProducts(type?: string | null, providerId?: number): Promise<GroupedProduct[]> {
+  // Without a provider filter, preserve the API-pricing LLM catalog.
+  // Provider pages include every available model category sold by that channel.
   const [modelsData, channelPrices, benchmarkScores] = await Promise.all([
     sql<any[]>`
-      SELECT id, name, slug, provider_ids, context_window, released_at, created_at
+      SELECT id, name, slug, provider_ids, model_category, context_window, released_at, created_at
       FROM models
-      WHERE type = ${type || 'llm'}
+      WHERE (
+        (${providerId ?? null}::int IS NULL AND type = ${type || 'llm'})
+        OR (${providerId ?? null}::int IS NOT NULL AND EXISTS (
+          SELECT 1 FROM api_channel_prices cp
+          WHERE cp.model_id = models.id AND cp.provider_id = ${providerId ?? null}
+            AND cp.is_available = true
+        ))
+      )
       ORDER BY name
     `,
     sql<any[]>`
@@ -188,6 +197,7 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
       FROM api_channel_prices cp
       JOIN providers p ON p.id = cp.provider_id
       WHERE cp.is_available = true
+        AND (${providerId ?? null}::int IS NULL OR cp.provider_id = ${providerId ?? null})
     `,
     // Fetch all current scores with their complete identity. Keeping benchmark,
     // version, task and metric together prevents unlike evaluation runs from
@@ -303,6 +313,7 @@ export async function getGroupedProducts(type?: string | null): Promise<GroupedP
         released_at: product.released_at ?? null,
         created_at: product.created_at ?? null,
         providers: displayProvider,
+        modelCategory: product.model_category,
         baseName,
         versions: productPrices as ChannelPrice[],
         hasChinaVersion,

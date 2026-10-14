@@ -44,8 +44,8 @@ test('classifies guide → model and guide → plan clicks', () => {
     { kind: 'guide_target', targetType: 'model', targetSlug: 'gpt-5', targetPath: '/en/models/gpt-5' },
   );
   assert.deepEqual(
-    classifyTrackedLink('/zh/plans/openai', 'https://aiplans.dev', '/zh/guides/openai-api-pricing'),
-    { kind: 'guide_target', targetType: 'plan', targetSlug: 'openai', targetPath: '/zh/plans/openai' },
+    classifyTrackedLink('/zh/providers/openai', 'https://aiplans.dev', '/zh/guides/openai-api-pricing'),
+    { kind: 'guide_target', targetType: 'plan', targetSlug: 'openai', targetPath: '/zh/providers/openai' },
   );
 });
 

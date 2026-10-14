@@ -146,7 +146,7 @@ planprice.ai 比价维度， **需要结合benchmark**
 /api-pricing                → API Token 价格总表（核心 SEO 页面）
 /plans/chatgpt              → ChatGPT 全部 Plan 详解
 /plans/claude               → Claude 全部 Plan 详解
-/plans/deepseek             → DeepSeek 套餐详解
+/providers/deepseek         → DeepSeek 套餐详解
 /compare/chatgpt-vs-claude  → 订阅 Plan 对比
 /compare/api/gpt4o-vs-claude-sonnet  → API 价格对比
 /channels/claude-sonnet     → Claude Sonnet 各渠道价格对比

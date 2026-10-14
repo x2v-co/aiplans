@@ -131,7 +131,7 @@ export default function GlobalSearch({
       .slice(0, LIMITS.plan)
       .map<Result>(({ item, score }) => ({
         kind: 'plan',
-        href: `/${locale}/plans/${item.providerSlug}`,
+        href: `/${locale}/providers/${item.providerSlug}`,
         title: item.name,
         subtitle: item.providerName,
         score,
@@ -141,7 +141,7 @@ export default function GlobalSearch({
       .slice(0, LIMITS.provider)
       .map<Result>(({ item, score }) => ({
         kind: 'provider',
-        href: `/${locale}/plans/${item.slug}`,
+        href: `/${locale}/providers/${item.slug}`,
         title: item.name,
         score,
       }));

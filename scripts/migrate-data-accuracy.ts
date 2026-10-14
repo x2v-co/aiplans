@@ -898,6 +898,10 @@ const MIGRATIONS: Migration[] = [
     name: '029_add_api_channel_introductory_prices',
     sql: readFileSync(new URL('../drizzle/0002_api_channel_introductory_prices.sql', import.meta.url), 'utf8'),
   },
+  {
+    name: 'provider_console_url',
+    sql: readFileSync(new URL('../drizzle/0004_provider_console_url.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 async function main() {

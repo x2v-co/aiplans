@@ -101,6 +101,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const isPlansActive =
     pathname?.startsWith(`/${locale}/compare/plans`) ||
     pathname?.startsWith(`/${locale}/plans`) ||
+    pathname?.startsWith(`/${locale}/providers/`) ||
     pathname?.startsWith(`/${locale}/submit-provider`) ||
     pathname?.startsWith(`/${locale}/agents`) ||
     pathname?.startsWith(`/${locale}/creative-plans`);

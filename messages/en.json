@@ -1,4 +1,26 @@
 {
+  "providerPage": {
+    "metaTitle": "{name}: API Models, Pricing & Subscription Plans | aiplans.dev",
+    "metaDescription": "Explore {name}, its official website and API resources. Compare available model API prices, subscription plans, monthly and annual billing, and model access.",
+    "back": "Home",
+    "website": "Official website",
+    "api": "API",
+    "apiDocs": "API documentation",
+    "pricing": "Pricing page",
+    "console": "Developer console",
+    "apiModels": "Available API models and prices",
+    "noApiModels": "No API pricing data available for this provider yet.",
+    "plans": "Subscription plans",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "models": "Models",
+    "model": "Model",
+    "inputPrice": "Input",
+    "outputPrice": "Output",
+    "cachedInputPrice": "Cached input",
+    "introductoryUntil": "Introductory price through {date}",
+    "priceVariants": "View price variants"
+  },
   "nav": {
     "home": "Home",
     "plans": "All Plans",

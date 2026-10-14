@@ -13,7 +13,7 @@
  * side by side must group by kind first.
  *
  * Labels live here rather than in messages/*.json because every page that
- * renders plans (/[locale]/plans/[provider], /[locale]/compare/plans/[model],
+ * renders plans (/[locale]/providers/[slug], /[locale]/compare/plans/[model],
  * /[locale]/models/[slug]) is a server component, and this repo's
  * `useTranslations` is a React context hook that only works in client
  * components. Those pages localize with an `isZh` ternary, so that is the idiom

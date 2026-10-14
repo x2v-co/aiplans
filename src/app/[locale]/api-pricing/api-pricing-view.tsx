@@ -462,7 +462,7 @@ export default function ApiPricingView({
                           </div>
                           <p className="text-sm text-zinc-600 dark:text-zinc-400">
                             {product.providers?.slug ? (
-                              <Link href={`/${locale}/plans/${product.providers.slug}`} className="hover:text-blue-600 hover:underline">
+                              <Link href={`/${locale}/providers/${product.providers.slug}`} className="hover:text-blue-600 hover:underline">
                                 {product.providers.name}
                               </Link>
                             ) : (

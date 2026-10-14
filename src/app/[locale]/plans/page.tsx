@@ -65,7 +65,7 @@ export default async function PlansIndexPage({
     itemListElement: providers.slice(0, 50).map((p, i) => ({
       '@type': 'ListItem',
       position: i + 1,
-      url: `${SITE_URL}/${locale}/plans/${p.slug}`,
+      url: `${SITE_URL}/${locale}/providers/${p.slug}`,
       name: p.name,
     })),
   });
@@ -150,7 +150,7 @@ export default async function PlansIndexPage({
                             size="xs"
                           />
                           <Link
-                            href={`/${locale}/plans/${provider.slug}`}
+                            href={`/${locale}/providers/${provider.slug}`}
                             className="text-blue-600 text-sm font-medium flex items-center gap-1 shrink-0"
                           >
                             {isZh ? '查看详情' : 'View Plans'} <ArrowRight className="w-4 h-4" />

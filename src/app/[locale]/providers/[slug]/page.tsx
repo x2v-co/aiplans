@@ -17,6 +17,12 @@ import { PlanRate } from "@/components/plan-rate";
 import { PlanCoverage } from "@/components/plan-coverage";
 import { buildMetadata, breadcrumbList, productOffer, faqPage, SITE_URL, type Locale } from "@/lib/seo";
 import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
+import { getTranslations } from 'next-intl/server';
+import { getGroupedProducts } from '@/lib/grouped-products';
+import { ProviderApiModels } from '@/components/provider-api-models';
+import { ProviderOutboundLink } from '@/components/provider-outbound-link';
+import { providerOrganization, providerModelPath } from '@/lib/provider-page';
+import type { ProviderRecord, ProviderPlanRecord, ProviderModelRecord } from '@/lib/provider-page';
 import { decodeSlugParam } from "@/lib/route-params";
 import SiteHeader from '@/components/SiteHeader';
 import { CouponBadge } from '@/components/coupon-badge';
@@ -26,12 +32,12 @@ import { guideForProviderSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string; provider: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { locale, provider: rawProvider } = await params;
+  const { locale, slug: rawProvider } = await params;
   const providerSlug = decodeSlugParam(rawProvider);
-  const [provider] = await sql<any[]>`
-    SELECT name, description, region
+  const [provider] = await sql<Array<Pick<ProviderRecord, 'name'>>>`
+    SELECT name
     FROM providers
     WHERE slug = ${providerSlug}
     LIMIT 1
@@ -42,31 +48,20 @@ export async function generateMetadata({
   // first, which turns the page's own notFound() into a 200 soft 404.
   if (!provider) notFound();
   const providerName = provider.name ?? providerSlug;
+  const [en, zh] = await Promise.all([
+    getTranslations({ locale: 'en', namespace: 'providerPage' }),
+    getTranslations({ locale: 'zh', namespace: 'providerPage' }),
+  ]);
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
-    path: `/plans/${providerSlug}`,
-    title: {
-      en: `${providerName} Subscription Plans & API Pricing | aiplans.dev`,
-      zh: `${providerName} 订阅套餐与 API 价格 | aiplans.dev`,
-    },
-    description: {
-      en: `Compare every ${providerName} subscription tier — free, pro, team, enterprise — including monthly + annual pricing, model access, rate limits and regional availability. Verified daily.`,
-      zh: `对比 ${providerName} 全部订阅档位（免费/Pro/团队/企业），含月付/年付价格、模型权限、速率限制和区域可用性。每日审计。`,
-    },
+    path: `/providers/${encodeURIComponent(providerSlug)}`,
+    title: { en: en('metaTitle', { name: providerName }), zh: zh('metaTitle', { name: providerName }) },
+    description: { en: en('metaDescription', { name: providerName }), zh: zh('metaDescription', { name: providerName }) },
   });
 }
 
-// Provider info map
-const providerInfo: Record<string, { name: string; logo: string; description: string }> = {
-  openai: { name: "OpenAI", logo: "🤖", description: "Creators of GPT-4, DALL-E, and more" },
-  anthropic: { name: "Anthropic", logo: "🧠", description: "AI safety company behind Claude" },
-  deepseek: { name: "DeepSeek", logo: "🔮", description: "Chinese AI company with open-source models" },
-  google: { name: "Google", logo: "🌐", description: "Google Cloud AI with Gemini models" },
-  meta: { name: "Meta", logo: "🦙", description: "Llama open-source models" },
-};
-
 async function getPlansByProvider(providerSlug: string) {
-  const [provider] = await sql<any[]>`
+  const [provider] = await sql<ProviderRecord[]>`
     SELECT * FROM providers WHERE slug = ${providerSlug} LIMIT 1
   `;
 
@@ -76,7 +71,7 @@ async function getPlansByProvider(providerSlug: string) {
   // interleaves lines -- a ¥20 coding plan landing between two chat tiers reads
   // as the cheap end of the chat line, which it is not. tier_rank carries the
   // vendor's own Lite/Pro/Max progression, so price is only the tiebreaker.
-  const plans = await sql<any[]>`
+  const plans = await sql<ProviderPlanRecord[]>`
     SELECT * FROM plans
     WHERE provider_id = ${provider.id}
     ORDER BY plan_kind, plan_line NULLS LAST, tier_rank NULLS LAST, price ASC NULLS LAST
@@ -84,9 +79,9 @@ async function getPlansByProvider(providerSlug: string) {
 
   const planIds = plans.map(p => p.id);
   const modelIds = await getAllModelIdsForProvider(provider.id, planIds);
-  const uniqueModels: any[] = modelIds.length > 0
-    ? [...await sql<any[]>`
-        SELECT id, name, slug, provider_ids
+  const uniqueModels: ProviderModelRecord[] = modelIds.length > 0
+    ? [...await sql<ProviderModelRecord[]>`
+        SELECT id, name, slug, model_category
         FROM models
         WHERE id = ANY(${sql.array(modelIds, INT4_ARRAY)})
       `]
@@ -95,14 +90,14 @@ async function getPlansByProvider(providerSlug: string) {
   return { provider, models: uniqueModels, plans };
 }
 
-export default async function ProviderPlansPage({
+export default async function ProviderPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ locale: string; provider: string }>;
+  params: Promise<{ locale: string; slug: string }>;
   searchParams: Promise<{ period?: string }>;
 }) {
-  const { locale, provider: rawProvider } = await params;
+  const { locale, slug: rawProvider } = await params;
   const providerSlug = decodeSlugParam(rawProvider);
   const { period } = await searchParams;
   const showYearly = period === 'yearly';
@@ -116,8 +111,11 @@ export default async function ProviderPlansPage({
   }
 
   const { provider, models, plans } = data;
+  const [apiModels, t] = await Promise.all([
+    getGroupedProducts(null, provider.id),
+    getTranslations({ locale, namespace: 'providerPage' }),
+  ]);
   const providerCoupons = couponByProvider[providerSlug] ?? [];
-  const providerData = providerInfo[providerSlug] || { name: provider.name, description: "" };
   const guideSlug = guideForProviderSlug(providerSlug);
   const claimIssueUrl = `https://github.com/x2v-co/aiplans/issues/new?template=provider-listing.yml&title=${encodeURIComponent(`Provider listing: ${provider.name}`)}&provider_name=${encodeURIComponent(provider.name)}&website_url=${encodeURIComponent(provider.website || provider.pricing_url || '')}`;
   const updateMailHref = `mailto:contact@aiplans.dev?subject=${encodeURIComponent(`Provider update: ${provider.name}`)}`;
@@ -140,8 +138,7 @@ export default async function ProviderPlansPage({
   const isZh = locale === 'zh';
   const breadcrumbJson = breadcrumbList([
     { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
-    { name: isZh ? '套餐总览' : 'Plans', url: `${SITE_URL}/${locale}/plans` },
-    { name: provider.name, url: `${SITE_URL}/${locale}/plans/${providerSlug}` },
+    { name: provider.name, url: `${SITE_URL}/${locale}/providers/${providerSlug}` },
   ]);
   const planJsonLdItems = plans
     // Contact-sales rows are omitted rather than emitted with a price.
@@ -157,11 +154,11 @@ export default async function ProviderPlansPage({
       // route's opengraph-image.tsx already renders a real 1200x630 card and
       // its extensionless URL serves image/png. The provider icons in
       // public/providers/ are mostly .ico, which Google does not accept.
-      image: `${SITE_URL}/${locale}/plans/${providerSlug}/opengraph-image`,
+      image: `${SITE_URL}/${locale}/providers/${providerSlug}/opengraph-image`,
       // Stands in for the GTIN/MPN we will never have — these are
       // subscriptions, not retail goods with a barcode.
       brand: provider.name,
-      url: `${SITE_URL}/${locale}/plans/${providerSlug}#${p.slug}`,
+      url: `${SITE_URL}/${locale}/providers/${providerSlug}#${p.slug}`,
       description: p.notes ?? `${provider.name} ${p.name} subscription plan`,
       category: 'AI Subscription',
     }));
@@ -203,6 +200,7 @@ export default async function ProviderPlansPage({
       {planJsonLdItems.map((ld, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />
       ))}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: providerOrganization(provider, locale) }} />
       <SiteHeader locale={locale} />
 
       {/* Main Content */}
@@ -210,7 +208,7 @@ export default async function ProviderPlansPage({
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
           <Link href={`/${locale}`} className="flex items-center gap-1 hover:text-blue-600">
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {t('back')}
           </Link>
         </div>
 
@@ -221,11 +219,14 @@ export default async function ProviderPlansPage({
               {getProviderLogoSrc(provider) ? (
                   <Image src={getProviderLogoSrc(provider)!} alt={provider.name} width={64} height={64} className="w-16 h-16 object-contain" unoptimized />
                 ) : (
-                  <span className="text-5xl">{getProviderLogoFallback(provider, providerInfo[providerSlug]?.logo || "🏢")}</span>
+                  <span className="text-5xl">{getProviderLogoFallback(provider)}</span>
                 )}
               <div>
-                <h1 className="text-3xl font-bold">{providerData.name} Plans</h1>
-                <p className="text-zinc-600">{providerData.description}</p>
+                <h1 className="text-3xl font-bold">{provider.name}</h1>
+                {provider.description && <p className="mt-2 max-w-3xl text-zinc-600 dark:text-zinc-400">{provider.description}</p>}
+                <div className="mt-3">
+                  <ProviderOutboundLink url={provider.website} providerSlug={providerSlug} locale={locale} label={t('website')} />
+                </div>
                 <p className="text-zinc-700 dark:text-zinc-300 mt-2 max-w-3xl leading-relaxed">
                   {providerCopy.summary}
                 </p>
@@ -236,25 +237,28 @@ export default async function ProviderPlansPage({
                 )}
               </div>
             </div>
-            {/* Period Toggle */}
-            <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
-              <Link
-                href={`/${locale}/plans/${providerSlug}`}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  !showYearly ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'text-zinc-500'
-                }`}
-              >
-                Monthly
-              </Link>
-              <Link
-                href={`/${locale}/plans/${providerSlug}?period=yearly`}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  showYearly ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'text-zinc-500'
-                }`}
-              >
-                Yearly
-              </Link>
-            </div>
+          </div>
+        </div>
+
+        <section aria-labelledby="provider-api-heading" className="mb-10">
+          <h2 id="provider-api-heading" className="mb-4 text-2xl font-bold">{t('api')}</h2>
+          <div className="mb-5 flex flex-wrap gap-4">
+            <ProviderOutboundLink url={provider.api_docs_url} providerSlug={providerSlug} locale={locale} label={t('apiDocs')} />
+            <ProviderOutboundLink url={provider.pricing_url} providerSlug={providerSlug} locale={locale} label={t('pricing')} />
+            <ProviderOutboundLink url={provider.console_url} providerSlug={providerSlug} locale={locale} label={t('console')} />
+          </div>
+          <ProviderApiModels products={apiModels} locale={locale} />
+        </section>
+
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <h2 className="text-2xl font-bold">{t('plans')}</h2>
+          <div className="flex items-center gap-2 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+            <Link href={`/${locale}/providers/${providerSlug}`} className={`rounded-md px-4 py-2 text-sm font-medium ${!showYearly ? 'bg-white shadow-sm dark:bg-zinc-700' : 'text-zinc-500'}`}>
+              {t('monthly')}
+            </Link>
+            <Link href={`/${locale}/providers/${providerSlug}?period=yearly`} className={`rounded-md px-4 py-2 text-sm font-medium ${showYearly ? 'bg-white shadow-sm dark:bg-zinc-700' : 'text-zinc-500'}`}>
+              {t('yearly')}
+            </Link>
           </div>
         </div>
 
@@ -279,7 +283,7 @@ export default async function ProviderPlansPage({
                 </div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {kindPlans.map((plan) => (
-                <Card key={plan.id} className={plan.tier === 'pro' ? 'border-blue-500' : ''}>
+                <Card key={plan.id} id={plan.slug} className={plan.tier === 'pro' ? 'border-blue-500' : ''}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <CardTitle>{plan.name}</CardTitle>
@@ -333,9 +337,9 @@ export default async function ProviderPlansPage({
                       <PlanRate display={economicsFor(plan as EconomicPlan)} locale={locale} />
                     </div>
 
-                    {plan.features && Array.isArray(plan.features) && (
+                    {Array.isArray(plan.features) && (
                       <ul className="space-y-2 mb-4">
-                        {plan.features.slice(0, 4).map((feature: string, idx: number) => (
+                        {plan.features.filter((feature): feature is string => typeof feature === 'string').slice(0, 4).map((feature, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-sm">
                             <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                             <span>{feature}</span>
@@ -374,7 +378,7 @@ export default async function ProviderPlansPage({
 
                     {(() => {
                       const rawHref = provider.pricing_url || provider.invite_url || provider.website;
-                      const outbound = resolveOutboundLink(rawHref, providerSlug);
+                      const outbound = rawHref ? resolveOutboundLink(rawHref, providerSlug) : null;
                       if (!outbound) return null;
                       const rel = outbound.affiliate
                         ? AFFILIATE_LINK_REL
@@ -433,7 +437,7 @@ export default async function ProviderPlansPage({
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <a
-                href={claimIssueUrl}
+                href={resolveOutboundLink(claimIssueUrl)?.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
@@ -442,7 +446,7 @@ export default async function ProviderPlansPage({
                 {isZh ? '提交更新' : 'Submit update'}
               </a>
               <a
-                href={updateMailHref}
+                href={resolveOutboundLink(updateMailHref)?.href}
                 className="inline-flex items-center justify-center rounded-md border bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
               >
                 {isZh ? '邮件联系' : 'Email us'}
@@ -487,12 +491,12 @@ export default async function ProviderPlansPage({
         {models.length > 0 && (
           <div className="mt-8">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              Models
-              <Badge variant="outline">{models.length} models</Badge>
+              {t('models')}
+              <Badge variant="outline">{models.length}</Badge>
             </h2>
             <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {models.map((model: any) => (
-                <Link key={model.id} href={`/${locale}/models/${model.slug}`}>
+              {models.map((model) => (
+                <Link key={model.id} href={`/${locale}${providerModelPath(model.slug, model.model_category)}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="py-4">
                       <h3 className="font-medium">{model.name}</h3>
@@ -507,3 +511,6 @@ export default async function ProviderPlansPage({
     </div>
   );
 }
+
+// Resolve scheduled API rates on every request.
+export const dynamic = 'force-dynamic';

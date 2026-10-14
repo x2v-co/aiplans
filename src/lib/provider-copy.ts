@@ -1,6 +1,6 @@
 /**
  * Data-driven, localized copy for a provider's plan lineup page
- * (`/[locale]/plans/[provider]`).
+ * (`/[locale]/providers/[slug]`).
  *
  * Like model-copy.ts for model detail pages, these pages are core SEO/GEO
  * landing pages (the sitemap lists every provider that has a plan) but used to

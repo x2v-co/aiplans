@@ -1,3 +1,6 @@
+import { readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { providerRedirects } from './src/lib/provider-redirects';
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
 
@@ -18,11 +21,12 @@ const nextConfig: NextConfig = {
   // gives slightly less fingerprinting info to bots.
   poweredByHeader: false,
 
-  // Cursor plans were folded into xAI's X Subscription (aiplans#87).
+  // Read static plan children so future /plans/* pages stay outside this redirect.
   async redirects() {
-    return [
-      { source: '/:locale(en|zh)/plans/cursor', destination: '/:locale/plans/xai', statusCode: 301 },
-    ];
+    const staticSegments = readdirSync(resolve(process.cwd(), 'src/app/[locale]/plans'), { withFileTypes: true })
+      .filter(entry => entry.isDirectory() && !entry.name.startsWith('[') && !entry.name.startsWith('(') && !entry.name.startsWith('@'))
+      .map(entry => entry.name);
+    return providerRedirects(staticSegments);
   },
 
   // Next.js per-package imports tree-shaking. Without this, importing

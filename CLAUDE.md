@@ -130,7 +130,7 @@ DB_PREPARE                     # optional, defaults to true
 | `/[locale]/api-pricing` | **Core SEO** — API token price comparison across channels |
 | `/[locale]/models/[slug]` | **Core SEO** — one page per model, all channels, Arena ELO |
 | `/[locale]/plans` | All providers with plans (index) |
-| `/[locale]/plans/[provider]` | One provider's full plan lineup |
+| `/[locale]/providers/[slug]` | Provider intro, official resources, API prices and subscription plans (legacy `/plans/[provider]` URLs 301 here) |
 | `/[locale]/compare/plans` | Plan comparison landing + FAQ |
 | `/[locale]/compare/plans/[model]` | All plans that include a specific model |
 | `/[locale]/coding-agents` | Coding Agent Index leaderboard (agent × model, cost/time per task) |
@@ -288,13 +288,13 @@ rows from web ground truth so `/api-pricing` filter "🇨🇳 China" shows them.
   and `/zh` roots get per-locale canonical + Chinese titles
 - Per-route dynamic OG images via `opengraph-image.tsx` (next/og):
   `/[locale]`, `/[locale]/api-pricing`, `/[locale]/models/[slug]`,
-  `/[locale]/plans`, `/[locale]/plans/[provider]`, `/[locale]/compare/plans`,
+  `/[locale]/plans`, `/[locale]/providers/[slug]`, `/[locale]/compare/plans`,
   `/[locale]/compare/plans/[model]` — each fetches real data (model name,
   ELO, lowest price, channel count) and renders a 1200×630 card
 - JSON-LD on `/[locale]/models/[slug]`: `Product` + `AggregateOffer` +
   per-channel `Offer[]` (seller, price, currency) + Arena ELO as
   `additionalProperty` + `BreadcrumbList`
-- JSON-LD on `/[locale]/plans/[provider]`: `BreadcrumbList` +
+- JSON-LD on `/[locale]/providers/[slug]`: `Organization` + `BreadcrumbList` +
   `Product/Offer` per plan (with `is_contact_sales` for enterprise tiers)
 - Baidu / 360 / Sogou rendering hints in layout.tsx `metadata.other`
   (`applicable-device`, `MobileOptimized`, `HandheldFriendly`). Baidu site
@@ -403,8 +403,8 @@ messages/
    - `/api/products/grouped` → rollup by base slug → frontend table
 2. **Subscription plan comparison**:
    - `/api/compare/plans?model=X` → model_plan_mapping join → tiers
-3. **Provider plan lineup**:
-   - `/[locale]/plans/[provider]` server component directly queries PostgreSQL
+3. **Provider page**:
+   - `/[locale]/providers/[slug]` server component directly queries PostgreSQL
 
 ## China-specific behaviour
 

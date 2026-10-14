@@ -39,16 +39,6 @@
       "count": 21
     }
   },
-  "src/app/[locale]/plans/[provider]/opengraph-image.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    }
-  },
-  "src/app/[locale]/plans/[provider]/page.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    }
-  },
   "src/app/[locale]/plans/page.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1

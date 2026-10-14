@@ -53,7 +53,7 @@ export function classifyTrackedLink(href: string, siteOrigin: string, fromPath?:
   }
 
   if (fromPath && guideSlugFromPath(fromPath)) {
-    const target = url.pathname.match(/^\/(?:en|zh)\/(models|plans)\/([^/]+)\/?$/);
+    const target = url.pathname.match(/^\/(?:en|zh)\/(models|plans|providers)\/([^/]+)\/?$/);
     if (target) {
       return {
         kind: 'guide_target',

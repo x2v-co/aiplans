@@ -321,7 +321,7 @@ export default async function PricingGuidePage({
             {locale === 'zh' ? '浏览全部 API 价格' : 'Browse all API prices'} <ArrowRight className="h-4 w-4" />
           </Link>
           {guide.providerSlugs.map((providerSlug) => (
-            <Link key={providerSlug} href={`/${locale}/plans/${providerSlug}`} className="text-blue-600 hover:underline">
+            <Link key={providerSlug} href={`/${locale}/providers/${providerSlug}`} className="text-blue-600 hover:underline">
               {locale === 'zh' ? `${providerSlug} 套餐` : `${providerSlug} plans`}
             </Link>
           ))}

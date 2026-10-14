@@ -1,4 +1,26 @@
 {
+  "providerPage": {
+    "metaTitle": "{name}：API 模型、价格与订阅套餐 | aiplans.dev",
+    "metaDescription": "了解 {name}，查看官方网站、API 文档与开发者控制台。对比已有模型 API 价格、订阅套餐、月付和年付价格及模型权限。",
+    "back": "首页",
+    "website": "官方网站",
+    "api": "API 服务",
+    "apiDocs": "API 文档",
+    "pricing": "价格页面",
+    "console": "开发者控制台",
+    "apiModels": "可用 API 模型与价格",
+    "noApiModels": "该厂商暂无 API 价格数据。",
+    "plans": "订阅套餐",
+    "monthly": "月付",
+    "yearly": "年付",
+    "models": "模型",
+    "model": "模型",
+    "inputPrice": "输入",
+    "outputPrice": "输出",
+    "cachedInputPrice": "缓存输入",
+    "introductoryUntil": "优惠价有效至 {date}",
+    "priceVariants": "查看价格变体"
+  },
   "nav": {
     "home": "首页",
     "plans": "全部套餐",

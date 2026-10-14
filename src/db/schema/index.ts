@@ -17,6 +17,7 @@ export const providers = pgTable('providers', {
   currency: varchar('currency').default('USD'),
   pricingUrl: text('pricing_url'),
   apiDocsUrl: text('api_docs_url'),
+  consoleUrl: text('console_url'),
   paymentMethods: jsonb('payment_methods').default([]),
   priority: integer('priority').default(2),
   type: text('type').default('official'), // 'official', 'cloud', 'aggregator', 'reseller'

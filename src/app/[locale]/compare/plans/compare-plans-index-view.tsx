@@ -239,7 +239,7 @@ export default function ComparePlansIndexView({
               const showModels = planModels.slice(0, 2);
 
               return (
-                <Link key={plan.id} href={`/${locale}/plans/${plan.provider?.slug || ''}`}>
+                <Link key={plan.id} href={plan.provider?.slug ? `/${locale}/providers/${plan.provider.slug}` : `/${locale}/plans`}>
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between mb-4">
