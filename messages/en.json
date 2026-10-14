@@ -347,6 +347,12 @@
     "methodology": "Prices audited daily from official provider pages and verified channels.",
     "copyright": "© x2v"
   },
+  "modelShutdown": {
+    "scheduled": "Scheduled for removal from the OpenAI API on {date}",
+    "removed": "Removed from the OpenAI API on {date}",
+    "replacement": "recommended replacement: {model}",
+    "source": "OpenAI deprecation announcement"
+  },
   "modelPricing": {
     "introductoryPrice": "Introductory price until {date} (Pacific time), then {input} / {output} per 1M"
   }

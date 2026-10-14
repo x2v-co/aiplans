@@ -1,4 +1,5 @@
-import { effectivePrice, introductoryEndDate, isIntroductoryPriceActive } from '@/lib/effective-price';
+import { effectivePrice, introductoryEndDate, isIntroductoryPriceActive, type PriceSchedule } from '@/lib/effective-price';
+import { modelShutdownNotice } from '@/lib/model-shutdown';
 import { getTranslations } from 'next-intl/server';
 import Link from "next/link";
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
@@ -133,7 +134,8 @@ async function getProductWithChannels(slug: string) {
   // Get model with provider info
   const [model] = await sql<any[]>`
     SELECT id, name, slug, type, description, context_window, max_output_tokens,
-           provider_ids, released_at, created_at, updated_at
+           provider_ids, released_at, created_at, updated_at, shutdown_date::text,
+           replacement_model, deprecation_source_url
     FROM models
     WHERE slug = ${slug}
     LIMIT 1
@@ -363,6 +365,8 @@ export default async function ModelPage({
   const promoMessages = await getTranslations({ locale, namespace: 'modelPricing' });
   const now = new Date();
   const productName = formatModelName(product.name);
+  const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
+  const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);
   const guideSlug = guideForModelSlug(product.slug);
   const pricing = buildModelPricingSeo({ ...product, name: productName }, channelPrices,
     isZh ? 'zh' : 'en', now);
@@ -571,6 +575,20 @@ export default async function ModelPage({
             {modelCopy.summary}
           </p>
         </div>
+
+        {shutdown && (
+          <div role="note" className="mb-8 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+            <p>
+              {shutdownMessages(shutdown.status, { date: shutdown.date })}
+              {product.replacement_model && <>; {shutdownMessages('replacement', { model: product.replacement_model })}</>}
+            </p>
+            {product.deprecation_source_url && (
+              <a href={product.deprecation_source_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm underline">
+                {shutdownMessages('source')} <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            )}
+          </div>
+        )}
 
         <ModelBenchmarkPanel scores={benchmarkScores} locale={locale} />
 
