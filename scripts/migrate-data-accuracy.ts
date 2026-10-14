@@ -899,8 +899,13 @@ const MIGRATIONS: Migration[] = [
     sql: readFileSync(new URL('../drizzle/0002_api_channel_introductory_prices.sql', import.meta.url), 'utf8'),
   },
   {
+<<<<<<< HEAD
     name: 'provider_console_url',
     sql: readFileSync(new URL('../drizzle/0004_provider_console_url.sql', import.meta.url), 'utf8'),
+=======
+    name: '030_add_model_shutdown',
+    sql: readFileSync(new URL('../drizzle/0003_model_shutdown.sql', import.meta.url), 'utf8'),
+>>>>>>> d1ff76f (feat: add nullable model API shutdown fields)
   },
 ];
 
