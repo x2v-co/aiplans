@@ -141,7 +141,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   {
     kind: 'agent',
     name: 'Cursor Background Agents',
-    provider: 'xAI',
+    provider: 'SpaceXSI',
     providerSlug: 'xai',
     status: 'available',
     pricing: 'The X Subscription / shared Grok quota; third-party models billed separately',

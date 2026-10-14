@@ -23,8 +23,8 @@ export async function generateMetadata({
       zh: '当前可用 AI 模型横评 · 性能、价格与 API 渠道 | aiplans.dev',
     },
     description: {
-      en: 'Compare one current leading model from OpenAI, Anthropic, Google, xAI, DeepSeek, GLM, Kimi, Qwen and MiniMax, then inspect every API channel offering it.',
-      zh: '横向比较 OpenAI、Anthropic、Google、xAI、DeepSeek、GLM、Kimi、Qwen、MiniMax 当前领先模型，再查看每个模型的全部 API 渠道价格。',
+      en: 'Compare one current leading model from OpenAI, Anthropic, Google, SpaceXSI (formerly xAI), DeepSeek, GLM, Kimi, Qwen and MiniMax, then inspect every API channel offering it.',
+      zh: '横向比较 OpenAI、Anthropic、Google、SpaceXSI（原 xAI）、DeepSeek、GLM、Kimi、Qwen、MiniMax 当前领先模型，再查看每个模型的全部 API 渠道价格。',
     },
   });
 }

@@ -47,7 +47,8 @@ const ORG_PROVIDER: Record<string, { slug: string; name: string; website?: strin
   Pika: { slug: 'pika', name: 'Pika', website: 'https://pika.art/' },
   Meta: { slug: 'meta', name: 'Meta', website: 'https://ai.meta.com/' },
   'Black Forest Labs': { slug: 'bfl', name: 'Black Forest Labs', website: 'https://blackforestlabs.ai/' },
-  SpaceXAI: { slug: 'xai', name: 'xAI', website: 'https://x.ai/' },
+  SpaceXSI: { slug: 'xai', name: 'SpaceXSI', website: 'https://x.ai/' },
+  SpaceXAI: { slug: 'xai', name: 'SpaceXSI', website: 'https://x.ai/' },
   'Genmo AI': { slug: 'genmo', name: 'Genmo', website: 'https://www.genmo.ai/' },
 };
 
