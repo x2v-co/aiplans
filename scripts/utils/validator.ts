@@ -6,6 +6,10 @@ export interface ScrapedPrice {
   inputPricePer1M: number;
   outputPricePer1M: number;
   cachedInputPricePer1M?: number | null;
+  promoEndsAt?: string | null;
+  regularInputPricePer1M?: number | null;
+  regularOutputPricePer1M?: number | null;
+  regularCachedInputPricePer1M?: number | null;
   contextWindow?: number;
   rateLimit?: string | number;
   isAvailable: boolean;

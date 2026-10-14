@@ -18,6 +18,10 @@ export interface PriceData {
   inputPricePer1M: number | null;
   outputPricePer1M: number | null;
   cachedInputPricePer1M?: number | null;
+  promoEndsAt?: string | null;
+  regularInputPricePer1M?: number | null;
+  regularOutputPricePer1M?: number | null;
+  regularCachedInputPricePer1M?: number | null;
   contextWindow?: number | null;
   rateLimit?: number | null;
   isAvailable?: boolean;
