@@ -284,6 +284,10 @@ export async function upsertChannelPrice(data: {
   input_price_per_1m: number;
   output_price_per_1m: number;
   cached_input_price_per_1m?: number | null;
+  promo_ends_at?: string | null;
+  regular_input_price_per_1m?: number | null;
+  regular_output_price_per_1m?: number | null;
+  regular_cached_input_price_per_1m?: number | null;
   rate_limit?: string | number;
   is_available: boolean;
   last_verified: Date;
@@ -352,6 +356,10 @@ export async function upsertChannelPrice(data: {
         input_price_per_1m: data.input_price_per_1m,
         output_price_per_1m: data.output_price_per_1m,
         cached_input_price_per_1m: data.cached_input_price_per_1m,
+        promo_ends_at: data.promo_ends_at ?? null,
+        regular_input_price_per_1m: data.promo_ends_at ? data.regular_input_price_per_1m ?? null : null,
+        regular_output_price_per_1m: data.promo_ends_at ? data.regular_output_price_per_1m ?? null : null,
+        regular_cached_input_price_per_1m: data.promo_ends_at ? data.regular_cached_input_price_per_1m ?? null : null,
         rate_limit: rateLimit,
         is_available: data.is_available,
         last_verified: data.last_verified,
@@ -377,6 +385,10 @@ export async function upsertChannelPrice(data: {
       input_price_per_1m: data.input_price_per_1m,
       output_price_per_1m: data.output_price_per_1m,
       cached_input_price_per_1m: data.cached_input_price_per_1m,
+        promo_ends_at: data.promo_ends_at ?? null,
+        regular_input_price_per_1m: data.promo_ends_at ? data.regular_input_price_per_1m ?? null : null,
+        regular_output_price_per_1m: data.promo_ends_at ? data.regular_output_price_per_1m ?? null : null,
+        regular_cached_input_price_per_1m: data.promo_ends_at ? data.regular_cached_input_price_per_1m ?? null : null,
       rate_limit: rateLimit,
       is_available: data.is_available,
       last_verified: data.last_verified,

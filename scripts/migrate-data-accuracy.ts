@@ -894,6 +894,10 @@ const MIGRATIONS: Migration[] = [
     name: '028_add_plan_third_party_coverage',
     sql: readFileSync(new URL('../drizzle/0001_plan_third_party_coverage.sql', import.meta.url), 'utf8'),
   },
+  {
+    name: '029_add_api_channel_introductory_prices',
+    sql: readFileSync(new URL('../drizzle/0002_api_channel_introductory_prices.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 async function main() {
