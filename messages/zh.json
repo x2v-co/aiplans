@@ -33,7 +33,8 @@
     "outputPrice": "输出",
     "cachedInputPrice": "缓存输入",
     "introductoryUntil": "优惠价有效至 {date}",
-    "priceVariants": "查看价格变体"
+    "priceVariants": "查看价格变体",
+    "backToProviders": "供应商"
   },
   "nav": {
     "home": "首页",

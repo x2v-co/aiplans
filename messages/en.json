@@ -33,7 +33,8 @@
     "outputPrice": "Output",
     "cachedInputPrice": "Cached input",
     "introductoryUntil": "Introductory price through {date}",
-    "priceVariants": "View price variants"
+    "priceVariants": "View price variants",
+    "backToProviders": "Providers"
   },
   "nav": {
     "home": "Home",

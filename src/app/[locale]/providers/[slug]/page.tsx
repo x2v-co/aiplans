@@ -143,6 +143,7 @@ export default async function ProviderPage({
   const isZh = locale === 'zh';
   const breadcrumbJson = breadcrumbList([
     { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
+    { name: isZh ? '供应商' : 'Providers', url: `${SITE_URL}/${locale}/providers` },
     { name: provider.name, url: `${SITE_URL}/${locale}/providers/${providerSlug}` },
   ]);
   // This page is a plan comparison, so plans go out as one ItemList of Offers
@@ -211,8 +212,8 @@ export default async function ProviderPage({
       <main className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
-          <Link href={`/${locale}`} className="flex items-center gap-1 hover:text-blue-600">
-            <ArrowLeft className="w-4 h-4" /> {t('back')}
+          <Link href={`/${locale}/providers`} className="flex items-center gap-1 hover:text-blue-600">
+            <ArrowLeft className="w-4 h-4" /> {t('backToProviders')}
           </Link>
         </div>
 

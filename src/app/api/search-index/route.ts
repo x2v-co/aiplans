@@ -17,6 +17,7 @@ type ProviderRow = { slug: string; name: string };
 
 const STATIC_PAGE_DEFS: Array<{ slug: string; kind?: AiCatalogKind; title: string; zhTitle: string; baseKeywords: string[] }> = [
   { slug: 'models', title: 'General AI Models', zhTitle: '通用大模型', baseKeywords: ['models', 'llm', 'general models', 'gpt', 'claude', 'gemini'] },
+  { slug: 'providers', title: 'AI Providers', zhTitle: 'AI 供应商', baseKeywords: ['providers', 'vendor', '供应商', 'openai', 'anthropic', 'deepseek'] },
   { slug: 'agents', kind: 'agent', title: 'AI Agent Plans', zhTitle: 'AI Agent 套餐', baseKeywords: ['agent', 'coding agent'] },
   { slug: 'creative-plans', kind: 'creative-plan', title: 'AI Creative Plans', zhTitle: 'AI 创作套餐', baseKeywords: ['creative', 'video plan', 'image plan', 'music plan'] },
   { slug: 'video-models', kind: 'video-model', title: 'AI Video Models', zhTitle: 'AI 视频模型', baseKeywords: ['video', 'text to video', 'image to video'] },
