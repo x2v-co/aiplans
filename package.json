@@ -71,6 +71,8 @@
     "sync:openai-deprecations": "tsx scripts/sync-openai-deprecations.ts",
     "sync:openai-deprecations:dry-run": "tsx scripts/sync-openai-deprecations.ts --dry-run",
     "test": "node scripts/test-unit.mjs",
+    "seed:opencode-go": "tsx scripts/seed-opencode-go-2026-10-15.ts",
+    "seed:opencode-go:apply": "tsx scripts/seed-opencode-go-2026-10-15.ts --apply",
     "seed:catalog-audit": "tsx scripts/seed-catalog-audit-2026-10-15.ts",
     "seed:catalog-audit:dry-run": "tsx scripts/seed-catalog-audit-2026-10-15.ts --dry-run",
     "test:catalog-audit": "npx tsx --test scripts/data/catalog-audit*.test.ts scripts/scrapers/openrouter.test.ts scripts/world-models.test.ts"

@@ -15,6 +15,7 @@ export const QUOTA_TEXT_SOURCES: readonly QuotaTextSource[] = [
   { id: 'codex-plans', name: 'Codex pricing and usage', url: 'https://developers.openai.com/codex/pricing/' },
   { id: 'cursor-plans', name: 'Cursor pricing', url: 'https://cursor.com/pricing' },
   { id: 'copilot-plans', name: 'GitHub Copilot plans', url: 'https://github.com/features/copilot/plans' },
+  { id: 'opencode-go', name: 'OpenCode Go plans', url: 'https://opencode.ai/docs/go/' },
   { id: 'google-ai-plans', name: 'Gemini / Google AI plans', url: 'https://one.google.com/about/google-ai-plans/' },
   { id: 'grok-plans', name: 'Grok / SuperGrok plans', url: 'https://grok.com/plans',
     enabled: false, disabledReason: 'HTTP 403 from prod (2026-10-15) and client-rendered: static HTML has no quota text. Needs a rendered fetch or another official source.' },
