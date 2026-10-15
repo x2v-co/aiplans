@@ -33,3 +33,12 @@ test('every models.pricing_unit used by image, non-llm and catalog-audit seeds i
   assert.deepEqual(rejected, [], `seed units missing from unit migrations: ${rejected.join(', ')}`);
   assert.ok(used.has('per_image'));
 });
+
+test('023 (replayed every deploy) re-creates models_pricing_unit_chk with every unit later migrations allow', () => {
+  const runner = readFileSync(new URL('../migrate-data-accuracy.ts', import.meta.url), 'utf8');
+  const block = runner.match(/ADD CONSTRAINT models_pricing_unit_chk[\s\S]*?CHECK \(pricing_unit IN \(([^)]+)\)\)/)?.[1];
+  assert.ok(block, '023 models_pricing_unit_chk list found');
+  const replayed = new Set([...block.matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  const missing = [...allowedUnits()].filter((u) => !replayed.has(u));
+  assert.deepEqual(missing, [], `023 replay would drop units: ${missing.join(', ')}`);
+});

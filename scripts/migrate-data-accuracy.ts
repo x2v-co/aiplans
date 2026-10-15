@@ -652,7 +652,8 @@ const MIGRATIONS: Migration[] = [
       ALTER TABLE models ADD COLUMN IF NOT EXISTS pricing_unit text DEFAULT 'per_1m_tokens';
       ALTER TABLE models DROP CONSTRAINT IF EXISTS models_pricing_unit_chk;
       ALTER TABLE models ADD CONSTRAINT models_pricing_unit_chk
-        CHECK (pricing_unit IN ('per_1m_tokens','per_second','per_minute','per_generation','per_credit','per_compute_hour','subscription_only','unknown'));
+        -- Replayed on each deployment: must keep units added later by 035/036, or rows using them break the replay.
+        CHECK (pricing_unit IN ('per_1m_tokens','per_second','per_minute','per_generation','per_credit','per_compute_hour','subscription_only','unknown','per_hour','per_megapixel','per_image'));
       CREATE INDEX IF NOT EXISTS models_model_category_idx ON models (model_category, slug);
 
       -- Broaden plan taxonomy. plan_kind remains the existing comparison axis;
