@@ -1,4 +1,5 @@
 import { NON_LLM_CATALOG } from './non-llm-catalog';
+import { IMAGE_MODEL_CATALOG } from './image-model-catalog';
 
 export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model' | 'voice-model' | 'image-model';
 
@@ -104,6 +105,7 @@ const VERIFIED_AT = '2026-09-15';
  */
 export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   ...NON_LLM_CATALOG,
+  ...IMAGE_MODEL_CATALOG,
   // Agent / coding-agent plans
   {
     kind: 'agent',

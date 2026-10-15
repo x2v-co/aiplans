@@ -7,7 +7,7 @@ import * as catalog from '../src/lib/ai-vertical-catalog';
 import * as logos from '../src/lib/vertical-provider-logos';
 import * as auditVertical from './data/catalog-audit-vertical';
 import type { Sql } from 'postgres';
-import { seedNonLlm } from './data/non-llm-seed';
+import { seedImageModels, seedNonLlm } from './data/non-llm-seed';
 
 type Row = Record<string, unknown> & { id: number };
 
@@ -110,7 +110,7 @@ function fixture(initial: Record<string, Row[]> = {}) {
       await db.from(table).update(payload).eq('id', values[2]);
       return [];
     };
-    return seedNonLlm(tx as unknown as Sql, true);
+    return [...await seedNonLlm(tx as unknown as Sql, true), ...await seedImageModels(tx as unknown as Sql, true)];
   }
   return { data, run, seed, seedNonLlmRows, writeCount: () => writes };
 }

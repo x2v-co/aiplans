@@ -1,5 +1,7 @@
 import type { Sql } from 'postgres';
 import { NON_LLM_CATALOG, MOONDREAM_SHUTDOWN } from '../../src/lib/non-llm-catalog';
+import { IMAGE_MODEL_CATALOG } from '../../src/lib/image-model-catalog';
+import type { AiCatalogItem } from '../../src/lib/ai-vertical-catalog';
 
 type Row = Record<string, unknown> & { id: number };
 type Table = 'providers' | 'models' | 'plans' | 'model_plan_mapping' | 'usage_prices';
@@ -17,6 +19,19 @@ function comparable(value: unknown): unknown {
 
 /** Caller owns a serializable transaction. Dry-run is SELECT-only. No scraping. */
 export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> {
+  return seedCatalogItems(tx, apply, NON_LLM_CATALOG, { moondream: true });
+}
+
+/**
+ * Image-model catalog (2026-10-15). Pre-existing model rows (e.g. gemini-nano-banana-2.1 from the LLM scrapers)
+ * are reused: their name, type and description are kept; only category/modality/pricing metadata is aligned.
+ */
+export async function seedImageModels(tx: Sql, apply = false): Promise<NonLlmStep[]> {
+  return seedCatalogItems(tx, apply, IMAGE_MODEL_CATALOG, { moondream: false, preserveExisting: true });
+}
+
+async function seedCatalogItems(tx: Sql, apply: boolean, items: AiCatalogItem[],
+  options: { moondream: boolean; preserveExisting?: boolean }): Promise<NonLlmStep[]> {
   const tables: Table[] = ['providers', 'models', 'plans', 'model_plan_mapping', 'usage_prices'];
   const rows = {} as Record<Table, Row[]>;
   for (const table of tables) rows[table] = await tx<Row[]>`SELECT * FROM ${tx(table)}`;
@@ -54,13 +69,17 @@ export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> 
       region: null, access_from_china: null, notes: '2026-10-15 verified identity; other provider metadata needs verification.' }, slug);
   };
 
-  for (const item of NON_LLM_CATALOG) {
+  for (const item of items) {
     const owner = await provider(item.providerSlug!, item.provider);
     const channel = item.pricingProviderSlug ? await provider(item.pricingProviderSlug, item.pricingChannel!, true) : owner;
     const existing = rows.models.filter(row => row.slug === item.slug);
     const providerIds = Array.isArray(existing[0]?.provider_ids) ? existing[0].provider_ids as number[] : [];
+    const keep = options.preserveExisting && existing.length === 1 ? existing[0] : null;
+    const description = [item.bestFor, `Status: ${item.status}. Pricing confidence: ${item.pricingConfidence}. Unit: ${item.pricingUnit}. Last verified: ${item.lastVerified}.`,
+      item.notes, ...(item.needsVerification ?? []).map(note => `[needs-verification] ${note}`),
+      `Sources: ${item.sourceUrls?.map(source => `${source.publisher}: ${source.url}`).join(' | ')}`].filter(Boolean).join('\n');
     const model = await save('models', existing, {
-      slug: item.slug, name: item.name, type: existing[0]?.type ?? (item.kind === 'decision-model' ? 'llm' : 'multimodal'),
+      slug: item.slug, name: keep ? keep.name : item.name, type: existing[0]?.type ?? (item.kind === 'decision-model' ? 'llm' : 'multimodal'),
       model_category: item.modelCategory, provider_ids: [...new Set([...providerIds, owner.id])],
       open_source: item.access?.includes('open-weights') ?? false,
       input_type: item.inputModalities, output_type: item.outputModalities,
@@ -72,9 +91,7 @@ export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> 
       ...(item.shutdownDate ? { shutdown_date: item.shutdownDate } : {}),
       ...(item.replacementModel ? { replacement_model: item.replacementModel } : {}),
       ...(item.deprecationSourceUrl ? { deprecation_source_url: item.deprecationSourceUrl } : {}),
-      description: [item.bestFor, `Status: ${item.status}. Pricing confidence: ${item.pricingConfidence}. Unit: ${item.pricingUnit}. Last verified: ${item.lastVerified}.`,
-        item.notes, ...(item.needsVerification ?? []).map(note => `[needs-verification] ${note}`),
-        `Sources: ${item.sourceUrls?.map(source => `${source.publisher}: ${source.url}`).join(' | ')}`].filter(Boolean).join('\n'),
+      description: keep ? keep.description : description,
     }, item.slug!);
     const unit = /minute|character/i.test(item.pricingUnit ?? '') ? 'minute' : /hour/i.test(item.pricingUnit ?? '') ? 'hour' : 'availability';
     const slug = `${item.slug}-official-pricing`;
@@ -113,7 +130,7 @@ export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> 
 
   // Apply the Cloud lifecycle notice to every pre-existing Moondream identity.
   // Keep its own weights/license/pricing fields intact.
-  for (const model of rows.models.filter(row => /moondream|vikhyatk/i.test(`${row.slug} ${row.name} ${row.offical_link ?? ''}`))) {
+  for (const model of !options.moondream ? [] : rows.models.filter(row => /moondream|vikhyatk/i.test(`${row.slug} ${row.name} ${row.offical_link ?? ''}`))) {
     const note = MOONDREAM_SHUTDOWN.notes;
     await save('models', [model], {
       deprecated_at: MOONDREAM_SHUTDOWN.deprecatedAt, shutdown_date: MOONDREAM_SHUTDOWN.shutdownDate,
