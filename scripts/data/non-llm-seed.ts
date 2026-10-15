@@ -44,8 +44,11 @@ export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> 
     else rows[table].push(result);
     return result;
   };
+  // Same aliases as the Nemotron seed: either existing Vercel identity is reused, never a second one.
+  const PROVIDER_ALIASES: Record<string, string[]> = { 'vercel-ai-gateway': ['vercel-ai-gateway', 'vercel'] };
   const provider = async (slug: string, name: string, channel = false) => {
-    const matches = rows.providers.filter(row => row.slug === slug);
+    const aliases = PROVIDER_ALIASES[slug] ?? [slug];
+    const matches = aliases.map(alias => rows.providers.filter(row => row.slug === alias)).find(found => found.length) ?? [];
     if (matches.length > 1) throw new Error(`Ambiguous provider ${slug}`);
     return matches[0] ?? save('providers', [], { slug, name, type: channel ? 'aggregator' : 'producer',
       region: null, access_from_china: null, notes: '2026-10-15 verified identity; other provider metadata needs verification.' }, slug);
@@ -89,7 +92,8 @@ export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> 
     }, slug);
     // Itemized usageRates win; decision defaults only fill kinds the item did not itemize.
     const itemized = item.usageRates ?? [];
-    const rates = [{ priceKind: unit, unit, price: null as number | null }, ...itemized,
+    // Itemized items get exactly their rates; only un-itemized items keep a unit placeholder row.
+    const rates = [...(itemized.length ? [] : [{ priceKind: unit, unit, price: null as number | null }]), ...itemized,
       ...(item.kind === 'decision-model' && !itemized.length ? [
         { priceKind: 'input_tokens', unit: 'per_1m_tokens', price: item.inputPricePer1M ?? null },
         { priceKind: 'output_tokens', unit: 'per_1m_tokens', price: item.outputPricePer1M ?? null },
@@ -109,7 +113,7 @@ export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> 
 
   // Apply the Cloud lifecycle notice to every pre-existing Moondream identity.
   // Keep its own weights/license/pricing fields intact.
-  for (const model of rows.models.filter(row => /moondream/i.test(`${row.slug} ${row.name}`))) {
+  for (const model of rows.models.filter(row => /moondream|vikhyatk/i.test(`${row.slug} ${row.name} ${row.offical_link ?? ''}`))) {
     const note = MOONDREAM_SHUTDOWN.notes;
     await save('models', [model], {
       deprecated_at: MOONDREAM_SHUTDOWN.deprecatedAt, shutdown_date: MOONDREAM_SHUTDOWN.shutdownDate,

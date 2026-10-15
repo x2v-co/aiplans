@@ -349,16 +349,20 @@ async function auditDatabaseDrift() {
     const expectedProviderId = pricingProvider?.id;
     const expectedPlanId = referencePlan?.id;
     const expectedAvailability = item.status !== 'announced' && item.status !== 'discontinued';
-    const hasUsageReference = usage.some((row) =>
+    // Itemized items carry one row per rate instead of a unit-level placeholder row.
+    const expectedRates = item.deferredDbSeed && item.usageRates?.length
+      ? item.usageRates.map(rate => ({ kind: rate.priceKind, unit: rate.unit }))
+      : [{ kind: referencePriceKind(item), unit: referenceUnit(item) }];
+    const missingRate = expectedRates.find(rate => !usage.some((row) =>
       row.provider_id === expectedProviderId &&
       (expectedPlanId == null || row.plan_id === expectedPlanId) &&
-      row.price_kind === referencePriceKind(item) &&
-      row.unit === referenceUnit(item) &&
+      row.price_kind === rate.kind &&
+      row.unit === rate.unit &&
       row.source_url === expectedSource &&
       row.is_available === expectedAvailability
-    );
-    if (!hasUsageReference) {
-      report(item, `DB drift: missing usage_prices reference ${referencePriceKind(item)}/${referenceUnit(item)} from ${expectedSource}`);
+    ));
+    if (missingRate) {
+      report(item, `DB drift: missing usage_prices reference ${missingRate.kind}/${missingRate.unit} from ${expectedSource}`);
     }
   }
 

@@ -126,3 +126,20 @@ test('grok-voice-transcribe 2.0 and 1.0 are billed per hour', async () => {
     assert.ok(item.usageRates?.every(r => r.unit === 'hour'));
   }
 });
+
+test('SRE 15:27 dry-run review: itemized rows only, provider reuse, Moondream match, grok-voice-2.0 lifecycle', async () => {
+  const f = fixture({
+    providers: [{ id: 1, slug: 'xai' }, { id: 2, slug: 'typesafe' }, { id: 3, slug: 'vercel' }],
+    models: [{ id: 10, slug: 'vikhyatk-moondream2', name: 'moondream2', description: null }],
+  });
+  const steps = await seedNonLlm(f.tx, true);
+  const targets = steps.map(step => step.target);
+  for (const slug of ['jev-1.14.0', 'jev-1.13.0', 'moondream-cloud', 'microsoft-mai-image-2.6']) {
+    assert.ok(!targets.includes(`${slug}/availability/availability`), slug);
+  }
+  assert.deepEqual(f.data.providers.filter(row => /xai|typesafe|vercel/.test(String(row.slug))).map(row => row.id).sort(), [1, 2, 3]);
+  assert.equal(f.data.models.find(row => row.id === 10)?.shutdown_date, '2026-11-13');
+  const voice2 = f.data.models.find(row => row.slug === 'grok-voice-2.0')!;
+  assert.equal(voice2.deprecated_at, undefined);
+  assert.deepEqual(await seedNonLlm(f.tx, true), []);
+});

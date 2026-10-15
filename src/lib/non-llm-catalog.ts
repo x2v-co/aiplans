@@ -17,14 +17,14 @@ function voice(version: '3.0' | '2.0'): AiCatalogItem {
   return {
     ...verified, kind: 'voice-model', slug: `grok-voice-${version}`, name: `grok-voice-${version}`,
     provider: 'xAI', providerSlug: 'xai', modelCategory: 'speech',
-    status: version === '2.0' ? 'deprecated' : 'available',
+    status: 'available',
     pricing: 'STS $0.08/min; TTS $15/1M characters', unit: 'minute / 1M characters', pricingUnit: 'per_minute',
     priceStatus: 'priced', pricingConfidence: 'verified', usageRates: voiceRates,
     inputModalities: ['audio', 'text'], outputModalities: ['audio'], access: ['api'],
     capabilities: ['speech-to-speech', 'text-to-speech'], bestFor: 'Speech-to-speech and text-to-speech.',
     notes: version === '3.0' ? 'grok-voice-latest → grok-voice-3.0. Available October 2026.'
-      : 'Deprecated; same price as 3.0. Deprecation date uses the 2026-10-15 audit date; exact announcement date was not supplied.',
-    ...(version === '2.0' ? { deprecatedAt: '2026-10-15', replacementModel: 'grok-voice-3.0', deprecationSourceUrl: releaseSource } : {}),
+      : 'Superseded: grok-voice-latest moved to grok-voice-3.0 on 2026-10-14 (same price). xAI has not announced a deprecation or shutdown date for grok-voice-2.0 (release notes checked 2026-10-15).',
+    ...(version === '2.0' ? { replacementModel: 'grok-voice-3.0' } : {}),
     url: voiceSource, sourceUrls: [
       { label: 'xAI models and pricing', url: voiceSource, publisher: 'xAI' },
       { label: 'xAI release notes', url: releaseSource, publisher: 'xAI' },

@@ -107,7 +107,7 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
   if (auto && large4Channel) {
     await save('api_channel_price_variants', auto, {
       input_price_per_1m: large4Channel.input_price_per_1m, output_price_per_1m: large4Channel.output_price_per_1m,
-      is_headline: true, source_url: 'https://openrouter.ai/mistralai/mistral-large-4-0',
+      is_headline: true,
     }, 'Large 4 headline/openrouter-auto');
   }
 
