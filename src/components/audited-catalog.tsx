@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { AiCatalogItem } from '@/lib/ai-vertical-catalog';
+import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 
 export function auditedPrice(item: AiCatalogItem, locale: string): string {
   if (item.priceStatus === 'not-public') return locale === 'zh' ? '未公开价格' : 'Price not public';
@@ -13,9 +14,16 @@ export function auditedPrice(item: AiCatalogItem, locale: string): string {
 export function AuditedPricingFacts({ item, locale }: { item: AiCatalogItem; locale: string }) {
   const zh = locale === 'zh';
   const money = (value: number | null | undefined) => value == null ? '—' : `$${value}`;
+  const priced = item.priceStatus === 'priced';
   return <section className="mt-8 rounded-xl border p-6">
     <h2 className="text-xl font-bold">{zh ? '价格与核验' : 'Pricing and verification'}</h2>
     <p className="mt-3">{auditedPrice(item, locale)}</p>
+    {item.usageRates?.length ? <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+      {item.usageRates.map(rate => <div key={`${rate.priceKind}/${rate.unit}`}>
+        <dt>{labelNonLlmPriceKey(rate.priceKind, locale)}</dt>
+        <dd>{priced && Number.isFinite(rate.price) ? `${rate.approximate ? '≈' : ''}$${rate.price} / ${labelNonLlmPriceKey(rate.unit, locale)}` : (zh ? '待核验' : 'Needs verification')}</dd>
+      </div>)}
+    </dl> : null}
     <dl className="mt-4 grid gap-3 sm:grid-cols-2">
       {item.kind === 'decision-model' && <>
         <div><dt>{zh ? '每百万输入 token' : 'Per 1M input tokens'}</dt><dd>{money(item.inputPricePer1M)}</dd></div>

@@ -3,6 +3,7 @@ import en from '../../messages/en.json';
 import zh from '../../messages/zh.json';
 import { CatalogProviderLogo } from '@/components/catalog-provider-logo';
 import type { AiCatalogItem } from '@/lib/ai-vertical-catalog';
+import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 
 export function nonLlmCopy(locale: string) {
   return locale === 'zh' ? zh.nonLlmModels : en.nonLlmModels;
@@ -10,7 +11,7 @@ export function nonLlmCopy(locale: string) {
 
 export function NonLlmFacts({ item, locale }: { item: AiCatalogItem; locale: string }) {
   const t = nonLlmCopy(locale);
-  const label = (key: string) => t[key as keyof typeof t] ?? key;
+  const label = (key: string) => labelNonLlmPriceKey(key, locale);
   const priced = item.priceStatus === 'priced';
   return <section className="mt-6 space-y-3 rounded-xl border p-5">
     <h2 className="text-xl font-bold">{t.pricing}</h2>
@@ -37,7 +38,7 @@ export function NonLlmFacts({ item, locale }: { item: AiCatalogItem; locale: str
 
 export function NonLlmCatalog({ items, locale }: { items: AiCatalogItem[]; locale: string }) {
   const t = nonLlmCopy(locale);
-  const label = (key: string) => t[key as keyof typeof t] ?? key;
+  const label = (key: string) => labelNonLlmPriceKey(key, locale);
   return <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">{items.map(item => {
     const priced = item.priceStatus === 'priced';
     const rates = (item.usageRates ?? []).filter(rate => Number.isFinite(rate.price)).slice(0, 3);

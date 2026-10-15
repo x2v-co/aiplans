@@ -15,6 +15,7 @@ import { verticalKindPath } from '@/lib/vertical-model-detail';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 import { PlanCoverage } from '@/components/plan-coverage';
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
+import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 
 function formatMoney(value: number | null, currency: string | null): string {
   if (value == null) return '—';
@@ -104,7 +105,7 @@ export default function VerticalModelDetailPage({
               </div>
               <div>
                 <div className="text-zinc-500">{isZh ? '计价单位' : 'Pricing unit'}</div>
-                <div className="mt-1 font-medium">{item.pricingUnit ?? item.unit}</div>
+                <div className="mt-1 font-medium">{labelNonLlmPriceKey(item.pricingUnit ?? item.unit ?? '', locale)}</div>
               </div>
               <div>
                 <div className="text-zinc-500">{isZh ? '访问方式' : 'Access'}</div>

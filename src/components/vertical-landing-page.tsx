@@ -13,6 +13,7 @@ import { catalogForKind, isRigorousModelKind, type AiBenchmarkSummary, type AiCa
 import { jsonLd, SITE_URL } from '@/lib/seo';
 import { verticalBenchmarkSummaryFallback } from '@/lib/vertical-benchmark-summaries';
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
+import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 
 const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> = {
   agent: { primary: '/plans', secondary: '/compare/models' },
@@ -241,7 +242,7 @@ export default function VerticalLandingPage({
                     <Badge variant={item.status === 'available' ? 'secondary' : 'outline'} className={item.status === 'discontinued' ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300' : undefined}>{item.status}</Badge>
                   </div>
                   <div className="relative z-10 col-span-3 hidden md:block text-sm text-zinc-600 dark:text-zinc-400 pointer-events-none">
-                    <div>{item.pricingUnit ?? item.unit}</div>
+                    <div>{labelNonLlmPriceKey(item.pricingUnit ?? item.unit ?? '', locale)}</div>
                     <div className="mt-1 text-xs text-zinc-500">{item.kind === 'video-model' || item.kind === 'music-model' ? auditedPrice(item, locale) : item.pricing}</div>
                     {rigorousModelCatalog && (
                       <div className="mt-2 flex flex-wrap gap-1">
