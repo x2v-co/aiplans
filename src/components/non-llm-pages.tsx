@@ -35,12 +35,24 @@ export async function NonLlmPage({ kind, params }: { kind: Kind; params: Params 
   ]);
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
-    {detail ? <VerticalModelDetailPage locale={locale} kind={kind} detail={detail} /> : <>
+    {detail ? <VerticalModelDetailPage locale={locale} kind={kind} detail={detail} /> : <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
       <SiteHeader locale={locale} />
       <main className="container mx-auto px-4 py-14">
-        <h1 className="text-4xl font-bold">{t[keys.title]}</h1><p className="mt-5">{t[keys.description]}</p>
-        <NonLlmCatalog items={await getVerticalModelCatalog(kind)} locale={locale} /><p className="mt-6">{t.unknown}</p>
+        <section className="mx-auto max-w-4xl text-center">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{t[keys.title]}</h1>
+          <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-zinc-600 dark:text-zinc-400">{t[keys.description]}</p>
+        </section>
+        {await (async () => {
+          const items = await getVerticalModelCatalog(kind);
+          return <section className="mt-12">
+            <div className="flex items-end justify-between gap-4">
+              <p className="text-sm text-zinc-500">{t.unknown}</p>
+              <span className="shrink-0 rounded-full border px-2.5 py-0.5 text-sm font-medium">{items.length}</span>
+            </div>
+            <NonLlmCatalog items={items} locale={locale} />
+          </section>;
+        })()}
       </main>
-    </>}
+    </div>}
   </>;
 }

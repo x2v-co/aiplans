@@ -92,3 +92,46 @@ export function getProviderInitials(provider?: ProviderLike | null): string {
   const letters = words.length > 1 ? words[0][0] + words[1][0] : [...words[0]].slice(0, 2).join('');
   return letters.toUpperCase();
 }
+
+// Image/video/voice catalog rows carry a free-text provider name ("ByteDance
+// (BytePlus ModelArk)", "Alibaba Cloud (Qwen)") rather than a DB provider, so
+// match on the leading brand word and point at a bundled logo.
+const CATALOG_PROVIDER_LOGOS: Array<[RegExp, string]> = [
+  [/^google|^gemini|^deepmind/, '/providers/google.png'],
+  [/^openai/, '/providers/openai.png'],
+  [/^black forest|^bfl/, '/providers/bfl.png'],
+  [/^bytedance|^volcano|^byteplus|^seed/, '/providers/bytedance.ico'],
+  [/^alibaba-ath/, '/providers/alibaba-ath.ico'],
+  [/^alibaba|^qwen|^wan\b/, '/providers/alibaba.ico'],
+  [/^microsoft/, '/providers/microsoft.ico'],
+  [/^meta/, '/providers/meta.png'],
+  [/^xai|^x\.ai/, '/providers/xai.ico'],
+  [/^tencent|^hunyuan/, '/providers/tencent.ico'],
+  [/^ideogram/, '/providers/ideogram.png'],
+  [/^recraft/, '/providers/recraft.png'],
+  [/^moondream/, '/providers/moondream.png'],
+  [/^runway/, '/providers/runway.png'],
+  [/^kuaishou|^kling/, '/providers/kling.png'],
+  [/^pika/, '/providers/pika.png'],
+  [/^luma/, '/providers/luma-ai.png'],
+  [/^shengshu|^vidu/, '/providers/shengshu.png'],
+  [/^skyreels/, '/providers/skyreels.png'],
+  [/^minimax|^hailuo/, '/providers/minimax.png'],
+  [/^genmo/, '/providers/genmo.png'],
+  [/^kandinsky/, '/providers/kandinsky.png'],
+  [/^spacexsi/, '/providers/spacexsi.svg'],
+  [/^pixverse/, '/providers/pixverse.ico'],
+  [/^stepfun/, '/providers/stepfun.ico'],
+  [/^mistral/, '/providers/mistral.ico'],
+];
+
+export function getCatalogProviderLogoSrc(provider?: string | null, slug?: string | null): string | null {
+  if (slug && LOCAL_PROVIDER_LOGOS[slug]) return LOCAL_PROVIDER_LOGOS[slug];
+  for (const part of [slug, provider]) {
+    const value = (part ?? '').toLowerCase().trim();
+    if (!value) continue;
+    const hit = CATALOG_PROVIDER_LOGOS.find(([pattern]) => pattern.test(value));
+    if (hit) return hit[1];
+  }
+  return null;
+}

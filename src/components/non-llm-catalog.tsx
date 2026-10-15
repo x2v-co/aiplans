@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import en from '../../messages/en.json';
 import zh from '../../messages/zh.json';
+import { CatalogProviderLogo } from '@/components/catalog-provider-logo';
 import type { AiCatalogItem } from '@/lib/ai-vertical-catalog';
 
 export function nonLlmCopy(locale: string) {
@@ -35,9 +36,34 @@ export function NonLlmFacts({ item, locale }: { item: AiCatalogItem; locale: str
 }
 
 export function NonLlmCatalog({ items, locale }: { items: AiCatalogItem[]; locale: string }) {
-  return <div className="mt-8 grid gap-6 lg:grid-cols-2">{items.map(item => <article key={item.slug} className="rounded-xl border p-5">
-    <h2 className="text-2xl font-bold"><Link className="text-blue-600 underline" href={`/${locale}/${item.kind}s/${item.slug}`}>{item.name}</Link></h2>
-    <p className="mt-2">{item.provider} · {item.status}</p>
-    <NonLlmFacts item={item} locale={locale} />
-  </article>)}</div>;
+  const t = nonLlmCopy(locale);
+  const label = (key: string) => t[key as keyof typeof t] ?? key;
+  return <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">{items.map(item => {
+    const priced = item.priceStatus === 'priced';
+    const rates = (item.usageRates ?? []).filter(rate => Number.isFinite(rate.price)).slice(0, 3);
+    return <Link key={item.slug} href={`/${locale}/${item.kind}s/${item.slug}`} className="group block h-full min-w-0">
+      <article className="flex h-full flex-col rounded-xl border bg-white p-5 transition-colors hover:border-blue-300 hover:bg-blue-50/40 dark:bg-zinc-950 dark:hover:border-blue-800 dark:hover:bg-blue-950/20">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <CatalogProviderLogo item={item} size={36} />
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-semibold group-hover:text-blue-600">{item.name}</h2>
+              <p className="truncate text-sm text-zinc-500">{item.provider}</p>
+            </div>
+          </div>
+          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs ${item.status === 'available' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300' : 'border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400'}`}>{item.status}</span>
+        </div>
+        <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          {priced && rates.length ? rates.map(rate => <div key={`${rate.priceKind}/${rate.unit}`} className="min-w-0">
+            <dt className="truncate text-xs text-zinc-500">{label(rate.priceKind)}</dt>
+            <dd className="truncate font-medium">{rate.approximate ? '≈' : ''}${rate.price} <span className="font-normal text-zinc-500">/ {label(rate.unit)}</span></dd>
+          </div>) : <div className="col-span-2"><dt className="text-xs text-zinc-500">{t.pricing}</dt><dd className="line-clamp-2">{priced ? item.pricing : t.needsVerification}</dd></div>}
+        </dl>
+        <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-4 text-xs text-zinc-500">
+          {item.pricingChannel && <span>{t.channel}: {item.pricingChannel}</span>}
+          <span>{t.verified}: {item.verifiedAt ?? '—'}</span>
+        </div>
+      </article>
+    </Link>;
+  })}</div>;
 }

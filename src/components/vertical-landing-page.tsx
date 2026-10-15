@@ -1,5 +1,5 @@
 import { auditedPrice } from '@/components/audited-catalog';
-import Image from 'next/image';
+import { CatalogProviderLogo } from '@/components/catalog-provider-logo';
 import { WorldModelCatalog } from '@/components/world-model-catalog';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -11,7 +11,6 @@ import type { AiVerticalKind } from '@/lib/ai-verticals';
 import { verticalPageCopy } from '@/lib/ai-verticals';
 import { catalogForKind, isRigorousModelKind, type AiBenchmarkSummary, type AiCatalogItem } from '@/lib/ai-vertical-catalog';
 import { jsonLd, SITE_URL } from '@/lib/seo';
-import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 import { verticalBenchmarkSummaryFallback } from '@/lib/vertical-benchmark-summaries';
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 
@@ -22,15 +21,6 @@ const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> 
   'music-model': { primary: '/creative-plans', secondary: '/video-models' },
   'world-model': { primary: '/video-models', secondary: '/compare/models' },
 };
-
-function normalizedProviderSlug(item: AiCatalogItem): string {
-  if (item.providerSlug) return item.providerSlug;
-  return item.provider.toLowerCase().replace(/\/.*$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-}
-
-function providerLogoForItem(item: AiCatalogItem): string | undefined {
-  return item.providerLogoUrl ?? getVerticalProviderLogo(normalizedProviderSlug(item));
-}
 
 function detailHrefForItem(locale: string, kind: AiVerticalKind, item: AiCatalogItem): string | null {
   if (!item.slug) return null;
@@ -157,8 +147,7 @@ export default function VerticalLandingPage({
                     <div className="flex items-center gap-2">
                       {(() => {
                         const catalogItem = catalog.find((entry) => findExampleHref(locale, kind, [entry], example.provider, example.name));
-                        const logo = catalogItem ? providerLogoForItem(catalogItem) : undefined;
-                        return logo ? <Image src={logo} alt="" width={24} height={24} className="h-6 w-6 rounded-md object-contain" /> : null;
+                        return catalogItem ? <CatalogProviderLogo item={catalogItem} size={24} className="rounded-md" /> : null;
                       })()}
                       <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{example.provider}</p>
                     </div>
@@ -213,7 +202,6 @@ export default function VerticalLandingPage({
               </div>
               {catalog.map((item) => {
                 const detailHref = detailHrefForItem(locale, kind, item);
-                const providerLogo = providerLogoForItem(item);
                 const benchmarkSummaries = benchmarkSummariesForItem(item);
                 return (
                 <div key={`${item.provider}-${item.name}`} className="group relative grid grid-cols-12 gap-3 border-b px-4 py-4 transition-colors last:border-b-0 hover:bg-blue-50/50 dark:hover:bg-blue-950/20">
@@ -222,7 +210,7 @@ export default function VerticalLandingPage({
                   )}
                   <div className="relative z-10 col-span-4 min-w-0 pointer-events-none">
                     <div className="flex min-w-0 items-center gap-3">
-                      {providerLogo && <Image src={providerLogo} alt="" width={32} height={32} className="h-8 w-8 shrink-0 rounded-lg object-contain" />}
+                      <CatalogProviderLogo item={item} size={32} />
                       <div className="min-w-0">
                         <div className="truncate font-semibold">{item.name}</div>
                         <div className="truncate text-sm text-zinc-500">{item.provider}</div>
