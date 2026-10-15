@@ -17,6 +17,23 @@ function comparable(value: unknown): unknown {
   return value ?? null;
 }
 
+// Lifecycle columns are timestamps in the DB but date-only strings in the catalog;
+// compare them at day precision so an applied seed reports zero drift.
+const DATE_KEYS = new Set(['deprecated_at', 'shutdown_date']);
+export function toDay(value: unknown): unknown {
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value.toISOString().slice(0, 10);
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}([T ].*)?$/.test(value)) {
+    if (value.length === 10) return value;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString().slice(0, 10);
+  }
+  return value ?? null;
+}
+export function sameColumnValue(key: string, existing: unknown, desired: unknown): boolean {
+  if (DATE_KEYS.has(key)) return toDay(existing) === toDay(desired);
+  return JSON.stringify(comparable(existing)) === JSON.stringify(comparable(desired));
+}
+
 /** Caller owns a serializable transaction. Dry-run is SELECT-only. No scraping. */
 export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> {
   return seedCatalogItems(tx, apply, NON_LLM_CATALOG, { moondream: true });
@@ -41,7 +58,7 @@ async function seedCatalogItems(tx: Sql, apply: boolean, items: AiCatalogItem[],
     if (matches.length > 1) throw new Error(`Ambiguous ${table}/${target}; transaction aborted.`);
     const existing = matches[0];
     const changes = Object.fromEntries(Object.entries(values)
-      .filter(([key, value]) => !existing || JSON.stringify(comparable(existing[key])) !== JSON.stringify(comparable(value)))
+      .filter(([key, value]) => !existing || !sameColumnValue(key, existing[key], value))
       .map(([key, value]) => [key, { from: existing?.[key] ?? null, to: value }]));
     if (!Object.keys(changes).length) return existing;
     steps.push({ table, target, changes });

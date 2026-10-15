@@ -143,3 +143,24 @@ test('SRE 15:27 dry-run review: itemized rows only, provider reuse, Moondream ma
   assert.equal(voice2.deprecated_at, undefined);
   assert.deepEqual(await seedNonLlm(f.tx, true), []);
 });
+
+test('SRE post-apply review: timestamp lifecycle columns compare equal to date-only seed values', async () => {
+  const f = fixture({ models: [{ id: 1, slug: 'moondream-cloud', name: 'Moondream Cloud' }] });
+  await seedNonLlm(f.tx, true);
+  // PostgreSQL returns timestamptz columns as Date objects.
+  for (const row of f.data.models) for (const key of ['deprecated_at', 'shutdown_date']) {
+    if (typeof row[key] === 'string') row[key] = new Date(`${row[key]}T00:00:00Z`);
+  }
+  const after = await seedNonLlm(f.tx);
+  const lifecycle = after.filter(step => step.table === 'models' && ('deprecated_at' in step.changes || 'shutdown_date' in step.changes));
+  assert.deepEqual(lifecycle, []);
+});
+
+test('toDay normalizes Date, timestamp strings and date strings', async () => {
+  const { toDay, sameColumnValue } = await import('./non-llm-seed');
+  assert.equal(toDay(new Date('2026-11-01T00:00:00Z')), '2026-11-01');
+  assert.equal(toDay('2026-11-01T00:00:00+00:00'), '2026-11-01');
+  assert.equal(toDay('2026-11-01'), '2026-11-01');
+  assert.ok(sameColumnValue('shutdown_date', new Date('2026-11-01T00:00:00Z'), '2026-11-01'));
+  assert.ok(!sameColumnValue('shutdown_date', new Date('2026-11-02T00:00:00Z'), '2026-11-01'));
+});

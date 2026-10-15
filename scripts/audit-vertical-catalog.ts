@@ -115,6 +115,11 @@ function critical(item: AiCatalogItem, message: string) {
   findings.push({ level: 'critical', row: rowId(item), message });
 }
 
+function deferredSeedScript(item: AiCatalogItem): string {
+  if (!item.deferredDbSeed) return 'seed:vertical-models';
+  return item.deferredDbSeedScript ?? 'seed:non-llm-2026-10-15:apply';
+}
+
 function warning(item: AiCatalogItem, message: string) {
   findings.push({ level: 'warning', row: rowId(item), message });
 }
@@ -301,11 +306,13 @@ async function auditDatabaseDrift() {
     const report = item.deferredDbSeed ? warning : critical;
     const model = modelBySlug.get(item.slug!);
     if (!model) {
-      report(item, `DB drift: missing models row; run npm run ${item.deferredDbSeed ? 'seed:non-llm-2026-10-15:apply' : 'seed:vertical-models'}`);
+      report(item, `DB drift: missing models row; run npm run ${deferredSeedScript(item)}`);
       continue;
     }
 
-    if (model.name !== item.name) report(item, `DB drift: name ${model.name} != ${item.name}`);
+    // The image seed reuses pre-existing rows and keeps their scraped display name by design.
+    const keepsExistingName = item.deferredDbSeedScript === 'seed:image-models-2026-10-15:apply';
+    if (!keepsExistingName && model.name !== item.name) report(item, `DB drift: name ${model.name} != ${item.name}`);
     if (model.model_category !== item.modelCategory) report(item, `DB drift: model_category ${model.model_category} != ${item.modelCategory}`);
     if (!sameStringArray(model.input_modalities, item.inputModalities)) report(item, 'DB drift: input_modalities mismatch');
     if (!sameStringArray(model.output_modalities, item.outputModalities)) report(item, 'DB drift: output_modalities mismatch');

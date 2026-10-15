@@ -229,3 +229,10 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
   assert.deepEqual(await f.seedNonLlmRows(), []);
   assert.equal(f.writeCount(), writes);
 });
+
+test('deferred image-model rows point at the image seed, non-LLM rows at the non-LLM seed', async () => {
+  const { IMAGE_MODEL_CATALOG } = await import('../src/lib/image-model-catalog');
+  const { NON_LLM_CATALOG } = await import('../src/lib/non-llm-catalog');
+  for (const item of IMAGE_MODEL_CATALOG) assert.equal(item.deferredDbSeedScript, 'seed:image-models-2026-10-15:apply', item.slug);
+  for (const item of NON_LLM_CATALOG) assert.equal(item.deferredDbSeedScript, undefined, item.slug);
+});

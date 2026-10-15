@@ -41,6 +41,8 @@ export interface AiCatalogItem {
 
   /** Optional SRE seed; DB drift remains a warning during rollout. */
   deferredDbSeed?: boolean;
+  /** npm script that writes a deferredDbSeed row; defaults to seed:non-llm-2026-10-15:apply. */
+  deferredDbSeedScript?: string;
   releasedAt?: string;
   deprecatedAt?: string;
   shutdownDate?: string;

@@ -6,7 +6,7 @@ import type { AiCatalogItem, AiCatalogModality } from './ai-vertical-catalog';
  * pricePerUnit is the headline (cheapest standard per-image or per-1M image-output price).
  * Vision-understanding multimodal LLMs (Gemini, GPT, Claude, Qwen-VL...) stay in the LLM tables and are not duplicated here.
  */
-const verified = { deferredDbSeed: true, lastVerified: '2026-10-15', verifiedAt: '2026-10-15', currency: 'USD', priceStatus: 'priced' as const, pricingConfidence: 'verified' as const };
+const verified = { deferredDbSeed: true, deferredDbSeedScript: 'seed:image-models-2026-10-15:apply', lastVerified: '2026-10-15', verifiedAt: '2026-10-15', currency: 'USD', priceStatus: 'priced' as const, pricingConfidence: 'verified' as const };
 
 type Rate = { priceKind: string; unit: string; price: number; approximate?: boolean };
 interface Spec {
