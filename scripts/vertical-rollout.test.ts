@@ -5,6 +5,7 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import * as catalog from '../src/lib/ai-vertical-catalog';
 import * as logos from '../src/lib/vertical-provider-logos';
+import * as auditVertical from './data/catalog-audit-vertical';
 import type { Sql } from 'postgres';
 import { seedNonLlm } from './data/non-llm-seed';
 
@@ -72,6 +73,7 @@ function fixture(initial: Record<string, Row[]> = {}) {
       './db/queries': { db },
       '../src/lib/ai-vertical-catalog': catalog,
       '../src/lib/vertical-provider-logos': logos,
+      './data/catalog-audit-vertical': auditVertical,
     };
     await runInNewContext(compiled, {
       exports: {}, process, URL,
