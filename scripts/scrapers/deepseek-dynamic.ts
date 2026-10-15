@@ -47,7 +47,9 @@ export function parseDeepSeekTable(rows: string[][], date = new Date()): Scraper
     const modelSlug = canonicalModelName(header);
     const windows = new Map<string, ScrapedPrice>();
     for (const window of ['peak', 'off-peak'] as const) {
-      const windowRows = rows.filter(row => row[0]?.toLowerCase() === window);
+      // Window label may sit in any cell: rowspan'd PRICING / token-type labels
+      // precede it on the first row of each pair (2026-10 layout, OFF-PEAK first).
+      const windowRows = rows.filter(row => row.some(cell => cell.trim().toLowerCase() === window));
       const rates = windowRows.map(row => parseDollar(row.slice(-names.length)[index]));
       const [cache, input, output] = rates;
       if (rates.length !== 3 || cache == null || input == null || output == null) {

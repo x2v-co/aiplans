@@ -27,3 +27,25 @@ test('incomplete pricing tables fail rather than filling unknown prices with zer
   assert.equal(result.success, false);
   assert.deepEqual(result.prices, []);
 });
+
+// Live layout on 2026-10-15: rowspan labels prefix OFF-PEAK rows, OFF-PEAK listed first.
+const liveRows = [
+  ['MODEL', 'deepseek-flash (1)', 'deepseek-v4-pro'],
+  ['MODEL VERSION', 'DeepSeek-V4.1-Flash', 'DeepSeek-V4-Pro-0813'],
+  ['PRICING (2)', '1M INPUT TOKENS (CACHE HIT)', 'OFF-PEAK', '$0.003', '$0.022'],
+  ['PEAK', '$0.006', '$0.044'],
+  ['1M INPUT TOKENS (CACHE MISS)', 'OFF-PEAK', '$0.15', '$0.66'],
+  ['PEAK', '$0.3', '$1.32'],
+  ['1M OUTPUT TOKENS', 'OFF-PEAK', '$0.6', '$1.98'],
+  ['PEAK', '$1.2', '$3.96'],
+  ['Concurrency Limit (3)', '2500', '500'],
+];
+test('rowspan layout with OFF-PEAK first parses both windows', () => {
+  const result = parseDeepSeekTable(liveRows, new Date('2026-10-15T09:21Z'));
+  assert.equal(result.errors, undefined);
+  assert.equal(result.success, true);
+  assert.deepEqual(result.variants!.map(v => [v.modelSlug, v.variantKey, v.inputPricePer1M, v.outputPricePer1M, v.cachedInputPricePer1M]), [
+    ['deepseek-v4-flash', 'peak', 0.3, 1.2, 0.006], ['deepseek-v4-flash', 'off-peak', 0.15, 0.6, 0.003],
+    ['deepseek-v4-pro', 'peak', 1.32, 3.96, 0.044], ['deepseek-v4-pro', 'off-peak', 0.66, 1.98, 0.022],
+  ]);
+});
