@@ -31,6 +31,36 @@ build_services=(app migrate)
 if [[ "${BUILD_SCRAPER:-0}" == "1" ]]; then
   build_services+=(scraper)
 fi
+# Keep code and images consistent: snapshot the currently deployed image tags
+# before building. If anything fails before the new app is confirmed healthy,
+# restore the previous tags so timers (scraper) and the app keep running the
+# images that match the still-deployed code. The workflow only syncs the new
+# code into the stable path after this script exits 0.
+image_name() { echo "${project_name}-$1:latest"; }
+rollback_tag() { echo "${project_name}-$1:pre-rollout"; }
+snapshotted=()
+for svc in "${build_services[@]}"; do
+  if "${docker_cmd[@]}" image inspect "$(image_name "$svc")" >/dev/null 2>&1; then
+    "${docker_cmd[@]}" tag "$(image_name "$svc")" "$(rollback_tag "$svc")"
+    snapshotted+=("$svc")
+  fi
+done
+restore_images() {
+  local rc=$?
+  trap - ERR EXIT
+  if [[ "$rc" != "0" ]]; then
+    echo "rollout failed (exit $rc); restoring previous images" >&2
+    for svc in "${snapshotted[@]}"; do
+      "${docker_cmd[@]}" tag "$(rollback_tag "$svc")" "$(image_name "$svc")" || true
+    done
+    if [[ "${app_switched:-0}" == "1" ]]; then
+      "${compose[@]}" up -d --no-deps app || true
+    fi
+  fi
+  exit "$rc"
+}
+trap restore_images EXIT
+
 "${compose[@]}" build "${build_services[@]}"
 "${compose[@]}" run --rm --no-deps scraper npm run validate:production-env
 "${compose[@]}" up -d postgres
@@ -60,6 +90,7 @@ fi
 "${compose[@]}" run --rm --no-deps scraper npm run audit:verticals:db
 "${compose[@]}" run --rm --no-deps scraper npm run refresh:fx
 "${compose[@]}" run --rm --no-deps scraper npm run publish:v1
+app_switched=1
 "${compose[@]}" up -d --no-deps --remove-orphans app
 
 for _ in {1..45}; do
