@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import * as catalog from '../src/lib/ai-vertical-catalog';
+import * as aliases from '../src/lib/vertical-model-aliases';
 import type { AiCatalogItem } from '../src/lib/ai-vertical-catalog';
 import type { getVerticalModelCatalog } from '../src/lib/vertical-models';
 import type { getVerticalModelDetail } from '../src/lib/vertical-model-detail';
@@ -114,6 +115,7 @@ function serverFixture({ unavailable = false, benchmarkFailure = false, rows = [
   const stubs = {
     '@/lib/db': { sql, TEXT_ARRAY: 1009, INT4_ARRAY: 1007 },
     '@/lib/ai-vertical-catalog': catalog,
+    '@/lib/vertical-model-aliases': aliases,
     '@/lib/vertical-provider-logos': { getVerticalProviderLogo: () => undefined },
     '@/lib/vertical-benchmarks': {
       getVerticalBenchmarkSummary: async (id: number) => {
@@ -144,7 +146,7 @@ test('DB cannot change world order, membership, identity, specs or prices; slug 
   assert.equal(actual[0].name, worlds[0].name);
   assert.equal(actual[0].priceStatus, 'subscription_included');
   assert.equal(actual[0].providerLogoUrl, '/fixture.svg');
-  assert.equal(actual[0].benchmarkSummaries, fixture.summaries);
+  assert.equal(JSON.stringify(actual[0].benchmarkSummaries), JSON.stringify(fixture.summaries));
   assert.deepEqual(fixture.benchmarkIds, [100]);
   for (let i = 0; i < worlds.length; i++) {
     const rest = { ...actual[i] };
@@ -193,14 +195,14 @@ test('video/music/decision membership and prices remain audit-owned with stale o
   }
 });
 
-test('DB-only video/music identities remain available with unknown price status', async () => {
+test('DB-only video/music identities remain available with not-public price status', async () => {
   for (const kind of ['video-model', 'music-model'] as const) {
     const fixture = serverFixture({ rows: [{ id: 300, slug: 'db-only', name: 'DB model' }] });
     const rows = await fixture.getVerticalModelCatalog(kind);
     assert.equal(rows.length, catalog.catalogForKind(kind).length + 1);
     const extra = rows.find(row => row.slug === 'db-only')!;
     assert.equal(extra.pricePerUnit, null);
-    assert.equal(extra.priceStatus, 'needs-verification');
+    assert.equal(extra.priceStatus, 'not-public');
     assert.equal((await fixture.getVerticalModelDetail(kind, 'db-only')).item.name, 'DB model');
   }
 });

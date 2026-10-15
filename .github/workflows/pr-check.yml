@@ -15,9 +15,9 @@ permissions:
 
 jobs:
   check:
-    name: Type-check, guide tests, build
+    name: Type-check, unit tests, build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,16 +27,10 @@ jobs:
       - run: npm ci
       - name: Type-check
         run: npx tsc --noEmit
-      - name: Pricing guide tests
-        run: npx tsx --test src/lib/seo-offers.test.ts src/lib/pricing-guides.test.ts src/lib/analytics.test.ts scripts/utils/model-identity-guard.test.ts scripts/data/verified-2026-10-openrouter-cached.test.ts scripts/scrapers/openrouter.test.ts scripts/scrapers/aws-bedrock-dynamic.test.ts
-      - name: Catalog audit, rollout seed and price-policy tests (offline)
-        run: npx tsx --test scripts/vertical-rollout.test.ts scripts/data/catalog-audit*.test.ts scripts/utils/audit-price-policy.test.ts scripts/scrapers/anthropic-dynamic.test.ts scripts/scrapers/plan-google-gemini-dynamic.test.ts scripts/data/haiku-5-5-headline.test.ts scripts/db/rehearsal.test.ts src/lib/vertical-model-aliases.test.ts
-      - name: Model shutdown tests
-        run: npx tsx --test src/lib/model-shutdown.test.ts scripts/data/openai-shutdowns.test.ts
-      - name: Quota schema, engine and monitor tests (offline)
-        run: |
-          npx tsc --noEmit -p scripts/tsconfig.quota.json
-          npx tsx --test src/db/schema/quota.test.ts src/lib/quota/engine.test.ts scripts/utils/quota-text-monitor.test.ts scripts/quota-text-monitor.test.ts
+      - name: Quota schema type-check
+        run: npx tsc --noEmit -p scripts/tsconfig.quota.json
+      - name: Unit tests
+        run: npm test
       - name: Build
         run: npm run build
         env:
