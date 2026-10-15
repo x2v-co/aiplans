@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { AiCatalogItem } from '@/lib/ai-vertical-catalog';
 
 export function auditedPrice(item: AiCatalogItem, locale: string): string {
+  if (item.priceStatus === 'not-public') return locale === 'zh' ? '未公开价格' : 'Price not public';
   if (item.priceStatus !== 'priced') return locale === 'zh' ? '待核验' : 'Needs verification';
   if (item.kind === 'decision-model') return item.pricing;
   if (item.pricePerUnit == null) return '—';
@@ -22,7 +23,7 @@ export function AuditedPricingFacts({ item, locale }: { item: AiCatalogItem; loc
         <div><dt>{zh ? '每百万次任务' : 'Per 1M tasks'}</dt><dd>{money(item.pricePer1MTasks)}</dd></div>
         <div><dt>{zh ? '上下文' : 'Context'}</dt><dd>{item.contextWindowLabel ?? '—'}</dd></div>
       </>}
-      <div><dt>{zh ? '价格状态' : 'Price status'}</dt><dd>{item.priceStatus === 'needs-verification' ? (zh ? '待核验' : 'Needs verification') : item.priceStatus === 'priced' ? (zh ? '已标价' : 'Priced') : item.priceStatus ?? '—'}</dd></div>
+      <div><dt>{zh ? '价格状态' : 'Price status'}</dt><dd>{item.priceStatus === 'needs-verification' ? (zh ? '待核验' : 'Needs verification') : item.priceStatus === 'priced' ? (zh ? '已标价' : 'Priced') : item.priceStatus === 'not-public' ? (zh ? '未公开价格' : 'Price not public') : item.priceStatus ?? '—'}</dd></div>
       <div><dt>{zh ? '核验日期' : 'Verified'}</dt><dd>{item.verifiedAt ?? '—'}</dd></div>
     </dl>
     {item.notes && <p className="mt-3 text-sm">{item.notes}</p>}

@@ -7,7 +7,7 @@ import VerticalModelDetailPage from '@/components/vertical-model-detail-page';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
-  const { item } = await getVerticalModelDetail('video-model', slug);
+  const { item } = await getVerticalModelDetail('video-model', slug, locale);
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: `/video-models/${slug}`,
@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function VideoModelDetailRoute({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
-  const detail = await getVerticalModelDetail('video-model', slug);
+  const detail = await getVerticalModelDetail('video-model', slug, locale);
   const crumbs = breadcrumbList([
     { name: locale === 'zh' ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
     { name: locale === 'zh' ? '视频模型' : 'Video Models', url: `${SITE_URL}/${locale}/video-models` },

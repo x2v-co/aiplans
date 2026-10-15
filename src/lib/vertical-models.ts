@@ -1,7 +1,8 @@
-import { sql, TEXT_ARRAY } from '@/lib/db';
+import { sql, INT4_ARRAY, TEXT_ARRAY } from '@/lib/db';
 import { catalogForKind, type AiBenchmarkSummary, type AiCatalogItem, type AiCatalogKind, type AiCatalogModality, type AiCatalogStatus, type AiModelCategory } from '@/lib/ai-vertical-catalog';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 import { getVerticalBenchmarkSummary } from '@/lib/vertical-benchmarks';
+import { isBenchmarkOnlySlug, parentSlugFor } from '@/lib/vertical-model-aliases';
 
 const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, AiModelCategory>> = {
   'video-model': 'video',
@@ -81,9 +82,43 @@ async function getBenchmarkSummaries(modelIds: number[]): Promise<Map<number, Ai
   return byModel;
 }
 
-function dbRowToCatalogItem(kind: AiCatalogKind, row: DbVerticalModelRow, benchmarkSummaries: AiBenchmarkSummary[] = []): AiCatalogItem {
+interface DbUsagePriceRow { model_id: number; price: number; currency: string | null; unit: string; price_kind: string }
+
+function dbBillingUnit(row: DbUsagePriceRow): AiCatalogItem['billingUnit'] | undefined {
+  if (row.price_kind === 'video_second' || /second/i.test(row.unit)) return 'per_second';
+  if (/song/i.test(row.unit)) return 'per_song';
+  return undefined;
+}
+
+/** Lowest/highest DB usage price per model, only for units the UI can render. */
+async function getDbPrices(modelIds: number[]): Promise<Map<number, { low: number; high: number; currency: string; billingUnit: NonNullable<AiCatalogItem['billingUnit']> }>> {
+  const out = new Map<number, { low: number; high: number; currency: string; billingUnit: NonNullable<AiCatalogItem['billingUnit']> }>();
+  if (modelIds.length === 0) return out;
+  const rows = await sql<DbUsagePriceRow[]>`
+    SELECT model_id, price, currency, unit, price_kind FROM usage_prices
+    WHERE model_id = ANY(${sql.array(modelIds, INT4_ARRAY)}) AND price IS NOT NULL AND price > 0 AND COALESCE(is_available, true)
+  `;
+  for (const row of rows) {
+    const billingUnit = dbBillingUnit(row);
+    if (!billingUnit) continue;
+    const currency = row.currency ?? 'USD';
+    const prev = out.get(row.model_id);
+    if (prev && (prev.billingUnit !== billingUnit || prev.currency !== currency)) continue;
+    out.set(row.model_id, prev
+      ? { ...prev, low: Math.min(prev.low, row.price), high: Math.max(prev.high, row.price) }
+      : { low: row.price, high: row.price, currency, billingUnit });
+  }
+  return out;
+}
+
+type DbPrice = Awaited<ReturnType<typeof getDbPrices>> extends Map<number, infer V> ? V : never;
+
+function dbRowToCatalogItem(kind: AiCatalogKind, row: DbVerticalModelRow, benchmarkSummaries: AiBenchmarkSummary[] = [], dbPrice?: DbPrice): AiCatalogItem {
   const sourceUrls = sourcesFromDescription(row.description);
   const pricingConfidence = confidenceFromDescription(row.description);
+  const priceFields: Partial<AiCatalogItem> = dbPrice
+    ? { priceStatus: 'priced', billingUnit: dbPrice.billingUnit, pricePerUnit: dbPrice.low, currency: dbPrice.currency, ...(dbPrice.high > dbPrice.low ? { pricePerUnitHigh: dbPrice.high } : {}) }
+    : { priceStatus: 'not-public', pricePerUnit: null };
   return {
     kind,
     slug: row.slug,
@@ -92,12 +127,11 @@ function dbRowToCatalogItem(kind: AiCatalogKind, row: DbVerticalModelRow, benchm
     providerSlug: row.provider_slug ?? undefined,
     providerLogoUrl: row.provider_logo_url ?? row.provider_logo ?? getVerticalProviderLogo(row.provider_slug),
     status: statusFromDescription(row.description, row.open_source),
-    pricing: pricingConfidence === 'not-commercial' ? 'Research / self-hosted compute' : 'See official source for current plan/API pricing',
+    pricing: pricingConfidence === 'not-commercial' ? 'Research / self-hosted compute' : dbPrice ? 'Usage price from provider price table' : 'Price not publicly disclosed',
     unit: row.pricing_unit ?? 'unknown',
     pricingUnit: row.pricing_unit ?? 'unknown',
     pricingConfidence,
-    priceStatus: 'needs-verification', pricePerUnit: null,
-    needsVerification: ['No price supplied in the 2026-10-15 audit.'],
+    ...priceFields,
     capabilities: row.capabilities ?? [],
     bestFor: row.description?.split('\n')[0] ?? `${row.name} ${row.model_category} model`,
     url: row.offical_link ?? sourceUrls?.[0]?.url,
@@ -131,19 +165,34 @@ async function getStaticModelCatalog(kind: AiCatalogKind): Promise<AiCatalogItem
     `;
     const matchingRows = rows.filter((row) => slugs.includes(row.slug));
     const bySlug = new Map(matchingRows.map((row) => [row.slug, row]));
-    const benchmarkSummaries = await getBenchmarkSummaries(matchingRows.map((row) => row.id));
+    const listExtras = kind === 'video-model' || kind === 'music-model';
+    const dbOnly = listExtras ? rows.filter((row) => !slugs.includes(row.slug) && !isBenchmarkOnlySlug(row.slug)) : [];
+    // Version-level rows whose family is in the audited catalog merge into it.
+    const childRows = new Map<string, DbVerticalModelRow[]>();
+    const extraRows: DbVerticalModelRow[] = [];
+    for (const row of dbOnly) {
+      const parent = parentSlugFor(kind, row.slug);
+      if (parent && slugs.includes(parent)) childRows.set(parent, [...(childRows.get(parent) ?? []), row]);
+      else extraRows.push(row);
+    }
+    const benchmarkSummaries = await getBenchmarkSummaries([...matchingRows, ...dbOnly].map((row) => row.id));
     const auditedItems = items.map((item) => {
       const row = bySlug.get(item.slug!);
-      if (!row) return item;
-      const summaries = benchmarkSummaries.get(row.id);
+      const children = childRows.get(item.slug!) ?? [];
+      if (!row && children.length === 0) return item;
+      const own = row ? benchmarkSummaries.get(row.id) ?? [] : [];
+      const merged = [...(own.length ? own : item.benchmarkSummaries ?? []), ...children.flatMap((child) => benchmarkSummaries.get(child.id) ?? [])];
       return {
         ...item,
-        providerLogoUrl: row.provider_logo_url ?? row.provider_logo ?? item.providerLogoUrl,
-        benchmarkSummaries: summaries?.length ? summaries : item.benchmarkSummaries,
+        providerLogoUrl: row?.provider_logo_url ?? row?.provider_logo ?? item.providerLogoUrl,
+        benchmarkSummaries: merged.length ? merged : item.benchmarkSummaries,
       };
     });
-    const extras = kind === 'video-model' || kind === 'music-model'
-      ? rows.filter(row => !slugs.includes(row.slug)).map(row => dbRowToCatalogItem(kind, row)) : [];
+    const dbPrices = await getDbPrices(extraRows.map((row) => row.id)).catch((error) => {
+      console.warn(`getDbPrices(${kind}) failed`, error);
+      return new Map<number, DbPrice>();
+    });
+    const extras = extraRows.map((row) => dbRowToCatalogItem(kind, row, benchmarkSummaries.get(row.id) ?? [], dbPrices.get(row.id)));
     return [...auditedItems, ...extras];
   } catch (error) {
     console.warn(`getVerticalModelCatalog(${kind}) using static catalog without DB enrichment`, error);

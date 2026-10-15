@@ -1,4 +1,5 @@
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { isBenchmarkOnlySlug, parentSlugFor } from '@/lib/vertical-model-aliases';
 import { catalogForKind, type AiCatalogItem, type AiCatalogKind, type AiModelCategory } from '@/lib/ai-vertical-catalog';
 import { getVerticalModelCatalog } from '@/lib/vertical-models';
 import type { ModelBenchmarkScore } from '@/lib/benchmarks';
@@ -55,9 +56,12 @@ export interface VerticalModelDetail {
 }
 
 /** Audited pricing is static; stale DB plans/usage rows never override it. */
-export async function getVerticalModelDetail(kind: AiCatalogKind, slug: string): Promise<VerticalModelDetail> {
+export async function getVerticalModelDetail(kind: AiCatalogKind, slug: string, locale?: string): Promise<VerticalModelDetail> {
   if (!KIND_TO_CATEGORY[kind]) notFound();
   if ((['world-model', 'decision-model', 'voice-model', 'image-model'].includes(kind)) && !catalogForKind(kind).some(i => i.slug === slug)) notFound();
+  const parent = parentSlugFor(kind, slug);
+  if (parent) permanentRedirect(`/${locale ?? 'en'}/${verticalKindPath(kind)}/${parent}`);
+  if (isBenchmarkOnlySlug(slug)) notFound();
   const catalog = await getVerticalModelCatalog(kind);
   const item = catalog.find(entry => entry.slug === slug);
   if (!item) notFound();
