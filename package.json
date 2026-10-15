@@ -42,6 +42,7 @@
     "fix:kinds": "tsx scripts/fix-plan-kinds.ts",
     "fix:kinds:dry-run": "tsx scripts/fix-plan-kinds.ts --dry-run",
     "mappings:materialize": "tsx scripts/materialize-model-plan-mappings.ts",
+    "mappings:materialize:apply": "tsx scripts/materialize-model-plan-mappings.ts --apply",
     "mappings:materialize:dry-run": "tsx scripts/materialize-model-plan-mappings.ts --dry-run",
     "ingest:arena": "tsx scripts/ingest-arena-leaderboard.ts",
     "ingest:benchmarks": "tsx scripts/ingest-artificial-analysis-benchmarks.ts",

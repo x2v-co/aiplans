@@ -20,9 +20,9 @@
  *     something a scraper can do quietly. `--allow-empty` overrides.
  *
  * Usage:
- *   npx tsx scripts/materialize-model-plan-mappings.ts --dry-run
- *   npx tsx scripts/materialize-model-plan-mappings.ts
- *   npx tsx scripts/materialize-model-plan-mappings.ts --allow-empty
+ *   npx tsx scripts/materialize-model-plan-mappings.ts            # dry-run (default)
+ *   npx tsx scripts/materialize-model-plan-mappings.ts --apply    # write
+ *   npx tsx scripts/materialize-model-plan-mappings.ts --apply --allow-empty
  */
 import { databaseSql } from './db/postgres-admin';
 import {
@@ -31,7 +31,13 @@ import {
   type SelectableModel,
 } from '../src/lib/plan-selector';
 
-const DRY_RUN = process.argv.includes('--dry-run');
+const KNOWN_FLAGS = ['--apply', '--dry-run', '--allow-empty'];
+const unknownFlags = process.argv.slice(2).filter(arg => !KNOWN_FLAGS.includes(arg));
+if (unknownFlags.length || (process.argv.includes('--apply') && process.argv.includes('--dry-run'))) {
+  throw new Error('Usage: materialize-model-plan-mappings.ts [--dry-run (default) | --apply] [--allow-empty]');
+}
+// Default is a dry-run; only an explicit --apply writes.
+const DRY_RUN = !process.argv.includes('--apply');
 const ALLOW_EMPTY = process.argv.includes('--allow-empty');
 
 type PlanRow = {

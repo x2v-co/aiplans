@@ -60,7 +60,7 @@ else
   # plan scrapers so newly-scraped models and plans get linked, and before the
   # audit so plans.no_model_mapping reflects this run. API-only runs keep this
   # enabled so newly-discovered models are linked to existing subscription plans.
-  "${compose[@]}" run --rm scraper npm run mappings:materialize
+  "${compose[@]}" run --rm scraper npm run mappings:materialize:apply
   mappings_status=$?
 fi
 

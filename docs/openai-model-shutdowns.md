@@ -50,7 +50,7 @@ psql -X "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /tmp/aiplans-2026-10-15-p0-apply.s
 npm run seed:openai-shutdowns -- --dry-run
 psql -X "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/sql/2026-10-15-p0-pricing.sql
 npm run mappings:materialize:dry-run
-npm run mappings:materialize
+npm run mappings:materialize:apply
 npm run audit:verbose
 ```
 
