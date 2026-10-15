@@ -2,6 +2,8 @@
 
 Plan quotas must come from evidence reviewed for this project. The external methodology reference informed the calculation approach only; none of its vendor quota values, prices, multipliers, or adoption decisions are imported.
 
+Community evidence intake adds internal data infrastructure with a read-only evidence review page. The intake itself adds no public quota estimates, plan prices or automatic migration registration.
+
 ## Public estimate display and change history
 
 Provider plan cards (`/[locale]/providers/[slug]`) and model plan comparisons
@@ -120,6 +122,27 @@ For writes it locks current PAYG rows and follows the transaction/version workfl
 
 Implementation and tests are DB-free. No database preview, rehearsal, apply or migration was executed during this change. Review 0005 status on the intended target before an operator runs these commands; production status is not inferred here.
 
+## Community evidence intake and review (额度5)
+
+`drizzle/0012_quota_evidence_review.sql` manually extends `quota_evidence` after 0005 with observation/provenance, token/meter measurements, confidence, review timestamps/status and a unique nullable SHA-256 content hash. Legacy evidence defaults to low confidence and pending review; observation time stays unknown. Both migrations are deliberately absent from `scripts/migrate-data-accuracy.ts` and the Drizzle journal. Review SQL and obtain explicit approval for the named database before an operator applies 0012 using the same single-file transaction workflow below. No migrations or production actions are performed by implementation or validation.
+
+```bash
+npm run quota:evidence                        # offline dry-run by default
+npm run quota:evidence -- --apply              # insert pending evidence
+npm run quota:evidence -- --review 123 accept --apply
+npm run quota:evidence -- --review 124 reject --apply
+npm run quota:evidence -- --from-ccusage /tmp/daily.json \
+  --plan your-plan-slug --pct-before 10 --pct-after 30 --output /tmp/draft.json
+```
+
+One strict Zod-validated JSON/YAML object per file goes under `data/quota-evidence/`; `.sample` examples are never loaded. See [the format and ccusage workflow](../data/quota-evidence/README.md). Source URL or screenshot, observation timestamp, capture date, original value and requested confidence are required. Dry-run prints the exact parameterized inserts and ordered values without requiring a DB; an explicitly supplied `DATABASE_URL` enables read-only hash dedupe. The CLI does not load credential files or fetch sources. Apply uses conflict-safe inserts; review changes pending status and review time only, never estimates or confidence.
+
+Single oral claims stay low. Explicit token/meter samples with recorded prices, mix and cadence pass through `measuredQuota`; successful derivations receive medium and print their implied monthly token interval. Missing assumptions produce no range and stay low. All persisted calculation inputs and the range are retained in notes. Two attested independent origins with matching comparison assumptions and range midpoints within 30% print a manual medium suggestion only. Reposts and same-author reports do not qualify. Community intake never assigns high.
+
+`--from-ccusage` converts one `daily[]` record into a local JSON draft, retaining model/cost/cache-creation context; select `--date` for multi-day exports. The draft needs its exact observation time, source link, window and calculation assumptions reviewed before intake. Cache creation is excluded from engine categories and explicitly noted; no model prices or reset cadence are guessed.
+
+`/{locale}/internal/quota-evidence` is a dynamic read-only list grouped by plan, with source, observation/capture date, source/screenshot links, confidence and review status. It has noindex metadata and no nav/sitemap entry. Missing tables or columns before manual rollout render an empty state. This route has no authentication gate; only ingest material suitable for that visibility.
+
 ## Quota text monitor (scheduled daily)
 
 ```bash
@@ -186,5 +209,8 @@ npm test
 npm run lint
 ```
 
-The dedicated script TypeScript config covers the monitor and PAYG seed files because the app's root config excludes `scripts/`. Tests use synthetic arithmetic, HTML fixtures and injected clients; they require no network or database. `npm test` / `scripts/test-unit.mjs` recursively discovers both PAYG test files, and PR CI runs that command and both TypeScript checks. PAYG tests exercise both mixes, USD/CNY conversion, cache fallback/zero rates, promotion expiry, exclusions, read-only preview, pre-0005 errors, empty data, idempotence, supersession ordering and rollback on rehearsal/failure.
-The dedicated script TypeScript config covers the new monitor files because the app's root config excludes `scripts/`. Tests use synthetic arithmetic, HTML fixtures and injected clients; they require no network or database. The monitor entry-point test injects a no-op environment loader so it does not read local credentials. `package.json` delegates `npm test` to `scripts/test-unit.mjs`, which recursively discovers the quota tests under `src/` as well as the monitor tests under `scripts/`. CI runs that command and both TypeScript checks, including on translation changes.
+The dedicated script TypeScript config covers the monitor, PAYG seed and evidence intake files because the app's root config excludes `scripts/`. `npm test` delegates to `scripts/test-unit.mjs`, which recursively discovers `*.test.ts`/`*.test.mjs` under `src/` and `scripts/` and runs Node's test runner with `tsx`, including schema, intake, ccusage, review, listing, quota display, history, SEO, missing-table, PAYG and monitor tests. Tests use synthetic arithmetic, HTML fixtures and injected clients; they require no network or database. The monitor entry-point test injects a no-op environment loader so it does not read local credentials. PR CI runs that command and both TypeScript checks, including on translation changes.
+
+PAYG tests exercise both mixes, USD/CNY conversion, cache fallback/zero rates, promotion expiry, exclusions, read-only preview, pre-0005 errors, empty data, idempotence, supersession ordering and rollback on rehearsal/failure.
+
+For the evidence change, run both TypeScript checks above, `npm test`, and ESLint on the changed TypeScript/TSX files. Run a credential-free build if it completes within ten minutes; never load production credentials for validation.
