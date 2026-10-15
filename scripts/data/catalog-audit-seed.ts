@@ -47,7 +47,9 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
   const model = async (slug: string, name: string, producerId: number | null, category = 'text', extras: Record<string, unknown> = {}) => {
     const existing = one('models', rows.models.filter(r => r.slug === slug), slug);
     const ids = [...new Set([...(Array.isArray(existing?.provider_ids) ? existing.provider_ids as number[] : []), ...(producerId == null ? [] : [producerId])])];
-    return save('models', existing, { slug, name, provider_ids: ids, type: category === 'text' ? 'llm' : 'multimodal',
+    return save('models', existing, { slug, name, provider_ids: ids,
+      // Keep an existing type (e.g. subq-snap llm row shared with the P0 SQL); defaults for new rows only.
+      type: existing?.type ?? (category === 'text' || slug === 'subq-snap' ? 'llm' : 'multimodal'),
       model_category: category, ...extras }, slug);
   };
   const channel = async (modelId: number, providerId: number, input: number | null, output: number | null, notes: string) => {
@@ -105,7 +107,9 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
     // Snap's decision catalog view shares the P0 token API row and its identity.
     const isSnap = item.slug === 'subq-snap';
     const fields = auditVerticalModelFields(item);
-    const m = await model(item.slug!, item.name, owner?.id ?? null, fields.model_category, {
+    // subq-snap shares the P0 SQL row: never flip its taxonomy here (deploy seed owns it).
+    const snapCategory = isSnap ? rows.models.find(r => r.slug === item.slug)?.model_category as string | undefined : undefined;
+    const m = await model(item.slug!, item.name, owner?.id ?? null, snapCategory ?? fields.model_category, {
       pricing_unit: fields.pricing_unit,
       offical_link: item.url ?? item.sourceUrls?.[0]?.url ?? null,
       ...(item.contextWindow != null ? { context_window: item.contextWindow } : item.contextWindowLabel ? { context_window: null } : {}),

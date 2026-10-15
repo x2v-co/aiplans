@@ -13,8 +13,8 @@ export function isAuditOwnedVertical(item: AiCatalogItem): boolean {
  */
 export function auditVerticalModelFields(item: AiCatalogItem) {
   return {
-    // Snap's decision catalog view shares the P0 token API row and its identity.
-    model_category: item.slug === 'subq-snap' ? 'text' : item.modelCategory,
+    // subq-snap keeps the catalog's decision taxonomy; the P0 SQL preserves it too.
+    model_category: item.modelCategory,
     pricing_unit: item.kind === 'decision-model' ? 'per_1m_tokens'
       : item.billingUnit === 'per_second' ? 'per_second'
       : item.billingUnit === 'per_song' ? 'per_generation' : 'unknown',

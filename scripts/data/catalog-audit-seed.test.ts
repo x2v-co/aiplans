@@ -198,5 +198,5 @@ test('audit-owned vertical fields keep deploy seed and audit seed in agreement',
   assert.equal(auditFields(veo).pricing_unit, 'per_second');
   assert.match(auditFields(veo).description, /Unit: .*\nSources: /s);
   const snap = CATALOG.find(i => i.slug === 'subq-snap')!;
-  assert.deepEqual([auditFields(snap).model_category, auditFields(snap).pricing_unit], ['text', 'per_1m_tokens']);
+  assert.deepEqual([auditFields(snap).model_category, auditFields(snap).pricing_unit], ['decision', 'per_1m_tokens']);
 });

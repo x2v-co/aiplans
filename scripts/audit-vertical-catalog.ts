@@ -5,6 +5,7 @@ import {
   type AiPricingConfidence,
 } from '../src/lib/ai-vertical-catalog';
 import { VERTICAL_PROVIDER_LOGOS } from '../src/lib/vertical-provider-logos';
+import { auditVerticalModelFields, isAuditOwnedVertical } from './data/catalog-audit-vertical';
 
 interface Finding {
   level: 'critical' | 'warning';
@@ -304,7 +305,9 @@ async function auditDatabaseDrift() {
     if (!sameStringArray(model.input_modalities, item.inputModalities)) report(item, 'DB drift: input_modalities mismatch');
     if (!sameStringArray(model.output_modalities, item.outputModalities)) report(item, 'DB drift: output_modalities mismatch');
     if (!sameStringArray(model.capabilities, item.capabilities)) report(item, 'DB drift: capabilities mismatch');
-    const expectedPricingUnit = item.deferredDbSeed ? item.pricingUnit : PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown'];
+    const expectedPricingUnit = item.deferredDbSeed ? item.pricingUnit
+      : isAuditOwnedVertical(item) ? auditVerticalModelFields(item).pricing_unit
+      : PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown'];
     if (model.pricing_unit !== expectedPricingUnit) report(item, `DB drift: pricing_unit ${model.pricing_unit} != ${expectedPricingUnit}`);
     if (model.offical_link !== officialLink(item)) report(item, `DB drift: offical_link ${model.offical_link} != ${officialLink(item)}`);
     if ((model.open_source ?? false) !== (item.access?.includes('open-weights') ?? false)) report(item, 'DB drift: open_source mismatch');
