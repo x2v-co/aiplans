@@ -87,8 +87,10 @@ export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> 
     await save('model_plan_mapping', rows.model_plan_mapping.filter(row => row.model_id === model.id && row.plan_id === plan.id), {
       model_id: model.id, plan_id: plan.id, priority: 50, source: 'manual',
     }, slug);
-    const rates = [{ priceKind: unit, unit, price: null as number | null }, ...(item.usageRates ?? []),
-      ...(item.kind === 'decision-model' ? [
+    // Itemized usageRates win; decision defaults only fill kinds the item did not itemize.
+    const itemized = item.usageRates ?? [];
+    const rates = [{ priceKind: unit, unit, price: null as number | null }, ...itemized,
+      ...(item.kind === 'decision-model' && !itemized.length ? [
         { priceKind: 'input_tokens', unit: 'per_1m_tokens', price: item.inputPricePer1M ?? null },
         { priceKind: 'output_tokens', unit: 'per_1m_tokens', price: item.outputPricePer1M ?? null },
         { priceKind: 'tasks', unit: 'per_1m_tasks', price: null },

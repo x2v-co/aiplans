@@ -80,7 +80,12 @@ test('apply is idempotent, scopes channel prices and updates every Moondream ent
   assert.equal((rates.find(row => row.price_kind === 'image_starting')?.constraints_json as Record<string, unknown>).approximate, true);
   const jevRates = f.data.usage_prices.filter(row => row.model_id === bySlug('jev-1.14.0').id);
   assert.equal(jevRates.find(row => row.price_kind === 'output_tokens')?.price, 0);
-  assert.equal(jevRates.find(row => row.price_kind === 'tasks')?.price, null);
+  assert.equal(jevRates.find(row => row.price_kind === 'input_tokens')?.price, 0.042);
+  // Itemized: TypeSafe has no per-task fee, so no null tasks row is invented.
+  assert.equal(jevRates.some(row => row.price_kind === 'tasks'), false);
+  const moondreamRates = f.data.usage_prices.filter(row => row.model_id === bySlug('moondream-cloud').id);
+  assert.equal(moondreamRates.find(row => row.price_kind === 'moondream-3.1_realtime_output')?.price, 1);
+  assert.equal(moondreamRates.find(row => row.price_kind === 'moondream-3-preview_batch_output')?.price, 1.25);
   assert.ok(f.data.plans.every(row => row.price === null && row.annual_price === null && row.source === 'manual'));
   assert.ok(f.data.model_plan_mapping.every(row => row.source === 'manual'));
   const transcribe = bySlug('grok-voice-transcribe-1.0');

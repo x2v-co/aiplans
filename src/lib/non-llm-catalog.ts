@@ -52,9 +52,14 @@ function transcription(version: '1.0' | '2.0'): AiCatalogItem {
 function jev(version: '1.14.0' | '1.13.0'): AiCatalogItem {
   return {
     ...verified, kind: 'decision-model', slug: `jev-${version}`, name: `TypeSafe Jev ${version}`, provider: 'TypeSafe', providerSlug: 'typesafe',
-    modelCategory: 'decision', status: 'available', pricing: '$0.042/1M input tokens; output free',
+    modelCategory: 'decision', status: 'available', pricing: '$0.042/1M input tokens ($42/1B); output free; long context same rate',
     unit: 'per_1m_tokens', pricingUnit: 'per_1m_tokens', priceStatus: 'priced', pricingConfidence: 'verified',
     inputPricePer1M: 0.042, outputPricePer1M: 0, pricePer1MTasks: null, contextWindow: 64000,
+    // Itemized: TypeSafe bills input tokens only; output is free; no per-task fee.
+    usageRates: [
+      { priceKind: 'input_tokens', unit: 'per_1m_tokens', price: 0.042 },
+      { priceKind: 'output_tokens', unit: 'per_1m_tokens', price: 0 },
+    ],
     contextWindowLabel: '64k/request; 32k/question; 262k with long-context header',
     inputModalities: ['text'], outputModalities: ['text'], access: ['api'], capabilities: ['decision'], bestFor: 'Decision API.',
     notes: 'jev-latest → jev-1.13.0; jev-preview → jev-1.14.0.',
@@ -99,10 +104,26 @@ export const NON_LLM_CATALOG: AiCatalogItem[] = [
   {
     ...verified, ...MOONDREAM_SHUTDOWN, kind: 'image-model', slug: 'moondream-cloud', name: 'Moondream Cloud (vision lifecycle note)',
     provider: 'Moondream', providerSlug: 'moondream', modelCategory: 'image', status: 'deprecated',
-    pricing: 'Needs verification', unit: 'availability', pricingUnit: 'unknown', priceStatus: 'needs-verification', pricingConfidence: 'unknown',
+    // https://moondream.ai/pricing (checked 2026-10-15); Cloud ends 2026-11-13.
+    pricing: 'Moondream 3.1 9B A2B real-time $0.30/$1.00, batch $0.15/$0.50; 3 Preview real-time $0.30/$2.50, batch $0.15/$1.25 per 1M input/output tokens; Lens training $0.60/1M',
+    unit: 'per_1m_tokens', pricingUnit: 'per_1m_tokens', priceStatus: 'priced', pricingConfidence: 'verified',
+    usageRates: [
+      { priceKind: 'moondream-3.1_realtime_input', unit: 'per_1m_tokens', price: 0.30 },
+      { priceKind: 'moondream-3.1_realtime_output', unit: 'per_1m_tokens', price: 1.00 },
+      { priceKind: 'moondream-3.1_batch_input', unit: 'per_1m_tokens', price: 0.15 },
+      { priceKind: 'moondream-3.1_batch_output', unit: 'per_1m_tokens', price: 0.50 },
+      { priceKind: 'moondream-3-preview_realtime_input', unit: 'per_1m_tokens', price: 0.30 },
+      { priceKind: 'moondream-3-preview_realtime_output', unit: 'per_1m_tokens', price: 2.50 },
+      { priceKind: 'moondream-3-preview_batch_input', unit: 'per_1m_tokens', price: 0.15 },
+      { priceKind: 'moondream-3-preview_batch_output', unit: 'per_1m_tokens', price: 1.25 },
+      { priceKind: 'lens_training', unit: 'per_1m_tokens', price: 0.60 },
+    ],
     inputModalities: ['image'], outputModalities: ['text'], access: ['api', 'open-weights'], capabilities: ['vision'],
     bestFor: 'Cloud and Lens lifecycle tracking; open models remain available.',
     url: MOONDREAM_SHUTDOWN.deprecationSourceUrl,
-    sourceUrls: [{ label: 'Moondream shutdown announcement', url: MOONDREAM_SHUTDOWN.deprecationSourceUrl, publisher: 'Moondream' }],
+    sourceUrls: [
+      { label: 'Moondream pricing', url: 'https://moondream.ai/pricing', publisher: 'Moondream' },
+      { label: 'Moondream shutdown announcement', url: MOONDREAM_SHUTDOWN.deprecationSourceUrl, publisher: 'Moondream' },
+    ],
   },
 ];
