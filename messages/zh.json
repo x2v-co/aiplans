@@ -374,5 +374,13 @@
   "decisionModels": {
     "title": "决策模型",
     "description": "ScaleDown、SubQ Snap 和 Jev：按每百万输入 token 与每百万次任务比较价格，未知值保留为待核验。"
+  },
+  "deepseekWindows": {
+    "label": "高峰 / 低谷",
+    "list": "标价为高峰价；低谷价为高峰价的 50%。",
+    "peak": "高峰",
+    "offPeak": "低谷",
+    "rates": "输入 {input} · 缓存命中 {cache} · 输出 {output} / 百万 token",
+    "window": "高峰：UTC 周一至周五 01:00–04:00 和 06:00–10:00，中国法定节假日除外。其余时间为低谷。未配置的节假日按工作日高峰时段处理。"
   }
 }

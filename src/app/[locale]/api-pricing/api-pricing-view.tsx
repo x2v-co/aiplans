@@ -1,5 +1,7 @@
 "use client";
 
+import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
+
 import { ModelLifecycleBadge } from '@/components/model-lifecycle-badge';
 import { Fragment, useState, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
@@ -707,6 +709,7 @@ export default function ApiPricingView({
                                       )}
                                     </div>
                                     <ChannelTermsBadges terms={cp} />
+                          <DeepSeekWindowPrices variants={cp.price_variants} />
                                     <PromoPriceNotice row={cp} locale={locale} />
                                   </TableCell>
                                   <TableCell className="text-center">

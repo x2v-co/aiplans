@@ -374,5 +374,13 @@
   "decisionModels": {
     "title": "Decision Models",
     "description": "ScaleDown, SubQ Snap and Jev: compare $/M input and $/1M tasks. Unknown values remain unverified."
+  },
+  "deepseekWindows": {
+    "label": "Peak / Off-peak",
+    "list": "List = peak; off-peak = 50% of peak.",
+    "peak": "Peak",
+    "offPeak": "Off-peak",
+    "rates": "Input {input} · cache hit {cache} · output {output} / 1M tokens",
+    "window": "Peak: 01:00–04:00 & 06:00–10:00 UTC Mon–Fri, excluding Chinese public holidays. All other times are off-peak. Unlisted holidays follow the weekday peak schedule."
   }
 }

@@ -1,6 +1,9 @@
 export type CurrencyCode = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'KRW' | 'SGD';
 
 export interface ScrapedPrice {
+  /** Only official DeepSeek or a confirmed StreamLake DeepSeek route. */
+  deepseekWindow?: boolean;
+  observedAt?: string;
   modelName: string;
   modelSlug: string;
   /** OpenRouter namespace resolved to a producer slug; never inferred from display copy. */
@@ -27,6 +30,9 @@ export interface ScrapedPrice {
 }
 
 export interface ScrapedPriceVariant {
+  /** Only official DeepSeek or a confirmed StreamLake DeepSeek route. */
+  deepseekWindow?: boolean;
+  observedAt?: string;
   modelName: string;
   modelSlug: string;
   variantKey: string;

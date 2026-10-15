@@ -1,3 +1,4 @@
+import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
 import Link from 'next/link';
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { getTranslations } from 'next-intl/server';
@@ -28,6 +29,7 @@ export async function ProviderApiModels({ products, locale }: { products: Groupe
                   {formatModelName(product.name)}{row.variant?.length ? ` (${row.variant.join(', ')})` : ''}
                 </Link>
                 <ChannelTermsBadges terms={row} />
+                          <DeepSeekWindowPrices variants={row.price_variants} />
                 {isIntroductoryPriceActive(row) && <p className="mt-1 text-xs font-normal text-zinc-500">{t('introductoryUntil', { date: introductoryEndDate(row.promo_ends_at!, locale) })}</p>}
                 {!!row.price_variants?.length && (
                   <details className="mt-2 font-normal">

@@ -128,3 +128,21 @@ test('full OpenRouter feed retains new producer metadata, free output and distin
     for (const price of result.prices) assert.ok(price.producerSlug);
   } finally { globalThis.fetch = originalFetch; }
 });
+
+import { buildOpenRouterVariants } from './openrouter';
+
+test('DeepSeek window normalization is scoped to StreamLake endpoints and unambiguous defaults', () => {
+  const model = { id: 'deepseek/deepseek-v4-pro', name: 'DeepSeek', pricing: { prompt: '0.000001', completion: '0.000002' }, context_length: 1_000_000 };
+  const headline = () => ({ modelName: 'deepseek-v4-pro', modelSlug: 'deepseek-v4-pro', inputPricePer1M: 1, outputPricePer1M: 2, isAvailable: true });
+  const streamlake = { provider_name: 'StreamLake', pricing: model.pricing };
+  const variants = buildOpenRouterVariants(model, headline(), [streamlake], new Date('2026-10-16T02:00Z'));
+  assert.equal(variants[0].deepseekWindow, true);
+  assert.equal(variants.find(v => v.variantKind === 'upstream_provider')!.deepseekWindow, true);
+  assert.equal(variants[0].observedAt, '2026-10-16T02:00:00.000Z');
+  assert.equal(variants[0].constraints?.schedule_status, 'needs-verification');
+  assert.equal(buildOpenRouterVariants(model, headline(), [streamlake, { ...streamlake, provider_name: 'Other', status: 1 }])[0].deepseekWindow, true);
+  for (const endpoints of [[], [{ ...streamlake, provider_name: 'Other' }], [streamlake, { ...streamlake, provider_name: 'Other' }]]) {
+    assert.ok(!buildOpenRouterVariants(model, headline(), endpoints)[0].deepseekWindow);
+  }
+  assert.ok(!buildOpenRouterVariants({ ...model, id: 'other/model' }, headline(), [streamlake])[0].deepseekWindow);
+});

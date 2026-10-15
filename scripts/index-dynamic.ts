@@ -5,6 +5,7 @@
  * Uses provider-config.ts for metadata and prioritized execution
  */
 
+import { DEEPSEEK_MODELS, deepseekPricingWindow, deepseekObservations, reconcileDeepSeekObservation } from '../src/lib/deepseek-pricing';
 import { syncResellerPromos } from './db/promo-sync';
 import { scrapeOpenRouter } from './scrapers/openrouter';
 import { describePriceChange, pickCanonicalPerProduct, type ResolvedEntry } from './utils/price-history';
@@ -383,10 +384,11 @@ async function processAPIScraper(
       collapsedEntries.map((e) => `${e.scrapedSlug}->${e.productSlug}`).join(', '));
   }
 
-  for (const { productId, price } of canonicalEntries) {
+  for (const { productId, price: scrapedPrice } of canonicalEntries) {
     try {
       const product = { id: productId };
-      headlinePriceByModelId.set(product.id, price);
+      let price = scrapedPrice;
+      let windowOnly = false;
 
       // Get existing price for comparison
       const { data: existingPrice } = await db
@@ -395,6 +397,39 @@ async function processAPIScraper(
         .eq('model_id', product.id)
         .eq('provider_id', channelProviderId)
         .single();
+
+      if (price.deepseekWindow) {
+        const official = result.source === 'DeepSeek-API';
+        const { data: priorVariant, error } = await db.from('api_channel_price_variants')
+          .select('*').eq('model_id', product.id).eq('provider_id', channelProviderId)
+          .eq('variant_key', official ? 'peak' : 'openrouter-auto').single();
+        if (error && error.code !== 'PGRST116') throw error;
+        const prior = deepseekObservations(priorVariant?.raw_json);
+        // Bootstrap a legacy dynamic route from its last observation timestamp.
+        if (!official && !Object.keys(prior).length && existingPrice?.last_verified) {
+          const verified = new Date(existingPrice.last_verified);
+          if (Number.isFinite(verified.getTime())) prior[deepseekPricingWindow(verified)] = {
+            input: existingPrice.input_price_per_1m, output: existingPrice.output_price_per_1m,
+            cache: existingPrice.cached_input_price_per_1m, observed_at: verified.toISOString(),
+          };
+        }
+        const knownPeak = official ? (priorVariant ? {
+          input: priorVariant.input_price_per_1m, output: priorVariant.output_price_per_1m,
+          cache: priorVariant.cached_input_price_per_1m,
+        } : DEEPSEEK_MODELS.find(model => model.slug === price.modelSlug)?.peak) : undefined;
+        const observation = reconcileDeepSeekObservation({ input: price.inputPricePer1M,
+          output: price.outputPricePer1M, cache: price.cachedInputPricePer1M },
+          new Date(price.observedAt ?? Date.now()), prior, existingPrice ? {
+            input: existingPrice.input_price_per_1m, output: existingPrice.output_price_per_1m,
+            cache: existingPrice.cached_input_price_per_1m,
+          } : undefined, knownPeak);
+        windowOnly = observation.windowOnly;
+        const headlineVariant = result.variants?.find(variant => variant.isHeadline && variant.modelSlug === price.modelSlug);
+        if (headlineVariant) headlineVariant.raw = { ...headlineVariant.raw, pricing_observations: observation.observations };
+        price = { ...price, inputPricePer1M: observation.listRate.input,
+          outputPricePer1M: observation.listRate.output, cachedInputPricePer1M: observation.listRate.cache };
+      }
+      headlinePriceByModelId.set(product.id, price);
 
       // Use currency from scraper if specified, otherwise infer from channel region
       const priceCurrency = price.currency || currency;
@@ -420,7 +455,7 @@ async function processAPIScraper(
       seenModelIds.add(product.id);
 
       // Log price change if significant
-      if (existingPrice) {
+      if (existingPrice && !windowOnly) {
         const { changed, changePercent } = describePriceChange(
           { input: existingPrice.input_price_per_1m, output: existingPrice.output_price_per_1m },
           { input: price.inputPricePer1M, output: price.outputPricePer1M },
@@ -476,6 +511,20 @@ async function processAPIScraper(
       // aggregators like OpenRouter from doing thousands of duplicate DB
       // lookups for endpoints whose base model was intentionally skipped.
       if (!modelId) continue;
+      if (variant.deepseekWindow) {
+        const { data: previous, error } = await db.from('api_channel_price_variants')
+          .select('raw_json').eq('model_id', modelId).eq('provider_id', channelProviderId)
+          .eq('variant_key', variant.variantKey).single();
+        if (error && error.code !== 'PGRST116') throw error;
+        const rate = { input: variant.inputPricePer1M, output: variant.outputPricePer1M, cache: variant.cachedInputPricePer1M };
+        const date = new Date(variant.observedAt ?? Date.now());
+        const published = variant.raw?.published_window;
+        const prior = { ...deepseekObservations(previous?.raw_json), ...deepseekObservations(variant.raw) };
+        const observations = published === 'peak' || published === 'off-peak'
+          ? { ...prior, [published]: { ...rate, observed_at: date.toISOString() } }
+          : reconcileDeepSeekObservation(rate, date, prior).observations;
+        variant.raw = { ...variant.raw, pricing_observations: observations };
+      }
       const headlinePrice = variant.isHeadline ? headlinePriceByModelId.get(modelId) : undefined;
       variantRows.push({
         model_id: modelId,

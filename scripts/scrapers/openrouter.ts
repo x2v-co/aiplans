@@ -3,6 +3,7 @@
  * NO FALLBACK DATA - Fails cleanly when scraping fails
  */
 
+import { sameDeepSeekRate } from '../../src/lib/deepseek-pricing';
 import type { ScrapedPrice, ScrapedPriceVariant, ScraperResult } from '../utils/validator';
 import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
 import { canonicalizeModelSlug } from '../utils/model-normalizer';
@@ -241,11 +242,24 @@ async function mapWithConcurrency<T, R>(items: T[], concurrency: number, fn: (it
 }
 
 /** Build route and endpoint rows independently; endpoint prices never mutate the headline. */
-export function buildOpenRouterVariants(model: OpenRouterModel, headline: ScrapedPrice, endpoints: OpenRouterEndpoint[]): ScrapedPriceVariant[] {
+export function buildOpenRouterVariants(model: OpenRouterModel, headline: ScrapedPrice, endpoints: OpenRouterEndpoint[], date = new Date()): ScrapedPriceVariant[] {
+  const isStreamLake = (endpoint: OpenRouterEndpoint) => model.id.startsWith('deepseek/') &&
+    /streamlake/i.test(endpoint.provider_name || endpoint.tag || endpoint.name || '');
+  const matching = endpoints.filter(endpoint => {
+    if (endpoint.status != null && endpoint.status !== 0) return false;
+    const price = endpointPrice(endpoint);
+    return price && sameDeepSeekRate(price, { input: headline.inputPricePer1M, output: headline.outputPricePer1M, cache: headline.cachedInputPricePer1M });
+  });
+  // Only normalize the default when its rate unambiguously belongs to StreamLake.
+  if (matching.length > 0 && matching.every(isStreamLake)) {
+    headline.deepseekWindow = true;
+    headline.observedAt = date.toISOString();
+  }
   const variants: ScrapedPriceVariant[] = [{
     modelName: headline.modelName,
     modelSlug: headline.modelSlug,
     variantKey: 'openrouter-auto',
+    deepseekWindow: headline.deepseekWindow, observedAt: date.toISOString(),
     variantName: 'OpenRouter Auto / default route',
     variantKind: 'default_route',
     sourceGroupKey: 'openrouter-auto',
@@ -263,6 +277,7 @@ export function buildOpenRouterVariants(model: OpenRouterModel, headline: Scrape
     isHeadline: true,
     headlineRank: 0,
     headlineReason: 'OpenRouter model-level default route price from /api/v1/models.',
+    constraints: headline.deepseekWindow ? { schedule_status: 'needs-verification', deepseek_window_normalization_only: true } : undefined,
     raw: { id: model.id, pricing: model.pricing },
   }];
 
@@ -270,6 +285,7 @@ export function buildOpenRouterVariants(model: OpenRouterModel, headline: Scrape
   if (cheapest) variants.push({
     modelName: headline.modelName, modelSlug: headline.modelSlug,
     variantKey: 'openrouter-cheapest-endpoint',
+    deepseekWindow: model.id.startsWith('deepseek/') && /streamlake/i.test(cheapest.provider), observedAt: date.toISOString(),
     variantName: `Cheapest endpoint: ${cheapest.provider}`,
     variantKind: 'cheapest_endpoint', sourceGroupName: cheapest.provider,
     sourceUrl: `${OPENROUTER_API}/${model.id}/endpoints`,
@@ -289,6 +305,7 @@ export function buildOpenRouterVariants(model: OpenRouterModel, headline: Scrape
       modelName: headline.modelName,
       modelSlug: headline.modelSlug,
       variantKey: key,
+      deepseekWindow: isStreamLake(endpoint), observedAt: date.toISOString(),
       variantName: endpoint.name || endpoint.provider_name || key,
       variantKind: 'upstream_provider',
       sourceGroupKey: endpoint.tag,
@@ -306,6 +323,7 @@ export function buildOpenRouterVariants(model: OpenRouterModel, headline: Scrape
       isHeadline: false,
       headlineRank: 10,
       constraints: {
+        ...(isStreamLake(endpoint) ? { schedule_status: 'needs-verification', deepseek_window_normalization_only: true } : {}),
         context_length: endpoint.context_length,
         quantization: endpoint.quantization,
         uptime_last_30m: endpoint.uptime_last_30m,

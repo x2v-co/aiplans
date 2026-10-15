@@ -1,3 +1,4 @@
+import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
 import { effectivePrice, introductoryEndDate, isIntroductoryPriceActive, type PriceSchedule } from '@/lib/effective-price';
 import { modelShutdownNotice } from '@/lib/model-shutdown';
 import { getTranslations } from 'next-intl/server';
@@ -955,6 +956,7 @@ export default async function ModelPage({
                             )}
                           </div>
                           <ChannelTermsBadges terms={cp} />
+                          <DeepSeekWindowPrices variants={cp.price_variants} />
                           {isIntroductoryPriceActive(cp, now) && cp.regular_input_price_per_1m != null && cp.regular_output_price_per_1m != null && (
                             <p className="mt-1 max-w-xs whitespace-normal text-xs font-normal text-zinc-500">
                               {promoMessages('introductoryPrice', {
