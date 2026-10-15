@@ -21,7 +21,13 @@ BEGIN
     def := c.def;
     -- Postgres normalizes IN (...) to = ANY (ARRAY['a'::text, ...]); reuse the element cast.
     cast_type := substring(def from '''per_[a-z0-9_]+''::([a-z ]+)');
-    IF def !~ 'ARRAY\[' OR cast_type IS NULL THEN
+    -- A single-value check (e.g. api_channel_price_variants: price_unit = 'per_1m_tokens')
+    -- is a deliberate restriction, not a unit list: leave it as is.
+    IF def !~ 'ARRAY\[' THEN
+      RAISE NOTICE 'skip non-list unit constraint %.%: %', c.tbl, c.conname, def;
+      CONTINUE;
+    END IF;
+    IF cast_type IS NULL THEN
       RAISE EXCEPTION 'Unexpected unit constraint shape on %.%: %', c.tbl, c.conname, def;
     END IF;
     new_def := regexp_replace(def, 'ARRAY\[', 'ARRAY[''per_hour''::' || cast_type || ', ');
