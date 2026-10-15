@@ -137,7 +137,7 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
       const candidates = rows.usage_prices.filter(r => r.model_id === m.id && r.provider_id === (owner?.id ?? null) && r.price_kind === kind && r.plan_id == null);
       const existing = one('usage_prices', candidates, `${item.slug}/${kind}`);
       await save('usage_prices', existing, { model_id: m.id, provider_id: owner?.id ?? null, plan_id: null,
-        price_kind: kind, unit, price, currency: 'USD', is_available: item.status !== 'discontinued',
+        price_kind: kind, unit, price, currency: item.currency ?? 'USD', is_available: item.status !== 'discontinued',
         constraints_json: { price_status: price == null ? 'needs-verification' : item.priceStatus,
           ...(item.pricePerUnitHigh == null ? {} : { price_high: item.pricePerUnitHigh }),
           ...(item.approximatePrice ? { approximate: true } : {}),
