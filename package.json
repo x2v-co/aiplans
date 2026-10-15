@@ -22,6 +22,8 @@
     "seed:quota-payg:db-dry-run": "tsx scripts/seed-quota-payg.ts --db-dry-run",
     "seed:quota-payg:apply": "tsx scripts/seed-quota-payg.ts --apply",
     "quota:monitor": "tsx scripts/quota-text-monitor.ts",
+    "quota:evidence": "tsx scripts/quota-evidence-intake.ts",
+    "quota:evidence:dry-run": "tsx scripts/quota-evidence-intake.ts --dry-run",
     "quota:monitor:dry-run": "tsx scripts/quota-text-monitor.ts --dry-run",
     "quota:collect": "tsx scripts/quota-collect.ts",
     "quota:collect:dry-run": "tsx scripts/quota-collect.ts --dry-run",
@@ -118,6 +120,8 @@
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",
     "tailwind-merge": "^3.5.0",
+    "yaml": "^2.9.1",
+    "zod": "4.3.6",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

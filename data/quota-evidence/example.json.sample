@@ -1,0 +1,23 @@
+{
+  "plan_slug": "synthetic-example-do-not-import",
+  "source_name": "self",
+  "url": "https://example.com/synthetic-evidence",
+  "screenshot_url": "https://example.com/synthetic-meter.png",
+  "author_handle": "synthetic-reporter",
+  "independent_source_id": "synthetic-original-reporter",
+  "observed_at": "2026-10-14T12:00:00Z",
+  "captured_at": "2026-10-15",
+  "raw_value": "SYNTHETIC EXAMPLE ONLY. Consumed meter increased from 10% to 30% within one weekly reset window.",
+  "tokens": { "input": 100000, "cached_input": 200000, "output": 10000 },
+  "quota_pct_before": 10,
+  "quota_pct_after": 30,
+  "window": "weekly",
+  "usage_mix_id": "coding-high-cache",
+  "confidence": "low",
+  "calculation": {
+    "list_prices": { "input": 1, "cached_input": 0.1, "output": 5 },
+    "mix": { "cache_read_pct": 97, "input_pct": 2.5, "output_pct": 0.5 },
+    "pct_rounding_uncertainty": 0.5
+  },
+  "notes": "All values and URLs are fictional. Prices are synthetic USD per million tokens. This is not a vendor quota or a real measurement."
+}
