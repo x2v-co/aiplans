@@ -5,6 +5,7 @@ on:
     paths:
       - 'src/**'
       - 'scripts/**'
+      - 'drizzle/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/pr-check.yml'
@@ -30,6 +31,10 @@ jobs:
         run: npx tsx --test src/lib/seo-offers.test.ts src/lib/pricing-guides.test.ts src/lib/analytics.test.ts scripts/utils/model-identity-guard.test.ts scripts/data/verified-2026-10-openrouter-cached.test.ts scripts/scrapers/openrouter.test.ts scripts/scrapers/aws-bedrock-dynamic.test.ts
       - name: Model shutdown tests
         run: npx tsx --test src/lib/model-shutdown.test.ts scripts/data/openai-shutdowns.test.ts
+      - name: Quota schema, engine and monitor tests (offline)
+        run: |
+          npx tsc --noEmit -p scripts/tsconfig.quota.json
+          npx tsx --test src/db/schema/quota.test.ts src/lib/quota/engine.test.ts scripts/utils/quota-text-monitor.test.ts scripts/quota-text-monitor.test.ts
       - name: Build
         run: npm run build
         env:

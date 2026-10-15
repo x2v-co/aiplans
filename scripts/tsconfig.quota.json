@@ -1,0 +1,6 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": { "incremental": false },
+  "include": ["quota-text-monitor.ts", "quota-text-monitor.test.ts", "config/quota-text-sources.ts", "utils/quota-text-monitor*.ts"],
+  "exclude": []
+}

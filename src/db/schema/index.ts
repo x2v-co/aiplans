@@ -447,3 +447,5 @@ export const products = models; // Alias for backward compatibility
 export const channelPrices = apiChannelPrices; // Alias for backward compatibility
 export type Product = Model;
 export type ChannelPrice = ApiChannelPrice;
+
+export * from './quota';
