@@ -5,6 +5,7 @@ import { getTableConfig } from 'drizzle-orm/pg-core';
 import { quotaEstimates, quotaEvidence, quotaTextSnapshots, usageMixes } from './index';
 
 const sql = readFileSync(new URL('../../../drizzle/0005_quota_estimates.sql', import.meta.url), 'utf8');
+const reviewSql = readFileSync(new URL('../../../drizzle/0012_quota_evidence_review.sql', import.meta.url), 'utf8');
 // Keep quoted literals together: the descriptions contain semicolons.
 const statements = [...sql.replace(/--[^\n]*/g, '').matchAll(/(?:'(?:''|[^'])*'|[^;'])+/g)]
   .map(([statement]) => statement.trim()).filter(Boolean);
@@ -62,12 +63,32 @@ test('evidence supports pending source-level review; snapshots uniquely dedupe b
 test('exported Drizzle tables match migration names, constraint and index names', () => {
   for (const table of [usageMixes, quotaEstimates, quotaEvidence, quotaTextSnapshots]) {
     const config = getTableConfig(table);
-    const body = tables.get(config.name);
+    const body = tables.get(config.name)! + (config.name === 'quota_evidence' ? reviewSql : '');
     assert.ok(body);
     for (const column of config.columns) assert.match(body, new RegExp(`\\b${column.name}\\b`));
-    for (const constraint of [...config.checks, ...config.uniqueConstraints]) assert.ok(sql.includes(constraint.name!));
+    for (const constraint of [...config.checks, ...config.uniqueConstraints]) assert.ok((sql + reviewSql).includes(constraint.name!));
     for (const index of config.indexes) assert.ok(sql.includes(index.config.name!));
     // Resolve lazy references as well, catching broken/circular schema exports.
     for (const fk of config.foreignKeys) assert.ok(fk.reference().foreignColumns.length > 0);
   }
+});
+
+test('evidence review migration is manual, additive and matches all review column types/defaults', () => {
+  const migration = reviewSql.replace(/--[^\n]*/g, '').trim();
+  assert.match(migration, /^ALTER TABLE quota_evidence\s+ADD COLUMN/);
+  assert.doesNotMatch(migration, /\b(DROP|DELETE|UPDATE|INSERT|CREATE)\b/i);
+  assert.equal(migration.split(';').filter((part) => part.trim()).length, 1);
+  const columns = getTableConfig(quotaEvidence).columns.slice(9);
+  assert.equal(columns.length, 14);
+  for (const column of columns) {
+    assert.match(migration, new RegExp(`ADD COLUMN "?${column.name}"? ${column.getSQLType() === 'timestamp with time zone' ? 'timestamptz' : column.getSQLType()}`));
+  }
+  assert.match(migration, /confidence text NOT NULL DEFAULT 'low'/);
+  assert.match(migration, /confidence IN \('high', 'medium', 'low'\)/);
+  assert.match(migration, /review_status text DEFAULT 'pending'/);
+  assert.match(migration, /review_status IN \('pending', 'accepted', 'rejected'\)/);
+  assert.match(migration, /usage_mix_id text REFERENCES usage_mixes\(id\)/);
+  assert.match(migration, /content_hash text CONSTRAINT quota_evidence_content_hash_unique UNIQUE/);
+  const runner = readFileSync(new URL('../../../scripts/migrate-data-accuracy.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(runner, /0012_quota_evidence_review/);
 });
