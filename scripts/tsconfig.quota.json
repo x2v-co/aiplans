@@ -1,6 +1,6 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": { "incremental": false },
-  "include": ["seed-quota-payg.ts", "seed-quota-payg.test.ts", "quota-text-monitor.ts", "quota-text-monitor.test.ts", "config/quota-text-sources.ts", "utils/quota-text-monitor*.ts"],
+  "include": ["seed-quota-payg.ts", "seed-quota-payg.test.ts", "quota-text-monitor.ts", "quota-text-monitor.test.ts", "config/quota-text-sources.ts", "utils/quota-text-monitor*.ts", "quota-collect.ts", "quota-collect.test.ts", "quota-collect/**/*.ts"],
   "exclude": []
 }

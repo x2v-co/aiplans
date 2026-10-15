@@ -23,6 +23,8 @@
     "seed:quota-payg:apply": "tsx scripts/seed-quota-payg.ts --apply",
     "quota:monitor": "tsx scripts/quota-text-monitor.ts",
     "quota:monitor:dry-run": "tsx scripts/quota-text-monitor.ts --dry-run",
+    "quota:collect": "tsx scripts/quota-collect.ts",
+    "quota:collect:dry-run": "tsx scripts/quota-collect.ts --dry-run",
     "validate:production-env": "node scripts/validate-production-env.mjs",
     "scrape:status": "node scripts/check-scrape-status.mjs",
     "snapshots:cleanup": "node scripts/cleanup-v1-snapshots.mjs",
