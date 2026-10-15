@@ -1,26 +1,18 @@
-/** MiniMax Global Token Plan scraper (current Plus / Max / Ultra lineup). */
+/** MiniMax Global M Plan scraper (Go / Explore / Build; replaced Token Plan Plus/Max/Ultra in 2026-10). */
 import type { PlanScraperResult, ScrapedPlan } from '../utils/plan-validator';
-import { fetchHTMLSmart } from './base-fetcher';
+import { parseMPlanPrices } from './lib/minimax-mplan';
 
-const URL = 'https://platform.minimax.io/docs/guides/pricing-token-plan';
+const URL = 'https://platform.minimax.io/docs/m-plan/monthly-offer.md';
 
-export async function scrapeMinimaxGlobalPlans(): Promise<PlanScraperResult> {
-  console.log('🔄 Fetching Minimax Global subscription plans...');
-  const result = await fetchHTMLSmart(URL, { waitForTimeout: 3000 });
-  if (!result.success || !result.data) {
-    return { source: 'MinimaxGlobal-Plans', success: false, plans: [], errors: [result.error || 'No HTML returned'] };
+export function buildMinimaxGlobalPlans(markdown: string): PlanScraperResult {
+  const prices = parseMPlanPrices(markdown, 'USD');
+  if (!prices) {
+    return { source: 'MinimaxGlobal-Plans', success: false, plans: [], errors: ['M Plan Go/Explore/Build regular price rows not found'] };
   }
-
-  const text = stripHtml(result.data);
-  const match = text.match(/Plus\s+Max\s+Ultra\s+Price\s*\$\s*([\d.]+)\s*\/month\s*\$\s*([\d.]+)\s*\/month\s*\$\s*([\d.]+)\s*\/month/i);
-  if (!match) {
-    return { source: 'MinimaxGlobal-Plans', success: false, plans: [], errors: ['Current Plus/Max/Ultra price row not found'] };
-  }
-
   const tiers = [
-    { slug: 'minimax-global-plus', name: 'MiniMax Global Plus', tier: 'pro' as const, price: Number(match[1]) },
-    { slug: 'minimax-global-max', name: 'MiniMax Global Max', tier: 'team' as const, price: Number(match[2]) },
-    { slug: 'minimax-global-ultra', name: 'MiniMax Global Ultra', tier: 'enterprise' as const, price: Number(match[3]) },
+    { slug: 'minimax-global-mplan-go', name: 'MiniMax Global M Plan Go', tier: 'basic' as const, price: prices.Go },
+    { slug: 'minimax-global-mplan-explore', name: 'MiniMax Global M Plan Explore', tier: 'pro' as const, price: prices.Explore },
+    { slug: 'minimax-global-mplan-build', name: 'MiniMax Global M Plan Build', tier: 'pro' as const, price: prices.Build },
   ];
   const plans: ScrapedPlan[] = tiers.map(item => ({
     planName: item.name,
@@ -31,24 +23,25 @@ export async function scrapeMinimaxGlobalPlans(): Promise<PlanScraperResult> {
     tier: item.tier,
     features: [],
     region: 'global',
-    accessFromChina: true,
-    paymentMethods: ['Credit Card', 'PayPal', 'Alipay'],
+    accessFromChina: false,
+    paymentMethods: ['Credit Card'],
     isOfficial: true,
     currency: 'USD',
   }));
-
-  console.log(`📦 Found ${plans.length} plans from Minimax Global`);
   return { source: 'MinimaxGlobal-Plans', success: true, plans };
 }
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;|&#xA0;/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+export async function scrapeMinimaxGlobalPlans(): Promise<PlanScraperResult> {
+  console.log('🔄 Fetching Minimax Global M Plan prices...');
+  try {
+    const res = await fetch(URL, { headers: { 'User-Agent': 'Mozilla/5.0 (aiplans planprice scraper)' } });
+    if (!res.ok) return { source: 'MinimaxGlobal-Plans', success: false, plans: [], errors: [`HTTP ${res.status} for ${URL}`] };
+    const result = buildMinimaxGlobalPlans(await res.text());
+    console.log(`📦 Found ${result.plans.length} plans from Minimax Global`);
+    return result;
+  } catch (error) {
+    return { source: 'MinimaxGlobal-Plans', success: false, plans: [], errors: [error instanceof Error ? error.message : String(error)] };
+  }
 }
 
 if (require.main === module) {
