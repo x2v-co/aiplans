@@ -12,10 +12,13 @@ MSG="${1:-$(cat)}"
 # Channel: x2v product-line bot (x2v_alerts_bot), tagged [aiplans]. Override with
 # AIPLANS_TG_ENV (same fields: BRAIN_TG_TOKEN / BRAIN_TG_CHAT_ID). BRAIN_TG_ENV is
 # still honoured for older host configs; the personal brain bot is the last resort.
-X2V_ENV=/home/ubuntu/.config/x2v-alerts/env
+# Prod hosts keep the file under /root (mode 600); ubuntu path is a cheap fallback.
+X2V_ENV_ROOT=/root/.config/x2v-alerts/env
+X2V_ENV_UBUNTU=/home/ubuntu/.config/x2v-alerts/env
 if [[ -n "${AIPLANS_TG_ENV:-}" ]]; then ENV_FILE="$AIPLANS_TG_ENV"
 elif [[ -n "${BRAIN_TG_ENV:-}" ]]; then ENV_FILE="$BRAIN_TG_ENV"
-elif [[ -f "$X2V_ENV" ]]; then ENV_FILE="$X2V_ENV"
+elif [[ -f "$X2V_ENV_ROOT" ]]; then ENV_FILE="$X2V_ENV_ROOT"
+elif [[ -f "$X2V_ENV_UBUNTU" ]]; then ENV_FILE="$X2V_ENV_UBUNTU"
 else ENV_FILE=/home/ubuntu/.config/brain-tg-bot/env; fi
 TAG="${AIPLANS_ALERT_TAG-[aiplans]}"
 HOST="$(hostname -s 2>/dev/null || hostname)"
