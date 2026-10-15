@@ -32,6 +32,21 @@ test('identity guard accepts real model ids (incl. ISO date suffixes)', () => {
   for (const s of clean) assert.deepEqual(checkModelIdentity(s, s), { ok: true, reasons: [] }, s);
 });
 
+test('identity guard requires manual review for doubled vendor/family prefixes', () => {
+  for (const slug of [
+    'google-gemini-gemini-4-argon', 'google-gemini-gemini-4-argon-batch',
+    'anthropic-claude-claude-opus-5', 'meta-llama-llama-4',
+    'unknown-vendor-family-family-1',
+  ]) {
+    const verdict = checkModelIdentity('Model', slug);
+    assert.equal(verdict.ok, false, slug);
+    assert.ok(verdict.reasons.includes('doubled vendor/family prefix'), slug);
+  }
+  for (const slug of ['gemini-4-argon', 'gemini-4-argon-batch', 'vendor-family-1']) {
+    assert.deepEqual(checkModelIdentity('Model', slug), { ok: true, reasons: [] }, slug);
+  }
+});
+
 test('Kimi pricing cell: badge / tooltip text is stripped to the model id', () => {
   assert.equal(parseKimiModelCell('kimi-k3'), 'kimi-k3');
   assert.equal(parseKimiModelCell('kimi-k3<Badge>Promo</Badge>'), 'kimi-k3');

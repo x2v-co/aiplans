@@ -7,6 +7,21 @@
  * 4. 厂商正确识别
  */
 
+/**
+ * Resolve verified catalog aliases without collapsing other provider IDs,
+ * dated snapshots, or separately priced SKUs. Explicit scraper slugs also
+ * pass through this function (they otherwise bypass normalizeSlug).
+ */
+export function canonicalizeModelSlug(value: string): string {
+  const candidate = value.trim().toLowerCase()
+    .replace(/\s*\(batch\)$/, '-batch')
+    .replace(/:batch$/, '-batch')
+    .replace(/:\s*/g, '-')
+    .replace(/[\s/]+/g, '-');
+  const argon = candidate.match(/^(?:google(?:-ai|-gemini)?-)?(gemini-4-argon(?:-batch)?)$/);
+  return argon?.[1] ?? value;
+}
+
 // 基础模型名称映射表 - 将各种变体统一为标准名称
 const MODEL_ALIASES: Record<string, string> = {
   // GPT 系列
@@ -170,6 +185,7 @@ function extractBaseModel(name: string): string {
 
 // 标准化模型名称
 export function normalizeModelName(name: string): string {
+  name = canonicalizeModelSlug(name);
   let lower = name.toLowerCase().replace(/\s+/g, '-');
 
   // 统一版本号格式：将 3-5 转换为 3.5, 2-5 转换为 2.5 等

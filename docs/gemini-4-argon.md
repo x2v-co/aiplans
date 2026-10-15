@@ -111,3 +111,84 @@ model. The seed skips Cursor unless an existing `cursor` or `anysphere` provider
 already has API channel rows; in that case it upserts the verified $2/$10 rates,
 with NULL cache price and NULL future schedule because neither is verified for
 Cursor. It never creates a Cursor provider or invents a December price change.
+
+## Duplicate slug
+
+The reproducible source of `google-gemini-gemini-4-argon` is
+`scripts/scrapers/openrouter.ts`, specifically `generateOpenRouterSlug`.
+`PROVIDER_NORMALIZATION` maps OpenRouter's `google` / `google-ai` vendor to
+`google-gemini`; the generator then joins that prefix to `slugify(model)`.
+Thus `google/gemini-4-argon` produced `google-gemini-gemini-4-argon`, and
+`google/gemini-4-argon:batch` produced `google-gemini-gemini-4-argon-batch`.
+The display-name helper separately strips `Google: `, so these IDs can carry
+the same display title as the seeded canonical model.
+
+Before this fix, `resolveProduct` in `scripts/index-dynamic.ts` used
+`price.modelSlug || normalizeSlug(price.modelName)`: OpenRouter's explicit slug
+bypassed the shared normalizer entirely. Gemini names infer Google's official
+producer ID 35, allowing auto-creation even though the channel is OpenRouter.
+`getOrCreateProduct` selected an existing exact slug before checking names,
+and its creation guard accepted the doubled prefix. A missing canonical model
+could therefore be created under the provider-prefixed slug; the Argon seed
+only looks up `ARGON_SLUG = 'gemini-4-argon'` and can later insert a separate
+canonical row. Name matching cannot reconcile two rows already present.
+This identifies the generating code path; the actual insertion order is not
+verified because no database or production logs were accessed.
+
+The current `fix-add-variant-models.ts` inserts only its explicit `VARIANT_SLUGS`
+with `name = slug`; Argon was absent from that list before this fix, so that
+version of the script does not explain the Argon batch duplicate. The earlier
+2026-10-12 repair documents similar malformed batch slugs for other models.
+The OpenRouter generator directly reproduces both reported Argon slugs.
+
+`canonicalizeModelSlug` now resolves the verified Argon base/batch names,
+OpenRouter IDs, and legacy slugs to `gemini-4-argon` and
+`gemini-4-argon-batch`. It runs in OpenRouter's generator, the shared name
+normalizer, the scrape resolver (including price-variant lookup), and
+`getOrCreateProduct` before the exact-slug query. The map is deliberately
+limited to Argon: unverified provider IDs, dated snapshots, and other pricing
+suffixes retain their identity. The identity guard requires manual review for
+any other vendor/family/family prefix instead of guessing a canonical model,
+even when no canonical row exists. The variant list includes the canonical
+Argon batch slug. Local regression tests cover display names, provider IDs,
+legacy slugs, batch forms, distinct SKUs, the OpenRouter generator, and the guard.
+
+`scripts/sql/2026-10-15-merge-gemini-4-argon-dup.sql` is a standalone manual
+repair, with no automatic migration registration. Its opening SELECTs list all
+four possible model rows, dependency counts, live foreign keys and uniqueness
+rules, and conflicting channel prices. The current schema's model dependencies
+are `api_channel_prices`, `api_channel_price_variants`, `model_plan_mapping`,
+`model_offical` (existing spelling), `model_benchmark_scores`, `evaluation_run`,
+`usage_prices`, `coding_agent_scores`, `external_price_references`, and
+`model_slug_redirects`. `price_history` depends on channel IDs rather than
+model IDs; quota tables reference plans and do not add a model FK.
+
+After reviewing the preview, an operator can run the transaction in a
+persistent session with scrapers/writers stopped. It locks the affected tables,
+backs up both canonical and duplicate rows and all their dependencies to
+`model_merge_backup_20261015`, and resolves IDs by slug. Canonical metadata and
+prices win conflicts, including introductory-price schedules. Conflicting
+channel rows are deleted only after their history is reattached to the surviving
+channel; all history events remain, so merged histories may contain prices
+different from the retained canonical price. Conflicting variant keys retain
+canonical rows, while a distinct moved variant loses its headline flag if an
+available canonical headline already exists. Plan/producer/benchmark key
+conflicts retain canonical rows; other dependencies move without deletion.
+
+The batch row is renamed in place when no canonical batch exists, otherwise
+merged into it. Existing redirects move before duplicate model deletion, and
+both old Argon slugs point to the canonical IDs for the existing 308 redirect
+handler. The transaction aborts for missing required models, unrelated redirects,
+unexpected FKs, or ambiguous per-model channel rows. Verification checks models,
+redirects, dependency moves, and preserved history. The SQL deliberately ends
+without COMMIT: inspect the results and issue manual `COMMIT` or `ROLLBACK` in
+the same session. The repair was not executed against any database.
+
+Local validation: 36 relevant `tsx --test` tests passed (normalizer, identity
+guard, OpenRouter, Google pricing, Argon seed data, price-history selection,
+and shutdown normalization). `npx tsc --noEmit` passed; the project excludes
+scripts, so a separate script check was compared with HEAD and showed the same
+40 existing diagnostics. Focused typechecking of the new normalizer test and
+identity guard passed. ESLint on touched TypeScript files reported zero errors
+and five existing unused-symbol warnings in `index-dynamic.ts`. PostgreSQL SQL
+and PL/pgSQL syntax parsing passed locally without a database connection.

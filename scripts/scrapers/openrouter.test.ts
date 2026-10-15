@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { classifyOpenRouterPricing } from './openrouter';
+import { classifyOpenRouterPricing, generateOpenRouterSlug } from './openrouter';
 import { parseMistralPriceCell } from './mistral-dynamic';
+
+test('OpenRouter slug generation uses canonical Argon base and batch identities', () => {
+  assert.equal(generateOpenRouterSlug('google/gemini-4-argon'), 'gemini-4-argon');
+  assert.equal(generateOpenRouterSlug('google/gemini-4-argon:batch'), 'gemini-4-argon-batch');
+  assert.equal(generateOpenRouterSlug('google-ai/gemini-4-argon'), 'gemini-4-argon');
+  assert.equal(generateOpenRouterSlug('google-gemini-gemini-4-argon-batch'), 'gemini-4-argon-batch');
+  assert.equal(generateOpenRouterSlug('openai/gpt-oss-120b'), 'openai-gpt-oss-120b');
+  assert.equal(generateOpenRouterSlug('google/gemini-4-argon:free'), 'google-gemini-gemini-4-argon-free');
+});
 
 test('OpenRouter: router sentinel "-1" is variable pricing, not an error', () => {
   // Live /api/v1/models on 2026-10-09: typesafe/jev-router, nvidia/switchyard.

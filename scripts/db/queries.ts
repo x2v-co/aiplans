@@ -1,4 +1,5 @@
 import { checkModelIdentity, ModelIdentityRejectedError, isCachedPriceSane } from '../utils/model-identity-guard';
+import { canonicalizeModelSlug } from '../utils/model-normalizer';
 import { databaseSql, postgresAdmin } from './postgres-admin';
 import type { JSONValue } from 'postgres';
 
@@ -457,6 +458,8 @@ export async function getOrCreateProduct(data: {
   context_window?: number;
   released_at?: string;
 }) {
+  // Prefer the canonical row even while an old duplicate still exists.
+  data = { ...data, slug: canonicalizeModelSlug(data.slug) };
   const backfillReleaseDate = async <T extends { id: number; released_at?: string | null }>(product: T): Promise<T> => {
     if (product.released_at || !data.released_at) return product;
 

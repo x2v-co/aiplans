@@ -25,6 +25,11 @@ export function checkModelIdentity(name: string, slug: string): ModelIdentityVer
   for (const value of [name ?? '', slug ?? '']) {
     for (const { reason, re } of RULES) if (re.test(value)) reasons.add(reason);
   }
+  // Unknown vendor/family/family IDs need review, even if the canonical row
+  // does not exist yet. Do not guess which prefixes are safe to strip.
+  if (/^(?:[a-z0-9]+-)+?([a-z][a-z0-9]*)-\1(?:-|$)/i.test(slug ?? '')) {
+    reasons.add('doubled vendor/family prefix');
+  }
   if (!slug || !/^[a-z0-9~][a-z0-9.\-_:~]*$/.test(slug)) reasons.add('slug charset');
   if ((slug ?? '').length > 80 || (name ?? '').length > 100) reasons.add('too long');
   return { ok: reasons.size === 0, reasons: [...reasons] };

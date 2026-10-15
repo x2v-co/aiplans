@@ -52,7 +52,7 @@ import {
 } from './db/queries';
 import type { ScraperResult } from './utils/validator';
 import type { PlanScraperResult } from './utils/plan-validator';
-import { normalizeModelName, normalizeSlug } from './utils/model-normalizer';
+import { canonicalizeModelSlug, normalizeModelName, normalizeSlug } from './utils/model-normalizer';
 import { checkModelIdentity } from './utils/model-identity-guard';
 import { closeBrowser } from './scrapers/base-fetcher';
 
@@ -272,7 +272,7 @@ async function processAPIScraper(
   const resolveProduct = async (price: { modelName: string; modelSlug?: string; contextWindow?: number; releasedAt?: string }) => {
     const providerId = inferProviderId(price.modelName, channelName);
     const normalizedName = normalizeModelName(price.modelName);
-    const normalizedSlug = price.modelSlug || normalizeSlug(price.modelName);
+    const normalizedSlug = canonicalizeModelSlug(price.modelSlug || normalizeSlug(price.modelName));
     const OFFICIAL_PROVIDER_IDS = [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50];
 
     if (!createProducts || providerId === -1 || !OFFICIAL_PROVIDER_IDS.includes(providerId)) {
@@ -336,7 +336,7 @@ async function processAPIScraper(
     try {
       const product = await resolveProduct(price);
       if (!product) continue;
-      const scrapedSlug = price.modelSlug || normalizeSlug(price.modelName);
+      const scrapedSlug = canonicalizeModelSlug(price.modelSlug || normalizeSlug(price.modelName));
       modelIdBySlug.set(scrapedSlug, product.id);
       resolvedEntries.push({ productId: product.id, productSlug: product.slug, scrapedSlug, price });
     } catch (error) {
@@ -419,7 +419,7 @@ async function processAPIScraper(
     const seenVariants: Array<{ model_id: number; variant_key: string }> = [];
     const variantRows = [];
     for (const variant of result.variants ?? []) {
-      const modelId = modelIdBySlug.get(variant.modelSlug || normalizeSlug(variant.modelName));
+      const modelId = modelIdBySlug.get(canonicalizeModelSlug(variant.modelSlug || normalizeSlug(variant.modelName)));
       // Variants are details of an already-published headline channel price;
       // they must never create/resolve products independently. This keeps
       // aggregators like OpenRouter from doing thousands of duplicate DB

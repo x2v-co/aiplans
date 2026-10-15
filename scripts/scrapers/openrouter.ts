@@ -5,6 +5,7 @@
 
 import type { ScrapedPrice, ScrapedPriceVariant, ScraperResult } from '../utils/validator';
 import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
+import { canonicalizeModelSlug } from '../utils/model-normalizer';
 import { OPENROUTER_FLOOR_PRICES } from '../data/verified-2026-10-chatgpt-pro-openrouter';
 
 /**
@@ -126,19 +127,19 @@ function normalizeOpenRouterModelName(id: string, name?: string): string {
 
 /**
  * Generate a normalized slug for OpenRouter models
- * Format: provider-model
+ * Format: provider-model, except verified aliases of canonical catalog slugs.
  */
-function generateOpenRouterSlug(id: string): string {
+export function generateOpenRouterSlug(id: string): string {
   if (!id.includes('/')) {
     // No provider separator, use the full id
-    return slugify(id);
+    return canonicalizeModelSlug(slugify(id));
   }
 
   const parts = id.split('/');
   const provider = normalizeProvider(parts[0]);
   const model = parts.slice(1).join('/'); // Handle cases with multiple /
 
-  return `${provider}-${slugify(model)}`;
+  return canonicalizeModelSlug(`${provider}-${slugify(model)}`);
 }
 
 function openRouterModelPage(id: string): string {

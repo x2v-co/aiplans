@@ -19,7 +19,8 @@ import { db } from './db/queries';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
-// Verified present in OpenRouter's live catalog on 2026-09-11; every slug's
+// Original list verified on 2026-09-11; Argon batch added from the reported
+// catalog duplicate on 2026-10-15. Every slug's
 // base model (strip -batch then -mini/-nano) exists in our models table.
 const VARIANT_SLUGS = [
   'codestral-batch',
@@ -37,6 +38,7 @@ const VARIANT_SLUGS = [
   'gemini-3.6-flash-batch',
   'gemini-3.7-flash-batch',
   'gemini-3.8-flash-batch',
+  'gemini-4-argon-batch',
   'gemma-4-31b-batch',
   'glm-5.2-batch',
   'glm-5.3-batch',
