@@ -72,10 +72,11 @@ test('unknown prices stay blank even if stale numeric values are supplied; Free 
 test('world table renders localized fields, warnings, research notes and the restricted cost list', () => {
   for (const locale of ['en', 'zh']) {
     // Standalone React rendering has no Next image-host config; use local logo fixtures.
-    const items = worlds.map((item) => ({ ...item, providerLogoUrl: '/fixture.svg' }));
+    const items = worlds.map((item) => ({ ...item, providerLogoUrl: '/fixture.svg',
+      ...(item.slug === 'world-labs-marble' ? { needsVerification: ['Fixture warning renders'] } : {}) }));
     const html = renderToStaticMarkup(createElement(WorldModelCatalog, { items, locale }));
     for (const item of worlds) assert.ok(html.includes(`/world-models/${item.slug}`));
-    assert.match(html, /Commercial-use rights for API-generated worlds unverified/);
+    assert.match(html, /Fixture warning renders/);
     assert.match(html, /JEPA/);
     assert.match(html, /GameNGen/);
     assert.ok(html.includes(locale === 'zh' ? '研究，非产品' : 'Research, not products'));
