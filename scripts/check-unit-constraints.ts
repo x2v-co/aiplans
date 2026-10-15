@@ -22,6 +22,8 @@ async function main() {
       console.log(`${row.tbl}.${row.conname}: ${row.def}`);
       const column = Object.keys(used).find(col => new RegExp(`\\(${col}\\)|\\b${col} =`).test(row.def));
       if (!column) continue;
+      // Single-value pins (e.g. api_channel_price_variants = 'per_1m_tokens') guard token-only tables.
+      if (!row.def.includes('ARRAY[')) { console.log('  (single-value pin, skipped)'); continue; }
       const allowed = new Set([...row.def.matchAll(/'([^']+)'/g)].map(m => m[1]));
       for (const value of used[column]) if (!allowed.has(value)) { problems++; console.log(`  ✗ ${column}='${value}' rejected`); }
     }
