@@ -29,7 +29,7 @@ export interface ScrapedPriceVariant {
   modelSlug: string;
   variantKey: string;
   variantName: string;
-  /** tier | service_group | upstream_provider | region | context_band | batch | other */
+  /** tier | service_group | default_route | cheapest_endpoint | upstream_provider | region | context_band | batch | other */
   variantKind?: string;
   sourceGroupKey?: string;
   sourceGroupName?: string;

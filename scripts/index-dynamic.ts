@@ -5,6 +5,7 @@
  * Uses provider-config.ts for metadata and prioritized execution
  */
 
+import { syncResellerPromos } from './db/promo-sync';
 import { scrapeOpenRouter } from './scrapers/openrouter';
 import { describePriceChange, pickCanonicalPerProduct, type ResolvedEntry } from './utils/price-history';
 
@@ -464,7 +465,7 @@ async function processAPIScraper(
       console.error(`  ❌ Error batch-processing ${result.source} variants:`, error);
       errorCount++;
     }
-    if (fullCatalog && seenVariants.length > 0) {
+    if (fullCatalog && warningCount === 0 && seenVariants.length > 0) {
       try {
         const retiredVariants = await retireUnseenChannelPriceVariants(channelProviderId, seenVariants, result.source);
         if (retiredVariants > 0) console.log(`🧹 ${result.source}: Soft-disabled ${retiredVariants} variants absent from full-catalog scrape`);
@@ -861,6 +862,13 @@ async function main() {
         totalErrors++;
       }
     });
+  }
+
+  try {
+    await syncResellerPromos(true);
+  } catch (error) {
+    console.error('Promo expiry sync failed:', error);
+    totalErrors++;
   }
 
   const duration = Math.round((Date.now() - startTime) / 1000);

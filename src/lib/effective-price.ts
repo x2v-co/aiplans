@@ -10,6 +10,13 @@ export interface ScheduledChannelPrice extends PriceSchedule {
   input_price_per_1m?: number | null;
   output_price_per_1m?: number | null;
   cached_input_price_per_1m?: number | null;
+  price_variants?: Array<{
+    input_price_per_1m?: number | null;
+    output_price_per_1m?: number | null;
+    cached_input_price_per_1m?: number | null;
+    is_headline?: boolean;
+    variant_kind?: string | null;
+  }>;
 }
 
 /** Resolve on every read, so a stopped scraper cannot freeze an introductory price. */
@@ -25,6 +32,14 @@ export function effectivePrice<T extends ScheduledChannelPrice>(row: T, now = ne
     const value = row[regular];
     if (value != null && Number.isFinite(value)) result[current] = value;
   }
+  // The default-route variant mirrors its channel headline. Keep expanded
+  // price tables consistent at expiry, even when no scraper has run yet.
+  if (row.price_variants) result.price_variants = row.price_variants.map(variant =>
+    variant.is_headline && variant.variant_kind === 'default_route'
+      ? { ...variant, input_price_per_1m: result.input_price_per_1m,
+        output_price_per_1m: result.output_price_per_1m,
+        cached_input_price_per_1m: result.cached_input_price_per_1m }
+      : variant);
   return result;
 }
 

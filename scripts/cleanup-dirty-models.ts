@@ -1,7 +1,7 @@
 /**
  * Cleanup for scraper-created "models" that are really promo copy
  * (e.g. kimi-k3promopromotion-valid-until-october-11,) plus stale cached-input
- * prices left on the 2026-10 OpenRouter floor rows.
+ * prices above ordinary input rates.
  *
  *   npx tsx scripts/cleanup-dirty-models.ts            # dry-run (default, read-only)
  *   npx tsx scripts/cleanup-dirty-models.ts --apply    # one transaction
@@ -17,16 +17,14 @@
  * slug, or a literal slug reference in src/ (guides, compare, hard-coded links).
  * Referenced candidates are skipped and reported as MANUAL_REVIEW.
  *
- * Part B - cached-input sanity: the four OpenRouter floor rows written by
- * seed-verified-2026-10-chatgpt-pro-openrouter get the cache-read price of the
- * same floor endpoint (or NULL when it publishes none). Any other row with
- * cached > input is listed; with --apply its cached price is set to NULL.
+ * Part B - cached-input sanity:
+ * rows with cached > input are listed; --apply sets their cached price to NULL.
+ * Endpoint cache prices are never copied onto default-route headlines.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { databaseSql as sql } from './db/postgres-admin';
 import { checkModelIdentity } from './utils/model-identity-guard';
-import { OPENROUTER_FLOOR_PRICES } from './data/verified-2026-10-chatgpt-pro-openrouter';
 
 const APPLY = process.argv.includes('--apply');
 const BACKUP = process.argv.find((a) => a.startsWith('--backup='))?.slice(9)
@@ -97,29 +95,12 @@ async function main() {
   console.log(`  → ${toDelete.length} model(s) to delete: ${toDelete.map((d) => d.m.slug).join(' | ') || '(none)'}\n`);
 
   // ---------- Part B ----------
-  const [openrouter] = await sql<{ id: number }[]>`SELECT id FROM providers WHERE slug = 'openrouter'`;
-  const floorFixes: Array<{ id: number; slug: string; from: number | null; to: number | null }> = [];
-  console.log('B1. OpenRouter floor rows (cached = verified cache-read of the floor endpoint, else NULL)');
-  if (!openrouter) console.log('  ✗ provider openrouter missing');
-  else for (const f of OPENROUTER_FLOOR_PRICES) {
-    const rows = await sql<{ id: number; slug: string; input: number; cached: number | null }[]>`
-      SELECT p.id, m.slug, p.input_price_per_1m::float8 AS input, p.cached_input_price_per_1m::float8 AS cached
-        FROM api_channel_prices p JOIN models m ON m.id = p.model_id
-       WHERE p.provider_id = ${openrouter.id} AND lower(m.slug) IN ${sql(f.modelSlugCandidates.map((s) => s.toLowerCase()))}`;
-    if (!rows.length) { console.log(`  · ${f.openRouterId}: no openrouter row`); continue; }
-    for (const r of rows) {
-      const to = f.cachedInputPer1m;
-      const same = (r.cached == null && to == null) || (r.cached != null && to != null && Math.abs(r.cached - to) < 1e-9);
-      console.log(`  ${same ? '=' : '↻'} #${r.id} ${r.slug}: input ${r.input}, cached ${r.cached ?? 'NULL'} -> ${to ?? 'NULL'} (${f.floorProvider})`);
-      if (!same) floorFixes.push({ id: r.id, slug: r.slug, from: r.cached, to });
-    }
-  }
-  const floorIds = new Set(floorFixes.map((f) => f.id));
+  // Endpoint cache prices belong only to endpoint variants; never copy to a route.
   const bad = await sql<{ id: number; slug: string; provider: string; input: number; cached: number }[]>`
     SELECT p.id, m.slug, pr.slug AS provider, p.input_price_per_1m::float8 AS input, p.cached_input_price_per_1m::float8 AS cached
       FROM api_channel_prices p JOIN models m ON m.id = p.model_id JOIN providers pr ON pr.id = p.provider_id
      WHERE p.cached_input_price_per_1m > p.input_price_per_1m ORDER BY p.id`;
-  const otherBad = bad.filter((r) => !floorIds.has(r.id) && !toDelete.some((d) => d.channelPriceIds.includes(r.id)));
+  const otherBad = bad.filter((r) => !toDelete.some((d) => d.channelPriceIds.includes(r.id)));
   const badVariants = await sql<{ id: number; slug: string; provider: string; variant_key: string; input: number; cached: number }[]>`
     SELECT v.id, m.slug, pr.slug AS provider, v.variant_key, v.input_price_per_1m::float8 AS input, v.cached_input_price_per_1m::float8 AS cached
       FROM api_channel_price_variants v JOIN models m ON m.id = v.model_id JOIN providers pr ON pr.id = v.provider_id
@@ -128,13 +109,13 @@ async function main() {
   for (const r of otherBad) console.log(`  #${r.id} ${r.provider}/${r.slug}: input ${r.input} < cached ${r.cached}`);
   for (const r of badVariants) console.log(`  variant #${r.id} ${r.provider}/${r.slug} [${r.variant_key}]: input ${r.input} < cached ${r.cached}`);
 
-  console.log(`\nSummary: delete ${toDelete.length} model(s); set ${floorFixes.length} floor cached price(s); null ${otherBad.length + badVariants.length} cached > input row(s).`);
+  console.log(`\nSummary: delete ${toDelete.length} model(s); null ${otherBad.length + badVariants.length} cached > input row(s).`);
   if (!APPLY) { console.log('Dry-run only. Re-run with --apply to write (single transaction).'); return; }
 
   // Backup everything we touch before writing.
   const ids = toDelete.map((d) => d.m.id);
   const cpIds = toDelete.flatMap((d) => d.channelPriceIds);
-  const backup: Record<string, unknown> = { at: new Date().toISOString(), floorFixes, otherBad, badVariants };
+  const backup: Record<string, unknown> = { at: new Date().toISOString(), otherBad, badVariants };
   if (ids.length) {
     backup.models = await sql`SELECT * FROM models WHERE id IN ${sql(ids)}`;
     backup.api_channel_prices = await sql`SELECT * FROM api_channel_prices WHERE model_id IN ${sql(ids)}`;
@@ -153,7 +134,6 @@ async function main() {
       const deleted = await tx`DELETE FROM models WHERE id IN ${tx(ids)} RETURNING id`;
       if (deleted.length !== ids.length) throw new Error(`expected ${ids.length} model deletes, got ${deleted.length}`);
     }
-    for (const f of floorFixes) await tx`UPDATE api_channel_prices SET cached_input_price_per_1m = ${f.to}, updated_at = now() WHERE id = ${f.id}`;
     if (otherBad.length) await tx`UPDATE api_channel_prices SET cached_input_price_per_1m = NULL, updated_at = now() WHERE id IN ${tx(otherBad.map((r) => r.id))}`;
     if (badVariants.length) await tx`UPDATE api_channel_price_variants SET cached_input_price_per_1m = NULL, updated_at = now() WHERE id IN ${tx(badVariants.map((r) => r.id))}`;
   });

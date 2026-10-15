@@ -65,7 +65,9 @@
     "seed:verified-2026-10": "tsx scripts/seed-verified-2026-10-subscriptions.ts --apply",
     "seed:verified-2026-10:dry-run": "tsx scripts/seed-verified-2026-10-subscriptions.ts",
     "seed:provider-links": "tsx scripts/seed-provider-links.ts",
-    "seed:provider-links:dry-run": "tsx scripts/seed-provider-links.ts --dry-run"
+    "seed:provider-links:dry-run": "tsx scripts/seed-provider-links.ts --dry-run",
+    "seed:reseller-promos": "tsx scripts/seed-reseller-promos.ts",
+    "seed:reseller-promos:dry-run": "tsx scripts/seed-reseller-promos.ts --dry-run"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

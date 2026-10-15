@@ -6,19 +6,19 @@
 import type { ScrapedPrice, ScrapedPriceVariant, ScraperResult } from '../utils/validator';
 import { validatePrice, slugify, normalizeModelName } from '../utils/validator';
 import { canonicalizeModelSlug } from '../utils/model-normalizer';
-import { OPENROUTER_FLOOR_PRICES } from '../data/verified-2026-10-chatgpt-pro-openrouter';
-
-/**
- * Models whose OpenRouter headline row is the cheapest available host (floor),
- * not the /api/v1/models default-route price. Same rule as the verified seed
- * (#90): cheapest available endpoint from /models/{id}/endpoints, by input
- * then output, with that endpoint's own cache-read price (or none).
- * Without this, every API scrape overwrote the verified floors with the
- * default-route price (gpt-oss-120b 0.03/0.15 -> 0.15/0.60).
- */
-export const OPENROUTER_FLOOR_HEADLINE_IDS: ReadonlySet<string> = new Set(
-  OPENROUTER_FLOOR_PRICES.map((f) => f.openRouterId),
-);
+// Exact identities from the 2026-10-15 audit. Do not infer SKU identity from
+// display names: the historical Mistral row is catalogued under a batch slug.
+const AUDITED_MODEL_SLUGS: Record<string, string> = {
+  '~google/gemini-pro-latest': '~google-gemini-pro-latest',
+  '~z-ai/glm-latest': '~z-ai-glm-latest',
+  'z-ai/glm-5.2': 'glm-5.2',
+  'openai/gpt-oss-120b': 'gpt-oss-120b',
+  '~moonshotai/kimi-latest': '~moonshotai-kimi-latest',
+  'moonshotai/kimi-k3': 'kimi-k3',
+  'mistralai/mistral-large': 'mistral-large-batch',
+  'qwen/qwen3.6-35b-a3b': 'qwen-qwen3-6-35b-a3b',
+  'qwen/qwen3.8-27b': 'qwen-qwen3-8-27b',
+};
 
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/models';
 const OPENROUTER_MODEL_URL = 'https://openrouter.ai/models/';
@@ -130,6 +130,7 @@ function normalizeOpenRouterModelName(id: string, name?: string): string {
  * Format: provider-model, except verified aliases of canonical catalog slugs.
  */
 export function generateOpenRouterSlug(id: string): string {
+  if (AUDITED_MODEL_SLUGS[id]) return AUDITED_MODEL_SLUGS[id];
   if (!id.includes('/')) {
     // No provider separator, use the full id
     return canonicalizeModelSlug(slugify(id));
@@ -187,17 +188,10 @@ export function classifyOpenRouterPricing(pricing: Partial<OpenRouterModel['pric
 }
 
 function endpointPrice(endpoint: OpenRouterEndpoint): { input: number; output: number; cache?: number } | null {
-  const prompt = endpoint.pricing?.prompt;
-  const completion = endpoint.pricing?.completion;
-  if (prompt == null || completion == null) return null;
-  const input = parseFloat(prompt) * 1_000_000;
-  const output = parseFloat(completion) * 1_000_000;
-  const cache = endpoint.pricing?.input_cache_read
-    ? parseFloat(endpoint.pricing.input_cache_read) * 1_000_000
-    : undefined;
-  if (!validatePrice(input) || !validatePrice(output)) return null;
-  if (output > 0 && input > 0 && output < input) return null;
-  return { input, output, cache };
+  const price = classifyOpenRouterPricing(endpoint.pricing);
+  if (price.kind !== 'ok') return null;
+  if (price.output > 0 && price.input > 0 && price.output < price.input) return null;
+  return price;
 }
 
 export interface OpenRouterFloor {
@@ -208,14 +202,13 @@ export interface OpenRouterFloor {
   cache: number | null;
 }
 
-/** Cheapest available paid endpoint (input asc, then output asc). */
+/** Cheapest available endpoint (input asc, then output asc), including explicit free prices. */
 export function pickOpenRouterFloor(endpoints: OpenRouterEndpoint[]): OpenRouterFloor | null {
   let best: OpenRouterFloor | null = null;
   for (const endpoint of endpoints) {
     if (endpoint.status != null && endpoint.status !== 0) continue;
     const price = endpointPrice(endpoint);
     if (!price) continue;
-    if (price.input === 0 && price.output === 0) continue; // free promo hosts are not a floor
     const cache = price.cache != null && Number.isFinite(price.cache) && price.cache >= 0 && price.cache <= price.input
       ? price.cache
       : null;
@@ -225,17 +218,6 @@ export function pickOpenRouterFloor(endpoints: OpenRouterEndpoint[]): OpenRouter
     }
   }
   return best;
-}
-
-const roundPrice = (n: number) => Math.round(n * 1e6) / 1e6;
-
-/** Rewrite a headline price in place to the endpoint floor. */
-export function applyOpenRouterFloor(headline: ScrapedPrice, modelId: string, floor: OpenRouterFloor): void {
-  headline.inputPricePer1M = roundPrice(floor.input);
-  headline.outputPricePer1M = roundPrice(floor.output);
-  headline.cachedInputPricePer1M = floor.cache == null ? null : roundPrice(floor.cache);
-  headline.notes = `${openRouterModelPage(modelId)} — OpenRouter cheapest host (floor): ${floor.provider} ` +
-    `$${headline.inputPricePer1M}/$${headline.outputPricePer1M} per 1M, from /api/v1/models/${modelId}/endpoints.`;
 }
 
 async function mapWithConcurrency<T, R>(items: T[], concurrency: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -251,20 +233,8 @@ async function mapWithConcurrency<T, R>(items: T[], concurrency: number, fn: (it
   return results;
 }
 
-async function fetchEndpointVariants(model: OpenRouterModel, headline: ScrapedPrice): Promise<ScrapedPriceVariant[]> {
-  const response = await fetch(`${OPENROUTER_API}/${model.id}/endpoints`, {
-    headers: { Accept: 'application/json', 'User-Agent': 'aiplans.dev pricing scraper (+https://aiplans.dev)' },
-  });
-  if (!response.ok) throw new Error(`OpenRouter endpoints ${model.id}: HTTP ${response.status}`);
-  const payload = await response.json() as OpenRouterEndpointPayload;
-  const endpoints = payload.data?.endpoints ?? [];
-  if (OPENROUTER_FLOOR_HEADLINE_IDS.has(model.id)) {
-    const floor = pickOpenRouterFloor(endpoints);
-    // No usable floor: fail this model so the run does not publish the
-    // default-route price over a verified floor row.
-    if (!floor) throw new Error(`OpenRouter floor ${model.id}: no available priced endpoint`);
-    applyOpenRouterFloor(headline, model.id, floor);
-  }
+/** Build route and endpoint rows independently; endpoint prices never mutate the headline. */
+export function buildOpenRouterVariants(model: OpenRouterModel, headline: ScrapedPrice, endpoints: OpenRouterEndpoint[]): ScrapedPriceVariant[] {
   const variants: ScrapedPriceVariant[] = [{
     modelName: headline.modelName,
     modelSlug: headline.modelSlug,
@@ -273,10 +243,10 @@ async function fetchEndpointVariants(model: OpenRouterModel, headline: ScrapedPr
     variantKind: 'default_route',
     sourceGroupKey: 'openrouter-auto',
     sourceGroupName: 'OpenRouter Auto / default route',
-    sourceUrl: `${OPENROUTER_API}/${model.id}/endpoints`,
+    sourceUrl: OPENROUTER_API,
     inputPricePer1M: headline.inputPricePer1M,
     outputPricePer1M: headline.outputPricePer1M,
-    cachedInputPricePer1M: headline.cachedInputPricePer1M,
+    cachedInputPricePer1M: headline.cachedInputPricePer1M ?? undefined,
     currency: 'USD',
     priceUnit: 'per_1m_tokens',
     isAvailable: true,
@@ -285,11 +255,24 @@ async function fetchEndpointVariants(model: OpenRouterModel, headline: ScrapedPr
     isPartnerOnly: false,
     isHeadline: true,
     headlineRank: 0,
-    headlineReason: OPENROUTER_FLOOR_HEADLINE_IDS.has(model.id)
-      ? 'OpenRouter cheapest available host (floor) from /api/v1/models/{id}/endpoints.'
-      : 'OpenRouter model-level default route price from /api/v1/models.',
+    headlineReason: 'OpenRouter model-level default route price from /api/v1/models.',
     raw: { id: model.id, pricing: model.pricing },
   }];
+
+  const cheapest = pickOpenRouterFloor(endpoints);
+  if (cheapest) variants.push({
+    modelName: headline.modelName, modelSlug: headline.modelSlug,
+    variantKey: 'openrouter-cheapest-endpoint',
+    variantName: `Cheapest endpoint: ${cheapest.provider}`,
+    variantKind: 'cheapest_endpoint', sourceGroupName: cheapest.provider,
+    sourceUrl: `${OPENROUTER_API}/${model.id}/endpoints`,
+    inputPricePer1M: cheapest.input, outputPricePer1M: cheapest.output,
+    cachedInputPricePer1M: cheapest.cache ?? undefined,
+    currency: 'USD', priceUnit: 'per_1m_tokens',
+    isAvailable: true, isPublic: true, isSelfService: true,
+    isPartnerOnly: false, isHeadline: false, headlineRank: 5,
+    notes: 'Lowest available endpoint by input, then output. Select this provider explicitly; default routing uses the headline price.',
+  });
 
   for (const endpoint of endpoints) {
     const price = endpointPrice(endpoint);
@@ -328,6 +311,16 @@ async function fetchEndpointVariants(model: OpenRouterModel, headline: ScrapedPr
     });
   }
   return variants;
+}
+
+async function fetchEndpointVariants(model: OpenRouterModel, headline: ScrapedPrice): Promise<ScrapedPriceVariant[]> {
+  const response = await fetch(`${OPENROUTER_API}/${model.id}/endpoints`, {
+    headers: { Accept: 'application/json', 'User-Agent': 'aiplans.dev pricing scraper (+https://aiplans.dev)' },
+  });
+  if (!response.ok) throw new Error(`OpenRouter endpoints ${model.id}: HTTP ${response.status}`);
+  const payload = await response.json() as OpenRouterEndpointPayload;
+  if (!Array.isArray(payload.data?.endpoints)) throw new Error(`OpenRouter endpoints ${model.id}: missing endpoints array`);
+  return buildOpenRouterVariants(model, headline, payload.data.endpoints);
 }
 
 export async function scrapeOpenRouter(): Promise<ScraperResult> {
@@ -405,14 +398,14 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
           modelSlug,
           inputPricePer1M: inputPrice,
           outputPricePer1M: outputPrice,
-          cachedInputPricePer1M: cachePrice,
+          cachedInputPricePer1M: cachePrice ?? null,
           contextWindow: model.context_length,
           isAvailable: true,
           currency: 'USD',
           releasedAt: model.created && Number.isFinite(model.created)
             ? new Date(model.created * 1000).toISOString()
             : undefined,
-          notes: openRouterModelPage(model.id),
+          notes: `${openRouterModelPage(model.id)} — OpenRouter model-level default route price from /api/v1/models.${cachePrice == null ? ' Cache price needs-verification (NULL).' : ''}`,
         });
         pricedModels.push(model);
       } catch (error) {
@@ -436,8 +429,8 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
       try {
         return await fetchEndpointVariants(model, headline);
       } catch (error) {
-        errors.push(`Error fetching endpoints for ${model.id}: ${error}`);
-        return [];
+        warnings.push(`Error fetching endpoints for ${model.id}: ${error}`);
+        return buildOpenRouterVariants(model, headline, []);
       }
     });
     const variants = variantGroups.flat();

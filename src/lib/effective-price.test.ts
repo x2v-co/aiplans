@@ -53,3 +53,15 @@ test('immutable snapshot expires at a pending price change and resumes normal li
   assert.equal(priceSnapshotExpiresAt([row], nominal, cutoff), nominal.toISOString());
   assert.equal(priceSnapshotExpiresAt([row], new Date('2026-11-30T23:00:00Z'), before), '2026-11-30T23:00:00.000Z');
 });
+
+
+test('default-route variant follows its scheduled headline at expiry; cheapest/provider variants keep independent prices', () => {
+  const scheduled = { ...row, price_variants: [
+    { id: 1, is_headline: true, variant_kind: 'default_route', input_price_per_1m: 2, output_price_per_1m: 10 },
+    { id: 2, is_headline: false, variant_kind: 'cheapest_endpoint', input_price_per_1m: 2, output_price_per_1m: 10 },
+  ] };
+  const resolved = effectivePrice(scheduled, cutoff);
+  assert.deepEqual(resolved.price_variants.map(variant => [variant.id, variant.input_price_per_1m, variant.output_price_per_1m]),
+    [[1, 4, 20], [2, 2, 10]]);
+  assert.equal(scheduled.price_variants[0].input_price_per_1m, 2);
+});

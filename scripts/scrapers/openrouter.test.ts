@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { classifyOpenRouterPricing, generateOpenRouterSlug } from './openrouter';
+import { classifyOpenRouterPricing, generateOpenRouterSlug, scrapeOpenRouter } from './openrouter';
 import { parseMistralPriceCell } from './mistral-dynamic';
 
 test('OpenRouter slug generation uses canonical Argon base and batch identities', () => {
@@ -8,7 +8,7 @@ test('OpenRouter slug generation uses canonical Argon base and batch identities'
   assert.equal(generateOpenRouterSlug('google/gemini-4-argon:batch'), 'gemini-4-argon-batch');
   assert.equal(generateOpenRouterSlug('google-ai/gemini-4-argon'), 'gemini-4-argon');
   assert.equal(generateOpenRouterSlug('google-gemini-gemini-4-argon-batch'), 'gemini-4-argon-batch');
-  assert.equal(generateOpenRouterSlug('openai/gpt-oss-120b'), 'openai-gpt-oss-120b');
+  assert.equal(generateOpenRouterSlug('openai/gpt-oss-120b'), 'gpt-oss-120b');
   assert.equal(generateOpenRouterSlug('google/gemini-4-argon:free'), 'google-gemini-gemini-4-argon-free');
 });
 
@@ -43,44 +43,64 @@ test('Mistral: sale price wins, non-token units are ignored', () => {
   assert.equal(parseMistralPriceCell(undefined), null);
 });
 
-import { pickOpenRouterFloor, applyOpenRouterFloor, OPENROUTER_FLOOR_HEADLINE_IDS } from './openrouter';
-import { OPENROUTER_FLOOR_PRICES } from '../data/verified-2026-10-chatgpt-pro-openrouter';
+import { pickOpenRouterFloor } from './openrouter';
+import { readFileSync } from 'node:fs';
 
-const ep = (provider_name: string, prompt: string, completion: string, extra: Record<string, unknown> = {}) =>
-  ({ provider_name, pricing: { prompt, completion, ...(extra.cache ? { input_cache_read: extra.cache as string } : {}) }, status: extra.status as number | undefined });
+const fixture = JSON.parse(readFileSync(new URL('./fixtures/openrouter-default-routes.json', import.meta.url), 'utf8')) as {
+  data: Array<{ id: string; name: string; pricing: { prompt: string; completion: string } }>;
+  expected: Array<{ slug: string; id: string; input: number; output: number }>;
+  endpoints: Record<string, unknown[]>;
+};
 
-test('OpenRouter floor: cheapest available host by input then output, own cache price', () => {
-  // gpt-oss-120b endpoints as verified 2026-10-13 (#90).
-  const floor = pickOpenRouterFloor([
-    ep('DefaultRoute', '0.00000015', '0.0000006', { cache: '0.000000075' }),
-    ep('CoreWeave', '0.00000003', '0.00000017'),
-    ep('Venice', '0.00000003', '0.00000015', { cache: '0.00000003' }),
-    ep('DekaLLM', '0.00000003', '0.00000018'),
-    ep('Down', '0.00000001', '0.00000002', { status: -1 }),
-    ep('Free', '0', '0'),
-  ]);
-  assert.ok(floor);
-  assert.equal(floor!.provider, 'Venice');
-  assert.ok(Math.abs(floor!.input - 0.03) < 1e-9);
-  assert.ok(Math.abs(floor!.output - 0.15) < 1e-9);
-  assert.ok(Math.abs((floor!.cache ?? -1) - 0.03) < 1e-9);
+test('all nine audit mismatches use model default prices; endpoint floor is separate and names the host', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async input => {
+    const url = String(input);
+    const id = url.replace('https://openrouter.ai/api/v1/models/', '').replace(/\/endpoints$/, '');
+    return new Response(JSON.stringify(url.endsWith('/endpoints')
+      ? { data: { endpoints: fixture.endpoints[id] ?? [] } } : { data: fixture.data }));
+  };
+  try {
+    const result = await scrapeOpenRouter();
+    assert.equal(result.success, true);
+    assert.equal(result.prices.length, 9);
+    for (const expected of fixture.expected) {
+      const headline = result.prices.find(row => row.modelSlug === expected.slug)!;
+      assert.ok(headline, expected.slug);
+      assert.equal(headline.cachedInputPricePer1M, null);
+      assert.ok(Math.abs(headline.inputPricePer1M - expected.input) < 1e-9);
+      assert.ok(Math.abs(headline.outputPricePer1M - expected.output) < 1e-9);
+      const route = result.variants!.find(row => row.modelSlug === expected.slug && row.isHeadline)!;
+      assert.equal(route.variantKind, 'default_route');
+      assert.equal(route.inputPricePer1M, headline.inputPricePer1M);
+      assert.equal(route.outputPricePer1M, headline.outputPricePer1M);
+      assert.match(route.headlineReason!, /model-level default route price from \/api\/v1\/models/);
+      assert.equal(route.sourceUrl, 'https://openrouter.ai/api/v1/models');
+    }
+    const floors = result.variants!.filter(row => row.variantKind === 'cheapest_endpoint');
+    assert.deepEqual(floors.map(row => [row.modelSlug, row.sourceGroupName, row.inputPricePer1M, row.outputPricePer1M, row.isHeadline]),
+      [['gpt-oss-120b', 'Venice', 0.03, 0.15, false], ['qwen-qwen3-8-27b', 'Tenstorrent', 0.02, 0.5, false]]);
+  } finally { globalThis.fetch = originalFetch; }
 });
 
-test('OpenRouter floor: no cache price -> null; cache above input -> null; none usable -> null', () => {
-  assert.equal(pickOpenRouterFloor([ep('A', '0.00000002', '0.0000005')])!.cache, null);
-  assert.equal(pickOpenRouterFloor([ep('A', '0.00000002', '0.0000005', { cache: '0.00000009' })])!.cache, null);
-  assert.equal(pickOpenRouterFloor([ep('Free', '0', '0'), ep('Down', '0.000001', '0.000002', { status: 1 })]), null);
+test('endpoint outages still publish verified defaults with warnings, preventing full-catalog retirement', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async input => String(input).endsWith('/endpoints')
+    ? new Response('', { status: 503 }) : new Response(JSON.stringify({ data: fixture.data }));
+  try {
+    const result = await scrapeOpenRouter();
+    assert.equal(result.success, true);
+    assert.equal(result.warnings?.length, 9);
+    assert.equal(result.prices.length, 9);
+    assert.equal(result.variants?.length, 9);
+    assert.ok(result.variants!.every(row => row.isHeadline));
+  } finally { globalThis.fetch = originalFetch; }
 });
 
-test('OpenRouter floor: headline is rewritten to the floor (rounded), not the /models default price', () => {
-  const headline = { modelName: 'gpt-oss-120b', modelSlug: 'openai-gpt-oss-120b', inputPricePer1M: 0.15, outputPricePer1M: 0.6, cachedInputPricePer1M: 0.075 as number | null, isAvailable: true };
-  applyOpenRouterFloor(headline, 'openai/gpt-oss-120b', { provider: 'Venice', input: 0.03 + 1e-12, output: 0.15, cache: null });
-  assert.equal(headline.inputPricePer1M, 0.03);
-  assert.equal(headline.outputPricePer1M, 0.15);
-  assert.equal(headline.cachedInputPricePer1M, null);
-});
-
-test('OpenRouter floor: every verified #90 floor model is floor-headlined by the scraper', () => {
-  for (const f of OPENROUTER_FLOOR_PRICES) assert.ok(OPENROUTER_FLOOR_HEADLINE_IDS.has(f.openRouterId), f.openRouterId);
-  assert.equal(OPENROUTER_FLOOR_HEADLINE_IDS.has('anthropic/claude-sonnet-4'), false);
+test('cheapest endpoints reject down, malformed and negative prices; explicit free prices remain valid', () => {
+  const ep = (provider_name: string, prompt: string, completion: string, status = 0) => ({ provider_name, pricing: { prompt, completion }, status });
+  assert.equal(pickOpenRouterFloor([ep('Down', '0.00000002', '0.0000005', 1), ep('Invalid', '', '1'), ep('Variable', '-1', '-1')]), null);
+  assert.deepEqual(pickOpenRouterFloor([ep('Venice', '0.00000003', '0.00000015')]),
+    { provider: 'Venice', input: 0.03, output: 0.15, cache: null });
+  assert.equal(pickOpenRouterFloor([ep('Free', '0', '0')])?.input, 0);
 });

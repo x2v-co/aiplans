@@ -1,3 +1,4 @@
+import { retainMatchingPromo } from '../utils/promo-sync';
 import { checkModelIdentity, ModelIdentityRejectedError, isCachedPriceSane } from '../utils/model-identity-guard';
 import { canonicalizeModelSlug } from '../utils/model-normalizer';
 import { databaseSql, postgresAdmin } from './postgres-admin';
@@ -339,7 +340,7 @@ export async function upsertChannelPrice(data: {
   // First, check if a record exists
   const { data: existing, error: selectError } = await db
     .from('api_channel_prices')
-    .select('id')
+    .select('*')
     .eq('model_id', data.model_id)
     .eq('provider_id', data.provider_id)
     .single();
@@ -348,6 +349,8 @@ export async function upsertChannelPrice(data: {
     // PGRST116 means no rows found, which is expected for new records
     throw selectError;
   }
+
+  data = retainMatchingPromo(data, existing);
 
   if (existing) {
     // Update existing record
