@@ -104,11 +104,11 @@ test('applies verified plans, per-model limits, Contributor terms and both DeepS
   assert.equal(f.data.providers.length, 1);
   assert.equal(f.data.providers[0].name, 'OpenCode Go');
   assert.equal(f.data.providers[0].pricing_url, GO_SOURCE);
-  assert.equal(f.data.models.length, 5);
+  assert.equal(f.data.models.length, 6);
   assert.equal(f.data.plans.length, 2);
-  assert.equal(f.data.api_channel_prices.length, 5);
+  assert.equal(f.data.api_channel_prices.length, 6);
   assert.equal(f.data.api_channel_price_variants.length, 4);
-  assert.equal(f.data.model_plan_mapping.length, 10);
+  assert.equal(f.data.model_plan_mapping.length, 12);
 
   for (const [index, plan] of f.data.plans.entries()) {
     assert.equal(plan.name, index === 0 ? 'Go' : 'Go Plus');
@@ -124,11 +124,11 @@ test('applies verified plans, per-model limits, Contributor terms and both DeepS
       assert.ok(String(plan.notes).includes(`${name}: $${limits[index]}/month`));
     }
     const resolved = resolveSelector(plan.model_selector as ModelSelector, f.data.models.map(model => ({ id: model.id, slug: String(model.slug), providerSlugs: [], elo: null })));
-    assert.equal(resolved.models.length, 5);
+    assert.equal(resolved.models.length, 6);
     assert.deepEqual(resolved.unknownExtra, []);
   }
   const expected = [
-    [4, 20, 0.2], [0.1, 0.2, 0.002], [0.1, 0.2, 0.002], [0.15, 0.6, 0.003], [0.66, 1.98, 0.022],
+    [4, 20, 0.2], [0.1, 0.2, 0.002], [0.1, 0.2, 0.002], [0.15, 0.6, 0.003], [0.66, 1.98, 0.022], [0, 0, 0],
   ];
   for (const [index, channel] of f.data.api_channel_prices.entries()) {
     assert.deepEqual([channel.input_price_per_1m, channel.output_price_per_1m, channel.cached_input_price_per_1m], expected[index]);
@@ -142,12 +142,12 @@ test('applies verified plans, per-model limits, Contributor terms and both DeepS
   const argon = f.data.api_channel_prices[0];
   assert.match(String(argon.data_for_discount_note), /Google.*not ZDR/);
   assert.match(String(argon.notes), /\$30 -> \$60.*\$120 -> \$240/);
-  for (const channel of f.data.api_channel_prices.slice(1, 3)) assert.match(String(channel.data_for_discount_note), /Meta training.*Limited regions/);
+  for (const channel of f.data.api_channel_prices.slice(1, 3)) assert.match(String(channel.data_for_discount_note), /Meta training.*Limited to regions/);
   assert.deepEqual(f.data.api_channel_price_variants.map(row => [row.variant_key, row.input_price_per_1m, row.output_price_per_1m, row.cached_input_price_per_1m]), [
     ['off-peak', 0.15, 0.6, 0.003], ['peak', 0.3, 1.2, 0.006], ['off-peak', 0.66, 1.98, 0.022], ['peak', 1.32, 3.96, 0.044],
   ]);
   for (const variant of f.data.api_channel_price_variants) {
-    assert.equal((variant.constraints_json as Record<string, unknown>).schedule_status, 'needs-verification');
+    assert.equal((variant.constraints_json as Record<string, unknown>).schedule, 'Peak 01:00-04:00 and 06:00-10:00 UTC Mon-Fri; all other hours incl. weekends Off-Peak.');
     assert.equal(variant.is_headline, variant.variant_key === 'off-peak');
   }
   for (const model of f.data.models) {
@@ -201,4 +201,17 @@ test('duplicate channel identities abort and roll back the entire apply', async 
   const ambiguousModels = fixture({ models: [{ id: 1, slug: 'deepseek-v4.1-flash' }, { id: 2, slug: 'deepseek-v4-1-flash' }] });
   await assert.rejects(seedOpenCodeGo(ambiguousModels.sql), /Ambiguous models/);
   assert.equal(ambiguousModels.writes.length, 0);
+});
+
+test('Cat Jam Free: free, unlimited, region-restricted, no data-for-discount flag', async () => {
+  const f = fixture();
+  await seedOpenCodeGo(f.sql, true);
+  const model = f.data.models.find(row => row.slug === 'cat-jam-free')!;
+  const channel = f.data.api_channel_prices.find(row => row.model_id === model.id)!;
+  assert.deepEqual([channel.input_price_per_1m, channel.output_price_per_1m, channel.cached_input_price_per_1m], [0, 0, 0]);
+  assert.equal(channel.data_for_discount, null);
+  assert.match(String(channel.notes), /Free, unlimited/);
+  assert.match(String(channel.notes), /China \(including Hong Kong and Macau\)/);
+  assert.match(String(f.data.plans[0].notes), /Cat Jam Free: Unlimited\./);
+  for (const table of Object.values(f.data)) for (const row of table) assert.doesNotMatch(JSON.stringify(row), /needs-verification/);
 });

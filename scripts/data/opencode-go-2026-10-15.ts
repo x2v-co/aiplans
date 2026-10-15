@@ -5,8 +5,11 @@ import { seedChanges } from './gemini-4-argon';
 export const GO_SOURCE = 'https://opencode.ai/docs/go/';
 const VERIFIED_AT = new Date('2026-10-15T00:00:00Z');
 const WINDOWS = 'Monthly USD limits are separate per model: 5-hour = 20%, weekly = 50%, monthly = 100% of that model\'s monthly limit. Single-member workspaces only. Token prices are identical on Go and Go Plus.';
-const GOOGLE_TERMS = 'Prompts and outputs may train future Google models in exchange for the temporarily doubled quota; not ZDR. Go monthly quota $30 -> $60; Go Plus $120 -> $240 (limited time). [needs-verification] Promotion end date.';
-const META_TERMS = 'Heavily discounted in exchange for Meta training on prompts and outputs. Limited regions; [needs-verification] exact region list.';
+const GOOGLE_TERMS = 'Prompts and outputs may train future Google models in exchange for the temporarily doubled quota; not ZDR. Go monthly quota $30 -> $60; Go Plus $120 -> $240 (limited time; OpenCode publishes no end date).';
+export const CAT_JAM_REGIONS = 'Not available in Angola, Belarus, Cambodia, China (including Hong Kong and Macau), Cuba, the Democratic Republic of the Congo, Equatorial Guinea, Iran, Iraq, Laos, Libya, Nigeria, North Korea, Russia, Syria, Turkmenistan, Uzbekistan, Venezuela, or the Crimea, Donetsk, and Luhansk regions of Ukraine.';
+const CAT_JAM_TERMS = 'Free for a limited time; no end date published. Prompts not used for training; retained 30 days for safety (not ZDR).';
+const PEAK_SCHEDULE = 'Peak 01:00-04:00 and 06:00-10:00 UTC Mon-Fri; all other hours incl. weekends Off-Peak.';
+const META_TERMS = 'Heavily discounted in exchange for Meta training on prompts and outputs. Limited to regions permitted by Meta\'s Geographic Use Policy (OpenCode publishes no list).';
 
 type Rate = readonly [input: number, output: number, cached: number];
 interface GoModel {
@@ -14,8 +17,10 @@ interface GoModel {
   name: string;
   rate: Rate;
   peak?: Rate;
-  limits: readonly [go: number, plus: number];
+  /** null = officially "Unlimited" (free limited-time models). */
+  limits: readonly [go: number | null, plus: number | null];
   dataTerms?: string;
+  regionNote?: string;
 }
 
 export const GO_MODELS: GoModel[] = [
@@ -26,6 +31,8 @@ export const GO_MODELS: GoModel[] = [
   // Do not silently attach a V4.1 price to the older deepseek-v4-flash identity.
   { slugs: ['deepseek-v4.1-flash', 'deepseek-v4-1-flash'], name: 'DeepSeek V4.1 Flash', rate: [0.15, 0.6, 0.003], peak: [0.3, 1.2, 0.006], limits: [80, 160] },
   { slugs: ['deepseek-v4-pro'], name: 'DeepSeek V4 Pro', rate: [0.66, 1.98, 0.022], peak: [1.32, 3.96, 0.044], limits: [15, 60] },
+  // Stealth model, free for a limited time (no end date published), listed beside LongCat 2.5 / Step 5 Preview Free.
+  { slugs: ['cat-jam-free'], name: 'Cat Jam Free', rate: [0, 0, 0], limits: [null, null], dataTerms: CAT_JAM_TERMS, regionNote: CAT_JAM_REGIONS },
 ];
 
 export function goSeedOptions(args: string[]) {
@@ -83,7 +90,7 @@ export async function seedOpenCodeGo(tx: Sql, apply = false): Promise<GoSeedStep
   const provider = existingProvider ?? await save('providers', null, {
     name: 'OpenCode Go', slug: 'opencode-go', website: 'https://opencode.ai', pricing_url: GO_SOURCE,
     type: 'aggregator', currency: 'USD', region: null, access_from_china: null,
-    notes: `[needs-verification] Regional access and payment methods. Source: ${GO_SOURCE}`,
+    notes: `Designed primarily for international users with stable global access; payment methods not listed in docs. Source: ${GO_SOURCE}`,
   }, 'opencode-go');
 
   const models: Row[] = [];
@@ -94,13 +101,13 @@ export async function seedOpenCodeGo(tx: Sql, apply = false): Promise<GoSeedStep
       slug: model.slugs[0], name: model.name, type: 'llm', model_category: 'text',
       provider_ids: [], context_window: null, max_output_tokens: null, open_source: null,
       offical_link: GO_SOURCE,
-      description: `[needs-verification] Model specifications and producer metadata. Listed on OpenCode Go. Source: ${GO_SOURCE}`,
+      description: `Listed on OpenCode Go; OpenCode docs state no context window or producer. Source: ${GO_SOURCE}`,
     }, model.slugs[0]));
   }
 
   for (const [index, name, slug, price] of [[0, 'Go', 'opencode-go', 10], [1, 'Go Plus', 'opencode-go-plus', 40]] as const) {
     const existing = one('plans', rows.plans.filter(row => row.slug === slug), slug);
-    const limits = GO_MODELS.map(model => `${model.name}${model.slugs[0] === 'gemini-4-argon' ? ' Contributor' : ''}: $${model.limits[index]}/month`).join('; ');
+    const limits = GO_MODELS.map(model => `${model.name}${model.slugs[0] === 'gemini-4-argon' ? ' Contributor' : ''}: ${model.limits[index] == null ? 'Unlimited' : `$${model.limits[index]}/month`}`).join('; ');
     const plan = await save('plans', existing, {
       provider_id: provider.id, product_id: provider.id, name, slug, price, currency: 'USD',
       pricing_model: 'subscription', price_unit: 'per_month', annual_price: null, price_yearly_monthly: null,
@@ -110,8 +117,8 @@ export async function seedOpenCodeGo(tx: Sql, apply = false): Promise<GoSeedStep
       model_selector: { only_extra: true, extra: models.map(model => model.slug) },
       third_party_coverage: 'full', third_party_coverage_note: 'Included up to separate per-model USD limits; not a shared credit pool.',
       region: null, access_from_china: null, data_for_discount: null,
-      data_for_discount_note: 'Training terms depend on the model: Gemini Contributor (Google) and Muse Contributor (Meta).',
-      notes: `${WINDOWS}\n${limits}.\n${GOOGLE_TERMS}\n${META_TERMS}\n[needs-verification] Annual pricing and exact regional access. Source: ${GO_SOURCE}`,
+      data_for_discount_note: 'Training terms depend on the model: Gemini Contributor (Google) and Muse Contributor (Meta). Cat Jam Free: not used for training, 30-day retention.',
+      notes: `${WINDOWS}\n${limits}.\n${GOOGLE_TERMS}\n${META_TERMS}\nDocs list monthly plans only (no annual price). Source: ${GO_SOURCE}`,
       last_verified: VERIFIED_AT,
     }, slug);
     for (const model of models) {
@@ -127,16 +134,16 @@ export async function seedOpenCodeGo(tx: Sql, apply = false): Promise<GoSeedStep
     const prices = ([input, output, cached]: Rate) => ({ input_price_per_1m: input, output_price_per_1m: output, cached_input_price_per_1m: cached });
     const notes = [
       model.slugs[0] === 'gemini-4-argon' ? 'Gemini 4 Argon Contributor on OpenCode Go.' : model.name,
-      `Go $${model.limits[0]}/month; Go Plus $${model.limits[1]}/month per-model USD limit.`, WINDOWS,
-      model.dataTerms,
-      model.peak ? 'Headline is conditional off-peak pricing; see peak/off-peak variants. [needs-verification] OpenCode Go peak schedule.' : null,
+      model.limits[0] == null ? 'Free, unlimited on Go and Go Plus (limited time).' : `Go $${model.limits[0]}/month; Go Plus $${model.limits[1]}/month per-model USD limit.`, WINDOWS,
+      model.dataTerms, model.regionNote,
+      model.peak ? `Headline is conditional off-peak pricing; see peak/off-peak variants. ${PEAK_SCHEDULE}` : null,
       `Source: ${GO_SOURCE}`,
     ].filter(Boolean).join('\n');
     const common = { ...identity, currency: 'USD', price_unit: 'per_1m_tokens', is_available: true, notes, last_verified: VERIFIED_AT };
     const channel = one('api_channel_prices', rows.api_channel_prices.filter(row => row.model_id === modelId), target);
     await save('api_channel_prices', channel, {
-      ...common, ...prices(model.rate), quota_unit: 'usd', data_for_discount: model.dataTerms ? true : null,
-      data_for_discount_note: model.dataTerms ?? null,
+      ...common, ...prices(model.rate), quota_unit: 'usd', data_for_discount: model.dataTerms && !model.regionNote ? true : null,
+      data_for_discount_note: model.regionNote ? null : model.dataTerms ?? null,
       promo_ends_at: null, regular_input_price_per_1m: null, regular_output_price_per_1m: null, regular_cached_input_price_per_1m: null,
     }, target);
     if (!model.peak) continue;
@@ -145,7 +152,7 @@ export async function seedOpenCodeGo(tx: Sql, apply = false): Promise<GoSeedStep
       await save('api_channel_price_variants', variant, {
         ...common, ...prices(rate), variant_key: key, variant_name: key === 'peak' ? 'Peak' : 'Off-peak', variant_kind: 'time_window',
         source_url: GO_SOURCE, is_public: true, is_headline: key === 'off-peak',
-        constraints_json: { time_window: key, schedule_status: 'needs-verification', subscription_required: true, quota_unit: 'usd' },
+        constraints_json: { time_window: key, schedule: PEAK_SCHEDULE, subscription_required: true, quota_unit: 'usd' },
       }, `${target}/${key}`);
     }
   }
