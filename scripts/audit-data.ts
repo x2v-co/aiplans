@@ -552,7 +552,9 @@ async function main() {
       if (!freeVariant && (v.input_price_per_1m == null || v.input_price_per_1m <= 0)) {
         add('variants.zero_or_null', 'critical', `input_price_per_1m=${v.input_price_per_1m}`, ctx);
       }
-      if (!freeVariant && (v.output_price_per_1m == null || v.output_price_per_1m <= 0)) {
+      // Explicitly verified free output (e.g. ScaleDown on OpenRouter bills input only) is a real 0, not missing data.
+      const freeVariantOutput = isVerifiedFreeOutput(modelById.get(v.model_id)?.slug, providerById.get(v.provider_id)?.slug, v.input_price_per_1m);
+      if (!freeVariant && (v.output_price_per_1m == null || v.output_price_per_1m < 0 || (v.output_price_per_1m === 0 && !freeVariantOutput))) {
         add('variants.zero_or_null', 'critical', `output_price_per_1m=${v.output_price_per_1m}`, ctx);
       }
       if (
