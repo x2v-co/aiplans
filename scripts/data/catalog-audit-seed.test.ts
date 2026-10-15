@@ -200,3 +200,13 @@ test('audit-owned vertical fields keep deploy seed and audit seed in agreement',
   const snap = CATALOG.find(i => i.slug === 'subq-snap')!;
   assert.deepEqual([auditFields(snap).model_category, auditFields(snap).pricing_unit], ['decision', 'per_1m_tokens']);
 });
+
+test('canonicalSeedValue terminates on non-midnight timestamps (17:16 RangeError)', async () => {
+  const { canonicalSeedValue: c } = await import('./gemini-4-argon');
+  assert.equal(c('2026-10-15T17:16:00+00:00'), '2026-10-15T17:16:00.000Z');
+  assert.equal(c(new Date('2026-10-15T09:01:02.345Z')), '2026-10-15T09:01:02.345Z');
+  assert.equal(c('2026-10-13T00:00:00+00:00'), '2026-10-13');
+  assert.equal(c(new Date('2026-10-13T00:00:00Z')), '2026-10-13');
+  assert.deepEqual(c({ b: '2026-10-15T08:00:00.000Z', a: [new Date('2026-12-01T08:00:00Z')] }),
+    { a: ['2026-12-01T08:00:00.000Z'], b: '2026-10-15T08:00:00.000Z' });
+});

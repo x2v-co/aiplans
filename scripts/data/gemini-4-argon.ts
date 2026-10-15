@@ -34,12 +34,16 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_MIDNIGHT = /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.000)?(?:Z|\+00:00)$/;
 
 /** Canonical form for comparison: sorted object keys, Dates as ISO, UTC-midnight timestamps as dates. */
+/** Non-recursive: a non-midnight ISO string used to recurse forever (#1716 RangeError). */
+function canonicalTimestamp(iso: string): string {
+  const midnight = iso.match(ISO_MIDNIGHT);
+  return midnight ? midnight[1] : iso;
+}
+
 export function canonicalSeedValue(v: unknown): unknown {
-  if (v instanceof Date) return canonicalSeedValue(v.toISOString());
+  if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : canonicalTimestamp(v.toISOString());
   if (typeof v === 'string') {
-    const midnight = v.match(ISO_MIDNIGHT);
-    if (midnight) return midnight[1];
-    if (!ISO_DATE.test(v) && /^\d{4}-\d{2}-\d{2}T/.test(v) && !Number.isNaN(Date.parse(v))) return canonicalSeedValue(new Date(v).toISOString());
+    if (!ISO_DATE.test(v) && /^\d{4}-\d{2}-\d{2}T/.test(v) && !Number.isNaN(Date.parse(v))) return canonicalTimestamp(new Date(v).toISOString());
     return v;
   }
   if (Array.isArray(v)) return v.map(canonicalSeedValue);
