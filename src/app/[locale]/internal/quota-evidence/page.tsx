@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
+import { cookies, headers } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { isQuotaEvidenceAuthorized, QUOTA_EVIDENCE_COOKIE } from '@/lib/quota/evidence-auth';
 import { evidenceLink, groupQuotaEvidence, loadQuotaEvidence } from '@/lib/quota/evidence';
 
 export const dynamic = 'force-dynamic';
@@ -9,6 +12,8 @@ export const metadata: Metadata = {
 };
 
 export default async function QuotaEvidencePage({ params }: { params: Promise<{ locale: string }> }) {
+  const [h, c] = await Promise.all([headers(), cookies()]);
+  if (!isQuotaEvidenceAuthorized(h.get('authorization'), c.get(QUOTA_EVIDENCE_COOKIE)?.value)) notFound();
   const { locale } = await params;
   const zh = locale === 'zh';
   const groups = groupQuotaEvidence(await loadQuotaEvidence());
