@@ -215,6 +215,46 @@ npm run scrape:status
 The command reads the public exchange-rate timestamp and exits non-zero when
 the data is older than `PLANPRICE_MAX_RATE_AGE_HOURS` (default 30 hours).
 
+
+## Disk hygiene (build cache)
+
+Planprice production builds on the self-hosted `planprice-production` runner
+leave Docker builder cache on the host root filesystem. After each successful
+`deploy-production` rollout the workflow runs a non-fatal:
+
+```bash
+docker builder prune -f --filter until=72h --keep-storage 8GB
+```
+
+(with `df -h /` logged before and after). A prune failure does not fail the
+deploy.
+
+A daily systemd timer template is also checked in but **not** installed by
+deploy:
+
+- `deploy/production/planprice-disk-guard` — builder prune (72h / keep 8GB) +
+  dangling `docker image prune -f` only. Never prunes volumes, never
+  `image prune -a`, never force-removes images used by containers.
+- `deploy/production/planprice-disk-guard.service`
+- `deploy/production/planprice-disk-guard.timer` — daily 05:45 Asia/Singapore
+
+SRE install (once, on x2v-global / planprice host):
+
+```bash
+# After a deploy has rsynced templates to /opt/x2v/planprice:
+sudo cp /opt/x2v/planprice/deploy/production/planprice-disk-guard.service \
+  /opt/x2v/planprice/deploy/production/planprice-disk-guard.timer \
+  /etc/systemd/system/
+sudo chmod 0755 /opt/x2v/planprice/deploy/production/planprice-disk-guard
+sudo systemctl daemon-reload
+# Manual once before enabling the timer:
+sudo systemctl start planprice-disk-guard.service
+journalctl -u planprice-disk-guard -n 80 --no-pager
+df -h /
+sudo systemctl enable --now planprice-disk-guard.timer
+systemctl list-timers planprice-disk-guard.timer
+```
+
 ## Gateway ownership
 
 Manage the shared gateway in `/opt/x2v/x2v-gateway`. Keep routing changes in

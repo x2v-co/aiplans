@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Daily disk hygiene for the planprice production host (x2v-global).
+# Checked in under deploy/production as a template; SRE installs the
+# companion .service/.timer. Not enabled by deploy-production.yml.
+#
+# Safe operations only:
+#   - docker builder prune with age + keep-storage caps
+#   - dangling (untagged) image prune
+# Never removes volumes, never `image prune -a`, never force-removes
+# images used by running or stopped containers.
+set -euo pipefail
+
+TARGET=${TARGET:-/}
+DOCKER_BIN=${DOCKER_BIN:-/usr/bin/docker}
+KEEP_STORAGE=${KEEP_STORAGE:-8GB}
+BUILDER_UNTIL=${BUILDER_UNTIL:-72h}
+
+if [ -z "${LOCK_FILE:-}" ]; then
+  LOCK_DIR=${LOCK_DIR:-/run/planprice-disk-guard}
+  if mkdir -p "$LOCK_DIR" 2>/dev/null && [ -w "$LOCK_DIR" ]; then
+    LOCK_FILE=$LOCK_DIR/lock
+  else
+    LOCK_FILE=${XDG_RUNTIME_DIR:-/tmp}/planprice-disk-guard.lock
+  fi
+fi
+
+d() { "$DOCKER_BIN" "$@"; }
+
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  echo "planprice-disk-guard: another run is active; skipping"
+  exit 0
+fi
+
+usage_percent() { df -P "$TARGET" | awk 'NR == 2 {gsub(/%/, "", $5); print $5}'; }
+free_kb() { df -Pk "$TARGET" | awk 'NR == 2 {print $4}'; }
+
+before_usage=$(usage_percent)
+before_free=$(free_kb)
+echo "planprice-disk-guard: start usage=${before_usage}% free_mb=$((before_free / 1024))"
+df -h "$TARGET" || true
+
+# Build cache from planprice compose builds; keep a floor so recent layers stay warm.
+d builder prune -f --filter "until=${BUILDER_UNTIL}" --keep-storage "$KEEP_STORAGE" || \
+  echo "planprice-disk-guard: WARN builder prune failed" >&2
+
+# Dangling images only (no -a). Docker refuses in-use layers; volumes untouched.
+d image prune -f || \
+  echo "planprice-disk-guard: WARN dangling image prune failed" >&2
+
+after_usage=$(usage_percent)
+after_free=$(free_kb)
+reclaimed_kb=$((after_free - before_free))
+echo "planprice-disk-guard: finish usage=${after_usage}% free_mb=$((after_free / 1024)) reclaimed_mb=$((reclaimed_kb / 1024))"
+df -h "$TARGET" || true

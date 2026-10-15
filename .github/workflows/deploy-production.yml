@@ -162,6 +162,20 @@ jobs:
           curl -fsS https://aiplans.dev/api/health
           sudo -n rm -rf "$release_dir"
 
+      # Non-fatal: reclaim build cache after a successful rollout. x2v-global
+      # root hit 87% from ~28GB of planprice docker builder cache. Failure must
+      # not fail the deploy (|| true). Daily timer templates under
+      # deploy/production/planprice-disk-guard* are not installed here.
+      - name: Prune docker build cache
+        if: success()
+        run: |
+          set +e
+          echo "disk-hygiene: df before"
+          df -h / || true
+          sudo -n docker builder prune -f --filter until=72h --keep-storage 8GB || true
+          echo "disk-hygiene: df after"
+          df -h / || true
+
       - name: Deployment summary
         if: always()
         run: |

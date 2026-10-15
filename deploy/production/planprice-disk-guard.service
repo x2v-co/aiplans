@@ -1,0 +1,25 @@
+[Unit]
+Description=Prune planprice docker build cache and dangling images
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+RuntimeDirectory=planprice-disk-guard
+RuntimeDirectoryMode=0750
+ExecStart=/opt/x2v/planprice/deploy/production/planprice-disk-guard
+TimeoutStartSec=15min
+Nice=10
+IOSchedulingClass=idle
+# Read-only root except docker state and the lock dir. Does not touch volumes.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/run /var/lib/docker /var/lib/containerd
+
+[Install]
+WantedBy=multi-user.target
