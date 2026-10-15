@@ -67,7 +67,7 @@ interface PlanUpdate {
 }
 
 const PLAN_UPDATES: PlanUpdate[] = [
-  // Google: use scripts/sql/2026-10-15-p0-pricing.sql; Plus/Pro need verification.
+  // Google: use scripts/sql/2026-10-15-p0-pricing.sql (US Plus $4.99 / Pro $19.99 verified 2026-10-15).
 
   // ─ Anthropic ───────────────────────────────────────
   // Pro monthly is $20, annual billing is $204/yr ($17/mo effective).

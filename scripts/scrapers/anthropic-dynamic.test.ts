@@ -23,3 +23,17 @@ test('missing or ambiguous docs tiers preserve existing variants and never use a
   assert.ok(result.warnings?.length);
   assert.equal(parseAnthropicPricing([], []).success, false);
 });
+
+test('documented Haiku 5.5 <=100K rows become the base price and a batch variant', () => {
+  const result = parseAnthropicPricing([], [
+    { cells: ['Claude Haiku 5.5 (for prompts up to 100,000 tokens)', '$0.10 / MTok', '$0.125 / MTok', '$0.20 / MTok', '$0.01 / MTok', '$0.50 / MTok'], heading: 'Model pricing' },
+    { cells: ['Claude Haiku 5.5 (for prompts over 100,000 tokens)', '$0.50 / MTok', '$0.625 / MTok', '$1 / MTok', '$0.05 / MTok', '$2.50 / MTok'], heading: 'Model pricing' },
+    { cells: ['Claude Haiku 5.5 (for prompts up to 100,000 tokens)', '$0.05 / MTok', '$0.25 / MTok'], heading: 'Batch processing' },
+    { cells: ['Claude Haiku 5.5 (for prompts over 100,000 tokens)', '$0.25 / MTok', '$1.25 / MTok'], heading: 'Batch processing' },
+  ]);
+  assert.deepEqual(result.prices.map(p => [p.modelSlug, p.inputPricePer1M, p.outputPricePer1M, p.cachedInputPricePer1M]), [['claude-haiku-5.5', 0.1, 0.5, 0.01]]);
+  assert.equal(result.unverifiedPrices?.length, 0);
+  assert.deepEqual(result.variants?.map(v => [v.variantKey, v.inputPricePer1M, v.outputPricePer1M]).sort(), [
+    ['batch-prompt-gt-100k', 0.25, 1.25], ['batch-prompt-le-100k', 0.05, 0.25], ['prompt-gt-100k', 0.5, 2.5]]);
+  assert.equal(result.warnings, undefined);
+});

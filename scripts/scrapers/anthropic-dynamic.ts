@@ -3,7 +3,7 @@ import { chromium } from 'playwright';
 import type { ScraperResult, ScrapedPrice, ScrapedPriceVariant } from '../utils/validator';
 
 export const ANTHROPIC_PRICING_SOURCE = 'https://platform.claude.com/docs/en/about-claude/pricing';
-export const HAIKU_UNVERIFIED_NOTE = '[needs-verification] Official <=100K prompt price not stated in 2026-10-15 audit; withheld. Source: ' + ANTHROPIC_PRICING_SOURCE;
+export const HAIKU_UNVERIFIED_NOTE = '[needs-verification] Official <=100K prompt price row not parsed; withheld. Source: ' + ANTHROPIC_PRICING_SOURCE;
 export interface AnthropicPricingRow { cells: string[]; heading: string }
 
 export function parseAnthropicPricing(cards: string[], rows: AnthropicPricingRow[]): ScraperResult {
@@ -21,26 +21,45 @@ export function parseAnthropicPricing(cards: string[], rows: AnthropicPricingRow
   }
   const variants: ScrapedPriceVariant[] = [];
   let foundHaiku = cards.some(card => /Haiku\s+5\.5/i.test(card));
+  let haikuBase: ScrapedPrice | null = null;
   for (const row of rows) {
     if (!/^(?:Claude\s+)?Haiku\s+5[.\-]5\b/i.test(row.cells[0]?.trim() ?? '')) continue;
     foundHaiku = true;
     const text = [...row.cells, row.heading].join(' ');
-    // Require an explicit prompt-length condition; never publish the tier as a base price.
-    if (!/(?:>|&gt;|over|above)\s*100(?:[,.]?000|k)\b/i.test(text)) continue;
     const dollars = [...row.cells.join(' ').matchAll(/\$\s*(\d+(?:\.\d+)?)/g)].map(match => Number(match[1]));
-    if (dollars.length !== 2 || dollars.some(price => !Number.isFinite(price))) continue;
+    if (dollars.some(price => !Number.isFinite(price))) continue;
     const batch = /\bbatch\b/i.test(text);
+    // Model pricing table: base, 5m write, 1h write, cache hit, output. Batch table: input, output.
+    const rate = dollars.length === 5 && !batch ? { input: dollars[0], output: dollars[4], cached: dollars[3] }
+      : dollars.length === 2 ? { input: dollars[0], output: dollars[1], cached: undefined } : null;
+    if (!rate) continue;
+    // Require an explicit prompt-length condition on every Haiku 5.5 row.
+    if (/up to\s*100(?:[,.]?000|k)\b|(?:<=|≤)\s*100(?:[,.]?000|k)\b/i.test(text)) {
+      if (batch) {
+        variants.push({ modelName: 'Claude Haiku 5.5', modelSlug: 'claude-haiku-5.5', variantKey: 'batch-prompt-le-100k',
+          variantName: 'Batch <=100K prompt', variantKind: 'batch', inputPricePer1M: rate.input, outputPricePer1M: rate.output,
+          currency: 'USD', sourceUrl: ANTHROPIC_PRICING_SOURCE, isAvailable: true, isPublic: true, isHeadline: false,
+          constraints: { prompt_tokens_lte: 100000, processing: 'batch' } });
+      } else if (!haikuBase) {
+        haikuBase = { modelName: 'Claude Haiku 5.5', modelSlug: 'claude-haiku-5.5', inputPricePer1M: rate.input,
+          outputPricePer1M: rate.output, cachedInputPricePer1M: rate.cached ?? null, isAvailable: true, currency: 'USD',
+          notes: `Standard price for prompts up to 100,000 tokens; >100K and batch in variants. Source: ${ANTHROPIC_PRICING_SOURCE}` } as ScrapedPrice;
+      }
+      continue;
+    }
+    if (!/(?:>|&gt;|over|above)\s*100(?:[,.]?000|k)\b/i.test(text)) continue;
     variants.push({ modelName: 'Claude Haiku 5.5', modelSlug: 'claude-haiku-5.5',
       variantKey: batch ? 'batch-prompt-gt-100k' : 'prompt-gt-100k',
       variantName: batch ? 'Batch >100K prompt' : '>100K prompt', variantKind: batch ? 'batch' : 'context_band',
-      inputPricePer1M: dollars[0], outputPricePer1M: dollars[1], currency: 'USD',
+      inputPricePer1M: rate.input, outputPricePer1M: rate.output, currency: 'USD',
       sourceUrl: ANTHROPIC_PRICING_SOURCE, isAvailable: true, isPublic: true, isHeadline: false,
       constraints: { prompt_tokens_gt: 100000, processing: batch ? 'batch' : 'standard' } });
   }
-  const unverifiedPrices: NonNullable<ScraperResult['unverifiedPrices']> = foundHaiku ? [{
+  if (haikuBase) prices.push(haikuBase);
+  const unverifiedPrices: NonNullable<ScraperResult['unverifiedPrices']> = foundHaiku && !haikuBase ? [{
     modelName: 'Claude Haiku 5.5', modelSlug: 'claude-haiku-5.5', notes: HAIKU_UNVERIFIED_NOTE,
   }] : [];
-  const warnings = foundHaiku && variants.length < 2 ? ['Haiku 5.5: not all >100K standard/batch rows parsed; preserve existing tier data.'] : [];
+  const warnings = foundHaiku && variants.filter(v => v.variantKey.includes('gt-100k')).length < 2 ? ['Haiku 5.5: not all >100K standard/batch rows parsed; preserve existing tier data.'] : [];
   return { source: 'Anthropic-API', success: prices.length + unverifiedPrices.length > 0,
     prices, variants, unverifiedPrices, ...(warnings.length ? { warnings } : {}),
     ...(prices.length + unverifiedPrices.length ? {} : { errors: ['No official Anthropic model pricing found.'] }) };

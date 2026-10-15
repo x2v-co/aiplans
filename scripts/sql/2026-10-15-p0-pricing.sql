@@ -1,4 +1,11 @@
 -- Audit A2 #2-#4. Review SELECT results; default ROLLBACK. No invented base prices.
+-- 2026-10-15 rev2: api_channel_prices uses UPDATE-then-INSERT-WHERE-NOT-EXISTS. "UPDATE 0" on the
+-- subq-snap and claude-haiku-5.5 channels only means the row did not exist yet (the INSERT right
+-- after it reported 1). It is not a failed match. Haiku 5.5 <=100K and Google AI Plus/Pro US prices
+-- are now taken from the official pages (verified 2026-10-15):
+--   https://platform.claude.com/docs/en/about-claude/pricing  Haiku 5.5 <=100K $0.10/$0.50, cache hit $0.01, batch $0.05/$0.25
+--   https://gemini.google/subscriptions/ (United States)       Google AI Plus $4.99, Google AI Pro (slug gemini-advanced) $19.99
+-- google-ai-pro has no row; it is the same plan as gemini-advanced and is not created.
 -- Run with psql -X -v ON_ERROR_STOP=1 -f ... . Change ONLY final ROLLBACK to COMMIT to apply.
 BEGIN;
 
@@ -65,11 +72,11 @@ DO $$ BEGIN
 END $$;
 UPDATE plans SET slug = 'google-ai-ultra-5x' WHERE slug = 'google-ai-ultra'
   AND provider_id = (SELECT id FROM providers WHERE slug = 'google');
-UPDATE plans SET price = NULL, annual_price = NULL, price_yearly_monthly = NULL, currency = NULL,
-  region = 'needs-verification', last_verified = NULL, is_contact_sales = false,
-  notes = '[needs-verification] Region/currency for Plus $6.98 / Pro $28.99 unverified; prices withheld. Source: https://gemini.google/subscriptions/'
-WHERE provider_id = (SELECT id FROM providers WHERE slug = 'google')
-  AND slug IN ('google-ai-plus', 'gemini-advanced', 'google-ai-pro');
+UPDATE plans pl SET price = v.price, annual_price = NULL, price_yearly_monthly = NULL, currency = 'USD',
+  region = 'US', last_verified = '2026-10-15', is_contact_sales = false,
+  notes = 'US consumer tier. Source: https://gemini.google/subscriptions/'
+FROM (VALUES ('google-ai-plus', 4.99), ('gemini-advanced', 19.99)) v(slug, price)
+WHERE pl.provider_id = (SELECT id FROM providers WHERE slug = 'google') AND pl.slug = v.slug;
 
 INSERT INTO plans (provider_id, name, slug, pricing_model, price, currency, region, price_unit,
   tier, plan_kind, plan_category, plan_line, tier_rank, is_official, is_contact_sales, source, notes, last_verified)
@@ -97,14 +104,14 @@ INSERT INTO models (name, slug, type, model_category, provider_ids, offical_link
 SELECT 'Claude Haiku 5.5', 'claude-haiku-5.5', 'llm', 'text', ARRAY[id],
   'https://platform.claude.com/docs/en/about-claude/pricing' FROM providers WHERE slug = 'anthropic'
 ON CONFLICT (slug) DO NOTHING;
-UPDATE api_channel_prices cp SET input_price_per_1m = NULL, output_price_per_1m = NULL,
-  cached_input_price_per_1m = NULL, currency = 'USD', price_unit = 'per_1m_tokens', is_available = true,
-  notes = '[needs-verification] Official <=100K prompt input/output not stated in audit. >100K: $0.50/$2.50; batch >100K: $0.25/$1.25 per 1M. Source: https://platform.claude.com/docs/en/about-claude/pricing',
-  last_verified = NULL
+UPDATE api_channel_prices cp SET input_price_per_1m = 0.10, output_price_per_1m = 0.50,
+  cached_input_price_per_1m = 0.01, currency = 'USD', price_unit = 'per_1m_tokens', is_available = true,
+  notes = 'Standard price for prompts up to 100,000 tokens; >100K and batch in variants. Source: https://platform.claude.com/docs/en/about-claude/pricing',
+  last_verified = '2026-10-15'
 FROM models m, providers p WHERE cp.model_id = m.id AND cp.provider_id = p.id AND m.slug = 'claude-haiku-5.5' AND p.slug = 'anthropic';
-INSERT INTO api_channel_prices (model_id, provider_id, input_price_per_1m, output_price_per_1m, currency, price_unit, is_available, notes)
-SELECT m.id, p.id, NULL, NULL, 'USD', 'per_1m_tokens', true,
-  '[needs-verification] Official <=100K prompt input/output not stated in audit. >100K: $0.50/$2.50; batch >100K: $0.25/$1.25 per 1M. Source: https://platform.claude.com/docs/en/about-claude/pricing'
+INSERT INTO api_channel_prices (model_id, provider_id, input_price_per_1m, output_price_per_1m, cached_input_price_per_1m, currency, price_unit, is_available, notes, last_verified)
+SELECT m.id, p.id, 0.10, 0.50, 0.01, 'USD', 'per_1m_tokens', true,
+  'Standard price for prompts up to 100,000 tokens; >100K and batch in variants. Source: https://platform.claude.com/docs/en/about-claude/pricing', '2026-10-15'
 FROM models m, providers p WHERE m.slug = 'claude-haiku-5.5' AND p.slug = 'anthropic'
   AND NOT EXISTS (SELECT 1 FROM api_channel_prices cp WHERE cp.model_id = m.id AND cp.provider_id = p.id);
 
@@ -112,11 +119,13 @@ INSERT INTO api_channel_price_variants (model_id, provider_id, variant_key, vari
   input_price_per_1m, output_price_per_1m, currency, price_unit, is_available, is_public, is_headline,
   constraints_json, source_url, last_verified)
 SELECT m.id, p.id, v.key, v.name, v.kind, v.input, v.output, 'USD', 'per_1m_tokens', true, true, false,
-  jsonb_build_object('prompt_tokens_gt', 100000, 'processing', v.processing),
+  CASE WHEN v.key LIKE '%-le-100k' THEN jsonb_build_object('prompt_tokens_lte', 100000, 'processing', v.processing)
+       ELSE jsonb_build_object('prompt_tokens_gt', 100000, 'processing', v.processing) END,
   'https://platform.claude.com/docs/en/about-claude/pricing', '2026-10-15'
 FROM models m, providers p CROSS JOIN (VALUES
   ('prompt-gt-100k', '>100K prompt', 'context_band', 0.50, 2.50, 'standard'),
-  ('batch-prompt-gt-100k', 'Batch >100K prompt', 'batch', 0.25, 1.25, 'batch')) v(key, name, kind, input, output, processing)
+  ('batch-prompt-gt-100k', 'Batch >100K prompt', 'batch', 0.25, 1.25, 'batch'),
+  ('batch-prompt-le-100k', 'Batch <=100K prompt', 'batch', 0.05, 0.25, 'batch')) v(key, name, kind, input, output, processing)
 WHERE m.slug = 'claude-haiku-5.5' AND p.slug = 'anthropic'
 ON CONFLICT (model_id, provider_id, variant_key) DO UPDATE SET
   variant_name = EXCLUDED.variant_name, variant_kind = EXCLUDED.variant_kind,
@@ -124,7 +133,7 @@ ON CONFLICT (model_id, provider_id, variant_key) DO UPDATE SET
   currency = EXCLUDED.currency, constraints_json = EXCLUDED.constraints_json,
   source_url = EXCLUDED.source_url, is_available = true, is_headline = false, last_verified = EXCLUDED.last_verified;
 
-SELECT p.slug AS provider, m.slug AS model, cp.input_price_per_1m, cp.output_price_per_1m, cp.notes
+SELECT p.slug AS provider, m.slug AS model, cp.input_price_per_1m, cp.output_price_per_1m, cp.cached_input_price_per_1m, cp.last_verified, cp.notes
 FROM api_channel_prices cp JOIN models m ON m.id = cp.model_id JOIN providers p ON p.id = cp.provider_id
 WHERE (m.slug = 'subq-snap' AND p.slug = 'subq') OR (m.slug = 'claude-haiku-5.5' AND p.slug = 'anthropic');
 SELECT pl.slug, pl.price, pl.currency, pl.region, pl.tier, pl.notes FROM plans pl JOIN providers p ON p.id = pl.provider_id
