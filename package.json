@@ -81,7 +81,9 @@
     "seed:non-llm-2026-10-15": "tsx scripts/seed-non-llm-2026-10-15.ts",
     "seed:non-llm-2026-10-15:apply": "tsx scripts/seed-non-llm-2026-10-15.ts --apply",
     "seed:deepseek-windows": "tsx scripts/seed-deepseek-windows.ts",
-    "seed:deepseek-windows:apply": "tsx scripts/seed-deepseek-windows.ts --apply"
+    "seed:deepseek-windows:apply": "tsx scripts/seed-deepseek-windows.ts --apply",
+    "seed:step5-license": "tsx scripts/seed-step5-license.ts",
+    "seed:step5-license:apply": "tsx scripts/seed-step5-license.ts --apply"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

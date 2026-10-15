@@ -39,6 +39,8 @@ export const models = pgTable('models', {
   contextWindow: integer('context_window'), // in tokens
   maxOutputTokens: bigint('max_output_tokens', { mode: 'number' }),
   openSource: boolean('open_source'),
+  license: text('license'),
+  licenseUrl: text('license_url'),
   features: text('features').array(),
   officalLink: text('offical_link'),
   inputType: text('input_type').array(),

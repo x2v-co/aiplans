@@ -919,6 +919,10 @@ const MIGRATIONS: Migration[] = [
     name: '033_add_channel_terms',
     sql: readFileSync(new URL('../drizzle/0008_channel_terms.sql', import.meta.url), 'utf8'),
   },
+  {
+    name: '034_add_model_license',
+    sql: readFileSync(new URL('../drizzle/0009_model_license.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 async function main() {

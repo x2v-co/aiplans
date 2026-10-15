@@ -139,6 +139,7 @@ async function getProductWithChannels(slug: string) {
   // Get model with provider info
   const [model] = await sql<any[]>`
     SELECT id, name, slug, type, description, context_window, max_output_tokens,
+           open_source, license, license_url, parameters, "active parameters" AS active_parameters,
            provider_ids, released_at, created_at, updated_at, shutdown_date::text,
            replacement_model, deprecation_source_url
     FROM models
@@ -563,6 +564,24 @@ export default async function ModelPage({
             {arenaElo != null && (
               <Badge variant="outline" className="text-sm">
                 🏟️ Agent Arena: {arenaElo.toLocaleString(undefined, { maximumFractionDigits: 1 })}%
+              </Badge>
+            )}
+            {product.open_source === true && (
+              <Badge variant="outline" className="text-sm">{isZh ? '开放权重' : 'Open weights'}</Badge>
+            )}
+            {product.parameters && (
+              <Badge variant="outline" className="text-sm">
+                {isZh ? '总参数' : 'Total parameters'}: {product.parameters}
+                {product.active_parameters && <> · {isZh ? '激活参数' : 'Active'}: {product.active_parameters}</>}
+              </Badge>
+            )}
+            {product.license && (
+              <Badge variant="outline" className="text-sm">
+                {product.license_url ? (
+                  <a href={product.license_url} target="_blank" rel="noopener noreferrer" className="underline">
+                    {product.license}
+                  </a>
+                ) : product.license}
               </Badge>
             )}
             {(product.released_at || product.created_at) && (
