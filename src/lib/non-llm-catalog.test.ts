@@ -12,9 +12,9 @@ const item = (slug: string) => NON_LLM_CATALOG.find(entry => entry.slug === slug
 test('verified tariffs retain their actual units, aliases and lifecycle dates', () => {
   assert.deepEqual(item('grok-voice-3.0').usageRates?.map(rate => [rate.unit, rate.price]), [['minute', 0.08], ['per_1m_characters', 15]]);
   assert.match(item('grok-voice-3.0').notes!, /grok-voice-latest → grok-voice-3.0/);
-  assert.equal(item('grok-voice-2.0').deprecatedAt, '2026-10-15');
+  assert.equal(item('grok-voice-2.0').deprecatedAt, undefined);
   assert.equal(item('grok-voice-2.0').replacementModel, 'grok-voice-3.0');
-  assert.match(item('grok-voice-2.0').notes!, /audit date/);
+  assert.match(item('grok-voice-2.0').notes!, /has not announced a deprecation/);
   assert.equal(item('grok-voice-transcribe-1.0').shutdownDate, '2026-10-02');
   assert.equal(item('grok-voice-transcribe-1.0').replacementModel, 'grok-voice-transcribe-2.0');
   assert.deepEqual(item('grok-voice-transcribe-2.0').usageRates?.map(rate => [rate.unit, rate.price]), [['hour', 0.1], ['hour', 0.2]]);
@@ -25,7 +25,8 @@ test('verified tariffs retain their actual units, aliases and lifecycle dates', 
     assert.equal(jev.contextWindow, 64000);
     assert.match(jev.contextWindowLabel!, /262k/);
     assert.match(jev.notes!, /jev-latest → jev-1.13.0; jev-preview → jev-1.14.0/);
-    assert.match(jev.needsVerification![0], /2026-10-21.*unverified/);
+    assert.equal(jev.needsVerification, undefined);
+    assert.match(jev.notes!, /no jev-latest switch date is published/);
   }
   for (const [suffix, input, output] of [['', 5, 38], ['-flash', 1.75, 19]] as const) {
     const mai = item(`microsoft-mai-image-2.6${suffix}`);
@@ -39,8 +40,8 @@ test('verified tariffs retain their actual units, aliases and lifecycle dates', 
   const moondream = item('moondream-cloud');
   assert.equal(moondream.shutdownDate, '2026-11-13');
   assert.equal(moondream.deprecatedAt, '2026-11-13');
-  assert.equal(moondream.priceStatus, 'needs-verification');
-  assert.equal(moondream.pricePerUnit, undefined);
+  assert.equal(moondream.priceStatus, 'priced');
+  assert.equal(moondream.usageRates?.length, 9);
   assert.match(moondream.notes!, /refunded; models stay open/);
   const matrix = catalogForKind('world-model').find(entry => entry.slug === 'skywork-matrix-game-4')!;
   assert.equal(matrix.license, 'Apache-2.0');
@@ -65,7 +66,7 @@ test('voice and image lists/details render units, channel and lifecycle in both 
     assert.match(image, /≈\$0.01/);
     const lifecycle = renderToStaticMarkup(createElement(NonLlmFacts, { item: item('moondream-cloud'), locale }));
     assert.match(lifecycle, /2026-11-13/);
-    assert.doesNotMatch(lifecycle, /\$0/);
+    assert.match(lifecycle, /\$0\.3 \//);
     const unverified = renderToStaticMarkup(createElement(NonLlmFacts, { item: { ...item('grok-voice-3.0'), priceStatus: 'needs-verification' }, locale }));
     assert.doesNotMatch(unverified, /\$0.08|\$15/);
     const empty = renderToStaticMarkup(createElement(NonLlmFacts, { item: { ...item('moondream-cloud'), verifiedAt: undefined, notes: undefined, shutdownDate: undefined }, locale }));
