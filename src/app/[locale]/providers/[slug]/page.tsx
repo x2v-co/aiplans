@@ -338,6 +338,13 @@ export default async function ProviderPage({
                         {isZh ? '待核验：地区和币种未确认，价格暂不显示。' : 'Needs verification: region and currency unconfirmed; price withheld.'}
                       </p>
                     )}
+                    {plan.legacy_ends_on && <p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
+                      {isZh ? '旧套餐，宽限期截止：' : 'Legacy tier; grace period ends: '}{plan.legacy_ends_on}
+                    </p>}
+                    {plan.monthly_api_credit_status === 'needs-verification' && <p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
+                      {isZh ? '包含每月 API 额度；具体金额待核验。' : 'Includes monthly API credit; amount needs verification.'}{' '}
+                      <a href="https://claude.com/pricing" target="_blank" rel="noreferrer" className="underline">{isZh ? '官方定价' : 'Official pricing'}</a>
+                    </p>}
 
                     {/* Effective unit rate, directly under the headline price:
                         the two answer "what does it cost" and "what does that

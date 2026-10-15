@@ -1,3 +1,4 @@
+import { AI_VERTICAL_CATALOG } from '@/lib/ai-vertical-catalog';
 import { MetadataRoute } from 'next';
 import { sql } from '@/lib/db';
 import { selectIndexablePlanComparisons } from '@/lib/search-indexing';
@@ -29,6 +30,7 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '/creative-plans', priority: 0.82, changefreq: 'weekly' },
   { path: '/video-models', priority: 0.84, changefreq: 'weekly' },
   { path: '/music-models', priority: 0.8, changefreq: 'weekly' },
+  { path: '/decision-models', priority: 0.78, changefreq: 'weekly' },
   { path: '/world-models', priority: 0.78, changefreq: 'weekly' },
   { path: '/coupons', priority: 0.7, changefreq: 'weekly' },
   { path: '/about', priority: 0.4, changefreq: 'monthly' },
@@ -86,6 +88,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('sitemap: failed to query providers', err);
   }
 
+  for (const item of AI_VERTICAL_CATALOG.filter(i => ['video-model', 'music-model', 'world-model', 'decision-model'].includes(i.kind) && i.slug)) {
+    for (const locale of LOCALES) urls.push({ url: `${BASE_URL}/${locale}/${item.kind}s/${item.slug}`,
+      lastModified: item.verifiedAt ? new Date(item.verifiedAt) : now, changeFrequency: 'weekly', priority: 0.68 });
+  }
+
   // Dynamic: every LLM model with at least one *available* channel →
   // /[locale]/models/[slug]. The `is_available` predicate is the same one the
   // page uses to build its price table, so a model excluded here is exactly a
@@ -131,9 +138,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('sitemap: failed to query models', err);
   }
 
-  // Dynamic: audited multimodal vertical detail pages.
+  // Keep active DB-only vertical detail URLs alongside the audited catalog.
   try {
-    const verticalModels = await sql<Array<{
+    const extras = await sql<Array<{
       slug: string | null;
       model_category: string | null;
       updated_at: Date | string | null;
@@ -144,26 +151,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         AND model_category IN ('video', 'music', 'world')
       ORDER BY updated_at DESC NULLS LAST
     `;
-    const categoryPath: Record<string, string> = {
-      video: 'video-models',
-      music: 'music-models',
-      world: 'world-models',
-    };
-    for (const m of verticalModels) {
-      if (!m.slug || !m.model_category || !categoryPath[m.model_category]) continue;
-      const lastMod = m.updated_at ? new Date(m.updated_at) : now;
-      for (const locale of LOCALES) {
-        urls.push({
-          url: `${BASE_URL}/${locale}/${categoryPath[m.model_category]}/${m.slug}`,
-          lastModified: lastMod,
-          changeFrequency: 'weekly',
-          priority: 0.68,
-        });
-      }
+    const auditedSlugs = new Set(AI_VERTICAL_CATALOG.map(item => item.slug));
+    for (const row of extras.filter(row => row.slug && row.model_category && !auditedSlugs.has(row.slug))) {
+      for (const locale of LOCALES) urls.push({ url: `${BASE_URL}/${locale}/${row.model_category}-models/${row.slug}`,
+        lastModified: row.updated_at ? new Date(row.updated_at) : now, changeFrequency: 'weekly', priority: 0.68 });
     }
-  } catch (err) {
-    console.error('sitemap: failed to query vertical models', err);
-  }
+  } catch (error) { console.error('sitemap: failed to query extra vertical models', error); }
 
   // Dynamic: every LLM model that at least one subscription plan includes →
   // /[locale]/compare/plans/[model]. getPlanComparison only returns null for a

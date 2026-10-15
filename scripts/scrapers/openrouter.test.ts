@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { classifyOpenRouterPricing, generateOpenRouterSlug, scrapeOpenRouter } from './openrouter';
+import { classifyOpenRouterPricing, generateOpenRouterSlug, scrapeOpenRouter, openRouterProducerSlug } from './openrouter';
 import { parseMistralPriceCell } from './mistral-dynamic';
 
 test('OpenRouter slug generation uses canonical Argon base and batch identities', () => {
@@ -103,4 +103,28 @@ test('cheapest endpoints reject down, malformed and negative prices; explicit fr
   assert.deepEqual(pickOpenRouterFloor([ep('Venice', '0.00000003', '0.00000015')]),
     { provider: 'Venice', input: 0.03, output: 0.15, cache: null });
   assert.equal(pickOpenRouterFloor([ep('Free', '0', '0')])?.input, 0);
+});
+
+import { OPENROUTER_ADDITIONS } from '../data/catalog-audit-2026-10-15';
+
+test('full OpenRouter feed retains new producer metadata, free output and distinct version/batch IDs', async () => {
+  const originalFetch = globalThis.fetch;
+  const feed = OPENROUTER_ADDITIONS.map(([id, prompt, completion]) => ({ id, pricing: { prompt, completion } }));
+  globalThis.fetch = async url => {
+    const endpoints = String(url).endsWith('/endpoints');
+    return new Response(JSON.stringify({ data: endpoints ? { endpoints: [] } : feed }), { status: 200 });
+  };
+  try {
+    const result = await scrapeOpenRouter();
+    assert.equal(result.success, true);
+    assert.equal(result.prices.length, 35); // Two variable routers deliberately have no numeric scraped rate.
+    const liquid = result.prices.find(p => p.modelSlug === generateOpenRouterSlug('liquid/lfm-2.5-24b-a2b'))!;
+    assert.equal(liquid.producerSlug, 'liquid');
+    assert.equal(result.prices.find(p => p.modelSlug === 'scaledown-extract')?.outputPricePer1M, 0);
+    assert.ok(result.prices.some(p => p.modelSlug === 'mistral-large-4'));
+    assert.ok(result.prices.some(p => p.modelSlug === 'google-gemini-gemini-3-8-flash-batch'));
+    assert.equal(openRouterProducerSlug('~unbiased/pareto-latest'), 'unbiased');
+    assert.equal(openRouterProducerSlug('google/gemini-3.8-flash:batch'), 'google');
+    for (const price of result.prices) assert.ok(price.producerSlug);
+  } finally { globalThis.fetch = originalFetch; }
 });

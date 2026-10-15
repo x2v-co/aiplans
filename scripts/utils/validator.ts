@@ -3,6 +3,8 @@ export type CurrencyCode = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'KRW' | 'SGD'
 export interface ScrapedPrice {
   modelName: string;
   modelSlug: string;
+  /** OpenRouter namespace resolved to a producer slug; never inferred from display copy. */
+  producerSlug?: string;
   inputPricePer1M: number;
   outputPricePer1M: number;
   cachedInputPricePer1M?: number | null;
@@ -38,7 +40,7 @@ export interface ScrapedPriceVariant {
   sourceUrl?: string;
   inputPricePer1M: number;
   outputPricePer1M: number;
-  cachedInputPricePer1M?: number;
+  cachedInputPricePer1M?: number | null;
   cacheCreatePricePer1M?: number;
   currency?: CurrencyCode;
   priceUnit?: string;

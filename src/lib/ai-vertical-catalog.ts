@@ -1,10 +1,10 @@
-export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model';
+export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model';
 
-export type AiCatalogStatus = 'available' | 'waitlist' | 'preview' | 'research' | 'announced' | 'discontinued';
+export type AiCatalogStatus = 'available' | 'waitlist' | 'preview' | 'research' | 'announced' | 'discontinued' | 'needs-verification';
 export type AiCatalogModality = 'text' | 'image' | 'video' | 'audio' | 'music' | '3d' | 'simulation' | 'code' | 'robotics';
 export type AiCatalogAccess = 'consumer-app' | 'api' | 'cloud-api' | 'open-weights' | 'research-preview' | 'enterprise' | 'waitlist';
 export type AiPricingConfidence = 'verified' | 'unit-only' | 'unknown' | 'not-commercial';
-export type AiModelCategory = 'video' | 'music' | 'world';
+export type AiModelCategory = 'video' | 'music' | 'world' | 'decision';
 
 export interface AiCatalogSource {
   label: string;
@@ -47,8 +47,15 @@ export interface AiCatalogItem {
   lastVerified?: string;
   notes?: string;
   benchmarkSummaries?: AiBenchmarkSummary[];
-  billingUnit?: 'per_second' | 'per_world' | 'per_token' | 'subscription_included' | 'contract' | 'open_source_self_host';
-  pricePerUnit?: number;
+  billingUnit?: 'per_second' | 'per_world' | 'per_token' | 'subscription_included' | 'contract' | 'open_source_self_host' | 'per_song';
+  pricePerUnit?: number | null;
+  pricePerUnitHigh?: number;
+  approximatePrice?: boolean;
+  inputPricePer1M?: number | null;
+  outputPricePer1M?: number | null;
+  pricePer1MTasks?: number | null;
+  contextWindowLabel?: string;
+  contextWindow?: number;
   currency?: string;
   resolutionTier?: string;
   fps?: number;
@@ -59,7 +66,7 @@ export interface AiCatalogItem {
   accessNote?: string;
   license?: string;
   selfHostHw?: string;
-  priceStatus?: 'priced' | 'subscription_included' | 'undisclosed' | 'not_applicable';
+  priceStatus?: 'priced' | 'subscription_included' | 'undisclosed' | 'not_applicable' | 'needs-verification' | 'not-public';
   costPerMinute?: number;
   verifiedAt?: string;
   needsVerification?: string[];
@@ -79,7 +86,8 @@ const VERIFIED_AT = '2026-09-15';
  *
  * This intentionally avoids pretending credits, generations, seconds and research
  * previews are equivalent to token pricing. World-model rows store source-backed
- * pricing here; the DB supplies optional logos and benchmark summaries only.
+ * pricing here, as do audited video/music/decision rows; the DB supplies optional
+ * logos and benchmark summaries for these static entries.
  */
 export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   // Agent / coding-agent plans
@@ -290,9 +298,125 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     bestFor: 'Voice, dubbing and audio production workflows.',
   },
 
+  {
+    kind: 'video-model', slug: 'veo-3-1', name: 'Veo 3.1', provider: 'Google', providerSlug: 'google',
+    status: 'available', pricing: '$0.40 / second', unit: 'second', pricingUnit: 'per_second',
+    billingUnit: 'per_second', pricePerUnit: 0.4, currency: 'USD', priceStatus: 'priced',
+    capabilities: [], bestFor: 'Veo 3.1 API pricing.', modelCategory: 'video', access: ['api'],
+    inputModalities: ['text', 'image'], outputModalities: ['video'],
+    pricingConfidence: 'verified', lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+    notes: 'Official unit price recorded in the 2026-10-15 audit.',
+    sourceUrls: [{ label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing', publisher: 'Google' }], url: 'https://ai.google.dev/gemini-api/docs/pricing',
+  },
+  {
+    kind: 'video-model', slug: 'veo-3-1-fast', name: 'Veo 3.1 Fast', provider: 'Google', providerSlug: 'google',
+    status: 'available', pricing: '$0.10–$0.30 / second', unit: 'second', pricingUnit: 'per_second',
+    billingUnit: 'per_second', pricePerUnit: 0.1, currency: 'USD', priceStatus: 'priced',
+    pricePerUnitHigh: 0.3,
+    capabilities: [], bestFor: 'Veo 3.1 Fast API pricing.', modelCategory: 'video', access: ['api'],
+    inputModalities: ['text', 'image'], outputModalities: ['video'],
+    pricingConfidence: 'verified', lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+    notes: 'Range depends on mode; audit does not assign prices to individual modes.',
+    sourceUrls: [{ label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing', publisher: 'Google' }], url: 'https://ai.google.dev/gemini-api/docs/pricing',
+  },
+  {
+    kind: 'video-model', slug: 'veo-3-1-lite', name: 'Veo 3.1 Lite', provider: 'Google', providerSlug: 'google',
+    status: 'available', pricing: '$0.05–$0.08 / second', unit: 'second', pricingUnit: 'per_second',
+    billingUnit: 'per_second', pricePerUnit: 0.05, currency: 'USD', priceStatus: 'priced',
+    pricePerUnitHigh: 0.08,
+    capabilities: [], bestFor: 'Veo 3.1 Lite API pricing.', modelCategory: 'video', access: ['api'],
+    inputModalities: ['text', 'image'], outputModalities: ['video'],
+    pricingConfidence: 'verified', lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+    notes: 'Range depends on mode; audit does not assign prices to individual modes.',
+    sourceUrls: [{ label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing', publisher: 'Google' }], url: 'https://ai.google.dev/gemini-api/docs/pricing',
+  },
+  {
+    kind: 'video-model', slug: 'gemini-omni-flash', name: 'Gemini Omni Flash', provider: 'Google', providerSlug: 'google',
+    status: 'available', pricing: '≈$0.10 / second', unit: 'second', pricingUnit: 'per_second',
+    billingUnit: 'per_second', pricePerUnit: 0.1, currency: 'USD', priceStatus: 'priced',
+     approximatePrice: true,
+    capabilities: [], bestFor: 'Gemini Omni Flash API pricing.', modelCategory: 'video', access: ['api'],
+    inputModalities: ['text', 'image'], outputModalities: ['video'],
+    pricingConfidence: 'verified', lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+    notes: 'Approximate price; audit does not specify a mode or resolution.',
+    sourceUrls: [{ label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing', publisher: 'Google' }], url: 'https://ai.google.dev/gemini-api/docs/pricing',
+  },
+  {
+    kind: 'music-model', slug: 'lyria-3-5', name: 'Lyria 3.5', provider: 'Google', providerSlug: 'google',
+    status: 'available', pricing: '$0.08 / song', unit: 'song', pricingUnit: 'per_song',
+    billingUnit: 'per_song', pricePerUnit: 0.08, currency: 'USD', priceStatus: 'priced',
+    capabilities: [], bestFor: 'Lyria 3.5 API pricing.', modelCategory: 'music', access: ['api'],
+    inputModalities: ['text'], outputModalities: ['audio'],
+    pricingConfidence: 'verified', lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+    notes: 'Official unit price recorded in the 2026-10-15 audit.',
+    sourceUrls: [{ label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing', publisher: 'Google' }], url: 'https://ai.google.dev/gemini-api/docs/pricing',
+  },
+  {
+    kind: 'decision-model', slug: 'scaledown-extract', name: 'ScaleDown Extract', provider: 'ScaleDown', providerSlug: 'scaledown',
+    status: 'available', pricing: '$0.04/M input; output free',
+    unit: '$/M input + $/1M tasks', pricingUnit: 'per_1m_tokens', modelCategory: 'decision',
+    inputPricePer1M: 0.04, outputPricePer1M: 0, pricePer1MTasks: null,
+    priceStatus: 'priced', pricePerUnit: null, currency: 'USD',
+    capabilities: [], bestFor: 'ScaleDown Extract API.', access: ['api'],
+    inputModalities: ['text'], outputModalities: ['text'],
+    pricingConfidence: 'verified', lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+    needsVerification: ['Price per million tasks is not supplied in the audit.'], notes: '',
+    sourceUrls: [{ label: 'Audited source', url: 'https://openrouter.ai/scaledown/extract', publisher: 'ScaleDown' }], url: 'https://openrouter.ai/scaledown/extract',
+  },
+  {
+    kind: 'decision-model', slug: 'scaledown-summarize', name: 'ScaleDown Summarize', provider: 'ScaleDown', providerSlug: 'scaledown',
+    status: 'available', pricing: '$0.04/M input; output free',
+    unit: '$/M input + $/1M tasks', pricingUnit: 'per_1m_tokens', modelCategory: 'decision',
+    inputPricePer1M: 0.04, outputPricePer1M: 0, pricePer1MTasks: null,
+    priceStatus: 'priced', pricePerUnit: null, currency: 'USD',
+    capabilities: [], bestFor: 'ScaleDown Summarize API.', access: ['api'],
+    inputModalities: ['text'], outputModalities: ['text'],
+    pricingConfidence: 'verified', lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+    needsVerification: ['Price per million tasks is not supplied in the audit.'], notes: '',
+    sourceUrls: [{ label: 'Audited source', url: 'https://openrouter.ai/scaledown/summarize', publisher: 'ScaleDown' }], url: 'https://openrouter.ai/scaledown/summarize',
+  },
+  {
+    kind: 'decision-model', slug: 'scaledown-classify-1', name: 'ScaleDown Classify-1', provider: 'ScaleDown', providerSlug: 'scaledown',
+    status: 'available', pricing: 'Needs verification',
+    unit: '$/M input + $/1M tasks', pricingUnit: 'per_1m_tokens', modelCategory: 'decision',
+    inputPricePer1M: null, outputPricePer1M: null, pricePer1MTasks: null,
+    priceStatus: 'needs-verification', pricePerUnit: null, currency: 'USD',
+    capabilities: [], bestFor: 'ScaleDown Classify-1 API.', access: ['api'],
+    inputModalities: ['text'], outputModalities: ['text'],
+    pricingConfidence: 'unknown', lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+    needsVerification: ['Price per million tasks is not supplied in the audit.'], notes: 'Decisions API; price needs verification.',
+    sourceUrls: [{ label: 'Audited source', url: 'https://openrouter.ai/scaledown/classify-1', publisher: 'ScaleDown' }], url: 'https://openrouter.ai/scaledown/classify-1',
+  },
+  {
+    kind: 'decision-model', slug: 'subq-snap', name: 'SubQ Snap', provider: 'SubQ', providerSlug: 'subq',
+    status: 'preview', pricing: '$0.05/M input; output free',
+    unit: '$/M input + $/1M tasks', pricingUnit: 'per_1m_tokens', modelCategory: 'decision',
+    inputPricePer1M: 0.05, outputPricePer1M: 0, pricePer1MTasks: null,
+    priceStatus: 'priced', pricePerUnit: null, currency: 'USD',
+    capabilities: [], bestFor: 'SubQ Snap API.', access: ['api'],
+    inputModalities: ['text'], outputModalities: ['text'],
+    pricingConfidence: 'verified', lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+    needsVerification: ['Price per million tasks is not supplied in the audit.'], notes: 'Public preview; 384K context.',
+    contextWindowLabel: '384K', contextWindow: 384_000,
+    sourceUrls: [{ label: 'Audited source', url: 'https://subq.ai/introducing-subq-snap', publisher: 'SubQ' }], url: 'https://subq.ai/introducing-subq-snap',
+  },
+  {
+    kind: 'decision-model', slug: 'typesafe-jev-router', name: 'Jev router', provider: 'Typesafe', providerSlug: 'typesafe',
+    status: 'available', pricing: 'Needs verification',
+    unit: '$/M input + $/1M tasks', pricingUnit: 'per_1m_tokens', modelCategory: 'decision',
+    inputPricePer1M: null, outputPricePer1M: null, pricePer1MTasks: null,
+    priceStatus: 'needs-verification', pricePerUnit: null, currency: 'USD',
+    capabilities: [], bestFor: 'Jev router API.', access: ['api'],
+    inputModalities: ['text'], outputModalities: ['text'],
+    pricingConfidence: 'unknown', lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+    needsVerification: ['Price per million tasks is not supplied in the audit.'], notes: 'Variable routing price; needs verification.',
+    sourceUrls: [{ label: 'Audited source', url: 'https://openrouter.ai/typesafe/jev-router', publisher: 'Typesafe' }], url: 'https://openrouter.ai/typesafe/jev-router',
+  },
   // Video models
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'sora',
     name: 'Sora',
     provider: 'OpenAI',
@@ -301,7 +425,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     pricing: 'Discontinued by OpenAI; retained for historical tracking only.',
     unit: 'generations, seconds',
     capabilities: ['text-to-video', 'image-to-video', 'storyboard'],
-    bestFor: 'Historical OpenAI video generation tracking; use Sora 2 / current OpenAI video surfaces instead.',
+    bestFor: 'Historical OpenAI video generation tracking.',
     modelCategory: 'video',
     inputModalities: ['text', 'image', 'video'],
     outputModalities: ['video'],
@@ -317,6 +441,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'veo',
     name: 'Veo',
     provider: 'Google',
@@ -340,6 +466,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'kling',
     name: 'Kling',
     provider: 'Kuaishou',
@@ -362,6 +490,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'runway-gen-4',
     name: 'Runway Gen-4',
     provider: 'Runway',
@@ -385,6 +515,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'pika',
     name: 'Pika',
     provider: 'Pika',
@@ -407,6 +539,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'luma-ray',
     name: 'Luma Ray',
     provider: 'Luma AI',
@@ -429,6 +563,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'hailuo-video',
     name: 'Hailuo Video',
     provider: 'MiniMax',
@@ -452,6 +588,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'seedance',
     name: 'Seedance',
     provider: 'ByteDance / Volcano Engine',
@@ -475,6 +613,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'wan-video',
     name: 'Wan / Tongyi Wanxiang Video',
     provider: 'Alibaba',
@@ -498,6 +638,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'vidu',
     name: 'Vidu',
     provider: 'ShengShu',
@@ -520,6 +662,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'skyreels',
     name: 'SkyReels',
     provider: 'SkyReels',
@@ -545,6 +689,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   // Music / audio models
   {
     kind: 'music-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'suno',
     name: 'Suno',
     provider: 'Suno',
@@ -567,6 +713,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'music-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'udio',
     name: 'Udio',
     provider: 'Udio',
@@ -589,6 +737,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'music-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'elevenlabs-music',
     name: 'ElevenLabs Music',
     provider: 'ElevenLabs',
@@ -611,6 +761,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'music-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'stable-audio',
     name: 'Stable Audio',
     provider: 'Stability AI',
@@ -633,6 +785,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'music-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'minimax-audio',
     name: 'MiniMax Audio',
     provider: 'MiniMax',
@@ -656,6 +810,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'music-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'seed-audio',
     name: 'Seed Audio',
     provider: 'ByteDance',
@@ -679,6 +835,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'music-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'google-lyria',
     name: 'Google MusicFX / Lyria',
     provider: 'Google DeepMind',
@@ -702,6 +860,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'music-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'mureka',
     name: 'Mureka',
     provider: 'Mureka',
@@ -724,6 +884,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'music-model',
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No numeric price in the 2026-10-15 audit; verify official pricing.'],
     slug: 'meta-musicgen',
     name: 'Meta MusicGen',
     provider: 'Meta',
@@ -913,7 +1075,7 @@ export const WORLD_MODEL_RESEARCH_NOTES = [
   },
 ];
 
-export const RIGOROUS_MODEL_KINDS: AiCatalogKind[] = ['video-model', 'music-model', 'world-model'];
+export const RIGOROUS_MODEL_KINDS: AiCatalogKind[] = ['video-model', 'music-model', 'world-model', 'decision-model'];
 
 export function catalogForKind(kind: AiCatalogKind): AiCatalogItem[] {
   return AI_VERTICAL_CATALOG.filter((item) => item.kind === kind);

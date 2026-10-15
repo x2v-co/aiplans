@@ -97,7 +97,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
     pathname?.startsWith(`/${locale}/video-models`) ||
     pathname?.startsWith(`/${locale}/coding-agents`) ||
     pathname?.startsWith(`/${locale}/music-models`) ||
-    pathname?.startsWith(`/${locale}/world-models`);
+    pathname?.startsWith(`/${locale}/world-models`) ||
+    pathname?.startsWith(`/${locale}/decision-models`);
   const isPlansActive =
     pathname?.startsWith(`/${locale}/compare/plans`) ||
     pathname?.startsWith(`/${locale}/plans`) ||
@@ -114,6 +115,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
         { href: `/${locale}/video-models`, label: t('videoModels'), active: pathname?.startsWith(`/${locale}/video-models`) },
         { href: `/${locale}/music-models`, label: t('musicModels'), active: pathname?.startsWith(`/${locale}/music-models`) },
         { href: `/${locale}/world-models`, label: t('worldModels'), active: pathname?.startsWith(`/${locale}/world-models`) },
+        { href: `/${locale}/decision-models`, label: t('decisionModels'), active: pathname?.startsWith(`/${locale}/decision-models`) },
       ],
     },
     {

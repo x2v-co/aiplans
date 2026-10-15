@@ -643,7 +643,8 @@ const MIGRATIONS: Migration[] = [
       ALTER TABLE models ALTER COLUMN model_category SET NOT NULL;
       ALTER TABLE models DROP CONSTRAINT IF EXISTS models_model_category_chk;
       ALTER TABLE models ADD CONSTRAINT models_model_category_chk
-        CHECK (model_category IN ('text','image','video','audio','music','world','embedding','speech','agent'));
+        -- Replayed on each deployment: retain categories introduced by 0007.
+        CHECK (model_category IN ('text','image','video','audio','music','world','embedding','speech','agent','decision'));
 
       ALTER TABLE models ADD COLUMN IF NOT EXISTS input_modalities text[] DEFAULT '{}';
       ALTER TABLE models ADD COLUMN IF NOT EXISTS output_modalities text[] DEFAULT '{}';
@@ -909,6 +910,10 @@ const MIGRATIONS: Migration[] = [
   {
     name: '031_add_model_deprecated_at',
     sql: readFileSync(new URL('../drizzle/0006_model_deprecated_at.sql', import.meta.url), 'utf8'),
+  },
+  {
+    name: '032_catalog_audit_p1',
+    sql: readFileSync(new URL('../drizzle/0007_catalog_audit_p1.sql', import.meta.url), 'utf8'),
   },
 ];
 

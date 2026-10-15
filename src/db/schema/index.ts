@@ -33,7 +33,7 @@ export const models = pgTable('models', {
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   type: text('type').notNull(), // legacy: 'llm', 'subscription', 'coding_tool'
-  modelCategory: text('model_category').notNull().default('text'), // 'text' | 'image' | 'video' | 'audio' | 'music' | 'world' | 'embedding' | 'speech' | 'agent'
+  modelCategory: text('model_category').notNull().default('text'), // 'text' | 'image' | 'video' | 'audio' | 'music' | 'world' | 'embedding' | 'speech' | 'agent' | 'decision'
   description: text('description'),
   contextWindow: integer('context_window'), // in tokens
   maxOutputTokens: bigint('max_output_tokens', { mode: 'number' }),
@@ -106,6 +106,10 @@ export const plans = pgTable('plans', {
   hasOveragePricing: boolean('has_overage_pricing').default(false),
   overageInputPricePer1m: real('overage_input_price_per_1m'),
   overageOutputPricePer1m: real('overage_output_price_per_1m'),
+
+  monthlyApiCreditUsd: real('monthly_api_credit_usd'),
+  monthlyApiCreditStatus: text('monthly_api_credit_status'),
+  legacyEndsOn: date('legacy_ends_on'),
 
   // Regional & payment
   region: text('region').default('global'),
@@ -214,7 +218,7 @@ export const usagePrices = pgTable('usage_prices', {
   modelId: integer('model_id').references(() => models.id),
   providerId: integer('provider_id').references(() => providers.id),
   planId: integer('plan_id').references(() => plans.id),
-  priceKind: text('price_kind').notNull(), // input_tokens | output_tokens | video_second | generation | credit | minute | compute_hour | seat
+  priceKind: text('price_kind').notNull(), // input_tokens | output_tokens | tasks | video_second | generation | credit | minute | compute_hour | seat
   unit: text('unit').notNull(),
   price: real('price'),
   currency: varchar('currency').default('USD'),

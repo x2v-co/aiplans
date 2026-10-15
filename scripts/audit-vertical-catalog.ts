@@ -169,6 +169,19 @@ function sameStringArray(a: string[] | null | undefined, b: string[] | null | un
   return JSON.stringify([...(a ?? [])].sort()) === JSON.stringify([...(b ?? [])].sort());
 }
 
+/** Audited static prices do not require a DB in the static CI gate. */
+function hasAuditedStaticPrices(item: AiCatalogItem): boolean {
+  const isPrice = (value: number | null | undefined) =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0;
+  if (item.priceStatus !== 'priced' || !item.currency || !item.pricingUnit ||
+      !item.verifiedAt || !ISO_DATE.test(item.verifiedAt) || !item.sourceUrls?.length) return false;
+
+  // Free output (0) is a price; null/undefined task prices stay unknown.
+  return item.kind === 'decision-model'
+    ? isPrice(item.inputPricePer1M) && isPrice(item.outputPricePer1M)
+    : Boolean(item.billingUnit) && isPrice(item.pricePerUnit);
+}
+
 function auditStaticCatalog() {
   const seenSlugs = new Map<string, string>();
 
@@ -229,8 +242,8 @@ function auditStaticCatalog() {
       }
     }
 
-    if (item.pricingConfidence === 'verified' && item.kind !== 'world-model') {
-      warning(item, 'pricingConfidence=verified should only be used after numeric prices are in usage_prices or plan rows');
+    if (item.pricingConfidence === 'verified' && item.kind !== 'world-model' && !hasAuditedStaticPrices(item)) {
+      warning(item, 'pricingConfidence=verified requires audited static numeric prices or numeric prices in usage_prices or plan rows');
     }
 
     if (item.status === 'research' && item.pricingConfidence !== 'not-commercial' && item.pricingConfidence !== 'unknown') {

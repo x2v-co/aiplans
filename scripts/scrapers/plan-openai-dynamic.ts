@@ -146,7 +146,7 @@ async function fetchOpenAIPlans(): Promise<{ plans: OpenAIPlan[], errors: string
     const priceMatch = proPriceMatch[0].match(/\$?\s*([\d.]+)/);
     if (priceMatch) {
       plans.push({
-        name: 'ChatGPT Pro',
+        name: `ChatGPT Pro ${parseFloat(priceMatch[1])}`,
         priceMonthly: parseFloat(priceMatch[1]),
         priceYearly: undefined,
         tier: 'pro',

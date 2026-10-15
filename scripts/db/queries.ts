@@ -461,6 +461,7 @@ export async function getOrCreateProduct(data: {
   provider_ids?: number[];  // Preferred: array of provider IDs
   type: string;
   context_window?: number;
+  model_category?: string;
   released_at?: string;
 }) {
   // Prefer the canonical row even while an old duplicate still exists.
@@ -549,6 +550,7 @@ export async function getOrCreateProduct(data: {
       slug: data.slug,
       provider_ids: providerIdsArray,
       type: data.type,
+      model_category: data.model_category ?? 'text',
       context_window: data.context_window,
       released_at: data.released_at,
     })

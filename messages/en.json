@@ -42,6 +42,7 @@
     "creativePlans": "Creative Plans",
     "videoModels": "Video Models",
     "musicModels": "Music Models",
+    "decisionModels": "Decision Models",
     "worldModels": "World Models",
     "coupons": "Coupons",
     "calculator": "Calculator",
@@ -355,5 +356,9 @@
   },
   "modelPricing": {
     "introductoryPrice": "Introductory price until {date} (Pacific time), then {input} / {output} per 1M"
+  },
+  "decisionModels": {
+    "title": "Decision Models",
+    "description": "ScaleDown, SubQ Snap and Jev: compare $/M input and $/1M tasks. Unknown values remain unverified."
   }
 }

@@ -147,7 +147,8 @@ async function loadExistingModels(slugs: string[]): Promise<Map<string, ModelRow
 }
 
 async function main() {
-  const rows = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind));
+  console.log('Video/music/decision rows are owned by npm run seed:catalog-audit (dry-run default); excluded here.');
+  const rows = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && !['video-model', 'music-model', 'decision-model'].includes(item.kind));
   const slugs = rows.map((item) => item.slug).filter(Boolean) as string[];
   const providers = await loadProviders();
   const existingModels = await loadExistingModels(slugs);

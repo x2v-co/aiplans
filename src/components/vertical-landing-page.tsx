@@ -1,3 +1,4 @@
+import { auditedPrice } from '@/components/audited-catalog';
 import Image from 'next/image';
 import { WorldModelCatalog } from '@/components/world-model-catalog';
 import Link from 'next/link';
@@ -253,7 +254,7 @@ export default function VerticalLandingPage({
                   </div>
                   <div className="relative z-10 col-span-3 hidden md:block text-sm text-zinc-600 dark:text-zinc-400 pointer-events-none">
                     <div>{item.pricingUnit ?? item.unit}</div>
-                    <div className="mt-1 text-xs text-zinc-500">{item.pricing}</div>
+                    <div className="mt-1 text-xs text-zinc-500">{item.kind === 'video-model' || item.kind === 'music-model' ? auditedPrice(item, locale) : item.pricing}</div>
                     {rigorousModelCatalog && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         <Badge variant="outline">{item.pricingConfidence}</Badge>
@@ -279,7 +280,7 @@ export default function VerticalLandingPage({
                           </div>
                         )}
                         <div className="mt-1 text-xs text-zinc-500">
-                          {locale === 'zh' ? '核验' : 'Verified'}: {item.lastVerified}
+                          {locale === 'zh' ? '核验' : 'Verified'}: {item.verifiedAt ?? item.lastVerified}
                         </div>
                         <div className="mt-2 flex flex-wrap gap-1">
                           {item.sourceUrls?.slice(0, 2).map((source) => (

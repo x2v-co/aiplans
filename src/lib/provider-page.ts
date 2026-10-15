@@ -32,6 +32,9 @@ export type ProviderPlanRecord = EconomicPlan & {
   features: unknown;
   monthly_message_limit: number | null;
   context_window: number | null;
+  monthly_api_credit_usd?: number | null;
+  monthly_api_credit_status?: string | null;
+  legacy_ends_on?: string | null;
   rate_limit: number | null;
   access_from_china: boolean | null;
   third_party_coverage: ThirdPartyCoverage | null;
@@ -43,7 +46,8 @@ export type ProviderModelRecord = { id: number; name: string; slug: string; mode
 export function providerModelPath(slug: string, category?: string | null): string {
   const route = category === 'video' ? 'video-models'
     : category === 'music' ? 'music-models'
-      : category === 'world' ? 'world-models' : 'models';
+      : category === 'world' ? 'world-models'
+        : category === 'decision' ? 'decision-models' : 'models';
   return `/${route}/${encodeURIComponent(slug)}`;
 }
 

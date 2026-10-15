@@ -9,6 +9,14 @@ import { chromium, Browser } from 'playwright';
 
 const ANTHROPIC_PLANS_URL = 'https://claude.com/pricing';
 
+/** Keep independently priced Max tiers on the existing canonical slugs. */
+export function canonicalAnthropicPlanName(name: string, price: number): string {
+  if (!/max/i.test(name)) return name;
+  if (price === 100) return 'Claude Max (5x)';
+  if (price === 200) return 'Claude Max (20x)';
+  return name;
+}
+
 interface AnthropicPlan {
   name: string;
   priceMonthly: number;
@@ -221,6 +229,7 @@ async function fetchAnthropicPlans(): Promise<{ plans: AnthropicPlan[], errors: 
     // The footer repeats "Enterprise" links after the pricing section. Keep
     // only one row per canonical plan name so page chrome cannot create
     // duplicate writes.
+    for (const plan of plans) plan.name = canonicalAnthropicPlanName(plan.name, plan.priceMonthly);
     const uniquePlans = Array.from(
       new Map(plans.map(plan => [slugifyPlan(plan.name), plan])).values()
     );

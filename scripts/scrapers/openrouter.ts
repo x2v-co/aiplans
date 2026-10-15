@@ -95,7 +95,7 @@ const PROVIDER_NORMALIZATION: Record<string, string> = {
 /**
  * Normalize OpenRouter provider name
  */
-function normalizeProvider(provider: string): string {
+export function normalizeProvider(provider: string): string {
   // Handle "openai/" prefix or similar
   const cleaned = provider.replace(/^\/+|\/+$/g, '').toLowerCase();
 
@@ -107,6 +107,11 @@ function normalizeProvider(provider: string): string {
  * Normalize OpenRouter model name
  * Handles "provider/model" format and other naming variations
  */
+export function openRouterProducerSlug(id: string): string {
+  const prefix = id.split('/')[0].replace(/^~/, '');
+  return ({ google: 'google', mistralai: 'mistral' } as Record<string, string>)[prefix] ?? normalizeProvider(prefix);
+}
+
 function normalizeOpenRouterModelName(id: string, name?: string): string {
   // If id contains "/" (provider/model format), extract model part
   if (id.includes('/')) {
@@ -131,6 +136,8 @@ function normalizeOpenRouterModelName(id: string, name?: string): string {
  */
 export function generateOpenRouterSlug(id: string): string {
   if (AUDITED_MODEL_SLUGS[id]) return AUDITED_MODEL_SLUGS[id];
+  if (id === 'mistralai/mistral-large-4-0') return 'mistral-large-4';
+  if (id === 'google/gemini-3.8-flash:batch') return 'google-gemini-gemini-3-8-flash-batch';
   if (!id.includes('/')) {
     // No provider separator, use the full id
     return canonicalizeModelSlug(slugify(id));
@@ -396,6 +403,7 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
         prices.push({
           modelName,
           modelSlug,
+          producerSlug: openRouterProducerSlug(model.id),
           inputPricePer1M: inputPrice,
           outputPricePer1M: outputPrice,
           cachedInputPricePer1M: cachePrice ?? null,

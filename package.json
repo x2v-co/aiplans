@@ -70,7 +70,10 @@
     "seed:reseller-promos:dry-run": "tsx scripts/seed-reseller-promos.ts --dry-run",
     "sync:openai-deprecations": "tsx scripts/sync-openai-deprecations.ts",
     "sync:openai-deprecations:dry-run": "tsx scripts/sync-openai-deprecations.ts --dry-run",
-    "test": "node scripts/test-unit.mjs"
+    "test": "node scripts/test-unit.mjs",
+    "seed:catalog-audit": "tsx scripts/seed-catalog-audit-2026-10-15.ts",
+    "seed:catalog-audit:dry-run": "tsx scripts/seed-catalog-audit-2026-10-15.ts --dry-run",
+    "test:catalog-audit": "npx tsx --test scripts/data/catalog-audit*.test.ts scripts/scrapers/openrouter.test.ts scripts/world-models.test.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

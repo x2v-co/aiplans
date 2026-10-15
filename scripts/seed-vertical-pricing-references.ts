@@ -199,7 +199,8 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
 }
 
 async function main() {
-  const items = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind));
+  console.log('Video/music/decision rows are owned by npm run seed:catalog-audit (dry-run default); excluded here.');
+  const items = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && !['video-model', 'music-model', 'decision-model'].includes(item.kind));
   const providers = await loadProviders();
   const models = await loadModels(items.map((item) => item.slug!).filter(Boolean));
 

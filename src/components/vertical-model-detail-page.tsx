@@ -1,3 +1,4 @@
+import { AuditedPricingFacts } from '@/components/audited-catalog';
 import Image from 'next/image';
 import { WorldModelFacts, WorldModelTiers } from '@/components/world-model-catalog';
 import Link from 'next/link';
@@ -117,6 +118,8 @@ export default function VerticalModelDetailPage({
             </CardContent>
           </Card>
         </section>
+
+        {['video-model', 'music-model', 'decision-model'].includes(kind) && <AuditedPricingFacts item={item} locale={locale} />}
 
         {kind === 'world-model' && <WorldModelFacts item={item} locale={locale} />}
 

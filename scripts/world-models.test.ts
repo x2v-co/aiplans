@@ -177,14 +177,29 @@ test('every static world detail works with or without DB rows; retired/unknown s
   }
 });
 
-test('video and music still use DB membership with static fallback', async () => {
+test('video/music/decision membership and prices remain audit-owned with stale or unavailable DB', async () => {
+  for (const kind of ['video-model', 'music-model', 'decision-model'] as const) {
+    for (const fixture of [serverFixture(), serverFixture({ unavailable: true })]) {
+      const actual = await fixture.getVerticalModelCatalog(kind);
+      assert.equal(JSON.stringify(actual), JSON.stringify(catalog.catalogForKind(kind)));
+      for (const item of actual) {
+        const detail = await fixture.getVerticalModelDetail(kind, item.slug!);
+        assert.equal(detail.source, 'catalog');
+        assert.equal(detail.item.pricePerUnit, item.pricePerUnit);
+        assert.deepEqual(Array.from(detail.usagePrices), []);
+      }
+    }
+  }
+});
+
+test('DB-only video/music identities remain available with unknown price status', async () => {
   for (const kind of ['video-model', 'music-model'] as const) {
-    const fixture = serverFixture({ rows: [{ id: 300, slug: 'db-only', name: 'DB model', model_category: kind === 'video-model' ? 'video' : 'music' }] });
-    const actual = await fixture.getVerticalModelCatalog(kind);
-    assert.equal(actual.length, 1);
-    assert.equal(actual[0].slug, 'db-only');
-    assert.equal(actual[0].name, 'DB model');
-    const offline = await serverFixture({ unavailable: true }).getVerticalModelCatalog(kind);
-    assert.equal(offline.length, catalog.catalogForKind(kind).length);
+    const fixture = serverFixture({ rows: [{ id: 300, slug: 'db-only', name: 'DB model' }] });
+    const rows = await fixture.getVerticalModelCatalog(kind);
+    assert.equal(rows.length, catalog.catalogForKind(kind).length + 1);
+    const extra = rows.find(row => row.slug === 'db-only')!;
+    assert.equal(extra.pricePerUnit, null);
+    assert.equal(extra.priceStatus, 'needs-verification');
+    assert.equal((await fixture.getVerticalModelDetail(kind, 'db-only')).item.name, 'DB model');
   }
 });

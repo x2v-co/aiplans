@@ -42,6 +42,7 @@
     "creativePlans": "创作套餐",
     "videoModels": "视频模型",
     "musicModels": "音乐模型",
+    "decisionModels": "决策模型",
     "worldModels": "世界模型",
     "coupons": "优惠码",
     "calculator": "计算器",
@@ -355,5 +356,9 @@
   },
   "modelPricing": {
     "introductoryPrice": "入门价截至 {date}（太平洋时间），之后 {input} / {output} 每百万 token"
+  },
+  "decisionModels": {
+    "title": "决策模型",
+    "description": "ScaleDown、SubQ Snap 和 Jev：按每百万输入 token 与每百万次任务比较价格，未知值保留为待核验。"
   }
 }

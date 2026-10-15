@@ -286,6 +286,7 @@ export function normalizeModelName(name: string): string {
   if (lower.includes('deepseek-coder-v2')) return 'deepseek-coder-v2';
   if (lower.includes('deepseek-chat')) return 'deepseek-chat';
 
+  if (/mistral-large-4(?:[.-]0)?(?:$|-)/.test(lower)) return 'mistral-large-4';
   if (lower.includes('mistral-large-2')) return 'mistral-large-2';
   if (lower.includes('mistral-large')) return 'mistral-large';
   if (lower.includes('mistral-nemo')) return 'mistral-nemo';

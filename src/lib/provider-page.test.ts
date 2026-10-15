@@ -43,6 +43,7 @@ test('provider metadata has localized canonical and hreflang at the new route', 
 test('model links keep the existing multimodal detail routes', () => {
   assert.equal(providerModelPath('gpt-5', 'text'), '/models/gpt-5');
   assert.equal(providerModelPath('sora', 'video'), '/video-models/sora');
+  assert.equal(providerModelPath('subq-snap', 'decision'), '/decision-models/subq-snap');
   assert.equal(providerModelPath('musicgen', 'music'), '/music-models/musicgen');
   assert.equal(providerModelPath('genie', 'world'), '/world-models/genie');
 });

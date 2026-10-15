@@ -2,12 +2,12 @@ import { sql, TEXT_ARRAY } from '@/lib/db';
 import { catalogForKind, type AiBenchmarkSummary, type AiCatalogItem, type AiCatalogKind, type AiCatalogModality, type AiCatalogStatus } from '@/lib/ai-vertical-catalog';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 import { getVerticalBenchmarkSummary } from '@/lib/vertical-benchmarks';
-import { verticalBenchmarkSummaryFallback } from '@/lib/vertical-benchmark-summaries';
 
-const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, 'video' | 'music' | 'world'>> = {
+const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, 'video' | 'music' | 'world' | 'decision'>> = {
   'video-model': 'video',
   'music-model': 'music',
   'world-model': 'world',
+  'decision-model': 'decision',
 };
 
 interface DbVerticalModelRow {
@@ -20,7 +20,7 @@ interface DbVerticalModelRow {
   provider_logo_url: string | null;
   description: string | null;
   offical_link: string | null;
-  model_category: 'video' | 'music' | 'world';
+  model_category: 'video' | 'music' | 'world' | 'decision';
   input_modalities: string[] | null;
   output_modalities: string[] | null;
   capabilities: string[] | null;
@@ -94,6 +94,8 @@ function dbRowToCatalogItem(kind: AiCatalogKind, row: DbVerticalModelRow, benchm
     unit: row.pricing_unit ?? 'unknown',
     pricingUnit: row.pricing_unit ?? 'unknown',
     pricingConfidence,
+    priceStatus: 'needs-verification', pricePerUnit: null,
+    needsVerification: ['No price supplied in the 2026-10-15 audit.'],
     capabilities: row.capabilities ?? [],
     bestFor: row.description?.split('\n')[0] ?? `${row.name} ${row.model_category} model`,
     url: row.offical_link ?? sourceUrls?.[0]?.url,
@@ -107,27 +109,28 @@ function dbRowToCatalogItem(kind: AiCatalogKind, row: DbVerticalModelRow, benchm
   };
 }
 
-/** The DB may enrich static world rows, but never controls their membership or pricing. */
-async function getWorldModelCatalog(): Promise<AiCatalogItem[]> {
-  const items = catalogForKind('world-model');
+/** Audited rows own identity/pricing; DB-only video/music rows remain unpriced. */
+async function getStaticModelCatalog(kind: AiCatalogKind): Promise<AiCatalogItem[]> {
+  const items = catalogForKind(kind);
   try {
     const slugs = items.map((item) => item.slug!);
-    const rows = await sql<Pick<DbVerticalModelRow, 'id' | 'slug' | 'provider_logo' | 'provider_logo_url'>[]>`
-      SELECT m.id, m.slug, p.logo AS provider_logo, p.logo_url AS provider_logo_url
+    const rows = await sql<DbVerticalModelRow[]>`
+      SELECT m.*, p.name AS provider_name, p.slug AS provider_slug, p.logo AS provider_logo, p.logo_url AS provider_logo_url
       FROM models m
       LEFT JOIN LATERAL (
-        SELECT providers.logo, providers.logo_url
+        SELECT providers.name, providers.slug, providers.logo, providers.logo_url
         FROM providers
         WHERE providers.id = ANY(m.provider_ids)
         ORDER BY providers.priority NULLS LAST, providers.id
         LIMIT 1
       ) p ON true
-      WHERE m.model_category = 'world' AND m.slug = ANY(${sql.array(slugs, TEXT_ARRAY)})
+      WHERE m.model_category = ${KIND_TO_CATEGORY[kind]!}
+        AND (${kind === 'video-model' || kind === 'music-model'} OR m.slug = ANY(${sql.array(slugs, TEXT_ARRAY)}))
     `;
     const matchingRows = rows.filter((row) => slugs.includes(row.slug));
     const bySlug = new Map(matchingRows.map((row) => [row.slug, row]));
     const benchmarkSummaries = await getBenchmarkSummaries(matchingRows.map((row) => row.id));
-    return items.map((item) => {
+    const auditedItems = items.map((item) => {
       const row = bySlug.get(item.slug!);
       if (!row) return item;
       const summaries = benchmarkSummaries.get(row.id);
@@ -137,55 +140,15 @@ async function getWorldModelCatalog(): Promise<AiCatalogItem[]> {
         benchmarkSummaries: summaries?.length ? summaries : item.benchmarkSummaries,
       };
     });
+    const extras = kind === 'video-model' || kind === 'music-model'
+      ? rows.filter(row => !slugs.includes(row.slug)).map(row => dbRowToCatalogItem(kind, row)) : [];
+    return [...auditedItems, ...extras];
   } catch (error) {
-    console.warn('getVerticalModelCatalog(world-model) using static catalog without DB enrichment', error);
+    console.warn(`getVerticalModelCatalog(${kind}) using static catalog without DB enrichment`, error);
     return items;
   }
 }
 
 export async function getVerticalModelCatalog(kind: AiCatalogKind): Promise<AiCatalogItem[]> {
-  if (kind === 'world-model') return getWorldModelCatalog();
-  const category = KIND_TO_CATEGORY[kind];
-  if (!category) return catalogForKind(kind);
-
-  try {
-    const rows = await sql<DbVerticalModelRow[]>`
-      SELECT
-        m.id,
-        m.name,
-        m.slug,
-        p.name AS provider_name,
-        p.slug AS provider_slug,
-        p.logo AS provider_logo,
-        p.logo_url AS provider_logo_url,
-        m.description,
-        m.offical_link,
-        m.model_category,
-        COALESCE(m.input_modalities, ${sql.array([], TEXT_ARRAY)}) AS input_modalities,
-        COALESCE(m.output_modalities, ${sql.array([], TEXT_ARRAY)}) AS output_modalities,
-        COALESCE(m.capabilities, ${sql.array([], TEXT_ARRAY)}) AS capabilities,
-        m.pricing_unit,
-        m.open_source
-      FROM models m
-      LEFT JOIN LATERAL (
-        SELECT providers.name, providers.slug, providers.logo, providers.logo_url
-        FROM providers
-        WHERE providers.id = ANY(m.provider_ids)
-        ORDER BY providers.priority NULLS LAST, providers.id
-        LIMIT 1
-      ) p ON true
-      WHERE m.model_category = ${category}
-      ORDER BY p.priority NULLS LAST, m.name ASC
-    `;
-
-    if (rows.length === 0) return catalogForKind(kind);
-    const benchmarkSummaries = await getBenchmarkSummaries(rows.map((row) => row.id));
-    return rows.map((row) => {
-      const summaries = benchmarkSummaries.get(row.id) ?? [];
-      return dbRowToCatalogItem(kind, row, summaries.length > 0 ? summaries : verticalBenchmarkSummaryFallback(row.slug));
-    });
-  } catch (error) {
-    console.warn(`getVerticalModelCatalog(${kind}) falling back to static catalog`, error);
-    return catalogForKind(kind);
-  }
+  return KIND_TO_CATEGORY[kind] ? getStaticModelCatalog(kind) : catalogForKind(kind);
 }

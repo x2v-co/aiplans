@@ -270,11 +270,43 @@ async function processAPIScraper(
   const seenModelIds = new Set<number>();
   const modelIdBySlug = new Map<string, number>();
   const headlinePriceByModelId = new Map<number, typeof result.prices[number]>();
-  const resolveProduct = async (price: { modelName: string; modelSlug?: string; contextWindow?: number; releasedAt?: string }) => {
+  const resolveProduct = async (price: { modelName: string; modelSlug?: string; contextWindow?: number; releasedAt?: string; producerSlug?: string }) => {
     const providerId = inferProviderId(price.modelName, channelName);
     const normalizedName = normalizeModelName(price.modelName);
     const normalizedSlug = canonicalizeModelSlug(price.modelSlug || normalizeSlug(price.modelName));
     const OFFICIAL_PROVIDER_IDS = [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50];
+
+    // OpenRouter namespaces identify producers even when our hardcoded producer
+    // ID list predates them. Resolve by slug and create only guarded identities.
+    if (createProducts && result.source === 'OpenRouter' && price.producerSlug) {
+      const { data: known, error: knownError } = await db.from('models').select('*').eq('slug', normalizedSlug).single();
+      if (knownError && knownError.code !== 'PGRST116') throw knownError;
+      if (known) return getOrCreateProduct({ name: known.name, slug: known.slug,
+        provider_ids: known.provider_ids, type: known.type || 'llm',
+        context_window: price.contextWindow, released_at: price.releasedAt });
+      const identity = checkModelIdentity(normalizedName, normalizedSlug);
+      if (!identity.ok) {
+        console.warn(`MANUAL_REVIEW OpenRouter ${normalizedSlug}: ${identity.reasons.join(', ')}`);
+        return null;
+      }
+      const { data: producer, error: producerError } = await db.from('providers')
+        .select('id').eq('slug', price.producerSlug).single();
+      if (producerError && producerError.code !== 'PGRST116') throw producerError;
+      let producerId = producer?.id;
+      if (!producerId) {
+        const { data: created, error } = await db.from('providers').insert({
+          slug: price.producerSlug, name: price.producerSlug, type: 'producer',
+          region: null, access_from_china: null,
+          notes: 'Identity from OpenRouter model namespace; provider metadata needs verification.',
+        }).select('id').single();
+        if (error) throw error;
+        producerId = created.id;
+      }
+      return getOrCreateProduct({ name: normalizedName, slug: normalizedSlug,
+        provider_id: producerId, type: 'llm',
+        model_category: ['scaledown', 'typesafe'].includes(price.producerSlug) ? 'decision' : 'text', context_window: price.contextWindow,
+        released_at: price.releasedAt });
+    }
 
     if (!createProducts || providerId === -1 || !OFFICIAL_PROVIDER_IDS.includes(providerId)) {
       const { data: existingProduct } = await db
