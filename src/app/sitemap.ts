@@ -65,7 +65,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const providers = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
       SELECT slug, updated_at FROM providers
       WHERE EXISTS (SELECT 1 FROM plans WHERE plans.provider_id = providers.id)
-         OR EXISTS (SELECT 1 FROM api_channel_prices cp WHERE cp.provider_id = providers.id AND cp.is_available = true)
+         OR EXISTS (SELECT 1 FROM api_channel_prices cp WHERE cp.provider_id = providers.id AND cp.is_available = true
+           AND EXISTS (SELECT 1 FROM models m WHERE m.id = cp.model_id
+             AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date)))
       ORDER BY priority ASC NULLS LAST
     `;
     for (const p of providers) {
@@ -99,7 +101,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const models = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
       SELECT slug, updated_at
       FROM models
-      WHERE type ILIKE '%llm%'
+      WHERE (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date)
+        AND type ILIKE '%llm%'
         AND EXISTS (
           SELECT 1 FROM api_channel_prices cp
           WHERE cp.model_id = models.id AND cp.is_available = true
@@ -137,7 +140,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }>>`
       SELECT slug, model_category, updated_at
       FROM models
-      WHERE model_category IN ('video', 'music', 'world')
+      WHERE (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date)
+        AND model_category IN ('video', 'music', 'world')
       ORDER BY updated_at DESC NULLS LAST
     `;
     const categoryPath: Record<string, string> = {
@@ -178,7 +182,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       FROM models
       JOIN model_plan_mapping mpm ON mpm.model_id = models.id
       JOIN plans ON plans.id = mpm.plan_id
-      WHERE models.type ILIKE '%llm%'
+      WHERE (models.shutdown_date IS NULL OR models.shutdown_date > (now() AT TIME ZONE 'UTC')::date)
+        AND models.type ILIKE '%llm%'
         AND plans.pricing_model = 'subscription'
       GROUP BY models.id, models.slug, models.released_at, models.updated_at
       ORDER BY models.updated_at DESC NULLS LAST

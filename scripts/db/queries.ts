@@ -1,4 +1,5 @@
 import { retainMatchingPromo } from '../utils/promo-sync';
+import { allowsUnverifiedPrice } from './unverified-price';
 import { checkModelIdentity, ModelIdentityRejectedError, isCachedPriceSane } from '../utils/model-identity-guard';
 import { canonicalizeModelSlug } from '../utils/model-normalizer';
 import { databaseSql, postgresAdmin } from './postgres-admin';
@@ -283,8 +284,8 @@ export async function retireUnseenChannelPriceVariants(
 export async function upsertChannelPrice(data: {
   model_id: number;
   provider_id: number;
-  input_price_per_1m: number;
-  output_price_per_1m: number;
+  input_price_per_1m: number | null;
+  output_price_per_1m: number | null;
   cached_input_price_per_1m?: number | null;
   promo_ends_at?: string | null;
   regular_input_price_per_1m?: number | null;
@@ -292,7 +293,7 @@ export async function upsertChannelPrice(data: {
   regular_cached_input_price_per_1m?: number | null;
   rate_limit?: string | number;
   is_available: boolean;
-  last_verified: Date;
+  last_verified: Date | null;
   currency?: string;
   price_unit?: string;
   /**
@@ -303,18 +304,19 @@ export async function upsertChannelPrice(data: {
 }) {
   // Defensive validation — reject obvious bad data at the write boundary so
   // scraper bugs fail loudly instead of silently overwriting good rows.
-  // Free tiers with price 0 are allowed; negative or null are not.
+  // Free tiers allow zero; unknown rates require nulls plus the explicit provenance marker.
   if (data.input_price_per_1m == null || data.output_price_per_1m == null) {
-    throw new Error(
+    if (!allowsUnverifiedPrice(data)) throw new Error(
       `upsertChannelPrice: null price rejected (model_id=${data.model_id} provider_id=${data.provider_id} in=${data.input_price_per_1m} out=${data.output_price_per_1m})`
     );
   }
-  if (data.input_price_per_1m < 0 || data.output_price_per_1m < 0) {
+  if ((data.input_price_per_1m != null && data.input_price_per_1m < 0) || (data.output_price_per_1m != null && data.output_price_per_1m < 0)) {
     throw new Error(
       `upsertChannelPrice: negative price rejected (model_id=${data.model_id} provider_id=${data.provider_id} in=${data.input_price_per_1m} out=${data.output_price_per_1m})`
     );
   }
   if (
+    data.input_price_per_1m != null && data.output_price_per_1m != null &&
     data.input_price_per_1m > 0 &&
     data.output_price_per_1m > 0 &&
     data.output_price_per_1m < data.input_price_per_1m
@@ -324,7 +326,7 @@ export async function upsertChannelPrice(data: {
     );
   }
 
-  if (!isCachedPriceSane(data.input_price_per_1m, data.cached_input_price_per_1m)) {
+  if (data.input_price_per_1m != null && !isCachedPriceSane(data.input_price_per_1m, data.cached_input_price_per_1m)) {
     // Cached input can never cost more than uncached input; drop it rather than publish it.
     console.warn(`upsertChannelPrice: cached input ($${data.cached_input_price_per_1m}) > input ($${data.input_price_per_1m}) (model_id=${data.model_id} provider_id=${data.provider_id}) — likely stale or parser bug` + ' — cached price dropped (NULL)');
     data = { ...data, cached_input_price_per_1m: null };
@@ -575,7 +577,8 @@ export async function upsertPlan(data: {
   slug: string;
   pricing_model: string;
   tier: string;
-  price_monthly: number;
+  price_monthly: number | null;
+  notes?: string;
   price_yearly?: number | null;
   daily_message_limit?: number;
   requests_per_minute?: number;
@@ -584,8 +587,8 @@ export async function upsertPlan(data: {
   access_from_china?: boolean;
   payment_methods?: string[];
   is_official: boolean;
-  last_verified: Date;
-  currency?: string;
+  last_verified: Date | null;
+  currency?: string | null;
   price_unit?: string;
 }) {
   // Map field names to match actual database columns
@@ -595,6 +598,7 @@ export async function upsertPlan(data: {
     slug: data.slug,
     pricing_model: data.pricing_model,
     tier: data.tier,
+    ...(data.notes !== undefined ? { notes: data.notes } : {}),
     price: data.price_monthly,  // price_monthly -> price
     annual_price: data.price_yearly,  // price_yearly -> annual_price
     daily_message_limit: data.daily_message_limit,
@@ -605,7 +609,7 @@ export async function upsertPlan(data: {
     payment_methods: data.payment_methods,
     is_official: data.is_official,
     last_verified: data.last_verified,
-    currency: data.currency || 'USD',
+    currency: data.currency === undefined ? 'USD' : data.currency,
     price_unit: data.price_unit || 'per_month',
   };
 

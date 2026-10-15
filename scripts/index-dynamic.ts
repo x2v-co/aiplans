@@ -416,6 +416,24 @@ async function processAPIScraper(
     }
   }
 
+  // Explicit unknown base rates still get a visible official channel and tier details.
+  for (const price of result.unverifiedPrices ?? []) {
+    try {
+      const product = await resolveProduct(price);
+      if (!product) continue;
+      await upsertChannelPrice({ model_id: product.id, provider_id: channelProviderId,
+        input_price_per_1m: null, output_price_per_1m: null, cached_input_price_per_1m: null,
+        currency: 'USD', price_unit: 'per_1m_tokens', is_available: true,
+        last_verified: null, notes: price.notes });
+      modelIdBySlug.set(price.modelSlug, product.id);
+      seenModelIds.add(product.id);
+      updatedCount++;
+    } catch (error) {
+      console.error(`Failed to record unverified ${price.modelSlug}:`, error);
+      errorCount++;
+    }
+  }
+
   if ((result.variants?.length ?? 0) > 0 && errorCount === 0) {
     const seenVariants: Array<{ model_id: number; variant_key: string }> = [];
     const variantRows = [];
@@ -870,6 +888,17 @@ async function main() {
     console.error('Promo expiry sync failed:', error);
     totalErrors++;
   }
+
+  // A published shutdown date wins over any stale source still advertising prices.
+  const { databaseSql } = await import('./db/postgres-admin');
+  await databaseSql.begin(async rawTx => {
+    const tx = rawTx as unknown as typeof databaseSql;
+    for (const table of ['api_channel_prices', 'api_channel_price_variants']) {
+      await tx`UPDATE ${tx(table)} SET is_available = false, updated_at = now()
+        WHERE is_available = true AND model_id IN (SELECT id FROM models
+          WHERE shutdown_date <= (now() AT TIME ZONE 'UTC')::date)`;
+    }
+  });
 
   const duration = Math.round((Date.now() - startTime) / 1000);
 

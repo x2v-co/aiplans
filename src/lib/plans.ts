@@ -95,6 +95,7 @@ export async function getPlans(query: PlanQuery = {}): Promise<ListedPlan[]> {
           SELECT id, name, slug, provider_ids, type, context_window
           FROM models
           WHERE id = ANY(${sql.array(modelIds, INT4_ARRAY)})
+            AND (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date)
         `
       : [];
 

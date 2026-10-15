@@ -41,13 +41,15 @@ export async function getProducts(query: ProductQuery = {}): Promise<any[]> {
   const productRows = matchedModelIds
     ? await sql<any[]>`
         SELECT * FROM models
-        WHERE (${type}::text IS NULL OR type = ${type})
+        WHERE (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date)
+          AND (${type}::text IS NULL OR type = ${type})
           AND id = ANY(${sql.array(matchedModelIds, INT4_ARRAY)})
         ORDER BY name
       `
     : await sql<any[]>`
         SELECT * FROM models
-        WHERE (${type}::text IS NULL OR type = ${type})
+        WHERE (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date)
+          AND (${type}::text IS NULL OR type = ${type})
         ORDER BY name
       `;
   let products: any[] = [...productRows];

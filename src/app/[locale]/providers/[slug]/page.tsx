@@ -87,6 +87,7 @@ async function getPlansByProvider(providerSlug: string) {
         SELECT id, name, slug, model_category
         FROM models
         WHERE id = ANY(${sql.array(modelIds, INT4_ARRAY)})
+          AND (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date)
       `]
     : [];
 
@@ -331,6 +332,12 @@ export default async function ProviderPage({
                         </span>
                       )}
                     </div>
+
+                    {typeof plan.notes === 'string' && plan.notes.startsWith('[needs-verification]') && (
+                      <p className="mb-3 text-xs text-amber-700 dark:text-amber-400">
+                        {isZh ? '待核验：地区和币种未确认，价格暂不显示。' : 'Needs verification: region and currency unconfirmed; price withheld.'}
+                      </p>
+                    )}
 
                     {/* Effective unit rate, directly under the headline price:
                         the two answer "what does it cost" and "what does that

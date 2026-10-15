@@ -64,6 +64,8 @@ export async function GET(
       JOIN providers p ON p.id = cp.provider_id
       WHERE cp.model_id = ${product.id}
         AND cp.is_available = true
+        AND EXISTS (SELECT 1 FROM models m WHERE m.id = cp.model_id
+          AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date))
       ORDER BY cp.input_price_per_1m ASC NULLS LAST
     `;
 
@@ -77,23 +79,23 @@ export async function GET(
         (p: any) => p.providers?.type === 'official' || p.providers?.type === 'producer'
       );
       const officialInputPrice = officialPrice?.input_price_per_1m || cp.input_price_per_1m;
-      const officialOutputPrice = officialPrice?.output_price_per_1m || cp.output_price_per_1m;
 
-      const savingsInput = officialPrice
+
+      const savingsInput = officialPrice?.input_price_per_1m != null && cp.input_price_per_1m != null && officialInputPrice > 0
         ? ((officialInputPrice - cp.input_price_per_1m) / officialInputPrice) * 100
         : 0;
 
       // 估算费用 (轻度使用: 10万tokens, 中度: 100万, 重度: 1000万)
-      const estimatedCost = {
-        light: (cp.input_price_per_1m * 0.1 + cp.output_price_per_1m * 0.05) / 100,
-        medium: (cp.input_price_per_1m * 1 + cp.output_price_per_1m * 0.5) / 100,
-        heavy: (cp.input_price_per_1m * 10 + cp.output_price_per_1m * 5) / 100,
+      const estimatedCost = cp.input_price_per_1m == null || cp.output_price_per_1m == null ? null : {
+        light: cp.input_price_per_1m * 0.1 + cp.output_price_per_1m * 0.05,
+        medium: cp.input_price_per_1m + cp.output_price_per_1m * 0.5,
+        heavy: cp.input_price_per_1m * 10 + cp.output_price_per_1m * 5,
       };
 
       return {
         ...cp,
         savingsVsOfficial: savingsInput > 0 ? savingsInput.toFixed(1) : '0.0',
-        isCheapest: channelPrices[0]?.id === cp.id,
+        isCheapest: cp.input_price_per_1m != null && channelPrices[0]?.id === cp.id,
         estimatedCost,
       };
     });

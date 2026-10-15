@@ -94,6 +94,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     SELECT cp.*, jsonb_build_object('name', p.name, 'type', p.type) AS providers
     FROM api_channel_prices cp JOIN providers p ON p.id = cp.provider_id
     WHERE cp.model_id = ${product.id} AND cp.is_available = true
+      AND EXISTS (SELECT 1 FROM models m WHERE m.id = cp.model_id
+        AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date))
   `;
   const pricing = buildModelPricingSeo({ ...product, name: productName, slug }, statsRows,
     locale === 'zh' ? 'zh' : 'en');
@@ -186,6 +188,8 @@ async function getProductWithChannels(slug: string) {
     FROM api_channel_prices cp
     JOIN providers p ON p.id = cp.provider_id
     WHERE cp.model_id = ${model.id} AND cp.is_available = true
+      AND EXISTS (SELECT 1 FROM models m WHERE m.id = cp.model_id
+        AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date))
     ORDER BY cp.input_price_per_1m ASC NULLS LAST
   `;
 
@@ -203,7 +207,7 @@ async function getProductWithChannels(slug: string) {
     relatedModels = await sql<Array<{ slug: string; name: string }>>`
       SELECT m.slug, m.name
       FROM models m
-      WHERE m.id <> ${model.id}
+      WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND m.id <> ${model.id}
         AND m.type ILIKE '%llm%'
         AND m.provider_ids[1] = ${primaryProducerId}
         AND EXISTS (
@@ -579,7 +583,7 @@ export default async function ModelPage({
         {shutdown && (
           <div role="note" className="mb-8 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
             <p>
-              {shutdownMessages(shutdown.status, { date: shutdown.date })}
+              <Badge variant="outline">{shutdownMessages(shutdown.status, { date: shutdown.date })}</Badge>
               {product.replacement_model && <>; {shutdownMessages('replacement', { model: product.replacement_model })}</>}
             </p>
             {product.deprecation_source_url && (
@@ -1017,6 +1021,9 @@ export default async function ModelPage({
                           </div>
                         </TableCell>
                       </TableRow>
+                      {cp.notes?.startsWith('[needs-verification]') && (
+                        <TableRow><TableCell colSpan={8} className="text-xs text-amber-700 dark:text-amber-400">{cp.notes}</TableCell></TableRow>
+                      )}
                       {Array.isArray(cp.price_variants) && cp.price_variants.length > 1 && (
                           <TableRow key={`${cp.id}-variants`} className="bg-zinc-50/70 dark:bg-zinc-900/50">
                             <TableCell colSpan={8}>
@@ -1116,10 +1123,10 @@ export default async function ModelPage({
                         {(usage.inputTokens / 1000000).toFixed(1)}M in + {(usage.outputTokens / 1000000).toFixed(1)}M out
                       </TableCell>
                       {sortedChannelPrices.slice(0, 4).map((cp: any) => {
-                        const costInChannelCurrency =
+                        const costInChannelCurrency = cp.input_price_per_1m == null || cp.output_price_per_1m == null ? null :
                           (Number(cp.input_price_per_1m) * usage.inputTokens) / 1000000 +
                           (Number(cp.output_price_per_1m) * usage.outputTokens) / 1000000;
-                        const cost = convertToUSD(costInChannelCurrency, channelCurrency(cp));
+                        const cost = costInChannelCurrency == null ? null : convertToUSD(costInChannelCurrency, channelCurrency(cp));
                         return (
                           <TableCell key={cp.id} className="text-right font-mono font-semibold">
                             {formatPrice(cost, 'USD', locale)}

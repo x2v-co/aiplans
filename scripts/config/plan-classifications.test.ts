@@ -83,3 +83,8 @@ test('Google Free and AI Pro do not claim API-first Gemini 4 Argon', () => {
     assert.deepEqual(resolveSelector(c.selector, googleModels, ['google']).models.map(m => m.slug), ['gemini-3.8-flash']);
   }
 });
+
+test('US Ultra rungs remain consumer chat plans in the existing Google line', () => {
+  const rungs = ['google-ai-ultra-5x', 'google-ai-ultra-20x'].map(slug => CLASSIFICATIONS.find(row => row.providerSlug === 'google' && row.planSlug === slug));
+  assert.deepEqual(rungs.map(row => [row?.kind, row?.line, row?.rank]), [['chat','google-one',3],['chat','google-one',4]]);
+});

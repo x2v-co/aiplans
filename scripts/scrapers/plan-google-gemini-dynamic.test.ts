@@ -2,20 +2,29 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseGooglePlansBody } from './plan-google-gemini-dynamic';
 
-const body = 'Free Gemini SGD 0/ month with a Google Account Google AI Plus SGD 6.98/ month Google AI Pro SGD 28.98/ month '
-  + 'Google AI Ultra1 Starting at: SGD 139.98/ month SGD 139.98/ month: 5x SGD 279.98 / month: 20x '
-  + 'Google AI Ultra is available in more than 150 countries Create Learn';
-
-test('parses Ultra without the old footer marker', () => {
-  const r = parseGooglePlansBody(body);
-  assert.equal(r.success, true);
-  assert.deepEqual(r.plans.map((p) => [p.planSlug, p.priceMonthly]),
-    [['gemini-free', 0], ['google-ai-plus', 6.98], ['gemini-advanced', 28.98], ['google-ai-ultra', 139.98]]);
+test('US Ultra has two consumer tiers; Plus/Pro stay unknown', () => {
+  const result = parseGooglePlansBody('Google AI Plus $6.98/month Google AI Pro $28.99/month Google AI Ultra Starting at: USD 99.99/month USD 99.99/month: 5x USD 199.99/month: 20x');
+  assert.deepEqual(result.plans.map(plan => [plan.planSlug, plan.priceMonthly]), [
+    ['google-ai-plus', null], ['gemini-advanced', null], ['google-ai-ultra-5x', 99.99], ['google-ai-ultra-20x', 199.99],
+  ]);
+  for (const plan of result.plans.slice(0,2)) {
+    assert.equal(plan.currency, null);
+    assert.match(plan.notes ?? '', /needs-verification/);
+  }
+  assert.ok(result.plans.slice(2).every(plan => plan.currency === 'USD' && plan.region === 'US' && plan.tier !== 'enterprise'));
 });
 
-test('a missing plan price is a warning, not a failure', () => {
-  const r = parseGooglePlansBody(body.replace('Starting at: SGD 139.98/ month SGD 139.98/ month: 5x SGD 279.98 / month: 20x', 'Contact us'));
-  assert.equal(r.success, true);
-  assert.equal(r.plans.length, 3);
-  assert.match(r.errors?.[0] ?? '', /Google AI Ultra/);
+test('regional or bare dollar prices cannot become US Ultra rates', () => {
+  for (const body of ['Google AI Ultra SGD 139.99/month: 5x', 'Google AI Ultra $99.99/month: 5x $199.99/month: 20x']) {
+    const result = parseGooglePlansBody('Google AI Plus Google AI Pro ' + body);
+    assert.equal(result.plans.length, 2);
+    assert.ok(result.plans.every(plan => plan.priceMonthly === null));
+    assert.ok(result.errors?.length);
+  }
+});
+
+test('an empty or changed page fails without fabricated rows', () => {
+  const result = parseGooglePlansBody('');
+  assert.equal(result.success, false);
+  assert.deepEqual(result.plans, []);
 });

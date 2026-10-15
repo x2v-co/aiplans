@@ -108,6 +108,8 @@ Key tables:
 - **model_benchmark_scores** — Arena ELO and other benchmark values, joined
   via `benchmark_tasks` + `benchmark_metrics` (filter `name='ELO'` for Arena).
 
+Model retirement runbook: `docs/openai-model-shutdowns.md` (exact slugs, dry-run seeds, optional manual sync; audit 2026-10-15).
+
 Schema source of truth: `src/db/schema/index.ts` (Drizzle). Migrations
 applied via `scripts/migrate-data-accuracy.ts` using raw SQL + `postgres`
 client. No database-provider MCP plugin is required.
@@ -162,7 +164,7 @@ middleware made them unreachable anyway.
 ### Write boundary — `scripts/db/queries.ts`
 
 `upsertChannelPrice()` validates every write:
-- rejects null / negative prices
+- rejects negative prices; null base rates require two null prices, null verification, and a `[needs-verification]` note
 - rejects `output < input` (physically impossible for LLM per-token pricing)
 - writes `currency` + `price_unit` (long-standing bug pre-2026-04 was that
   these params were accepted but never written, so siliconflow CNY values

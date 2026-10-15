@@ -74,7 +74,7 @@ export async function getPriceIndexSnapshot(): Promise<PriceIndexSnapshot> {
              max(cp.last_verified) AS verified_at
       FROM models m
       JOIN api_channel_prices cp ON cp.model_id = m.id
-      WHERE m.type ILIKE '%llm%' AND cp.is_available = true
+      WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND m.type ILIKE '%llm%' AND cp.is_available = true
     `,
     sql<CurrentPriceRow[]>`
       SELECT m.id AS model_id, m.name AS model_name, m.slug AS model_slug,
@@ -86,7 +86,7 @@ export async function getPriceIndexSnapshot(): Promise<PriceIndexSnapshot> {
       FROM models m
       JOIN api_channel_prices cp ON cp.model_id = m.id AND cp.is_available = true
       JOIN providers p ON p.id = cp.provider_id
-      WHERE m.type ILIKE '%llm%' AND cp.input_price_per_1m > 0
+      WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND m.type ILIKE '%llm%' AND cp.input_price_per_1m > 0
     `,
     sql<ChangeRow[]>`
       SELECT model_name, model_slug, provider_name, provider_slug,
@@ -104,7 +104,7 @@ export async function getPriceIndexSnapshot(): Promise<PriceIndexSnapshot> {
         JOIN api_channel_prices cp ON cp.id = ph.channel_price_id
         JOIN models m ON m.id = cp.model_id
         JOIN providers p ON p.id = cp.provider_id
-        WHERE m.type ILIKE '%llm%'
+        WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND m.type ILIKE '%llm%'
         ORDER BY ph.channel_price_id, ph.recorded_at DESC
       ) latest_channel_changes
       ORDER BY recorded_at DESC

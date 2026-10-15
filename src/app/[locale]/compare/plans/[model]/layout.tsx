@@ -30,7 +30,7 @@ export async function generateMetadata({
       FROM models
       JOIN model_plan_mapping mpm ON mpm.model_id = models.id
       JOIN plans ON plans.id = mpm.plan_id
-      WHERE models.type ILIKE '%llm%' AND plans.pricing_model = 'subscription'
+      WHERE (models.shutdown_date IS NULL OR models.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND models.type ILIKE '%llm%' AND plans.pricing_model = 'subscription'
       GROUP BY models.id, models.slug, models.released_at, models.updated_at
     `,
   ]);

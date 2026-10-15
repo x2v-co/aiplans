@@ -19,7 +19,9 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
     SELECT
       (SELECT count(*)::int FROM plans WHERE provider_id = ${provider.id}) AS plans,
       (SELECT count(DISTINCT model_id)::int FROM api_channel_prices
-        WHERE provider_id = ${provider.id} AND is_available = true) AS models
+        WHERE provider_id = ${provider.id} AND is_available = true
+          AND EXISTS (SELECT 1 FROM models m WHERE m.id = model_id
+            AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date))) AS models
   `;
   const t = await getTranslations({ locale, namespace: 'providerPage' });
   return new ImageResponse(ogTemplate({

@@ -244,6 +244,7 @@ export function planEconomics(
   // showing even though no rate can be computed.
   if (plan.is_contact_sales) return { state: 'contact_sales' };
 
+  if (plan.price == null) return { state: 'unresearched' };
   const price = monthlyPriceUSD(plan);
   if (price == null) return { state: 'free', allowances };
 

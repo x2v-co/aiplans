@@ -1,87 +1,52 @@
-/** Google Gemini consumer plan scraper using official regional prices. */
+/** US Google AI tiers; never relabel an ambiguous regional $ price as USD. */
 import { chromium } from 'playwright';
 import type { PlanScraperResult, ScrapedPlan } from '../utils/plan-validator';
 
-const URL = 'https://gemini.google/subscriptions';
+const URL = 'https://gemini.google/subscriptions/';
+export const GOOGLE_UNVERIFIED_NOTE = '[needs-verification] Plus/Pro region and currency unverified in 2026-10-15 audit; prices withheld. Source: ' + URL;
 
 export async function scrapeGoogleGeminiPlans(): Promise<PlanScraperResult> {
-  console.log('🔄 Fetching Google Gemini subscription plans...');
   const browser = await chromium.launch({ headless: true });
-  let body = '';
   try {
-    const page = await browser.newPage({ locale: 'en-SG' });
-    const response = await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
-    if (!response?.ok()) {
-      return { source: 'GoogleGemini-Plans', success: false, plans: [], errors: [`HTTP ${response?.status() ?? 'no response'}`] };
-    }
-    await page.waitForFunction(
-      () => /Google AI Plus/i.test(document.body.innerText) && /Google AI Pro/i.test(document.body.innerText)
-        && /Google AI Ultra/i.test(document.body.innerText),
-      undefined,
-      { timeout: 15_000 }
-    );
-    body = (await page.locator('body').innerText()).replace(/\s+/g, ' ').trim();
+    const page = await browser.newPage({ locale: 'en-US' });
+    const response = await page.goto(URL + '?hl=en-US', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    if (!response?.ok()) throw new Error(`HTTP ${response?.status() ?? 'no response'}`);
+    await page.waitForFunction(() => /Google AI Ultra/i.test(document.body.innerText), undefined, { timeout: 15_000 });
+    return parseGooglePlansBody(await page.locator('body').innerText());
   } catch (error) {
     return { source: 'GoogleGemini-Plans', success: false, plans: [], errors: [String(error)] };
   } finally {
     await browser.close();
   }
-
-  return parseGooglePlansBody(body);
 }
 
-/** Parse the flattened page text. Exported for tests. */
-export function parseGooglePlansBody(body: string): PlanScraperResult {
-  const currency = body.match(/\b(SGD|USD|JPY|KRW|EUR|GBP|CNY)\s*0\s*\/\s*month/i)?.[1]?.toUpperCase();
-  if (currency !== 'SGD') {
-    return {
-      source: 'GoogleGemini-Plans', success: false, plans: [],
-      errors: [`Unsupported or missing regional currency: ${currency || 'unknown'}`],
-    };
+export function parseGooglePlansBody(raw: string): PlanScraperResult {
+  const body = raw.replace(/\s+/g, ' ').trim();
+  if (!/Google AI Plus/i.test(body) || !/Google AI Pro/i.test(body)) {
+    return { source: 'GoogleGemini-Plans', success: false, plans: [], errors: ['Google plan headings missing; nothing inferred from an empty or changed page.'] };
   }
-
-  const definitions = [
-    { start: 'Free', end: 'Google AI Plus', slug: 'gemini-free', name: 'Gemini Free', tier: 'free' as const },
-    { start: 'Google AI Plus', end: 'Google AI Pro', slug: 'google-ai-plus', name: 'Google AI Plus', tier: 'basic' as const },
-    { start: 'Google AI Pro', end: 'Google AI Ultra', slug: 'gemini-advanced', name: 'Google AI Pro', tier: 'pro' as const },
-    // The page no longer has the "Looking for AI solutions" footer after Ultra
-    // (checked 2026-10-12); end at the availability note or the end of the body.
-    { start: 'Google AI Ultra', end: 'Google AI Ultra is available|Looking for AI solutions|$', slug: 'google-ai-ultra', name: 'Google AI Ultra', tier: 'enterprise' as const },
+  const common = { priceYearly: null, pricingModel: 'subscription' as const,
+    features: [], accessFromChina: false, paymentMethods: [], isOfficial: true };
+  // These two rows self-heal previously mislabelled prices even on a regional response.
+  const plans: ScrapedPlan[] = [
+    { ...common, planName: 'Google AI Plus', planSlug: 'google-ai-plus', tier: 'basic', priceMonthly: null,
+      currency: null, region: 'needs-verification', notes: GOOGLE_UNVERIFIED_NOTE },
+    { ...common, planName: 'Google AI Pro', planSlug: 'gemini-advanced', tier: 'pro', priceMonthly: null,
+      currency: null, region: 'needs-verification', notes: GOOGLE_UNVERIFIED_NOTE },
   ];
-
-  const plans: ScrapedPlan[] = [];
-  const warnings: string[] = [];
-  for (const definition of definitions) {
-    const section = body.match(new RegExp(`${definition.start}[\\s\\S]*?(?=${definition.end})`, 'i'))?.[0];
-    // First price in the section is the headline ("Starting at: ..." for Ultra).
-    const price = section?.match(new RegExp(`${currency}\\s*([\\d.]+)\\s*\\/\\s*month`, 'i'));
-    if (!price) {
-      // Keep the last known row (plan cleanup is log-only) instead of failing
-      // the whole provider; surfaced as a non-fatal warning.
-      warnings.push(`Price not found for ${definition.name}; keeping last known value`);
-      continue;
-    }
-    plans.push({
-      planName: definition.name,
-      planSlug: definition.slug,
-      priceMonthly: Number(price[1]),
-      priceYearly: null,
-      pricingModel: 'subscription',
-      tier: definition.tier,
-      features: [],
-      region: 'global',
-      accessFromChina: false,
-      paymentMethods: ['Credit Card', 'Debit Card', 'Google Pay'],
-      isOfficial: true,
-      currency: 'SGD',
-    });
+  const ultra = body.match(/Google AI Ultra[\s\S]*?(?=Google AI Ultra is available|Looking for AI solutions|$)/i)?.[0] ?? '';
+  // Explicit USD/US$ or an explicit United States region is required; locale alone isn't proof.
+  const us = /\bUSD\b|US\$|United States/i.test(body) && !/\bSGD\b|S\$/i.test(body);
+  for (const [multiplier, expected] of [[5, 99.99], [20, 199.99]] as const) {
+    const price = new RegExp(`(?:USD\\s*|US\\$\\s*|\\$\\s*)${String(expected).replace('.', '\\.')}\\s*\\/\\s*month\\s*:?\\s*${multiplier}x\\b`, 'i');
+    if (!us || !price.test(ultra)) continue;
+    plans.push({ ...common, planName: `Google AI Ultra (${multiplier}x)`, planSlug: `google-ai-ultra-${multiplier}x`,
+      priceMonthly: expected, tier: 'pro', currency: 'USD', region: 'US',
+      features: [`${multiplier}x`], notes: `US ${multiplier}x tier. Source: ${URL}` });
   }
-
-  console.log(`📦 Found ${plans.length} Google plans in ${currency}`);
-  if (plans.length === 0) {
-    return { source: 'GoogleGemini-Plans', success: false, plans: [], errors: warnings };
-  }
-  return { source: 'GoogleGemini-Plans', success: true, plans, errors: warnings.length ? warnings : undefined };
+  const complete = plans.length === 4;
+  return { source: 'GoogleGemini-Plans', success: true, plans,
+    ...(complete ? {} : { errors: ['US Ultra 5x/20x prices not both identified; no regional price substituted.'] }) };
 }
 
 if (require.main === module) scrapeGoogleGeminiPlans().then(result => console.log(JSON.stringify(result, null, 2)));

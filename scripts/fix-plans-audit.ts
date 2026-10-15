@@ -67,13 +67,7 @@ interface PlanUpdate {
 }
 
 const PLAN_UPDATES: PlanUpdate[] = [
-  // ─ Google ──────────────────────────────────────────
-  // gemini-advanced was $197/$2364 — clearly a 10x decimal error or stale data.
-  // Per https://one.google.com/about/google-ai-plans/ Google AI Pro is $19.99/mo
-  // and $199.99/yr.
-  { providerSlug: 'google', planSlug: 'gemini-advanced',
-    price: 19.99, annual: 199.99, currency: 'USD',
-    reason: 'Google AI Pro (formerly Gemini Advanced) is $19.99/mo, $199.99/yr — DB had $197/$2364 (10x decimal error)' },
+  // Google: use scripts/sql/2026-10-15-p0-pricing.sql; Plus/Pro need verification.
 
   // ─ Anthropic ───────────────────────────────────────
   // Pro monthly is $20, annual billing is $204/yr ($17/mo effective).
@@ -322,19 +316,7 @@ const NEW_PLANS: NewPlan[] = [
     notes: 'Contact sales. Reported floor ~$50k/yr, ~50-70 seat minimum. SCIM, SSO, audit, 500K context.',
     reason: 'Claude Enterprise referenced in plan-model-slugs.ts' },
 
-  // ─── Google AI ───────────────────────────────────────────────────────
-  { providerSlug: 'google', slug: 'google-ai-plus',
-    name: 'Google AI Plus', tier: 'basic', pricingModel: 'subscription',
-    price: 7.99, annual: null, currency: 'USD',
-    notes: 'Includes 200 GB storage. Monthly billing only.',
-    reason: 'Google AI Plus tier (cheapest paid Gemini sub)' },
-  { providerSlug: 'google', slug: 'google-ai-ultra',
-    name: 'Google AI Ultra', tier: 'enterprise', pricingModel: 'subscription',
-    price: 249.99, annual: null, currency: 'USD',
-    notes: 'Includes 30 TB storage + YouTube Premium. Monthly billing only.',
-    reason: 'Google AI Ultra tier — top consumer Gemini plan' },
-  // google-one-ai-premium is the legacy name for "Gemini Advanced" / "Google AI Pro"
-  // The existing google/gemini-advanced row already represents this. Skip.
+  // Google AI: audit 2026-10-15 supersedes these legacy fixed prices.
 
   // ─── Mistral Le Chat ─────────────────────────────────────────────────
   // Note: plan-model-slugs.ts uses 'mistral-pro' / 'mistral-team' as keys, but

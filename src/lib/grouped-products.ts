@@ -39,6 +39,7 @@ export interface ChannelPrice extends PriceSchedule {
   cached_input_price_per_1m?: number | null;
   currency: CurrencyCode;
   price_unit: PriceUnit;
+  notes?: string | null;
   rate_limit?: string | null;
   is_available?: boolean;
   /** Slug of the model row this price belongs to (variants merge into one card). */
@@ -81,6 +82,7 @@ export interface GroupedProduct {
     access_from_china?: boolean;
   };
   modelCategory?: string | null;
+  shutdown_date?: string | null;
   baseName: string;
   versions: ChannelPrice[];
   hasChinaVersion: boolean;
@@ -132,9 +134,9 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
   // Provider pages include every available model category sold by that channel.
   const [modelsData, channelPrices, benchmarkScores] = await Promise.all([
     sql<any[]>`
-      SELECT id, name, slug, provider_ids, model_category, context_window, released_at, created_at
+      SELECT id, name, slug, provider_ids, model_category, context_window, released_at, created_at, shutdown_date::text
       FROM models
-      WHERE (
+      WHERE (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND (
         (${providerId ?? null}::int IS NULL AND type = ${type || 'llm'})
         OR (${providerId ?? null}::int IS NOT NULL AND EXISTS (
           SELECT 1 FROM api_channel_prices cp
@@ -158,6 +160,7 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
         cp.regular_cached_input_price_per_1m,
         cp.currency,
         cp.price_unit,
+        cp.notes,
         cp.rate_limit,
         cp.is_available,
         COALESCE((
@@ -314,6 +317,7 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
         created_at: product.created_at ?? null,
         providers: displayProvider,
         modelCategory: product.model_category,
+        shutdown_date: product.shutdown_date ?? null,
         baseName,
         versions: productPrices as ChannelPrice[],
         hasChinaVersion,
@@ -336,6 +340,7 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
       // Standard (non-snapshot, non-variant) model owns the card identity;
       // a dated snapshot or variant that created the group first yields to it.
       if (!variant && isCanonicalSlug(product.slug)) {
+        group.shutdown_date = product.shutdown_date ?? null;
         group.id = product.id;
         group.name = product.name;
         group.slug = product.slug;

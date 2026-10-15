@@ -33,7 +33,7 @@ export async function getPlanComparison(
   const products = await sql<any[]>`
     SELECT id, name, slug, provider_ids, context_window
     FROM models
-    WHERE slug = ANY(${sql.array(slugCandidates, TEXT_ARRAY)})
+    WHERE (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND slug = ANY(${sql.array(slugCandidates, TEXT_ARRAY)})
   `;
 
   if (products.length === 0) return null;

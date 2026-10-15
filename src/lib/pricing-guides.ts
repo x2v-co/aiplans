@@ -673,7 +673,7 @@ export async function getPricingGuideModels(guide: PricingGuide): Promise<GuideM
     FROM models m
     JOIN api_channel_prices cp ON cp.model_id = m.id AND cp.is_available = true
     JOIN providers p ON p.id = cp.provider_id
-    WHERE lower(m.slug) LIKE ANY(${sql.array(guide.queryPatterns, TEXT_ARRAY)})
+    WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND lower(m.slug) LIKE ANY(${sql.array(guide.queryPatterns, TEXT_ARRAY)})
       -- Language models only: model_category is the current taxonomy (migration 023);
       -- legacy models.type may be 'llm' or 'coding_tool' etc., so only drop subscription rows.
       AND COALESCE(m.model_category, 'text') = 'text'

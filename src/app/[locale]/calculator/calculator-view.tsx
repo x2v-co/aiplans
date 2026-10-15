@@ -83,6 +83,7 @@ export default function CalculatorView({
   };
 
   const estimates = selectedProducts.flatMap((product) => product.versions
+    .filter(channel => channel.input_price_per_1m != null && channel.output_price_per_1m != null)
     .filter((channel) => region === 'all' || channel.providers.region === region)
     .map((channel) => ({
       product,

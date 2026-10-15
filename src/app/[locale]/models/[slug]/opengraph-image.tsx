@@ -49,6 +49,8 @@ export default async function Image({
       SELECT input_price_per_1m, currency, promo_ends_at, regular_input_price_per_1m
       FROM api_channel_prices
       WHERE model_id = ${model.id} AND is_available = true
+        AND EXISTS (SELECT 1 FROM models m WHERE m.id = model_id
+          AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date))
     `,
     sql<any[]>`
       SELECT s.value

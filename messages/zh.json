@@ -348,10 +348,10 @@
     "copyright": "© x2v"
   },
   "modelShutdown": {
-    "scheduled": "计划于 {date} 从 OpenAI API 移除",
-    "removed": "已于 {date} 从 OpenAI API 移除",
     "replacement": "推荐替代模型：{model}",
-    "source": "OpenAI 弃用公告"
+    "source": "OpenAI 弃用公告",
+    "retiring": "将于 {date} 退役",
+    "retired": "已于 {date} 退役"
   },
   "modelPricing": {
     "introductoryPrice": "入门价截至 {date}（太平洋时间），之后 {input} / {output} 每百万 token"

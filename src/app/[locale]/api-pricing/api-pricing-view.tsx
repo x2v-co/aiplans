@@ -1,5 +1,6 @@
 "use client";
 
+import { ModelLifecycleBadge } from '@/components/model-lifecycle-badge';
 import { Fragment, useState, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
 import { useTranslations } from '@/lib/translations';
@@ -463,6 +464,7 @@ export default function ApiPricingView({
                             >
                               {formatModelName(product.name)}
                             </Link>
+                            <ModelLifecycleBadge shutdownDate={product.shutdown_date} />
                             {product.benchmark_arena_elo && (
                               <Badge variant="outline" className="ml-2" title="Agent Arena net improvement">
                                 Agent {product.benchmark_arena_elo}%
@@ -734,6 +736,11 @@ export default function ApiPricingView({
                                     />
                                   </TableCell>
                                 </TableRow>
+                                {cp.notes?.startsWith('[needs-verification]') && (
+                                  <TableRow>
+                                    <TableCell colSpan={6} className="text-xs text-amber-700 dark:text-amber-400">{cp.notes}</TableCell>
+                                  </TableRow>
+                                )}
                                 {(cp.price_variants?.length ?? 0) > 1 && (
                                   <TableRow>
                                     <TableCell colSpan={6} className="bg-zinc-50/70 dark:bg-zinc-900/50">

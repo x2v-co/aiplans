@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ModelLifecycleBadge } from '@/components/model-lifecycle-badge';
 import type { Metadata } from 'next';
 import { ArrowRight, GitCompareArrows, ReceiptText } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
@@ -152,6 +153,7 @@ export default async function ModelsCatalogPage({ params }: { params: Promise<{ 
                           {logo && <img src={logo} alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-lg object-contain" />}
                           <div className="min-w-0">
                             <h3 className="truncate text-lg font-semibold group-hover:text-blue-600">{formatModelName(model.name)}</h3>
+                            <ModelLifecycleBadge shutdownDate={model.shutdown_date} />
                             <p className="truncate text-sm text-zinc-500">{model.providers?.name ?? (isZh ? '未知供应商' : 'Unknown provider')}</p>
                           </div>
                         </div>

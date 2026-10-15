@@ -45,7 +45,7 @@ export async function GET() {
                p.slug AS provider_slug
         FROM models m
         LEFT JOIN providers p ON p.id = m.provider_ids[1]
-        WHERE m.type = 'llm'
+        WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND m.type = 'llm'
           AND (
             EXISTS (
               SELECT 1 FROM api_channel_prices cp

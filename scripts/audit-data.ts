@@ -42,6 +42,7 @@
  *   C22 variants.*              — channel price variant integrity (one headline,
  *                                   no inverted prices, no stale active rows)
  */
+import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput } from './utils/audit-price-policy';
 import { db } from './db/queries';
 import { databaseSql } from './db/postgres-admin';
 import { resolveSelector, type ModelSelector, type SelectableModel } from '../src/lib/plan-selector';
@@ -139,7 +140,7 @@ async function main() {
   const [modelsRes, providersRes, pricesRes, plansRes, mappingsRes, ratesRes] = await Promise.all([
     db.from('models').select('id, name, slug, provider_ids, type'),
     db.from('providers').select('id, name, slug, type'),
-    db.from('api_channel_prices').select('id, model_id, provider_id, input_price_per_1m, output_price_per_1m, is_available, last_verified, updated_at, currency'),
+    db.from('api_channel_prices').select('id, model_id, provider_id, input_price_per_1m, output_price_per_1m, is_available, last_verified, updated_at, currency, notes'),
     db.from('plans').select(planColumns),
     db.from('model_plan_mapping').select(MAPPING_SOURCES ? 'id, model_id, plan_id, source' : 'id, model_id, plan_id'),
     db.from('exchange_rates').select('from_currency, to_currency, rate, valid_at').eq('is_active', true).order('valid_at', { ascending: false }),
@@ -264,11 +265,16 @@ async function main() {
     const freeTier = isFreeTier(p.model_id) || isVerifiedFreePrice(p.model_id, p.provider_id);
     const nonToken = isNonTokenPriced(p.model_id);
 
+    if (isExplicitlyUnverifiedPrice(p)) {
+      add('prices.needs_verification', 'warning', p.notes, ctx);
+      continue;
+    }
+    const freeOutput = isVerifiedFreeOutput(modelById.get(p.model_id)?.slug, providerById.get(p.provider_id)?.slug, p.input_price_per_1m);
     if (!freeTier && !nonToken) {
       if (p.input_price_per_1m == null || p.input_price_per_1m <= 0) {
         add('prices.zero_or_null', 'critical', `input_price_per_1m=${p.input_price_per_1m}`, ctx);
       }
-      if (p.output_price_per_1m == null || p.output_price_per_1m <= 0) {
+      if (p.output_price_per_1m == null || p.output_price_per_1m < 0 || (p.output_price_per_1m === 0 && !freeOutput)) {
         add('prices.zero_or_null', 'critical', `output_price_per_1m=${p.output_price_per_1m}`, ctx);
       }
     }

@@ -56,6 +56,8 @@ export async function GET(
       JOIN models m ON m.id = cp.model_id
       WHERE cp.model_id = ${productIdNum}
         AND cp.is_available = true
+        AND EXISTS (SELECT 1 FROM models m WHERE m.id = cp.model_id
+          AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date))
       ORDER BY cp.input_price_per_1m ASC NULLS LAST
     `;
 

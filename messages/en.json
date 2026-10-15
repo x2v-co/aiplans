@@ -348,8 +348,8 @@
     "copyright": "© x2v"
   },
   "modelShutdown": {
-    "scheduled": "Scheduled for removal from the OpenAI API on {date}",
-    "removed": "Removed from the OpenAI API on {date}",
+    "retiring": "Retiring on {date}",
+    "retired": "Retired on {date}",
     "replacement": "recommended replacement: {model}",
     "source": "OpenAI deprecation announcement"
   },

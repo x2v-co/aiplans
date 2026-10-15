@@ -67,7 +67,10 @@
     "seed:provider-links": "tsx scripts/seed-provider-links.ts",
     "seed:provider-links:dry-run": "tsx scripts/seed-provider-links.ts --dry-run",
     "seed:reseller-promos": "tsx scripts/seed-reseller-promos.ts",
-    "seed:reseller-promos:dry-run": "tsx scripts/seed-reseller-promos.ts --dry-run"
+    "seed:reseller-promos:dry-run": "tsx scripts/seed-reseller-promos.ts --dry-run",
+    "sync:openai-deprecations": "tsx scripts/sync-openai-deprecations.ts",
+    "sync:openai-deprecations:dry-run": "tsx scripts/sync-openai-deprecations.ts --dry-run",
+    "test": "node scripts/test-unit.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

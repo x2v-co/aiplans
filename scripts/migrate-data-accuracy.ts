@@ -906,6 +906,10 @@ const MIGRATIONS: Migration[] = [
     name: 'provider_console_url',
     sql: readFileSync(new URL('../drizzle/0004_provider_console_url.sql', import.meta.url), 'utf8'),
   },
+  {
+    name: '031_add_model_deprecated_at',
+    sql: readFileSync(new URL('../drizzle/0006_model_deprecated_at.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 async function main() {

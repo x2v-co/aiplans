@@ -10,7 +10,7 @@ export const getComparisonSeoData = cache(async (slug: string) => {
   const candidates = getModelSlugCandidates(slug);
   const models = await sql<Array<{ id: number; name: string; slug: string }>>`
     SELECT id, name, slug FROM models
-    WHERE slug = ANY(${sql.array(candidates, TEXT_ARRAY)})
+    WHERE (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND slug = ANY(${sql.array(candidates, TEXT_ARRAY)})
   `;
   const model = models.find((row) => row.slug === slug) ?? models[0];
   if (!model) return null;
@@ -22,7 +22,7 @@ export const getComparisonSeoData = cache(async (slug: string) => {
     FROM plans p
     JOIN model_plan_mapping mpm ON mpm.plan_id = p.id
     JOIN models m ON m.id = mpm.model_id
-    WHERE m.slug = ANY(${sql.array(candidates, TEXT_ARRAY)})
+    WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND m.slug = ANY(${sql.array(candidates, TEXT_ARRAY)})
     ORDER BY p.id
   `;
   return { model, plans };
@@ -48,13 +48,13 @@ export const getApiPricingSeoData = cache(async () => {
         SELECT cp.updated_at FROM api_channel_prices cp
         JOIN models m ON m.id = cp.model_id
         JOIN providers p ON p.id = cp.provider_id
-        WHERE m.type = 'llm' AND cp.is_available = true
+        WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND m.type = 'llm' AND cp.is_available = true
         UNION ALL
         SELECT v.updated_at FROM api_channel_price_variants v
         JOIN models m ON m.id = v.model_id
         JOIN api_channel_prices cp ON cp.model_id = v.model_id AND cp.provider_id = v.provider_id
         JOIN providers p ON p.id = cp.provider_id
-        WHERE m.type = 'llm' AND cp.is_available = true
+        WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND m.type = 'llm' AND cp.is_available = true
           AND v.is_available = true AND v.is_public = true
       ) price_updates
     `,

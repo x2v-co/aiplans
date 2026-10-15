@@ -5,10 +5,14 @@ export function modelShutdownNotice(shutdownDate: string | null | undefined, loc
   if (!/^\d{4}-\d{2}-\d{2}$/.test(shutdownDate) || !Number.isFinite(date.getTime())
     || date.toISOString().slice(0, 10) !== shutdownDate) return null;
   return {
-    // No time of day is published. Use past tense only after the UTC date passes.
-    status: now.toISOString().slice(0, 10) > shutdownDate ? 'removed' as const : 'scheduled' as const,
+    // Retirement takes effect on the published UTC date.
+    status: now.toISOString().slice(0, 10) >= shutdownDate ? 'retired' as const : 'retiring' as const,
     date: new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
       dateStyle: 'long', timeZone: 'UTC',
     }).format(date),
   };
+}
+
+export function modelLifecycleStatus(shutdownDate: string | null | undefined, now = new Date()): 'active' | 'retiring' | 'retired' {
+  return modelShutdownNotice(shutdownDate, 'en', now)?.status ?? 'active';
 }

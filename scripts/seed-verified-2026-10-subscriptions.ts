@@ -1,14 +1,14 @@
 #!/usr/bin/env tsx
 /**
  * Seed The X Subscription tiers (including Cursor), Muse Code tiers and
- * muse-wonder-1.0 API price, plus an unverified SubQ Snap placeholder,
+ * muse-wonder-1.0 API price,
  * and mark legacy SuperGrok / X Premium / Cursor plans closed to new users
  * (kept, not deleted). Dry-run by default; --apply writes.
  */
 import { db } from './db/queries';
 import {
   MUSE_CODE_PLANS, MUSE_WONDER_MODEL,
-  VERIFIED_AT_ISO, X_SUBSCRIPTION_PLANS, SUBQ_SNAP_PLAN, type SubscriptionSeed,
+  VERIFIED_AT_ISO, X_SUBSCRIPTION_PLANS, type SubscriptionSeed,
 } from './data/verified-2026-10-subscriptions';
 import { markLegacyPlans } from './data/mark-legacy-plans';
 import { subscriptionPlanRow } from './data/subscription-plan-row';
@@ -34,20 +34,6 @@ async function ensureMetaProvider(providers: Map<string, ProviderRow>): Promise<
   const { data, error } = await db.from('providers').insert({
     name: 'Meta', slug: 'meta', website: 'https://dev.meta.ai', pricing_url: 'https://dev.meta.ai/docs/overview',
     region: 'global', type: 'official', access_from_china: false,
-  }).select('id, slug, name').single();
-  if (error) throw error;
-  return data as ProviderRow;
-}
-
-async function ensureSubQProvider(providers: Map<string, ProviderRow>): Promise<ProviderRow> {
-  const existing = providers.get(SUBQ_SNAP_PLAN.providerSlug);
-  if (existing) return existing;
-  console.log('  ➕ provider subq (unverified placeholder; metadata unknown)');
-  if (!APPLY) return { id: -2, slug: 'subq', name: 'SubQ' };
-  const { data, error } = await db.from('providers').insert({
-    name: 'SubQ', slug: 'subq', website: null, pricing_url: null,
-    region: null, currency: null, type: null, access_from_china: null,
-    notes: 'Unverified catalog placeholder for SubQ Snap; provider metadata needs research.',
   }).select('id, slug, name').single();
   if (error) throw error;
   return data as ProviderRow;
@@ -126,7 +112,6 @@ async function main() {
   if (!xai) { console.log('  ⚠ missing provider xai'); failures++; }
   else for (const seed of X_SUBSCRIPTION_PLANS) await upsertPlan(seed, xai);
   await markLegacy(providers);
-  await upsertPlan(SUBQ_SNAP_PLAN, await ensureSubQProvider(providers));
 
   const meta = await ensureMetaProvider(providers);
   if (meta) {

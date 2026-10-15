@@ -262,8 +262,9 @@ async function savePlansToDatabase(
         access_from_china: plan.accessFromChina,
         payment_methods: plan.paymentMethods,
         is_official: plan.isOfficial,
-        last_verified: new Date(),
-        currency: plan.currency || 'USD',
+        last_verified: plan.priceMonthly == null ? null : new Date(),
+        currency: plan.currency === undefined ? 'USD' : plan.currency,
+        notes: plan.notes,
         price_unit: 'per_month',
       });
 

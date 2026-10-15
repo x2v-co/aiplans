@@ -59,6 +59,8 @@ export interface ScraperResult {
   success: boolean;
   prices: ScrapedPrice[];
   variants?: ScrapedPriceVariant[];
+  /** Explicitly unknown official base prices; never represent these as zero. */
+  unverifiedPrices?: Array<{ modelName: string; modelSlug: string; notes: string }>;
   errors?: string[];
   /**
    * Item-level problems (e.g. one model with a malformed price) that did not

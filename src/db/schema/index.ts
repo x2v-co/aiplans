@@ -50,6 +50,7 @@ export const models = pgTable('models', {
   activeParameters: text('active parameters'),
   providerIds: integer('provider_ids').array(),
   releasedAt: timestamp('released_at', { withTimezone: true }),
+  deprecatedAt: date('deprecated_at'), // announcement date; NULL = unknown
   shutdownDate: date('shutdown_date'), // API removal date; NULL = no recorded announcement
   replacementModel: text('replacement_model'),
   deprecationSourceUrl: text('deprecation_source_url'),

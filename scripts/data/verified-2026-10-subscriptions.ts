@@ -3,8 +3,8 @@
  * so it can be unit-tested. Applied by scripts/seed-verified-2026-10-subscriptions.ts.
  *
  * Shared pools and legacy closure use existing notes markers. Third-party
- * quota coverage has dedicated fields (migration 028). SubQ Snap is an
- * unverified placeholder requested for the catalog, not part of the verified data.
+ * quota coverage has dedicated fields (migration 028). SubQ Snap is API-only
+ * (audit 2026-10-15); never create a subscription placeholder.
  */
 import type { ThirdPartyCoverage } from '../../src/lib/third-party-coverage';
 export const VERIFIED_AT_ISO = '2026-10-13T01:00:00.000Z';
@@ -121,18 +121,6 @@ export const MUSE_CODE_PLANS: SubscriptionSeed[] = [
   muse('muse-code-power', 'Muse Code Power', 2, 50, '20x Everyday usage', true),
   muse('muse-code-maximum', 'Muse Code Maximum', 3, 200, '80x Everyday usage', true),
 ];
-
-export const SUBQ_SNAP_PLAN: SubscriptionSeed = {
-  providerSlug: 'subq', slug: 'subq-snap', name: 'SubQ Snap',
-  tier: null, tierRank: null, price: null, annualPrice: null, currency: null, priceUnit: null,
-  region: null, accessFromChina: null, isOfficial: null, billingGranularity: null, verifiedAt: null,
-  thirdPartyCoverage: 'unknown', thirdPartyCoverageNote: null,
-  // Keep the schema's default chat/chatbot taxonomy until the product is researched.
-  planKind: 'chat', planCategory: 'chatbot', planLine: 'subq-snap',
-  modelSlugs: [], modelSelector: null, quotas: null, quotaNote: null, features: [],
-  noteLines: ['Unverified catalog placeholder: no SubQ Snap pricing, quota or model-access data exists in the repository. TODO: verify pricing, plan taxonomy, model access and third-party quota coverage.'],
-  sourceUrl: null, sourceQuote: null,
-};
 
 export const MUSE_WONDER_MODEL = {
   slug: 'muse-wonder',

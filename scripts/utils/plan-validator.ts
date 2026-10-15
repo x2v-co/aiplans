@@ -3,13 +3,14 @@ export type CurrencyCode = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'KRW' | 'SGD'
 export interface ScrapedPlan {
   planName: string;
   planSlug: string;
-  priceMonthly: number;
+  priceMonthly: number | null;
+  notes?: string;
   priceYearly?: number | null;
   pricingModel: 'subscription' | 'token_pack' | 'pay_as_you_go';
   tier: 'free' | 'basic' | 'pro' | 'team' | 'enterprise';
 
   // Currency (optional, will be inferred from region if not provided)
-  currency?: CurrencyCode;
+  currency?: CurrencyCode | null;
 
   // Limits
   dailyMessageLimit?: number;
