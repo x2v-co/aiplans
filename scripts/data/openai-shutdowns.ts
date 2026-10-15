@@ -66,12 +66,19 @@ export function planOpenAIShutdowns(rows: readonly ShutdownModelRow[], shutdowns
     // Never call normalizeSlug, resolve a redirect, or match a display name here.
     const exact = bySlug.get(apiId);
     const row = exact;
-    if (!row) return {
-      apiId, slug: null, status: shutdown.snapshotFamily ? 'ambiguous' : 'not-present',
-      reason: shutdown.snapshotFamily
-        ? `No exact snapshot row; ${shutdown.snapshotFamily} is a separate target.`
-        : 'No exact model slug.',
-    };
+    if (!row) {
+      if (!shutdown.snapshotFamily) return { apiId, slug: null, status: 'not-present', reason: 'No exact model slug.' };
+      // Deterministic: a dated snapshot never writes to its family row. Report whether the
+      // family row is itself scheduled for the same date (covered) or not (not cataloged).
+      const familyDates = shutdowns.filter(s => s.ids.includes(shutdown.snapshotFamily!)).map(s => s.shutdownDate);
+      const covered = bySlug.has(shutdown.snapshotFamily) && familyDates.includes(shutdown.shutdownDate);
+      return {
+        apiId, slug: null, status: covered ? 'covered-by-family' : 'snapshot-not-cataloged',
+        reason: covered
+          ? `Snapshot not cataloged; family row ${shutdown.snapshotFamily} carries the same ${shutdown.shutdownDate} shutdown.`
+          : `Snapshot not cataloged; family row ${shutdown.snapshotFamily} is not updated (different or no shutdown date).`,
+      };
+    }
     const previousDate = desiredDates.get(row.id);
     if (previousDate && previousDate !== shutdown.shutdownDate) throw new Error(`Conflicting shutdown dates for ${row.slug}; nothing written.`);
     desiredDates.set(row.id, shutdown.shutdownDate);

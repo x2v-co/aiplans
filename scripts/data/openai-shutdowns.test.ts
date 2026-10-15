@@ -61,3 +61,15 @@ test('conflicting notices fail even if one of the dates already matches the DB',
     { ids:['gpt-5.1'], shutdownDate:'2027-04-01' },
   ]), /Conflicting shutdown dates/);
 });
+
+test('dated snapshots resolve deterministically and never write the family row', () => {
+  const row = (id: number, slug: string) => ({ id, slug, shutdown_date: null, deprecated_at: null, replacement_model: null, deprecation_source_url: null });
+  const plan = planOpenAIShutdowns([row(1, 'gpt-4o'), row(2, 'gpt-4.1')]);
+  const status = (id: string) => plan.matches.find(m => m.apiId === id)?.status;
+  assert.equal(status('gpt-4o-2024-08-06'), 'covered-by-family');
+  assert.equal(status('gpt-4.1-2025-04-14'), 'covered-by-family');
+  assert.equal(status('gpt-4o-2024-05-13'), 'snapshot-not-cataloged');
+  assert.equal(status('gpt-4o-mini-2024-07-18'), 'snapshot-not-cataloged');
+  assert.equal(plan.matches.some(m => m.status === 'ambiguous'), false);
+  assert.equal(plan.updates.find(u => u.slug === 'gpt-4o')?.to.shutdown_date, '2027-01-14');
+});

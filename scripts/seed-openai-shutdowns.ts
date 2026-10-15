@@ -16,7 +16,10 @@ export async function runShutdownSeed(shutdowns: readonly Shutdown[], mode: 'app
       const plan = planOpenAIShutdowns(rows, shutdowns);
       console.log(JSON.stringify(plan, null, 2));
       console.log(`Matched ${plan.matches.filter(item => item.slug).length} API IDs; ${plan.updates.length} model rows would change.`);
-      console.log('IDs without a matching row:', plan.matches.filter(item => !item.slug).map(item => item.apiId).join(', ') || '(none)');
+      for (const status of ['covered-by-family', 'snapshot-not-cataloged', 'not-present']) {
+        const ids = plan.matches.filter(item => item.status === status).map(item => item.apiId);
+        console.log(`${status} (${ids.length}):`, ids.join(', ') || '(none)');
+      }
       // Include unchanged models: a later run must retire channels when the date arrives.
       // Use the transaction's UTC day and post-update dates so the preview matches --apply.
       const [clock] = await tx<Array<{ today: string }>>`SELECT (now() AT TIME ZONE 'UTC')::date::text AS today`;
