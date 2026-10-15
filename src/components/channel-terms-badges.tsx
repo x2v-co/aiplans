@@ -1,3 +1,4 @@
+"use client";
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { channelTermBadges, type ChannelTermsFields } from '@/lib/channel-terms';

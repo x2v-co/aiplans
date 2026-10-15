@@ -1,3 +1,4 @@
+"use client";
 import { useLocale, useTranslations } from 'next-intl';
 import type { ChannelPriceVariant } from '@/lib/grouped-products';
 

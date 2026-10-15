@@ -1,3 +1,4 @@
+"use client";
 import { useTranslations } from 'next-intl';
 
 /** Seeded source notes stay available on both subscription comparison surfaces.
