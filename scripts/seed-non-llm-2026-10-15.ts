@@ -2,6 +2,7 @@
 /** Optional SRE seed. Offline preview by default; --db-dry-run reads production read-only; --apply writes atomically. */
 import { NON_LLM_CATALOG, MOONDREAM_SHUTDOWN } from '../src/lib/non-llm-catalog';
 import { seedNonLlm } from './data/non-llm-seed';
+import { runRehearsable } from './db/rehearsal';
 
 const args = process.argv.slice(2);
 const modes = ['--apply', '--dry-run', '--db-dry-run'];
@@ -18,15 +19,11 @@ async function main() {
   }
   const { databaseSql: sql } = await import('./db/postgres-admin');
   try {
-    await sql.begin('isolation level serializable', async rawTx => {
-      const tx = rawTx as unknown as typeof sql;
-      // Read-only transaction: any accidental write fails in PostgreSQL itself.
-      if (dbDryRun) await tx`SET TRANSACTION READ ONLY`;
-      const steps = await seedNonLlm(tx, !dbDryRun);
-      console.log(JSON.stringify(steps, null, 2));
-      console.log(dbDryRun ? `DB dry-run (read-only; no writes): ${steps.length} changes would be applied. Negative IDs are new rows.`
-        : `Applied: ${steps.length} changes.`);
-    });
+    // --db-dry-run performs the real writes and then rolls back, so constraint errors show up now.
+    const steps = await runRehearsable(sql, !dbDryRun, tx => seedNonLlm(tx as unknown as typeof sql, true));
+    console.log(JSON.stringify(steps, null, 2));
+    console.log(dbDryRun ? `DB dry-run (writes executed then ROLLBACK; nothing committed): ${steps.length} changes would be applied.`
+      : `Applied: ${steps.length} changes.`);
   } finally { await sql.end(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
