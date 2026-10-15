@@ -33,6 +33,57 @@ Keep estimates as history. In a transaction, lock the current row for the same p
 
 Use confidence to express evidence quality: direct controlled measurements or explicit official allowances can justify high; reproducible but incomplete measurements may justify medium; community statements and unverified derivations remain low. Record conflicting evidence instead of silently selecting a favorable value. Automated text changes create evidence for review; they do not update estimates or establish a quota.
 
+## Pay-as-you-go list-price baseline
+
+`src/lib/quota/pay-as-you-go.ts` computes the baseline directly from a joined `api_channel_prices` row and a `usage_mixes` workload, using `engine.ts`'s `blendedPricePerMTok`. No subscription purchase or assumed monthly spend is involved:
+
+```text
+USD/MTok = (cache-read USD/MTok × cache_read_pct
+          + ordinary-input USD/MTok × input_pct
+          + output USD/MTok × output_pct) / 100
+coding-high-cache: 97 / 2.5 / 0.5
+chat:              0 / 75 / 25
+```
+
+The seed reads both mixes from `usage_mixes` and checks that they match these assumptions. It includes available, non-retired API channel rows across **all provider types**, including clouds and aggregators, using the same availability and UTC shutdown-date criteria as provider pages. It uses channel headline prices from `api_channel_prices`, not expanded route/tier variants or external model-producer prices. Per-million-token prices are used directly; per-thousand-token prices are multiplied by 1,000. Non-token billing units, unknown/null units or currencies, missing/invalid/negative prices, and missing/invalid/future source verification dates are explicitly reported as skipped. Zero prices are valid. There is no hardcoded provider list or fallback price catalog.
+
+For non-USD rows (including CNY), the script supplies the existing `getExchangeRateSync(currency, 'USD')` rate snapshot to the pure function. Each price is multiplied by that rate and the unit factor before blending. The notes retain the exact factor, original currency/unit/rates, converted rates and conversion method. This reuses the project's synchronous FX cache; it does not fetch live FX or claim the cached rate is a newly verified market rate. Missing cache-read prices use the ordinary input price for the entire cached share, with an explicit note; an explicit zero cache price stays zero. Cache-write fees remain outside this three-category comparison. Introductory prices resolve through `effectivePrice` at the calculation time. Expired promotions require complete regular input/output rates; missing regular cache prices fall back to regular input, never the expired promotional cache rate.
+
+### Representation without a new migration
+
+Existing 0005 constraints are sufficient; no SQL or Drizzle constraint changes are needed:
+
+| Field | PAYG meaning |
+| --- | --- |
+| `plan_id` | `NULL`; there is no purchased plan or synthetic `plans` row. |
+| `plan_slug` | Reserved namespace `payg:<provider-slug>`, e.g. `payg:openrouter`. |
+| `served_model` | Exact `models.slug`, retaining distinct models and variants. |
+| `window` | `monthly`, solely the existing comparison dimension; no reset or monthly cap is asserted. No new `payg` window value. |
+| `est_tokens_low`, `est_tokens_high` | Both exactly `1000000`: a **priced reference basket**, not a token allowance. These must never be displayed or processed as subscription quota. |
+| `usage_mix_id` | `coding-high-cache` or `chat`. |
+| `confidence` | `high` for direct arithmetic on the channel's stored official list prices; not confidence in a measured workload or allowance. |
+| `verified_at` | Source `api_channel_prices.last_verified`, not the seed execution date. Rerunning cannot make an old price look freshly verified. |
+| `notes` | JSON with `kind='payg-list-price'`, `version=1`, numeric `blended_price_usd_per_mtok`, formula and substitution, exact mix, currency/FX, cache treatment, source row ID/URL/notes/verification date and promotion basis. |
+
+Consumers must recognize the `payg:` namespace / notes kind before interpreting token fields. Read the numeric USD/MTok baseline from `notes.blended_price_usd_per_mtok`; do not run `realUnitPrice` against a fictitious plan fee. This representation also supports free API list prices without dividing by zero. Existing pages and app queries gain no dependency on quota tables, so missing or empty 0005 tables cannot cause a new page error or HTTP 500. Any future display integration must check table availability, treat absent/empty estimates as no baseline, and retain the existing price display.
+
+### Seed modes and version history
+
+These are **operator commands requiring a database connection**, not offline validation commands. Supply `DATABASE_URL` through the environment; this seed deliberately does not load `.env` files or `postgres-admin`.
+
+```bash
+npm run seed:quota-payg                 # default: read-only transaction; counts + up to 3 samples
+npm run seed:quota-payg -- --dry-run     # same read-only preview
+npm run seed:quota-payg:db-dry-run       # serializable real writes, then ROLLBACK
+npm run seed:quota-payg:apply            # serializable real writes, then COMMIT
+```
+
+The script probes `to_regclass` before querying quota tables and fails with **“需先应用 0005”** if `quota_estimates` or `usage_mixes` is absent. It does not run migrations. Preview/rehearsal/apply report new versions, superseded versions, unchanged rows, skipped source rows with reasons, and samples containing the complete proposed fields/notes. Rehearsal rolls back inserts and supersession links; PostgreSQL sequence values may still advance.
+
+For writes it locks current PAYG rows and follows the transaction/version workflow above: insert the replacement noncurrent, mark the old version noncurrent with `superseded_by`, then activate the replacement. Historical prices, token fields, notes and verification timestamps remain intact. Identical inputs (including source verification, source notes and FX) are unchanged even on another day; changed inputs create new versions. Duplicate provider/model/mix source identities abort before writes. Concurrent initial inserts or serialization failures abort the entire transaction; rerun after the competing operation completes. Skipped, unavailable, removed or retired source rows do not silently delete or retire existing history; inspect their source/verification dates before using an older baseline.
+
+Implementation and tests are DB-free. No database preview, rehearsal, apply or migration was executed during this change. Review 0005 status on the intended target before an operator runs these commands; production status is not inferred here.
+
 ## Quota text monitor (scheduled daily)
 
 ```bash
@@ -93,8 +144,9 @@ systemctl list-timers aiplans-quota-monitor.timer
 ```bash
 npx tsc --noEmit
 npx tsc --noEmit -p scripts/tsconfig.quota.json
-npx tsx --test src/db/schema/quota.test.ts src/lib/quota/engine.test.ts scripts/utils/quota-text-monitor.test.ts scripts/quota-text-monitor.test.ts
-npm run lint -- src/db/schema/index.ts src/db/schema/quota.ts src/db/schema/quota.test.ts src/lib/quota/engine.ts src/lib/quota/engine.test.ts scripts/config/quota-text-sources.ts scripts/utils/quota-text-monitor.ts scripts/utils/quota-text-monitor.test.ts scripts/quota-text-monitor.ts scripts/quota-text-monitor.test.ts
+npx tsx --test src/db/schema/quota.test.ts src/lib/quota/engine.test.ts src/lib/quota/pay-as-you-go.test.ts scripts/seed-quota-payg.test.ts scripts/utils/quota-text-monitor.test.ts scripts/quota-text-monitor.test.ts
+npm test
+npm run lint
 ```
 
-The dedicated script TypeScript config covers the new monitor files because the app's root config excludes `scripts/`. Tests use synthetic arithmetic, HTML fixtures and injected clients; they require no network or database. CI runs all new test files and both TypeScript checks.
+The dedicated script TypeScript config covers the monitor and PAYG seed files because the app's root config excludes `scripts/`. Tests use synthetic arithmetic, HTML fixtures and injected clients; they require no network or database. `npm test` / `scripts/test-unit.mjs` recursively discovers both PAYG test files, and PR CI runs that command and both TypeScript checks. PAYG tests exercise both mixes, USD/CNY conversion, cache fallback/zero rates, promotion expiry, exclusions, read-only preview, pre-0005 errors, empty data, idempotence, supersession ordering and rollback on rehearsal/failure.
