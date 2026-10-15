@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
-  type AnyPgColumn, bigint, boolean, check, date, index, integer, numeric,
+  type AnyPgColumn, bigint, boolean, check, date, index, integer, jsonb, numeric,
   pgTable, serial, text, timestamp, unique, uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { plans } from './index';
@@ -75,3 +75,37 @@ export type UsageMix = typeof usageMixes.$inferSelect;
 export type QuotaEstimate = typeof quotaEstimates.$inferSelect;
 export type QuotaEvidence = typeof quotaEvidence.$inferSelect;
 export type QuotaTextSnapshot = typeof quotaTextSnapshots.$inferSelect;
+
+export const quotaUsageSamples = pgTable('quota_usage_samples', {
+  id: serial('id').primaryKey(),
+  planSlug: text('plan_slug').notNull(),
+  collector: text('collector').notNull(),
+  // Opaque local alias only; never copy an email or account identifier from logs.
+  accountLabel: text('account_label').notNull(),
+  observedAt: timestamp('observed_at', { withTimezone: true }).notNull(),
+  window: text('window').notNull(),
+  windowMinutes: integer('window_minutes'),
+  resetsAt: timestamp('resets_at', { withTimezone: true }),
+  usedPct: numeric('used_pct'),
+  tokensInput: bigint('tokens_input', { mode: 'bigint' }),
+  tokensCached: bigint('tokens_cached', { mode: 'bigint' }),
+  tokensCacheWrite: bigint('tokens_cache_write', { mode: 'bigint' }),
+  tokensOutput: bigint('tokens_output', { mode: 'bigint' }),
+  tokensReasoning: bigint('tokens_reasoning', { mode: 'bigint' }),
+  model: text('model'),
+  raw: jsonb('raw'),
+  confidence: text('confidence').notNull().default('high'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  check('quota_usage_samples_collector', sql`${table.collector} IN ('codex-log', 'ccusage', 'cursor-dashboard', 'grok-bot', 'claude-usage')`),
+  check('quota_usage_samples_account_label', sql`${table.accountLabel} ~ '^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$'`),
+  check('quota_usage_samples_window', sql`${table.window} IN ('5h', 'daily', 'weekly', 'monthly')`),
+  check('quota_usage_samples_window_minutes', sql`${table.windowMinutes} > 0`),
+  check('quota_usage_samples_used_pct', sql`${table.usedPct} >= 0 AND ${table.usedPct} <= 100`),
+  check('quota_usage_samples_tokens', sql`${table.tokensInput} >= 0 AND ${table.tokensCached} >= 0 AND ${table.tokensCacheWrite} >= 0 AND ${table.tokensOutput} >= 0 AND ${table.tokensReasoning} >= 0`),
+  check('quota_usage_samples_confidence', sql`${table.confidence} IN ('high', 'medium', 'low')`),
+  unique('quota_usage_samples_observation_unique').on(table.collector, table.accountLabel, table.observedAt, table.window),
+  index('quota_usage_samples_plan_observed_idx').on(table.planSlug, table.observedAt.desc()),
+]);
+
+export type QuotaUsageSample = typeof quotaUsageSamples.$inferSelect;
