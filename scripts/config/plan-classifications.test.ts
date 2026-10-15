@@ -88,3 +88,18 @@ test('US Ultra rungs remain consumer chat plans in the existing Google line', ()
   const rungs = ['google-ai-ultra-5x', 'google-ai-ultra-20x'].map(slug => CLASSIFICATIONS.find(row => row.providerSlug === 'google' && row.planSlug === slug));
   assert.deepEqual(rungs.map(row => [row?.kind, row?.line, row?.rank]), [['chat','google-one',3],['chat','google-one',4]]);
 });
+
+test('Le Chat excludes retired/speech models; Code Assist excludes image models (2026-10-15 mappings review)', async () => {
+  
+  const all = CLASSIFICATIONS;
+  const m = (slug: string, provider: string) => ({ id: slug.length, slug, providerSlugs: [provider], elo: null });
+  const mistral = ['mistral-mistral-large-2512', 'mistral-devstral-2512', 'mistral-mistral-saba', 'mistral-voxtral-small-24b-2507', 'codestral-2508'].map(s => m(s, 'mistral'));
+  const google = ['gemini-3.1-pro', 'gemini-3-pro-image', 'gemini-3.1-flash-image'].map(s => m(s, 'google'));
+  const pick = (plan: string, catalog: ReturnType<typeof m>[], provider: string) =>
+    resolveSelector(all.find((p: { planSlug: string }) => p.planSlug === plan)!.selector, catalog, [provider]).models.map(x => x.slug).sort();
+  for (const plan of ['le-chat-pro', 'le-chat-team', 'le-chat-enterprise'])
+    assert.deepEqual(pick(plan, mistral, 'mistral'), ['codestral-2508', 'mistral-mistral-large-2512']);
+  for (const plan of ['gemini-code-assist-individual', 'gemini-code-assist-standard', 'gemini-code-assist-enterprise'])
+    assert.deepEqual(pick(plan, google, 'google'), ['gemini-3.1-pro']);
+  assert.ok(pick('google-ai-plus', google, 'google').includes('gemini-3-pro-image'));
+});

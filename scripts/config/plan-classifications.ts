@@ -44,6 +44,11 @@ export interface Classification {
 // ────────────────────────────────────────────────────────────────────────────
 const ANTHROPIC_NOISE = ['claude-opus', 'claude-sonnet', 'claude-haiku', '*-fast'];
 const GOOGLE_NOISE = ['gemini-pro', 'gemini-flash', '*-preview*'];
+// Gemini Code Assist is an IDE/CLI coding product; image-generation models are not part of it.
+const CODE_ASSIST_EXCLUDE = [...GOOGLE_NOISE, '*-image'];
+// Le Chat/Vibe routes chat to Large/Medium/Small; Saba is retired (2025-09-30), Devstral 2 retired 2026-07-31
+// (docs.mistral.ai/models), and Voxtral is a speech model, not a selectable chat model.
+const LE_CHAT_EXCLUDE = ['mistral-mistral-saba*', 'mistral-devstral-2512', 'mistral-voxtral-*'];
 const MOONSHOT_NOISE = ['kimi', '*-us'];
 const MINIMAX_LEGACY = ['minimax-01', 'minimax-m1'];
 
@@ -169,13 +174,13 @@ export const CLASSIFICATIONS: Classification[] = [
     selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
     reason: 'US AI Ultra 20x; preserves the existing Ultra catalog selector' },
   { providerSlug: 'google', planSlug: 'gemini-code-assist-individual', kind: 'coding', line: 'gemini-code-assist', rank: 0,
-    selector: { families: ['gemini'], current_only: true, exclude: GOOGLE_NOISE },
+    selector: { families: ['gemini'], current_only: true, exclude: CODE_ASSIST_EXCLUDE },
     reason: 'Code Assist is an IDE/CLI product, not a chat subscription — separate line, not a tier of Google One' },
   { providerSlug: 'google', planSlug: 'gemini-code-assist-standard', kind: 'coding', line: 'gemini-code-assist', rank: 1,
-    selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
+    selector: { families: ['gemini'], exclude: CODE_ASSIST_EXCLUDE },
     reason: 'Standard: 1500 model requests/day shared across CLI and Agent' },
   { providerSlug: 'google', planSlug: 'gemini-code-assist-enterprise', kind: 'coding', line: 'gemini-code-assist', rank: 2,
-    selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
+    selector: { families: ['gemini'], exclude: CODE_ASSIST_EXCLUDE },
     reason: 'Enterprise: 2000 requests/day plus private-repo customization' },
 
   // ─ Baidu.
@@ -217,13 +222,13 @@ export const CLASSIFICATIONS: Classification[] = [
     selector: { families: ['mistral-small', 'mistral-medium'], current_only: true },
     reason: 'Free tier is Small/Medium class only' },
   { providerSlug: 'mistral', planSlug: 'le-chat-pro', kind: 'chat', line: 'le-chat', rank: 1,
-    selector: { families: ['mistral', 'codestral'] },
+    selector: { families: ['mistral', 'codestral'], exclude: LE_CHAT_EXCLUDE },
     reason: 'Pro adds Large and Codestral. The Ministral edge models need no exclude — they fall outside the mistral-* families' },
   { providerSlug: 'mistral', planSlug: 'le-chat-team', kind: 'chat', line: 'le-chat', rank: 2,
-    selector: { families: ['mistral', 'codestral'] },
+    selector: { families: ['mistral', 'codestral'], exclude: LE_CHAT_EXCLUDE },
     reason: 'Team is Pro per-seat' },
   { providerSlug: 'mistral', planSlug: 'le-chat-enterprise', kind: 'chat', line: 'le-chat', rank: 3,
-    selector: { families: ['mistral', 'codestral'] },
+    selector: { families: ['mistral', 'codestral'], exclude: LE_CHAT_EXCLUDE },
     reason: 'Enterprise is contact-sales; same catalog' },
 
   // ─ Moonshot / Kimi.
