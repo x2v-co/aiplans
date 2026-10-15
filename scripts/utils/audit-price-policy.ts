@@ -8,6 +8,10 @@ export function isExplicitlyUnverifiedPrice(row: {
 }
 
 /** Audit A2 #2 explicitly confirms this paid-input/free-output API. */
+/** OpenRouter /api/v1/models + /endpoints (checked 2026-10-15): ScaleDown's only endpoint bills input only, completion "0". */
+const OPENROUTER_INPUT_ONLY = new Set(['scaledown-summarize', 'scaledown-extract']);
+
 export function isVerifiedFreeOutput(modelSlug: string | undefined, providerSlug: string | undefined, input: number | null) {
-  return modelSlug === 'subq-snap' && providerSlug === 'subq' && input === 0.05;
+  if (modelSlug === 'subq-snap' && providerSlug === 'subq' && input === 0.05) return true;
+  return OPENROUTER_INPUT_ONLY.has(modelSlug ?? '') && providerSlug === 'openrouter' && input != null && input > 0;
 }

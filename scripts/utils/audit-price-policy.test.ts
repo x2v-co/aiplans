@@ -15,4 +15,7 @@ test('SubQ free output exception cannot hide zero input or another channel error
   assert.equal(isVerifiedFreeOutput('subq-snap','subq',0), false);
   assert.equal(isVerifiedFreeOutput('subq-snap','openrouter',0.05), false);
   assert.equal(isVerifiedFreeOutput('other','subq',0.05), false);
+  assert.equal(isVerifiedFreeOutput('scaledown-summarize','openrouter',0.04), true);
+  assert.equal(isVerifiedFreeOutput('scaledown-extract','openrouter',0), false);
+  assert.equal(isVerifiedFreeOutput('scaledown-extract','scaledown',0.04), false);
 });

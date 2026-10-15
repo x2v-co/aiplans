@@ -82,11 +82,19 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
     if (belongsTo4) {
       const conflict = rows.api_channel_price_variants.some(r => r.model_id === large4.id && r.provider_id === or.id && r.variant_key === v.variant_key);
       if (conflict) throw new Error(`Large 4 variant conflict ${v.variant_key}; review before retry.`);
-      await save('api_channel_price_variants', v, { model_id: large4.id, is_headline: false }, `move Large 4/${v.variant_key}`);
+      // The OpenRouter default route stays the headline; endpoint rows never are.
+      await save('api_channel_price_variants', v, { model_id: large4.id, is_headline: v.variant_key === 'openrouter-auto' }, `move Large 4/${v.variant_key}`);
     } else {
       // Existing floor/default rows may contain stale mixed prices. Daily scrape rebuilds them.
       await save('api_channel_price_variants', v, { is_available: false, is_headline: false }, `retire stale Mistral/${v.variant_key}`);
     }
+  }
+
+  // Repair rows moved by an earlier apply that cleared the default-route headline.
+  const large4Variants = rows.api_channel_price_variants.filter(r => r.model_id === large4.id && r.provider_id === or.id && r.is_available !== false);
+  const auto = large4Variants.find(r => r.variant_key === 'openrouter-auto');
+  if (auto && !large4Variants.some(r => r.is_headline === true)) {
+    await save('api_channel_price_variants', auto, { is_headline: true }, 'Large 4 headline/openrouter-auto');
   }
 
   // Source-owned static verticals, just like the audited world-model catalog.
