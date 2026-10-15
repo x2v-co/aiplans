@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { WorldModelFacts, WorldModelTiers } from '@/components/world-model-catalog';
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
@@ -97,7 +98,7 @@ export default function VerticalModelDetailPage({
             <CardContent className="space-y-4 text-sm">
               <div>
                 <div className="text-zinc-500">{isZh ? '输入 → 输出' : 'Input → Output'}</div>
-                <div className="mt-1 font-medium">{item.inputModalities?.join(', ')} → {item.outputModalities?.join(', ')}</div>
+                <div className="mt-1 font-medium">{item.inputModalities?.join(', ') || (kind === 'world-model' ? '—' : '')} → {item.outputModalities?.join(', ') || (kind === 'world-model' ? '—' : '')}</div>
               </div>
               <div>
                 <div className="text-zinc-500">{isZh ? '计价单位' : 'Pricing unit'}</div>
@@ -111,11 +112,13 @@ export default function VerticalModelDetailPage({
               </div>
               <div>
                 <div className="text-zinc-500">{isZh ? '最后核验' : 'Last verified'}</div>
-                <div className="mt-1 font-medium">{item.lastVerified ?? '—'}</div>
+                <div className="mt-1 font-medium">{(kind === 'world-model' ? item.verifiedAt : item.lastVerified) ?? '—'}</div>
               </div>
             </CardContent>
           </Card>
         </section>
+
+        {kind === 'world-model' && <WorldModelFacts item={item} locale={locale} />}
 
         <section className="mt-10">
           {benchmarks.length > 0 ? (
@@ -141,6 +144,7 @@ export default function VerticalModelDetailPage({
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
+                {kind === 'world-model' && item.capabilities.length === 0 && '—'}
                 {item.capabilities.map((capability) => (
                   <Badge key={capability} variant="outline">{capability}</Badge>
                 ))}
@@ -166,6 +170,7 @@ export default function VerticalModelDetailPage({
           </Card>
         </section>
 
+        {kind === 'world-model' ? <WorldModelTiers item={item} locale={locale} /> : (
         <section className="mt-10 grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
@@ -239,6 +244,7 @@ export default function VerticalModelDetailPage({
             </CardContent>
           </Card>
         </section>
+        )}
       </main>
     </div>
   );

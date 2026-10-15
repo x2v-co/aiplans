@@ -9,8 +9,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: '/world-models',
     title: {
-      en: 'AI World Models Tracked · Genie, Cosmos, World Labs | aiplans.dev',
-      zh: 'AI 世界模型追踪 · Genie、Cosmos、World Labs | aiplans.dev',
+      en: 'AI World Models · Genie 3, Marble, Cosmos 3, Oasis | aiplans.dev',
+      zh: 'AI 世界模型 · Genie 3、Marble、Cosmos 3、Oasis | aiplans.dev',
     },
     description: {
       en: 'Track world models and simulation models by availability, input and output modality, interactivity, physical consistency, latency, frame rate and API maturity.',

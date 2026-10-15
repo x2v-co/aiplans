@@ -185,8 +185,11 @@ function auditStaticCatalog() {
 
     requireNonEmpty(item, 'slug');
     requireNonEmpty(item, 'modelCategory');
-    requireNonEmpty(item, 'inputModalities');
-    requireNonEmpty(item, 'outputModalities');
+    // Unknown world-model specifications remain blank until verified.
+    if (item.kind !== 'world-model') {
+      requireNonEmpty(item, 'inputModalities');
+      requireNonEmpty(item, 'outputModalities');
+    }
     requireNonEmpty(item, 'access');
     requireNonEmpty(item, 'pricingUnit');
     requireNonEmpty(item, 'pricingConfidence');
@@ -198,6 +201,14 @@ function auditStaticCatalog() {
     }
     if (item.kind === 'music-model' && item.modelCategory !== 'music') {
       critical(item, `music-model must have modelCategory=music, got ${item.modelCategory}`);
+    }
+    if (item.kind === 'world-model') {
+      requireNonEmpty(item, 'verifiedAt');
+      if (item.verifiedAt && !ISO_DATE.test(item.verifiedAt)) critical(item, 'verifiedAt must be YYYY-MM-DD');
+      if ((item.priceStatus === 'undisclosed' || item.priceStatus === 'not_applicable') &&
+          (item.pricePerUnit !== undefined || item.costPerMinute !== undefined)) {
+        critical(item, 'undisclosed/not_applicable must not have numeric prices');
+      }
     }
     if (item.kind === 'world-model' && item.modelCategory !== 'world') {
       critical(item, `world-model must have modelCategory=world, got ${item.modelCategory}`);
@@ -218,7 +229,7 @@ function auditStaticCatalog() {
       }
     }
 
-    if (item.pricingConfidence === 'verified') {
+    if (item.pricingConfidence === 'verified' && item.kind !== 'world-model') {
       warning(item, 'pricingConfidence=verified should only be used after numeric prices are in usage_prices or plan rows');
     }
 
@@ -230,7 +241,7 @@ function auditStaticCatalog() {
 
 async function auditDatabaseDrift() {
   const { db } = await import('./db/queries');
-  const strictRows = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind));
+  const strictRows = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && item.kind !== 'world-model');
   const slugs = strictRows.map((item) => item.slug).filter(Boolean) as string[];
 
   const planSlugs = [...new Set([

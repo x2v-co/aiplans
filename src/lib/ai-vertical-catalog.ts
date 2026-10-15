@@ -36,7 +36,7 @@ export interface AiCatalogItem {
   bestFor: string;
   url?: string;
 
-  /** Required for model-category catalog rows (video/music/world). */
+  /** Model-category metadata; unknown world-model specifications remain unset. */
   modelCategory?: AiModelCategory;
   inputModalities?: AiCatalogModality[];
   outputModalities?: AiCatalogModality[];
@@ -47,6 +47,23 @@ export interface AiCatalogItem {
   lastVerified?: string;
   notes?: string;
   benchmarkSummaries?: AiBenchmarkSummary[];
+  billingUnit?: 'per_second' | 'per_world' | 'per_token' | 'subscription_included' | 'contract' | 'open_source_self_host';
+  pricePerUnit?: number;
+  currency?: string;
+  resolutionTier?: string;
+  fps?: number;
+  realtime?: boolean;
+  maxSessionLen?: string;
+  memoryHorizon?: string;
+  outputType?: ('video_stream' | '3d_asset' | 'panorama')[];
+  accessNote?: string;
+  license?: string;
+  selfHostHw?: string;
+  priceStatus?: 'priced' | 'subscription_included' | 'undisclosed' | 'not_applicable';
+  costPerMinute?: number;
+  verifiedAt?: string;
+  needsVerification?: string[];
+  planTiers?: { name: string; price: number; currency: string; credits?: number; note?: string }[];
 }
 
 const VERIFIED_AT = '2026-09-15';
@@ -61,8 +78,8 @@ const VERIFIED_AT = '2026-09-15';
  * - lastVerified records when this catalog entry was manually checked.
  *
  * This intentionally avoids pretending credits, generations, seconds and research
- * previews are equivalent to token pricing. Exact numeric prices move into
- * plans / usage_prices only after the source can be parsed and audited.
+ * previews are equivalent to token pricing. World-model rows store source-backed
+ * pricing here; the DB supplies optional logos and benchmark summaries only.
  */
 export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   // Agent / coding-agent plans
@@ -728,114 +745,133 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     lastVerified: VERIFIED_AT,
   },
 
-  // World models
+  // World models: static membership, order, specifications and pricing are authoritative.
   {
-    kind: 'world-model',
-    slug: 'genie-2',
-    name: 'Genie / Genie 2',
-    provider: 'Google DeepMind',
-    providerSlug: 'google',
-    status: 'research',
-    pricing: 'Research preview',
-    unit: 'availability',
-    capabilities: ['interactive worlds', 'prompt-to-environment', 'control'],
-    bestFor: 'Tracking interactive world generation research.',
-    modelCategory: 'world',
-    inputModalities: ['text', 'image'],
-    outputModalities: ['simulation', 'video'],
-    access: ['research-preview'],
-    pricingUnit: 'not commercially priced',
-    pricingConfidence: 'not-commercial',
-    sourceUrls: [
-      { label: 'Genie 2', url: 'https://deepmind.google/discover/blog/genie-2-a-large-scale-foundation-world-model/', publisher: 'Google DeepMind' },
+    kind: 'world-model', slug: 'genie-3', name: 'Genie 3 / Project Genie',
+    provider: 'Google DeepMind', providerSlug: 'google', status: 'available',
+    pricing: 'Included with Google AI Ultra ($199.99/month)', unit: 'subscription',
+    billingUnit: 'subscription_included', priceStatus: 'subscription_included',
+    resolutionTier: '720p', fps: 24, realtime: true, maxSessionLen: 'a few minutes',
+    outputType: ['video_stream'],
+    capabilities: ['interactive worlds', 'control'], bestFor: 'Exploring interactive generated worlds with Google AI Ultra.',
+    modelCategory: 'world', inputModalities: ['text', 'image'], outputModalities: ['video', 'simulation'],
+    access: ['consumer-app'], accessNote: 'Google AI Ultra', pricingUnit: 'subscription included', pricingConfidence: 'verified',
+    planTiers: [
+      { name: 'Google AI Ultra', price: 199.99, currency: 'USD', note: 'Per month; includes Project Genie.' },
+      { name: 'Google AI Ultra ($99.99 tier)', price: 99.99, currency: 'USD', note: 'Per month; Project Genie entitlement unverified — official sources conflict.' },
     ],
-    lastVerified: VERIFIED_AT,
+    needsVerification: ['Whether the $99.99 Ultra tier includes Project Genie is unverified — official sources conflict'],
+    url: 'https://gemini.google/subscriptions/',
+    sourceUrls: [{ label: 'Google AI Ultra subscriptions', url: 'https://gemini.google/subscriptions/', publisher: 'Google' }],
+    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
   },
   {
-    kind: 'world-model',
-    slug: 'nvidia-cosmos',
-    name: 'Cosmos',
-    provider: 'NVIDIA',
-    status: 'preview',
-    pricing: 'Developer / platform access',
-    unit: 'compute, API',
-    capabilities: ['robotics', 'simulation', 'physical AI'],
-    bestFor: 'Robotics and physical-world simulation workflows.',
-    modelCategory: 'world',
-    inputModalities: ['text', 'image', 'video', 'robotics'],
-    outputModalities: ['video', 'simulation'],
-    access: ['open-weights', 'cloud-api', 'enterprise'],
-    pricingUnit: 'self-hosted compute / cloud API',
-    pricingConfidence: 'unit-only',
-    sourceUrls: [
-      { label: 'NVIDIA Cosmos', url: 'https://www.nvidia.com/en-us/ai/cosmos/', publisher: 'NVIDIA' },
-      { label: 'Cosmos models', url: 'https://build.nvidia.com/nvidia/cosmos', publisher: 'NVIDIA' },
+    kind: 'world-model', slug: 'world-labs-marble', name: 'Marble', provider: 'World Labs', providerSlug: 'world-labs',
+    status: 'available', pricing: 'API 1.0/1.1 world: 1,500 credits ≈ $1.20/world', unit: 'world',
+    billingUnit: 'per_world', priceStatus: 'priced', pricePerUnit: 1.20, currency: 'USD', outputType: ['3d_asset'],
+    capabilities: ['3D worlds', 'scene generation', 'spatial intelligence'], bestFor: 'Generating explorable 3D assets through Marble or its API.',
+    modelCategory: 'world', inputModalities: ['image', 'text'], outputModalities: ['3d'],
+    access: ['consumer-app', 'api'], pricingUnit: 'per world', pricingConfidence: 'verified',
+    planTiers: [
+      { name: 'Free', price: 0, currency: 'USD', credits: 7000 },
+      { name: 'Standard', price: 20, currency: 'USD', credits: 20000, note: 'Per month.' },
+      { name: 'Pro', price: 35, currency: 'USD', credits: 40000, note: 'Per month; commercial license.' },
+      { name: 'Max', price: 95, currency: 'USD', credits: 120000, note: 'Per month.' },
+      { name: 'API', price: 1, currency: 'USD', credits: 1250, note: 'Minimum purchase $5; API credits only.' },
     ],
-    lastVerified: VERIFIED_AT,
+    notes: '1.1-plus uses up to 3,000 credits (≈ $2.40/world); draft uses 150 credits. Subscription and API credits are not interchangeable. API ≈ $1.20/world is cheaper than any paid subscription (≈ 1,580 credits/world → ≈ $1.25–$1.58/world).',
+    needsVerification: ['Commercial-use rights for API-generated worlds unverified'],
+    url: 'https://docs.worldlabs.ai/api/pricing',
+    sourceUrls: [{ label: 'Marble API pricing', url: 'https://docs.worldlabs.ai/api/pricing', publisher: 'World Labs' }],
+    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
   },
   {
-    kind: 'world-model',
-    slug: 'world-labs',
-    name: 'World Labs',
-    provider: 'World Labs',
-    status: 'preview',
-    pricing: 'Product preview',
-    unit: 'availability',
-    capabilities: ['3D worlds', 'scene generation', 'spatial intelligence'],
-    bestFor: '3D world generation and spatial AI tracking.',
-    modelCategory: 'world',
-    inputModalities: ['image', 'text'],
-    outputModalities: ['3d', 'simulation'],
-    access: ['research-preview', 'waitlist'],
-    pricingUnit: 'availability',
-    pricingConfidence: 'unknown',
-    sourceUrls: [
-      { label: 'World Labs', url: 'https://www.worldlabs.ai/', publisher: 'World Labs' },
-    ],
-    lastVerified: VERIFIED_AT,
+    kind: 'world-model', slug: 'nvidia-cosmos-3', name: 'Cosmos 3', provider: 'NVIDIA', providerSlug: 'nvidia',
+    status: 'available', pricing: 'Via fal: Cosmos 3 Super image-to-video $0.05/second', unit: 'second',
+    billingUnit: 'per_second', priceStatus: 'priced', pricePerUnit: 0.05, currency: 'USD', costPerMinute: 3.00,
+    realtime: false, outputType: ['video_stream'], license: 'NVIDIA Open Model License',
+    capabilities: ['physical AI', 'image-to-video'], bestFor: 'Physical-world video generation with open weights or fal hosting.',
+    modelCategory: 'world', inputModalities: ['image'], outputModalities: ['video'],
+    access: ['open-weights', 'cloud-api'], accessNote: 'Open weights; channel price via fal.', pricingUnit: 'per second via fal', pricingConfidence: 'verified',
+    needsVerification: ['NVIDIA first-party hosted price not verified'],
+    url: 'https://fal.ai/models/nvidia/cosmos-3-super/image-to-video',
+    sourceUrls: [{ label: 'fal Cosmos 3 Super image-to-video pricing', url: 'https://fal.ai/models/nvidia/cosmos-3-super/image-to-video', publisher: 'fal' }],
+    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
   },
   {
-    kind: 'world-model',
-    slug: 'jepa-world-models',
-    name: 'JEPA-style world models',
-    provider: 'Meta / research',
-    status: 'research',
-    pricing: 'Research',
-    unit: 'availability',
-    capabilities: ['representation learning', 'planning', 'world modeling'],
-    bestFor: 'Research tracking rather than buyer comparison.',
-    modelCategory: 'world',
-    inputModalities: ['image', 'video'],
-    outputModalities: ['simulation'],
-    access: ['research-preview', 'open-weights'],
-    pricingUnit: 'not commercially priced',
-    pricingConfidence: 'not-commercial',
-    sourceUrls: [
-      { label: 'JEPA overview', url: 'https://ai.meta.com/blog/yann-lecun-ai-model-i-jepa/', publisher: 'Meta AI' },
-      { label: 'V-JEPA', url: 'https://ai.meta.com/blog/v-jepa-yann-lecun-ai-model-video-joint-embedding-predictive-architecture/', publisher: 'Meta AI' },
-    ],
-    lastVerified: VERIFIED_AT,
+    kind: 'world-model', slug: 'decart-oasis-3-preview', name: 'Oasis 3 Preview', provider: 'Decart', providerSlug: 'decart',
+    status: 'preview', pricing: '$0.02/second', unit: 'second', billingUnit: 'per_second', priceStatus: 'priced',
+    pricePerUnit: 0.02, currency: 'USD', costPerMinute: 1.20, resolutionTier: '720p', realtime: true, outputType: ['video_stream'],
+    capabilities: ['interactive worlds', 'real-time generation'], bestFor: 'Real-time interactive world generation through the Decart API.',
+    modelCategory: 'world', inputModalities: ['image'], outputModalities: ['video', 'simulation'],
+    access: ['api'], pricingUnit: 'per second', pricingConfidence: 'verified',
+    notes: 'Mirage, renamed Lucy Restyle Live ($0.01/second), is style transfer, not a world model, and is excluded.',
+    url: 'https://docs.platform.decart.ai/getting-started/pricing',
+    sourceUrls: [{ label: 'Decart API pricing', url: 'https://docs.platform.decart.ai/getting-started/pricing', publisher: 'Decart' }],
+    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
   },
   {
-    kind: 'world-model',
-    slug: 'gamengen',
-    name: 'GameNGen-style game worlds',
-    provider: 'Research',
-    status: 'research',
-    pricing: 'Research',
-    unit: 'availability',
-    capabilities: ['game simulation', 'interactive video', 'world state'],
-    bestFor: 'Tracking neural game and interactive environment generation.',
-    modelCategory: 'world',
-    inputModalities: ['video', 'simulation'],
-    outputModalities: ['video', 'simulation'],
-    access: ['research-preview'],
-    pricingUnit: 'not commercially priced',
-    pricingConfidence: 'not-commercial',
-    sourceUrls: [
-      { label: 'GameNGen project', url: 'https://gamengen.github.io/', publisher: 'Research project' },
-    ],
-    lastVerified: VERIFIED_AT,
+    kind: 'world-model', slug: 'tencent-hy-world-2-1', name: 'HY-World 2.1', provider: 'Tencent (TokenHub)', providerSlug: 'tencent',
+    status: 'available', pricing: 'TokenHub unit price undisclosed', unit: 'token', billingUnit: 'per_token', priceStatus: 'undisclosed',
+    outputType: ['panorama', '3d_asset'], capabilities: ['panorama', '3D worlds'], bestFor: 'Panorama and 3D scene generation through TokenHub.',
+    modelCategory: 'world', outputModalities: ['3d'], access: ['api'], pricingUnit: 'per token', pricingConfidence: 'unit-only',
+    notes: 'Example scene ≈ 8M tokens; panorama ≈ 0.5M tokens. HY-World 2.0 is open source.',
+    needsVerification: ['TokenHub unit price (reported ¥10 / 1M tokens) unverified'],
+    url: 'https://hunyuan.tencent.com/',
+    sourceUrls: [{ label: 'Tencent Hunyuan', url: 'https://hunyuan.tencent.com/', publisher: 'Tencent' }],
+    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+  },
+  {
+    kind: 'world-model', slug: 'skywork-matrix-game-4', name: 'Matrix-Game 4.0', provider: 'Skywork', providerSlug: 'skywork',
+    status: 'available', pricing: 'Self-host compute only', unit: 'self-host compute',
+    billingUnit: 'open_source_self_host', priceStatus: 'not_applicable', license: 'Apache-2.0',
+    selfHostHw: 'Tested on RTX 5090 (no fps/VRAM guarantee)',
+    capabilities: ['playable games', '3 scenes'], bestFor: 'Self-hosted game world generation with open weights.',
+    modelCategory: 'world', outputModalities: ['video', 'simulation'], access: ['open-weights'],
+    accessNote: 'Open weights; no API.', pricingUnit: 'self-host compute only', pricingConfidence: 'not-commercial',
+    notes: 'Released 2026-10-15. Three scenes; excluded from price sorting. Self-host compute only.',
+    url: 'https://github.com/SkyworkAI/Matrix-Game',
+    sourceUrls: [{ label: 'Matrix-Game repository', url: 'https://github.com/SkyworkAI/Matrix-Game', publisher: 'Skywork' }],
+    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+  },
+  {
+    kind: 'world-model', slug: 'odyssey-3', name: 'Odyssey-3', provider: 'Odyssey', providerSlug: 'odyssey',
+    status: 'available', pricing: 'Business inquiry / contract', unit: 'contract', billingUnit: 'contract', priceStatus: 'undisclosed',
+    capabilities: ['interactive worlds'], bestFor: 'Business evaluation through a direct inquiry.',
+    modelCategory: 'world', access: ['enterprise'], accessNote: 'Business inquiry / contract.',
+    pricingUnit: 'contract', pricingConfidence: 'unknown', url: 'https://odyssey.world/',
+    sourceUrls: [{ label: 'Odyssey', url: 'https://odyssey.world/', publisher: 'Odyssey' }],
+    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+  },
+  {
+    kind: 'world-model', slug: 'runway-gwm-worlds-2', name: 'GWM Worlds 2', provider: 'Runway', providerSlug: 'runway',
+    status: 'research', pricing: 'Research preview; not included in any subscription', unit: '—', priceStatus: 'undisclosed',
+    capabilities: ['world generation'], bestFor: 'Tracking Runway world model research previews.',
+    modelCategory: 'world', access: ['research-preview'], accessNote: 'Research preview; not included in any subscription.',
+    pricingUnit: 'undisclosed', pricingConfidence: 'unknown', url: 'https://runwayml.com/research',
+    sourceUrls: [{ label: 'Runway research', url: 'https://runwayml.com/research', publisher: 'Runway' }],
+    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+  },
+  {
+    kind: 'world-model', slug: 'pixverse-r2', name: 'PixVerse R2', provider: 'PixVerse', providerSlug: 'pixverse',
+    status: 'preview', pricing: 'Undisclosed', unit: '—', priceStatus: 'undisclosed',
+    capabilities: [], bestFor: 'Web demo evaluation; specifications and pricing await verification.',
+    modelCategory: 'world', access: ['consumer-app'], accessNote: 'Web demo.', pricingUnit: 'undisclosed', pricingConfidence: 'unknown',
+    needsVerification: ['specs and price unverified'], url: 'https://pixverse.ai/',
+    sourceUrls: [{ label: 'PixVerse', url: 'https://pixverse.ai/', publisher: 'PixVerse' }],
+    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
+  },
+  {
+    kind: 'world-model', slug: 'helix-world', name: 'Helix World', provider: 'Noiz AI + HKUST', providerSlug: 'noiz-ai',
+    status: 'preview', pricing: 'Self-host compute only', unit: 'self-host compute',
+    billingUnit: 'open_source_self_host', priceStatus: 'not_applicable', resolutionTier: '768×512', fps: 24, realtime: true,
+    selfHostHw: 'Reference: H800', outputType: ['video_stream'], capabilities: ['interactive worlds', 'audio-visual generation'],
+    bestFor: 'Exploring the open-source audio-visual world model preview.', modelCategory: 'world',
+    inputModalities: ['image'], outputModalities: ['video', 'audio'], access: ['open-weights', 'research-preview'],
+    accessNote: 'Open-source preview.', pricingUnit: 'self-host compute only', pricingConfidence: 'not-commercial',
+    needsVerification: ['license unverified'], notes: 'Released 2026-10-12.', url: 'https://noiz.ai/lp/blog/meet-helix-world',
+    sourceUrls: [{ label: 'Helix World announcement', url: 'https://noiz.ai/lp/blog/meet-helix-world', publisher: 'Noiz AI + HKUST' }],
+    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
   },
   {
     kind: 'world-model',
@@ -858,6 +894,22 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
       { label: 'NVIDIA physical AI', url: 'https://www.nvidia.com/en-us/industries/robotics/', publisher: 'NVIDIA' },
     ],
     lastVerified: VERIFIED_AT,
+    verifiedAt: '2026-10-15',
+  },
+];
+
+export const WORLD_MODEL_RESEARCH_NOTES = [
+  {
+    name: 'JEPA',
+    description: 'Representation learning and predictive world-model research; not a product pricing row.',
+    descriptionZh: '表征学习与预测式世界建模研究，不作为产品价格条目。',
+    url: 'https://ai.meta.com/blog/v-jepa-yann-lecun-ai-model-video-joint-embedding-predictive-architecture/',
+  },
+  {
+    name: 'GameNGen',
+    description: 'Neural game simulation research; not a commercially priced world-model product.',
+    descriptionZh: '神经游戏仿真研究，不作为商业世界模型产品比价。',
+    url: 'https://gamengen.github.io/',
   },
 ];
 

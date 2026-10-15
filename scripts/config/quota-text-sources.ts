@@ -23,4 +23,11 @@ export const QUOTA_TEXT_SOURCES: readonly QuotaTextSource[] = [
   { id: 'kimi-membership', name: 'Kimi Code membership', url: 'https://www.kimi.com/code/docs/en/kimi-code/membership.html' },
   { id: 'minimax-plans', name: 'MiniMax Token / M Plan', url: 'https://platform.minimaxi.com/docs/guides/pricing-token-plan' },
   { id: 'qwen-coding', name: 'Alibaba Qwen Coding Plan', url: 'https://help.aliyun.com/zh/model-studio/coding-plan' },
+  // Watch Odyssey/Runway pricing launch and Google Ultra tier entitlements.
+  { id: 'google-ai-ultra', name: 'Google AI Ultra', url: 'https://gemini.google/subscriptions/' },
+  { id: 'worldlabs-api-pricing', name: 'World Labs API pricing', url: 'https://docs.worldlabs.ai/api/pricing' },
+  { id: 'decart-pricing', name: 'Decart pricing', url: 'https://docs.platform.decart.ai/getting-started/pricing' },
+  { id: 'fal-cosmos-3', name: 'fal Cosmos 3 pricing', url: 'https://fal.ai/models/nvidia/cosmos-3-super/image-to-video' },
+  { id: 'odyssey', name: 'Odyssey', url: 'https://odyssey.world/' },
+  { id: 'runway-gwm', name: 'Runway GWM research', url: 'https://runwayml.com/research' },
 ];

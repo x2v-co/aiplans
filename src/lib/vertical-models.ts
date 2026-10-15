@@ -107,7 +107,44 @@ function dbRowToCatalogItem(kind: AiCatalogKind, row: DbVerticalModelRow, benchm
   };
 }
 
+/** The DB may enrich static world rows, but never controls their membership or pricing. */
+async function getWorldModelCatalog(): Promise<AiCatalogItem[]> {
+  const items = catalogForKind('world-model');
+  try {
+    const slugs = items.map((item) => item.slug!);
+    const rows = await sql<Pick<DbVerticalModelRow, 'id' | 'slug' | 'provider_logo' | 'provider_logo_url'>[]>`
+      SELECT m.id, m.slug, p.logo AS provider_logo, p.logo_url AS provider_logo_url
+      FROM models m
+      LEFT JOIN LATERAL (
+        SELECT providers.logo, providers.logo_url
+        FROM providers
+        WHERE providers.id = ANY(m.provider_ids)
+        ORDER BY providers.priority NULLS LAST, providers.id
+        LIMIT 1
+      ) p ON true
+      WHERE m.model_category = 'world' AND m.slug = ANY(${sql.array(slugs, TEXT_ARRAY)})
+    `;
+    const matchingRows = rows.filter((row) => slugs.includes(row.slug));
+    const bySlug = new Map(matchingRows.map((row) => [row.slug, row]));
+    const benchmarkSummaries = await getBenchmarkSummaries(matchingRows.map((row) => row.id));
+    return items.map((item) => {
+      const row = bySlug.get(item.slug!);
+      if (!row) return item;
+      const summaries = benchmarkSummaries.get(row.id);
+      return {
+        ...item,
+        providerLogoUrl: row.provider_logo_url ?? row.provider_logo ?? item.providerLogoUrl,
+        benchmarkSummaries: summaries?.length ? summaries : item.benchmarkSummaries,
+      };
+    });
+  } catch (error) {
+    console.warn('getVerticalModelCatalog(world-model) using static catalog without DB enrichment', error);
+    return items;
+  }
+}
+
 export async function getVerticalModelCatalog(kind: AiCatalogKind): Promise<AiCatalogItem[]> {
+  if (kind === 'world-model') return getWorldModelCatalog();
   const category = KIND_TO_CATEGORY[kind];
   if (!category) return catalogForKind(kind);
 

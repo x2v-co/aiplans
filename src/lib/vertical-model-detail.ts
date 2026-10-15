@@ -113,6 +113,15 @@ export async function getVerticalModelDetail(kind: AiCatalogKind, slug: string):
   const category = KIND_TO_CATEGORY[kind];
   if (!category) notFound();
 
+  // Static world rows own pricing and membership, including when the DB is unavailable.
+  // Do not surface stale DB plans or usage prices for these products.
+  if (kind === 'world-model') {
+    if (!catalogForKind(kind).some((item) => item.slug === slug)) notFound();
+    const catalog = await getVerticalModelCatalog(kind);
+    const item = catalog.find((entry) => entry.slug === slug)!;
+    return { item, plans: [], usagePrices: [], benchmarks: [], source: 'catalog' };
+  }
+
   const [model] = await sql<Array<{ id: number }>>`
     SELECT id FROM models WHERE slug = ${slug} AND model_category = ${category} LIMIT 1
   `;

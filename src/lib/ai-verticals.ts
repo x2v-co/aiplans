@@ -297,11 +297,11 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
           eyebrow: '新增模型类别',
           title: 'AI 世界模型与仿真模型追踪',
           description:
-            '追踪 Genie、World Labs、Cosmos、JEPA 类模型，以及面向 3D、游戏环境和机器人仿真的世界模型。早期重点不是价格，而是可用性、交互性、物理一致性和输出形态。',
+            '对比 Genie 3、Marble、Cosmos 3、Oasis 及其他世界模型的价格、访问方式、实时能力和输出类型。未公开价格和待核验信息会明确标注。',
           primaryCta: '查看视频模型',
           secondaryCta: '查看模型对比',
           cardsTitle: '世界模型的比较维度',
-          cardsDescription: '世界模型市场还早。先把 research preview、API、产品化和开源权重区分清楚。',
+          cardsDescription: '区分订阅权益、API 单价、研究预览和开源权重，并保留来源与核验日期。',
           cards: [
             { title: 'Interactive Worlds', description: '可交互视频或 3D 场景，重点看控制、连续性、状态保持和延迟。', tags: ['Interactive', 'State', 'Control'], icon: Globe2 },
             { title: 'Simulation Models', description: '机器人、自动驾驶和物理仿真场景，重点看物理一致性和环境覆盖。', tags: ['Robotics', 'Physics', 'Sim'], icon: Sparkles },
@@ -311,23 +311,23 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
           metrics: ['可用性：研究 / preview / API / 产品', '输入：文本 / 图像 / 视频 / 状态', '输出：视频 / 3D / 仿真环境', '是否可交互', '物理一致性', '延迟、帧率和控制能力'],
           examplesTitle: '优先收录对象',
           examples: [
-            { name: 'Genie / Genie 2', provider: 'Google DeepMind', note: '从图像或提示生成可交互环境，偏 research tracking。', tags: ['Research', 'Interactive'] },
-            { name: 'World Labs', provider: 'World Labs', note: '3D 世界生成方向，先追踪产品可用性和输出格式。', tags: ['3D', 'World'] },
-            { name: 'Cosmos', provider: 'NVIDIA', note: '机器人与物理世界基础模型，适合按仿真和开发者 API 追踪。', tags: ['Robotics', 'Simulation'] },
-            { name: 'JEPA-style models', provider: 'Meta / research', note: '世界建模研究线，更多是能力追踪而非套餐比价。', tags: ['Research', 'Planning'] },
+            { name: 'Genie 3 / Project Genie', provider: 'Google DeepMind', note: 'Google AI Ultra 订阅包含的实时交互世界，部分档位权益待核验。', tags: ['Subscription', 'Interactive'] },
+            { name: 'Marble', provider: 'World Labs', note: 'API 约 $1.20/世界，订阅积分与 API 积分不互通。', tags: ['3D', 'API'] },
+            { name: 'Cosmos 3', provider: 'NVIDIA', note: '开源权重；fal 渠道图生视频 $0.05/秒，非实时。', tags: ['Open weights', 'API'] },
+            { name: 'Oasis 3 Preview', provider: 'Decart', note: '720p 实时世界模型，$0.02/秒（$1.20/分钟）。', tags: ['Realtime', 'API'] },
           ],
           noteTitle: '落地策略',
-          note: '世界模型公开价格和标准 benchmark 都不成熟。先做 tracker 和解释页，等 API 与商业套餐稳定后再进入价格对比表。',
+          note: '按官方单位展示已公开价格。订阅包含不等于免费；自托管算力不作为零价 API。JEPA 与 GameNGen 作为研究资料单列。',
         }
       : {
           eyebrow: 'New model category',
           title: 'AI World Models and Simulation Models Tracked',
           description:
-            'Track world models such as Genie, World Labs, Cosmos, JEPA-style research lines, 3D environment generation and robotics simulation models. Early comparison should focus on availability, interactivity, physical consistency and output format before pricing.',
+            'Compare Genie 3, Marble, Cosmos 3, Oasis and other world models by pricing, access, realtime capability and output type. Undisclosed prices and unverified details are clearly marked.',
           primaryCta: 'View video models',
           secondaryCta: 'Compare models',
           cardsTitle: 'What makes world models different',
-          cardsDescription: 'The category is early. Separate research previews, APIs, productized tools and open weights before forcing a price table.',
+          cardsDescription: 'Compare subscription entitlements, API prices, research previews and open weights with sources and verification dates.',
           cards: [
             { title: 'Interactive Worlds', description: 'Interactive video or 3D scenes. Compare control, continuity, persistent state and latency.', tags: ['Interactive', 'State', 'Control'], icon: Globe2 },
             { title: 'Simulation Models', description: 'Robotics, autonomous driving and physical simulation. Compare physics consistency and environment coverage.', tags: ['Robotics', 'Physics', 'Sim'], icon: Sparkles },
@@ -337,13 +337,13 @@ export function verticalPageCopy(kind: AiVerticalKind, locale: string): Vertical
           metrics: ['Availability: research / preview / API / product', 'Input: text / image / video / state', 'Output: video / 3D / simulated environment', 'Interactivity', 'Physical consistency', 'Latency, frame rate and control'],
           examplesTitle: 'Priority products',
           examples: [
-            { name: 'Genie / Genie 2', provider: 'Google DeepMind', note: 'Interactive environment generation from prompts or images. Mostly research tracking today.', tags: ['Research', 'Interactive'] },
-            { name: 'World Labs', provider: 'World Labs', note: '3D world generation direction. Track availability and output format first.', tags: ['3D', 'World'] },
-            { name: 'Cosmos', provider: 'NVIDIA', note: 'Physical world foundation models for robotics and simulation. Track developer APIs.', tags: ['Robotics', 'Simulation'] },
-            { name: 'JEPA-style models', provider: 'Meta / research', note: 'World-model research line. More capability tracking than plan comparison today.', tags: ['Research', 'Planning'] },
+            { name: 'Genie 3 / Project Genie', provider: 'Google DeepMind', note: 'Realtime interactive worlds included with Google AI Ultra; some tier entitlements need verification.', tags: ['Subscription', 'Interactive'] },
+            { name: 'Marble', provider: 'World Labs', note: 'API ≈ $1.20/world. Subscription and API credits are separate.', tags: ['3D', 'API'] },
+            { name: 'Cosmos 3', provider: 'NVIDIA', note: 'Open weights; fal image-to-video at $0.05/second, without realtime output.', tags: ['Open weights', 'API'] },
+            { name: 'Oasis 3 Preview', provider: 'Decart', note: '720p realtime worlds at $0.02/second ($1.20/minute).', tags: ['Realtime', 'API'] },
           ],
           noteTitle: 'Implementation stance',
-          note: 'World-model pricing and benchmarks are not standardized yet. Start as a tracker and explainer surface; promote it into pricing tables when commercial APIs settle.',
+          note: 'Published prices retain their billing units. Subscription inclusion and self-host compute have separate statuses. JEPA and GameNGen appear as research notes.',
         };
   }
 

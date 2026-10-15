@@ -84,6 +84,9 @@ test('CLI is safe by default, supports source filtering and rejects ambiguous fl
 
 test('official source ids are unique, stable and use HTTPS', () => {
   assert.equal(new Set(QUOTA_TEXT_SOURCES.map((source) => source.id)).size, QUOTA_TEXT_SOURCES.length);
-  assert.equal(QUOTA_TEXT_SOURCES.length, 12);
+  assert.equal(QUOTA_TEXT_SOURCES.length, 18);
+  for (const id of ['google-ai-ultra', 'worldlabs-api-pricing', 'decart-pricing', 'fal-cosmos-3', 'odyssey', 'runway-gwm']) {
+    assert.ok(QUOTA_TEXT_SOURCES.some((source) => source.id === id));
+  }
   for (const source of QUOTA_TEXT_SOURCES) assert.equal(new URL(source.url).protocol, 'https:');
 });

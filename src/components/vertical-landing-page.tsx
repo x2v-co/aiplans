@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { WorldModelCatalog } from '@/components/world-model-catalog';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -183,7 +184,11 @@ export default function VerticalLandingPage({
                   {locale === 'zh' ? '目录追踪' : 'Catalog tracker'}
                 </h2>
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  {rigorousModelCatalog
+                  {kind === 'world-model'
+                    ? locale === 'zh'
+                      ? '对比已公开价格、规格和访问方式；未知值显示为 —，待核验信息单独标注。'
+                      : 'Compare published prices, specifications and access. Unknown values appear as —, with verification warnings shown separately.'
+                    : rigorousModelCatalog
                     ? locale === 'zh'
                       ? '每条模型记录都标注输入/输出模态、访问方式、计价单位、价格置信度、官方来源和最后核验日期。'
                       : 'Each model row tracks modalities, access paths, pricing unit, price confidence, official sources and last verification date.'
@@ -194,6 +199,7 @@ export default function VerticalLandingPage({
               </div>
               <Badge variant="outline">{catalog.length}</Badge>
             </div>
+            {kind === 'world-model' ? <WorldModelCatalog items={catalog} locale={locale} /> : (
             <div className="overflow-hidden rounded-xl border bg-white dark:bg-zinc-950">
               <div className="grid grid-cols-12 gap-3 border-b bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
                 <div className="col-span-4">{locale === 'zh' ? '产品' : 'Product'}</div>
@@ -321,6 +327,7 @@ export default function VerticalLandingPage({
                 );
               })}
             </div>
+            )}
           </section>
         )}
 
