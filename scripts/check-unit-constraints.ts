@@ -1,9 +1,10 @@
 #!/usr/bin/env tsx
 /** Read-only: list unit CHECK constraints and flag non-llm catalog values they would reject. */
 import { NON_LLM_CATALOG } from '../src/lib/non-llm-catalog';
+import { IMAGE_MODEL_CATALOG } from '../src/lib/image-model-catalog';
 
 const used: Record<string, Set<string>> = { pricing_unit: new Set(), price_unit: new Set(), unit: new Set(), included_usage_unit: new Set() };
-for (const item of NON_LLM_CATALOG) {
+for (const item of [...NON_LLM_CATALOG, ...IMAGE_MODEL_CATALOG]) {
   if (item.pricingUnit) { used.pricing_unit.add(item.pricingUnit); used.price_unit.add(item.pricingUnit); }
   for (const rate of item.usageRates ?? []) used.unit.add(rate.unit);
   used.included_usage_unit.add(/minute|character/i.test(item.pricingUnit ?? '') ? 'minute' : /hour/i.test(item.pricingUnit ?? '') ? 'hour' : 'availability');
