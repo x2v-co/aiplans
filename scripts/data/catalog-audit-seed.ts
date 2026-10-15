@@ -81,7 +81,11 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
   const large4 = rows.models.find(r => r.slug === 'mistral-large-4')!;
   for (const v of rows.api_channel_price_variants.filter(r => r.provider_id === or.id && r.model_id === old.id)) {
     const provenance = JSON.stringify([v.source_url, v.raw_json]);
-    const belongsTo4 = provenance.includes('mistral-large-4-0');
+    // The route-level openrouter-auto row carries the model's default price; only move it when
+    // that price is Large 4's (the old Large row is $2/$6 and its provenance can still list 4-0).
+    const large4Channel = rows.api_channel_prices.find(r => r.model_id === large4.id && r.provider_id === or.id);
+    const samePrice = (r: Row, c: Row | undefined) => !!c && Number(r.input_price_per_1m) === Number(c.input_price_per_1m) && Number(r.output_price_per_1m) === Number(c.output_price_per_1m);
+    const belongsTo4 = provenance.includes('mistral-large-4-0') && (v.variant_key !== 'openrouter-auto' || samePrice(v, large4Channel));
     if (belongsTo4) {
       const conflict = rows.api_channel_price_variants.some(r => r.model_id === large4.id && r.provider_id === or.id && r.variant_key === v.variant_key);
       if (conflict) throw new Error(`Large 4 variant conflict ${v.variant_key}; review before retry.`);
@@ -93,11 +97,18 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
     }
   }
 
-  // Repair rows moved by an earlier apply that cleared the default-route headline.
+  // Repair rows moved by an earlier apply: the moved openrouter-auto row kept the OLD Large
+  // $2/$6 route price (variants.headline_drift vs the $0.68/$2.09 channel row, which matches
+  // OpenRouter /api/v1/models for mistralai/mistral-large-4-0 on 2026-10-15). Align it with the
+  // Large 4 channel price and keep it as the only headline; the daily scrape refreshes it.
+  const large4Channel = rows.api_channel_prices.find(r => r.model_id === large4.id && r.provider_id === or.id);
   const large4Variants = rows.api_channel_price_variants.filter(r => r.model_id === large4.id && r.provider_id === or.id && r.is_available !== false);
   const auto = large4Variants.find(r => r.variant_key === 'openrouter-auto');
-  if (auto && !large4Variants.some(r => r.is_headline === true)) {
-    await save('api_channel_price_variants', auto, { is_headline: true }, 'Large 4 headline/openrouter-auto');
+  if (auto && large4Channel) {
+    await save('api_channel_price_variants', auto, {
+      input_price_per_1m: large4Channel.input_price_per_1m, output_price_per_1m: large4Channel.output_price_per_1m,
+      is_headline: true, source_url: 'https://openrouter.ai/mistralai/mistral-large-4-0',
+    }, 'Large 4 headline/openrouter-auto');
   }
 
   // Source-owned static verticals, just like the audited world-model catalog.
