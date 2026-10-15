@@ -175,6 +175,10 @@ function usageReferences(item: AiCatalogItem): UsageReference[] {
 async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: ProviderRow, plan: PlanRow | null, reference: UsageReference) {
   const { unit, priceKind, price } = reference;
   const src = sourceUrl(item);
+  // Match only this script's own row (same plan link). The 2026-10-15 catalog audit owns a
+  // separate plan-less row with the same model/provider/kind/unit; matching it made
+  // maybeSingle() fail with PGRST116 and aborted every deploy after the audit apply.
+  const planId = plan && plan.id > 0 ? plan.id : null;
   const existing = await db
     .from('usage_prices')
     .select('id')
@@ -182,13 +186,14 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
     .eq('provider_id', provider.id)
     .eq('price_kind', priceKind)
     .eq('unit', unit)
+    .eq('plan_id', planId) // null renders IS NULL
     .maybeSingle();
   if (existing.error) throw existing.error;
 
   const row = {
     model_id: model.id,
     provider_id: provider.id,
-    plan_id: plan && plan.id > 0 ? plan.id : null,
+    plan_id: planId,
     price_kind: priceKind,
     unit,
     price,
