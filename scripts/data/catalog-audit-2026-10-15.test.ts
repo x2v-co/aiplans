@@ -81,7 +81,8 @@ test('decision models distinguish free output from unknown task prices in en/zh'
     assert.match(html, /\$0.05/);
     assert.match(html, /384K/);
     assert.match(html, /—/);
-    for (const slug of ['scaledown-classify-1', 'typesafe-jev-router']) {
+    assert.equal(items.find(i => i.slug === 'scaledown-classify-1')!.inputPricePer1M, 0.04);
+    for (const slug of ['typesafe-jev-router']) {
       const unknown = items.find(i => i.slug === slug)!;
       const detail = renderToStaticMarkup(createElement(AuditedPricingFacts, { item: unknown, locale }));
       assert.doesNotMatch(detail, /\$0(?:\.00)?/);

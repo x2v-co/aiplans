@@ -62,8 +62,7 @@ function jev(version: '1.14.0' | '1.13.0'): AiCatalogItem {
     ],
     contextWindowLabel: '64k/request; 32k/question; 262k with long-context header',
     inputModalities: ['text'], outputModalities: ['text'], access: ['api'], capabilities: ['decision'], bestFor: 'Decision API.',
-    notes: 'jev-latest → jev-1.13.0; jev-preview → jev-1.14.0.',
-    needsVerification: ['Intel-expected jev-latest switch around 2026-10-21 is unverified; no scheduled switch is confirmed.'],
+    notes: 'docs.typesafe.ai/models (checked 2026-10-15): jev-latest → jev-1.13.0; jev-preview → jev-1.14.0; no jev-latest switch date is published.',
     ...(version === '1.14.0' ? { releasedAt: '2026-10-14' } : {}),
     url: 'https://docs.typesafe.ai/models', sourceUrls: [{ label: 'TypeSafe models', url: 'https://docs.typesafe.ai/models', publisher: 'TypeSafe' }],
   };
