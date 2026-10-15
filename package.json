@@ -100,7 +100,9 @@
     "seed:step5-license": "tsx scripts/seed-step5-license.ts",
     "seed:step5-license:apply": "tsx scripts/seed-step5-license.ts --apply",
     "seed:nemotron-lightning": "tsx scripts/seed-nemotron-lightning-2026-10-15.ts",
-    "seed:nemotron-lightning:apply": "tsx scripts/seed-nemotron-lightning-2026-10-15.ts --apply"
+    "seed:nemotron-lightning:apply": "tsx scripts/seed-nemotron-lightning-2026-10-15.ts --apply",
+    "seed:opencode-zen-free": "tsx scripts/seed-opencode-zen-free-2026-10-15.ts",
+    "seed:opencode-zen-free:apply": "tsx scripts/seed-opencode-zen-free-2026-10-15.ts --apply"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
