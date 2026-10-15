@@ -18,6 +18,7 @@ import {
   type AiCatalogItem,
   type AiPricingConfidence,
 } from '../src/lib/ai-vertical-catalog';
+import { auditVerticalModelFields, isAuditOwnedVertical, verticalModelDescription } from './data/catalog-audit-vertical';
 
 const APPLY = process.argv.includes('--apply');
 
@@ -62,16 +63,6 @@ function normalizeProviderSlug(item: AiCatalogItem): string {
 
 function officialLink(item: AiCatalogItem): string | undefined {
   return item.url ?? item.sourceUrls?.[0]?.url;
-}
-
-function description(item: AiCatalogItem): string {
-  const sources = item.sourceUrls?.map((source) => `${source.publisher}: ${source.url}`).join(' | ');
-  return [
-    item.bestFor,
-    `Status: ${item.status}. Pricing confidence: ${item.pricingConfidence}. Unit: ${item.pricingUnit}. Last verified: ${item.lastVerified}.`,
-    item.notes,
-    sources ? `Sources: ${sources}` : undefined,
-  ].filter(Boolean).join('\n');
 }
 
 function sameStringArray(a: string[] | null | undefined, b: string[] | undefined): boolean {
@@ -171,22 +162,25 @@ async function main() {
     }
 
     const existing = existingModels.get(slug);
+    // Video / music / decision rows are owned by the catalog audit; use its exact fields
+    // so every deploy no longer reverts pricing_unit / model_category.
+    const owned = isAuditOwnedVertical(item) ? auditVerticalModelFields(item) : null;
     const payload = {
       name: item.name,
       slug,
       // A catalog entry can share its slug with an existing token API model.
       type: existing?.type ?? (item.kind === 'decision-model' ? 'llm' : 'multimodal'),
       ...(item.contextWindow != null ? { context_window: item.contextWindow } : {}),
-      model_category: item.modelCategory,
+      model_category: owned?.model_category ?? item.modelCategory,
       provider_ids: [...new Set([...(existing?.provider_ids ?? []), provider.id])],
-      description: description(item),
+      description: verticalModelDescription(item),
       offical_link: officialLink(item),
       input_type: item.inputModalities,
       output_type: item.outputModalities,
       input_modalities: item.inputModalities,
       output_modalities: item.outputModalities,
       capabilities: item.capabilities,
-      pricing_unit: PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown'],
+      pricing_unit: owned?.pricing_unit ?? PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown'],
       open_source: item.access?.includes('open-weights') ?? false,
       updated_at: new Date().toISOString(),
     };

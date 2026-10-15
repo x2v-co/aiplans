@@ -30,12 +30,30 @@ export function argonChannelRow(providerId: number, modelId: number | null, now:
 }
 
 /** Print field-level changes, and avoid updates that only refresh updated_at. */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const ISO_MIDNIGHT = /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.000)?(?:Z|\+00:00)$/;
+
+/** Canonical form for comparison: sorted object keys, Dates as ISO, UTC-midnight timestamps as dates. */
+export function canonicalSeedValue(v: unknown): unknown {
+  if (v instanceof Date) return canonicalSeedValue(v.toISOString());
+  if (typeof v === 'string') {
+    const midnight = v.match(ISO_MIDNIGHT);
+    if (midnight) return midnight[1];
+    if (!ISO_DATE.test(v) && /^\d{4}-\d{2}-\d{2}T/.test(v) && !Number.isNaN(Date.parse(v))) return canonicalSeedValue(new Date(v).toISOString());
+    return v;
+  }
+  if (Array.isArray(v)) return v.map(canonicalSeedValue);
+  if (v && typeof v === 'object') {
+    return Object.fromEntries(Object.keys(v).sort().map(k => [k, canonicalSeedValue((v as Record<string, unknown>)[k])]));
+  }
+  return v;
+}
+
 export function seedChanges(existing: Record<string, unknown> | null, desired: Record<string, unknown>) {
   const changes: Record<string, { from: unknown; to: unknown }> = {};
   for (const [key, value] of Object.entries(desired)) {
     const previous = existing?.[key] ?? null;
-    const normalize = (v: unknown) => v instanceof Date ? v.toISOString() : v;
-    if (!existing || JSON.stringify(normalize(previous)) !== JSON.stringify(normalize(value))) {
+    if (!existing || JSON.stringify(canonicalSeedValue(previous)) !== JSON.stringify(canonicalSeedValue(value))) {
       changes[key] = { from: previous, to: value };
     }
   }

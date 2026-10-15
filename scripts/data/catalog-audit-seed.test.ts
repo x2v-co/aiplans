@@ -180,3 +180,23 @@ test('decision catalog seed reuses the P0 SubQ Snap API identity and prices with
   }
   assert.deepEqual(await seedCatalogAudit(f.tx, true), []);
 });
+
+import { canonicalSeedValue, seedChanges as seedChangesForIdempotence } from './gemini-4-argon';
+import { auditVerticalModelFields as auditFields } from './catalog-audit-vertical';
+import { AI_VERTICAL_CATALOG as CATALOG } from '../../src/lib/ai-vertical-catalog';
+
+test('seedChanges ignores JSON key order and date formatting', () => {
+  assert.deepEqual(seedChangesForIdempotence(
+    { id: 1, c: { notes: 'x', price_status: 'priced' }, d: new Date('2026-10-29T00:00:00.000Z'), t: '2026-10-15T00:00:00+00:00' },
+    { c: { price_status: 'priced', notes: 'x' }, d: '2026-10-29', t: new Date('2026-10-15T00:00:00Z') }), {});
+  assert.equal(canonicalSeedValue('2026-10-15T08:00:00+08:00'), '2026-10-15');
+  assert.ok(Object.keys(seedChangesForIdempotence({ id: 1, c: { a: 1 } }, { c: { a: 2 } })).length === 1);
+});
+
+test('audit-owned vertical fields keep deploy seed and audit seed in agreement', () => {
+  const veo = CATALOG.find(i => i.slug === 'veo-3-1')!;
+  assert.equal(auditFields(veo).pricing_unit, 'per_second');
+  assert.match(auditFields(veo).description, /Unit: .*\nSources: /s);
+  const snap = CATALOG.find(i => i.slug === 'subq-snap')!;
+  assert.deepEqual([auditFields(snap).model_category, auditFields(snap).pricing_unit], ['text', 'per_1m_tokens']);
+});

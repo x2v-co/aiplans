@@ -2,6 +2,7 @@ import type { Sql } from 'postgres';
 import { AI_VERTICAL_CATALOG } from '../../src/lib/ai-vertical-catalog';
 import { openRouterProducerSlug } from '../scrapers/openrouter';
 import { seedChanges } from './gemini-4-argon';
+import { auditVerticalModelFields, isAuditOwnedVertical } from './catalog-audit-vertical';
 import { AUDIT_TIMESTAMP, OPENROUTER_ADDITIONS, auditedModelSlug, auditedPrices,
   LEGACY_PRO_NOTE, MAX_API_CREDIT_NOTE, cleanLegacyFeatures } from './catalog-audit-2026-10-15';
 
@@ -90,16 +91,17 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
   }
 
   // Source-owned static verticals, just like the audited world-model catalog.
-  for (const item of AI_VERTICAL_CATALOG.filter(i => ['video-model', 'music-model', 'decision-model'].includes(i.kind))) {
+  for (const item of AI_VERTICAL_CATALOG.filter(isAuditOwnedVertical)) {
     const ownerSlug = item.providerSlug ?? item.provider.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const owner = await provider(ownerSlug, item.provider);
     // Snap's decision catalog view shares the P0 token API row and its identity.
     const isSnap = item.slug === 'subq-snap';
-    const m = await model(item.slug!, item.name, owner?.id ?? null, isSnap ? 'text' : item.modelCategory, {
-      pricing_unit: item.kind === 'decision-model' ? 'per_1m_tokens' : item.billingUnit === 'per_second' ? 'per_second' : item.billingUnit === 'per_song' ? 'per_generation' : 'unknown',
+    const fields = auditVerticalModelFields(item);
+    const m = await model(item.slug!, item.name, owner?.id ?? null, fields.model_category, {
+      pricing_unit: fields.pricing_unit,
       offical_link: item.url ?? item.sourceUrls?.[0]?.url ?? null,
       ...(item.contextWindow != null ? { context_window: item.contextWindow } : item.contextWindowLabel ? { context_window: null } : {}),
-      description: [item.bestFor, `Status: ${item.status}. Pricing confidence: ${item.pricingConfidence}. Last verified: ${item.lastVerified}.`, item.notes].filter(Boolean).join('\n'),
+      description: fields.description,
     });
     if (isSnap && owner) {
       await channel(m.id, owner.id, item.inputPricePer1M ?? null, item.outputPricePer1M ?? null,
