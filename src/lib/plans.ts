@@ -1,4 +1,5 @@
 import { sql, INT4_ARRAY } from '@/lib/db';
+import type { ChannelTermsFields } from '@/lib/channel-terms';
 import type { PlanCoverageFields } from '@/lib/third-party-coverage';
 import type { EconomicPlan } from '@/lib/plan-economics';
 
@@ -35,7 +36,7 @@ interface PlanModel {
   context_window: number | null;
 }
 
-export interface ListedPlan extends EconomicPlan, PlanCoverageFields {
+export interface ListedPlan extends EconomicPlan, PlanCoverageFields, ChannelTermsFields {
   id: number;
   name: string;
   tier: string | null;
@@ -52,7 +53,11 @@ export async function getPlans(query: PlanQuery = {}): Promise<ListedPlan[]> {
   const { tier = null, pricingModel = null, providerId = null, includeModels = false } = query;
 
   const planRows = await sql<ListedPlan[]>`
-    SELECT * FROM plans
+    SELECT plans.*,
+      (to_jsonb(plans)->>'data_for_discount')::boolean AS data_for_discount,
+      to_jsonb(plans)->>'data_for_discount_note' AS data_for_discount_note,
+      to_jsonb(plans)->>'quota_unit' AS quota_unit
+    FROM plans
     WHERE (${tier}::text IS NULL OR tier = ${tier})
       AND (${pricingModel}::text IS NULL OR pricing_model = ${pricingModel})
       AND (${providerId}::integer IS NULL OR provider_id = ${providerId})

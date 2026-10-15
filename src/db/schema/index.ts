@@ -1,4 +1,5 @@
-import { pgTable, pgEnum, serial, text, timestamp, boolean, integer, real, jsonb, bigint, bigserial, varchar, numeric, date } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { pgTable, check, pgEnum, serial, text, timestamp, boolean, integer, real, jsonb, bigint, bigserial, varchar, numeric, date } from 'drizzle-orm/pg-core';
 import { THIRD_PARTY_COVERAGE_VALUES } from '../../lib/third-party-coverage';
 
 export const thirdPartyCoverageEnum = pgEnum('third_party_coverage', THIRD_PARTY_COVERAGE_VALUES);
@@ -152,9 +153,16 @@ export const plans = pgTable('plans', {
   thirdPartyCoverage: thirdPartyCoverageEnum('third_party_coverage').notNull().default('unknown'),
   thirdPartyCoverageNote: text('third_party_coverage_note'),
 
+  // Terms apply to this channel/plan; NULL means not researched.
+  dataForDiscount: boolean('data_for_discount'),
+  dataForDiscountNote: text('data_for_discount_note'),
+  quotaUnit: text('quota_unit'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-});
+}, (table) => [
+  check('plans_quota_unit_check', sql`${table.quotaUnit} IN ('usd', 'requests', 'tokens', 'credits')`),
+]);
 
 // API Channel Prices - Token prices per provider for each model
 export const apiChannelPrices = pgTable('api_channel_prices', {
@@ -174,9 +182,16 @@ export const apiChannelPrices = pgTable('api_channel_prices', {
   notes: text('notes'),
   currency: varchar('currency').default('USD'),
   priceUnit: varchar('price_unit').default('per_1m_tokens'),
+  // Terms apply to this channel/plan; NULL means not researched.
+  dataForDiscount: boolean('data_for_discount'),
+  dataForDiscountNote: text('data_for_discount_note'),
+  quotaUnit: text('quota_unit'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-});
+}, (table) => [
+  check('api_channel_prices_quota_unit_check', sql`${table.quotaUnit} IN ('usd', 'requests', 'tokens', 'credits')`),
+]);
 
 // API channel price variants - per-tier/per-group billed prices for routers/resellers
 export const apiChannelPriceVariants = pgTable('api_channel_price_variants', {

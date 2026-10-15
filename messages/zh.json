@@ -1,4 +1,14 @@
 {
+  "channelTerms": {
+    "training": "训练你的数据换折扣",
+    "quota": "额度单位：{unit}",
+    "units": {
+      "usd": "USD",
+      "requests": "请求",
+      "tokens": "tokens",
+      "credits": "积分"
+    }
+  },
   "providerPage": {
     "metaTitle": "{name}：API 模型、价格与订阅套餐 | aiplans.dev",
     "metaDescription": "了解 {name}，查看官方网站、API 文档与开发者控制台。对比已有模型 API 价格、订阅套餐、月付和年付价格及模型权限。",

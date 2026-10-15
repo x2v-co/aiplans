@@ -1,3 +1,4 @@
+import type { ChannelTermsFields } from '@/lib/channel-terms';
 import { effectivePrice, type PriceSchedule } from '@/lib/effective-price';
 import { sql } from '@/lib/db';
 import { attachPrimaryProvidersToModels } from '@/lib/schema-adapters';
@@ -30,7 +31,7 @@ export interface ChannelPriceVariant {
   constraints_json?: Record<string, unknown> | null;
 }
 
-export interface ChannelPrice extends PriceSchedule {
+export interface ChannelPrice extends PriceSchedule, ChannelTermsFields {
   id: number;
   model_id: number;
   provider_id: number;
@@ -160,6 +161,9 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
         cp.regular_cached_input_price_per_1m,
         cp.currency,
         cp.price_unit,
+        (to_jsonb(cp)->>'data_for_discount')::boolean AS data_for_discount,
+        to_jsonb(cp)->>'data_for_discount_note' AS data_for_discount_note,
+        to_jsonb(cp)->>'quota_unit' AS quota_unit,
         cp.notes,
         cp.rate_limit,
         cp.is_available,

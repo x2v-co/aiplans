@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { getTranslations } from 'next-intl/server';
 import type { ChannelPrice, GroupedProduct } from '@/lib/grouped-products';
 import { formatModelName } from '@/lib/model-names';
@@ -26,6 +27,7 @@ export async function ProviderApiModels({ products, locale }: { products: Groupe
                 <Link href={`/${locale}${providerModelPath(row.model_slug || product.slug, product.modelCategory)}`} className="text-blue-600 hover:underline">
                   {formatModelName(product.name)}{row.variant?.length ? ` (${row.variant.join(', ')})` : ''}
                 </Link>
+                <ChannelTermsBadges terms={row} />
                 {isIntroductoryPriceActive(row) && <p className="mt-1 text-xs font-normal text-zinc-500">{t('introductoryUntil', { date: introductoryEndDate(row.promo_ends_at!, locale) })}</p>}
                 {!!row.price_variants?.length && (
                   <details className="mt-2 font-normal">

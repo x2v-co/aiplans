@@ -19,6 +19,7 @@ import {
 import { describeEconomics } from "@/lib/plan-economics";
 import type { PlanComparison } from "@/lib/compare-plans";
 import { PlanRate } from "@/components/plan-rate";
+import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { PlanCoverage } from "@/components/plan-coverage";
 import type { FaqItem } from "./faqs";
 import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
@@ -471,6 +472,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider 
 
                                 {/* Features - Show more */}
                                 <div className="mb-3">
+                                  <ChannelTermsBadges terms={{ data_for_discount: plan.plan?.dataForDiscount, data_for_discount_note: plan.plan?.dataForDiscountNote, quota_unit: plan.plan?.quotaUnit }} />
                                   <PlanCoverage coverage={plan.plan?.thirdPartyCoverage} note={plan.plan?.thirdPartyCoverageNote} locale={locale} />
                                 </div>
                                 {plan.plan?.subscriptionContext && (

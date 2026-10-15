@@ -15,6 +15,9 @@ export async function GET(
     const rawPrices = await sql<any[]>`
       SELECT
         cp.*,
+        (to_jsonb(cp)->>'data_for_discount')::boolean AS data_for_discount,
+        to_jsonb(cp)->>'data_for_discount_note' AS data_for_discount_note,
+        to_jsonb(cp)->>'quota_unit' AS quota_unit,
         COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
             'id', v.id,

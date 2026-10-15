@@ -39,14 +39,16 @@ import CodingAgentModelSection from '@/components/coding-agent-model-section';
 import VariantBadges from '@/components/variant-badges';
 import { isArenaBenchmark, type ModelBenchmarkScore } from '@/lib/benchmarks';
 import { getCodingAgentRowsForModel } from '@/lib/coding-agents';
+import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { PlanCoverage } from '@/components/plan-coverage';
+import type { ChannelTermsFields } from '@/lib/channel-terms';
 import type { PlanCoverageFields } from '@/lib/third-party-coverage';
 
 import { buildModelPricingSeo, type PricingChannel } from '@/lib/model-pricing-seo';
 import ModelPricingSummary from '@/components/model-pricing-summary';
 
 /** The columns the plan cards read out of the `plans` query below. */
-interface PlanRow extends PlanCoverageFields {
+interface PlanRow extends PlanCoverageFields, ChannelTermsFields {
   id: number;
   name: string;
   slug: string;
@@ -260,6 +262,9 @@ async function getProductWithChannels(slug: string) {
       pl.currency,
       pl.price_unit,
       pl.features,
+      (to_jsonb(pl)->>'data_for_discount')::boolean AS data_for_discount,
+      to_jsonb(pl)->>'data_for_discount_note' AS data_for_discount_note,
+      to_jsonb(pl)->>'quota_unit' AS quota_unit,
       pl.third_party_coverage,
       pl.third_party_coverage_note,
       pl.access_from_china,
@@ -812,6 +817,7 @@ export default async function ModelPage({
 
                         <CardContent>
                           <div className="mb-3">
+                            <ChannelTermsBadges terms={plan} />
                             <PlanCoverage coverage={plan.third_party_coverage} note={plan.third_party_coverage_note} locale={locale} />
                           </div>
                           <div className="space-y-2 mb-4">
@@ -948,6 +954,7 @@ export default async function ModelPage({
                               <Badge variant="outline" className="text-xs">🏢 Official</Badge>
                             )}
                           </div>
+                          <ChannelTermsBadges terms={cp} />
                           {isIntroductoryPriceActive(cp, now) && cp.regular_input_price_per_1m != null && cp.regular_output_price_per_1m != null && (
                             <p className="mt-1 max-w-xs whitespace-normal text-xs font-normal text-zinc-500">
                               {promoMessages('introductoryPrice', {

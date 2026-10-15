@@ -1,4 +1,14 @@
 {
+  "channelTerms": {
+    "training": "Trains on your data",
+    "quota": "Quota: {unit}",
+    "units": {
+      "usd": "USD",
+      "requests": "requests",
+      "tokens": "tokens",
+      "credits": "credits"
+    }
+  },
   "providerPage": {
     "metaTitle": "{name}: API Models, Pricing & Subscription Plans | aiplans.dev",
     "metaDescription": "Explore {name}, its official website and API resources. Compare available model API prices, subscription plans, monthly and annual billing, and model access.",

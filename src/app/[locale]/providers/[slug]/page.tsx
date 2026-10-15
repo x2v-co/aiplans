@@ -14,6 +14,7 @@ import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-bran
 import { groupPlansByKind, planKindDescription, planKindIcon, planKindLabel } from "@/lib/plan-kinds";
 import { describeEconomics, planEconomics, type EconomicPlan } from "@/lib/plan-economics";
 import { PlanRate } from "@/components/plan-rate";
+import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { PlanCoverage } from "@/components/plan-coverage";
 import { buildMetadata, breadcrumbList, priceItemList, faqPage, SITE_URL, type Locale } from "@/lib/seo";
 import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
@@ -367,6 +368,7 @@ export default async function ProviderPage({
                     <Separator className="my-4" />
 
                     <div className="space-y-2 text-sm">
+                      <ChannelTermsBadges terms={plan} />
                       <PlanCoverage coverage={plan.third_party_coverage} note={plan.third_party_coverage_note} locale={locale} />
                       {plan.monthly_message_limit !== null && (
                         <div className="flex justify-between">

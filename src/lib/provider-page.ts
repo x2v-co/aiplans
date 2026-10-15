@@ -1,3 +1,4 @@
+import type { ChannelTermsFields } from './channel-terms';
 import { jsonLd, SITE_URL } from './seo';
 import { getProviderLogoSrc } from './provider-branding';
 import type { EconomicPlan } from './plan-economics';
@@ -21,7 +22,7 @@ export type ProviderRecord = {
   access_from_china: boolean | null;
 };
 
-export type ProviderPlanRecord = EconomicPlan & {
+export type ProviderPlanRecord = EconomicPlan & ChannelTermsFields & {
   id: number;
   name: string;
   plan_kind: string | null;

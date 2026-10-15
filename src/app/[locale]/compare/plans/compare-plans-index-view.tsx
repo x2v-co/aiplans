@@ -13,6 +13,7 @@ import { formatPrice, type CurrencyCode } from "@/lib/currency";
 import { matchesSearch } from "@/lib/search-match";
 import type { ComparePlansIndexData, ProviderModelGroup } from "@/lib/compare-plans-index";
 import { formatModelName } from '@/lib/model-names';
+import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { PlanCoverage } from '@/components/plan-coverage';
 
 /**
@@ -295,6 +296,7 @@ export default function ComparePlansIndexView({
                       </div>
 
                       <div className="space-y-2 mb-4">
+                        <ChannelTermsBadges terms={plan} />
                         <PlanCoverage coverage={plan.third_party_coverage} note={plan.third_party_coverage_note} locale={locale} />
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-zinc-500">{locale === 'zh' ? '包含模型' : 'Models included'}</span>

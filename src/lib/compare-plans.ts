@@ -64,7 +64,10 @@ export async function getPlanComparison(
             payment_methods, is_official, last_verified, provider_id,
             plan_kind, plan_line, tier_rank,
             quotas, is_contact_sales, pack_validity_days,
-            third_party_coverage, third_party_coverage_note
+            third_party_coverage, third_party_coverage_note,
+            (to_jsonb(plans)->>'data_for_discount')::boolean AS data_for_discount,
+            to_jsonb(plans)->>'data_for_discount_note' AS data_for_discount_note,
+            to_jsonb(plans)->>'quota_unit' AS quota_unit
           FROM plans
           WHERE id = ANY(${sql.array(planIds, INT4_ARRAY)})
           ORDER BY plan_kind, plan_line NULLS LAST, tier_rank NULLS LAST, price ASC NULLS LAST
@@ -135,6 +138,9 @@ export async function getPlanComparison(
         tierRank: plan.tier_rank ?? null,
         isOfficial,
         features: plan.features || [],
+        dataForDiscount: (plan.data_for_discount ?? null) as boolean | null,
+        dataForDiscountNote: (plan.data_for_discount_note ?? null) as string | null,
+        quotaUnit: (plan.quota_unit ?? null) as string | null,
         thirdPartyCoverage: normalizeThirdPartyCoverage(plan.third_party_coverage),
         thirdPartyCoverageNote: (plan.third_party_coverage_note ?? null) as string | null,
         subscriptionContext: (() => {

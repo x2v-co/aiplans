@@ -915,6 +915,10 @@ const MIGRATIONS: Migration[] = [
     name: '032_catalog_audit_p1',
     sql: readFileSync(new URL('../drizzle/0007_catalog_audit_p1.sql', import.meta.url), 'utf8'),
   },
+  {
+    name: '033_add_channel_terms',
+    sql: readFileSync(new URL('../drizzle/0008_channel_terms.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 async function main() {

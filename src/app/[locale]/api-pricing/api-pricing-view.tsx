@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowRight, BarChart3, BookOpen, Check, ExternalLink, Filter, Search, Globe, MapPin, HelpCircle } from "lucide-react";
+import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { PromoPriceNotice } from '@/components/promo-price-notice';
 import SiteHeader from '@/components/SiteHeader';
 import {
@@ -705,6 +706,7 @@ export default function ApiPricingView({
                                         </Badge>
                                       )}
                                     </div>
+                                    <ChannelTermsBadges terms={cp} />
                                     <PromoPriceNotice row={cp} locale={locale} />
                                   </TableCell>
                                   <TableCell className="text-center">

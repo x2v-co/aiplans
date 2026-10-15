@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 import { getProviderVisitRel } from "@/lib/provider-links";
+import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { PlanCoverage } from '@/components/plan-coverage';
 import type { ThirdPartyCoverage } from '@/lib/third-party-coverage';
 
@@ -185,6 +186,9 @@ interface PlanComparison {
     planTier: string;
     isOfficial: boolean;
     features?: string[];
+    dataForDiscount?: boolean | null;
+    dataForDiscountNote?: string | null;
+    quotaUnit?: string | null;
     thirdPartyCoverage?: ThirdPartyCoverage;
     thirdPartyCoverageNote?: string | null;
   };
@@ -646,6 +650,7 @@ function PlanRow({ plan, isBaseline, currency: _currency, showYearly }: {
 
       {/* Features */}
       <div className="mt-3">
+        <ChannelTermsBadges terms={{ data_for_discount: plan.plan?.dataForDiscount, data_for_discount_note: plan.plan?.dataForDiscountNote, quota_unit: plan.plan?.quotaUnit }} />
         <PlanCoverage coverage={plan.plan.thirdPartyCoverage} note={plan.plan.thirdPartyCoverageNote} locale="en" />
       </div>
       {plan.plan.features && plan.plan.features.length > 0 && (
