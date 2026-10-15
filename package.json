@@ -81,6 +81,7 @@
     "seed:catalog-audit:dry-run": "tsx scripts/seed-catalog-audit-2026-10-15.ts --dry-run",
     "test:catalog-audit": "npx tsx --test scripts/data/catalog-audit*.test.ts scripts/scrapers/openrouter.test.ts scripts/world-models.test.ts",
     "seed:non-llm-2026-10-15": "tsx scripts/seed-non-llm-2026-10-15.ts",
+    "seed:non-llm-2026-10-15:db-dry-run": "tsx scripts/seed-non-llm-2026-10-15.ts --db-dry-run",
     "seed:non-llm-2026-10-15:apply": "tsx scripts/seed-non-llm-2026-10-15.ts --apply",
     "seed:deepseek-windows": "tsx scripts/seed-deepseek-windows.ts",
     "seed:deepseek-windows:apply": "tsx scripts/seed-deepseek-windows.ts --apply",
