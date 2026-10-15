@@ -60,7 +60,9 @@
     "worldModels": "世界模型",
     "coupons": "优惠码",
     "calculator": "计算器",
-    "submitProvider": "提交供应商"
+    "submitProvider": "提交供应商",
+    "voiceModels": "语音模型",
+    "imageModels": "图像生成与视觉"
   },
   "common": {
     "loading": "加载中...",
@@ -382,5 +384,37 @@
     "offPeak": "低谷",
     "rates": "输入 {input} · 缓存命中 {cache} · 输出 {output} / 百万 token",
     "window": "高峰：UTC 周一至周五 01:00–04:00 和 06:00–10:00，中国法定节假日除外。其余时间为低谷。未配置的节假日按工作日高峰时段处理。"
+  },
+  "nonLlmModels": {
+    "voiceTitle": "语音模型",
+    "voiceDescription": "比较语音到语音、文本转语音和语音识别的价格、别名与生命周期日期。",
+    "imageTitle": "图像生成与视觉",
+    "imageDescription": "比较 Vercel AI Gateway 图像生成价格，并追踪 Moondream Cloud 生命周期公告。",
+    "model": "模型",
+    "pricing": "价格与核验",
+    "channel": "计价渠道",
+    "verified": "核验日期",
+    "released": "发布日期",
+    "deprecated": "弃用日期",
+    "shutdown": "关闭 / EOL 日期",
+    "successor": "后继模型",
+    "needsVerification": "待核验",
+    "sources": "来源",
+    "context": "上下文",
+    "unknown": "— 表示未知；未知价格不会显示为免费。",
+    "visionNote": "视觉服务生命周期公告；未提供图像生成价格。",
+    "speech_to_speech": "语音到语音",
+    "text_to_speech": "文本转语音",
+    "transcription_batch": "批量语音识别",
+    "transcription_streaming": "流式语音识别",
+    "input_tokens": "输入 token",
+    "output_tokens": "输出 token",
+    "image_starting": "图像起步价",
+    "minute": "分钟",
+    "hour": "小时",
+    "per_1m_characters": "百万字符",
+    "per_1m_tokens": "百万 token",
+    "image": "张",
+    "back": "返回列表"
   }
 }

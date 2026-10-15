@@ -1,14 +1,16 @@
 import { notFound } from 'next/navigation';
-import { catalogForKind, type AiCatalogItem, type AiCatalogKind } from '@/lib/ai-vertical-catalog';
+import { catalogForKind, type AiCatalogItem, type AiCatalogKind, type AiModelCategory } from '@/lib/ai-vertical-catalog';
 import { getVerticalModelCatalog } from '@/lib/vertical-models';
 import type { ModelBenchmarkScore } from '@/lib/benchmarks';
 import type { PlanCoverageFields } from '@/lib/third-party-coverage';
 
-const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, 'video' | 'music' | 'world' | 'decision'>> = {
+const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, AiModelCategory>> = {
   'video-model': 'video',
   'music-model': 'music',
   'world-model': 'world',
   'decision-model': 'decision',
+  'voice-model': 'speech',
+  'image-model': 'image',
 };
 
 export interface VerticalModelPlanRow extends PlanCoverageFields {
@@ -55,7 +57,7 @@ export interface VerticalModelDetail {
 /** Audited pricing is static; stale DB plans/usage rows never override it. */
 export async function getVerticalModelDetail(kind: AiCatalogKind, slug: string): Promise<VerticalModelDetail> {
   if (!KIND_TO_CATEGORY[kind]) notFound();
-  if ((kind === 'world-model' || kind === 'decision-model') && !catalogForKind(kind).some(i => i.slug === slug)) notFound();
+  if ((['world-model', 'decision-model', 'voice-model', 'image-model'].includes(kind)) && !catalogForKind(kind).some(i => i.slug === slug)) notFound();
   const catalog = await getVerticalModelCatalog(kind);
   const item = catalog.find(entry => entry.slug === slug);
   if (!item) notFound();
@@ -67,5 +69,7 @@ export function verticalKindPath(kind: AiCatalogKind): string {
   if (kind === 'music-model') return 'music-models';
   if (kind === 'world-model') return 'world-models';
   if (kind === 'decision-model') return 'decision-models';
+  if (kind === 'voice-model') return 'voice-models';
+  if (kind === 'image-model') return 'image-models';
   return 'models';
 }

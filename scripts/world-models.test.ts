@@ -178,7 +178,7 @@ test('every static world detail works with or without DB rows; retired/unknown s
 });
 
 test('video/music/decision membership and prices remain audit-owned with stale or unavailable DB', async () => {
-  for (const kind of ['video-model', 'music-model', 'decision-model'] as const) {
+  for (const kind of ['video-model', 'music-model', 'decision-model', 'voice-model', 'image-model'] as const) {
     for (const fixture of [serverFixture(), serverFixture({ unavailable: true })]) {
       const actual = await fixture.getVerticalModelCatalog(kind);
       assert.equal(JSON.stringify(actual), JSON.stringify(catalog.catalogForKind(kind)));
@@ -201,5 +201,29 @@ test('DB-only video/music identities remain available with unknown price status'
     assert.equal(extra.pricePerUnit, null);
     assert.equal(extra.priceStatus, 'needs-verification');
     assert.equal((await fixture.getVerticalModelDetail(kind, 'db-only')).item.name, 'DB model');
+  }
+});
+
+
+test('voice and image detail identity and facts survive missing columns and stale enrichment', async () => {
+  for (const kind of ['voice-model', 'image-model'] as const) {
+    const expected = catalog.catalogForKind(kind);
+    for (const fixture of [serverFixture({ unavailable: true }), serverFixture({ rows: [
+      { id: 7, slug: expected[0].slug, name: 'Stale name', price: 0, deprecated_at: null, shutdown_date: null },
+      { id: 8, slug: 'unverified-db-only', name: 'DB-only model' },
+    ] })]) {
+      const actual = await fixture.getVerticalModelCatalog(kind);
+      const facts = actual.map(entry => { const facts = { ...entry }; delete facts.benchmarkSummaries; return facts; });
+      assert.equal(JSON.stringify(facts), JSON.stringify(expected));
+      for (const entry of expected) {
+        const detail = await fixture.getVerticalModelDetail(kind, entry.slug!);
+        assert.equal(detail.item.name, entry.name);
+        assert.equal(detail.item.shutdownDate, entry.shutdownDate);
+        assert.equal(JSON.stringify(detail.item.usageRates), JSON.stringify(entry.usageRates));
+      }
+      const queries = fixture.queryCount();
+      await assert.rejects(fixture.getVerticalModelDetail(kind, 'unverified-db-only'), /NOT_FOUND/);
+      assert.equal(fixture.queryCount(), queries);
+    }
   }
 });

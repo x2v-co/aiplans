@@ -1,10 +1,12 @@
-export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model';
+import { NON_LLM_CATALOG } from './non-llm-catalog';
 
-export type AiCatalogStatus = 'available' | 'waitlist' | 'preview' | 'research' | 'announced' | 'discontinued' | 'needs-verification';
+export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model' | 'voice-model' | 'image-model';
+
+export type AiCatalogStatus = 'available' | 'waitlist' | 'preview' | 'research' | 'announced' | 'discontinued' | 'needs-verification' | 'deprecated';
 export type AiCatalogModality = 'text' | 'image' | 'video' | 'audio' | 'music' | '3d' | 'simulation' | 'code' | 'robotics';
 export type AiCatalogAccess = 'consumer-app' | 'api' | 'cloud-api' | 'open-weights' | 'research-preview' | 'enterprise' | 'waitlist';
 export type AiPricingConfidence = 'verified' | 'unit-only' | 'unknown' | 'not-commercial';
-export type AiModelCategory = 'video' | 'music' | 'world' | 'decision';
+export type AiModelCategory = 'video' | 'music' | 'world' | 'decision' | 'speech' | 'image';
 
 export interface AiCatalogSource {
   label: string;
@@ -35,6 +37,17 @@ export interface AiCatalogItem {
   capabilities: string[];
   bestFor: string;
   url?: string;
+
+  /** Optional SRE seed; DB drift remains a warning during rollout. */
+  deferredDbSeed?: boolean;
+  releasedAt?: string;
+  deprecatedAt?: string;
+  shutdownDate?: string;
+  replacementModel?: string;
+  deprecationSourceUrl?: string;
+  pricingProviderSlug?: string;
+  pricingChannel?: string;
+  usageRates?: { priceKind: string; unit: string; price: number; approximate?: boolean }[];
 
   /** Model-category metadata; unknown world-model specifications remain unset. */
   modelCategory?: AiModelCategory;
@@ -90,6 +103,7 @@ const VERIFIED_AT = '2026-09-15';
  * logos and benchmark summaries for these static entries.
  */
 export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
+  ...NON_LLM_CATALOG,
   // Agent / coding-agent plans
   {
     kind: 'agent',
@@ -1075,7 +1089,7 @@ export const WORLD_MODEL_RESEARCH_NOTES = [
   },
 ];
 
-export const RIGOROUS_MODEL_KINDS: AiCatalogKind[] = ['video-model', 'music-model', 'world-model', 'decision-model'];
+export const RIGOROUS_MODEL_KINDS: AiCatalogKind[] = ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model'];
 
 export function catalogForKind(kind: AiCatalogKind): AiCatalogItem[] {
   return AI_VERTICAL_CATALOG.filter((item) => item.kind === kind);

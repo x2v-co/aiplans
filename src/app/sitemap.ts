@@ -30,6 +30,8 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '/creative-plans', priority: 0.82, changefreq: 'weekly' },
   { path: '/video-models', priority: 0.84, changefreq: 'weekly' },
   { path: '/music-models', priority: 0.8, changefreq: 'weekly' },
+  { path: '/voice-models', priority: 0.78, changefreq: 'weekly' },
+  { path: '/image-models', priority: 0.78, changefreq: 'weekly' },
   { path: '/decision-models', priority: 0.78, changefreq: 'weekly' },
   { path: '/world-models', priority: 0.78, changefreq: 'weekly' },
   { path: '/coupons', priority: 0.7, changefreq: 'weekly' },
@@ -88,7 +90,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('sitemap: failed to query providers', err);
   }
 
-  for (const item of AI_VERTICAL_CATALOG.filter(i => ['video-model', 'music-model', 'world-model', 'decision-model'].includes(i.kind) && i.slug)) {
+  for (const item of AI_VERTICAL_CATALOG.filter(i => ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model'].includes(i.kind) && i.slug)) {
     for (const locale of LOCALES) urls.push({ url: `${BASE_URL}/${locale}/${item.kind}s/${item.slug}`,
       lastModified: item.verifiedAt ? new Date(item.verifiedAt) : now, changeFrequency: 'weekly', priority: 0.68 });
   }

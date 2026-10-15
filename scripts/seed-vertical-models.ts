@@ -140,7 +140,7 @@ async function loadExistingModels(slugs: string[]): Promise<Map<string, ModelRow
 }
 
 async function main() {
-  const rows = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind));
+  const rows = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && !item.deferredDbSeed);
   const slugs = rows.map((item) => item.slug).filter(Boolean) as string[];
   const providers = await loadProviders();
   const existingModels = await loadExistingModels(slugs);

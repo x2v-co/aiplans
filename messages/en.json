@@ -60,7 +60,9 @@
     "worldModels": "World Models",
     "coupons": "Coupons",
     "calculator": "Calculator",
-    "submitProvider": "Submit Provider"
+    "submitProvider": "Submit Provider",
+    "voiceModels": "Voice Models",
+    "imageModels": "Image Generation and Vision"
   },
   "common": {
     "loading": "Loading...",
@@ -382,5 +384,37 @@
     "offPeak": "Off-peak",
     "rates": "Input {input} · cache hit {cache} · output {output} / 1M tokens",
     "window": "Peak: 01:00–04:00 & 06:00–10:00 UTC Mon–Fri, excluding Chinese public holidays. All other times are off-peak. Unlisted holidays follow the weekday peak schedule."
+  },
+  "nonLlmModels": {
+    "voiceTitle": "Voice Models",
+    "voiceDescription": "Compare speech-to-speech, text-to-speech and ASR pricing, aliases and lifecycle dates.",
+    "imageTitle": "Image Generation and Vision",
+    "imageDescription": "Compare Vercel AI Gateway image generation prices and track Moondream Cloud lifecycle notices.",
+    "model": "Model",
+    "pricing": "Pricing and verification",
+    "channel": "Pricing channel",
+    "verified": "Verified",
+    "released": "Released",
+    "deprecated": "Deprecated on",
+    "shutdown": "Shutdown / EOL",
+    "successor": "Successor",
+    "needsVerification": "Needs verification",
+    "sources": "Sources",
+    "context": "Context",
+    "unknown": "— means unknown; unknown prices are never shown as free.",
+    "visionNote": "Vision lifecycle notice; no image-generation price.",
+    "speech_to_speech": "Speech-to-speech",
+    "text_to_speech": "Text-to-speech",
+    "transcription_batch": "STT batch",
+    "transcription_streaming": "STT streaming",
+    "input_tokens": "Input tokens",
+    "output_tokens": "Output tokens",
+    "image_starting": "Starting image price",
+    "minute": "minute",
+    "hour": "hour",
+    "per_1m_characters": "1M characters",
+    "per_1m_tokens": "1M tokens",
+    "image": "image",
+    "back": "Back to list"
   }
 }

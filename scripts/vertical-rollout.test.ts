@@ -5,6 +5,8 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import * as catalog from '../src/lib/ai-vertical-catalog';
 import * as logos from '../src/lib/vertical-provider-logos';
+import type { Sql } from 'postgres';
+import { seedNonLlm } from './data/non-llm-seed';
 
 type Row = Record<string, unknown> & { id: number };
 
@@ -89,7 +91,26 @@ function fixture(initial: Record<string, Row[]> = {}) {
       assert.equal(result.code, 0, result.output);
     }
   }
-  return { data, run, seed, writeCount: () => writes };
+  async function seedNonLlmRows() {
+    // Adapt the same memory-only query store to the optional seed's SQL API.
+    const tx = async (parts: TemplateStringsArray | unknown, ...values: unknown[]): Promise<unknown> => {
+      if (!Array.isArray(parts) || !('raw' in parts)) return { fragment: parts };
+      const fragment = async (value: unknown) => ((await value) as { fragment: unknown }).fragment;
+      const table = String(await fragment(values[0]));
+      const query = parts.join('?').trim();
+      if (query === 'SELECT * FROM ?') return (await db.from(table).select()).data;
+      const payload = await fragment(values[1]) as Record<string, unknown>;
+      if (query === 'INSERT INTO ? ? RETURNING id') {
+        const result = await db.from(table).insert(payload).select('id').single();
+        return [result.data];
+      }
+      assert.equal(query, 'UPDATE ? SET ? WHERE id = ?');
+      await db.from(table).update(payload).eq('id', values[2]);
+      return [];
+    };
+    return seedNonLlm(tx as unknown as Sql, true);
+  }
+  return { data, run, seed, seedNonLlmRows, writeCount: () => writes };
 }
 
 test('rollout seeds repair missing/stale audited rows and pass the actual DB audit idempotently', async () => {
@@ -103,7 +124,7 @@ test('rollout seeds repair missing/stale audited rows and pass the actual DB aud
   assert.match(before.output, /input_modalities mismatch/);
 
   await f.seed();
-  const audited = catalog.AI_VERTICAL_CATALOG.filter(item => ['video-model', 'music-model', 'decision-model'].includes(item.kind));
+  const audited = catalog.AI_VERTICAL_CATALOG.filter(item => ['video-model', 'music-model', 'decision-model'].includes(item.kind) && !item.deferredDbSeed);
   for (const item of audited) {
     const model = f.data.models.find(row => row.slug === item.slug)!;
     assert.ok(model, item.slug);
@@ -182,4 +203,27 @@ test('SubQ P0 SQL and rollout seeds share a slug in either order without clobber
     await f.seed();
     assert.equal(JSON.stringify(f.data), snapshot);
   }
+});
+
+
+test('new non-LLM catalog rows are soft during rollout, including partially seeded rows', async () => {
+  const f = fixture();
+  await f.seed();
+  const pending = await f.run('audit-vertical-catalog', ['--db']);
+  assert.equal(pending.code, 0, pending.output);
+  for (const item of catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeed)) {
+    assert.ok(pending.output.includes(`WARNING ${item.kind}:${item.slug}: DB drift: missing models row`));
+  }
+  f.data.models.push({ id: 999, slug: 'grok-voice-3.0', name: 'Partial seed', model_category: null });
+  const partial = await f.run('audit-vertical-catalog', ['--db']);
+  assert.equal(partial.code, 0, partial.output);
+  assert.match(partial.output, /WARNING voice-model:grok-voice-3.0: DB drift: model_category/);
+  assert.doesNotMatch(partial.output, /CRITICAL/);
+  await f.seedNonLlmRows();
+  const seeded = await f.run('audit-vertical-catalog', ['--db']);
+  assert.equal(seeded.code, 0, seeded.output);
+  assert.doesNotMatch(seeded.output, /WARNING|CRITICAL/);
+  const writes = f.writeCount();
+  assert.deepEqual(await f.seedNonLlmRows(), []);
+  assert.equal(f.writeCount(), writes);
 });

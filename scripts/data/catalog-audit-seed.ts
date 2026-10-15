@@ -99,7 +99,7 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
   }
 
   // Source-owned static verticals, just like the audited world-model catalog.
-  for (const item of AI_VERTICAL_CATALOG.filter(isAuditOwnedVertical)) {
+  for (const item of AI_VERTICAL_CATALOG.filter(i => isAuditOwnedVertical(i) && !i.deferredDbSeed)) {
     const ownerSlug = item.providerSlug ?? item.provider.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const owner = await provider(ownerSlug, item.provider);
     // Snap's decision catalog view shares the P0 token API row and its identity.

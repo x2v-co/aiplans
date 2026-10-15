@@ -177,6 +177,7 @@ function hasAuditedStaticPrices(item: AiCatalogItem): boolean {
       !item.verifiedAt || !ISO_DATE.test(item.verifiedAt) || !item.sourceUrls?.length) return false;
 
   // Free output (0) is a price; null/undefined task prices stay unknown.
+  if (item.usageRates?.length) return item.usageRates.every(rate => isPrice(rate.price));
   return item.kind === 'decision-model'
     ? isPrice(item.inputPricePer1M) && isPrice(item.outputPricePer1M)
     : Boolean(item.billingUnit) && isPrice(item.pricePerUnit);
@@ -291,54 +292,57 @@ async function auditDatabaseDrift() {
   if (usageError) throw new Error(`usage_prices query failed: ${usageError.message}`);
 
   for (const item of strictRows) {
+    const report = item.deferredDbSeed ? warning : critical;
     const model = modelBySlug.get(item.slug!);
     if (!model) {
-      critical(item, 'DB drift: missing models row; run npm run seed:vertical-models');
+      report(item, `DB drift: missing models row; run npm run ${item.deferredDbSeed ? 'seed:non-llm-2026-10-15:apply' : 'seed:vertical-models'}`);
       continue;
     }
 
-    if (model.name !== item.name) critical(item, `DB drift: name ${model.name} != ${item.name}`);
-    if (model.model_category !== item.modelCategory) critical(item, `DB drift: model_category ${model.model_category} != ${item.modelCategory}`);
-    if (!sameStringArray(model.input_modalities, item.inputModalities)) critical(item, 'DB drift: input_modalities mismatch');
-    if (!sameStringArray(model.output_modalities, item.outputModalities)) critical(item, 'DB drift: output_modalities mismatch');
-    if (!sameStringArray(model.capabilities, item.capabilities)) critical(item, 'DB drift: capabilities mismatch');
-    if (model.pricing_unit !== PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown']) critical(item, `DB drift: pricing_unit ${model.pricing_unit} != ${PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown']}`);
-    if (model.offical_link !== officialLink(item)) critical(item, `DB drift: offical_link ${model.offical_link} != ${officialLink(item)}`);
-    if ((model.open_source ?? false) !== (item.access?.includes('open-weights') ?? false)) critical(item, 'DB drift: open_source mismatch');
+    if (model.name !== item.name) report(item, `DB drift: name ${model.name} != ${item.name}`);
+    if (model.model_category !== item.modelCategory) report(item, `DB drift: model_category ${model.model_category} != ${item.modelCategory}`);
+    if (!sameStringArray(model.input_modalities, item.inputModalities)) report(item, 'DB drift: input_modalities mismatch');
+    if (!sameStringArray(model.output_modalities, item.outputModalities)) report(item, 'DB drift: output_modalities mismatch');
+    if (!sameStringArray(model.capabilities, item.capabilities)) report(item, 'DB drift: capabilities mismatch');
+    const expectedPricingUnit = item.deferredDbSeed ? item.pricingUnit : PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown'];
+    if (model.pricing_unit !== expectedPricingUnit) report(item, `DB drift: pricing_unit ${model.pricing_unit} != ${expectedPricingUnit}`);
+    if (model.offical_link !== officialLink(item)) report(item, `DB drift: offical_link ${model.offical_link} != ${officialLink(item)}`);
+    if ((model.open_source ?? false) !== (item.access?.includes('open-weights') ?? false)) report(item, 'DB drift: open_source mismatch');
 
     const expectedProvider = providerBySlug.get(normalizeProviderSlug(item));
     if (!expectedProvider) {
-      critical(item, `DB drift: provider ${normalizeProviderSlug(item)} missing`);
+      report(item, `DB drift: provider ${normalizeProviderSlug(item)} missing`);
     } else {
       if (!(model.provider_ids ?? []).includes(expectedProvider.id)) {
-        critical(item, `DB drift: provider_ids missing ${normalizeProviderSlug(item)}#${expectedProvider.id}`);
+        report(item, `DB drift: provider_ids missing ${normalizeProviderSlug(item)}#${expectedProvider.id}`);
       }
       const expectedLogo = VERTICAL_PROVIDER_LOGOS[expectedProvider.slug];
       if (expectedLogo && !expectedProvider.logo_url) {
-        critical(item, `DB drift: provider ${expectedProvider.slug} missing logo_url`);
+        report(item, `DB drift: provider ${expectedProvider.slug} missing logo_url`);
       }
     }
 
+    const pricingProvider = item.pricingProviderSlug ? providerBySlug.get(item.pricingProviderSlug) : expectedProvider;
     const referencePlan = planBySlug.get(referencePlanSlug(item));
     if (!referencePlan) {
-      critical(item, `DB drift: missing official pricing reference plan ${referencePlanSlug(item)}`);
+      report(item, `DB drift: missing official pricing reference plan ${referencePlanSlug(item)}`);
     } else {
-      if (expectedProvider && referencePlan.provider_id !== expectedProvider.id) {
-        critical(item, `DB drift: pricing reference plan provider_id ${referencePlan.provider_id} != ${expectedProvider.id}`);
+      if (pricingProvider && referencePlan.provider_id !== pricingProvider.id) {
+        report(item, `DB drift: pricing reference plan provider_id ${referencePlan.provider_id} != ${pricingProvider.id}`);
       }
-      if (referencePlan.plan_kind !== 'creative') critical(item, `DB drift: reference plan_kind ${referencePlan.plan_kind} != creative`);
-      if (referencePlan.plan_category !== 'creative') critical(item, `DB drift: reference plan_category ${referencePlan.plan_category} != creative`);
-      if (referencePlan.source !== 'manual') critical(item, `DB drift: reference plan source ${referencePlan.source} != manual`);
+      if (referencePlan.plan_kind !== 'creative') report(item, `DB drift: reference plan_kind ${referencePlan.plan_kind} != creative`);
+      if (referencePlan.plan_category !== 'creative') report(item, `DB drift: reference plan_category ${referencePlan.plan_category} != creative`);
+      if (referencePlan.source !== 'manual') report(item, `DB drift: reference plan source ${referencePlan.source} != manual`);
 
       const hasMapping = (mappingRows ?? []).some((mapping: MappingRow) =>
         mapping.model_id === model.id && mapping.plan_id === referencePlan.id && mapping.source === 'manual'
       );
-      if (!hasMapping) critical(item, `DB drift: missing manual mapping to ${referencePlanSlug(item)}`);
+      if (!hasMapping) report(item, `DB drift: missing manual mapping to ${referencePlanSlug(item)}`);
     }
 
     const usage = (usageRows ?? []).filter((row: UsagePriceRow) => row.model_id === model.id);
     const expectedSource = pricingSourceUrl(item);
-    const expectedProviderId = expectedProvider?.id;
+    const expectedProviderId = pricingProvider?.id;
     const expectedPlanId = referencePlan?.id;
     const expectedAvailability = item.status !== 'announced' && item.status !== 'discontinued';
     const hasUsageReference = usage.some((row) =>
@@ -350,7 +354,7 @@ async function auditDatabaseDrift() {
       row.is_available === expectedAvailability
     );
     if (!hasUsageReference) {
-      critical(item, `DB drift: missing usage_prices reference ${referencePriceKind(item)}/${referenceUnit(item)} from ${expectedSource}`);
+      report(item, `DB drift: missing usage_prices reference ${referencePriceKind(item)}/${referenceUnit(item)} from ${expectedSource}`);
     }
   }
 

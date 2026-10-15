@@ -1,13 +1,15 @@
 import { sql, TEXT_ARRAY } from '@/lib/db';
-import { catalogForKind, type AiBenchmarkSummary, type AiCatalogItem, type AiCatalogKind, type AiCatalogModality, type AiCatalogStatus } from '@/lib/ai-vertical-catalog';
+import { catalogForKind, type AiBenchmarkSummary, type AiCatalogItem, type AiCatalogKind, type AiCatalogModality, type AiCatalogStatus, type AiModelCategory } from '@/lib/ai-vertical-catalog';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 import { getVerticalBenchmarkSummary } from '@/lib/vertical-benchmarks';
 
-const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, 'video' | 'music' | 'world' | 'decision'>> = {
+const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, AiModelCategory>> = {
   'video-model': 'video',
   'music-model': 'music',
   'world-model': 'world',
   'decision-model': 'decision',
+  'voice-model': 'speech',
+  'image-model': 'image',
 };
 
 interface DbVerticalModelRow {
@@ -20,7 +22,7 @@ interface DbVerticalModelRow {
   provider_logo_url: string | null;
   description: string | null;
   offical_link: string | null;
-  model_category: 'video' | 'music' | 'world' | 'decision';
+  model_category: AiModelCategory;
   input_modalities: string[] | null;
   output_modalities: string[] | null;
   capabilities: string[] | null;

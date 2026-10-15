@@ -36,7 +36,7 @@ export function DecisionModelCatalog({ items, locale }: { items: AiCatalogItem[]
   return <div className="mt-8 overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm">
     <thead><tr>{[zh ? '模型' : 'Model', zh ? '$/百万输入 token' : '$/M input tokens', zh ? '$/百万输出 token' : '$/M output tokens', zh ? '$/百万次任务' : '$/1M tasks', zh ? '状态 / 核验' : 'Status / verification', zh ? '来源' : 'Sources'].map(h => <th key={h} className="p-4">{h}</th>)}</tr></thead>
     <tbody>{items.map(item => <tr key={item.slug} className="border-t align-top">
-      <td className="p-4"><Link className="text-blue-600 underline" href={`/${locale}/decision-models/${item.slug}`}>{item.name}</Link><p>{item.provider}</p>{item.contextWindowLabel && <p>{item.contextWindowLabel} · {zh ? '公开预览' : 'Public preview'}</p>}</td>
+      <td className="p-4"><Link className="text-blue-600 underline" href={`/${locale}/decision-models/${item.slug}`}>{item.name}</Link><p>{item.provider}</p>{item.contextWindowLabel && <p>{item.contextWindowLabel}{item.status === 'preview' && ` · ${zh ? '公开预览' : 'Public preview'}`}</p>}</td>
       <td className="p-4">{money(item.inputPricePer1M)}</td><td className="p-4">{money(item.outputPricePer1M)}</td><td className="p-4">{money(item.pricePer1MTasks)}</td>
       <td className="p-4">{item.priceStatus === 'priced' ? (zh ? '已标价' : 'Priced') : (zh ? '待核验' : 'Needs verification')}<p>{item.verifiedAt}</p><p>{item.notes}</p></td>
       <td className="p-4">{item.sourceUrls?.map(source => <a key={source.url} className="block text-blue-600 underline" href={source.url} target="_blank" rel="noreferrer">{source.label}</a>) ?? '—'}</td>

@@ -1,3 +1,4 @@
+import { NonLlmFacts } from '@/components/non-llm-catalog';
 import { AuditedPricingFacts } from '@/components/audited-catalog';
 import Image from 'next/image';
 import { WorldModelFacts, WorldModelTiers } from '@/components/world-model-catalog';
@@ -120,6 +121,8 @@ export default function VerticalModelDetailPage({
         </section>
 
         {['video-model', 'music-model', 'decision-model'].includes(kind) && <AuditedPricingFacts item={item} locale={locale} />}
+
+        {['voice-model', 'image-model'].includes(kind) && <NonLlmFacts item={item} locale={locale} />}
 
         {kind === 'world-model' && <WorldModelFacts item={item} locale={locale} />}
 

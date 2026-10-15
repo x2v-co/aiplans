@@ -229,7 +229,7 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
 }
 
 async function main() {
-  const items = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind));
+  const items = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && !item.deferredDbSeed);
   const providers = await loadProviders();
   const models = await loadModels(items.map((item) => item.slug!).filter(Boolean));
 
