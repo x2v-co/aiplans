@@ -1,4 +1,38 @@
 {
+  "quota": {
+    "title": "Subscription quota estimates",
+    "estimate": "Estimate",
+    "monthlyEstimate": "Estimated usable tokens per month",
+    "monthlyUnknown": "Unknown; an explicit usage frequency is needed to estimate a month",
+    "sourceWindow": "Source window",
+    "model": "Served model",
+    "mix": "Assumed mix ({name}): cache reads {cache}%, fresh input {input}%, output {output}%",
+    "confidence": "Confidence",
+    "verifiedAt": "Verified on",
+    "unknown": "Unknown",
+    "evidence": "Evidence",
+    "noEvidence": "No public evidence link recorded",
+    "empty": "No verified quota estimates available yet",
+    "caveat": "Estimates depend on the stated workload mix and full utilization; they are not guaranteed allowances. One comparison month is four weeks. Short reset windows do not establish a monthly cap.",
+    "historyTitle": "Quota estimate change history",
+    "historyDescription": "Reviewed quota estimate revisions, newest first. Compare the previous and replacement ranges and their evidence. Record dates describe our versions, not necessarily when a vendor changed its allowance; a revision may reflect a correction or new evidence.",
+    "recordedAt": "Version recorded on",
+    "previous": "Previous estimate →",
+    "next": "Replacement estimate",
+    "coverage": "Does the subscription allowance cover third-party models?",
+    "coverageValues": {
+      "none": "Not included",
+      "partial": "Partially included",
+      "full": "Fully included",
+      "unknown": "Unknown"
+    },
+    "windows": {
+      "5h": "5 hours",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    }
+  },
   "copilotPlan": {
     "notes": "Copilot allowances, data policy and preview notes (source text)"
   },

@@ -22,6 +22,8 @@ import { PlanRate } from "@/components/plan-rate";
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { CopilotPlanNotes } from '@/components/copilot-plan-notes';
 import { PlanCoverage } from "@/components/plan-coverage";
+import { PlanQuotaEstimates } from '@/components/quota-estimates';
+import type { VerifiedQuotaEstimate } from '@/lib/quota/estimates';
 import type { FaqItem } from "./faqs";
 import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
 import { formatModelName } from '@/lib/model-names';
@@ -36,6 +38,7 @@ interface ComparePlansViewProps {
   faqs: FaqItem[];
   /** Active plan-scoped coupons keyed by provider slug. */
   couponByProvider: Record<string, CouponOffer[]>;
+  quotaEstimates: VerifiedQuotaEstimate[];
 }
 
 interface CheapestByKind {
@@ -57,7 +60,7 @@ interface PlanGroup {
   plans: any[];
 }
 
-export default function ComparePlansView({ locale, data, faqs, couponByProvider }: ComparePlansViewProps) {
+export default function ComparePlansView({ locale, data, faqs, couponByProvider, quotaEstimates }: ComparePlansViewProps) {
   // Billing toggle
   const [showYearly, setShowYearly] = useState(false);
   // Every provider starts expanded, and it has to be the *initial* state rather
@@ -472,6 +475,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider 
                                 )}
 
                                 {/* Features - Show more */}
+                                <PlanQuotaEstimates estimates={quotaEstimates} planSlug={plan.plan.slug} locale={locale} />
                                 <div className="mb-3">
                                   <ChannelTermsBadges terms={{ data_for_discount: plan.plan?.dataForDiscount, data_for_discount_note: plan.plan?.dataForDiscountNote, quota_unit: plan.plan?.quotaUnit }} />
                                   <PlanCoverage coverage={plan.plan?.thirdPartyCoverage} note={plan.plan?.thirdPartyCoverageNote} locale={locale} />

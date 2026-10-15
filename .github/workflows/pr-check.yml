@@ -6,6 +6,7 @@ on:
       - 'src/**'
       - 'scripts/**'
       - 'drizzle/**'
+      - 'messages/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/pr-check.yml'

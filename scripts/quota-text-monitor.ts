@@ -168,8 +168,8 @@ async function writeState(path: string, state: FailureState) {
   await rename(`${path}.tmp`, path);
 }
 
-export async function main(args = process.argv.slice(2)) {
-  config({ path: resolve(process.cwd(), '.env.local') });
+export async function main(args = process.argv.slice(2), loadEnv = () => { config({ path: resolve(process.cwd(), '.env.local') }); }) {
+  loadEnv();
   const { dryRun, sourceId } = monitorOptions(args);
   const sources = QUOTA_TEXT_SOURCES.filter((source) => !sourceId || source.id === sourceId);
   if (!sources.length) throw new Error(`Unknown source: ${sourceId}`);

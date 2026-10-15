@@ -1,6 +1,42 @@
 # Quota estimates and official text monitoring
 
-This is internal data infrastructure. It adds no pages, displayed estimates, plan prices, automatic migration registration, or scheduled jobs. Plan quotas must come from evidence reviewed for this project. The external methodology reference informed the calculation approach only; none of its vendor quota values, prices, multipliers, or adoption decisions are imported.
+Plan quotas must come from evidence reviewed for this project. The external methodology reference informed the calculation approach only; none of its vendor quota values, prices, multipliers, or adoption decisions are imported.
+
+## Public estimate display and change history
+
+Provider plan cards (`/[locale]/providers/[slug]`) and model plan comparisons
+(`/[locale]/compare/plans/[model]`) display current,
+reviewed `quota_estimates` with `verified_at` set. Estimates are labeled as such,
+use the engine's two-significant-figure range and order-of-magnitude labels,
+and include served model (unknown if absent), workload percentages, confidence,
+verification date, notes and available evidence URLs. Weekly estimates convert
+to monthly using exactly four weeks; daily/5-hour estimates retain their source
+window and show monthly values as unknown because no usage frequency is stored.
+The display does not calculate savings or add estimates to existing price JSON-LD.
+
+The existing `plans.third_party_coverage` field already explicitly describes
+whether subscription allowances cover third-party models (`none`, `partial`,
+`full`, `unknown`). Both card surfaces display it with its note; missing values
+remain unknown. `served_model` identifies the model an estimate concerns and is
+never used to infer coverage. No new column or migration is needed for this task.
+
+`/[locale]/quota-changes` follows each reviewed old row's `superseded_by` pointer
+to a reviewed replacement. It retains intermediate versions, including unchanged
+ranges and corrections, sorts by the replacement's `created_at` descending, and
+shows both ranges, windows, mixes, confidence levels, verification dates and
+version-specific evidence links (including screenshots). Dangling links,
+unreviewed endpoints, mismatched identities and cyclic chains are omitted.
+Version dates are our record dates, not claims about when vendors changed limits.
+Stable `#change-OLD-NEW` anchors allow operators to cite an individual revision.
+
+Quota queries are read-only and soft-fail to an empty array if migration 0005 is
+absent, any quota table is missing, or querying fails. Empty plan sections and
+history show “暂无已核验的额度估算” / “No verified quota estimates available yet”.
+The history route is dynamic, has localized canonical/hreflang metadata and
+CollectionPage/ItemList JSON-LD without token values or Offers. It is `noindex`
+and excluded from the sitemap until at least one valid reviewed revision exists;
+then both indexing and sitemap inclusion become automatic. No database or
+production environment is needed to test these states.
 
 ## Calculation method
 
@@ -142,6 +178,7 @@ systemctl list-timers aiplans-quota-monitor.timer
 ## Offline validation
 
 ```bash
+npm test # recursively includes quota display, history, SEO and missing-table tests
 npx tsc --noEmit
 npx tsc --noEmit -p scripts/tsconfig.quota.json
 npx tsx --test src/db/schema/quota.test.ts src/lib/quota/engine.test.ts src/lib/quota/pay-as-you-go.test.ts scripts/seed-quota-payg.test.ts scripts/utils/quota-text-monitor.test.ts scripts/quota-text-monitor.test.ts
@@ -150,3 +187,4 @@ npm run lint
 ```
 
 The dedicated script TypeScript config covers the monitor and PAYG seed files because the app's root config excludes `scripts/`. Tests use synthetic arithmetic, HTML fixtures and injected clients; they require no network or database. `npm test` / `scripts/test-unit.mjs` recursively discovers both PAYG test files, and PR CI runs that command and both TypeScript checks. PAYG tests exercise both mixes, USD/CNY conversion, cache fallback/zero rates, promotion expiry, exclusions, read-only preview, pre-0005 errors, empty data, idempotence, supersession ordering and rollback on rehearsal/failure.
+The dedicated script TypeScript config covers the new monitor files because the app's root config excludes `scripts/`. Tests use synthetic arithmetic, HTML fixtures and injected clients; they require no network or database. The monitor entry-point test injects a no-op environment loader so it does not read local credentials. `package.json` delegates `npm test` to `scripts/test-unit.mjs`, which recursively discovers the quota tests under `src/` as well as the monitor tests under `scripts/`. CI runs that command and both TypeScript checks, including on translation changes.

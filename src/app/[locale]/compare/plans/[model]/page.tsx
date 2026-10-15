@@ -8,6 +8,7 @@ import ComparePlansView from "./compare-plans-view";
 import { buildCompareFaqs } from "./faqs";
 import { decodeSlugParam } from "@/lib/route-params";
 import { formatModelName } from '@/lib/model-names';
+import { getVerifiedQuotaEstimates } from '@/lib/quota/data';
 
 // Metadata prices and plan counts are read on each request.
 export const dynamic = 'force-dynamic';
@@ -41,6 +42,9 @@ export default async function ComparePlansModelPage({
   }
 
   const isZh = locale === "zh";
+  const quotaEstimates = await getVerifiedQuotaEstimates(
+    [...data.officialPlans, ...data.thirdPartyPlans].map(entry => entry.plan.slug),
+  );
   const crumbs = breadcrumbList([
     { name: isZh ? "首页" : "Home", url: `${SITE_URL}/${locale}` },
     { name: isZh ? "套餐对比" : "Compare Plans", url: `${SITE_URL}/${locale}/compare/plans` },
@@ -55,7 +59,7 @@ export default async function ComparePlansModelPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage(faqs) }} />
-      <ComparePlansView locale={locale} data={data} faqs={faqs} couponByProvider={couponByProvider} />
+      <ComparePlansView locale={locale} data={data} faqs={faqs} couponByProvider={couponByProvider} quotaEstimates={quotaEstimates} />
     </>
   );
 }

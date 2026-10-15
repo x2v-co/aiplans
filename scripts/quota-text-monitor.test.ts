@@ -30,7 +30,8 @@ test('missing Telegram token exits apply before opening DB or fetching sources',
   try {
     process.env.AIPLANS_TG_BOT_TOKEN = '';
     globalThis.fetch = async () => { throw new Error('Network forbidden in tests'); };
-    await main(['--apply']);
+    // Unit tests must never load local credentials, even when invoked from a developer checkout.
+    await main(['--apply'], () => {});
   } finally {
     globalThis.fetch = originalFetch;
     if (previousToken === undefined) delete process.env.AIPLANS_TG_BOT_TOKEN;

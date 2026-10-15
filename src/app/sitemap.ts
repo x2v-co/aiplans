@@ -3,6 +3,8 @@ import { MetadataRoute } from 'next';
 import { sql } from '@/lib/db';
 import { selectIndexablePlanComparisons } from '@/lib/search-indexing';
 import { PRICING_GUIDE_SLUGS } from '@/lib/pricing-guides';
+import { getVerifiedQuotaEstimates } from '@/lib/quota/data';
+import { quotaChanges } from '@/lib/quota/estimates';
 
 const BASE_URL = 'https://aiplans.dev';
 const LOCALES = ['en', 'zh'] as const;
@@ -22,6 +24,7 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
   { path: '/api-pricing', priority: 0.9, changefreq: 'daily' },
   { path: '/calculator', priority: 0.9, changefreq: 'daily' },
   { path: '/compare/plans', priority: 0.9, changefreq: 'daily' },
+  { path: '/quota-changes', priority: 0.6, changefreq: 'daily' },
   { path: '/compare/models', priority: 0.8, changefreq: 'daily' },
   { path: '/compare/video-models', priority: 0.82, changefreq: 'weekly' },
   { path: '/coding-agents', priority: 0.84, changefreq: 'weekly' },
@@ -54,6 +57,7 @@ const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['chan
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const urls: UrlEntry[] = [];
   const now = new Date();
+  const hasQuotaHistory = quotaChanges(await getVerifiedQuotaEstimates()).length > 0;
 
   const push = (path: string, priority: number, changeFrequency: UrlEntry['changeFrequency']) => {
     urls.push({ url: `${BASE_URL}${path}`, lastModified: now, changeFrequency, priority });
@@ -62,6 +66,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Locale roots and static paths × all locales
   for (const locale of LOCALES) {
     for (const { path, priority, changefreq } of STATIC_PATHS) {
+      // Match the history page's noindex policy until a reviewed revision exists.
+      if (path === '/quota-changes' && !hasQuotaHistory) continue;
       push(`/${locale}${path}`, priority, changefreq);
     }
   }

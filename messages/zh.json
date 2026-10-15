@@ -1,4 +1,38 @@
 {
+  "quota": {
+    "title": "订阅额度估算",
+    "estimate": "估算",
+    "monthlyEstimate": "月可用 token（估算）",
+    "monthlyUnknown": "未知；需明确使用频次才能估算月值",
+    "sourceWindow": "原始额度周期",
+    "model": "使用模型",
+    "mix": "假设配比（{name}）：缓存读取 {cache}%，新输入 {input}%，输出 {output}%",
+    "confidence": "可信度",
+    "verifiedAt": "核验日期",
+    "unknown": "未知",
+    "evidence": "证据",
+    "noEvidence": "未记录公开证据链接",
+    "empty": "暂无已核验的额度估算",
+    "caveat": "估算取决于所列配比及充分使用额度的假设，不代表保证额度。比较口径为每月四周；短周期额度不能单独确立月上限。",
+    "historyTitle": "额度变化历史",
+    "historyDescription": "按时间倒序列出已核验的额度估算版本，对照旧区间、新区间及证据。记录日期是本站版本日期，不一定是厂商调整额度的日期；版本变更也可能源于纠错或新增证据。",
+    "recordedAt": "版本记录日期",
+    "previous": "旧估算 →",
+    "next": "新估算",
+    "coverage": "订阅额度是否覆盖第三方模型",
+    "coverageValues": {
+      "none": "不包含",
+      "partial": "部分包含",
+      "full": "全部包含",
+      "unknown": "未知"
+    },
+    "windows": {
+      "5h": "5 小时",
+      "daily": "每日",
+      "weekly": "每周",
+      "monthly": "每月"
+    }
+  },
   "copilotPlan": {
     "notes": "Copilot 额度、数据政策和预览说明（来源原文）"
   },

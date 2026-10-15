@@ -16,6 +16,8 @@ import { PlanRate } from "@/components/plan-rate";
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { CopilotPlanNotes } from '@/components/copilot-plan-notes';
 import { PlanCoverage } from "@/components/plan-coverage";
+import { PlanQuotaEstimates } from '@/components/quota-estimates';
+import { getVerifiedQuotaEstimates } from '@/lib/quota/data';
 import { buildMetadata, breadcrumbList, priceItemList, faqPage, SITE_URL, type Locale } from "@/lib/seo";
 import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
 import { getTranslations } from 'next-intl/server';
@@ -116,9 +118,10 @@ export default async function ProviderPage({
   }
 
   const { provider, models, plans } = data;
-  const [apiModels, t] = await Promise.all([
+  const [apiModels, t, quotaEstimates] = await Promise.all([
     getGroupedProducts(null, provider.id),
     getTranslations({ locale, namespace: 'providerPage' }),
+    getVerifiedQuotaEstimates(plans.map(plan => plan.slug)),
   ]);
   const providerCoupons = couponByProvider[providerSlug] ?? [];
   const guideSlug = guideForProviderSlug(providerSlug);
@@ -363,6 +366,7 @@ export default async function ProviderPage({
                     )}
 
                     <CopilotPlanNotes slug={plan.slug} notes={plan.notes} />
+                    <PlanQuotaEstimates estimates={quotaEstimates} planSlug={plan.slug} locale={locale} />
                     <Separator className="my-4" />
 
                     <div className="space-y-2 text-sm">
