@@ -92,7 +92,7 @@ const BYTEPLUS = { label: 'BytePlus ModelArk model pricing', url: 'https://ai.by
 const QWEN = { label: 'Alibaba Cloud Model Studio pricing (International/Singapore)', url: 'https://www.alibabacloud.com/help/en/model-studio/model-pricing', publisher: 'Alibaba Cloud' };
 const RECRAFT = { label: 'Recraft API pricing', url: 'https://www.recraft.ai/docs/api-reference/pricing', publisher: 'Recraft' };
 const XAI = { label: 'xAI models and pricing', url: 'https://docs.x.ai/docs/models', publisher: 'xAI' };
-const IDEOGRAM = { label: 'Ideogram API pricing', url: 'https://ideogram.ai/api-pricing', publisher: 'Ideogram' };
+const IDEOGRAM = { label: 'Ideogram API pricing', url: 'https://ideogram.ai/pricing/?pricing_tab=api', publisher: 'Ideogram' };
 const mp = (kind: string, price: number): Rate => ({ priceKind: kind, unit: 'megapixel', price });
 
 function perImage(provider: string, providerSlug: string, src: { label: string; url: string; publisher: string }, slug: string, name: string, rates: Rate[], extra: Partial<Spec> = {}): AiCatalogItem {
@@ -119,9 +119,8 @@ const qwen = (slug: string, name: string, rates: Rate[]) =>
   perImage('Alibaba Cloud (Qwen)', 'qwen', QWEN, slug, name, rates, { notes: 'International (Singapore) deployment price; Mainland China prices differ.' });
 const recraft = (slug: string, name: string, rates: Rate[]) => perImage('Recraft', 'recraft', RECRAFT, slug, name, rates);
 const grok = (slug: string, name: string, price: number) => perImage('xAI', 'xai', XAI, slug, name, [img('image', price)]);
-const ideogram = (slug: string, name: string, turbo: number, def: number, quality: number) => perImage('Ideogram', 'ideogram', IDEOGRAM, slug, name,
-  [img('image_turbo', turbo), img('image_default', def), img('image_quality', quality)],
-  { needsVerification: ['Ideogram pricing page renders client-side; prices taken from the published page text via search index on 2026-10-15. Re-check on ideogram.ai/api-pricing.'] });
+const ideogram = (slug: string, name: string, rates: Rate[], extra: Partial<Spec> = {}) => perImage('Ideogram', 'ideogram', IDEOGRAM, slug, name, rates, extra);
+const tiers = (prefix: string, prices: [string, number][]) => prices.map(([tier, price]) => img(`${prefix}_${tier}`, price));
 
 export const IMAGE_MODEL_CATALOG_OTHERS: AiCatalogItem[] = [
   bfl('flux-3-image', 'FLUX 3 Image', [img('image_768', 0.041), img('image_1k', 0.048), img('image_1.5k', 0.07), img('image_2k', 0.1), img('image_4k', 0.607)]),
@@ -152,8 +151,16 @@ export const IMAGE_MODEL_CATALOG_OTHERS: AiCatalogItem[] = [
   grok('grok-imagine-image-2.0', 'Grok Imagine Image 2.0', 0.04),
   grok('grok-imagine-image-quality', 'Grok Imagine Image (quality)', 0.05),
   grok('grok-imagine-image', 'Grok Imagine Image', 0.02),
-  ideogram('ideogram-4.0', 'Ideogram 4.0', 0.03, 0.06, 0.1),
-  ideogram('ideogram-3.0', 'Ideogram 3.0', 0.03, 0.06, 0.09),
+  ideogram('ideogram-4.5', 'Ideogram 4.5', [
+    ...tiers('image', [['low', 0.03], ['medium', 0.06], ['high', 0.1]]), img('image_high_with_reference', 0.22),
+    ...tiers('precise_edit', [['tier_1', 0.008], ['tier_2', 0.03], ['tier_3', 0.06], ['tier_4', 0.22]]),
+  ], { headline: 0.03, notes: 'Generate low/medium/high; 1K and 2K are the same price. Precise Edit has four price tiers (listed in page order).' }),
+  ideogram('ideogram-4.0', 'Ideogram 4.0', tiers('image', [['turbo', 0.03], ['default', 0.06], ['quality', 0.1]])),
+  ideogram('ideogram-3.0', 'Ideogram 3.0', [
+    ...tiers('image', [['turbo', 0.03], ['default', 0.06], ['quality', 0.09]]),
+    ...tiers('character_reference', [['turbo', 0.1], ['default', 0.15], ['quality', 0.2]]),
+  ]),
+  ideogram('ideogram-3.0-flash', 'Ideogram 3.0 Flash', [img('image', 0.03)]),
 ];
 
 export const IMAGE_MODEL_CATALOG: AiCatalogItem[] = [...IMAGE_MODEL_CATALOG_GOOGLE_OPENAI, ...IMAGE_MODEL_CATALOG_OTHERS];

@@ -81,6 +81,8 @@ test('image seed: dry-run is read-only, reuses existing LLM rows/providers and i
   assert.ok(!f.data.usage_prices.some(row => row.price_kind === 'availability'));
   const retired = f.data.models.find(row => row.slug === 'gemini-2.5-flash-image')!;
   assert.ok(f.data.usage_prices.filter(row => row.model_id === retired.id).every(row => row.is_available === false));
+  const i45 = f.data.models.find(row => row.slug === 'ideogram-4.5')!;
+  assert.equal(f.data.usage_prices.filter(row => row.model_id === i45.id).length, 8);
   const writes = f.writeCount();
   assert.deepEqual(await seedImageModels(f.tx, true), []);
   assert.equal(f.writeCount(), writes);
