@@ -158,7 +158,6 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     capabilities: ['browser', 'files', 'research', 'long tasks', 'pooled credits', 'SSO'],
     bestFor: 'General web and research tasks with file outputs.',
     url: 'https://manus.im/team',
-    deferredDbSeed: true,
     pricingConfidence: 'verified',
     lastVerified: '2026-10-15',
     sourceUrls: [{ label: 'Manus Team', url: 'https://manus.im/team', publisher: 'Manus' }],

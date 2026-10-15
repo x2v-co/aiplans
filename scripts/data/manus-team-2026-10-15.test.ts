@@ -178,7 +178,7 @@ test('npm scripts remain optional and the static Manus catalog exposes Team pric
   assert.doesNotMatch(readFileSync(new URL('../../deploy/production/rollout.sh', import.meta.url), 'utf8'), /seed:manus-team|seed-manus-team/);
   const manus = AI_VERTICAL_CATALOG.filter(item => item.providerSlug === 'manus');
   assert.equal(manus.length, 1);
-  assert.equal(manus[0].deferredDbSeed, true); assert.equal(manus[0].url, MANUS_TEAM_SOURCE);
+  assert.equal(manus[0].url, MANUS_TEAM_SOURCE);
   assert.match(manus[0].pricing, /US\$20\/seat\/month or US\$200\/seat\/year/);
   assert.match(manus[0].pricing, /4,000 credits\/seat\/month, pooled/);
   assert.match(manus[0].notes!, /never trains on data/);
