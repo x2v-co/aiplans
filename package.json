@@ -71,6 +71,8 @@
     "sync:openai-deprecations": "tsx scripts/sync-openai-deprecations.ts",
     "sync:openai-deprecations:dry-run": "tsx scripts/sync-openai-deprecations.ts --dry-run",
     "test": "node scripts/test-unit.mjs",
+    "seed:manus-team": "tsx scripts/seed-manus-team-2026-10-15.ts",
+    "seed:manus-team:apply": "tsx scripts/seed-manus-team-2026-10-15.ts --apply",
     "seed:copilot": "tsx scripts/seed-copilot-2026-10-15.ts",
     "seed:copilot:apply": "tsx scripts/seed-copilot-2026-10-15.ts --apply",
     "seed:opencode-go": "tsx scripts/seed-opencode-go-2026-10-15.ts",
