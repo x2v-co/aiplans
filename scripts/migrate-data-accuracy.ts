@@ -923,6 +923,10 @@ const MIGRATIONS: Migration[] = [
     name: '034_add_model_license',
     sql: readFileSync(new URL('../drizzle/0009_model_license.sql', import.meta.url), 'utf8'),
   },
+  {
+    name: '035_allow_per_hour_unit',
+    sql: readFileSync(new URL('../drizzle/0010_allow_per_hour_unit.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 async function main() {
