@@ -42,7 +42,7 @@
  *   C22 variants.*              — channel price variant integrity (one headline,
  *                                   no inverted prices, no stale active rows)
  */
-import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput } from './utils/audit-price-policy';
+import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice as isVerifiedFreeChannel } from './utils/audit-price-policy';
 import { db } from './db/queries';
 import { databaseSql } from './db/postgres-admin';
 import { resolveSelector, type ModelSelector, type SelectableModel } from '../src/lib/plan-selector';
@@ -235,8 +235,7 @@ async function main() {
   const isVerifiedFreePrice = (modelId: number | null | undefined, providerId: number | null | undefined) => {
     const modelSlug = modelId != null ? modelById.get(modelId)?.slug : undefined;
     const providerSlug = providerId != null ? providerById.get(providerId)?.slug : undefined;
-    return providerSlug === 'zhipu-china'
-      && (modelSlug === 'glm-4.7-flash' || modelSlug === 'glm-4.6v-flash');
+    return isVerifiedFreeChannel(modelSlug, providerSlug);
   };
   // Helper: image/audio models priced per-call rather than per-token
   const isNonTokenPriced = (modelId: number | null | undefined) => {

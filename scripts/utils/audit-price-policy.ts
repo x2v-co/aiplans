@@ -7,6 +7,14 @@ export function isExplicitlyUnverifiedPrice(row: {
     && row.last_verified == null && row.notes?.startsWith('[needs-verification]') === true;
 }
 
+/** Verified free channels. A free gateway must never exempt other model channels. */
+export function isVerifiedFreePrice(modelSlug: string | undefined, providerSlug: string | undefined) {
+  if (providerSlug === 'zhipu-china' && (modelSlug === 'glm-4.7-flash' || modelSlug === 'glm-4.6v-flash')) return true;
+  // /workspace/aiplans-gaps-facts.md, Nemotron 3.5 Lightning section (2026-10-15).
+  return modelSlug === 'nemotron-3.5-lightning'
+    && (providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway');
+}
+
 /** Audit A2 #2 explicitly confirms this paid-input/free-output API. */
 /** OpenRouter /api/v1/models + /endpoints (checked 2026-10-15): ScaleDown's only endpoint bills input only, completion "0". */
 const OPENROUTER_INPUT_ONLY = new Set(['scaledown-summarize', 'scaledown-extract']);
