@@ -52,8 +52,14 @@ test('only audited video/music values are numeric; range and approximation are e
       assert.equal(item.verifiedAt, '2026-10-15');
       assert.equal(item.sourceUrls?.[0].url, 'https://ai.google.dev/gemini-api/docs/pricing');
     } else {
-      assert.equal(item.pricePerUnit, null, item.slug);
-      assert.equal(item.priceStatus, 'needs-verification');
+      if (item.priceStatus === 'needs-verification') {
+        assert.equal(item.pricePerUnit, null, item.slug);
+      } else {
+        // Re-verified rows must cite an official source and carry no open audit flag.
+        assert.equal(item.verifiedAt, '2026-10-15', item.slug);
+        assert.ok(item.sourceUrls?.length, item.slug);
+        assert.equal(item.needsVerification, undefined, item.slug);
+      }
     }
   }
   assert.equal(catalogForKind('video-model').find(i => i.slug === 'sora')?.status, 'discontinued');

@@ -175,6 +175,10 @@ function sameStringArray(a: string[] | null | undefined, b: string[] | null | un
 function hasAuditedStaticPrices(item: AiCatalogItem): boolean {
   const isPrice = (value: number | null | undefined) =>
     typeof value === 'number' && Number.isFinite(value) && value >= 0;
+  if (item.priceStatus === 'subscription_included' && item.planTiers?.length) {
+    return Boolean(item.verifiedAt && ISO_DATE.test(item.verifiedAt) && item.sourceUrls?.length) &&
+      item.planTiers.every(tier => isPrice(tier.price) && Boolean(tier.currency));
+  }
   if (item.priceStatus !== 'priced' || !item.currency || !item.pricingUnit ||
       !item.verifiedAt || !ISO_DATE.test(item.verifiedAt) || !item.sourceUrls?.length) return false;
 
