@@ -87,4 +87,73 @@ export const IMAGE_MODEL_CATALOG_GOOGLE_OPENAI: AiCatalogItem[] = [
   gptImage('gpt-image-1', 5, 10, 40, undefined, { status: 'deprecated', shutdownDate: '2026-10-23', deprecationSourceUrl: OPENAI_DEPRECATIONS, replacementModel: 'gpt-image-2.5-sunburst or gpt-image-2.5-flare' }),
 ];
 
-export const IMAGE_MODEL_CATALOG: AiCatalogItem[] = [...IMAGE_MODEL_CATALOG_GOOGLE_OPENAI];
+const BFL = { label: 'Black Forest Labs API pricing', url: 'https://docs.bfl.ai/quick_start/pricing', publisher: 'Black Forest Labs' };
+const BYTEPLUS = { label: 'BytePlus ModelArk model pricing', url: 'https://ai.byteplus.com/ark/region:ap-southeast-1/docs/model-pricing', publisher: 'BytePlus' };
+const QWEN = { label: 'Alibaba Cloud Model Studio pricing (International/Singapore)', url: 'https://www.alibabacloud.com/help/en/model-studio/model-pricing', publisher: 'Alibaba Cloud' };
+const RECRAFT = { label: 'Recraft API pricing', url: 'https://www.recraft.ai/docs/api-reference/pricing', publisher: 'Recraft' };
+const XAI = { label: 'xAI models and pricing', url: 'https://docs.x.ai/docs/models', publisher: 'xAI' };
+const IDEOGRAM = { label: 'Ideogram API pricing', url: 'https://ideogram.ai/api-pricing', publisher: 'Ideogram' };
+const mp = (kind: string, price: number): Rate => ({ priceKind: kind, unit: 'megapixel', price });
+
+function perImage(provider: string, providerSlug: string, src: { label: string; url: string; publisher: string }, slug: string, name: string, rates: Rate[], extra: Partial<Spec> = {}): AiCatalogItem {
+  const headline = Math.min(...rates.filter(r => r.unit === 'image').map(r => r.price));
+  return image({
+    slug, name, provider, providerSlug, pricingUnit: 'per_image', headline, rates, source: [src],
+    pricing: rates.map(r => `${r.priceKind}: $${r.price}/${r.unit}`).join('; '), ...extra,
+  });
+}
+
+const bfl = (slug: string, name: string, rates: Rate[], extra: Partial<Spec> = {}) =>
+  perImage('Black Forest Labs', 'bfl', BFL, slug, name, rates, { notes: '1 credit = $0.01.', ...extra });
+function flux2(slug: string, name: string, first: number, extraMp: number, inputMp: number): AiCatalogItem {
+  return image({
+    slug, name, provider: 'Black Forest Labs', providerSlug: 'bfl', pricingUnit: 'per_megapixel', headline: first, source: [BFL],
+    pricing: `$${first} first output MP; $${extraMp} each additional output MP; $${inputMp} per input (reference) MP`,
+    rates: [mp('output_first_megapixel', first), mp('output_additional_megapixel', extraMp), mp('input_megapixel', inputMp)],
+    notes: '1 credit = $0.01. Billed by megapixel; a 1024x1024 image is ~1 MP.',
+  });
+}
+const seedream = (slug: string, name: string, rates: Rate[], extra: Partial<Spec> = {}) =>
+  perImage('ByteDance (BytePlus ModelArk)', 'volcengine', BYTEPLUS, slug, name, rates, extra);
+const qwen = (slug: string, name: string, rates: Rate[]) =>
+  perImage('Alibaba Cloud (Qwen)', 'qwen', QWEN, slug, name, rates, { notes: 'International (Singapore) deployment price; Mainland China prices differ.' });
+const recraft = (slug: string, name: string, rates: Rate[]) => perImage('Recraft', 'recraft', RECRAFT, slug, name, rates);
+const grok = (slug: string, name: string, price: number) => perImage('xAI', 'xai', XAI, slug, name, [img('image', price)]);
+const ideogram = (slug: string, name: string, turbo: number, def: number, quality: number) => perImage('Ideogram', 'ideogram', IDEOGRAM, slug, name,
+  [img('image_turbo', turbo), img('image_default', def), img('image_quality', quality)],
+  { needsVerification: ['Ideogram pricing page renders client-side; prices taken from the published page text via search index on 2026-10-15. Re-check on ideogram.ai/api-pricing.'] });
+
+export const IMAGE_MODEL_CATALOG_OTHERS: AiCatalogItem[] = [
+  bfl('flux-3-image', 'FLUX 3 Image', [img('image_768', 0.041), img('image_1k', 0.048), img('image_1.5k', 0.07), img('image_2k', 0.1), img('image_4k', 0.607)]),
+  flux2('flux-2-max', 'FLUX.2 [max]', 0.07, 0.03, 0.03),
+  flux2('flux-2-pro', 'FLUX.2 [pro]', 0.03, 0.015, 0.015),
+  flux2('flux-2-flex', 'FLUX.2 [flex]', 0.05, 0.05, 0.05),
+  flux2('flux-2-klein-9b', 'FLUX.2 [klein] 9B', 0.015, 0.002, 0.002),
+  flux2('flux-2-klein-4b', 'FLUX.2 [klein] 4B', 0.014, 0.001, 0.001),
+  bfl('flux-kontext-max', 'FLUX.1 Kontext [max]', [img('image', 0.08)]),
+  bfl('flux-kontext-pro', 'FLUX.1 Kontext [pro]', [img('image', 0.04)]),
+  bfl('flux-1.1-pro-ultra', 'FLUX1.1 [pro] Ultra', [img('image', 0.06)]),
+  bfl('flux-1.1-pro', 'FLUX1.1 [pro]', [img('image', 0.04)]),
+  seedream('dola-seedream-5-0-pro', 'Seedream 5.0 Pro', [img('image_up_to_1.5k', 0.045), img('image_above_1.5k', 0.09), img('reference_image_after_first', 0.003)],
+    { notes: 'First reference image is free; each additional reference image $0.003.' }),
+  seedream('seedream-5-0-lite', 'Seedream 5.0 Lite', [img('image', 0.035)]),
+  seedream('seedream-5-0-flash', 'Seedream 5.0 Flash', [img('image', 0.018)]),
+  seedream('seedream-4-5', 'Seedream 4.5', [img('image', 0.04)]),
+  seedream('seedream-4-0', 'Seedream 4.0', [img('image', 0.03)]),
+  qwen('qwen-image-3.0-pro', 'Qwen-Image 3.0 Pro', [img('image_1k', 0.04), img('image_2k', 0.075), img('input_image', 0.003)]),
+  qwen('qwen-image-3.0', 'Qwen-Image 3.0', [img('image', 0.03), img('input_image', 0.003)]),
+  qwen('qwen-image-2.1-pro', 'Qwen-Image 2.1 Pro', [img('image', 0.04)]),
+  qwen('qwen-image-2.1-turbo', 'Qwen-Image 2.1 Turbo', [img('image', 0.016)]),
+  qwen('qwen-image-2.0-pro', 'Qwen-Image 2.0 Pro', [img('image', 0.075)]),
+  qwen('qwen-image-2.0', 'Qwen-Image 2.0', [img('image', 0.035)]),
+  recraft('recraft-v4.1-flash', 'Recraft V4.1 Flash', [img('raster_image', 0.007)]),
+  recraft('recraft-v4.1', 'Recraft V4.1', [img('raster_image', 0.035), img('vector_image', 0.08), img('pro_raster_image', 0.21), img('pro_vector_image', 0.3)]),
+  recraft('recraft-v4', 'Recraft V4', [img('raster_image', 0.04), img('vector_image', 0.08), img('pro_raster_image', 0.25), img('pro_vector_image', 0.3)]),
+  grok('grok-imagine-image-2.0', 'Grok Imagine Image 2.0', 0.04),
+  grok('grok-imagine-image-quality', 'Grok Imagine Image (quality)', 0.05),
+  grok('grok-imagine-image', 'Grok Imagine Image', 0.02),
+  ideogram('ideogram-4.0', 'Ideogram 4.0', 0.03, 0.06, 0.1),
+  ideogram('ideogram-3.0', 'Ideogram 3.0', 0.03, 0.06, 0.09),
+];
+
+export const IMAGE_MODEL_CATALOG: AiCatalogItem[] = [...IMAGE_MODEL_CATALOG_GOOGLE_OPENAI, ...IMAGE_MODEL_CATALOG_OTHERS];

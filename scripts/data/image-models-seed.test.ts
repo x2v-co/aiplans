@@ -53,7 +53,8 @@ test('image catalog: every row is official-sourced, itemized and has a headline 
 
 test('image seed: dry-run is read-only, reuses existing LLM rows/providers and is idempotent', async () => {
   const f = fixture({
-    providers: [{ id: 1, slug: 'google' }, { id: 2, slug: 'openai' }, { id: 3, slug: 'vertex-ai' }],
+    providers: [{ id: 1, slug: 'google' }, { id: 2, slug: 'openai' }, { id: 3, slug: 'vertex-ai' },
+      { id: 4, slug: 'bfl' }, { id: 5, slug: 'volcengine' }, { id: 6, slug: 'qwen' }, { id: 7, slug: 'xai' }],
     models: [{ id: 3364, slug: 'gemini-nano-banana-2.1', name: 'Gemini Nano Banana 2.1', type: 'llm', description: 'LLM scraper row', provider_ids: [1] }],
     usage_prices: [],
   });
@@ -61,7 +62,8 @@ test('image seed: dry-run is read-only, reuses existing LLM rows/providers and i
   const preview = await seedImageModels(f.tx);
   assert.deepEqual(f.data, before);
   assert.equal(f.writeCount(), 0);
-  assert.equal(preview.filter(s => s.table === 'providers').length, 0);
+  assert.deepEqual(preview.filter(s => s.table === 'providers').map(s => JSON.stringify(s)).filter(s => /recraft|ideogram/.test(s)).length, 2);
+  assert.equal(preview.filter(s => s.table === 'providers').length, 2);
   await seedImageModels(f.tx, true);
   const nano = f.data.models.filter(row => row.slug === 'gemini-nano-banana-2.1');
   assert.equal(nano.length, 1);
@@ -69,7 +71,11 @@ test('image seed: dry-run is read-only, reuses existing LLM rows/providers and i
   assert.equal(nano[0].type, 'llm');
   assert.equal(nano[0].description, 'LLM scraper row');
   assert.equal(nano[0].model_category, 'image');
-  assert.equal(f.data.providers.length, 3);
+  assert.equal(f.data.providers.length, 9);
+  const flux = f.data.models.find(row => row.slug === 'flux-2-pro')!;
+  assert.ok(f.data.usage_prices.filter(row => row.model_id === flux.id).every(row => row.provider_id === 4 && row.unit === 'megapixel'));
+  const seed = f.data.models.find(row => row.slug === 'seedream-4-5')!;
+  assert.ok(f.data.usage_prices.some(row => row.model_id === seed.id && row.provider_id === 5 && row.price === 0.04));
   const imagen = f.data.models.find(row => row.slug === 'imagen-4')!;
   assert.ok(f.data.usage_prices.filter(row => row.model_id === imagen.id).every(row => row.provider_id === 3 && row.price === 0.04));
   assert.ok(!f.data.usage_prices.some(row => row.price_kind === 'availability'));
