@@ -54,9 +54,12 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
   };
   const channel = async (modelId: number, providerId: number, input: number | null, output: number | null, notes: string) => {
     const existing = one('api_channel_prices', rows.api_channel_prices.filter(r => r.model_id === modelId && r.provider_id === providerId), `${modelId}/${providerId}`);
+    // OpenRouter -1 / null list prices (jev-router, switchyard, …) are not payg-usable: keep the
+    // row for catalog identity but mark unavailable. last_verified still records the audit check.
+    const variable = input == null || output == null;
     return save('api_channel_prices', existing, { model_id: modelId, provider_id: providerId,
       input_price_per_1m: input, output_price_per_1m: output, currency: 'USD', price_unit: 'per_1m_tokens',
-      is_available: true, notes, last_verified: input == null ? null : AUDIT_TIMESTAMP }, `${modelId}/${providerId}`);
+      is_available: !variable, notes, last_verified: AUDIT_TIMESTAMP }, `${modelId}/${providerId}`);
   };
   const or = await provider('openrouter', 'OpenRouter');
   for (const [id, input, output] of OPENROUTER_ADDITIONS) {

@@ -65,6 +65,11 @@ export function payAsYouGoEstimate(
   if (!currency || !Object.hasOwn(CURRENCY_INFO, currency)) return skip(`unsupported currency: ${currency ?? 'null'}`);
   const fx = currency === 'USD' ? 1 : context.usdPerCurrencyUnit;
   if (fx == null || !Number.isFinite(fx) || fx <= 0) return skip(`missing/invalid ${currency}/USD exchange rate`);
+  // OpenRouter -1 routers land as null/null; name that before the verification-date check
+  // so seed rows like typesafe/jev-router and nvidia/switchyard are not reported as date errors.
+  if (channel.input_price_per_1m == null && channel.output_price_per_1m == null) {
+    return skip('missing fixed list prices (variable/router)');
+  }
   const verifiedAt = channel.last_verified == null ? NaN : new Date(channel.last_verified).getTime();
   if (!Number.isFinite(verifiedAt) || verifiedAt > context.asOf.getTime()) return skip('missing/invalid/future source verification date');
 

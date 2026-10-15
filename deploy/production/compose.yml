@@ -37,6 +37,8 @@ services:
       PLANPRICE_V1_SNAPSHOT_PATH: ${PLANPRICE_V1_SNAPSHOT_PATH:-/var/lib/planprice/snapshots/current.json}
       PLANPRICE_V1_SNAPSHOT_DIR: ${PLANPRICE_V1_SNAPSHOT_DIR:-/var/lib/planprice/snapshots}
       PLANPRICE_V1_FX_PATH: ${PLANPRICE_V1_FX_PATH:-/var/lib/planprice/snapshots/exchange-rates.json}
+      # Optional; without it /[locale]/internal/quota-evidence returns 404.
+      QUOTA_EVIDENCE_TOKEN: ${QUOTA_EVIDENCE_TOKEN:-}
     ports:
       - "127.0.0.1:${HOST_APP_PORT:-3000}:3000"
     volumes:

@@ -75,6 +75,11 @@ test('ineligible or unverified rows are skipped instead of receiving high confid
   ] satisfies Partial<PaygChannelPrice>[]) {
     assert.equal(payAsYouGoEstimate({ ...channel, ...overrides }, PAYG_MIXES[0], { asOf }).status, 'skipped', JSON.stringify(overrides));
   }
+  const variable = payAsYouGoEstimate({
+    ...channel, input_price_per_1m: null, output_price_per_1m: null, last_verified: null,
+  }, PAYG_MIXES[0], { asOf });
+  assert.equal(variable.status, 'skipped');
+  if (variable.status === 'skipped') assert.match(variable.reason, /variable\/router/);
   for (const fx of [0, -1, Infinity, NaN]) {
     assert.equal(payAsYouGoEstimate({ ...channel, currency: 'CNY' }, PAYG_MIXES[0], { asOf, usdPerCurrencyUnit: fx }).status, 'skipped');
   }

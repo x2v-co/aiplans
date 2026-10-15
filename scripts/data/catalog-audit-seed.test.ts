@@ -97,11 +97,14 @@ test('apply is idempotent and preserves producer ownership, new Pro, unknowns an
   const m4 = f.data.models.find(r => r.slug === 'mistral-large-4')!;
   assert.equal(f.data.api_channel_prices.find(r => r.model_id === old.id && r.provider_id === or.id)?.input_price_per_1m, 2);
   assert.equal(f.data.api_channel_prices.find(r => r.model_id === m4.id && r.provider_id === or.id)?.output_price_per_1m, 2.09);
-  const jev = f.data.models.find(r => r.slug === 'typesafe-jev-router')!;
-  const jevPrice = f.data.api_channel_prices.find(r => r.model_id === jev.id)!;
-  assert.equal(jevPrice.input_price_per_1m, null);
-  assert.equal(jevPrice.last_verified, null);
-  assert.match(String(jevPrice.notes), /needs-verification/);
+  for (const slug of ['typesafe-jev-router', 'nvidia-switchyard']) {
+    const row = f.data.models.find(r => r.slug === slug)!;
+    const price = f.data.api_channel_prices.find(r => r.model_id === row.id)!;
+    assert.equal(price.input_price_per_1m, null, slug);
+    assert.equal(price.is_available, false, slug);
+    assert.deepEqual(price.last_verified, new Date('2026-10-15T00:00:00Z'), slug);
+    assert.match(String(price.notes), /needs-verification/, slug);
+  }
   const extract = f.data.models.find(r => r.slug === 'scaledown-extract')!;
   assert.equal(f.data.api_channel_prices.find(r => r.model_id === extract.id)?.output_price_per_1m, 0);
   assert.deepEqual(await seedCatalogAudit(f.tx, true), []);
