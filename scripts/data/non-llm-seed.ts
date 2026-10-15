@@ -73,7 +73,7 @@ export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> 
         item.notes, ...(item.needsVerification ?? []).map(note => `[needs-verification] ${note}`),
         `Sources: ${item.sourceUrls?.map(source => `${source.publisher}: ${source.url}`).join(' | ')}`].filter(Boolean).join('\n'),
     }, item.slug!);
-    const unit = /minute|character/i.test(item.pricingUnit ?? '') ? 'minute' : 'availability';
+    const unit = /minute|character/i.test(item.pricingUnit ?? '') ? 'minute' : /hour/i.test(item.pricingUnit ?? '') ? 'hour' : 'availability';
     const slug = `${item.slug}-official-pricing`;
     const source = item.sourceUrls![0].url;
     const plan = await save('plans', rows.plans.filter(row => row.slug === slug && row.provider_id === channel.id), {

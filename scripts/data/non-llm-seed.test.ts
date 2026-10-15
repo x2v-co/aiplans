@@ -112,3 +112,12 @@ test('CLI default preview cannot import a database client and conflicting flags 
   assert.notEqual(conflict.status, 0);
   assert.match(conflict.stderr, /Usage:/);
 });
+
+test('grok-voice-transcribe 2.0 and 1.0 are billed per hour', async () => {
+  const { NON_LLM_CATALOG } = await import('../../src/lib/non-llm-catalog');
+  for (const slug of ['grok-voice-transcribe-2.0', 'grok-voice-transcribe-1.0']) {
+    const item = NON_LLM_CATALOG.find(i => i.slug === slug)!;
+    assert.equal(item.pricingUnit, 'per_hour');
+    assert.ok(item.usageRates?.every(r => r.unit === 'hour'));
+  }
+});

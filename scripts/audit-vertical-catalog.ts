@@ -156,6 +156,7 @@ function referenceUnit(item: AiCatalogItem): string {
   if (/second/i.test(text)) return 'second';
   if (/minute|character/i.test(text)) return 'minute';
   if (/compute/i.test(text)) return 'compute_hour';
+  if (/\bper_hour\b|^\s*hour\b/i.test(text)) return 'hour';
   if (/license|enterprise/i.test(text)) return 'license';
   return 'availability';
 }

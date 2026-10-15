@@ -36,7 +36,7 @@ function transcription(version: '1.0' | '2.0'): AiCatalogItem {
   return {
     ...verified, kind: 'voice-model', slug: `grok-voice-transcribe-${version}`, name: `grok-voice-transcribe-${version}`,
     provider: 'xAI', providerSlug: 'xai', modelCategory: 'speech', status: version === '1.0' ? 'discontinued' : 'available',
-    pricing: 'STT batch $0.10/hour; streaming $0.20/hour', unit: 'hour', pricingUnit: 'unknown',
+    pricing: 'STT batch $0.10/hour; streaming $0.20/hour', unit: 'hour', pricingUnit: 'per_hour',
     priceStatus: 'priced', pricingConfidence: 'verified', usageRates: transcriptionRates,
     inputModalities: ['audio'], outputModalities: ['text'], access: ['api'], capabilities: ['ASR', 'batch', 'streaming'],
     bestFor: 'Speech transcription.',
