@@ -1,4 +1,7 @@
 {
+  "copilotPlan": {
+    "notes": "Copilot allowances, data policy and preview notes (source text)"
+  },
   "channelTerms": {
     "training": "Trains on your data",
     "quota": "Quota: {unit}",
@@ -10,6 +13,7 @@
     }
   },
   "providerPage": {
+    "needsVerification": "Needs verification: see plan notes for unconfirmed details.",
     "metaTitle": "{name}: API Models, Pricing & Subscription Plans | aiplans.dev",
     "metaDescription": "Explore {name}, its official website and API resources. Compare available model API prices, subscription plans, monthly and annual billing, and model access.",
     "back": "Home",

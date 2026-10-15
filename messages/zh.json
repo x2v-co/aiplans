@@ -1,4 +1,7 @@
 {
+  "copilotPlan": {
+    "notes": "Copilot 额度、数据政策和预览说明（来源原文）"
+  },
   "channelTerms": {
     "training": "训练你的数据换折扣",
     "quota": "额度单位：{unit}",
@@ -10,6 +13,7 @@
     }
   },
   "providerPage": {
+    "needsVerification": "待核验：未确认的信息请参阅套餐说明。",
     "metaTitle": "{name}：API 模型、价格与订阅套餐 | aiplans.dev",
     "metaDescription": "了解 {name}，查看官方网站、API 文档与开发者控制台。对比已有模型 API 价格、订阅套餐、月付和年付价格及模型权限。",
     "back": "首页",

@@ -15,6 +15,7 @@ import { groupPlansByKind, planKindDescription, planKindIcon, planKindLabel } fr
 import { describeEconomics, planEconomics, type EconomicPlan } from "@/lib/plan-economics";
 import { PlanRate } from "@/components/plan-rate";
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
+import { CopilotPlanNotes } from '@/components/copilot-plan-notes';
 import { PlanCoverage } from "@/components/plan-coverage";
 import { buildMetadata, breadcrumbList, priceItemList, faqPage, SITE_URL, type Locale } from "@/lib/seo";
 import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
@@ -336,7 +337,7 @@ export default async function ProviderPage({
 
                     {typeof plan.notes === 'string' && plan.notes.startsWith('[needs-verification]') && (
                       <p className="mb-3 text-xs text-amber-700 dark:text-amber-400">
-                        {isZh ? '待核验：地区和币种未确认，价格暂不显示。' : 'Needs verification: region and currency unconfirmed; price withheld.'}
+                        {t('needsVerification')}
                       </p>
                     )}
                     {plan.legacy_ends_on && <p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
@@ -365,6 +366,7 @@ export default async function ProviderPage({
                       </ul>
                     )}
 
+                    <CopilotPlanNotes slug={plan.slug} notes={plan.notes} />
                     <Separator className="my-4" />
 
                     <div className="space-y-2 text-sm">
