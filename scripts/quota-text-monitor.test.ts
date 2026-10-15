@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test, { after, before } from 'node:test';
 import type { Sql } from 'postgres';
-import { main, observeSnapshot, sendTelegram } from './quota-text-monitor';
+import { fetchSourceText, main, observeSnapshot, runExitCode, sendTelegram, telegramCredentials, updateFailureState, type FailureState } from './quota-text-monitor';
+import { QUOTA_TEXT_SOURCES } from './config/quota-text-sources';
 
 const source = { id: 'fixture', name: 'Fixture', url: 'https://example.invalid/quota' };
 const originalFetch = globalThis.fetch;
@@ -23,6 +24,8 @@ test('dry-run performs only SELECTs and never Telegram requests', async () => {
 
 test('missing Telegram token exits apply before opening DB or fetching sources', async () => {
   const previousToken = process.env.AIPLANS_TG_BOT_TOKEN;
+  const previousBrain = process.env.BRAIN_TG_TOKEN;
+  delete process.env.BRAIN_TG_TOKEN;
   const originalFetch = globalThis.fetch;
   try {
     process.env.AIPLANS_TG_BOT_TOKEN = '';
@@ -32,6 +35,7 @@ test('missing Telegram token exits apply before opening DB or fetching sources',
     globalThis.fetch = originalFetch;
     if (previousToken === undefined) delete process.env.AIPLANS_TG_BOT_TOKEN;
     else process.env.AIPLANS_TG_BOT_TOKEN = previousToken;
+    if (previousBrain !== undefined) process.env.BRAIN_TG_TOKEN = previousBrain;
   }
 });
 
@@ -140,4 +144,47 @@ test('Telegram uses plain JSON with bounded message text, and validates API succ
     assert.equal(error.message, 'Telegram request failed');
     return true;
   });
+});
+
+
+test('telegram credentials prefer AIPLANS_TG_* and fall back to x2v alerts BRAIN_TG_*', () => {
+  assert.deepEqual(telegramCredentials({ AIPLANS_TG_BOT_TOKEN: 'a', BRAIN_TG_TOKEN: 'b', BRAIN_TG_CHAT_ID: '9' }), { token: 'a', tokenEnv: 'AIPLANS_TG_BOT_TOKEN', chatId: '9' });
+  assert.deepEqual(telegramCredentials({ BRAIN_TG_TOKEN: 'b', BRAIN_TG_CHAT_ID: '9' }), { token: 'b', tokenEnv: 'BRAIN_TG_TOKEN', chatId: '9' });
+  assert.deepEqual(telegramCredentials({}), { token: undefined, tokenEnv: undefined, chatId: '6217573976' });
+});
+
+test('per-source failures are warnings; only all-failed is non-zero', () => {
+  assert.equal(runExitCode([{ id: 'a', status: 'ok' }, { id: 'b', status: 'failed', detail: 'HTTP 403' }]), 0);
+  assert.equal(runExitCode([{ id: 'a', status: 'failed' }, { id: 'b', status: 'failed' }, { id: 'c', status: 'disabled' }]), 1);
+  assert.equal(runExitCode([{ id: 'c', status: 'disabled' }]), 0);
+});
+
+test('consecutive failure alert fires once at threshold and resets on success', () => {
+  const state: FailureState = {};
+  const fail = [{ id: 'x', status: 'failed' as const, detail: 'HTTP 403' }];
+  assert.deepEqual(updateFailureState(state, fail, 3), []);
+  assert.deepEqual(updateFailureState(state, fail, 3), []);
+  assert.deepEqual(updateFailureState(state, fail, 3), ['x']);
+  assert.deepEqual(updateFailureState(state, fail, 3), []);
+  updateFailureState(state, [{ id: 'x', status: 'ok' }], 3);
+  assert.equal(state.x, undefined);
+});
+
+test('fetchSourceText retries once on 403 with alternate headers, then warns', async () => {
+  const agents: string[] = [];
+  const fetcher = (async (_url: string, init: RequestInit) => {
+    agents.push((init.headers as Record<string, string>)['user-agent']);
+    return agents.length === 1 ? new Response('no', { status: 403 }) : new Response('<p>Usage limits: 50 messages</p>', { headers: { 'content-type': 'text/html' } });
+  }) as unknown as typeof fetch;
+  assert.equal(await fetchSourceText(source, fetcher), 'Usage limits: 50 messages');
+  assert.equal(agents.length, 2);
+  assert.notEqual(agents[0], agents[1]);
+  const always403 = (async () => new Response('no', { status: 403 })) as unknown as typeof fetch;
+  await assert.rejects(fetchSourceText(source, always403), /HTTP 403/);
+  const empty = (async () => new Response('<div id="app"></div>', { headers: { 'content-type': 'text/html' } })) as unknown as typeof fetch;
+  await assert.rejects(fetchSourceText(source, empty), /No quota text/);
+});
+
+test('disabled sources carry a reason', () => {
+  for (const s of QUOTA_TEXT_SOURCES) if (s.enabled === false) assert.ok(s.disabledReason);
 });

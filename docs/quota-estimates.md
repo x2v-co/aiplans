@@ -33,23 +33,37 @@ Keep estimates as history. In a transaction, lock the current row for the same p
 
 Use confidence to express evidence quality: direct controlled measurements or explicit official allowances can justify high; reproducible but incomplete measurements may justify medium; community statements and unverified derivations remain low. Record conflicting evidence instead of silently selecting a favorable value. Automated text changes create evidence for review; they do not update estimates or establish a quota.
 
-## Manual monitor
+## Quota text monitor (scheduled daily)
 
 ```bash
 npm run quota:monitor                         # default dry-run
 npm run quota:monitor:dry-run -- --source=claude-usage
-npm run quota:monitor -- --apply --source=claude-usage
+npm run quota:monitor -- --apply              # what the daily timer runs
 ```
 
-The source IDs and official URLs live in `scripts/config/quota-text-sources.ts`. Fetch uses a 30-second timeout. HTML extraction removes scripts, styles and hidden payload containers, keeps block boundaries and table rows, normalizes whitespace and metadata dates/nonces, then selects quota-related lines in English or Chinese. Dates in quota and promotion prose are preserved so a changed expiry can be reviewed. Full client rendering is not attempted; errors and empty quota extractions are logged, skipped and return a failing status. Operators should inspect failures and revise extraction or the official URL. Plain fetch may miss client-rendered content even on a successful page.
+Production schedule: `deploy/production/aiplans-quota-monitor.service` + `.timer` (daily 09:30 SGT, `Persistent=true`), running `npm run quota:monitor -- --apply` in the scraper container, following the `planprice-*` timer pattern. Templates only; SRE installs them (see below).
 
-Dry-run makes no DB writes and sends no Telegram messages. If `DATABASE_URL` is available, it reads the latest snapshot for diffs and deduplication; otherwise it prints a preview without a stored baseline. An existing DB must have migration 0005 before DB-backed monitoring. Do not use production dry-run as a substitute for migration review.
+Sources live in `scripts/config/quota-text-sources.ts`. A source may be `enabled: false` with a required `disabledReason`; it is listed but not fetched. Fetch uses browser-like headers with a 30-second timeout and retries once with alternate headers on HTTP 403/429. HTML extraction removes scripts/styles, keeps block boundaries and table rows, normalizes metadata, then keeps quota-related lines (EN/ZH). Full client rendering is not attempted.
 
-For `--apply`, provide `DATABASE_URL` and `AIPLANS_TG_BOT_TOKEN` through the operator's environment. `AIPLANS_TG_CHAT_ID` defaults to `6217573976`. The existing `.env.local` loader and audit PostgreSQL client are reused. No env files are created or edited. A missing token logs a skip and exits zero before database access or fetching.
+Failure policy: a per-source failure (HTTP 4xx/5xx, timeout, no quota text) is a warning; the run continues and prints a per-source summary. Exit is non-zero only if every enabled source fails, or on DB/credential errors. With `QUOTA_MONITOR_STATE_FILE` set (the unit uses `/var/lib/planprice/snapshots/quota-monitor-state.json`, a writable volume), `--apply` full runs count consecutive failures per source and send one Telegram alert when a source reaches `QUOTA_MONITOR_FAIL_ALERT_DAYS` (default 3); success resets the count.
 
-The first snapshot is a silent baseline. A new hash after the baseline inserts a changed snapshot and one `official_text` evidence row with notes exactly `pending review`; its estimate link and plan slug await human review. Telegram messages start with `[aiplans]`, identify the source and URL, and include a bounded line diff. Content versions are unique by `(source_id, content_hash)`. Revisiting an already-alerted hash or the baseline does not alert again; it refreshes `fetched_at` so the next diff uses the last observed text. Thus `fetched_at` means last observation, not immutable first-capture time.
+Dry-run makes no DB writes and sends no Telegram messages. If `DATABASE_URL` is available it reads the latest snapshot for diffs; otherwise it previews without a baseline. The DB must have migration 0005 first.
 
-An advisory transaction lock serializes runs per source. Failed Telegram deliveries leave a pending alert and commit evidence; a later observation of that hash retries without duplicating evidence. Delivery failures log and do not fail the run, following the audit-alert convention. As with the existing alert pattern, a process/DB failure after Telegram accepts a message but before its timestamp commits can cause a retry delivery; Telegram's API offers no transactional exactly-once guarantee.
+Telegram credentials: `AIPLANS_TG_BOT_TOKEN` / `AIPLANS_TG_CHAT_ID` if set, otherwise `BRAIN_TG_TOKEN` / `BRAIN_TG_CHAT_ID`, the same x2v alerts bot (`/home/ubuntu/.config/x2v-alerts/env`) that `notify-audit-alert.sh` uses. The unit loads that file via `EnvironmentFile=-` and passes the two vars into the container. Chat ID defaults to `6217573976`. With no token, `--apply` logs a skip and exits zero before DB access or fetching. If that env file is absent on the host, SRE must provide a token (owner approval required).
+
+The first snapshot is a silent baseline. A new hash after the baseline inserts a changed snapshot and one `official_text` evidence row with notes exactly `pending review`. Telegram messages start with `[aiplans]`, identify the source and URL, and include a bounded line diff. Content versions are unique by `(source_id, content_hash)`; revisiting a known hash does not alert again and refreshes `fetched_at` (last observation). An advisory transaction lock serializes runs per source. Failed Telegram deliveries leave a pending alert retried on a later run; delivery failures do not fail the run.
+
+### Installing the timer (SRE, owner approval required)
+
+```bash
+cd /opt/x2v/planprice && git pull   # must include this change
+sudo cp deploy/production/aiplans-quota-monitor.{service,timer} /etc/systemd/system/
+# optional: same fleet failure drop-in as planprice-* units (10-notify.conf)
+sudo systemctl daemon-reload
+sudo systemctl start aiplans-quota-monitor.service && journalctl -u aiplans-quota-monitor -n 80 --no-pager
+sudo systemctl enable --now aiplans-quota-monitor.timer
+systemctl list-timers aiplans-quota-monitor.timer
+```
 
 ## SRE rollout (manual, approval required for applying SQL)
 

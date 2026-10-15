@@ -1,0 +1,17 @@
+[Unit]
+Description=aiplans official quota-text monitor (snapshots + Telegram change alerts)
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+# Failure alerts come from the fleet-wide host drop-in, as for planprice-scraper.service.
+# Per-source fetch failures do not fail the unit; only all-sources-failed or DB errors do.
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/x2v/planprice
+# Reuse the x2v alerts bot (same file notify-audit-alert.sh reads): BRAIN_TG_TOKEN / BRAIN_TG_CHAT_ID.
+# The monitor falls back to these when AIPLANS_TG_BOT_TOKEN is unset. "-" = optional file.
+EnvironmentFile=-/home/ubuntu/.config/x2v-alerts/env
+ExecStart=/usr/bin/docker compose -p planprice-production -f /opt/x2v/planprice/deploy/production/compose.yml --env-file /opt/x2v/planprice/deploy/production/.env.production run --rm -e BRAIN_TG_TOKEN -e BRAIN_TG_CHAT_ID -e QUOTA_MONITOR_STATE_FILE=/var/lib/planprice/snapshots/quota-monitor-state.json scraper npm run quota:monitor -- --apply
+TimeoutStartSec=15min
+Nice=10

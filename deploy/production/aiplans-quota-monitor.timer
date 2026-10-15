@@ -1,0 +1,11 @@
+[Unit]
+Description=Run aiplans quota-text monitor daily
+
+[Timer]
+OnCalendar=*-*-* 09:30:00 Asia/Singapore
+Persistent=true
+RandomizedDelaySec=15min
+Unit=aiplans-quota-monitor.service
+
+[Install]
+WantedBy=timers.target
