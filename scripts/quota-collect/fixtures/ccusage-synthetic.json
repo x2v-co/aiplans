@@ -1,0 +1,18 @@
+{
+  "daily": [
+    {
+      "date": "2026-01-01",
+      "inputTokens": 100,
+      "cacheReadTokens": 800,
+      "cacheCreationTokens": 20,
+      "outputTokens": 50,
+      "modelsUsed": [
+        "claude-synthetic"
+      ],
+      "privateIgnoredField": "SYNTHETIC_IGNORE"
+    }
+  ],
+  "totals": {
+    "inputTokens": 100
+  }
+}
