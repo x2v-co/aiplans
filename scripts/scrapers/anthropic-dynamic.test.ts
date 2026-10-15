@@ -34,6 +34,7 @@ test('documented Haiku 5.5 <=100K rows become the base price and a batch variant
   assert.deepEqual(result.prices.map(p => [p.modelSlug, p.inputPricePer1M, p.outputPricePer1M, p.cachedInputPricePer1M]), [['claude-haiku-5.5', 0.1, 0.5, 0.01]]);
   assert.equal(result.unverifiedPrices?.length, 0);
   assert.deepEqual(result.variants?.map(v => [v.variantKey, v.inputPricePer1M, v.outputPricePer1M]).sort(), [
-    ['batch-prompt-gt-100k', 0.25, 1.25], ['batch-prompt-le-100k', 0.05, 0.25], ['prompt-gt-100k', 0.5, 2.5]]);
+    ['batch-prompt-gt-100k', 0.25, 1.25], ['batch-prompt-le-100k', 0.05, 0.25], ['prompt-gt-100k', 0.5, 2.5], ['prompt-le-100k', 0.1, 0.5]]);
+  assert.deepEqual(result.variants?.filter(v => v.isHeadline).map(v => v.variantKey), ['prompt-le-100k']);
   assert.equal(result.warnings, undefined);
 });

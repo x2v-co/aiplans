@@ -55,7 +55,14 @@ export function parseAnthropicPricing(cards: string[], rows: AnthropicPricingRow
       sourceUrl: ANTHROPIC_PRICING_SOURCE, isAvailable: true, isPublic: true, isHeadline: false,
       constraints: { prompt_tokens_gt: 100000, processing: batch ? 'batch' : 'standard' } });
   }
-  if (haikuBase) prices.push(haikuBase);
+  if (haikuBase) {
+    prices.push(haikuBase);
+    // The <=100K standard rate is Haiku 5.5's single headline variant (equals the channel price).
+    variants.push({ modelName: 'Claude Haiku 5.5', modelSlug: 'claude-haiku-5.5', variantKey: 'prompt-le-100k',
+      variantName: '<=100K prompt', variantKind: 'context_band', inputPricePer1M: haikuBase.inputPricePer1M,
+      outputPricePer1M: haikuBase.outputPricePer1M, currency: 'USD', sourceUrl: ANTHROPIC_PRICING_SOURCE,
+      isAvailable: true, isPublic: true, isHeadline: true, constraints: { prompt_tokens_lte: 100000, processing: 'standard' } });
+  }
   const unverifiedPrices: NonNullable<ScraperResult['unverifiedPrices']> = foundHaiku && !haikuBase ? [{
     modelName: 'Claude Haiku 5.5', modelSlug: 'claude-haiku-5.5', notes: HAIKU_UNVERIFIED_NOTE,
   }] : [];

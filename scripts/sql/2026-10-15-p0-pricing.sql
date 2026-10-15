@@ -118,11 +118,13 @@ FROM models m, providers p WHERE m.slug = 'claude-haiku-5.5' AND p.slug = 'anthr
 INSERT INTO api_channel_price_variants (model_id, provider_id, variant_key, variant_name, variant_kind,
   input_price_per_1m, output_price_per_1m, currency, price_unit, is_available, is_public, is_headline,
   constraints_json, source_url, last_verified)
-SELECT m.id, p.id, v.key, v.name, v.kind, v.input, v.output, 'USD', 'per_1m_tokens', true, true, false,
+SELECT m.id, p.id, v.key, v.name, v.kind, v.input, v.output, 'USD', 'per_1m_tokens', true, true, v.key = 'prompt-le-100k',
   CASE WHEN v.key LIKE '%-le-100k' THEN jsonb_build_object('prompt_tokens_lte', 100000, 'processing', v.processing)
        ELSE jsonb_build_object('prompt_tokens_gt', 100000, 'processing', v.processing) END,
   'https://platform.claude.com/docs/en/about-claude/pricing', '2026-10-15'
 FROM models m, providers p CROSS JOIN (VALUES
+  -- The <=100K standard real-time rate is the single headline (matches api_channel_prices).
+  ('prompt-le-100k', '<=100K prompt', 'context_band', 0.10, 0.50, 'standard'),
   ('prompt-gt-100k', '>100K prompt', 'context_band', 0.50, 2.50, 'standard'),
   ('batch-prompt-gt-100k', 'Batch >100K prompt', 'batch', 0.25, 1.25, 'batch'),
   ('batch-prompt-le-100k', 'Batch <=100K prompt', 'batch', 0.05, 0.25, 'batch')) v(key, name, kind, input, output, processing)
@@ -131,14 +133,32 @@ ON CONFLICT (model_id, provider_id, variant_key) DO UPDATE SET
   variant_name = EXCLUDED.variant_name, variant_kind = EXCLUDED.variant_kind,
   input_price_per_1m = EXCLUDED.input_price_per_1m, output_price_per_1m = EXCLUDED.output_price_per_1m,
   currency = EXCLUDED.currency, constraints_json = EXCLUDED.constraints_json,
-  source_url = EXCLUDED.source_url, is_available = true, is_headline = false, last_verified = EXCLUDED.last_verified;
+  source_url = EXCLUDED.source_url, is_available = true, is_headline = EXCLUDED.is_headline, last_verified = EXCLUDED.last_verified;
+
+-- New model rows need plan links right away (audit plans.mapping_drift otherwise).
+-- claude.com/pricing (2026-10-15): Haiku is included on Free, Pro, Max, Team and Enterprise.
+-- Rows are source='derived' so mappings:materialize owns them afterwards.
+INSERT INTO model_plan_mapping (model_id, plan_id, priority, source)
+SELECT m.id, pl.id, 50, 'derived'
+FROM models m CROSS JOIN plans pl JOIN providers pr ON pr.id = pl.provider_id
+WHERE m.slug = 'claude-haiku-5.5' AND pr.slug = 'anthropic'
+  AND pl.slug IN ('claude-free','claude-pro','claude-max-5x','claude-max-20x','claude-team','claude-team-premium','claude-enterprise')
+  AND NOT EXISTS (SELECT 1 FROM model_plan_mapping x WHERE x.model_id = m.id AND x.plan_id = pl.id);
+-- Ultra 20x shares Ultra 5x's selector; copy its links so the new rung is not empty.
+INSERT INTO model_plan_mapping (model_id, plan_id, priority, source)
+SELECT x5.model_id, p20.id, x5.priority, 'derived'
+FROM plans p5 JOIN plans p20 ON p20.provider_id = p5.provider_id
+JOIN model_plan_mapping x5 ON x5.plan_id = p5.id
+WHERE p5.provider_id = (SELECT id FROM providers WHERE slug = 'google')
+  AND p5.slug = 'google-ai-ultra-5x' AND p20.slug = 'google-ai-ultra-20x'
+  AND NOT EXISTS (SELECT 1 FROM model_plan_mapping x WHERE x.model_id = x5.model_id AND x.plan_id = p20.id);
 
 SELECT p.slug AS provider, m.slug AS model, cp.input_price_per_1m, cp.output_price_per_1m, cp.cached_input_price_per_1m, cp.last_verified, cp.notes
 FROM api_channel_prices cp JOIN models m ON m.id = cp.model_id JOIN providers p ON p.id = cp.provider_id
 WHERE (m.slug = 'subq-snap' AND p.slug = 'subq') OR (m.slug = 'claude-haiku-5.5' AND p.slug = 'anthropic');
 SELECT pl.slug, pl.price, pl.currency, pl.region, pl.tier, pl.notes FROM plans pl JOIN providers p ON p.id = pl.provider_id
 WHERE p.slug = 'google' AND pl.slug IN ('google-ai-plus','gemini-advanced','google-ai-pro','google-ai-ultra-5x','google-ai-ultra-20x');
-SELECT v.variant_key, v.input_price_per_1m, v.output_price_per_1m, v.constraints_json
+SELECT v.variant_key, v.input_price_per_1m, v.output_price_per_1m, v.is_headline, v.constraints_json
 FROM api_channel_price_variants v JOIN models m ON m.id = v.model_id JOIN providers p ON p.id = v.provider_id
 WHERE m.slug = 'claude-haiku-5.5' AND p.slug = 'anthropic';
 
