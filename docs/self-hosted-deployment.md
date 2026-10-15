@@ -219,18 +219,29 @@ the data is older than `PLANPRICE_MAX_RATE_AGE_HOURS` (default 30 hours).
 ## Disk hygiene (build cache)
 
 Planprice production builds on the self-hosted `planprice-production` runner
-leave Docker builder cache on the host root filesystem. After each successful
-`deploy-production` rollout the workflow runs a non-fatal:
+leave Docker builder cache on the host root filesystem. The `deploy-production`
+workflow always runs non-fatal hygiene after the rollout step (`if: always()`,
+`continue-on-error: true`), including when the rollout itself failed — failed
+deploys used to skip prune and fill the disk:
 
 ```bash
 docker builder prune -f --filter until=72h --keep-storage 8GB
+docker image prune -f   # dangling only; keeps tagged :latest and :pre-rollout
 ```
 
-(with `df -h /` logged before and after). A prune failure does not fail the
-deploy.
+(`df -h /` logged around each prune). Never `image prune -a`: `rollout.sh`
+tags the previous images as `:pre-rollout` for rollback and needs them kept.
 
-A daily systemd timer template is also checked in but **not** installed by
-deploy:
+After IndexNow (or after a failed earlier step), the workflow also starts the
+host one-shot when it is installed:
+
+```bash
+sudo systemctl start planprice-disk-guard.service
+```
+
+Unit/timer templates are checked in; install is still SRE-owned (not enabled
+by deploy). Timer cadence is SRE-owned — raise frequency there if usage still
+climbs between deploys:
 
 - `deploy/production/planprice-disk-guard` — builder prune (72h / keep 8GB) +
   dangling `docker image prune -f` only. Never prunes volumes, never

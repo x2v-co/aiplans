@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Daily disk hygiene for the planprice production host (x2v-global).
 # Checked in under deploy/production as a template; SRE installs the
-# companion .service/.timer. Not enabled by deploy-production.yml.
+# companion .service/.timer. deploy-production.yml starts the oneshot after
+# every deploy attempt (if: always); timer enable/cadence stays SRE-owned.
 #
 # Safe operations only:
 #   - docker builder prune with age + keep-storage caps

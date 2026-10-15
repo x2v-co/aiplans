@@ -162,18 +162,29 @@ jobs:
           curl -fsS https://aiplans.dev/api/health
           sudo -n rm -rf "$release_dir"
 
-      # Non-fatal: reclaim build cache after a successful rollout. x2v-global
-      # root hit 87% from ~28GB of planprice docker builder cache. Failure must
-      # not fail the deploy (|| true). Daily timer templates under
-      # deploy/production/planprice-disk-guard* are not installed here.
+      # Disk hygiene even when rollout failed: consecutive failed deploys were
+      # skipping prune (if: success) and drove x2v-global root 50%→85%. Prune
+      # failure must not fail the job (continue-on-error). Dangling image prune
+      # only — tagged :latest and :pre-rollout stay for rollback (rollout.sh).
       - name: Prune docker build cache
-        if: success()
+        if: always()
+        continue-on-error: true
         run: |
           set +e
-          echo "disk-hygiene: df before"
+          echo "disk-hygiene: df before builder prune"
           df -h / || true
           sudo -n docker builder prune -f --filter until=72h --keep-storage 8GB || true
-          echo "disk-hygiene: df after"
+          echo "disk-hygiene: df after builder prune"
+          df -h / || true
+
+      - name: Prune dangling docker images
+        if: always()
+        continue-on-error: true
+        run: |
+          set +e
+          echo "disk-hygiene: dangling image prune (keeps tagged :latest / :pre-rollout)"
+          sudo -n docker image prune -f || true
+          echo "disk-hygiene: df after image prune"
           df -h / || true
 
       - name: Deployment summary
@@ -198,3 +209,18 @@ jobs:
           key='b1f0d17ebd1d1720cc80f2ede4b03770'
           test "$(curl -fsS "https://aiplans.dev/$key.txt")" = "$key"
           node --experimental-strip-types scripts/submit-indexnow.ts
+
+      # Host one-shot (SRE-installed unit). Same hygiene as above; also covers
+      # the case where inline prune was skipped or the unit does extra work.
+      # Timer cadence stays SRE-owned; bump frequency there if still climbing.
+      - name: Trigger planprice-disk-guard
+        if: always()
+        continue-on-error: true
+        run: |
+          set +e
+          if sudo -n systemctl cat planprice-disk-guard.service >/dev/null 2>&1; then
+            sudo -n systemctl start planprice-disk-guard.service || true
+            sudo -n systemctl --no-pager --full status planprice-disk-guard.service || true
+          else
+            echo "planprice-disk-guard.service not installed; skip (SRE installs once)"
+          fi
