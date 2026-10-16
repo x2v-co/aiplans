@@ -200,14 +200,16 @@ export function productOffer(input: OfferInput): string {
   if (input.url) offer.url = input.url;
   offer.priceValidUntil = priceValidUntil();
 
+  // Service, not Product: aiplans lists vendor prices and sells nothing, so a
+  // Product would trigger Google's merchant-listing checks.
   return jsonLd({
-    '@type': 'Product',
+    '@type': 'Service',
     name: input.name,
     description: input.description ?? input.name,
     image: input.image,
     ...(input.brand ? { brand: { '@type': 'Brand', name: input.brand } } : {}),
     category: input.category ?? 'AI Service',
-    offers: offer,
+    offers: input.brand ? { ...offer, seller: { '@type': 'Organization', name: input.brand } } : offer,
   });
 }
 

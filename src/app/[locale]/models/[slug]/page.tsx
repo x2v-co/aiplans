@@ -459,33 +459,27 @@ export default async function ModelPage({
     (locale === 'zh' ? 'zh' : 'en') as Locale,
   );
 
-  // Extend the existing Product and FAQPage rather than emitting duplicate schemas.
+  // aiplans compares vendor prices and sells nothing itself, so this is a
+  // `Service` (the model API) whose AggregateOffer points at the vendors as
+  // sellers — not a `Product`. A Product+Offer opts the page into Google's
+  // merchant-listing / product-snippet checks (shippingDetails,
+  // hasMerchantReturnPolicy, aggregateRating, review), none of which can be
+  // filled honestly. No ratings or reviews are emitted; benchmark scores stay
+  // in the visible page, not in markup.
   const productJsonLd = !pricing.aggregateOffer ? null : jsonLd({
-    '@type': 'Product',
+    '@type': 'Service',
+    serviceType: 'AI Model API',
     name: productName,
     alternateName: pricing.aliases,
     description: product.description ?? `${productName} — ${product.context_window?.toLocaleString() ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
-    // Required by Google, and missing site-wide until now. The route's own
-    // opengraph-image.tsx already renders a real 1200x630 card for this model,
-    // and its extensionless URL serves image/png.
     image: `${SITE_URL}/${locale}/models/${product.slug}/opengraph-image`,
-    brand: product.providers?.name
-      ? { '@type': 'Brand', name: product.providers.name }
-      : undefined,
+    url: `${SITE_URL}/${locale}/models/${product.slug}`,
+    ...(product.providers?.name
+      ? { brand: { '@type': 'Brand', name: product.providers.name },
+          provider: { '@type': 'Organization', name: product.providers.name } }
+      : {}),
     category: 'AI Model API',
     offers: pricing.aggregateOffer,
-    // Benchmarks remain custom properties, not AggregateRating: they use
-    // different scales and are evaluation results rather than user ratings.
-    ...(benchmarkScores.length > 0
-      ? {
-          additionalProperty: benchmarkScores.map((score) => ({
-            '@type': 'PropertyValue',
-            name: `${score.benchmark_name} (${score.version_label})`,
-            value: score.value,
-            unitText: score.unit || undefined,
-          })),
-        }
-      : {}),
   });
 
   const breadcrumbJsonLd = breadcrumbList([

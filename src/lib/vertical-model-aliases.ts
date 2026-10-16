@@ -49,6 +49,25 @@ export const VERTICAL_MODEL_PARENT: Partial<Record<AiCatalogKind, Record<string,
   },
 };
 
+/** Strip the Arena benchmark prefix: arena-t2v-veo-2 → veo-2. */
+export function benchmarkBaseSlug(slug: string): string | undefined {
+  return isBenchmarkOnlySlug(slug) ? slug.slice('arena-t2v-'.length) : undefined;
+}
+
+/** Kinds whose detail route only serves audited catalog slugs (others 404). */
+export const CATALOG_ONLY_DETAIL_KINDS: AiCatalogKind[] = ['world-model', 'decision-model', 'voice-model', 'image-model'];
+
+/**
+ * Whether a DB-only vertical slug gets its own 200 detail page. Mirrors the
+ * guards in getVerticalModelDetail so the sitemap never lists a URL that
+ * 404s (benchmark-only rows, catalog-only kinds) or redirects (aliases).
+ */
+export function isIndexableVerticalDbSlug(kind: AiCatalogKind, slug: string): boolean {
+  if (CATALOG_ONLY_DETAIL_KINDS.includes(kind)) return false;
+  if (isBenchmarkOnlySlug(slug)) return false;
+  return !parentSlugFor(kind, slug);
+}
+
 export function parentSlugFor(kind: AiCatalogKind, slug: string): string | undefined {
   return VERTICAL_MODEL_PARENT[kind]?.[slug];
 }

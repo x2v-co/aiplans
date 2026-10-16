@@ -51,7 +51,7 @@ test('currency ranking retains native prices in snippets, table rows and single-
     assert.equal(offer.highPrice, '4');
     assert.ok(offer.offers.every(row => row.priceCurrency === 'USD'));
     assert.equal(JSON.parse(faqPage(content.faqs)).mainEntity.length, 4);
-    assert.equal(JSON.parse(jsonLd({ '@type': 'Product', alternateName: content.aliases, offers: offer })).offers.lowPrice, '2');
+    assert.equal(JSON.parse(jsonLd({ '@type': 'Service', alternateName: content.aliases, offers: offer })).offers.lowPrice, '2');
   }
 });
 
@@ -109,7 +109,9 @@ test('Argon uses the #104 schedule for table, snippet, offers and FAQs at and af
 
 test('route keeps a single Product and FAQPage with visible FAQ and table ahead of benchmarks', () => {
   const page = readFileSync(new URL('../app/[locale]/models/[slug]/page.tsx', import.meta.url), 'utf8');
-  assert.equal((page.match(/'@type': 'Product'/g) || []).length, 1);
+  assert.equal((page.match(/'@type': 'Product'/g) || []).length, 0);
+  assert.equal((page.match(/'@type': 'Service'/g) || []).length, 1);
+  assert.doesNotMatch(page, /aggregateRating:|review:|shippingDetails:/);
   assert.equal((page.match(/faqPage\(/g) || []).length, 1);
   assert.match(page, /faqPage\(pricing.faqs\)/);
   assert.match(page, /pricing.faqs.map/);

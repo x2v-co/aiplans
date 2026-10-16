@@ -26,4 +26,6 @@ test('productOffer keeps name/offers/brand, adds priceValidUntil, no ratings', (
   assert.match(ld.offers.priceValidUntil, /^\d{4}-\d{2}-\d{2}$/);
   assert.equal(ld.aggregateRating, undefined);
   assert.equal(ld.review, undefined);
+  assert.equal(ld['@type'], 'Service');
+  assert.equal(ld.offers.seller.name, 'B');
 });
