@@ -103,10 +103,7 @@ for _ in {1..45}; do
          [[ "$script_dir" == /opt/x2v/planprice/.releases/*/deploy/production ]]; } \
       && [[ -d /run/systemd/system ]] && command -v systemctl >/dev/null 2>&1; then
       install -m 0644 "$script_dir/planprice-snapshot-cleanup.service" /etc/systemd/system/planprice-snapshot-cleanup.service
-      install -m 0644 "$script_dir/planprice-snapshot-cleanup.timer" /etc/systemd/system/planprice-snapshot-cleanup.timer
-      systemctl daemon-reload
-      systemctl enable planprice-snapshot-cleanup.timer
-      systemctl restart planprice-snapshot-cleanup.timer
+      bash "$script_dir/install-timers.sh" "$script_dir" planprice-snapshot-cleanup.timer
     fi
     echo "planprice rollout ok: $health_url"
     exit 0
