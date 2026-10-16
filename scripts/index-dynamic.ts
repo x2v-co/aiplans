@@ -237,6 +237,16 @@ async function retireUnseenChannelPrices(
   return unseen.length;
 }
 
+/** Every error counted toward the run total, one entry per counted error. */
+const runErrors: { scraper: string; message: string }[] = [];
+function errText(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  return typeof e === 'string' ? e : JSON.stringify(e);
+}
+function recordError(scraper: string, error: unknown) {
+  runErrors.push({ scraper, message: errText(error).split('\n')[0].slice(0, 500) });
+}
+
 async function processAPIScraper(
   result: ScraperResult,
   channelName: string,
@@ -246,8 +256,13 @@ async function processAPIScraper(
   console.log(`\n🔄 Processing ${result.source} API results...`);
 
   if (!result.success) {
-    console.error(`❌ ${result.source} failed:`, result.errors);
-    return { updated: 0, errors: result.errors?.length || 0, warnings: 0 };
+    const errs = result.errors?.length ? result.errors : ['failed without error message'];
+    console.error(`❌ ${result.source} failed (${errs.length} error${errs.length === 1 ? '' : 's'}):`);
+    for (const e of errs) {
+      console.error(`   ✗ [${result.source}] ${e}`);
+      recordError(result.source, e);
+    }
+    return { updated: 0, errors: errs.length, warnings: 0 };
   }
 
   const warningCount = result.warnings?.length ?? 0;
@@ -260,6 +275,7 @@ async function processAPIScraper(
 
   if (!channelProviderId) {
     console.error(`❌ No provider ID found for channel: ${result.source}`);
+    recordError(result.source, 'No provider ID found for channel');
     return { updated: 0, errors: 1, warnings: warningCount };
   }
 
@@ -375,6 +391,7 @@ async function processAPIScraper(
       resolvedEntries.push({ productId: product.id, productSlug: product.slug, scrapedSlug, price });
     } catch (error) {
       console.error(`  ❌ Error resolving ${price.modelName}:`, error);
+      recordError(result.source, `${price.modelName}: ${errText(error)}`);
       errorCount++;
     }
   }
@@ -479,6 +496,7 @@ async function processAPIScraper(
       updatedCount++;
     } catch (error) {
       console.error(`  ❌ Error processing ${price.modelName}:`, error);
+      recordError(result.source, `${price.modelName}: ${errText(error)}`);
       errorCount++;
     }
   }
@@ -497,6 +515,7 @@ async function processAPIScraper(
       updatedCount++;
     } catch (error) {
       console.error(`Failed to record unverified ${price.modelSlug}:`, error);
+      recordError(result.source, `unverified ${price.modelSlug}: ${errText(error)}`);
       errorCount++;
     }
   }
@@ -562,6 +581,7 @@ async function processAPIScraper(
       if (variantCount > 0) console.log(`✅ ${result.source}: Updated ${variantCount} price variants`);
     } catch (error) {
       console.error(`  ❌ Error batch-processing ${result.source} variants:`, error);
+      recordError(result.source, `variants batch: ${errText(error)}`);
       errorCount++;
     }
     if (fullCatalog && warningCount === 0 && seenVariants.length > 0) {
@@ -570,6 +590,7 @@ async function processAPIScraper(
         if (retiredVariants > 0) console.log(`🧹 ${result.source}: Soft-disabled ${retiredVariants} variants absent from full-catalog scrape`);
       } catch (error) {
         console.error(`❌ ${result.source}: Failed to retire unseen variants:`, error);
+        recordError(result.source, `retire unseen variants: ${errText(error)}`);
         errorCount++;
       }
     }
@@ -585,6 +606,7 @@ async function processAPIScraper(
       await retireUnseenChannelPrices(channelProviderId, seenModelIds, result.source);
     } catch (error) {
       console.error(`❌ ${result.source}: Failed to retire unseen prices:`, error);
+      recordError(result.source, `retire unseen prices: ${errText(error)}`);
       errorCount++;
     }
   }
@@ -941,6 +963,7 @@ async function main() {
       totalWarnings += result.value.warnings;
     } else {
       console.error(`❌ Scraper ${priority1Scrapers[index].name} crashed:`, result.reason);
+      recordError(priority1Scrapers[index].name, `crashed: ${errText(result.reason)}`);
       totalErrors++;
     }
   });
@@ -958,6 +981,7 @@ async function main() {
         totalWarnings += result.value.warnings;
       } else {
         console.error(`❌ Scraper ${priority2Scrapers[index].name} crashed:`, result.reason);
+        recordError(priority2Scrapers[index].name, `crashed: ${errText(result.reason)}`);
         totalErrors++;
       }
     });
@@ -967,6 +991,7 @@ async function main() {
     await syncResellerPromos(true);
   } catch (error) {
     console.error('Promo expiry sync failed:', error);
+    recordError('promo-sync', error);
     totalErrors++;
   }
 
@@ -1001,6 +1026,13 @@ async function main() {
   console.log(`   - Total items updated: ${totalUpdated}`);
   console.log(`   - Total errors: ${totalErrors}`);
   console.log(`   - Total warnings (skipped items, run not failed): ${totalWarnings}`);
+  if (runErrors.length > 0) {
+    console.error(`   - Error list (${runErrors.length}):`);
+    for (const { scraper, message } of runErrors) console.error(`     ✗ [${scraper}] ${message}`);
+    if (runErrors.length !== totalErrors) {
+      console.error(`     (counted ${totalErrors}, itemized ${runErrors.length})`);
+    }
+  }
 
   // Close Playwright browser
   await closeBrowser();
