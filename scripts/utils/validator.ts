@@ -46,6 +46,7 @@ export interface ScrapedPriceVariant {
   sourceUrl?: string;
   inputPricePer1M: number;
   outputPricePer1M: number;
+  /** null explicitly clears a previously published cache-read price. */
   cachedInputPricePer1M?: number | null;
   cacheCreatePricePer1M?: number;
   currency?: CurrencyCode;

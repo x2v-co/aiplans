@@ -146,6 +146,12 @@ export function canonicalModelKey(rawId: string, opts: { fireworksDotP?: boolean
 }
 
 export function ourModelKey(ourProviderSlug: string, ourModelSlug: string): string {
+  // This model is seeded with the exact provider-prefixed OpenRouter slug so
+  // index-dynamic can resolve an otherwise unknown producer. models.dev uses
+  // the API id, whose vendor path is stripped by canonicalModelKey.
+  if (ourProviderSlug === 'openrouter' && ourModelSlug === 'liquid-lfm-2-5-24b-a2b') {
+    return canonicalModelKey('liquid/lfm-2.5-24b-a2b');
+  }
   return canonicalModelKey(ourModelSlug, { fireworksDotP: ourProviderSlug === 'fireworks' });
 }
 
