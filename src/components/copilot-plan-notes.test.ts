@@ -21,5 +21,8 @@ test('Copilot source notes render in both locales and missing/older rows render 
     assert.ok(html.includes(messages.copilotPlan.notes));
     assert.ok(html.includes('Training &lt;opt-out&gt; &amp; preview'));
     assert.ok(html.includes('[needs-verification] multiplier'));
+    for (const model of ['Claude Opus 4.8', 'Claude Opus 5', 'GPT-5.6 Terra']) assert.ok(html.includes(model));
+    assert.ok(html.includes('2026-11-16'));
+    assert.ok(html.includes(messages.copilotPlan.annualIndividualKeeps));
   }
 });

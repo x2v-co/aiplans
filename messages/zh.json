@@ -34,7 +34,11 @@
     }
   },
   "copilotPlan": {
-    "notes": "Copilot 额度、数据政策和预览说明（来源原文）"
+    "notes": "Copilot 额度、数据政策和预览说明（来源原文）",
+    "deprecations": "即将下线的模型",
+    "deprecationItem": "{model}：{date} 下线，建议改用 {replacement}。",
+    "annualIndividualKeeps": "年付个人订阅用户保留。",
+    "deprecationSource": "GitHub 更新日志"
   },
   "channelTerms": {
     "training": "训练你的数据换折扣",

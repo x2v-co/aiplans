@@ -34,7 +34,11 @@
     }
   },
   "copilotPlan": {
-    "notes": "Copilot allowances, data policy and preview notes (source text)"
+    "notes": "Copilot allowances, data policy and preview notes (source text)",
+    "deprecations": "Scheduled model removals",
+    "deprecationItem": "{model}: removed on {date}; suggested alternative {replacement}.",
+    "annualIndividualKeeps": "Individual subscribers on annual plans keep it.",
+    "deprecationSource": "GitHub changelog"
   },
   "channelTerms": {
     "training": "Trains on your data",
