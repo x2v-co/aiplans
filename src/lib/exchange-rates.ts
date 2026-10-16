@@ -44,16 +44,22 @@ export function getExchangeRateSync(
   from: string,
   to: string
 ): number {
-  const rate = FIXED_RATES[from]?.[to] ?? 1;
-  return rate;
+  if (from === to) return 1;
+  const direct = FIXED_RATES[from]?.[to];
+  if (direct !== undefined) return direct;
+  // Cross rate via USD (e.g. EUR -> CNY); previously fell back to 1.
+  const toUsd = FIXED_RATES[from]?.USD;
+  const fromUsd = FIXED_RATES.USD?.[to];
+  if (toUsd !== undefined && fromUsd !== undefined) return toUsd * fromUsd;
+  return 1;
 }
 
 /**
  * 获取汇率显示字符串
  */
 export function getExchangeRateDisplay(from: string, to: string): string {
-  const rate = FIXED_RATES[from]?.[to] ?? 1;
-  return `1 ${from} ≈ ${to}`;
+  const rate = getExchangeRateSync(from, to);
+  return `1 ${from} ≈ ${rate} ${to}`;
 }
 
 /**
