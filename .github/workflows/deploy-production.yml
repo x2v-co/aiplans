@@ -159,7 +159,7 @@ jobs:
           sudo -n docker compose -p planprice-production \
             -f "$base/deploy/production/compose.yml" \
             --env-file "$env_file" ps
-          curl -fsS https://aiplans.dev/api/health
+          curl -fsSL --retry 3 --retry-delay 10 --retry-all-errors https://aiplans.dev/api/health
           sudo -n rm -rf "$release_dir"
 
       # Disk hygiene even when rollout failed: consecutive failed deploys were
@@ -207,7 +207,7 @@ jobs:
         run: |
           set -euo pipefail
           key='b1f0d17ebd1d1720cc80f2ede4b03770'
-          test "$(curl -fsS "https://aiplans.dev/$key.txt")" = "$key"
+          test "$(curl -fsSL --retry 3 --retry-delay 10 --retry-all-errors "https://aiplans.dev/$key.txt")" = "$key"
           node --experimental-strip-types scripts/submit-indexnow.ts
 
       # Host one-shot (SRE-installed unit). Same hygiene as above; also covers

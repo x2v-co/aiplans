@@ -2,8 +2,20 @@
 -- Run after npm run migrate. Default rolls back after displaying before/after rows.
 -- To apply, replace the final ROLLBACK with COMMIT (never execute both).
 -- Prices are USD / 1M tokens. Default-route cache prices were not verified by
--- this audit: NULL + needs-verification note, never a floor endpoint's cache.
+-- this audit: an existing cache price is kept (only dropped when it exceeds the
+-- new input price); it is never replaced by a floor endpoint's cache.
+-- 2026-10-16: rows the scraper has already re-priced from the /api/v1/models
+-- default route after the audit are skipped (the scraper's live default-route
+-- price wins; the audit numbers are a 2026-10-15 snapshot). Re-running is a no-op.
 BEGIN;
+
+-- Scraper-owned default-route rows refreshed after the audit (index-dynamic notes).
+CREATE TEMP TABLE scraper_maintained ON COMMIT DROP AS
+SELECT cp.id FROM api_channel_prices cp
+JOIN providers p ON p.id = cp.provider_id AND p.slug = 'openrouter'
+WHERE cp.notes LIKE '%OpenRouter model-level default route price from /api/v1/models%'
+  AND cp.notes NOT LIKE '%Audit 2026-10-15:%'
+  AND cp.last_verified > timestamptz '2026-10-15 00:00:00+00';
 
 CREATE TEMP TABLE audited_or_defaults (
   model_slug text PRIMARY KEY, openrouter_id text NOT NULL,
@@ -43,34 +55,41 @@ ORDER BY m.slug;
 
 UPDATE api_channel_prices cp
 SET input_price_per_1m = a.input_price, output_price_per_1m = a.output_price,
-    cached_input_price_per_1m = NULL, currency = 'USD', price_unit = 'per_1m_tokens',
+    cached_input_price_per_1m = CASE WHEN cp.cached_input_price_per_1m > a.input_price THEN NULL
+      ELSE cp.cached_input_price_per_1m END,
+    currency = 'USD', price_unit = 'per_1m_tokens',
     notes = 'OpenRouter model-level default route price from /api/v1/models. Audit 2026-10-15: '
-      || a.openrouter_id || '. Default-route cache price needs-verification (NULL); next scrape reads the API. Cheapest endpoints are separate variants.',
+      || a.openrouter_id || '. Default-route cache price needs-verification; next scrape reads the API. Cheapest endpoints are separate variants.',
     updated_at = now()
 FROM audited_or_defaults a, models m, providers p
 WHERE m.slug = a.model_slug AND cp.model_id = m.id
   AND p.id = cp.provider_id AND p.slug = 'openrouter'
+  AND cp.id NOT IN (SELECT id FROM scraper_maintained)
   AND (cp.input_price_per_1m IS DISTINCT FROM a.input_price
     OR cp.output_price_per_1m IS DISTINCT FROM a.output_price
-    OR cp.cached_input_price_per_1m IS NOT NULL
+    OR cp.cached_input_price_per_1m > a.input_price
     OR cp.currency IS DISTINCT FROM 'USD' OR cp.price_unit IS DISTINCT FROM 'per_1m_tokens'
     OR cp.notes NOT LIKE '%Audit 2026-10-15:%' OR cp.notes IS NULL);
 
 UPDATE api_channel_price_variants v
 SET input_price_per_1m = a.input_price, output_price_per_1m = a.output_price,
-    cached_input_price_per_1m = NULL, currency = 'USD', price_unit = 'per_1m_tokens',
+    cached_input_price_per_1m = CASE WHEN v.cached_input_price_per_1m > a.input_price THEN NULL
+      ELSE v.cached_input_price_per_1m END,
+    currency = 'USD', price_unit = 'per_1m_tokens',
     variant_kind = 'default_route', source_url = 'https://openrouter.ai/api/v1/models',
     headline_reason = 'OpenRouter model-level default route price from /api/v1/models.',
     raw_json = jsonb_build_object('id', a.openrouter_id, 'audit', '2026-10-15',
       'input_per_1m', a.input_price, 'output_per_1m', a.output_price),
-    notes = 'Audit 2026-10-15 default route correction. Default-route cache price needs-verification (NULL).',
+    notes = 'Audit 2026-10-15 default route correction. Default-route cache price needs-verification.',
     updated_at = now()
 FROM audited_or_defaults a, models m, providers p
 WHERE m.slug = a.model_slug AND v.model_id = m.id
   AND p.id = v.provider_id AND p.slug = 'openrouter' AND v.variant_key = 'openrouter-auto'
+  AND NOT EXISTS (SELECT 1 FROM api_channel_prices cp WHERE cp.model_id = m.id AND cp.provider_id = p.id
+    AND cp.id IN (SELECT id FROM scraper_maintained))
   AND (v.input_price_per_1m IS DISTINCT FROM a.input_price
     OR v.output_price_per_1m IS DISTINCT FROM a.output_price
-    OR v.cached_input_price_per_1m IS NOT NULL
+    OR v.cached_input_price_per_1m > a.input_price
     OR v.headline_reason IS DISTINCT FROM 'OpenRouter model-level default route price from /api/v1/models.'
     OR v.source_url IS DISTINCT FROM 'https://openrouter.ai/api/v1/models');
 
