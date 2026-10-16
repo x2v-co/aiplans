@@ -9,6 +9,7 @@ import { providers, models, apiChannelPrices } from '../../src/db/schema';
 import { channelTermBadges } from '../../src/lib/channel-terms';
 import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice } from '../utils/audit-price-policy';
 import { NEMOTRON_SLUG, NEMOTRON_SOURCE, NEMOTRON_ENDPOINT, NEMOTRON_DATA_NOTE, nemotronSeedOptions, seedNemotronLightning } from './nemotron-lightning-2026-10-15';
+import { auditExitCode, missingPlanFields } from '../utils/audit-plan-policy';
 
 type Row = Record<string, unknown> & { id: number };
 const columns = Object.fromEntries([providers, models, apiChannelPrices].map(table => {
@@ -230,6 +231,7 @@ test('real audit accepts the free channel while another zero-priced channel rema
     };
     const dependencies: Record<string, unknown> = {
       './utils/audit-price-policy': { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice },
+      './utils/audit-plan-policy': { auditExitCode, missingPlanFields },
       './db/queries': { db }, './db/postgres-admin': { databaseSql },
       '../src/lib/plan-selector': { resolveSelector() { throw new Error('Unexpected selector resolution'); } },
       './scrapers/modelsdev': { fetchModelsDevCatalog: async () => { throw new Error('Offline test'); }, PLAN_DRIFT_SKIP: new Set() },

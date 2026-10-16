@@ -355,4 +355,22 @@ export const CLASSIFICATIONS: Classification[] = [
     secondaryKinds: ['chat'],
     selector: { extra: ZHIPU_CODING_MODELS, only_extra: true },
     reason: 'Z.AI Max' },
+
+  // ─ Meta Muse Code — coding-agent subscription (CLI only). Every tier runs Muse
+  //   Wonder; Muse Wonder Full (Power/Maximum only) has no catalog row, since it
+  //   has no API price. muse-wonder (#3375) is the official-priced row; the
+  //   meta-muse-wonder row is the OpenRouter duplicate.
+  //   Source: https://dev.meta.ai/help/subscriptions/what-is-a-muse-code-subscription
+  { providerSlug: 'meta', planSlug: 'muse-code-everyday', kind: 'coding', line: 'muse-code', rank: 0,
+    selector: { extra: ['muse-wonder'], only_extra: true },
+    reason: 'Everyday ($5): Muse Wonder, 10-50 prompts / 5h' },
+  { providerSlug: 'meta', planSlug: 'muse-code-high', kind: 'coding', line: 'muse-code', rank: 1,
+    selector: { extra: ['muse-wonder'], only_extra: true },
+    reason: 'High ($15): 5x Everyday, Muse Wonder' },
+  { providerSlug: 'meta', planSlug: 'muse-code-power', kind: 'coding', line: 'muse-code', rank: 2,
+    selector: { extra: ['muse-wonder'], only_extra: true },
+    reason: 'Power ($50): 20x Everyday, Muse Wonder + Wonder Full (no catalog row)' },
+  { providerSlug: 'meta', planSlug: 'muse-code-maximum', kind: 'coding', line: 'muse-code', rank: 3,
+    selector: { extra: ['muse-wonder'], only_extra: true },
+    reason: 'Maximum ($200): 80x Everyday, Muse Wonder + Wonder Full (no catalog row)' },
 ];
