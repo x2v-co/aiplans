@@ -27,6 +27,7 @@ import { scrapeVertexAIDynamic } from './scrapers/vertex-ai-dynamic';
 import { scrapeMistralDynamic } from './scrapers/mistral-dynamic';
 import { scrapeQwenDynamic } from './scrapers/qwen-dynamic';
 import { scrapeSeedDynamic } from './scrapers/seed-dynamic';
+import { keepsLastKnownPrice } from './utils/variant-headlines';
 import { isTencentModelName, scrapeHunyuanDynamic } from './scrapers/hunyuan-dynamic';
 import { scrapeBaiduDynamic } from './scrapers/baidu-dynamic';
 
@@ -506,6 +507,14 @@ async function processAPIScraper(
     try {
       const product = await resolveProduct(price);
       if (!product) continue;
+      const { data: existingRow } = await db.from('api_channel_prices').select('input_price_per_1m, output_price_per_1m')
+        .eq('model_id', product.id).eq('provider_id', channelProviderId).single();
+      if (keepsLastKnownPrice(existingRow)) {
+        console.warn(`⚠️ ${result.source}: ${price.modelSlug} base price not parsed this run; keeping last-known ${existingRow!.input_price_per_1m}/${existingRow!.output_price_per_1m}`);
+        modelIdBySlug.set(price.modelSlug, product.id);
+        seenModelIds.add(product.id);
+        continue;
+      }
       await upsertChannelPrice({ model_id: product.id, provider_id: channelProviderId,
         input_price_per_1m: null, output_price_per_1m: null, cached_input_price_per_1m: null,
         currency: 'USD', price_unit: 'per_1m_tokens', is_available: true,
