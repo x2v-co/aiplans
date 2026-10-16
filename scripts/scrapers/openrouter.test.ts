@@ -177,8 +177,10 @@ test('OpenRouter ingests Liquid text prices and endpoints with the exact seeded 
   assert.ok(Math.abs(price.inputPricePer1M - 0.05) < 1e-9);
   assert.ok(Math.abs(price.outputPricePer1M - 0.7) < 1e-9);
   assert.ok(Math.abs((price.cachedInputPricePer1M ?? 0) - 0.025) < 1e-9);
-  assert.equal(result.variants?.length, 2);
+  // main now emits default_route (headline) + cheapest_endpoint (non-headline) + upstream_provider.
+  assert.deepEqual(result.variants?.map(variant => variant.variantKind).sort(), ['cheapest_endpoint', 'default_route', 'upstream_provider']);
   assert.ok(result.variants?.every(variant => variant.modelSlug === LFM_SLUG));
+  assert.equal(result.variants?.find(variant => variant.variantKind === 'default_route')?.isHeadline, true);
   assert.equal(result.variants?.find(variant => variant.variantKind === 'upstream_provider')?.sourceGroupName, 'Liquid');
   assert.equal(requested.length, 2);
 });
