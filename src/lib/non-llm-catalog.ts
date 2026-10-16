@@ -98,8 +98,27 @@ export const MOONDREAM_SHUTDOWN = {
   notes: 'Moondream Cloud inference and Lens shut down 2026-11-13. Unspent purchased credits will be refunded; models stay open. Acquired by Prime Intellect on 2026-10-14.',
 };
 
+const chatgptReleaseNotes = 'https://help.openai.com/en/articles/6825453-chatgpt-release-notes';
+// ChatGPT release notes (checked 2026-10-16): GPT-Live-1.1 and 1.1 Quip (mini) rolling out in ChatGPT Voice; no API or API price published.
+function gptLive(quip: boolean): AiCatalogItem {
+  return {
+    deferredDbSeed: true, lastVerified: '2026-10-16', verifiedAt: '2026-10-16', currency: 'USD',
+    kind: 'voice-model', slug: quip ? 'gpt-live-1.1-quip' : 'gpt-live-1.1', name: quip ? 'GPT-Live-1.1 Quip' : 'GPT-Live-1.1',
+    provider: 'OpenAI', providerSlug: 'openai', modelCategory: 'speech', status: 'available', releasedAt: '2026-10-16',
+    pricing: 'No API. Available in ChatGPT Voice (included with ChatGPT plans; plan Voice limits apply).',
+    unit: 'subscription', pricingUnit: 'subscription_only', billingUnit: 'subscription_included',
+    priceStatus: 'subscription_included', pricingConfidence: 'not-commercial',
+    inputModalities: ['audio', 'text'], outputModalities: ['audio', 'text'], access: ['consumer-app'],
+    accessNote: 'No API: ChatGPT Voice only. OpenAI has not published an API model or API price.',
+    capabilities: ['speech-to-speech', 'voice assistant'],
+    bestFor: quip ? 'Mini GPT-Live voice model in ChatGPT Voice.' : 'Real-time voice conversations in ChatGPT Voice.',
+    notes: (quip ? 'Mini version of GPT-Live-1.1. ' : '') + 'Rolling out in ChatGPT Voice with new Live voices (French, German, Hindi, Japanese, Korean, Mexican Spanish, plus Bubbie in English). No API.',
+    url: chatgptReleaseNotes, sourceUrls: [{ label: 'ChatGPT release notes', url: chatgptReleaseNotes, publisher: 'OpenAI' }],
+  };
+}
+
 export const NON_LLM_CATALOG: AiCatalogItem[] = [
-  voice('3.0'), voice('2.0'), transcription('2.0'), transcription('1.0'), jev('1.14.0'), jev('1.13.0'), image(false), image(true),
+  gptLive(false), gptLive(true), voice('3.0'), voice('2.0'), transcription('2.0'), transcription('1.0'), jev('1.14.0'), jev('1.13.0'), image(false), image(true),
   {
     ...verified, ...MOONDREAM_SHUTDOWN, kind: 'image-model', slug: 'moondream-cloud', name: 'Moondream Cloud (vision lifecycle note)',
     provider: 'Moondream', providerSlug: 'moondream', modelCategory: 'image', status: 'deprecated',

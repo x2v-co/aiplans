@@ -459,6 +459,8 @@
     "per_megapixel": "每百万像素",
     "per_hour": "每小时",
     "per_minute": "每分钟",
+    "subscription": "订阅内含",
+    "subscription_only": "仅订阅（无 API）",
     "per_second": "每秒",
     "per_song": "每首",
     "megapixel": "百万像素",

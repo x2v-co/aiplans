@@ -459,6 +459,8 @@
     "per_megapixel": "per megapixel",
     "per_hour": "per hour",
     "per_minute": "per minute",
+    "subscription": "included in subscription",
+    "subscription_only": "subscription only (no API)",
     "per_second": "per second",
     "per_song": "per song",
     "megapixel": "megapixel",
