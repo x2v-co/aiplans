@@ -4,7 +4,35 @@ import type { ScraperResult, ScrapedPrice, ScrapedPriceVariant } from '../utils/
 
 export const ANTHROPIC_PRICING_SOURCE = 'https://platform.claude.com/docs/en/about-claude/pricing';
 export const HAIKU_UNVERIFIED_NOTE = '[needs-verification] Official <=100K prompt price row not parsed; withheld. Source: ' + ANTHROPIC_PRICING_SOURCE;
+export const ANTHROPIC_FAST_MODE_SOURCE = 'https://docs.claude.com/en/docs/build-with-claude/fast-mode';
 export interface AnthropicPricingRow { cells: string[]; heading: string }
+
+/** Fast mode pricing table. Opus 5.5 is GA (Claude API + Microsoft Foundry on Azure);
+ * any other model in the table is research preview (access request + beta header). */
+export function parseAnthropicFastMode(rows: AnthropicPricingRow[]): ScrapedPriceVariant[] {
+  const variants: ScrapedPriceVariant[] = [];
+  for (const row of rows) {
+    const label = row.cells[0]?.trim() ?? '';
+    const dollars = row.cells.slice(1).map(cell => cell.match(/\$\s*(\d+(?:\.\d+)?)/)?.[1]).map(Number);
+    if (dollars.length !== 2 || dollars.some(price => !Number.isFinite(price) || price <= 0)) continue;
+    const versions = [...label.matchAll(/Opus\s+(\d+(?:\.\d+)?)/gi)].map(match => match[1]);
+    for (const version of versions) {
+      const ga = version === '5.5';
+      const slug = `claude-opus-${version}`;
+      variants.push({ modelName: `Claude Opus ${version}`, modelSlug: slug, variantKey: 'fast-mode',
+        variantName: ga ? 'Fast mode' : 'Fast mode (research preview)', variantKind: 'tier',
+        inputPricePer1M: dollars[0], outputPricePer1M: dollars[1], currency: 'USD', sourceUrl: ANTHROPIC_FAST_MODE_SOURCE,
+        isAvailable: true, isPublic: ga, isSelfService: ga, isHeadline: false,
+        constraints: { speed: 'fast', status: ga ? 'ga' : 'research_preview',
+          platforms: ga ? ['claude-api', 'microsoft-foundry-azure'] : ['claude-api'] },
+        notes: (ga ? 'Fast mode GA (2026-10-15): Claude API incl. Managed Agents, and Microsoft Foundry deployments hosted on Azure.'
+          : 'Fast mode research preview: access request/waitlist and fast-mode-2026-02-01 beta header; Claude API only.')
+          + ' Up to 2.5x output tokens/s. Not available with Batch API, Priority Tier or Claude Platform on AWS. Prompt caching and data residency multipliers stack. Source: '
+          + ANTHROPIC_FAST_MODE_SOURCE });
+    }
+  }
+  return variants;
+}
 
 export function parseAnthropicPricing(cards: string[], rows: AnthropicPricingRow[]): ScraperResult {
   const prices: ScrapedPrice[] = [];
@@ -98,7 +126,15 @@ export async function scrapeAnthropicDynamic(): Promise<ScraperResult> {
       }
       return rows;
     });
-    return parseAnthropicPricing(cards, rows);
+    const result = parseAnthropicPricing(cards, rows);
+    const fastResponse = await page.goto(ANTHROPIC_FAST_MODE_SOURCE, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    if (!fastResponse?.ok()) return { ...result, warnings: [...(result.warnings ?? []), `Fast mode docs HTTP ${fastResponse?.status()}; existing fast-mode variants preserved.`] };
+    const fastRows = await page.evaluate(() => [...document.querySelectorAll('table tr')]
+      .map(row => ({ cells: [...row.querySelectorAll('td')].map(cell => cell.textContent?.trim() ?? ''), heading: '' }))
+      .filter(row => row.cells.length === 3));
+    const fast = parseAnthropicFastMode(fastRows);
+    return { ...result, variants: [...(result.variants ?? []), ...fast],
+      ...(fast.length ? {} : { warnings: [...(result.warnings ?? []), 'Fast mode pricing table not parsed; existing fast-mode variants preserved.'] }) };
   } catch (error) {
     return { source: 'Anthropic-API', success: false, prices: [], errors: [String(error)] };
   } finally {

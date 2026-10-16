@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseAnthropicPricing } from './anthropic-dynamic';
+import { parseAnthropicFastMode, parseAnthropicPricing } from './anthropic-dynamic';
 
 test('Haiku official base is unknown; context and batch tiers never become headline prices', () => {
   const result = parseAnthropicPricing(['Haiku 5.5 Input $0.10 Output $0.50'], [
@@ -37,4 +37,15 @@ test('documented Haiku 5.5 <=100K rows become the base price and a batch variant
     ['batch-prompt-gt-100k', 0.25, 1.25], ['batch-prompt-le-100k', 0.05, 0.25], ['prompt-gt-100k', 0.5, 2.5], ['prompt-le-100k', 0.1, 0.5]]);
   assert.deepEqual(result.variants?.filter(v => v.isHeadline).map(v => v.variantKey), ['prompt-le-100k']);
   assert.equal(result.warnings, undefined);
+});
+
+test('fast mode: Opus 5.5 GA public variant; Opus 5 / 4.8 research preview; never headline', () => {
+  const variants = parseAnthropicFastMode([
+    { cells: ['Claude Opus 5.5', '$8 USD / MTok', '$40 USD / MTok'], heading: '' },
+    { cells: ['Claude Opus 5 / Claude Opus 4.8', '$10 USD / MTok', '$50 USD / MTok'], heading: '' },
+    { cells: ['Claude Opus 5.5 (claude-opus-5-5)', 'Claude API, including Claude Managed Agents', ''], heading: '' },
+  ]);
+  assert.deepEqual(variants.map(v => [v.modelSlug, v.inputPricePer1M, v.outputPricePer1M, v.isPublic, v.constraints?.status]), [
+    ['claude-opus-5.5', 8, 40, true, 'ga'], ['claude-opus-5', 10, 50, false, 'research_preview'], ['claude-opus-4.8', 10, 50, false, 'research_preview']]);
+  assert.ok(variants.every(v => v.isHeadline === false && v.variantKey === 'fast-mode'));
 });
