@@ -27,7 +27,7 @@ import { scrapeVertexAIDynamic } from './scrapers/vertex-ai-dynamic';
 import { scrapeMistralDynamic } from './scrapers/mistral-dynamic';
 import { scrapeQwenDynamic } from './scrapers/qwen-dynamic';
 import { scrapeSeedDynamic } from './scrapers/seed-dynamic';
-import { scrapeHunyuanDynamic } from './scrapers/hunyuan-dynamic';
+import { isTencentModelName, scrapeHunyuanDynamic } from './scrapers/hunyuan-dynamic';
 import { scrapeBaiduDynamic } from './scrapers/baidu-dynamic';
 
 // Additional dynamic scrapers - Priority 2 (medium)
@@ -851,7 +851,7 @@ function inferProviderId(modelName: string, channelName?: string): number {
   if (name.includes('seed') && name.includes('bytedance') === false) return PROVIDER_IDS['SEED'];
   if (name.includes('bytedance') || name.includes('doubao')) return PROVIDER_IDS['BYTEDANCE'];
   if (name.includes('step') || name.includes('stepfun')) return PROVIDER_IDS['STEPFUN'];
-  if (name.includes('hunyuan') || name.includes('tencent')) return PROVIDER_IDS['HUNYUAN'];
+  if (isTencentModelName(name)) return PROVIDER_IDS['HUNYUAN'];
   if (name.includes('ernie') || name.includes('baidu')) return PROVIDER_IDS['BAIDU'];
 
   return -1;
