@@ -24,6 +24,7 @@ import {
   extractBalancedObject,
   parseNextFlight,
 } from './utils/artificial-analysis';
+import { deriveHostModelSlug } from './utils/coding-agent-host';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const SOURCE_URL = 'https://artificialanalysis.ai/agents/coding-agents';
@@ -41,7 +42,10 @@ interface AaCodingRecord {
   isUnavailable: boolean;
   agentName: string;
   provider: string;
-  hostModelSlug: string;
+  /** Dropped by AA in the 2026-10-16 snapshot; see deriveHostModelSlug. */
+  hostModelSlug?: string;
+  display?: { agent?: string; model?: string } | null;
+  modelCreators?: Array<{ slug?: string }> | null;
   displayLabel: string;
   variantOf: string | null;
   indexVersion?: string;
@@ -99,6 +103,11 @@ const HOST_SLUG_ALIASES: Record<string, string> = {
   'google_skimaki_ai-studio': 'gemini-3.8-flash',
   'cognition_fusion-claude-fable-5-1-xhigh-sidekick-penguin-medium': 'claude-fable-5.1',
   'cognition_fusion-gpt-6-astra-xhigh-sidekick-penguin-medium': 'gpt-6-astra',
+  // Slugs derived from display.model after AA dropped hostModelSlug (2026-10-16).
+  'alibaba_cloud_qwen3-8-max': 'qwen3.8-max',
+  'cognition_gpt-6-astra-xhigh-swe-2-medium': 'gpt-6-astra',
+  'cognition_claude-fable-5-1-xhigh-swe-2-medium': 'claude-fable-5.1',
+  'cognition_claude-opus-5-5-max-gpt-6-luna-high': 'claude-opus-5.5',
 };
 
 /** Generic fallback: drop the AA provider prefix, then reuse model-slug rules. */
@@ -108,7 +117,12 @@ function hostSlugCandidates(hostModelSlug: string): string[] {
     .replace(/-public$/, '')
     .replace(/-\d{4}$/, '') // dated model snapshots, e.g. deepseek-v4-pro-0813
     .replace(/-(?:xhigh|high|medium|low|max)$/, '');
-  return aaSlugCandidates(withoutProvider);
+  const candidates = aaSlugCandidates(withoutProvider);
+  // Derived Anthropic slugs lack the family prefix ("sonnet-5-5" vs claude-sonnet-5.5).
+  if (hostModelSlug.startsWith('anthropic_') && !withoutProvider.startsWith('claude-')) {
+    candidates.push(...aaSlugCandidates(`claude-${withoutProvider}`));
+  }
+  return candidates;
 }
 
 function resolveHostModel(
@@ -193,16 +207,23 @@ async function main() {
   const rows: CodingScoreRow[] = [];
   const matchedSlugs = new Map<string, string>();
   const unmatched = new Set<string>();
+  const skippedIds: string[] = [];
   for (const record of records) {
-    const local = resolveHostModel(record.hostModelSlug, bySlug);
+    const hostModelSlug = deriveHostModelSlug(record);
+    if (!hostModelSlug) {
+      skippedIds.push(record.id);
+      console.warn(`⚠️ Skipping coding-agent record ${record.id} (${record.displayLabel ?? record.agentName ?? 'unknown'}): no host model slug`);
+      continue;
+    }
+    const local = resolveHostModel(hostModelSlug, bySlug);
     if (local) matchedSlugs.set(record.id, local.slug);
-    else unmatched.add(record.hostModelSlug);
+    else unmatched.add(hostModelSlug);
     rows.push({
       source_record_id: record.id,
       agent_name: record.agentName,
       agent_display_label: record.displayLabel,
       variant_of: record.variantOf,
-      host_model_slug: record.hostModelSlug,
+      host_model_slug: hostModelSlug,
       model_id: local?.id ?? null,
       provider_slug: record.provider,
       index_version: indexVersion,
@@ -234,6 +255,10 @@ async function main() {
     );
   }
   console.log(`\nMapped: ${matchedSlugs.size}/${rows.length} rows; unmatched hosts: ${[...unmatched].join(', ') || 'none'}`);
+  if (skippedIds.length) console.warn(`⚠️ Skipped ${skippedIds.length} record(s) without host model info; their existing rows are kept.`);
+  if (rows.length < MIN_RECORDS) {
+    throw new Error(`Only ${rows.length} importable coding-agent records after skipping; refusing a partial import`);
+  }
 
   if (DRY_RUN) {
     console.log('\nDry-run only. Re-run without --dry-run to write.');
@@ -282,7 +307,8 @@ async function main() {
     `;
     // Retire rows that disappeared from the current index version (delisted
     // agent variants or an index-version bump with non-overlapping ids).
-    const ids = rows.map((row) => row.source_record_id);
+    // Skipped records are not delisted, so keep their last-known-good rows.
+    const ids = [...rows.map((row) => row.source_record_id), ...skippedIds];
     await tx`
       DELETE FROM coding_agent_scores
       WHERE index_version = ${indexVersion}
