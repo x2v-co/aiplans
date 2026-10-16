@@ -93,16 +93,45 @@ const ARENA_TOP60: ArenaRow[] = [
   { rank: 60, modelName: 'deepseek-v3.2-exp',                        score: 1423, votes: 12019, org: 'DeepSeek' },
 ];
 
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+const ROW_SELECTORS = ['table tbody tr', '[role="table"] [role="row"]:has([role="cell"])', 'table tr:has(td)'];
+const ROW_WAIT_MS = 60_000;
+
+/** arena.ai sits behind a Cloudflare managed challenge that headless browsers often cannot pass. */
+export class ArenaBlockedError extends Error {}
+
+export function isChallengePage(title: string, bodyText: string): boolean {
+  return /just a moment/i.test(title) || /performing security verification|verify you are (not a bot|human)/i.test(bodyText);
+}
+
 /** Read the live ranking table rendered by arena.ai. */
 async function fetchLiveLeaderboard(): Promise<ArenaRow[]> {
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage({ userAgent: BROWSER_UA, locale: 'en-US' });
     await page.goto(SOURCE_URL, { waitUntil: 'domcontentloaded', timeout: 45_000 });
-    await page.locator('table tbody tr').first().waitFor({ state: 'visible', timeout: 30_000 });
 
-    const rows = await page.locator('table tbody tr').evaluateAll((elements) => elements.map((element) => {
-      const cells = Array.from(element.querySelectorAll('td'));
+    // Wait for whichever row selector shows up first; bail out early on a bot challenge.
+    const deadline = Date.now() + ROW_WAIT_MS;
+    let rowSelector: string | null = null;
+    while (!rowSelector && Date.now() < deadline) {
+      for (const sel of ROW_SELECTORS) {
+        if (await page.locator(sel).first().isVisible().catch(() => false)) { rowSelector = sel; break; }
+      }
+      if (rowSelector) break;
+      await page.waitForTimeout(2_000);
+    }
+    if (!rowSelector) {
+      const title = await page.title().catch(() => '');
+      const body = (await page.locator('body').innerText().catch(() => '')).slice(0, 2_000);
+      if (isChallengePage(title, body)) {
+        throw new ArenaBlockedError(`arena.ai served a bot challenge ("${title}") for ${ROW_WAIT_MS / 1000}s`);
+      }
+      throw new Error(`No leaderboard rows after ${ROW_WAIT_MS / 1000}s (tried ${ROW_SELECTORS.join(' | ')}; title="${title}")`);
+    }
+
+    const rows = await page.locator(rowSelector).evaluateAll((elements) => elements.map((element) => {
+      const cells = Array.from(element.querySelectorAll('td, [role="cell"]'));
       const rankText = cells[0]?.querySelector('span')?.textContent || cells[0]?.textContent || '';
       const rank = Number.parseInt(rankText.trim(), 10);
       const modelElement = cells[1]?.querySelector('[title]') as HTMLElement | null;
@@ -280,6 +309,11 @@ async function main() {
     leaderboard = await fetchLiveLeaderboard();
     console.log(`Live Arena leaderboard loaded: ${leaderboard.length} rows`);
   } catch (error) {
+    if (!DRY_RUN && error instanceof ArenaBlockedError) {
+      // Same policy as anti-bot-blocked plan pages: keep last-known-good rows, do not fail the run.
+      console.warn(`⚠️ Live Arena leaderboard blocked; keeping last-known-good DB rows, nothing written: ${error.message}`);
+      return;
+    }
     if (!DRY_RUN) {
       throw new Error(`Live Arena leaderboard unavailable: ${(error as Error).message}`);
     }
