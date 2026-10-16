@@ -160,7 +160,22 @@ jobs:
             -f "$base/deploy/production/compose.yml" \
             --env-file "$env_file" ps
           curl -fsSL --retry 3 --retry-delay 10 --retry-all-errors https://aiplans.dev/api/health
-          sudo -n rm -rf "$release_dir"
+
+          # Release retention: keep the current release (rollback target) plus
+          # the KEEP_RELEASES most recent others; prune only older ones.
+          keep="${KEEP_RELEASES:-5}"
+          sudo -n touch "$release_dir"
+          echo "$GITHUB_SHA" | sudo -n tee "$base/.releases/CURRENT" >/dev/null
+          sudo -n find "$base/.releases" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' \
+            | sort -rn | cut -d' ' -f2- \
+            | grep -vxF "$release_dir" \
+            | tail -n +"$((keep + 1))" \
+            | while IFS= read -r old; do
+                case "$old" in
+                  "$base/.releases/"?*) echo "prune release: $old"; sudo -n rm -rf -- "$old" ;;
+                esac
+              done
+          echo "releases kept:"; sudo -n ls -1t "$base/.releases"
 
       # Disk hygiene even when rollout failed: consecutive failed deploys were
       # skipping prune (if: success) and drove x2v-global root 50%→85%. Prune
