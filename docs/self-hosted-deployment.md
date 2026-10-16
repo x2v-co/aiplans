@@ -286,3 +286,22 @@ only replace planprice containers. Gateway changes should be reviewed and
 released separately, because an invalid shared routing configuration affects
 both sites. `deploy/nginx/aiplans.dev.conf.example` is retained as historical
 reference only and is not installed on the VPS.
+
+## 暂停定时任务（部署会尊重）
+
+`deploy-production.yml` 和 `rollout.sh` 在安装/启用 timer 前会检查暂停状态，满足任一条件即跳过该 timer 的 install、enable、restart，并在日志里打印 `⏸️ ... skipping`：
+
+1. timer 被 mask（推荐）：
+   ```bash
+   sudo systemctl stop planprice-api-scraper.timer
+   sudo systemctl mask planprice-api-scraper.timer
+   ```
+2. 或存在标记文件：
+   ```bash
+   sudo mkdir -p /etc/planprice/paused-timers
+   echo "paused 2026-10-15, approved by owner" | sudo tee /etc/planprice/paused-timers/planprice-api-scraper.timer
+   sudo systemctl disable --now planprice-api-scraper.timer
+   ```
+   （标记只阻止部署重新打开，当前正在跑的 timer 仍需 `disable --now`。）
+
+恢复：`sudo systemctl unmask <timer>` 或删除标记文件，然后重新部署或手动 `systemctl enable --now <timer>`。
