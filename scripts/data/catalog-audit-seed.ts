@@ -2,6 +2,7 @@ import type { Sql } from 'postgres';
 import { AI_VERTICAL_CATALOG } from '../../src/lib/ai-vertical-catalog';
 import { openRouterProducerSlug } from '../scrapers/openrouter';
 import { seedChanges } from './gemini-4-argon';
+import { keepUnavailableForSeed } from '../utils/manual-unavailable';
 import { auditVerticalModelFields, isAuditOwnedVertical } from './catalog-audit-vertical';
 import { AUDIT_TIMESTAMP, OPENROUTER_ADDITIONS, auditedModelSlug, auditedPrices,
   LEGACY_PRO_NOTE, MAX_API_CREDIT_NOTE, cleanLegacyFeatures } from './catalog-audit-2026-10-15';
@@ -57,9 +58,13 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
     // OpenRouter -1 / null list prices (jev-router, switchyard, …) are not payg-usable: keep the
     // row for catalog identity but mark unavailable. last_verified still records the audit check.
     const variable = input == null || output == null;
+    // Never flip a DB-unavailable row back on unless it has a real price and was not retired by
+    // the live scrape (same rule as upsertChannelPrice's retainManualUnavailable, #192).
+    const guarded = keepUnavailableForSeed({ input_price_per_1m: input, output_price_per_1m: output,
+      is_available: !variable, notes }, existing as Parameters<typeof keepUnavailableForSeed>[1]);
     return save('api_channel_prices', existing, { model_id: modelId, provider_id: providerId,
       input_price_per_1m: input, output_price_per_1m: output, currency: 'USD', price_unit: 'per_1m_tokens',
-      is_available: !variable, notes, last_verified: AUDIT_TIMESTAMP }, `${modelId}/${providerId}`);
+      is_available: guarded.is_available, notes: guarded.notes, last_verified: AUDIT_TIMESTAMP }, `${modelId}/${providerId}`);
   };
   const or = await provider('openrouter', 'OpenRouter');
   for (const [id, input, output] of OPENROUTER_ADDITIONS) {
