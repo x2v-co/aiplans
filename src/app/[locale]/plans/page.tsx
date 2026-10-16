@@ -3,7 +3,7 @@ import { ProviderLogo } from '@/components/provider-logo';
 import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, ArrowRight, SquarePen } from "lucide-react";
+import { Building2, ArrowRight, SquarePen, Network } from "lucide-react";
 import { sql } from "@/lib/db";
 import { getActiveCouponMap } from "@/lib/coupons";
 import { CouponBadge } from "@/components/coupon-badge";
@@ -11,6 +11,7 @@ import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from "@/
 import SiteHeader from '@/components/SiteHeader';
 import { buildPlansIndexPricingCopy } from '@/lib/pricing-seo';
 import { getPlansSeoProviders } from '@/lib/pricing-seo-data';
+import { buildGatewaySectionRows, gatewaySectionCopy, GATEWAY_SECTION_ID, type GatewaySectionSource } from '@/lib/gateway-subscription-section';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,16 +42,35 @@ async function getProvidersWithPlans() {
   `;
 }
 
+async function getGatewaySubscriptionPlans() {
+  return sql<GatewaySectionSource[]>`
+    SELECT pl.id, pl.name, pl.plan_kind, pl.price::float8 AS price, pl.currency,
+           pl.monthly_api_credit_usd::float8 AS monthly_api_credit_usd, pl.has_overage_pricing,
+           p.name AS provider_name, p.slug AS provider_slug
+    FROM plans pl
+    JOIN providers p ON p.id = pl.provider_id
+    WHERE pl.plan_kind = 'gateway_subscription'
+    ORDER BY pl.id
+  `;
+}
+
 export default async function PlansIndexPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ kind?: string | string[] }>;
 }) {
   const { locale } = await params;
-  const [providers, couponByProvider] = await Promise.all([
+  const kindParam = (await searchParams)?.kind;
+  const gatewayOnly = (Array.isArray(kindParam) ? kindParam[0] : kindParam) === 'gateway_subscription';
+  const [providers, couponByProvider, gatewayPlans] = await Promise.all([
     getProvidersWithPlans(),
     getActiveCouponMap('plan'),
+    getGatewaySubscriptionPlans(),
   ]);
+  const gatewayRows = buildGatewaySectionRows(gatewayPlans, locale);
+  const gatewayCopy = gatewaySectionCopy(locale);
 
   const isZh = locale === 'zh';
   const copy = buildPlansIndexPricingCopy(providers, isZh ? 'zh' : 'en');
@@ -96,7 +116,38 @@ export default async function PlansIndexPage({
           </Link>
         </div>
 
+        {/* Gateway subscriptions (plan_kind = gateway_subscription); hidden when empty */}
+        {gatewayRows.length > 0 && (
+          <section id={GATEWAY_SECTION_ID} className="mb-12 scroll-mt-20">
+            <div className="flex items-center gap-2 mb-2">
+              <Network className="w-6 h-6 text-purple-500" />
+              <h2 className="text-2xl font-bold">{gatewayCopy.title}</h2>
+              <Badge variant="outline">{gatewayRows.length}</Badge>
+            </div>
+            <p className="text-sm text-zinc-500 mb-6">{gatewayCopy.description}</p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {gatewayRows.map((row) => (
+                <Card key={row.id} className="hover:shadow-lg transition-shadow h-full flex flex-col">
+                  <CardContent className="p-6 flex flex-1 flex-col">
+                    <h3 className="font-bold text-xl">{row.name}</h3>
+                    <p className="text-sm text-zinc-500 mb-4">{row.providerName}</p>
+                    <dl className="grid grid-cols-3 gap-2 text-sm mb-4">
+                      <div><dt className="text-zinc-500">{gatewayCopy.price}</dt><dd className="font-semibold">{row.priceText}</dd></div>
+                      <div><dt className="text-zinc-500">{gatewayCopy.credit}</dt><dd className="font-semibold">{row.creditText}</dd></div>
+                      <div><dt className="text-zinc-500">{gatewayCopy.multiple}</dt><dd className="font-semibold text-green-600">{row.multipleText}</dd></div>
+                    </dl>
+                    <Link href={row.href} className="mt-auto text-blue-600 text-sm font-medium flex items-center gap-1">
+                      {gatewayCopy.view} <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Providers Grid */}
+        {!(gatewayOnly && gatewayRows.length > 0) && (
         <section>
           <div className="flex items-center gap-2 mb-6">
             <Building2 className="w-6 h-6 text-blue-500" />
@@ -161,6 +212,7 @@ export default async function PlansIndexPage({
             </Card>
           )}
         </section>
+        )}
       </main>
     </div>
   );
