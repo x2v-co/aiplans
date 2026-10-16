@@ -11,6 +11,7 @@ import { sql, INT4_ARRAY } from "@/lib/db";
 import { formatPrice, CurrencyCode } from "@/lib/currency";
 import { getAllModelIdsForProvider, getPlanYearlyMonthly } from "@/lib/schema-adapters";
 import { groupPlansByKind, planKindDescription, planKindIcon, planKindLabel } from "@/lib/plan-kinds";
+import { gatewaySubscriptionEconomics, gatewaySubscriptionSummary } from "@/lib/gateway-subscription";
 import { describeEconomics, planEconomics, type EconomicPlan } from "@/lib/plan-economics";
 import { PlanRate } from "@/components/plan-rate";
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
@@ -353,6 +354,15 @@ export default async function ProviderPage({
                     <div className="mb-4 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/60">
                       <PlanRate display={economicsFor(plan as EconomicPlan)} locale={locale} />
                     </div>
+
+                    {(() => {
+                      const gateway = gatewaySubscriptionEconomics(plan);
+                      return gateway ? (
+                        <ul className="mb-4 space-y-1 text-sm text-zinc-600 dark:text-zinc-300">
+                          {gatewaySubscriptionSummary(gateway, locale).map((line) => <li key={line}>{line}</li>)}
+                        </ul>
+                      ) : null;
+                    })()}
 
                     {Array.isArray(plan.features) && (
                       <ul className="space-y-2 mb-4">

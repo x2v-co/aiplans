@@ -20,7 +20,7 @@
  * a shared helper has to serve.
  */
 
-export type PlanKind = 'chat' | 'coding' | 'agent' | 'creative' | 'token_pack' | 'api_tier' | 'bundle';
+export type PlanKind = 'chat' | 'coding' | 'agent' | 'creative' | 'token_pack' | 'api_tier' | 'bundle' | 'gateway_subscription';
 
 /**
  * Display order. Chat first because it is what most visitors arrive looking
@@ -33,6 +33,7 @@ export const PLAN_KIND_ORDER: readonly PlanKind[] = [
   'agent',
   'creative',
   'token_pack',
+  'gateway_subscription',
   'api_tier',
   'bundle',
 ] as const;
@@ -81,6 +82,13 @@ const PRESENTATION: Record<PlanKind, KindPresentation> = {
     zh: 'Token 包',
     descriptionEn: 'Prepaid balance drawn down as you use it, with no monthly commitment.',
     descriptionZh: '预付余额，用多少扣多少，无按月承诺。',
+  },
+  gateway_subscription: {
+    icon: '🔀',
+    en: 'Gateway subscriptions',
+    zh: '网关订阅',
+    descriptionEn: 'A monthly fee buys a fixed USD credit on an AI gateway, spent at per-token rates on the models it covers.',
+    descriptionZh: '按月付费换取 AI 网关上的固定美元额度，按所含模型的单价扣减。',
   },
   api_tier: {
     icon: '⚡',

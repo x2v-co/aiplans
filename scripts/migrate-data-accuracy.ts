@@ -343,7 +343,8 @@ const MIGRATIONS: Migration[] = [
 
       ALTER TABLE plans DROP CONSTRAINT IF EXISTS plans_plan_kind_chk;
       ALTER TABLE plans ADD CONSTRAINT plans_plan_kind_chk
-        CHECK (plan_kind IN ('chat','coding','agent','creative','token_pack','api_tier','bundle'));
+        -- Replayed on each deployment: keep every kind, incl. gateway_subscription.
+        CHECK (plan_kind IN ('chat','coding','agent','creative','token_pack','api_tier','bundle','gateway_subscription'));
 
       -- Named product line within a kind ('claude-code', 'minimax-highspeed').
       -- Two plans compare only when plan_kind AND plan_line match.
@@ -662,7 +663,8 @@ const MIGRATIONS: Migration[] = [
       -- creative/API/enterprise surfaces.
       ALTER TABLE plans DROP CONSTRAINT IF EXISTS plans_plan_kind_chk;
       ALTER TABLE plans ADD CONSTRAINT plans_plan_kind_chk
-        CHECK (plan_kind IN ('chat','coding','agent','creative','token_pack','api_tier','bundle'));
+        -- Replayed on each deployment: keep every kind, incl. gateway_subscription.
+        CHECK (plan_kind IN ('chat','coding','agent','creative','token_pack','api_tier','bundle','gateway_subscription'));
       ALTER TABLE plans ADD COLUMN IF NOT EXISTS plan_category text DEFAULT 'chatbot';
       ALTER TABLE plans ALTER COLUMN plan_category SET DEFAULT 'chatbot';
       UPDATE plans
