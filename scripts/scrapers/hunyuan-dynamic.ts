@@ -13,6 +13,16 @@ function canonicalModel(raw: string): string | null {
   return clean;
 }
 
+/**
+ * True for Tencent model names. The scraper canonicalizes the Tencent HY line
+ * to bare `hy-*` names (e.g. hy-vision-1.5-instruct), which contain neither
+ * "hunyuan" nor "tencent", so name-based provider inference must match them.
+ */
+export function isTencentModelName(name: string): boolean {
+  const n = name.toLowerCase();
+  return n.includes('hunyuan') || n.includes('tencent') || /^hy-/.test(n);
+}
+
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 
 function decodeEntities(text: string): string {
