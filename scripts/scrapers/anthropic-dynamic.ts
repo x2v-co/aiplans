@@ -2,6 +2,8 @@
 import { chromium } from 'playwright';
 import type { ScraperResult, ScrapedPrice, ScrapedPriceVariant } from '../utils/validator';
 
+import { addStandardHeadlines } from '../utils/variant-headlines';
+
 export const ANTHROPIC_PRICING_SOURCE = 'https://platform.claude.com/docs/en/about-claude/pricing';
 export const HAIKU_UNVERIFIED_NOTE = '[needs-verification] Official <=100K prompt price row not parsed; withheld. Source: ' + ANTHROPIC_PRICING_SOURCE;
 export const ANTHROPIC_FAST_MODE_SOURCE = 'https://docs.claude.com/en/docs/build-with-claude/fast-mode';
@@ -133,7 +135,8 @@ export async function scrapeAnthropicDynamic(): Promise<ScraperResult> {
       .map(row => ({ cells: [...row.querySelectorAll('td')].map(cell => cell.textContent?.trim() ?? ''), heading: '' }))
       .filter(row => row.cells.length === 3));
     const fast = parseAnthropicFastMode(fastRows);
-    return { ...result, variants: [...(result.variants ?? []), ...fast],
+    // Fast mode alone would leave Opus groups without a headline (audit variants.no_headline).
+    return { ...result, variants: addStandardHeadlines(result.prices, [...(result.variants ?? []), ...fast], ANTHROPIC_PRICING_SOURCE),
       ...(fast.length ? {} : { warnings: [...(result.warnings ?? []), 'Fast mode pricing table not parsed; existing fast-mode variants preserved.'] }) };
   } catch (error) {
     return { source: 'Anthropic-API', success: false, prices: [], errors: [String(error)] };
