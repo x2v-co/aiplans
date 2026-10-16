@@ -127,7 +127,7 @@ export const plans = pgTable('plans', {
 
   // Product line taxonomy — orthogonal to `tier`. Plans are only comparable
   // when planKind AND planLine match; tierRank orders the rungs within a line.
-  planKind: text('plan_kind').notNull().default('chat'), // 'chat' | 'coding' | 'agent' | 'creative' | 'token_pack' | 'api_tier' | 'bundle'
+  planKind: text('plan_kind').notNull().default('chat'), // 'chat' | 'coding' | 'agent' | 'creative' | 'token_pack' | 'api_tier' | 'bundle' | 'gateway_subscription'
   planCategory: text('plan_category').notNull().default('chatbot'), // 'chatbot' | 'coding' | 'agent' | 'creative' | 'api' | 'enterprise'
   planLine: text('plan_line'), // e.g. 'claude-code', 'minimax-highspeed'
   tierRank: integer('tier_rank'),
