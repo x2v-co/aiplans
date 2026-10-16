@@ -1,5 +1,7 @@
 import { AI_VERTICAL_CATALOG } from '@/lib/ai-vertical-catalog';
 import { MetadataRoute } from 'next';
+import { isIndexableVerticalDbSlug } from '@/lib/vertical-model-aliases';
+import type { AiCatalogKind } from '@/lib/ai-vertical-catalog';
 import { sql } from '@/lib/db';
 import { selectIndexablePlanComparisons } from '@/lib/search-indexing';
 import { PRICING_GUIDE_SLUGS } from '@/lib/pricing-guides';
@@ -161,7 +163,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ORDER BY updated_at DESC NULLS LAST
     `;
     const auditedSlugs = new Set(AI_VERTICAL_CATALOG.map(item => item.slug));
-    for (const row of extras.filter(row => row.slug && row.model_category && !auditedSlugs.has(row.slug))) {
+    // Only slugs whose detail route returns 200: Arena benchmark rows
+    // (arena-t2v-*) and DB-only world models 404, aliases redirect.
+    for (const row of extras.filter(row => row.slug && row.model_category && !auditedSlugs.has(row.slug)
+      && isIndexableVerticalDbSlug(`${row.model_category}-model` as AiCatalogKind, row.slug))) {
       for (const locale of LOCALES) urls.push({ url: `${BASE_URL}/${locale}/${row.model_category}-models/${row.slug}`,
         lastModified: row.updated_at ? new Date(row.updated_at) : now, changeFrequency: 'weekly', priority: 0.68 });
     }
