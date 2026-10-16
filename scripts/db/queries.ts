@@ -1,4 +1,5 @@
 import { retainMatchingPromo } from '../utils/promo-sync';
+import { retainManualUnavailable } from '../utils/manual-unavailable';
 import { allowsUnverifiedPrice } from './unverified-price';
 import { checkModelIdentity, ModelIdentityRejectedError, isCachedPriceSane } from '../utils/model-identity-guard';
 import { canonicalizeModelSlug } from '../utils/model-normalizer';
@@ -353,6 +354,8 @@ export async function upsertChannelPrice(data: {
   }
 
   data = retainMatchingPromo(data, existing);
+  // 审计下架的无固定价路由行（-1 哨兵）不被无价格写入改回可用。
+  data = retainManualUnavailable(data, existing);
 
   if (existing) {
     // Update existing record
