@@ -74,6 +74,10 @@ Re-run any time; all steps use `IF NOT EXISTS` / no-op guards.
 The Gemini introductory-price migration and Argon seed are documented in
 [`docs/gemini-4-argon.md`](../docs/gemini-4-argon.md), including rollout order,
 field-level dry-run output, the Pacific cutoff assumption, and operator commands.
+The optional `seed-google-ai-pro-argon-2026-10-17.ts` corrects existing Argon notes
+and only the `google-ai-pro` selector for AI Studio Build/Playground access
+(including trials; Gemini App unconfirmed). It defaults to read-only dry-run,
+requires `--apply` for writes, and never changes prices. See the same document.
 
 ## Arena leaderboard
 
