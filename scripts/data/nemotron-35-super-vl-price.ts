@@ -8,7 +8,9 @@ import { seedChanges } from './gemini-4-argon';
  * Upstream endpoints keep their own posted prices (Together/CoreWeave still list $0.15/$0.50 on
  * OpenRouter); an upstream variant OpenRouter no longer lists is marked unavailable, never deleted.
  */
-export const NEMOTRON_SLUG = 'nvidia-nemotron-3.5-super-vl';
+/** DB slugs use hyphens, not dots (models#3689; the :free row is models#3690). */
+export const NEMOTRON_SLUG = 'nvidia-nemotron-3-5-super-vl';
+export const NEMOTRON_FREE_SLUG = `${NEMOTRON_SLUG}-free`;
 export const SOURCE = 'https://openrouter.ai/nvidia/nemotron-3.5-super-vl';
 const VERIFIED = new Date('2026-10-17T00:00:00Z');
 export const NEW_PRICE = { input_price_per_1m: 0.1, output_price_per_1m: 0.4, cached_input_price_per_1m: 0.08 };
@@ -32,7 +34,8 @@ function upstreamKey(v: Row): string | null {
 export async function seedNemotronPrice(tx: Sql, apply: boolean): Promise<Step[]> {
   const [model] = await tx<Row[]>`SELECT id FROM models WHERE slug = ${NEMOTRON_SLUG}`;
   const [provider] = await tx<Row[]>`SELECT id FROM providers WHERE slug = 'openrouter'`;
-  if (!model || !provider) throw new Error(`${NEMOTRON_SLUG} or openrouter provider missing`);
+  if (!model) throw new Error(`model ${NEMOTRON_SLUG} missing`);
+  if (!provider) throw new Error('provider openrouter missing');
   const steps: Step[] = [];
   const stamp = { last_verified: VERIFIED };
 
@@ -62,7 +65,7 @@ export async function seedNemotronPrice(tx: Sql, apply: boolean): Promise<Step[]
 
   // Read-only: duplicate model rows or other channels still at the old price need a human decision.
   const lookalikes = await tx<Row[]>`SELECT id, slug FROM models WHERE slug ILIKE ${'%nemotron-3%5-super-vl%'} AND id <> ${model.id}`;
-  for (const m of lookalikes) steps.push({ target: `models#${m.id}:${m.slug}`, action: 'review', changes: { reason: 'possible duplicate / :free row; not modified' } });
+  for (const m of lookalikes) steps.push({ target: `models#${m.id}:${m.slug}`, action: 'review', changes: { reason: m.slug === NEMOTRON_FREE_SLUG ? ':free route stays $0; not modified' : 'possible duplicate row; not modified' } });
   const others = await tx<Row[]>`SELECT id, provider_id, input_price_per_1m, output_price_per_1m FROM api_channel_prices WHERE model_id = ${model.id} AND provider_id <> ${provider.id} AND is_available IS DISTINCT FROM false`;
   for (const o of others) steps.push({ target: `api_channel_prices#${o.id}`, action: 'review', changes: { provider_id: o.provider_id, input: o.input_price_per_1m, output: o.output_price_per_1m, reason: 'non-OpenRouter channel; not modified' } });
   return steps;
