@@ -99,6 +99,11 @@ unpublished, so `promo_ends_at` stays null and notes defer to the official page.
 Preview against an explicitly configured non-production database with
 `npx tsx scripts/seed-mistral-large-4-promo.ts`.
 
+Reflection Beam's optional Vercel channel seed is documented in
+[`docs/reflection-beam.md`](../docs/reflection-beam.md). `npm run seed:reflection-beam`
+defaults to a read-only database preview; only an explicit `--apply` writes.
+It reuses the existing Beam model and records upstreams in price variants.
+
 ## Arena leaderboard
 
 `ingest-arena-leaderboard.ts` reads the live Chatbot Arena Agent leaderboard

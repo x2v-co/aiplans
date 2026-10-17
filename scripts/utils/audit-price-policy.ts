@@ -12,6 +12,11 @@ export function isVerifiedFreePrice(modelSlug: string | undefined, providerSlug:
   if (providerSlug === 'zhipu-china' && (modelSlug === 'glm-4.7-flash' || modelSlug === 'glm-4.6v-flash')) return true;
   // https://opencode.ai/docs/zen/ Free models (2026-10-15): limited-time free endpoint deepseek-v4.1-flash-free.
   if (providerSlug === 'opencode-zen' && modelSlug === 'deepseek-v4.1-flash') return true;
+  // Vercel endpoints + changelog verified 2026-10-17: only the Reflection-hosted
+  // Beam route is temporarily free; other channels are not exempt.
+  if ((providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway') && [
+    'reflection-beam-1-0-501b-a23b', 'reflection-beam-1-0', 'reflection-beam', 'reflection/beam',
+  ].includes(modelSlug ?? '')) return true;
   // /workspace/aiplans-gaps-facts.md, Nemotron 3.5 Lightning section (2026-10-15).
   return modelSlug === 'nemotron-3.5-lightning'
     && (providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway');
