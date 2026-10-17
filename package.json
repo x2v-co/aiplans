@@ -110,7 +110,9 @@
     "seed:vercel-token-pass": "tsx scripts/seed-vercel-token-pass-2026-10-16.ts",
     "seed:vercel-token-pass:apply": "tsx scripts/seed-vercel-token-pass-2026-10-16.ts --apply",
     "seed:cloudflare-ai-gateway": "tsx scripts/seed-cloudflare-ai-gateway-2026-10-16.ts",
-    "seed:cloudflare-ai-gateway:apply": "tsx scripts/seed-cloudflare-ai-gateway-2026-10-16.ts --apply"
+    "seed:cloudflare-ai-gateway:apply": "tsx scripts/seed-cloudflare-ai-gateway-2026-10-16.ts --apply",
+    "seed:glimpse-decider": "tsx scripts/seed-glimpse-decider-2026-10-17.ts",
+    "seed:glimpse-decider:apply": "tsx scripts/seed-glimpse-decider-2026-10-17.ts --apply"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

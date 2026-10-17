@@ -2,8 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addStandardHeadlines, keepsLastKnownPrice } from './variant-headlines';
 import { parseAnthropicFastMode } from '../scrapers/anthropic-dynamic';
+import type { ScrapedPrice, ScrapedPriceVariant } from './validator';
 
-const price = (slug: string, i: number, o: number) => ({ modelName: slug, modelSlug: slug, inputPricePer1M: i, outputPricePer1M: o, isAvailable: true, currency: 'USD' }) as any;
+const price = (slug: string, i: number, o: number): ScrapedPrice => ({ modelName: slug, modelSlug: slug, inputPricePer1M: i, outputPricePer1M: o, isAvailable: true, currency: 'USD' });
 
 test('fast-mode-only groups get one standard headline equal to the base price', () => {
   const fast = parseAnthropicFastMode([
@@ -23,7 +24,7 @@ test('groups that already have a headline or lack a base price are untouched', (
     { modelSlug: 'claude-haiku-5.5', variantKey: 'prompt-le-100k', isHeadline: true },
     { modelSlug: 'claude-haiku-5.5', variantKey: 'prompt-gt-100k', isHeadline: false },
     { modelSlug: 'claude-opus-9', variantKey: 'fast-mode', isHeadline: false },
-  ] as any[];
+  ] as ScrapedPriceVariant[];
   assert.equal(addStandardHeadlines([price('claude-haiku-5.5', 0.1, 0.5)], variants).length, 3);
 });
 
