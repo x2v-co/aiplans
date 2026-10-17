@@ -24,7 +24,9 @@
  *   C11 providers.unknown_ref     — api_channel_prices.provider_id not in providers (critical)
  *   C12 models.unknown_provider_id — models.provider_ids[] references missing provider (warn)
  *   C13 plans.stale               — plan last_verified older than threshold (warn)
- *   C14 plans.missing_kind        — plan has no plan_kind/plan_line/tier_rank (warn)
+ *   C14 plans.missing_kind        — plan has no plan_kind/plan_line/tier_rank/selector (warn; see utils/audit-plan-policy)
+ *
+ * Exit codes: 0 clean or warnings only, 1 critical findings. --strict: 2 on warnings only.
  *   C15 plans.no_model_mapping    — plan has 0 rows in model_plan_mapping (warn)
  *   C16 plans.selector_empty      — model_selector resolves to 0 models (critical)
  *   C17 plans.selector_unknown_slug — selector.extra names a nonexistent model (critical)
@@ -44,6 +46,7 @@
  */
 import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice as isVerifiedFreeChannel } from './utils/audit-price-policy';
 import { db } from './db/queries';
+import { auditExitCode, missingPlanFields } from './utils/audit-plan-policy';
 import { databaseSql } from './db/postgres-admin';
 import { resolveSelector, type ModelSelector, type SelectableModel } from '../src/lib/plan-selector';
 import { fetchModelsDevCatalog, isModelsDevComparable, PLAN_DRIFT_SKIP, type ModelsDevCatalog } from './scrapers/modelsdev';
@@ -51,6 +54,8 @@ import { fetchModelsDevCatalog, isModelsDevComparable, PLAN_DRIFT_SKIP, type Mod
 const args = new Set(process.argv.slice(2));
 const VERBOSE = args.has('--verbose') || args.has('-v');
 const JSON_OUT = args.has('--json');
+/** --strict: exit 2 on warnings-only (pre-2026-10-17 behaviour). */
+const STRICT = args.has('--strict');
 const STALE_DAYS = (() => {
   const i = process.argv.indexOf('--stale-days');
   return i >= 0 ? Number(process.argv[i + 1]) : 30;
@@ -104,7 +109,7 @@ async function main() {
   `;
   const CLASSIFIED = planKindColumns.length === 4;
   const planColumns = CLASSIFIED
-    ? 'id, name, slug, provider_id, price, last_verified, source, plan_kind, plan_line, tier_rank, model_selector'
+    ? 'id, name, slug, provider_id, price, last_verified, source, plan_kind, plan_line, tier_rank, model_selector, pricing_model'
     : 'id, name, slug, provider_id, price, last_verified, source';
 
   // model_plan_mapping.source ('derived' | 'manual') landed with the selector
@@ -712,11 +717,7 @@ async function main() {
   for (const pl of CLASSIFIED ? plans : []) {
     const ref = { plan: `${pl.slug}#${pl.id}`, provider: refProvider(pl.provider_id) };
 
-    const missing: string[] = [];
-    if (!pl.plan_kind) missing.push('plan_kind');
-    if (!pl.plan_line) missing.push('plan_line');
-    if (pl.tier_rank == null) missing.push('tier_rank');
-    if (!pl.model_selector) missing.push('model_selector');
+    const missing = missingPlanFields(pl);
     if (missing.length > 0) {
       add('plans.missing_kind', 'warning', `plan is unclassified (${missing.join(', ')} unset)`, ref);
     }
@@ -902,7 +903,7 @@ async function main() {
   const hasCritical = findings.some(f => f.severity === 'critical');
   // Let Node flush large JSON reports before exiting. Calling process.exit()
   // here truncated stdout once the report exceeded the pipe buffer.
-  process.exitCode = hasCritical ? 1 : findings.length > 0 ? 2 : 0;
+  process.exitCode = auditExitCode(hasCritical, findings.length, STRICT);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
