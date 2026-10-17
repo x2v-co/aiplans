@@ -5,6 +5,7 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import * as catalog from '../src/lib/ai-vertical-catalog';
 import * as logos from '../src/lib/vertical-provider-logos';
+import { PERPLEXITY_DECIDER_CATALOG } from '../src/lib/perplexity-decider-catalog';
 import * as auditVertical from './data/catalog-audit-vertical';
 import type { Sql } from 'postgres';
 import { seedImageModels, seedNonLlm } from './data/non-llm-seed';
@@ -224,15 +225,24 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
   await f.seedNonLlmRows();
   const seeded = await f.run('audit-vertical-catalog', ['--db']);
   assert.equal(seeded.code, 0, seeded.output);
-  assert.doesNotMatch(seeded.output, /WARNING|CRITICAL/);
+  // Deciders belong to a separate deferred seed; the two applied groups must be clean.
+  assert.deepEqual(
+    seeded.output.split('\n').filter(line => /WARNING|CRITICAL/.test(line)),
+    PERPLEXITY_DECIDER_CATALOG.map(item =>
+      `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:glimpse-decider:apply`),
+  );
   const writes = f.writeCount();
   assert.deepEqual(await f.seedNonLlmRows(), []);
   assert.equal(f.writeCount(), writes);
 });
 
-test('deferred image-model rows point at the image seed, non-LLM rows at the non-LLM seed', async () => {
+test('deferred catalog rows point at their image, non-LLM or glimpse-decider seed', async () => {
   const { IMAGE_MODEL_CATALOG } = await import('../src/lib/image-model-catalog');
   const { NON_LLM_CATALOG } = await import('../src/lib/non-llm-catalog');
   for (const item of IMAGE_MODEL_CATALOG) assert.equal(item.deferredDbSeedScript, 'seed:image-models-2026-10-15:apply', item.slug);
   for (const item of NON_LLM_CATALOG) assert.equal(item.deferredDbSeedScript, undefined, item.slug);
+  for (const item of PERPLEXITY_DECIDER_CATALOG) {
+    assert.equal(item.deferredDbSeed, true, item.slug);
+    assert.equal(item.deferredDbSeedScript, 'seed:glimpse-decider:apply', item.slug);
+  }
 });

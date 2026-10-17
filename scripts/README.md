@@ -79,6 +79,15 @@ and only the `google-ai-pro` selector for AI Studio Build/Playground access
 (including trials; Gemini App unconfirmed). It defaults to read-only dry-run,
 requires `--apply` for writes, and never changes prices. See the same document.
 
+`npm run seed:glimpse-decider` previews the 2026-10-17 Elorian Glimpse and
+Perplexity Decider V1.2 seeds (models and four channel-price rows). It uses a
+serializable, read-only transaction by default; only `--apply` writes. Missing
+providers appear as planned inserts, with negative preview IDs. Existing
+`vercel` / `vercel-ai-gateway` identities are reused; ambiguous identities abort.
+This optional seed is not wired into deployment or scraping. Glimpse's context
+differs by channel (OpenRouter 262144, Vercel 220000), so both values are retained
+in channel notes. Decider output is verified $0; cache/task rates stay unknown.
+
 ## Arena leaderboard
 
 `ingest-arena-leaderboard.ts` reads the live Chatbot Arena Agent leaderboard
