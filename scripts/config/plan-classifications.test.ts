@@ -72,7 +72,7 @@ test('GPT-6.1 Sol maps to Plus/Pro/Business/Team/Enterprise only, never batch', 
   }
 });
 
-test('only the Google AI Pro selector changes for Argon AI Studio access; Free and legacy Advanced stay excluded', () => {
+test('only the Google AI Pro selector changes for Argon AI Studio access; gemini-advanced (live Google AI Pro) also includes Argon; Free stays excluded', () => {
   const googleModels: SelectableModel[] = [
     { id: 1, slug: 'gemini-4-argon', providerSlugs: ['google'], elo: null },
     { id: 2, slug: 'gemini-3.8-flash', providerSlugs: ['google'], elo: null },
@@ -84,11 +84,12 @@ test('only the Google AI Pro selector changes for Argon AI Studio access; Free a
   assert.ok(pro);
   assert.deepEqual(pro.selector, { families: ['gemini'], exclude: ['gemini-pro', 'gemini-flash', '*-preview*'] });
   assert.deepEqual(resolveSelector(pro.selector, googleModels, ['google']).models.map(m => m.slug), ['gemini-3.8-flash', 'gemini-4-argon']);
-  for (const slug of ['gemini-free', 'gemini-advanced']) {
-    const c = CLASSIFICATIONS.find(p => p.providerSlug === 'google' && p.planSlug === slug);
-    assert.ok(c);
-    assert.deepEqual(resolveSelector(c.selector, googleModels, ['google']).models.map(m => m.slug), ['gemini-3.8-flash']);
-  }
+  const advanced = CLASSIFICATIONS.find(p => p.providerSlug === 'google' && p.planSlug === 'gemini-advanced');
+  assert.ok(advanced);
+  assert.deepEqual(resolveSelector(advanced.selector, googleModels, ['google']).models.map(m => m.slug), ['gemini-3.8-flash', 'gemini-4-argon']);
+  const free = CLASSIFICATIONS.find(p => p.providerSlug === 'google' && p.planSlug === 'gemini-free');
+  assert.ok(free);
+  assert.deepEqual(resolveSelector(free.selector, googleModels, ['google']).models.map(m => m.slug), ['gemini-3.8-flash']);
 });
 
 test('US Ultra rungs remain consumer chat plans in the existing Google line', () => {
