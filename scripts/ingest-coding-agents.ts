@@ -20,11 +20,10 @@
 import { databaseSql } from './db/postgres-admin';
 import {
   AA_USER_AGENT,
-  aaSlugCandidates,
   extractBalancedObject,
   parseNextFlight,
 } from './utils/artificial-analysis';
-import { deriveHostModelSlug } from './utils/coding-agent-host';
+import { deriveHostModelSlug, resolveHostModel } from './utils/coding-agent-host';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const SOURCE_URL = 'https://artificialanalysis.ai/agents/coding-agents';
@@ -84,58 +83,6 @@ interface CodingScoreRow {
   raw: unknown;
   source_materialized_at: string | null;
   observed_date: string;
-}
-
-/**
- * Explicit host-slug aliases for codenames and provider-prefixed slugs no
- * generic normalization can recover. Keep this curated; generic candidates
- * cover new hosts that follow the `provider_model` convention.
- */
-const HOST_SLUG_ALIASES: Record<string, string> = {
-  'anthropic_claude-fable-5-1': 'claude-fable-5.1',
-  'anthropic_claude-opus-5': 'claude-opus-5',
-  'openai_vega-alpha': 'gpt-6-astra',
-  'openai_gpt-5-6-sol': 'gpt-5.6-sol',
-  'deepseek_deepseek-v4-pro-0813': 'deepseek-v4-pro',
-  'deepseek_deepseek-v4-flash-0731': 'deepseek-v4-flash',
-  'xai_grok-4-6-xhigh': 'grok-4.6',
-  'alibaba_cloud_qwen3-8-max-public': 'qwen3.8-max',
-  'google_skimaki_ai-studio': 'gemini-3.8-flash',
-  'cognition_fusion-claude-fable-5-1-xhigh-sidekick-penguin-medium': 'claude-fable-5.1',
-  'cognition_fusion-gpt-6-astra-xhigh-sidekick-penguin-medium': 'gpt-6-astra',
-  // Slugs derived from display.model after AA dropped hostModelSlug (2026-10-16).
-  'alibaba_cloud_qwen3-8-max': 'qwen3.8-max',
-  'cognition_gpt-6-astra-xhigh-swe-2-medium': 'gpt-6-astra',
-  'cognition_claude-fable-5-1-xhigh-swe-2-medium': 'claude-fable-5.1',
-  'cognition_claude-opus-5-5-max-gpt-6-luna-high': 'claude-opus-5.5',
-};
-
-/** Generic fallback: drop the AA provider prefix, then reuse model-slug rules. */
-function hostSlugCandidates(hostModelSlug: string): string[] {
-  const withoutProvider = hostModelSlug
-    .replace(/^[a-z0-9]+_(?:aa_|cloud_)?/, '')
-    .replace(/-public$/, '')
-    .replace(/-\d{4}$/, '') // dated model snapshots, e.g. deepseek-v4-pro-0813
-    .replace(/-(?:xhigh|high|medium|low|max)$/, '');
-  const candidates = aaSlugCandidates(withoutProvider);
-  // Derived Anthropic slugs lack the family prefix ("sonnet-5-5" vs claude-sonnet-5.5).
-  if (hostModelSlug.startsWith('anthropic_') && !withoutProvider.startsWith('claude-')) {
-    candidates.push(...aaSlugCandidates(`claude-${withoutProvider}`));
-  }
-  return candidates;
-}
-
-function resolveHostModel(
-  hostModelSlug: string,
-  bySlug: ReadonlyMap<string, { id: number }>,
-): { id: number; slug: string } | undefined {
-  const alias = HOST_SLUG_ALIASES[hostModelSlug];
-  const candidates = alias ? [alias, ...hostSlugCandidates(hostModelSlug)] : hostSlugCandidates(hostModelSlug);
-  for (const candidate of candidates) {
-    const model = bySlug.get(candidate);
-    if (model) return { id: model.id, slug: candidate };
-  }
-  return undefined;
 }
 
 function parseRecords(flight: string): AaCodingRecord[] {
