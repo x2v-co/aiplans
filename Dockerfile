@@ -12,17 +12,30 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM deps AS migrator
+# Runtime-only dependencies for the migrate/scraper tool images: no eslint,
+# typescript, drizzle-kit, tailwind etc. (tsx is a runtime dependency).
+FROM node:22-bookworm-slim AS prod-deps
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+
+FROM node:22-bookworm-slim AS migrator
+WORKDIR /app
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY package.json tsconfig.json ./
 COPY scripts ./scripts
 COPY drizzle ./drizzle
 CMD ["npm", "run", "migrate"]
 
-FROM deps AS scraper
+FROM node:22-bookworm-slim AS scraper
 WORKDIR /app
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-RUN npx playwright install --with-deps chromium
+COPY --from=prod-deps /app/node_modules ./node_modules
+# Every scraper launches chromium with headless: true, so the headless shell is
+# enough: --only-shell skips the full headed Chromium build (the bulk of the
+# old 3.48G image). Only chromium, no firefox/webkit; apt lists dropped.
+RUN npx playwright install --with-deps --only-shell chromium \
+ && rm -rf /var/lib/apt/lists/* /root/.npm /tmp/*
 COPY package.json tsconfig.json ./
 COPY scripts ./scripts
 # Scripts share selectors with the app (e.g. src/lib/plan-selector.ts, used by

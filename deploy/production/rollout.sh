@@ -61,6 +61,26 @@ restore_images() {
 }
 trap restore_images EXIT
 
+# Disk hygiene after a healthy rollout. Each project image keeps exactly two
+# tags: :latest (running) and :pre-rollout (the one previous release, the
+# rollback target). The older :pre-rollout that was just re-pointed becomes
+# dangling, and so do stray tags left by manual builds; remove both. Images in
+# use by a container are skipped by docker itself. Never fails the rollout.
+prune_superseded_images() {
+  local ref
+  "${docker_cmd[@]}" image ls --format '{{.Repository}}:{{.Tag}}' 2>/dev/null \
+    | grep -E "^${project_name}-[a-z0-9_-]+:" \
+    | grep -vE ':(latest|pre-rollout|<none>)$' \
+    | while IFS= read -r ref; do
+        echo "disk-hygiene: removing stale image tag $ref"
+        "${docker_cmd[@]}" image rm "$ref" >/dev/null 2>&1 || true
+      done || true
+  "${docker_cmd[@]}" image prune -f >/dev/null 2>&1 || true
+  echo "disk-hygiene: kept images:"
+  "${docker_cmd[@]}" image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}' 2>/dev/null \
+    | grep -E "^${project_name}-" || true
+}
+
 "${compose[@]}" build "${build_services[@]}"
 "${compose[@]}" run --rm --no-deps scraper npm run validate:production-env
 "${compose[@]}" up -d postgres
@@ -105,6 +125,7 @@ for _ in {1..45}; do
       install -m 0644 "$script_dir/planprice-snapshot-cleanup.service" /etc/systemd/system/planprice-snapshot-cleanup.service
       bash "$script_dir/install-timers.sh" "$script_dir" planprice-snapshot-cleanup.timer
     fi
+    prune_superseded_images
     echo "planprice rollout ok: $health_url"
     exit 0
   fi

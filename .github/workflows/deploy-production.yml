@@ -193,8 +193,12 @@ jobs:
 
       # Disk hygiene even when rollout failed: consecutive failed deploys were
       # skipping prune (if: success) and drove x2v-global root 50%→85%. Prune
-      # failure must not fail the job (continue-on-error). Dangling image prune
-      # only — tagged :latest and :pre-rollout stay for rollback (rollout.sh).
+      # failure must not fail the job (continue-on-error). Each deploy rebuilds
+      # app/migrate/scraper locally and leaves ~3–4G of build cache; the old
+      # `--filter until=72h` kept all of it when deploys come hours apart
+      # (45%→68% on 2026-10-17), so cap total cache at 5GB with no age filter.
+      # Dangling image prune only — tagged :latest and :pre-rollout (exactly one
+      # previous release) stay for rollback (rollout.sh).
       - name: Prune docker build cache
         if: always()
         continue-on-error: true
@@ -202,7 +206,10 @@ jobs:
           set +e
           echo "disk-hygiene: df before builder prune"
           df -h / || true
-          sudo -n docker builder prune -f --filter until=72h --keep-storage 8GB || true
+          sudo -n docker system df || true
+          # Docker 28+ renamed --keep-storage to --max-used-space; try both.
+          sudo -n docker builder prune -f --keep-storage 5GB \
+            || sudo -n docker builder prune -f --max-used-space 5GB || true
           echo "disk-hygiene: df after builder prune"
           df -h / || true
 
