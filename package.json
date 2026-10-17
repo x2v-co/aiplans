@@ -88,6 +88,8 @@
     "check:unit-constraints": "tsx scripts/check-unit-constraints.ts",
     "seed:haiku-headline": "tsx scripts/seed-haiku-5-5-headline.ts",
     "seed:haiku-headline:apply": "tsx scripts/seed-haiku-5-5-headline.ts --apply",
+    "seed:nemotron-35-super-vl": "tsx scripts/seed-nemotron-35-super-vl.ts",
+    "seed:nemotron-35-super-vl:apply": "tsx scripts/seed-nemotron-35-super-vl.ts --apply",
     "seed:catalog-audit": "tsx scripts/seed-catalog-audit-2026-10-15.ts",
     "seed:catalog-audit:dry-run": "tsx scripts/seed-catalog-audit-2026-10-15.ts --dry-run",
     "test:catalog-audit": "npx tsx --test scripts/data/catalog-audit*.test.ts scripts/scrapers/openrouter.test.ts scripts/world-models.test.ts",
