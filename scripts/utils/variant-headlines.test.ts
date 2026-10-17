@@ -20,11 +20,11 @@ test('fast-mode-only groups get one standard headline equal to the base price', 
 });
 
 test('groups that already have a headline or lack a base price are untouched', () => {
-  const variants = [
-    { modelSlug: 'claude-haiku-5.5', variantKey: 'prompt-le-100k', isHeadline: true },
-    { modelSlug: 'claude-haiku-5.5', variantKey: 'prompt-gt-100k', isHeadline: false },
-    { modelSlug: 'claude-opus-9', variantKey: 'fast-mode', isHeadline: false },
-  ] as ScrapedPriceVariant[];
+  const variants: ScrapedPriceVariant[] = [
+    { ...price('claude-haiku-5.5', 0.1, 0.5), variantKey: 'prompt-le-100k', variantName: '<=100K', isHeadline: true },
+    { ...price('claude-haiku-5.5', 0.1, 0.5), variantKey: 'prompt-gt-100k', variantName: '>100K', isHeadline: false },
+    { ...price('claude-opus-9', 5, 25), variantKey: 'fast-mode', variantName: 'Fast', isHeadline: false },
+  ];
   assert.equal(addStandardHeadlines([price('claude-haiku-5.5', 0.1, 0.5)], variants).length, 3);
 });
 
