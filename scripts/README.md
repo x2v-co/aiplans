@@ -88,6 +88,17 @@ This optional seed is not wired into deployment or scraping. Glimpse's context
 differs by channel (OpenRouter 262144, Vercel 220000), so both values are retained
 in channel notes. Decider output is verified $0; cache/task rates stay unknown.
 
+`seed-mistral-large-4-promo.ts` updates only the existing Mistral official
+`mistral-large-4` channel (requires the introductory-price migration). Default
+and `--dry-run` use a read-only serializable transaction with field-level changes;
+only `--apply` writes. Missing or duplicate identities abort. Third-party channels
+are untouched. The official model page's `originalPrice` fields were verified on
+2026-10-17: current input/output/cache $0.68/$2.09/$0.07, regular
+$1.36/$4.18/$0.14 per 1M tokens. The launch discount is 50%; its end date is
+unpublished, so `promo_ends_at` stays null and notes defer to the official page.
+Preview against an explicitly configured non-production database with
+`npx tsx scripts/seed-mistral-large-4-promo.ts`.
+
 ## Arena leaderboard
 
 `ingest-arena-leaderboard.ts` reads the live Chatbot Arena Agent leaderboard
