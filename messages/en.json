@@ -422,7 +422,7 @@
     "peak": "Peak",
     "offPeak": "Off-peak",
     "rates": "Input {input} · cache hit {cache} · output {output} / 1M tokens",
-    "window": "Peak: 01:00–04:00 & 06:00–10:00 UTC Mon–Fri, excluding Chinese public holidays. All other times are off-peak. Unlisted holidays follow the weekday peak schedule."
+    "window": "Peak: 01:00–04:00 & 06:00–10:00 UTC Mon–Fri, excluding Chinese public holidays. All other times are off-peak, including weekends and Chinese public holidays all day (weekend make-up workdays stay off-peak)."
   },
   "nonLlmModels": {
     "voiceTitle": "Voice Models",

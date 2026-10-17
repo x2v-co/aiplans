@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DEEPSEEK_MODELS, deepseekPricingWindow, reconcileDeepSeekObservation, scaleDeepSeekRate, deepseekObservations } from './deepseek-pricing';
+import { DEEPSEEK_CN_HOLIDAYS, DEEPSEEK_MODELS, deepseekPricingWindow, reconcileDeepSeekObservation, scaleDeepSeekRate, deepseekObservations } from './deepseek-pricing';
 
 test('UTC weekday windows use inclusive starts and exclusive ends', () => {
   for (const day of ['2026-10-12', '2026-10-16']) {
@@ -56,4 +56,13 @@ test('StreamLake learns only observed rates, preserves both windows, and retains
   assert.equal(reconcileDeepSeekObservation(peak, new Date('2026-10-14T02:00Z'), {}, off).windowOnly, true);
   assert.deepEqual(deepseekObservations(null), {});
   assert.deepEqual(deepseekObservations({ pricing_observations: { peak: {} } }), {});
+});
+
+test('weekends and 2026 CN statutory holidays are off-peak all day; weekend make-up workdays stay off-peak', () => {
+  for (const day of ['2026-10-01', '2026-10-07', '2026-02-16', '2026-05-05', '2026-06-19', '2026-09-25', '2026-01-02'])
+    for (const hour of ['02', '07']) assert.equal(deepseekPricingWindow(new Date(`${day}T${hour}:00:00Z`)), 'off-peak', day);
+  // 2026-10-10 (Sat) and 2026-09-20 (Sun) are 调休 workdays, but peak is Mon-Fri only per the official note.
+  for (const day of ['2026-10-10', '2026-09-20']) assert.equal(deepseekPricingWindow(new Date(`${day}T02:00:00Z`)), 'off-peak', day);
+  assert.equal(deepseekPricingWindow(new Date('2026-10-08T02:00:00Z')), 'peak');
+  assert.equal(DEEPSEEK_CN_HOLIDAYS.every(day => { const d = new Date(`${day}T00:00:00Z`).getUTCDay(); return d >= 1 && d <= 5; }), true);
 });
