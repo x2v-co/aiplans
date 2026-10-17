@@ -3,10 +3,22 @@ export interface DeepSeekRate { input: number; output: number; cache?: number | 
 export interface DeepSeekObservation extends DeepSeekRate { observed_at: string }
 export type DeepSeekObservations = Partial<Record<DeepSeekPricingWindow, DeepSeekObservation>>;
 
-// Unlisted CN public holidays follow the weekday peak schedule (conservative).
-export const DEEPSEEK_CN_HOLIDAYS: readonly string[] = [];
+// Official rule: weekends and CN statutory holidays are off-peak all day; peak is Mon-Fri only,
+// so a Saturday/Sunday make-up workday (调休) stays off-peak.
+// 2026 dates: 国办发明电〔2025〕7号 https://www.gov.cn/zhengce/zhengceku/202511/content_7047091.htm
+// Weekday holidays only (weekends are already off-peak). Add 2027 when the State Council publishes it.
+export const DEEPSEEK_CN_HOLIDAYS: readonly string[] = [
+  '2026-01-01', '2026-01-02',
+  '2026-02-16', '2026-02-17', '2026-02-18', '2026-02-19', '2026-02-20', '2026-02-23',
+  '2026-04-06',
+  '2026-05-01', '2026-05-04', '2026-05-05',
+  '2026-06-19',
+  '2026-09-25',
+  '2026-10-01', '2026-10-02', '2026-10-05', '2026-10-06', '2026-10-07',
+];
+export const DEEPSEEK_HOLIDAY_SOURCE = 'https://www.gov.cn/zhengce/zhengceku/202511/content_7047091.htm';
 export const DEEPSEEK_SOURCE = 'https://api-docs.deepseek.com/quick_start/pricing';
-export const DEEPSEEK_PEAK_SCHEDULE = '01:00-04:00 & 06:00-10:00 UTC Mon-Fri, excluding CN public holidays';
+export const DEEPSEEK_PEAK_SCHEDULE = '01:00-04:00 & 06:00-10:00 UTC Mon-Fri, excluding CN public holidays; weekends and CN public holidays are off-peak all day';
 // Verified facts, 2026-10-15. Flash's legacy catalog slug is reused by the scraper.
 export const DEEPSEEK_MODELS = [
   { slug: 'deepseek-v4-flash', apiId: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash', peak: { input: 0.30, output: 1.20, cache: 0.006 } },
