@@ -157,7 +157,7 @@ test('missing plan is not invented; null selector uses the classification; ambig
 });
 
 test('current and repaired notes cite scoped access and preserve Free API restrictions; old seed cannot revoke Pro', () => {
-  assert.deepEqual(ARGON_UNENTITLED_PLANS, ['gemini-free', 'gemini-advanced']);
+  assert.deepEqual(ARGON_UNENTITLED_PLANS, ['gemini-free']);
   for (const note of [null, oldNote, 'No Google AI Pro entitlement.', 'No AI Pro entitlement.', ARGON_AI_PRO_NOTE]) {
     const corrected = argonProNote(note);
     assert.ok(corrected.includes(ARGON_AI_PRO_SOURCE));

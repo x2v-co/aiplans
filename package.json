@@ -113,7 +113,9 @@
     "seed:cloudflare-ai-gateway:apply": "tsx scripts/seed-cloudflare-ai-gateway-2026-10-16.ts --apply",
     "seed:glimpse-decider": "tsx scripts/seed-glimpse-decider-2026-10-17.ts",
     "seed:glimpse-decider:apply": "tsx scripts/seed-glimpse-decider-2026-10-17.ts --apply",
-    "seed:reflection-beam": "tsx scripts/seed-reflection-beam-2026-10-17.ts"
+    "seed:reflection-beam": "tsx scripts/seed-reflection-beam-2026-10-17.ts",
+    "seed:gemini-advanced-argon": "tsx scripts/seed-gemini-advanced-argon-2026-10-17.ts",
+    "seed:gemini-advanced-argon:apply": "tsx scripts/seed-gemini-advanced-argon-2026-10-17.ts --apply"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

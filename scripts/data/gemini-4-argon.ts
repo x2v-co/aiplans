@@ -3,7 +3,8 @@ import { effectivePrice } from '../../src/lib/effective-price';
 export const ARGON_SLUG = 'gemini-4-argon';
 export const ARGON_PROMO_ENDS_AT = '2026-12-01T08:00:00.000Z';
 export const ARGON_SOURCE = 'https://ai.google.dev/gemini-api/docs/pricing';
-export const ARGON_UNENTITLED_PLANS = ['gemini-free', 'gemini-advanced'];
+/** gemini-advanced is the live Google AI Pro row and is entitled since 2026-10-17. */
+export const ARGON_UNENTITLED_PLANS = ['gemini-free'];
 export const ARGON_AI_PRO_SOURCE = 'https://x.com/GoogleAIStudio/status/2111240722426802258';
 export const ARGON_AI_PRO_NOTE = `Since 2026-10-17, Google AI Pro subscriptions (including trials) can use Gemini 4 Argon in AI Studio Build and Playground. Gemini App access is unconfirmed. Source: ${ARGON_AI_PRO_SOURCE}`;
 
