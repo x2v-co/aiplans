@@ -56,7 +56,7 @@ async function main() {
     }
 
     // Persist exclusions as well as removing incorrect existing links; the nightly
-    // selector materializer must not put Argon back in Google Free / AI Pro.
+    // selector materializer must not put Argon back in Free / legacy Advanced.
     const plans = await tx<Array<Row & { slug: string; model_selector: ModelSelector | null }>>`
       SELECT * FROM plans WHERE provider_id = ${google.id} AND slug IN ${tx(ARGON_UNENTITLED_PLANS)}`;
     for (const plan of plans) {

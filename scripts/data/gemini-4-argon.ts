@@ -3,7 +3,9 @@ import { effectivePrice } from '../../src/lib/effective-price';
 export const ARGON_SLUG = 'gemini-4-argon';
 export const ARGON_PROMO_ENDS_AT = '2026-12-01T08:00:00.000Z';
 export const ARGON_SOURCE = 'https://ai.google.dev/gemini-api/docs/pricing';
-export const ARGON_UNENTITLED_PLANS = ['gemini-free', 'gemini-advanced', 'google-ai-pro'];
+export const ARGON_UNENTITLED_PLANS = ['gemini-free', 'gemini-advanced'];
+export const ARGON_AI_PRO_SOURCE = 'https://x.com/GoogleAIStudio/status/2111240722426802258';
+export const ARGON_AI_PRO_NOTE = `Since 2026-10-17, Google AI Pro subscriptions (including trials) can use Gemini 4 Argon in AI Studio Build and Playground. Gemini App access is unconfirmed. Source: ${ARGON_AI_PRO_SOURCE}`;
 
 export function argonModelRow(googleId: number) {
   return { name: 'Gemini 4 Argon', slug: ARGON_SLUG, type: 'llm', model_category: 'text',
@@ -23,7 +25,7 @@ export function argonChannelRow(providerId: number, modelId: number | null, now:
     currency: 'USD', price_unit: 'per_1m_tokens', is_available: true,
     last_verified: new Date('2026-10-13T00:00:00Z'),
     notes: google
-      ? `Source: ${ARGON_SOURCE} (updated 2026-10-13). Introductory Standard input/output/cache $2/$10/$0.10 through 2026-11-30; regular $4/$20/$0.20 thereafter. Cache is implicit only. Google gives no timezone; cutoff assumes Pacific midnight, ${ARGON_PROMO_ENDS_AT}. Batch and Flex $1/$5/$0.05 -> $2/$10/$0.10; Priority $3.60/$18/$0.18 -> $7.20/$36/$0.36. Tiers recorded in notes: Google does not currently use api_channel_price_variants. No Free API tier or Google AI Pro entitlement.`
+      ? `Source: ${ARGON_SOURCE} (updated 2026-10-13). Introductory Standard input/output/cache $2/$10/$0.10 through 2026-11-30; regular $4/$20/$0.20 thereafter. Cache is implicit only. Google gives no timezone; cutoff assumes Pacific midnight, ${ARGON_PROMO_ENDS_AT}. Batch and Flex $1/$5/$0.05 -> $2/$10/$0.10; Priority $3.60/$18/$0.18 -> $7.20/$36/$0.36. Tiers recorded in notes: Google does not currently use api_channel_price_variants. No Free API tier. ${ARGON_AI_PRO_NOTE}`
       : 'Cursor lists Gemini 4 Argon at $2/$10 per 1M input/output (verified 2026-10-13). Third-party models are billed separately; no included subscription entitlement. Cache rate and future price schedule are unverified.',
   };
   return effectivePrice(row, now);

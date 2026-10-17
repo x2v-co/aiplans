@@ -18,7 +18,37 @@ $4/$20/$0.20. Argon cache is implicit only. Batch and Flex are
 $1/$5/$0.05 → $2/$10/$0.10; Priority is $3.60/$18/$0.18 → $7.20/$36/$0.36.
 The Google scraper publishes Standard prices. Google does not currently populate
 `api_channel_price_variants` for tiers, so the seed records those other tiers in
-notes. It does not create Free API pricing or AI Pro / Free plan entitlements.
+notes. It does not create Free API pricing or Free plan entitlements.
+
+## Google AI Pro access (2026-10-17)
+
+Since 2026-10-17, Google AI Pro subscriptions **including trials** can use Gemini
+4 Argon in **AI Studio Build and Playground**, per the
+[Google AI Studio announcement](https://x.com/GoogleAIStudio/status/2111240722426802258).
+Gemini App access is unconfirmed. This access announcement adds no API pricing data.
+
+The `google-ai-pro` classification includes Argon; `gemini-free`, the legacy
+`gemini-advanced` slug, and all other plan selectors remain unchanged. The original
+Argon seed no longer excludes or deletes mappings for `google-ai-pro`.
+
+For existing data, preview the targeted correction with:
+
+```bash
+npx tsx scripts/seed-google-ai-pro-argon-2026-10-17.ts
+# Equivalent explicit preview:
+npx tsx scripts/seed-google-ai-pro-argon-2026-10-17.ts --dry-run
+```
+
+This optional seed defaults to a serializable, read-only transaction and prints
+field-level `from` / `to` changes. Only `--apply` opts into writes. It updates the
+canonical model description, existing Google channel notes, and the existing
+`google-ai-pro` plan notes/selector. It removes only the exact Argon exclusion
+from an existing selector, preserving its other rules; a null selector uses the
+classification. A missing plan is skipped without creating a plan or inferring
+a price. No prices, verification dates, other plans, third-party channels, or
+mapping rows are changed. Repeated runs are no-ops once corrected. Refresh derived
+model-plan mappings separately with the standard materializer after reviewing
+the selector changes. No database access or apply was performed for this update.
 
 ## Migration
 
@@ -65,7 +95,7 @@ Changed rows receive `updated_at` on apply. There is no write for an equal row.
 An absent model is printed as an insert; new channel `model_id: null` refers to
 the ID that the model insert will return inside the transaction.
 
-With no Argon model, no Cursor API provider, and both Google Free / AI Pro plans
+With no Argon model, no Cursor API provider, and both Free / legacy Advanced plans
 present with broad selectors, expect four row changes: a model insert, a Google
 channel insert, and two selector updates adding `gemini-4-argon` to `exclude`.
 Existing erroneous links to those plans are printed as deletes. The seed fails

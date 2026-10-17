@@ -72,11 +72,18 @@ test('GPT-6.1 Sol maps to Plus/Pro/Business/Team/Enterprise only, never batch', 
   }
 });
 
-test('Google Free and AI Pro do not claim API-first Gemini 4 Argon', () => {
+test('only the Google AI Pro selector changes for Argon AI Studio access; Free and legacy Advanced stay excluded', () => {
   const googleModels: SelectableModel[] = [
     { id: 1, slug: 'gemini-4-argon', providerSlugs: ['google'], elo: null },
     { id: 2, slug: 'gemini-3.8-flash', providerSlugs: ['google'], elo: null },
+    { id: 3, slug: 'gemini-4-argon-batch', providerSlugs: ['google'], elo: null },
+    { id: 4, slug: 'gemini-pro', providerSlugs: ['google'], elo: null },
+    { id: 5, slug: 'gemini-4-argon-preview', providerSlugs: ['google'], elo: null },
   ];
+  const pro = CLASSIFICATIONS.find(p => p.providerSlug === 'google' && p.planSlug === 'google-ai-pro');
+  assert.ok(pro);
+  assert.deepEqual(pro.selector, { families: ['gemini'], exclude: ['gemini-pro', 'gemini-flash', '*-preview*'] });
+  assert.deepEqual(resolveSelector(pro.selector, googleModels, ['google']).models.map(m => m.slug), ['gemini-3.8-flash', 'gemini-4-argon']);
   for (const slug of ['gemini-free', 'gemini-advanced']) {
     const c = CLASSIFICATIONS.find(p => p.providerSlug === 'google' && p.planSlug === slug);
     assert.ok(c);
