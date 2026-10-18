@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { currentPlanEstimates, tokenRange, type VerifiedQuotaEstimate } from '@/lib/quota/estimates';
+import { quotaEstimateTrust } from '@/lib/data-trust';
+import { DataTrustLabel } from '@/components/data-trust-label';
 
 export function QuotaEstimateDetails({ estimate, locale }: { estimate: VerifiedQuotaEstimate; locale: string }) {
   const t = useTranslations('quota');
@@ -28,8 +30,8 @@ export function QuotaEstimateDetails({ estimate, locale }: { estimate: VerifiedQ
   );
 }
 
-export function PlanQuotaEstimates({ estimates, planSlug, locale }: {
-  estimates: VerifiedQuotaEstimate[]; planSlug: string; locale: string;
+export function PlanQuotaEstimates({ estimates, planSlug, locale, showTrust = false }: {
+  estimates: VerifiedQuotaEstimate[]; planSlug: string; locale: string; showTrust?: boolean;
 }) {
   const t = useTranslations('quota');
   const current = currentPlanEstimates(estimates, planSlug);
@@ -37,8 +39,24 @@ export function PlanQuotaEstimates({ estimates, planSlug, locale }: {
     <section className="my-4 space-y-3 rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
       <h3 className="text-sm font-semibold">{t('title')}</h3>
       <p className="text-xs text-zinc-500">{t('caveat')}</p>
-      {current.length ? current.map(estimate => <QuotaEstimateDetails key={estimate.id} estimate={estimate} locale={locale} />)
-        : <p className="text-xs text-zinc-500">{t('empty')}</p>}
+      {current.length ? current.map(estimate => (
+        <div key={estimate.id}>
+          <QuotaEstimateDetails estimate={estimate} locale={locale} />
+          {showTrust && (
+            <DataTrustLabel
+              fact={quotaEstimateTrust({
+                verifiedAt: estimate.verifiedAt,
+                windowLabel: t(`windows.${estimate.window}`),
+                mix: t('mix', { name: estimate.mix.name, cache: estimate.mix.cacheReadPct, input: estimate.mix.inputPct, output: estimate.mix.outputPct }),
+                servedModel: estimate.servedModel,
+                evidenceUrl: estimate.evidence[0]?.url ?? null,
+                isCurrent: estimate.isCurrent,
+              }, locale)}
+              locale={locale}
+            />
+          )}
+        </div>
+      )) : <p className="text-xs text-zinc-500">{t('empty')}</p>}
       <Link href={`/${locale}/quota-changes`} className="text-xs text-blue-600 underline">{t('historyTitle')}</Link>
     </section>
   );

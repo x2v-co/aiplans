@@ -36,6 +36,7 @@ export type ProviderPlanRecord = EconomicPlan & ChannelTermsFields & {
   monthly_api_credit_usd?: number | null;
   monthly_api_credit_status?: string | null;
   legacy_ends_on?: string | null;
+  last_verified?: Date | string | null;
   rate_limit: number | null;
   access_from_china: boolean | null;
   third_party_coverage: ThirdPartyCoverage | null;

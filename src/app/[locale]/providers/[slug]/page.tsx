@@ -15,6 +15,7 @@ import { gatewaySubscriptionEconomics, gatewaySubscriptionSummary } from "@/lib/
 import { describeEconomics, planEconomics, type EconomicPlan } from "@/lib/plan-economics";
 import { PlanRate } from "@/components/plan-rate";
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
+import { DataTrustLabel, EntitlementLine } from '@/components/data-trust-label';
 import { CopilotPlanNotes } from '@/components/copilot-plan-notes';
 import { PlanCoverage } from "@/components/plan-coverage";
 import { PlanQuotaEstimates } from '@/components/quota-estimates';
@@ -32,6 +33,14 @@ import SiteHeader from '@/components/SiteHeader';
 import { CouponBadge } from '@/components/coupon-badge';
 import { getActiveCouponMap } from '@/lib/coupons';
 import { guideForProviderSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
+import {
+  featureLooksEstimated,
+  isTrustProviderSlug,
+  planCreditTrust,
+  planEntitlementTrust,
+  planPriceTrust,
+  reviewedPlanSource,
+} from '@/lib/data-trust';
 import { buildProviderPricingCopy } from '@/lib/pricing-seo';
 import { getProviderSeoPlans } from '@/lib/pricing-seo-data';
 
@@ -146,6 +155,8 @@ export default async function ProviderPage({
 
   // Structured data: breadcrumb + ItemList of Offers (one per plan)
   const isZh = locale === 'zh';
+  const showTrust = isTrustProviderSlug(provider.slug);
+  const planSource = reviewedPlanSource(provider.slug, locale, provider);
   const breadcrumbJson = breadcrumbList([
     { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
     { name: isZh ? '供应商' : 'Providers', url: `${SITE_URL}/${locale}/providers` },
@@ -256,6 +267,14 @@ export default async function ProviderPage({
           <ProviderApiModels products={apiModels} locale={locale} now={now} />
         </section>
 
+        {showTrust && (
+          <p className="mb-5 max-w-4xl text-sm text-zinc-600 dark:text-zinc-300">
+            {isZh
+              ? '本页在前 10 高流量核验范围内。每条套餐标价和权益都标出来源、适用条件、最近核验时间，以及是否过期或估算。估算不是确定权益。'
+              : 'This page is in the top-10 traffic review set. Each plan price and entitlement shows its source, conditions, last verification, and whether it is expired or an estimate. Estimates are not confirmed entitlements.'}
+          </p>
+        )}
+
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-2xl font-bold">{t('plans')}</h2>
           <div className="flex items-center gap-2 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
@@ -334,6 +353,9 @@ export default async function ProviderPage({
                           /{showYearly ? 'year' : (plan.price_unit === 'per_month' ? 'mo' : plan.price_unit.replace('_', ' '))}
                         </span>
                       )}
+                      {showTrust && (
+                        <DataTrustLabel fact={planPriceTrust(plan, planSource, locale, now, provider.slug)} locale={locale} />
+                      )}
                     </div>
 
                     {typeof plan.notes === 'string' && plan.notes.startsWith('[needs-verification]') && (
@@ -344,10 +366,13 @@ export default async function ProviderPage({
                     {plan.legacy_ends_on && <p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
                       {isZh ? '旧套餐，宽限期截止：' : 'Legacy tier; grace period ends: '}{plan.legacy_ends_on}
                     </p>}
-                    {plan.monthly_api_credit_status === 'needs-verification' && <p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
-                      {isZh ? '包含每月 API 额度；具体金额待核验。' : 'Includes monthly API credit; amount needs verification.'}{' '}
-                      <a href="https://claude.com/pricing" target="_blank" rel="noreferrer" className="underline">{isZh ? '官方定价' : 'Official pricing'}</a>
-                    </p>}
+                    {plan.monthly_api_credit_status === 'needs-verification' && <div className="mb-4 text-sm text-amber-700 dark:text-amber-400">
+                      <p>
+                        {isZh ? '包含每月 API 额度；具体金额待核验。' : 'Includes monthly API credit; amount needs verification.'}{' '}
+                        <a href="https://claude.com/pricing" target="_blank" rel="noreferrer" className="underline">{isZh ? '官方定价' : 'Official pricing'}</a>
+                      </p>
+                      {showTrust && <DataTrustLabel fact={planCreditTrust(planSource, locale, now)} locale={locale} />}
+                    </div>}
 
                     {/* Effective unit rate, directly under the headline price:
                         the two answer "what does it cost" and "what does that
@@ -369,15 +394,17 @@ export default async function ProviderPage({
                       <ul className="space-y-2 mb-4">
                         {plan.features.filter((feature): feature is string => typeof feature === 'string').slice(0, 4).map((feature, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-sm">
-                            <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                            <span>{feature}</span>
+                            {!(showTrust && featureLooksEstimated(feature)) && (
+                              <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                            )}
+                            <span>{showTrust ? <EntitlementLine text={feature} locale={locale} /> : feature}</span>
                           </li>
                         ))}
                       </ul>
                     )}
 
                     <CopilotPlanNotes slug={plan.slug} notes={plan.notes} />
-                    <PlanQuotaEstimates estimates={quotaEstimates} planSlug={plan.slug} locale={locale} />
+                    <PlanQuotaEstimates estimates={quotaEstimates} planSlug={plan.slug} locale={locale} showTrust={showTrust} />
                     <Separator className="my-4" />
 
                     <div className="space-y-2 text-sm">
@@ -405,6 +432,9 @@ export default async function ProviderPage({
                         <span className="text-zinc-500">{isZh ? '中国直连' : 'China Access'}</span>
                         <span>{plan.access_from_china == null ? (isZh ? '未知' : 'Unknown') : plan.access_from_china ? (isZh ? '✓ 可用' : '✓ Available') : (isZh ? '✗ 不可用' : '✗ Not available')}</span>
                       </div>
+                      {showTrust && (
+                        <DataTrustLabel fact={planEntitlementTrust(plan, planSource, locale, now)} locale={locale} />
+                      )}
                     </div>
 
                     {(() => {
