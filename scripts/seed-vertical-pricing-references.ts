@@ -5,11 +5,20 @@
  * Reference plans have price=NULL. Usage prices come only from audited static
  * video/music/decision values; unknown prices remain NULL. Other units retain
  * auditable placeholders until source-specific parsing is available.
+ *
+ * Usage:
+ *   npm run seed:vertical-pricing -- --slug omnihuman-2-0            # dry-run, field diff
+ *   npm run seed:vertical-pricing -- --slug omnihuman-2-0 --apply    # write changed rows only
  */
 import { db } from './db/queries';
 import { AI_VERTICAL_CATALOG, RIGOROUS_MODEL_KINDS, type AiCatalogItem } from '../src/lib/ai-vertical-catalog';
+import { diffRow, formatChanges, parseSeedArgs } from './utils/seed-diff';
 
-const APPLY = process.argv.includes('--apply');
+// Default is dry-run. Only `--apply` writes; `--slug a,b` narrows the run;
+// `--sync-availability` also lets existing usage rows change is_available.
+const ARGS = parseSeedArgs(process.argv);
+const APPLY = ARGS.apply;
+const stats = { inserted: 0, updated: 0, unchanged: 0 };
 const NOW = new Date();
 
 type Unit = 'credit' | 'generation' | 'second' | 'minute' | 'compute_hour' | 'license' | 'availability';
@@ -81,7 +90,7 @@ async function loadModels(slugs: string[]): Promise<Map<string, ModelRow>> {
 async function upsertPlan(item: AiCatalogItem, provider: ProviderRow): Promise<PlanRow | null> {
   const slug = planSlug(item);
   const unit = inferPrimaryUnit(item);
-  const existing = await db.from('plans').select('id, slug, provider_id').eq('provider_id', provider.id).eq('slug', slug).maybeSingle();
+  const existing = await db.from('plans').select('*').eq('provider_id', provider.id).eq('slug', slug).maybeSingle();
   if (existing.error) throw existing.error;
 
   const row = {
@@ -117,15 +126,25 @@ async function upsertPlan(item: AiCatalogItem, provider: ProviderRow): Promise<P
   };
 
   if (existing.data) {
-    console.log(`  ↻ plan ${provider.slug}/${slug}`);
+    const current = existing.data as Record<string, unknown>;
+    const { changes, patch } = diffRow(current, row);
+    const planRow = { id: current.id, slug: current.slug, provider_id: current.provider_id } as PlanRow;
+    if (changes.length === 0) {
+      console.log(`  ✓ plan ${provider.slug}/${slug}: unchanged`);
+      stats.unchanged++;
+      return planRow;
+    }
+    console.log(`  ↻ plan ${provider.slug}/${slug} (id ${current.id})\n${formatChanges(changes)}`);
+    stats.updated++;
     if (APPLY) {
-      const { error } = await db.from('plans').update(row).eq('id', existing.data.id);
+      const { error } = await db.from('plans').update({ ...patch, updated_at: NOW }).eq('id', current.id);
       if (error) throw error;
     }
-    return existing.data as PlanRow;
+    return planRow;
   }
 
   console.log(`  ➕ plan ${provider.slug}/${slug}`);
+  stats.inserted++;
   if (!APPLY) return { id: -1, slug, provider_id: provider.id };
   const { data, error } = await db.from('plans').insert(row).select('id, slug, provider_id').single();
   if (error) throw error;
@@ -140,6 +159,10 @@ async function upsertMapping(model: ModelRow, plan: PlanRow) {
   const existing = await db.from('model_plan_mapping').select('id, source').eq('model_id', model.id).eq('plan_id', plan.id).maybeSingle();
   if (existing.error) throw existing.error;
   if (existing.data) {
+    if (existing.data.source !== 'manual') {
+      console.log(`    ↻ map ${model.slug} → ${plan.slug}\n      source: ${JSON.stringify(existing.data.source)} → "manual"`);
+      stats.updated++;
+    } else stats.unchanged++;
     if (APPLY && existing.data.source !== 'manual') {
       const { error } = await db.from('model_plan_mapping').update({ source: 'manual' }).eq('id', existing.data.id);
       if (error) throw error;
@@ -147,6 +170,7 @@ async function upsertMapping(model: ModelRow, plan: PlanRow) {
     return;
   }
   console.log(`    ↳ map ${model.slug} → ${plan.slug}`);
+  stats.inserted++;
   if (APPLY) {
     const { error } = await db.from('model_plan_mapping').insert({ model_id: model.id, plan_id: plan.id, priority: 50, source: 'manual' });
     if (error) throw error;
@@ -181,7 +205,7 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
   const planId = plan && plan.id > 0 ? plan.id : null;
   const existing = await db
     .from('usage_prices')
-    .select('id')
+    .select('*')
     .eq('model_id', model.id)
     .eq('provider_id', provider.id)
     .eq('price_kind', priceKind)
@@ -213,15 +237,24 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
   };
 
   if (existing.data) {
-    console.log(`    ↻ usage ${model.slug}/${priceKind}/${unit}`);
+    const current = existing.data as Record<string, unknown>;
+    const { changes, patch } = diffRow(current, row, { syncAvailability: ARGS.syncAvailability });
+    if (changes.length === 0) {
+      console.log(`    ✓ usage ${model.slug}/${priceKind}/${unit}: unchanged`);
+      stats.unchanged++;
+      return;
+    }
+    console.log(`    ↻ usage ${model.slug}/${priceKind}/${unit} (id ${current.id})\n${formatChanges(changes, '        ')}`);
+    stats.updated++;
     if (APPLY) {
-      const { error } = await db.from('usage_prices').update(row).eq('id', existing.data.id);
+      const { error } = await db.from('usage_prices').update({ ...patch, updated_at: NOW }).eq('id', current.id);
       if (error) throw error;
     }
     return;
   }
 
   console.log(`    ➕ usage ${model.slug}/${priceKind}/${unit}`);
+  stats.inserted++;
   if (APPLY) {
     const { error } = await db.from('usage_prices').insert(row);
     if (error) throw error;
@@ -229,7 +262,16 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
 }
 
 async function main() {
-  const items = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && !item.deferredDbSeed);
+  const eligible = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && !item.deferredDbSeed);
+  const items = ARGS.slugs ? eligible.filter((item) => ARGS.slugs!.has(item.slug!)) : eligible;
+  if (ARGS.slugs) {
+    const unknown = [...ARGS.slugs].filter((slug) => !items.some((item) => item.slug === slug));
+    if (unknown.length) {
+      console.error(`Unknown or non-seedable --slug: ${unknown.join(', ')}`);
+      process.exitCode = 1;
+      return;
+    }
+  }
   const providers = await loadProviders();
   const models = await loadModels(items.map((item) => item.slug!).filter(Boolean));
 
@@ -257,7 +299,8 @@ async function main() {
   console.log('\n━━━ Summary ━━━');
   console.log(`Seeded references: ${seeded}`);
   console.log(`Skipped: ${skipped}`);
-  if (!APPLY) console.log('Dry-run only. Re-run with --apply or npm run seed:vertical-pricing to write.');
+  console.log(`Rows: ${stats.inserted} insert, ${stats.updated} update, ${stats.unchanged} unchanged`);
+  if (!APPLY) console.log('Dry-run only. Re-run with --apply to write the rows listed above.');
   if (skipped > 0) process.exitCode = 1;
 }
 

@@ -10,7 +10,7 @@ flowchart LR
   Verify --> Runner[Self-hosted runner\n planprice-production]
   BW[Bitwarden Secrets Manager\n machine account] -. secrets at deploy .-> Runner
   Runner -->|git archive + rollout| VPS[VPS /opt/x2v/planprice]
-  VPS --> Env[.env.production\n mode 600]
+  VPS --> Env[deploy/production/.env.production\n mode 600]
   VPS --> Compose[Docker Compose\n planprice-production]
   Compose --> App[Planprice Next.js\n 127.0.0.1:3000]
   Compose --> DB[(PostgreSQL\n private volume)]
@@ -43,8 +43,8 @@ flowchart LR
 
 | 内容 | Bitwarden | GitHub | VPS | 容器环境 |
 |---|---:|---:|---:|---:|
-| PostgreSQL 密码 | 是 | 不保存明文 | `.env.production` | app/postgres |
-| catalog Bearer token | 是 | 不保存明文 | `.env.production` | app |
+| PostgreSQL 密码 | 是 | 不保存明文 | `deploy/production/.env.production` | app/postgres |
+| catalog Bearer token | 是 | 不保存明文 | `deploy/production/.env.production` | app |
 | exchange-rate admin key | 是 | 不保存明文 | 仅 admin origin | admin job |
 | Provider API key | 是 | 不保存明文 | AEEIS/Provider secret store | AEEIS |
 | `DEPLOY_PATH` | 否 | GitHub Environment Variable | — | — |

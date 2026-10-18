@@ -7,6 +7,7 @@ import * as catalog from '../src/lib/ai-vertical-catalog';
 import * as logos from '../src/lib/vertical-provider-logos';
 import { PERPLEXITY_DECIDER_CATALOG } from '../src/lib/perplexity-decider-catalog';
 import * as auditVertical from './data/catalog-audit-vertical';
+import * as seedDiff from './utils/seed-diff';
 import type { Sql } from 'postgres';
 import { seedImageModels, seedNonLlm } from './data/non-llm-seed';
 
@@ -75,6 +76,7 @@ function fixture(initial: Record<string, Row[]> = {}) {
       '../src/lib/ai-vertical-catalog': catalog,
       '../src/lib/vertical-provider-logos': logos,
       './data/catalog-audit-vertical': auditVertical,
+      './utils/seed-diff': seedDiff,
     };
     await runInNewContext(compiled, {
       exports: {}, process, URL,
@@ -245,4 +247,81 @@ test('deferred catalog rows point at their image, non-LLM or glimpse-decider see
     assert.equal(item.deferredDbSeed, true, item.slug);
     assert.equal(item.deferredDbSeedScript, 'seed:glimpse-decider:apply', item.slug);
   }
+});
+
+test('vertical model/pricing seeds default to dry-run and --slug narrows the run', async () => {
+  const f = fixture({ providers: [{ id: 1, slug: 'byteplus', name: 'BytePlus' }] });
+  for (const name of ['seed-vertical-models', 'seed-vertical-pricing-references']) {
+    const dry = await f.run(name, ['--slug', 'omnihuman-2-0']);
+    assert.match(dry.output, /\[DRY-RUN\]/);
+  }
+  assert.equal(f.writeCount(), 0);
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.doesNotMatch(pkg.scripts['seed:vertical-models'], /--apply/);
+  assert.doesNotMatch(pkg.scripts['seed:vertical-pricing'], /--apply/);
+  const rollout = readFileSync(new URL('../deploy/production/rollout.sh', import.meta.url), 'utf8');
+  assert.match(rollout, /seed:vertical-models -- --apply/);
+  assert.match(rollout, /seed:vertical-pricing -- --apply/);
+  const bad = await f.run('seed-vertical-pricing-references', ['--slug', 'no-such-model']);
+  assert.equal(bad.code, 1);
+});
+
+test('vertical pricing seed only touches the requested slug, prints field diffs, keeps newer last_verified and is_available', async () => {
+  const f = fixture();
+  await f.seed();
+  const omni = catalog.AI_VERTICAL_CATALOG.find(item => item.slug === 'omnihuman-2-0')!;
+  assert.ok(omni && !omni.deferredDbSeed, 'omnihuman-2-0 must be a seedable vertical row');
+  const model = f.data.models.find(row => row.slug === 'omnihuman-2-0')!;
+  const other = f.data.usage_prices.find(row => row.model_id !== model.id)!;
+  const usage = f.data.usage_prices.find(row => row.model_id === model.id)!;
+  const plan = f.data.plans.find(row => row.slug === 'omnihuman-2-0-official-pricing')!;
+
+  // Drift: stale price, a newer verification date and a manual unavailability flag.
+  usage.price = 0.5;
+  usage.last_verified = new Date('2030-01-01T00:00:00Z');
+  usage.is_available = false;
+  other.price = 123;
+  plan.last_verified = '2030-01-01T00:00:00.000Z';
+  const otherSnapshot = JSON.stringify(other);
+  const writes = f.writeCount();
+
+  const dry = await f.run('seed-vertical-pricing-references', ['--slug', 'omnihuman-2-0']);
+  assert.equal(dry.code, 0, dry.output);
+  assert.equal(f.writeCount(), writes, 'dry-run must not write');
+  assert.match(dry.output, /price: 0\.5 → 0\.07/);
+  assert.match(dry.output, /plan .*omnihuman-2-0-official-pricing: unchanged/);
+  assert.doesNotMatch(dry.output, /last_verified|is_available/);
+  assert.match(dry.output, /0 insert, 1 update/);
+
+  await f.run('seed-vertical-pricing-references', ['--slug', 'omnihuman-2-0', '--apply']);
+  assert.equal(f.writeCount(), writes + 1, 'only the changed row is written');
+  assert.equal(usage.price, omni.pricePerUnit);
+  assert.equal((usage.last_verified as Date).toISOString(), '2030-01-01T00:00:00.000Z');
+  assert.equal(usage.is_available, false);
+  assert.equal(plan.last_verified, '2030-01-01T00:00:00.000Z');
+  assert.equal(JSON.stringify(other), otherSnapshot, 'other slugs untouched');
+
+  // A full run with nothing stale besides the other row writes exactly that row.
+  const full = f.writeCount();
+  await f.run('seed-vertical-pricing-references', ['--apply']);
+  assert.equal(f.writeCount(), full + 1);
+  assert.equal(usage.is_available, false, 'is_available only syncs with --sync-availability');
+  await f.run('seed-vertical-pricing-references', ['--apply', '--slug=omnihuman-2-0', '--sync-availability']);
+  assert.equal(usage.is_available, true);
+});
+
+test('vertical models seed writes only changed fields', async () => {
+  const f = fixture();
+  await f.seed();
+  const model = f.data.models.find(row => row.slug === 'omnihuman-2-0')!;
+  model.name = 'Stale';
+  (model.capabilities as string[]).reverse();
+  const writes = f.writeCount();
+  const dry = await f.run('seed-vertical-models', ['--slug', 'omnihuman-2-0']);
+  assert.match(dry.output, /name: "Stale" → /);
+  assert.doesNotMatch(dry.output, /capabilities/);
+  assert.equal(f.writeCount(), writes);
+  await f.run('seed-vertical-models', ['--slug', 'omnihuman-2-0', '--apply']);
+  assert.equal(f.writeCount(), writes + 1);
+  assert.notEqual(model.name, 'Stale');
 });

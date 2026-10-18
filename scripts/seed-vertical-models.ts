@@ -8,8 +8,8 @@
  * - this script only seeds model taxonomy, modalities, capabilities and official links.
  *
  * Usage:
- *   npm run seed:vertical-models:dry-run
- *   DATABASE_URL=... npm run seed:vertical-models
+ *   npm run seed:vertical-models -- --slug omnihuman-2-0            # dry-run (default), field diff
+ *   npm run seed:vertical-models -- --slug omnihuman-2-0 --apply    # write changed rows only
  */
 import { db } from './db/queries';
 import {
@@ -19,8 +19,10 @@ import {
   type AiPricingConfidence,
 } from '../src/lib/ai-vertical-catalog';
 import { auditVerticalModelFields, isAuditOwnedVertical, verticalModelDescription } from './data/catalog-audit-vertical';
+import { diffRow, formatChanges, parseSeedArgs } from './utils/seed-diff';
 
-const APPLY = process.argv.includes('--apply');
+const ARGS = parseSeedArgs(process.argv);
+const APPLY = ARGS.apply;
 
 interface ProviderRow {
   id: number;
@@ -133,14 +135,23 @@ async function loadExistingModels(slugs: string[]): Promise<Map<string, ModelRow
   if (slugs.length === 0) return new Map();
   const { data, error } = await db
     .from('models')
-    .select('id, slug, name, type, context_window, provider_ids, model_category, input_modalities, output_modalities, capabilities, pricing_unit, description, offical_link, open_source')
+    .select('*')
     .in('slug', slugs);
   if (error) throw error;
   return new Map((data ?? []).map((model: ModelRow) => [model.slug, model]));
 }
 
 async function main() {
-  const rows = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && !item.deferredDbSeed);
+  const eligible = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && !item.deferredDbSeed);
+  const rows = ARGS.slugs ? eligible.filter((item) => ARGS.slugs!.has(item.slug!)) : eligible;
+  if (ARGS.slugs) {
+    const unknown = [...ARGS.slugs].filter((slug) => !rows.some((item) => item.slug === slug));
+    if (unknown.length) {
+      console.error(`Unknown or non-seedable --slug: ${unknown.join(', ')}`);
+      process.exitCode = 1;
+      return;
+    }
+  }
   const slugs = rows.map((item) => item.slug).filter(Boolean) as string[];
   const providers = await loadProviders();
   const existingModels = await loadExistingModels(slugs);
@@ -195,28 +206,23 @@ async function main() {
       continue;
     }
 
-    const needsUpdate =
-      existing.name !== payload.name ||
-      (item.contextWindow != null && existing.context_window !== item.contextWindow) ||
-      existing.model_category !== payload.model_category ||
-      existing.pricing_unit !== payload.pricing_unit ||
-      existing.offical_link !== payload.offical_link ||
-      existing.open_source !== payload.open_source ||
-      JSON.stringify(existing.provider_ids ?? []) !== JSON.stringify(payload.provider_ids) ||
-      !sameStringArray(existing.input_modalities, payload.input_modalities) ||
-      !sameStringArray(existing.output_modalities, payload.output_modalities) ||
-      !sameStringArray(existing.capabilities, payload.capabilities) ||
-      existing.description !== payload.description;
-
-    if (!needsUpdate) {
+    // Order of modality/capability arrays is not meaningful; keep the stored order.
+    const stored = existing as unknown as Record<string, string[] | null>;
+    for (const key of ['input_type', 'output_type', 'input_modalities', 'output_modalities', 'capabilities'] as const) {
+      if (sameStringArray(stored[key], (payload as Record<string, unknown>)[key] as string[] | undefined)) {
+        (payload as Record<string, unknown>)[key] = stored[key];
+      }
+    }
+    const { changes, patch } = diffRow(existing as unknown as Record<string, unknown>, payload);
+    if (changes.length === 0) {
       console.log(`  ✓ ${slug}: up to date`);
       skipped++;
       continue;
     }
 
-    console.log(`  ↻ update ${slug} (${existing.model_category ?? '-'} → ${payload.model_category})`);
+    console.log(`  ↻ update ${slug} (id ${existing.id})\n${formatChanges(changes, '    ')}`);
     if (APPLY) {
-      const { error } = await db.from('models').update(payload).eq('id', existing.id);
+      const { error } = await db.from('models').update({ ...patch, updated_at: payload.updated_at }).eq('id', existing.id);
       if (error) throw error;
     }
     updated++;
@@ -227,7 +233,7 @@ async function main() {
   console.log(`Updated: ${updated}`);
   console.log(`Skipped: ${skipped}`);
   console.log(`Missing providers: ${missingProviders}`);
-  if (!APPLY) console.log('Dry-run only. Re-run with --apply or npm run seed:vertical-models to write.');
+  if (!APPLY) console.log('Dry-run only. Re-run with --apply to write the rows listed above.');
 
   if (missingProviders > 0) process.exitCode = 1;
 }

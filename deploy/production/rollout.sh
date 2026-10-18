@@ -102,9 +102,9 @@ if [[ "$database_ready" != "1" ]]; then
 fi
 
 "${compose[@]}" run --rm --no-deps migrate
-"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-models
+"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-models -- --apply
 "${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-logos
-"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-pricing
+"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-pricing -- --apply
 "${compose[@]}" run --rm --no-deps scraper npm run seed:verified-creative-plans
 "${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-benchmarks
 "${compose[@]}" run --rm --no-deps scraper npm run audit:verticals:db
