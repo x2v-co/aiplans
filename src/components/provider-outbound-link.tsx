@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
+import { outboundChannelDataset } from '@/lib/funnel-analytics';
 
-export function ProviderOutboundLink({ url, providerSlug, locale, label }: {
+export function ProviderOutboundLink({ url, providerSlug, locale, label, channelType }: {
   url?: string | null;
   providerSlug: string;
   locale: string;
   label: string;
+  channelType?: string | null;
 }) {
   // Check the data before resolving: affiliate providers can resolve an absent URL.
   if (!url) return null;
@@ -13,7 +15,13 @@ export function ProviderOutboundLink({ url, providerSlug, locale, label }: {
   if (!outbound) return null;
   return (
     <div>
-      <a href={outbound.href} target="_blank" rel={outbound.affiliate ? AFFILIATE_LINK_REL : 'noopener noreferrer'} className="font-medium text-blue-600 hover:underline">
+      <a
+        href={outbound.href}
+        target="_blank"
+        rel={outbound.affiliate ? AFFILIATE_LINK_REL : 'noopener noreferrer'}
+        className="font-medium text-blue-600 hover:underline"
+        {...outboundChannelDataset({ channelSlug: providerSlug, channelType })}
+      >
         {label} ↗
       </a>
       {outbound.affiliate && (

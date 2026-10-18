@@ -1,3 +1,5 @@
+import { clearFunnelBrowserState } from '@/lib/funnel-analytics';
+
 export const CONSENT_STORAGE_KEY = 'aiplans-consent-v1';
 export const CONSENT_CHANGE_EVENT = 'aiplans:consent-change';
 export const CONSENT_OPEN_EVENT = 'aiplans:consent-open';
@@ -58,6 +60,7 @@ export function writeConsent(preferences: Omit<ConsentPreferences, 'updatedAt'>)
   window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(value));
 
   if (!preferences.analytics) {
+    clearFunnelBrowserState();
     const hostname = window.location.hostname;
     document.cookie.split(';').forEach((cookie) => {
       const name = cookie.split('=')[0]?.trim();

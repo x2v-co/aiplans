@@ -11,6 +11,12 @@
 Funnel: landing on guide (page_view with `utm_*`) → `guide_model_click` → `compare_start` → `outbound_click`.
 In GA4, register `guide_slug`, `target_type`, `target_slug` as event-scoped custom dimensions to report on them.
 
+## Closed loop (visit → compare → outbound → return)
+
+Configurable names default to `funnel_landing`, `funnel_compare`, `funnel_outbound_click`, and `funnel_return_visit` (`src/config/analytics-events.ts`). Override with `NEXT_PUBLIC_ANALYTICS_EVENT_LANDING`, `_COMPARE`, `_OUTBOUND`, and `_RETURN`. The weekly GA4 queries are `npm run report:funnel` and `docs/analytics-funnel-weekly.md`.
+
+Events fire only after analytics consent. Parameters are page family, UTM tokens, provider channel, and coarse return buckets. They do not include an account id, email, query string, or full outbound URL. A browser-local visit note (day, session count, outbound flag) is deleted when analytics is rejected.
+
 ## UTM rules
 
 All links we place off-site (community answers, outreach, newsletters) carry UTM; links inside aiplans.dev never do.

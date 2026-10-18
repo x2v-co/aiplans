@@ -73,7 +73,7 @@ export async function getPlanComparison(
           ORDER BY plan_kind, plan_line NULLS LAST, tier_rank NULLS LAST, price ASC NULLS LAST
         `,
         sql<any[]>`
-          SELECT id, name, slug, logo, logo_url, website, invite_url, pricing_url
+          SELECT id, name, slug, logo, logo_url, website, invite_url, pricing_url, type
           FROM providers
         `,
       ])
@@ -167,6 +167,7 @@ export async function getPlanComparison(
         website: provider?.website || null,
         pricingUrl: provider?.pricing_url || null,
         inviteUrl: provider?.invite_url || null,
+        type: provider?.type || null,
         region: plan.region,
         accessFromChina: plan.access_from_china,
         paymentMethods: plan.payment_methods || getPaymentMethods(plan.region),
@@ -316,6 +317,7 @@ export async function getPlanComparison(
         website: productProvider?.website || null,
         pricingUrl: productProvider?.pricing_url || null,
         inviteUrl: productProvider?.invite_url || null,
+        type: productProvider?.type || null,
       },
       contextWindow: product.context_window,
       maxOutput: null,

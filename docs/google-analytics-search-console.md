@@ -27,6 +27,16 @@ Mark `outbound_click` and `compare_start` as key events in GA4. Keep the other
 events as diagnostic interaction signals. Event collection follows the site's
 analytics consent preference; no events are sent before consent.
 
+The closed-loop events are separate and configurable (see
+`docs/analytics-funnel-weekly.md`):
+
+- `funnel_landing`: first page of a consented session, with UTM and traffic channel.
+- `funnel_compare`: a comparison page view, a model add/remove, or a billing-period change.
+- `funnel_outbound_click`: an external click, with provider channel type and slug when the link is tagged.
+- `funnel_return_visit`: a new session after 30 minutes away. `prior_outbound=yes` means this browser used an outbound link before.
+
+`npm run report:funnel` prints the GA4 Query Explorer bodies for the last complete Monday–Sunday week. Register the event-scoped custom dimensions listed in that output before the page and channel splits return rows. That registration is a GA4 admin step, not a database migration.
+
 ## Search Console
 
 For a URL-prefix property, copy the HTML tag verification value and set

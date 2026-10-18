@@ -9,7 +9,20 @@ import {
   getAnalyticsConsentSnapshot,
   subscribeToConsent,
 } from '@/lib/consent';
-import { classifyTrackedLink, guideSlugFromPath, trackAnalyticsEvent } from '@/lib/analytics';
+import { classifyTrackedLink, guideSlugFromPath, trackAnalyticsEvent, trackFunnelEvent } from '@/lib/analytics';
+import {
+  ANALYTICS_NOT_SET,
+  analyticsDay,
+  clearFunnelBrowserState,
+  markFunnelOutbound,
+  readFunnelSession,
+  readFunnelVisit,
+  readOutboundChannel,
+  sanitizeHost,
+  tickFunnel,
+  writeFunnelSession,
+  writeFunnelVisit,
+} from '@/lib/funnel-analytics';
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
@@ -39,6 +52,7 @@ export default function GoogleAnalytics() {
       const preferences = (event as CustomEvent<ConsentPreferences>).detail;
       if (!preferences.analytics) {
         setScriptReady(false);
+        clearFunnelBrowserState();
         window.gtag?.('consent', 'update', { analytics_storage: 'denied' });
       }
     };
@@ -51,6 +65,22 @@ export default function GoogleAnalytics() {
     if (!scriptReady || !pathname) return;
     const query = searchParams?.toString();
     trackPageView(query ? `${pathname}?${query}` : pathname);
+
+    const funnel = tickFunnel({
+      pathname,
+      search: query ? `?${query}` : '',
+      referrer: document.referrer,
+      origin: window.location.origin,
+      today: analyticsDay(),
+      now: Date.now(),
+      session: readFunnelSession(),
+      visit: readFunnelVisit(),
+    });
+    writeFunnelSession(funnel.session);
+    writeFunnelVisit(funnel.visit);
+    for (const event of funnel.events) {
+      trackFunnelEvent(event.key, event.params);
+    }
   }, [pathname, searchParams, scriptReady]);
 
   useEffect(() => {
@@ -79,12 +109,23 @@ export default function GoogleAnalytics() {
       }
 
       if (tracked.kind === 'outbound') {
+        const channel = readOutboundChannel(anchor.dataset);
         trackAnalyticsEvent('outbound_click', {
           link_domain: tracked.domain,
           link_text: anchor.innerText.trim().slice(0, 100),
           link_url: tracked.url,
           guide_slug: guideSlug,
+          channel_slug: channel.channel_slug,
+          channel_type: channel.channel_type,
+          model_slug: channel.model_slug,
         });
+        trackFunnelEvent('outboundClick', {
+          link_domain: sanitizeHost(tracked.domain) ?? ANALYTICS_NOT_SET,
+          channel_slug: channel.channel_slug,
+          channel_type: channel.channel_type,
+          model_slug: channel.model_slug,
+        });
+        markFunnelOutbound();
         return;
       }
 

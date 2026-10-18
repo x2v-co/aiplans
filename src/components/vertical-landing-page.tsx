@@ -13,6 +13,7 @@ import { catalogForKind, isRigorousModelKind, type AiBenchmarkSummary, type AiCa
 import { jsonLd, SITE_URL } from '@/lib/seo';
 import { verticalBenchmarkSummaryFallback } from '@/lib/vertical-benchmark-summaries';
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
+import { outboundChannelDataset } from '@/lib/funnel-analytics';
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 
 const CTA_LINKS: Record<AiVerticalKind, { primary: string; secondary: string }> = {
@@ -227,7 +228,17 @@ export default function VerticalLandingPage({
                       if (!outbound?.affiliate) return null;
                       return (
                         <div className="mt-2">
-                          <a href={outbound.href} target="_blank" rel={AFFILIATE_LINK_REL} className="pointer-events-auto relative z-20">
+                          <a
+                            href={outbound.href}
+                            target="_blank"
+                            rel={AFFILIATE_LINK_REL}
+                            className="pointer-events-auto relative z-20"
+                            {...outboundChannelDataset({
+                              channelSlug: item.providerSlug ?? item.provider,
+                              channelType: 'official',
+                              modelSlug: item.slug,
+                            })}
+                          >
                             <Button variant="outline" size="sm">{locale === 'zh' ? '前往官网（联盟链接）' : 'Visit website (affiliate link)'}</Button>
                           </a>
                           <div className="mt-1 text-xs text-zinc-500">

@@ -27,6 +27,7 @@ import { modelFreshnessTime } from "@/lib/model-freshness";
 import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
 import { formatModelName } from '@/lib/model-names';
 import { trackAnalyticsEvent } from '@/lib/analytics';
+import { outboundChannelDataset } from '@/lib/funnel-analytics';
 import { matchesSearch } from '@/lib/search-match';
 import { CouponBadge } from "@/components/coupon-badge";
 import { couponsFor, type CouponOffer } from "@/lib/coupon-format";
@@ -48,11 +49,13 @@ function ProviderVisitLink({
   label,
   locale,
   coupons,
+  modelSlug,
 }: {
   provider: ChannelPrice['providers'];
   label: string;
   locale: string;
   coupons?: CouponOffer[];
+  modelSlug?: string;
 }) {
   const href = getProviderVisitUrl(provider, 'api');
   const badge = <CouponBadge coupons={coupons ?? []} locale={locale} size="xs" align="end" />;
@@ -66,7 +69,16 @@ function ProviderVisitLink({
   return (
     <div className="flex flex-col items-end gap-1">
       <Button asChild variant="outline" size="xs">
-        <a href={href} target="_blank" rel={getProviderVisitRel(provider, 'api')}>
+        <a
+          href={href}
+          target="_blank"
+          rel={getProviderVisitRel(provider, 'api')}
+          {...outboundChannelDataset({
+            channelSlug: provider.slug,
+            channelType: provider.type,
+            modelSlug,
+          })}
+        >
           {label}
           <ExternalLink />
         </a>
@@ -665,6 +677,7 @@ export default function ApiPricingView({
                                       provider={chinaVersion.providers}
                                       label={locale === 'zh' ? '访问' : 'Visit'}
                                       locale={locale}
+                                      modelSlug={product.slug}
                                       coupons={couponsFor(
                                         couponByProvider,
                                         chinaVersion.providers.slug,
@@ -759,6 +772,7 @@ export default function ApiPricingView({
                                       provider={cp.providers}
                                       label={locale === 'zh' ? '访问' : 'Visit'}
                                       locale={locale}
+                                      modelSlug={product.slug}
                                       coupons={couponsFor(couponByProvider, cp.providers.slug)}
                                     />
                                   </TableCell>

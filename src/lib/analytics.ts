@@ -1,4 +1,6 @@
+import { ANALYTICS_EVENTS, type FunnelEventKey } from '@/config/analytics-events';
 import { getAnalyticsConsentSnapshot } from '@/lib/consent';
+import { pageGroup, readFunnelAttribution, type FunnelEventParams } from '@/lib/funnel-analytics';
 
 export type AnalyticsEventName =
   | 'compare_start'
@@ -84,4 +86,18 @@ export function trackAnalyticsEvent(
     ...params,
     page_path: `${window.location.pathname}${window.location.search}`,
   });
+}
+
+/** Closed-loop event. Name comes from the configurable map. Path has no query string. */
+export function trackFunnelEvent(key: FunnelEventKey, params: FunnelEventParams = {}) {
+  if (typeof window === 'undefined' || !getAnalyticsConsentSnapshot()) return;
+
+  const payload: FunnelEventParams = {
+    ...readFunnelAttribution(),
+    page_group: pageGroup(window.location.pathname),
+    ...params,
+    page_path: window.location.pathname.slice(0, 120),
+  };
+
+  window.gtag?.('event', ANALYTICS_EVENTS[key], payload);
 }

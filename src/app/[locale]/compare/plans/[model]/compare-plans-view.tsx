@@ -25,6 +25,8 @@ import { PlanCoverage } from "@/components/plan-coverage";
 import { PlanQuotaEstimates } from '@/components/quota-estimates';
 import type { VerifiedQuotaEstimate } from '@/lib/quota/estimates';
 import type { FaqItem } from "./faqs";
+import { trackFunnelEvent } from "@/lib/analytics";
+import { outboundChannelDataset } from "@/lib/funnel-analytics";
 import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
 import { formatModelName } from '@/lib/model-names';
 import { CouponBadge } from "@/components/coupon-badge";
@@ -233,7 +235,16 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
             <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
               {providerVisitUrl && (
                 <Button asChild variant="outline">
-                  <a href={providerVisitUrl} target="_blank" rel={getProviderVisitRel(model.provider, 'plan')}>
+                  <a
+                    href={providerVisitUrl}
+                    target="_blank"
+                    rel={getProviderVisitRel(model.provider, 'plan')}
+                    {...outboundChannelDataset({
+                      channelSlug: model.provider.slug,
+                      channelType: model.provider.type,
+                      modelSlug: model.slug,
+                    })}
+                  >
                     {locale === "zh" ? `访问 ${model.provider.name}` : `Visit ${model.provider.name}`}
                     <ExternalLink />
                   </a>
@@ -256,7 +267,14 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                 </span>
                 <Switch
                   checked={showYearly}
-                  onCheckedChange={setShowYearly}
+                  onCheckedChange={(checked) => {
+                    setShowYearly(checked);
+                    trackFunnelEvent('compare', {
+                      compare_type: 'plans',
+                      compare_action: checked ? 'period_yearly' : 'period_monthly',
+                      model_slug: model.slug,
+                    });
+                  }}
                 />
                 <span className={`text-sm ${showYearly ? "font-semibold" : "text-zinc-500"}`}>
                   {locale === "zh" ? "年付" : "Yearly"}
@@ -546,6 +564,11 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                                     rel={channelVisitUrl
                                       ? getProviderVisitRel(plan.channel, 'plan')
                                       : getProviderVisitRel(model.provider, 'plan')}
+                                    {...outboundChannelDataset({
+                                      channelSlug: plan.channel?.slug || model.provider.slug,
+                                      channelType: plan.channel?.type || model.provider.type,
+                                      modelSlug: model.slug,
+                                    })}
                                     className={`w-full flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                                       isRecommended
                                         ? "bg-blue-600 text-white hover:bg-blue-700"
@@ -596,7 +619,16 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                 </Button>
                 {providerVisitUrl && (
                   <Button asChild variant="outline">
-                    <a href={providerVisitUrl} target="_blank" rel={getProviderVisitRel(model.provider, 'plan')}>
+                    <a
+                      href={providerVisitUrl}
+                      target="_blank"
+                      rel={getProviderVisitRel(model.provider, 'plan')}
+                      {...outboundChannelDataset({
+                        channelSlug: model.provider.slug,
+                        channelType: model.provider.type,
+                        modelSlug: model.slug,
+                      })}
+                    >
                       {locale === "zh" ? "访问供应商" : "Visit provider"}
                       <ExternalLink />
                     </a>
@@ -686,7 +718,17 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
             <li>
               • Data sources: Official pricing pages from each provider{" "}
               {data?.model?.provider?.website ? (
-                <a href={data.model.provider.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                <a
+                  href={data.model.provider.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                  {...outboundChannelDataset({
+                    channelSlug: data.model.provider.slug,
+                    channelType: data.model.provider.type,
+                    modelSlug: data.model.slug,
+                  })}
+                >
                   [View sources]
                 </a>
               ) : (
