@@ -15,6 +15,8 @@ In GA4, register `guide_slug`, `target_type`, `target_slug` as event-scoped cust
 
 Configurable names default to `funnel_landing`, `funnel_compare`, `funnel_outbound_click`, and `funnel_return_visit` (`src/config/analytics-events.ts`). Override with `NEXT_PUBLIC_ANALYTICS_EVENT_LANDING`, `_COMPARE`, `_OUTBOUND`, and `_RETURN`. The weekly GA4 queries are `npm run report:funnel` and `docs/analytics-funnel-weekly.md`.
 
+`funnel_landing`, `funnel_compare`, and `funnel_outbound_click` also send `guide_slug`: a published pricing-guide slug when the event happens on that guide, otherwise `(not set)`. `funnel_alert_subscribe` is reserved for the unbuilt price-alert card and is not sent.
+
 Events fire only after analytics consent. Parameters are page family, UTM tokens, provider channel, and coarse return buckets. They do not include an account id, email, query string, or full outbound URL. A browser-local visit note (day, session count, outbound flag) is deleted when analytics is rejected.
 
 ## UTM rules

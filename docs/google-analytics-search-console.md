@@ -35,6 +35,8 @@ The closed-loop events are separate and configurable (see
 - `funnel_outbound_click`: an external click, with provider channel type and slug when the link is tagged.
 - `funnel_return_visit`: a new session after 30 minutes away. `prior_outbound=yes` means this browser used an outbound link before.
 
+`funnel_landing`, `funnel_compare`, and `funnel_outbound_click` include `guide_slug` (a published guide slug, or `(not set)` off those pages). `funnel_alert_subscribe` is defined but not sent until the price-alert card exists.
+
 `npm run report:funnel` prints the GA4 Query Explorer bodies for the last complete Monday–Sunday week. Register the event-scoped custom dimensions listed in that output before the page and channel splits return rows. That registration is a GA4 admin step, not a database migration.
 
 ## Search Console

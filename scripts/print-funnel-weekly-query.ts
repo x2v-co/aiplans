@@ -15,8 +15,10 @@ const sections: Array<[string, unknown]> = [
   ['按页面分组 × 来源', report.byPageAndTraffic],
   ['按页面分组 × 渠道', report.byChannel],
   ['回访间隔 × 是否曾出站', report.returns],
+  ['按 utm_source × utm_campaign 汇总落地和出站人数', report.bySourceCampaign],
 ];
 
+console.log('事件只在访客同意分析后才发送。绝对数会偏低，只适合看趋势和渠道之间的对比。');
 console.log(`周报区间（UTC，已结束的周一至周日）：${report.range.startDate} ~ ${report.range.endDate}`);
 console.log(`事件：${report.eventNames.join('、')}`);
 console.log('');

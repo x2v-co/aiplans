@@ -7,7 +7,7 @@
  * a session count kept in the browser and deleted when analytics is rejected.
  */
 
-import type { FunnelEventKey } from '@/config/analytics-events';
+import { FUNNEL_GUIDE_SLUGS, type FunnelEventKey } from '@/config/analytics-events';
 
 export const FUNNEL_SESSION_KEY = 'aiplans-funnel-session-v1';
 export const FUNNEL_VISIT_KEY = 'aiplans-funnel-visit-v1';
@@ -20,6 +20,7 @@ const HOST = /^[a-z0-9.-]{1,253}$/;
 /** A new tab inside this window continues the session instead of counting a return. */
 export const FUNNEL_SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 const CHANNEL_TYPES = new Set(['official', 'cloud', 'aggregator', 'reseller']);
+const GUIDE_SLUGS = new Set<string>(FUNNEL_GUIDE_SLUGS);
 const SEARCH_HOSTS = [
   'google.',
   'bing.com',
@@ -202,6 +203,23 @@ export function trafficChannel(utmMedium: string, utmSource: string, host: strin
   return 'referral';
 }
 
+/**
+ * Guide slug for funnel_landing, funnel_compare, and funnel_outbound_click.
+ * Only a published guide page qualifies. Every other page is `(not set)`.
+ */
+export function funnelGuideSlug(pathname: string): string {
+  const match = pathname.split('?')[0].match(/^\/(?:en|zh)\/guides\/([^/]+)\/?$/);
+  if (!match) return ANALYTICS_NOT_SET;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(match[1]);
+  } catch {
+    return ANALYTICS_NOT_SET;
+  }
+  const slug = sanitizeAnalyticsSlug(decoded);
+  return slug && GUIDE_SLUGS.has(slug) ? slug : ANALYTICS_NOT_SET;
+}
+
 export function landingPage(pathname: string): string {
   const path = pathname.split('?')[0] || '/';
   return path.slice(0, 120) || '/';
@@ -316,6 +334,7 @@ export function tickFunnel(input: FunnelTickInput): FunnelTickResult {
       params: {
         ...attributionParams(session),
         page_group: group,
+        guide_slug: funnelGuideSlug(input.pathname),
       },
     });
   }
@@ -331,6 +350,7 @@ export function tickFunnel(input: FunnelTickInput): FunnelTickResult {
         compare_type: compare.compare_type,
         compare_action: 'view',
         model_slug: compare.model_slug,
+        guide_slug: funnelGuideSlug(input.pathname),
       },
     });
   }

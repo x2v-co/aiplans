@@ -80,6 +80,8 @@ export type FunnelWeeklyQueries = {
   byChannel: Ga4ReportRequest;
   /** Return stage × gap × whether this browser had an earlier outbound click. */
   returns: Ga4ReportRequest;
+  /** Landing and outbound users by campaign. Compare and return are excluded. */
+  bySourceCampaign: Ga4ReportRequest;
 };
 
 export function buildFunnelWeeklyQueries(options?: {
@@ -89,6 +91,7 @@ export function buildFunnelWeeklyQueries(options?: {
   const today = options?.today ?? isoDate(new Date());
   const range = lastCompleteIsoWeek(today);
   const names = eventNames(options?.eventNames);
+  const resolved = resolveAnalyticsEventNames(options?.eventNames);
   return {
     range,
     eventNames: names,
@@ -111,6 +114,11 @@ export function buildFunnelWeeklyQueries(options?: {
       'customEvent:gap_bucket',
       'customEvent:prior_visits_bucket',
       'customEvent:prior_outbound',
+    ]),
+    bySourceCampaign: baseRequest(range, [resolved.landing, resolved.outboundClick], [
+      'eventName',
+      'customEvent:utm_source',
+      'customEvent:utm_campaign',
     ]),
   };
 }

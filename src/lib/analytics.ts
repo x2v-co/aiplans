@@ -1,6 +1,6 @@
 import { ANALYTICS_EVENTS, type FunnelEventKey } from '@/config/analytics-events';
 import { getAnalyticsConsentSnapshot } from '@/lib/consent';
-import { pageGroup, readFunnelAttribution, type FunnelEventParams } from '@/lib/funnel-analytics';
+import { funnelGuideSlug, pageGroup, readFunnelAttribution, type FunnelEventParams } from '@/lib/funnel-analytics';
 
 export type AnalyticsEventName =
   | 'compare_start'
@@ -98,6 +98,13 @@ export function trackFunnelEvent(key: FunnelEventKey, params: FunnelEventParams 
     ...params,
     page_path: window.location.pathname.slice(0, 120),
   };
+
+  if (
+    (key === 'landing' || key === 'compare' || key === 'outboundClick')
+    && !payload.guide_slug
+  ) {
+    payload.guide_slug = funnelGuideSlug(window.location.pathname);
+  }
 
   window.gtag?.('event', ANALYTICS_EVENTS[key], payload);
 }

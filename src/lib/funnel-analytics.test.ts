@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ANALYTICS_EVENT_DEFAULTS, resolveAnalyticsEventNames } from '../config/analytics-events';
+import { ANALYTICS_EVENT_DEFAULTS, FUNNEL_CUSTOM_DIMENSIONS, FUNNEL_GUIDE_SLUGS, resolveAnalyticsEventNames } from '../config/analytics-events';
+import { PRICING_GUIDE_SLUGS } from './pricing-guides';
 import {
   ANALYTICS_DIRECT,
   ANALYTICS_NOT_SET,
   FUNNEL_SESSION_TIMEOUT_MS,
   compareContext,
+  funnelGuideSlug,
   gapBucket,
   outboundChannelDataset,
   pageGroup,
@@ -109,6 +111,7 @@ test('first consented visit records landing and not a return', () => {
   assert.equal(result.events[0].params.page_group, 'guide');
   assert.equal(result.events[0].params.landing_page, '/zh/guides/openai-api-pricing');
   assert.equal(result.events[0].params.referrer_host, 'zhihu.com');
+  assert.equal(result.events[0].params.guide_slug, 'openai-api-pricing');
   assert.equal(result.visit.sessions, 1);
   assert.equal(result.visit.outbound, false);
   assert.equal(JSON.stringify(result.events).includes('@'), false);
@@ -128,6 +131,7 @@ test('opening a compare page in the same session emits one compare view', () => 
   assert.equal(first.events[0].params.utm_source, ANALYTICS_NOT_SET);
   assert.equal(first.events[0].params.traffic_channel, 'direct');
   assert.equal(first.events[0].params.referrer_host, ANALYTICS_DIRECT);
+  assert.equal(first.events[0].params.guide_slug, ANALYTICS_NOT_SET);
 
   const again = tick({
     pathname: '/en/compare/plans/gpt-4o',
@@ -169,6 +173,18 @@ test('a later session is a return, and outbound is remembered without an id', ()
   assert.equal(back.params.prior_outbound, 'yes');
   assert.equal(returned.visit.sessions, 2);
   assert.equal(JSON.stringify(returned.visit).includes('user'), false);
+});
+
+test('guide_slug is a published guide or (not set)', () => {
+  assert.equal(funnelGuideSlug('/zh/guides/kimi-api-pricing'), 'kimi-api-pricing');
+  assert.equal(funnelGuideSlug('/en/guides/cursor-x-subscription-pricing'), 'cursor-x-subscription-pricing');
+  assert.equal(funnelGuideSlug('/en/guides'), ANALYTICS_NOT_SET);
+  assert.equal(funnelGuideSlug('/en/guides/not-a-guide'), ANALYTICS_NOT_SET);
+  assert.equal(funnelGuideSlug('/en/api-pricing'), ANALYTICS_NOT_SET);
+  const home = tick({ pathname: '/en' });
+  assert.equal(home.events[0].params.guide_slug, ANALYTICS_NOT_SET);
+  assert.equal(home.events[0].key, 'landing');
+  assert.deepEqual([...FUNNEL_GUIDE_SLUGS].sort(), [...PRICING_GUIDE_SLUGS].sort());
 });
 
 test('return buckets stay coarse', () => {
@@ -239,6 +255,19 @@ test('weekly queries cover the four stages and split by page and channel', () =>
   assert.ok(report.byChannel.dimensions.some((dimension) => dimension.name === 'customEvent:channel_type'));
   assert.ok(report.byChannel.dimensions.some((dimension) => dimension.name === 'customEvent:channel_slug'));
   assert.ok(report.customDimensions.includes('prior_outbound'));
+  assert.ok(report.customDimensions.includes('guide_slug'));
+  assert.equal(FUNNEL_CUSTOM_DIMENSIONS.length, 18);
+  assert.deepEqual(report.bySourceCampaign.dimensions.map((dimension) => dimension.name), [
+    'eventName',
+    'customEvent:utm_source',
+    'customEvent:utm_campaign',
+  ]);
+  assert.deepEqual(report.bySourceCampaign.dimensionFilter.filter.inListFilter.values, [
+    'funnel_landing',
+    'funnel_outbound_click',
+  ]);
+  assert.equal(report.eventNames.includes('funnel_alert_subscribe'), false);
+  assert.equal(ANALYTICS_EVENT_DEFAULTS.alertSubscribe, 'funnel_alert_subscribe');
 });
 
 test('session state does not grow a transmitted identifier', () => {
