@@ -102,12 +102,9 @@ if [[ "$database_ready" != "1" ]]; then
 fi
 
 "${compose[@]}" run --rm --no-deps migrate
-"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-models -- --apply
-"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-logos
-"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-pricing -- --apply
-"${compose[@]}" run --rm --no-deps scraper npm run seed:verified-creative-plans
-"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-benchmarks
-"${compose[@]}" run --rm --no-deps scraper npm run audit:verticals:db
+# Catalog seeds stay out of app release. SRE runs deploy/production/seed-catalog.sh
+# (default dry-run; --apply only after a saved diff and pg_dump). See
+# docs/vertical-seeds.md and docs/launch-sample-checklist.md.
 "${compose[@]}" run --rm --no-deps scraper npm run refresh:fx
 "${compose[@]}" run --rm --no-deps scraper npm run publish:v1
 app_switched=1

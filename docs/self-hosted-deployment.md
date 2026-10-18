@@ -120,6 +120,7 @@ the cutover.
   image also needs rebuilding);
 - starts/waits for planprice PostgreSQL;
 - runs the idempotent schema migrations;
+- does not seed the vertical catalog (that write is `deploy/production/seed-catalog.sh`; see `docs/vertical-seeds.md`);
 - replaces only the planprice app container;
 - waits for `http://127.0.0.1:3000/api/health`.
 

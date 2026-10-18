@@ -260,8 +260,11 @@ test('vertical model/pricing seeds default to dry-run and --slug narrows the run
   assert.doesNotMatch(pkg.scripts['seed:vertical-models'], /--apply/);
   assert.doesNotMatch(pkg.scripts['seed:vertical-pricing'], /--apply/);
   const rollout = readFileSync(new URL('../deploy/production/rollout.sh', import.meta.url), 'utf8');
-  assert.match(rollout, /seed:vertical-models -- --apply/);
-  assert.match(rollout, /seed:vertical-pricing -- --apply/);
+  const rolloutCode = rollout.split('\n').filter((line) => !/^\s*#/.test(line)).join('\n');
+  assert.doesNotMatch(rolloutCode, /seed:vertical-models|seed:vertical-pricing/);
+  const manual = readFileSync(new URL('../deploy/production/seed-catalog.sh', import.meta.url), 'utf8');
+  assert.match(manual, /seed:vertical-models -- --apply/);
+  assert.match(manual, /seed:vertical-pricing -- --apply/);
   const bad = await f.run('seed-vertical-pricing-references', ['--slug', 'no-such-model']);
   assert.equal(bad.code, 1);
 });
