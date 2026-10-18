@@ -4,6 +4,7 @@ import { getActiveCouponMap } from "@/lib/coupons";
 import { breadcrumbList, faqPage, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
 import { computeApiPricingStats } from "@/lib/api-pricing-copy";
 import ApiPricingView from "./api-pricing-view";
+import { ToolApiPricingSection } from "@/components/tool-api-pricing-section";
 
 /**
  * Server component. The whole page used to be a client component that fetched
@@ -96,6 +97,7 @@ export default async function ApiPricingPage({
         faqs={faqs}
         couponByProvider={couponByProvider}
       />
+      <ToolApiPricingSection locale={locale} />
     </>
   );
 }

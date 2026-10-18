@@ -37,3 +37,7 @@
 5. 迁移通过 drizzle 生成，SRE 按常规先备份再执行。
 
 在扩展落地前，DeepSeek Search / Fetch 保留在 backlog，不写进现有表。
+
+## 2026-10-18 更新：先上静态表
+
+在 `tool_api_prices` 表获批前，按次价格先放在 `src/lib/tool-api-pricing.ts`（静态、逐条附官方来源和核验日期），在 `/api-pricing` 页底部「联网搜索 / 抓取工具按次价格」区块展示。不写数据库，不进 token 价格的排序与换算。表落地后迁移这份数据即可。
