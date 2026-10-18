@@ -11,11 +11,20 @@ import { getCheapestChannel, getCheapestOfficialChannel, usd } from '@/lib/chann
 import { formatPrice, type CurrencyCode } from '@/lib/currency';
 import { getProviderLogoSrc } from '@/lib/provider-branding';
 import { formatModelName } from '@/lib/model-names';
+import { LimitedTimeOfferFlag, LimitedTimeOfferToggle } from '@/components/limited-time-offer';
+import { applyPromoFilter, filteredListMetadata, isPromoFilter, modelHasLimitedTimeOffer } from '@/lib/limited-time-offer';
 import { buildMetadata, breadcrumbList, jsonLd, SITE_URL, type Locale } from '@/lib/seo';
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ promo?: string | string[] }>;
+}): Promise<Metadata> {
   const { locale } = await params;
-  return buildMetadata({
+  const promoFiltered = isPromoFilter((await searchParams)?.promo);
+  const metadata = buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: '/models',
     title: {
@@ -26,7 +35,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       en: 'Browse general-purpose LLMs and reasoning models with provider, context window, benchmark signals, API channel coverage and lowest available API price.',
       zh: '浏览通用大模型与推理模型，包含供应商、上下文长度、benchmark 信号、API 渠道覆盖和最低可用 API 价格。',
     },
+    noindex: promoFiltered,
   });
+  // Root layout sets googleBot.index. Replace the whole robots object when
+  // filtered so that flag cannot keep a noindex page eligible.
+  if (!promoFiltered) return metadata;
+  return { ...metadata, robots: filteredListMetadata(locale, '/models', true).robots };
 }
 
 function formatContext(ctx: number | null | undefined, locale: string): string {
@@ -58,10 +72,18 @@ function providerLogo(model: GroupedProduct): string | null {
   return getProviderLogoSrc(model.providers);
 }
 
-export default async function ModelsCatalogPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function ModelsCatalogPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ promo?: string | string[] }>;
+}) {
   const { locale } = await params;
   const isZh = locale === 'zh';
-  const models = (await getGroupedProducts('llm'))
+  const now = new Date();
+  const promoParam = (await searchParams)?.promo;
+  const loaded = (await getGroupedProducts('llm', undefined, now))
     .filter((model) => model.versions.length > 0 || model.benchmark_arena_elo != null)
     .sort((a, b) => {
       const aScore = a.benchmark_arena_elo ?? -1;
@@ -69,6 +91,7 @@ export default async function ModelsCatalogPage({ params }: { params: Promise<{ 
       if (bScore !== aScore) return bScore - aScore;
       return b.versionCounts - a.versionCounts || a.name.localeCompare(b.name);
     });
+  const { models, filtered: promoFiltered } = applyPromoFilter(loaded, promoParam, now);
   const featured = models.slice(0, 12);
 
   const crumbs = breadcrumbList([
@@ -133,9 +156,15 @@ export default async function ModelsCatalogPage({ params }: { params: Promise<{ 
                 {isZh ? '按 benchmark 信号、渠道覆盖和模型名称排序。点击任意模型查看完整渠道价格、套餐和详情。' : 'Sorted by benchmark signal, channel coverage and model name. Open any model for full channel pricing, plans and details.'}
               </p>
             </div>
-            <Badge variant="outline">{models.length}</Badge>
+            <div className="flex items-center gap-3">
+              <LimitedTimeOfferToggle locale={locale} path="/models" active={promoFiltered} />
+              <Badge variant="outline">{models.length}</Badge>
+            </div>
           </div>
 
+          {models.length === 0 && (
+            <p className="text-sm text-zinc-500">{isZh ? '当前没有未过期的限时优惠。' : 'No limited-time offers are active.'}</p>
+          )}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {models.map((model) => {
               const logo = providerLogo(model);
@@ -182,6 +211,7 @@ export default async function ModelsCatalogPage({ params }: { params: Promise<{ 
                       <div className="mt-5 flex flex-wrap gap-2">
                         {model.hasGlobalVersion && <Badge variant="secondary">Global</Badge>}
                         {model.hasChinaVersion && <Badge variant="secondary">China</Badge>}
+                        {modelHasLimitedTimeOffer(model, now) && <LimitedTimeOfferFlag locale={locale} />}
                         {savings && <Badge variant="outline">{savings}</Badge>}
                         {model.variantTags?.slice(0, 2).map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>)}
                       </div>

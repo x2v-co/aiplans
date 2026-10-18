@@ -4,10 +4,10 @@ import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { getTranslations } from 'next-intl/server';
 import type { ChannelPrice, GroupedProduct } from '@/lib/grouped-products';
 import { formatModelName } from '@/lib/model-names';
-import { introductoryEndDate, isIntroductoryPriceActive } from '@/lib/effective-price';
+import { LimitedTimeOfferMark } from '@/components/limited-time-offer';
 import { providerModelPath, formatProviderApiPrice } from '@/lib/provider-page';
 
-export async function ProviderApiModels({ products, locale }: { products: GroupedProduct[]; locale: string }) {
+export async function ProviderApiModels({ products, locale, now }: { products: GroupedProduct[]; locale: string; now: Date }) {
   const t = await getTranslations({ locale, namespace: 'providerPage' });
   if (!products.length) return <p className="text-zinc-500">{t('noApiModels')}</p>;
   const price = (value: number | null | undefined, row: Pick<ChannelPrice, 'currency' | 'price_unit'>) =>
@@ -30,7 +30,7 @@ export async function ProviderApiModels({ products, locale }: { products: Groupe
                 </Link>
                 <ChannelTermsBadges terms={row} />
                           <DeepSeekWindowPrices variants={row.price_variants} />
-                {isIntroductoryPriceActive(row) && <p className="mt-1 text-xs font-normal text-zinc-500">{t('introductoryUntil', { date: introductoryEndDate(row.promo_ends_at!, locale) })}</p>}
+                <LimitedTimeOfferMark row={row} locale={locale} now={now} />
                 {!!row.price_variants?.length && (
                   <details className="mt-2 font-normal">
                     <summary className="cursor-pointer text-xs text-zinc-500">{t('priceVariants')}</summary>
