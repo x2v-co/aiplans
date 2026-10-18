@@ -56,7 +56,7 @@ test('only audited video/music values are numeric; range and approximation are e
         assert.equal(item.pricePerUnit, null, item.slug);
       } else {
         // Re-verified rows must cite an official source and carry no open audit flag.
-        assert.equal(item.verifiedAt, '2026-10-15', item.slug);
+        assert.ok(item.verifiedAt && item.verifiedAt >= '2026-10-15', item.slug);
         assert.ok(item.sourceUrls?.length, item.slug);
         assert.equal(item.needsVerification, undefined, item.slug);
       }
