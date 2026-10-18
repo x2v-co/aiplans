@@ -5,7 +5,8 @@ import { seedChanges } from './gemini-4-argon';
 import { keepUnavailableForSeed } from '../utils/manual-unavailable';
 import { auditVerticalModelFields, isAuditOwnedVertical } from './catalog-audit-vertical';
 import { AUDIT_TIMESTAMP, OPENROUTER_ADDITIONS, auditedModelSlug, auditedPrices,
-  LEGACY_PRO_NOTE, MAX_API_CREDIT_NOTE, cleanLegacyFeatures } from './catalog-audit-2026-10-15';
+  LEGACY_PRO_NOTE, cleanLegacyFeatures } from './catalog-audit-2026-10-15';
+import { claudeCreditValues } from './claude-api-credits-2026-10-18';
 
 type Row = Record<string, unknown> & { id: number };
 type Table = 'providers' | 'models' | 'api_channel_prices' | 'usage_prices' | 'plans' | 'api_channel_price_variants';
@@ -192,8 +193,9 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
   }
   for (const p of maxes.filter(r => r !== generic || r === max5)) {
     if (p.price !== 100 && p.price !== 200) throw new Error(`Unexpected Claude Max price on ${p.slug}; review audit scope.`);
-    await save('plans', p, { access_from_china: false, monthly_api_credit_usd: null,
-      monthly_api_credit_status: 'needs-verification', notes: String(p.notes ?? '').includes(MAX_API_CREDIT_NOTE) ? p.notes : [p.notes, MAX_API_CREDIT_NOTE].filter(Boolean).join('\n'),
+    // 2026-10-18: credit amounts verified (claude-api-credits-2026-10-18); never re-add [needs-verification].
+    await save('plans', p, { access_from_china: false,
+      ...claudeCreditValues({ slug: p.price === 100 ? 'claude-max-5x' : 'claude-max-20x', notes: p.notes }),
       source: 'manual', last_verified: AUDIT_TIMESTAMP }, `anthropic/${p.slug}`);
   }
   return steps;

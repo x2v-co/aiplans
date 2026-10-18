@@ -19,9 +19,9 @@ export const DEEPSEEK_CN_HOLIDAYS: readonly string[] = [
 export const DEEPSEEK_HOLIDAY_SOURCE = 'https://www.gov.cn/zhengce/zhengceku/202511/content_7047091.htm';
 export const DEEPSEEK_SOURCE = 'https://api-docs.deepseek.com/quick_start/pricing';
 export const DEEPSEEK_PEAK_SCHEDULE = '01:00-04:00 & 06:00-10:00 UTC Mon-Fri, excluding CN public holidays; weekends and CN public holidays are off-peak all day';
-// Verified facts, 2026-10-15. Flash's legacy catalog slug is reused by the scraper.
+// Verified facts, 2026-10-15; Flash version renamed DeepSeek-V4.1-Flash-1017 on the official page (checked 2026-10-18). Flash's legacy catalog slug is reused by the scraper.
 export const DEEPSEEK_MODELS = [
-  { slug: 'deepseek-v4-flash', apiId: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash', peak: { input: 0.30, output: 1.20, cache: 0.006 } },
+  { slug: 'deepseek-v4-flash', apiId: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash-1017', peak: { input: 0.30, output: 1.20, cache: 0.006 } },
   { slug: 'deepseek-v4-pro', apiId: 'deepseek-v4-pro', name: 'DeepSeek-V4-Pro-0813', peak: { input: 1.32, output: 3.96, cache: 0.044 } },
 ] as const;
 
@@ -85,3 +85,7 @@ export function deepseekObservations(raw?: Record<string, unknown> | null): Deep
   }
   return result;
 }
+
+/** Official CNY list (peak) from the Chinese pricing page, checked 2026-10-18. Off-peak = 50%. */
+export const DEEPSEEK_CN_SOURCE = 'https://api-docs.deepseek.com/zh-cn/quick_start/pricing';
+export const DEEPSEEK_FLASH_CNY_PEAK = { input: 2, output: 8, cache: 0.04 } as const;

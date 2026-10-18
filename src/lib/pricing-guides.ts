@@ -243,13 +243,13 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     },
     queryPatterns: ['%claude%'],
     providerSlugs: ['anthropic'],
-    reviewedAt: '2026-10-13',
+    reviewedAt: '2026-10-18',
     sections: [
       {
-        heading: { en: 'API cost versus subscription price', zh: 'API 成本与订阅价格' },
+        heading: { en: 'API cost versus subscription price, and included API credits', zh: 'API 成本、订阅价格与附赠 API 额度' },
         body: {
-          en: 'A subscription does not normally include general-purpose API credits. Estimate API spend from token volume, then compare subscriptions separately for interactive chat or coding workflows.',
-          zh: '订阅通常不包含通用 API 额度。API 支出应根据 token 用量估算；交互式聊天或编程工作流则应单独比较订阅套餐。',
+          en: 'Max and Team plans include monthly Claude API credits: Max 5x $100, Max 20x $200; Team $20 per Standard seat and $100 per Premium seat, pooled across the team and capped at $500. Free, Pro and Enterprise get none. Credits are claimed by linking a Claude Console organization, after 7 days on an eligible plan. They cover only the Claude API, Claude Managed Agents, the Claude Agent SDK and the playground in the Claude Console, not Claude Code, extra usage in the Claude apps, or Claude on AWS, Bedrock, Google Cloud (Vertex AI) or Microsoft Foundry. They refresh each billing cycle (monthly on annual plans) and expire unused, with no rollover. Estimate API spend from token volume; anything above the credit is billed at normal API rates.',
+          zh: 'Max 与 Team 套餐每月附赠 Claude API 额度：Max 5x 为 100 美元，Max 20x 为 200 美元；Team 的 Standard 席位每席 20 美元、Premium 席位每席 100 美元，全团队合并为一个余额，上限 500 美元。Free、Pro 与 Enterprise 不附赠。需在订阅满 7 天后关联一个 Claude Console 组织领取，仅可用于 Claude Console 中的 Claude API、Claude Managed Agents、Claude Agent SDK 和 Playground，不能用于 Claude Code、Claude 应用的超额用量，也不能用于 AWS、Bedrock、Google Cloud（Vertex AI）或 Microsoft Foundry 上的 Claude。额度每个账单周期发放（年付按月发放），当期未用完即作废、不滚存。API 支出仍应按 token 用量估算，超出额度的部分按常规 API 价格计费。',
         },
       },
       {
@@ -283,6 +283,10 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     ],
     faqs: [
       {
+        question: { en: 'Can Max or Team API credits pay for Claude Code?', zh: 'Max 或 Team 附赠的 API 额度能用于 Claude Code 吗？' },
+        answer: { en: 'No. The monthly credits cover only the Claude API, Managed Agents, the Agent SDK and the playground in the Claude Console. Claude Code, extra usage in the Claude apps, and Claude on Bedrock, Vertex AI or Foundry are excluded, and unused credits expire each billing cycle.', zh: '不能。每月附赠额度仅可用于 Claude Console 中的 Claude API、Managed Agents、Agent SDK 和 Playground；Claude Code、Claude 应用的超额用量以及 Bedrock、Vertex AI、Foundry 上的 Claude 都不适用，未用完的额度在每个账单周期结束时作废。' },
+      },
+      {
         question: { en: 'Does every cached token use the read rate?', zh: '所有缓存 token 都按读取价收费吗？' },
         answer: { en: 'No. A cache creation uses the write rate for its lifetime; later hits use the read rate. Use the separate usage counters and model-specific multipliers.', zh: '不是。创建缓存按对应存续时间的写入价计费，后续命中才按读取价计费。应使用独立用量计数及具体模型的倍率。' },
       },
@@ -301,6 +305,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     ],
     sources: [
       { label: { en: 'Anthropic official Claude pricing and billing mechanisms', zh: 'Anthropic 官方 Claude 价格与计费机制' }, url: 'https://docs.anthropic.com/en/docs/about-claude/pricing' },
+      { label: { en: 'Claude docs: API credits for Max and Team subscribers (verified 2026-10-18)', zh: 'Claude 官方文档：Max 与 Team 订阅附赠 API 额度（2026-10-18 核验）' }, url: 'https://platform.claude.com/docs/en/about-claude/api-credits-for-subscribers' },
     ],
   },
   'grok-pricing': {

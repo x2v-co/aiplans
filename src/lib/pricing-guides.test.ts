@@ -90,7 +90,7 @@ test('every guide has reviewed sources, at least three FAQs and complete bilingu
   for (const slug of PRICING_GUIDE_SLUGS) {
     const guide = PRICING_GUIDES[slug];
     assert.ok(guide.sources && guide.sources.length >= 1, `missing sources for ${slug}`);
-    assert.equal(guide.reviewedAt, '2026-10-13');
+    assert.equal(guide.reviewedAt, slug === 'claude-anthropic-pricing' ? '2026-10-18' : '2026-10-13');
     assert.ok(guide.reviewedAt && Number.isFinite(Date.parse(guide.reviewedAt)));
     assert.ok(guide.faqs && guide.faqs.length >= 3, `missing FAQs for ${slug}`);
     guide.sources.forEach((source) => assert.equal(new URL(source.url).protocol, 'https:'));
@@ -234,4 +234,12 @@ test('guide examples and cheapest selection use scheduled regular prices after i
   const after = summarizeGuidePrices(prices, new Date('2026-12-01T08:00:00Z'))[0];
   assert.equal(after.cheapest.providerSlug, 'other');
   assert.equal(after.exampleCostUsd, 6.75);
+});
+
+test('Claude guide reflects subscriber API credits from the official doc', () => {
+  const guide = PRICING_GUIDES['claude-anthropic-pricing'];
+  const text = JSON.stringify(guide);
+  assert.doesNotMatch(text, /订阅通常不包含通用 API 额度|does not normally include general-purpose API credits/);
+  for (const needle of ['100 美元', '200 美元', '500 美元', '$100', '$200', '$500', 'Claude Code', '不滚存', 'no rollover']) assert.ok(text.includes(needle), needle);
+  assert.ok(guide.sources?.some(s => s.url === 'https://platform.claude.com/docs/en/about-claude/api-credits-for-subscribers'));
 });

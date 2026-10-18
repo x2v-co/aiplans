@@ -87,9 +87,10 @@ test('apply is idempotent and preserves producer ownership, new Pro, unknowns an
   assert.deepEqual(f.data.plans[0].features, ['Keep feature']);
   for (const p of f.data.plans.filter(r => r.provider_id === 2)) {
     assert.equal(p.access_from_china, false);
-    assert.equal(p.monthly_api_credit_usd, null);
-    assert.equal(p.monthly_api_credit_status, 'needs-verification');
-    assert.match(String(p.notes), /claude.com\/pricing/);
+    assert.equal(p.monthly_api_credit_usd, p.price === 100 ? 100 : 200);
+    assert.equal(p.monthly_api_credit_status, null);
+    assert.doesNotMatch(String(p.notes), /needs-verification/);
+    assert.match(String(p.notes), /api-credits-for-subscribers/);
   }
   assert.match(String(f.data.plans[2].notes), /Existing fact/);
   const or = f.data.providers.find(r => r.slug === 'openrouter')!;
