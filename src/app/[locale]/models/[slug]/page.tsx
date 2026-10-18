@@ -1,5 +1,6 @@
 import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
-import { effectivePrice, introductoryEndDate, isIntroductoryPriceActive, type PriceSchedule } from '@/lib/effective-price';
+import { LimitedTimeOfferMark } from '@/components/limited-time-offer';
+import { effectivePrice } from '@/lib/effective-price';
 import { modelShutdownNotice } from '@/lib/model-shutdown';
 import { getTranslations } from 'next-intl/server';
 import Link from "next/link";
@@ -135,7 +136,7 @@ function channelCurrency(cp: { currency?: string | null } | null | undefined): C
   return (cp?.currency || 'USD') as CurrencyCode;
 }
 
-async function getProductWithChannels(slug: string) {
+async function getProductWithChannels(slug: string, now = new Date()) {
   // Get model with provider info
   const [model] = await sql<any[]>`
     SELECT id, name, slug, type, description, context_window, max_output_tokens,
@@ -197,7 +198,6 @@ async function getProductWithChannels(slug: string) {
     ORDER BY cp.input_price_per_1m ASC NULLS LAST
   `;
 
-  const now = new Date();
   const normalizedChannelPrices = rawChannelPrices.map(cp => effectivePrice(cp, now));
 
   // Related models from the same producer (provider_ids[1] is the primary
@@ -357,8 +357,9 @@ export default async function ModelPage({
 }) {
   const { locale, slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
+  const now = new Date();
   const [data, couponByProvider] = await Promise.all([
-    getProductWithChannels(slug),
+    getProductWithChannels(slug, now),
     getActiveCouponMap('api'),
   ]);
 
@@ -373,8 +374,6 @@ export default async function ModelPage({
   // nothing for the vast majority of models that AA has not evaluated.
   const codingAgentRows = await getCodingAgentRowsForModel(product.id);
   const isZh = locale === 'zh';
-  const promoMessages = await getTranslations({ locale, namespace: 'modelPricing' });
-  const now = new Date();
   const productName = formatModelName(product.name);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
   const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);
@@ -970,15 +969,7 @@ export default async function ModelPage({
                           </div>
                           <ChannelTermsBadges terms={cp} />
                           <DeepSeekWindowPrices variants={cp.price_variants} />
-                          {isIntroductoryPriceActive(cp, now) && cp.regular_input_price_per_1m != null && cp.regular_output_price_per_1m != null && (
-                            <p className="mt-1 max-w-xs whitespace-normal text-xs font-normal text-zinc-500">
-                              {promoMessages('introductoryPrice', {
-                                date: introductoryEndDate(cp.promo_ends_at, locale),
-                                input: new Intl.NumberFormat(locale, { style: 'currency', currency: channelCurrency(cp), currencyDisplay: 'narrowSymbol', minimumFractionDigits: 0, maximumFractionDigits: 6 }).format(cp.regular_input_price_per_1m),
-                                output: new Intl.NumberFormat(locale, { style: 'currency', currency: channelCurrency(cp), currencyDisplay: 'narrowSymbol', minimumFractionDigits: 0, maximumFractionDigits: 6 }).format(cp.regular_output_price_per_1m),
-                              })}
-                            </p>
-                          )}
+                          <LimitedTimeOfferMark row={cp} locale={locale} now={now} />
                         </TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${channelTypeLabels[cp.providers.type]?.color || 'bg-gray-100'}`}>

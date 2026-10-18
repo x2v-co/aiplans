@@ -1,7 +1,9 @@
 import { getApiPricingSeoData } from "@/lib/pricing-seo-data";
 import { buildApiPricingSeo } from "@/lib/pricing-seo";
 import { getActiveCouponMap } from "@/lib/coupons";
+import { applyPromoFilter, filteredListMetadata } from "@/lib/limited-time-offer";
 import { breadcrumbList, faqPage, jsonLd, SITE_URL, type Locale } from "@/lib/seo";
+import type { Metadata } from "next";
 import { computeApiPricingStats } from "@/lib/api-pricing-copy";
 import ApiPricingView from "./api-pricing-view";
 import { ToolApiPricingSection } from "@/components/tool-api-pricing-section";
@@ -15,6 +17,19 @@ import { ToolApiPricingSection } from "@/components/tool-api-pricing-section";
  * The interactive parts (search, sort, filters) live in api-pricing-view.tsx and
  * are unchanged; only where the data comes from moved.
  */
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ promo?: string | string[] }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const { promo } = await searchParams;
+  const { filtered } = applyPromoFilter([], promo);
+  return filteredListMetadata(locale, '/api-pricing', filtered);
+}
+
 export default async function ApiPricingPage({
   params,
   searchParams,
@@ -27,14 +42,17 @@ export default async function ApiPricingPage({
     china?: string;
     region?: string;
     channel?: string;
+    promo?: string | string[];
   }>;
 }) {
   const { locale } = await params;
-  const { q, sort, order, china, region, channel } = await searchParams;
+  const { q, sort, order, china, region, channel, promo } = await searchParams;
+  const now = new Date();
   const [{ products, updatedAt }, couponByProvider] = await Promise.all([
     getApiPricingSeoData(),
     getActiveCouponMap('api'),
   ]);
+  const { models: listedProducts, filtered: promoOnly } = applyPromoFilter(products, promo, now);
 
   // The capability cards on /compare/plans deep-link here (Arena ranking,
   // longest context, cheapest, China-reachable). Validate whitelist-style so
@@ -55,8 +73,8 @@ export default async function ApiPricingPage({
 
   // Data-driven FAQ + stats, shared between the visible section and the JSON-LD.
   const loc = (locale === "zh" ? "zh" : "en") as Locale;
-  const stats = computeApiPricingStats(products);
-  const copy = buildApiPricingSeo(products, updatedAt, loc);
+  const stats = computeApiPricingStats(listedProducts);
+  const copy = buildApiPricingSeo(listedProducts, updatedAt, loc);
   const faqs = copy.faqs;
 
   const crumbs = breadcrumbList([
@@ -73,8 +91,8 @@ export default async function ApiPricingPage({
       loc === "zh"
         ? "AI 模型 API 价格一览"
         : "AI model API price list",
-    numberOfItems: products.length,
-    itemListElement: products.map((p, i) => ({
+    numberOfItems: listedProducts.length,
+    itemListElement: listedProducts.map((p, i) => ({
       "@type": "ListItem",
       position: i + 1,
       url: `${SITE_URL}/${locale}/models/${p.slug}`,
@@ -89,13 +107,15 @@ export default async function ApiPricingPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage(faqs) }} />
       <ApiPricingView
         locale={locale}
-        products={products}
+        products={listedProducts}
         initialQuery={q}
         initialFilters={initialFilters}
         stats={stats}
         copy={copy}
         faqs={faqs}
         couponByProvider={couponByProvider}
+        promoOnly={promoOnly}
+        requestedAt={now.toISOString()}
       />
       <ToolApiPricingSection locale={locale} />
     </>

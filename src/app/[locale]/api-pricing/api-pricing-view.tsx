@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowRight, BarChart3, BookOpen, Check, ExternalLink, Filter, Search, Globe, MapPin, HelpCircle } from "lucide-react";
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
-import { PromoPriceNotice } from '@/components/promo-price-notice';
+import { LimitedTimeOfferMark, LimitedTimeOfferToggle } from '@/components/limited-time-offer';
 import SiteHeader from '@/components/SiteHeader';
 import {
   formatPrice,
@@ -104,6 +104,8 @@ export default function ApiPricingView({
   copy,
   faqs,
   couponByProvider,
+  promoOnly = false,
+  requestedAt,
 }: {
   locale: string;
   products: GroupedProduct[];
@@ -116,9 +118,14 @@ export default function ApiPricingView({
   faqs: FaqItem[];
   /** Active api-scoped coupons keyed by provider slug. */
   couponByProvider: Record<string, CouponOffer[]>;
+  /** Server already limited `products` to unexpired offers when true. */
+  promoOnly?: boolean;
+  /** Request time. The offer mark must not read the browser clock. */
+  requestedAt: string;
 }) {
   const t = useTranslations('apiPricing');
   const isZh = locale === "zh";
+  const offerNow = new Date(requestedAt);
 
   // 获取嵌套翻译的辅助函数
   const tChina = () => t('china' as any);
@@ -388,7 +395,20 @@ export default function ApiPricingView({
                 </Select>
               </div>
 
-              <div className="lg:col-span-2 flex items-center gap-2">
+              <div className="lg:col-span-2 flex flex-wrap items-center gap-4">
+                <LimitedTimeOfferToggle
+                  locale={locale}
+                  path="/api-pricing"
+                  active={promoOnly}
+                  preserve={{
+                    q: initialQuery,
+                    sort: initialFilters?.sortBy,
+                    order: initialFilters?.sortOrder,
+                    china: initialFilters?.chinaAccessOnly ? '1' : undefined,
+                    region: initialFilters?.regionFilter && initialFilters.regionFilter !== 'all' ? initialFilters.regionFilter : undefined,
+                    channel: initialFilters?.channelTypeFilter && initialFilters.channelTypeFilter !== 'all' ? initialFilters.channelTypeFilter : undefined,
+                  }}
+                />
                 <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -574,6 +594,8 @@ export default function ApiPricingView({
                                         </div>
                                       </div>
                                     </div>
+                                    <LimitedTimeOfferMark row={chinaVersion} locale={locale} now={offerNow} />
+                                    <LimitedTimeOfferMark row={globalVersion} locale={locale} now={offerNow} />
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <Badge variant="outline">
@@ -710,7 +732,7 @@ export default function ApiPricingView({
                                     </div>
                                     <ChannelTermsBadges terms={cp} />
                           <DeepSeekWindowPrices variants={cp.price_variants} />
-                                    <PromoPriceNotice row={cp} locale={locale} />
+                                    <LimitedTimeOfferMark row={cp} locale={locale} now={offerNow} />
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <Badge variant="outline">

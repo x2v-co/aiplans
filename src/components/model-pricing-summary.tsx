@@ -1,4 +1,4 @@
-import { introductoryEndDate, isIntroductoryPriceActive } from '@/lib/effective-price';
+import { LimitedTimeOfferMark } from '@/components/limited-time-offer';
 import { pricingDate, pricingLabel, type buildModelPricingSeo } from '@/lib/model-pricing-seo';
 
 export default function ModelPricingSummary({ pricing, locale, now }: {
@@ -27,7 +27,7 @@ export default function ModelPricingSummary({ pricing, locale, now }: {
                 {row.providers?.name || (isZh ? '渠道' : 'Channel')}
                 {pricing.official.includes(row) && <span className="ml-2">{isZh ? '官方' : 'Official'}</span>}
                 {row === pricing.cheapest && <span className="ml-2 text-green-700 dark:text-green-400">{isZh ? '最低输入价' : 'Lowest input'}</span>}
-                {isIntroductoryPriceActive(row, now) && <div className="text-xs font-normal">{isZh ? '首发优惠至' : 'Introductory through'} {introductoryEndDate(row.promo_ends_at!, locale)}</div>}
+                <LimitedTimeOfferMark row={row} locale={locale} now={now} />
               </th>
               <td className="px-2 py-2 whitespace-nowrap">{pricingLabel(row.input_price_per_1m, row.currency)}</td>
               <td className="px-2 py-2 whitespace-nowrap">{pricingLabel(row.output_price_per_1m, row.currency)}</td>

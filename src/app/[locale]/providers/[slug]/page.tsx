@@ -119,8 +119,9 @@ export default async function ProviderPage({
   }
 
   const { provider, models, plans } = data;
+  const now = new Date();
   const [apiModels, t, quotaEstimates] = await Promise.all([
-    getGroupedProducts(null, provider.id),
+    getGroupedProducts(null, provider.id, now),
     getTranslations({ locale, namespace: 'providerPage' }),
     getVerifiedQuotaEstimates(plans.map(plan => plan.slug)),
   ]);
@@ -252,7 +253,7 @@ export default async function ProviderPage({
             <ProviderOutboundLink url={provider.pricing_url} providerSlug={providerSlug} locale={locale} label={t('pricing')} />
             <ProviderOutboundLink url={provider.console_url} providerSlug={providerSlug} locale={locale} label={t('console')} />
           </div>
-          <ProviderApiModels products={apiModels} locale={locale} />
+          <ProviderApiModels products={apiModels} locale={locale} now={now} />
         </section>
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">

@@ -130,7 +130,7 @@ export function isCanonicalSlug(slug: string): boolean {
     && !/\d+\.\d+\.\d+$/.test(slug);
 }
 
-export async function getGroupedProducts(type?: string | null, providerId?: number): Promise<GroupedProduct[]> {
+export async function getGroupedProducts(type?: string | null, providerId?: number, now = new Date()): Promise<GroupedProduct[]> {
   // Without a provider filter, preserve the API-pricing LLM catalog.
   // Provider pages include every available model category sold by that channel.
   const [modelsData, channelPrices, benchmarkScores] = await Promise.all([
@@ -228,7 +228,6 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
     `,
   ]);
 
-  const now = new Date();
   const effectiveChannelPrices = channelPrices.map(cp => effectivePrice(cp, now));
   const products = await attachPrimaryProvidersToModels(modelsData as any[]);
 
