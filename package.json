@@ -115,7 +115,13 @@
     "seed:glimpse-decider:apply": "tsx scripts/seed-glimpse-decider-2026-10-17.ts --apply",
     "seed:reflection-beam": "tsx scripts/seed-reflection-beam-2026-10-17.ts",
     "seed:gemini-advanced-argon": "tsx scripts/seed-gemini-advanced-argon-2026-10-17.ts",
-    "seed:gemini-advanced-argon:apply": "tsx scripts/seed-gemini-advanced-argon-2026-10-17.ts --apply"
+    "seed:gemini-advanced-argon:apply": "tsx scripts/seed-gemini-advanced-argon-2026-10-17.ts --apply",
+    "seed:deepseek-flash-1017-display": "tsx scripts/seed-deepseek-flash-1017-display-2026-10-18.ts",
+    "seed:deepseek-flash-1017-display:apply": "tsx scripts/seed-deepseek-flash-1017-display-2026-10-18.ts --apply",
+    "seed:vercel-deepseek-flash-1017": "tsx scripts/seed-vercel-deepseek-flash-1017-2026-10-18.ts",
+    "seed:vercel-deepseek-flash-1017:apply": "tsx scripts/seed-vercel-deepseek-flash-1017-2026-10-18.ts --apply",
+    "seed:opencode-console-security": "tsx scripts/seed-opencode-console-security-2026-10-18.ts",
+    "seed:opencode-console-security:apply": "tsx scripts/seed-opencode-console-security-2026-10-18.ts --apply"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

@@ -41,3 +41,7 @@
 ## 2026-10-18 更新：先上静态表
 
 在 `tool_api_prices` 表获批前，按次价格先放在 `src/lib/tool-api-pricing.ts`（静态、逐条附官方来源和核验日期），在 `/api-pricing` 页底部「联网搜索 / 抓取工具按次价格」区块展示。不写数据库，不进 token 价格的排序与换算。表落地后迁移这份数据即可。
+
+## 2026-10-18 午报复核
+
+Intel 12:52 午报仍写「Search/Fetch 按次价仍未入库」。当前维持静态表（`src/lib/tool-api-pricing.ts` + `/api-pricing` 底部区块）；`tool_api_prices` 表尚未获批，本轮不擅自建表。建议 PM 开需求卡走老板批准后再做 schema 迁移与 seed。
