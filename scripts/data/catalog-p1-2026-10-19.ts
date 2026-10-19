@@ -135,6 +135,7 @@ export interface QwenCnChannel {
   price_unit: string | null;
   notes: string | null;
   is_available: boolean | null;
+  availability_locked?: boolean | null;
 }
 export interface QwenCnVariant {
   id: number;
@@ -152,9 +153,26 @@ export interface QwenCnVariant {
   source_url: string | null;
   notes: string | null;
 }
+/**
+ * A channel whose notes record the model as retired by the vendor (e.g. the
+ * qwen-flash #14836 report) is not a live price. Do not reprice it or add bands.
+ *
+ * The scraper's own soft-retire marker ("retired <ts>: absent from successful
+ * full-catalog Qwen scrape") is not a vendor retirement: index-dynamic writes
+ * it when one run misses a model, and the next run that sees the model turns
+ * the row back on but leaves the marker in notes. That marker is ignored here.
+ */
+export const RETIRED_NOTE = /\bretired\b|已(?:退役|下线)/i;
+const SCRAPE_RETIRE_MARKER = /\|?\s*retired \S+: absent from successful full-catalog [^|]*/gi;
+export function channelRetired(notes: string | null | undefined): boolean {
+  return RETIRED_NOTE.test(String(notes ?? '').replace(SCRAPE_RETIRE_MARKER, ''));
+}
+
 export interface QwenCnPlan {
   missing: string[];
   disabled: string[];
+  /** Channels whose notes say retired: no price/variant writes, only is_available → false. */
+  retired: Array<{ id: number; slug: string; channelAvailable: boolean; variantIds: number[] }>;
   channelInserts: Array<{ model_id: number; slug: string; input: number; output: number }>;
   channelUpdates: Array<{ id: number; slug: string; changes: Record<string, { from: unknown; to: unknown }> }>;
   variantInserts: Array<{ model_id: number; slug: string; band: QwenCnBand }>;
@@ -185,6 +203,7 @@ export function planQwenCnPrices(
 ): QwenCnPlan {
   const missing: string[] = [];
   const disabled: string[] = [];
+  const retired: QwenCnPlan['retired'] = [];
   const channelInserts: QwenCnPlan['channelInserts'] = [];
   const channelUpdates: QwenCnPlan['channelUpdates'] = [];
   const variantInserts: QwenCnPlan['variantInserts'] = [];
@@ -202,6 +221,16 @@ export function planQwenCnPrices(
     const headline = spec.bands.find(band => band.headline)!;
     if (rows.length === 0) {
       channelInserts.push({ model_id: model.id, slug: spec.slug, input: headline.input, output: headline.output });
+    } else if (channelRetired(rows[0].notes)) {
+      // Retired wins over the price list: skip repricing and the bands, and
+      // switch the channel (and any existing variants) off. Never turns one on.
+      const variantIds = variants
+        .filter(variant => variant.model_id === model.id && variant.is_available !== false)
+        .map(variant => variant.id);
+      const unlocked = rows[0].is_available !== false || rows[0].availability_locked !== true;
+      if (unlocked || variantIds.length) retired.push({ id: rows[0].id, slug: spec.slug, channelAvailable: rows[0].is_available !== false, variantIds });
+      else disabled.push(spec.slug);
+      continue;
     } else if (rows[0].is_available === false) {
       disabled.push(spec.slug);
       continue;
@@ -268,7 +297,7 @@ export function planQwenCnPrices(
       });
     }
   }
-  return { missing, disabled, channelInserts, channelUpdates, variantInserts, variantUpdates };
+  return { missing, disabled, retired, channelInserts, channelUpdates, variantInserts, variantUpdates };
 }
 
 export function catalogP1SeedOptions(args: string[]) {
@@ -367,7 +396,7 @@ export async function seedCatalogP1(tx: Sql, apply = false): Promise<P1Step[]> {
   const qwenIds = qwenModels.map(model => model.id);
   const qwenChannels = qwenIds.length
     ? await tx<QwenCnChannel[]>`
-        SELECT id, model_id, input_price_per_1m, output_price_per_1m, currency, price_unit, notes, is_available
+        SELECT id, model_id, input_price_per_1m, output_price_per_1m, currency, price_unit, notes, is_available, availability_locked
         FROM api_channel_prices WHERE provider_id = ${qwenProviders[0].id} AND model_id IN ${tx(qwenIds)}`
     : [];
   const qwenVariants = qwenIds.length
@@ -431,6 +460,27 @@ export async function seedCatalogP1(tx: Sql, apply = false): Promise<P1Step[]> {
   }
   for (const slug of qwenPlan.missing) {
     steps.push({ table: 'models', target: slug, id: null, changes: { skipped: 'model slug is not in the catalog; Qwen China price was not invented onto a new row' } });
+  }
+  for (const row of qwenPlan.retired) {
+    if (apply) {
+      await tx`UPDATE api_channel_prices SET is_available = false, availability_locked = true, updated_at = ${new Date()}
+        WHERE id = ${row.id}`;
+      if (row.variantIds.length) {
+        await tx`UPDATE api_channel_price_variants SET is_available = false, availability_locked = true, updated_at = ${new Date()}
+          WHERE id IN ${tx(row.variantIds)}`;
+      }
+    }
+    steps.push({
+      table: 'api_channel_prices',
+      target: `qwen/${row.slug}`,
+      id: row.id,
+      changes: {
+        ...(row.channelAvailable ? { is_available: { from: true, to: false } } : {}),
+        availability_locked: true,
+        ...(row.variantIds.length ? { variants_disabled: row.variantIds } : {}),
+        skipped: 'notes say retired; price and context-band variants were not written',
+      },
+    });
   }
   for (const slug of qwenPlan.disabled) {
     steps.push({ table: 'api_channel_prices', target: `qwen/${slug}`, id: null, changes: { skipped: 'qwen channel is disabled; headline and variants were not written' } });

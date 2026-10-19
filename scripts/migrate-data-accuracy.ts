@@ -935,6 +935,10 @@ const MIGRATIONS: Migration[] = [
     name: '036_allow_per_image_unit',
     sql: readFileSync(new URL('../drizzle/0011_allow_per_image_unit.sql', import.meta.url), 'utf8'),
   },
+  {
+    name: '037_channel_availability_lock',
+    sql: readFileSync(new URL('../drizzle/0014_channel_availability_lock.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 async function main() {

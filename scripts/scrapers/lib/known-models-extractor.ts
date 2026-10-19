@@ -133,13 +133,8 @@ export abstract class KnownModelsExtractor extends PlaywrightScraper {
       errors.push(`Empty page body for ${this.getSourceName()} — page may be JS-blocked or geo-restricted`);
     }
     const lines = bodyText.split('\n').map(l => l.trim()).filter(Boolean);
-
-    for (const m of this.models()) {
-      const found = this.extractModel(lines, m);
-      if (found && !prices.some(p => p.modelName === found.modelName)) {
-        prices.push(found);
-      }
-    }
+    const { prices: extracted, warnings } = this.collectPrices(lines);
+    prices.push(...extracted);
 
     if (prices.length === 0) {
       errors.push(`No prices extracted from ${this.getSourceUrl()}; page structure may have changed.`);
@@ -150,7 +145,29 @@ export abstract class KnownModelsExtractor extends PlaywrightScraper {
       source: this.getSourceName(),
       prices,
       errors: errors.length > 0 ? errors : undefined,
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
+  }
+
+  /**
+   * Runs every known model over the page lines. A known model that does not
+   * match (header gone, or its numbers fell outside the expected window) is a
+   * warning, not silence: full-catalog scrapers only retire unseen channels
+   * after a run with zero warnings, so one changed number on the page must not
+   * soft-disable that model's channel.
+   */
+  collectPrices(lines: string[]): { prices: PriceData[]; warnings: string[] } {
+    const prices: PriceData[] = [];
+    const warnings: string[] = [];
+    for (const m of this.models()) {
+      const found = this.extractModel(lines, m);
+      if (!found) {
+        warnings.push(`${m.name}: known model not matched on ${this.getSourceUrl()} (header missing or price outside ${m.minInput}–${m.maxInput} / ${m.minOutput}–${m.maxOutput}); unseen-channel retirement skipped this run`);
+        continue;
+      }
+      if (!prices.some(p => p.modelName === found.modelName)) prices.push(found);
+    }
+    return { prices, warnings };
   }
 
   /**

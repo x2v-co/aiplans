@@ -1009,7 +1009,7 @@ async function main() {
   await databaseSql.begin(async rawTx => {
     const tx = rawTx as unknown as typeof databaseSql;
     for (const table of ['api_channel_prices', 'api_channel_price_variants']) {
-      await tx`UPDATE ${tx(table)} SET is_available = false, updated_at = now()
+      await tx`UPDATE ${tx(table)} SET is_available = false, availability_locked = true, updated_at = now()
         WHERE is_available = true AND model_id IN (SELECT id FROM models
           WHERE shutdown_date <= (now() AT TIME ZONE 'UTC')::date)`;
     }

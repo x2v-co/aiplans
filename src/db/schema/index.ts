@@ -180,6 +180,8 @@ export const apiChannelPrices = pgTable('api_channel_prices', {
   regularCachedInputPricePer1m: real('regular_cached_input_price_per_1m'),
   rateLimit: integer('rate_limit'),
   isAvailable: boolean('is_available').default(true),
+  // true + is_available=false: retired by a person/seed; scraper upserts keep it off.
+  availabilityLocked: boolean('availability_locked').notNull().default(false),
   lastVerified: timestamp('last_verified', { withTimezone: true }),
   notes: text('notes'),
   currency: varchar('currency').default('USD'),
@@ -215,6 +217,7 @@ export const apiChannelPriceVariants = pgTable('api_channel_price_variants', {
   currency: varchar('currency').default('USD'),
   priceUnit: varchar('price_unit').default('per_1m_tokens'),
   isAvailable: boolean('is_available').default(true),
+  availabilityLocked: boolean('availability_locked').notNull().default(false),
   isPublic: boolean('is_public').default(true),
   isSelfService: boolean('is_self_service').default(true),
   isPartnerOnly: boolean('is_partner_only').default(false),

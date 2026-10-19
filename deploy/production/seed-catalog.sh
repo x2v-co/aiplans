@@ -157,6 +157,8 @@ set -o pipefail
   else
     echo "slug set; skip verified creative plans and benchmarks (cannot narrow those seeds)"
   fi
+  echo "=== seed:shutdown-availability dry-run ==="
+  run_scraper npm run seed:shutdown-availability
 } | tee "$record/diff.txt"
 
 test -s "$record/diff.txt"
@@ -174,7 +176,7 @@ set +e
   sh -c 'pg_dump --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --format=custom --data-only --no-owner --no-acl \
     --table=providers --table=models --table=plans --table=model_plan_mapping --table=usage_prices \
     --table=benchmarks --table=benchmark_versions --table=benchmark_tasks --table=benchmark_metrics \
-    --table=model_benchmark_scores' \
+    --table=model_benchmark_scores --table=api_channel_prices --table=api_channel_price_variants' \
   > "$record/backup.dump"
 dump_status=$?
 set -e
@@ -218,8 +220,13 @@ set -o pipefail
   else
     echo "slug set; skip verified creative plans and benchmarks"
   fi
+  # One way (true → false + lock) for channels of models past shutdown_date (UTC).
+  echo "=== seed:shutdown-availability apply ==="
+  run_scraper npm run seed:shutdown-availability -- --apply
   echo "=== audit:verticals:db ==="
   run_scraper npm run audit:verticals:db
+  echo "=== audit:shutdown-availability ==="
+  run_scraper npm run audit:shutdown-availability
 } | tee "$record/apply.txt"
 
 echo "apply finished. record: $record"

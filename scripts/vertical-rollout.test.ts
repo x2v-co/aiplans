@@ -10,6 +10,7 @@ import * as auditVertical from './data/catalog-audit-vertical';
 import * as seedDiff from './utils/seed-diff';
 import type { Sql } from 'postgres';
 import { seedImageModels, seedNonLlm } from './data/non-llm-seed';
+import * as modelShutdown from '../src/lib/model-shutdown';
 
 type Row = Record<string, unknown> & { id: number };
 
@@ -21,6 +22,7 @@ function fixture(initial: Record<string, Row[]> = {}) {
   };
   let nextId = 10000;
   let writes = 0;
+  let clock = '2026-10-15T00:00:00Z';
   const db = {
     from(table: string) {
       assert.ok(Object.hasOwn(data, table), `Unexpected table: ${table}`);
@@ -77,6 +79,7 @@ function fixture(initial: Record<string, Row[]> = {}) {
       '../src/lib/vertical-provider-logos': logos,
       './data/catalog-audit-vertical': auditVertical,
       './utils/seed-diff': seedDiff,
+      '../src/lib/model-shutdown': modelShutdown,
     };
     await runInNewContext(compiled, {
       exports: {}, process, URL,
@@ -85,7 +88,7 @@ function fixture(initial: Record<string, Row[]> = {}) {
         return dependencies[id];
       },
       console: { log: (...values: unknown[]) => messages.push(values.join(' ')), error: (...values: unknown[]) => messages.push(values.join(' ')) },
-      Date: class extends Date { constructor(value: string | number = '2026-10-15T00:00:00Z') { super(value); } },
+      Date: class extends Date { constructor(value: string | number = clock) { super(value); } },
     });
     return { code: process.exitCode, output: messages.join('\n') };
   }
@@ -115,7 +118,7 @@ function fixture(initial: Record<string, Row[]> = {}) {
     };
     return [...await seedNonLlm(tx as unknown as Sql, true), ...await seedImageModels(tx as unknown as Sql, true)];
   }
-  return { data, run, seed, seedNonLlmRows, writeCount: () => writes };
+  return { data, run, seed, seedNonLlmRows, writeCount: () => writes, setClock: (value: string) => { clock = value; } };
 }
 
 test('rollout seeds repair missing/stale audited rows and pass the actual DB audit idempotently', async () => {
@@ -346,6 +349,40 @@ test('discontinued usage rows are marked unavailable by the pricing seed and the
   const after = await f.run('audit-vertical-catalog', ['--db']);
   assert.equal(after.code, 0, after.output);
   assert.doesNotMatch(after.output, /CRITICAL/);
+});
+
+test('usage references of a model past its shutdown_date go unavailable one way, and the DB audit agrees', async () => {
+  const f = fixture();
+  await f.seed();
+  const ending = catalog.AI_VERTICAL_CATALOG.filter(item => item.shutdownDate === '2026-10-22' && !item.deferredDbSeed);
+  assert.ok(ending.length > 0, 'catalog has rows retiring 2026-10-22');
+  const usageOf = (slug: string) => {
+    const model = f.data.models.find(row => row.slug === slug)!;
+    return f.data.usage_prices.filter(row => row.model_id === model.id);
+  };
+  for (const item of ending) for (const row of usageOf(item.slug!)) assert.equal(row.is_available, true, item.slug);
+  assert.equal((await f.run('audit-vertical-catalog', ['--db'])).code, 0);
+
+  // 2026-10-22 00:00 UTC: on the shutdown day the audit expects the reference off.
+  f.setClock('2026-10-22T00:00:00Z');
+  const stale = await f.run('audit-vertical-catalog', ['--db']);
+  assert.equal(stale.code, 1);
+  assert.match(stale.output, new RegExp(`${ending[0].slug}: DB drift: missing usage_prices reference`));
+
+  const seeded = await f.run('seed-vertical-pricing-references', ['--apply']);
+  assert.equal(seeded.code, 0, seeded.output);
+  assert.match(seeded.output, /is_available: true → false/);
+  for (const item of ending) for (const row of usageOf(item.slug!)) assert.equal(row.is_available, false, item.slug);
+  const live = catalog.AI_VERTICAL_CATALOG.find(item => !item.shutdownDate && item.status === 'available' && !item.deferredDbSeed
+    && f.data.models.some(row => row.slug === item.slug));
+  if (live) for (const row of usageOf(live.slug!)) assert.equal(row.is_available, true, live.slug);
+  const after = await f.run('audit-vertical-catalog', ['--db']);
+  assert.equal(after.code, 0, after.output);
+
+  // One way: winding the clock back never turns the rows on again.
+  f.setClock('2026-10-15T00:00:00Z');
+  assert.equal((await f.run('seed-vertical-pricing-references', ['--apply'])).code, 0);
+  for (const item of ending) for (const row of usageOf(item.slug!)) assert.equal(row.is_available, false, item.slug);
 });
 
 test('vertical models seed writes only changed fields', async () => {

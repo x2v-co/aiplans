@@ -7,6 +7,7 @@ import {
   SONNET_45_SHUTDOWN,
   ZHIPU_GLOBAL_PRICES,
   catalogP1SeedOptions,
+  channelRetired,
   planQwenCnPrices,
   planZhipuGlobalPrices,
   qwenHeadline,
@@ -133,11 +134,61 @@ test('a correct Qwen headline is quiet, and a disabled channel is left alone', (
   assert.equal(held.channelUpdates.length + held.variantInserts.length, 0);
 });
 
+test('a retired qwen-flash channel is not repriced, gets no bands, and is switched off and locked', () => {
+  const notes = 'Bailian lists qwen-flash as retired 2026-08-20; use qwen3.5-flash.';
+  const plan = planQwenCnPrices(
+    [{ id: 8, slug: 'qwen-flash' }, { id: 2, slug: 'qwen3.5-flash' }],
+    [
+      { id: 14836, model_id: 8, input_price_per_1m: 0.2, output_price_per_1m: 2, currency: 'CNY', price_unit: 'per_1m_tokens', notes, is_available: true },
+      { id: 14835, model_id: 2, input_price_per_1m: 0.2, output_price_per_1m: 2, currency: 'CNY', price_unit: 'per_1m_tokens', notes: QWEN_CN_NOTE, is_available: true },
+    ],
+    [qwenVariant({ id: 91, model_id: 8, variant_key: 'context-le-128k' }), qwenVariant({ id: 92, model_id: 8, variant_key: 'old', is_available: false })],
+  );
+  assert.deepEqual(plan.retired, [{ id: 14836, slug: 'qwen-flash', channelAvailable: true, variantIds: [91] }]);
+  assert.ok(!plan.channelUpdates.some(row => row.slug === 'qwen-flash'));
+  assert.ok(!plan.variantInserts.some(row => row.slug === 'qwen-flash'));
+  assert.ok(!plan.variantUpdates.some(row => row.slug === 'qwen-flash'));
+  // Other Qwen rows still get their prices.
+  assert.ok(plan.variantInserts.some(row => row.slug === 'qwen3.5-flash'));
+  // Already off and locked: nothing left to do.
+  const done = planQwenCnPrices(
+    [{ id: 8, slug: 'qwen-flash' }],
+    [{ id: 14836, model_id: 8, input_price_per_1m: 0.2, output_price_per_1m: 2, currency: 'CNY', price_unit: 'per_1m_tokens', notes, is_available: false, availability_locked: true }],
+    [],
+  );
+  assert.deepEqual(done.retired, []);
+  assert.deepEqual(done.disabled, ['qwen-flash']);
+  // Off but unlocked: lock it so the daily scrape cannot turn it back on.
+  const unlocked = planQwenCnPrices(
+    [{ id: 8, slug: 'qwen-flash' }],
+    [{ id: 14836, model_id: 8, input_price_per_1m: 0.2, output_price_per_1m: 2, currency: 'CNY', price_unit: 'per_1m_tokens', notes, is_available: false, availability_locked: false }],
+    [],
+  );
+  assert.deepEqual(unlocked.retired, [{ id: 14836, slug: 'qwen-flash', channelAvailable: false, variantIds: [] }]);
+});
+
+test('the scraper soft-retire marker is not a vendor retirement', () => {
+  assert.equal(channelRetired('retired 2026-08-20T03:21:00.000Z: absent from successful full-catalog Qwen scrape'), false);
+  assert.equal(channelRetired('audit-fix: ok | retired 2026-08-20T03:21:00.000Z: absent from successful full-catalog Qwen scrape'), false);
+  assert.equal(channelRetired('Model retired 2026-08-20 by Alibaba'), true);
+  assert.equal(channelRetired('2026-08-20 已下线'), true);
+  assert.equal(channelRetired(null), false);
+  assert.equal(channelRetired(QWEN_CN_NOTE), false);
+});
+
+test('seed SQL for the retired path only ever writes is_available = false', () => {
+  const source = readFileSync(new URL('./catalog-p1-2026-10-19.ts', import.meta.url), 'utf8');
+  const block = source.slice(source.indexOf('for (const row of qwenPlan.retired)'), source.indexOf('for (const slug of qwenPlan.disabled)'));
+  assert.match(block, /SET is_available = false, availability_locked = true/);
+  assert.doesNotMatch(block, /is_available = true|input_price_per_1m/);
+});
+
 test('fix:data pins the same ≤128K Qwen headlines', () => {
   const source = readFileSync(new URL('../fix-data-audit.ts', import.meta.url), 'utf8');
   assert.match(source, /modelSlug: 'qwen3\.5-plus'[\s\S]{0,120}input: 0\.8, output: 4\.8/);
   assert.match(source, /modelSlug: 'qwen3\.5-flash'[\s\S]{0,160}input: 0\.2, output: 2,/);
   assert.match(source, /modelSlug: 'qwen-flash'[\s\S]{0,120}input: 0\.15, output: 1\.5/);
+  assert.match(source, /modelSlug: 'qwen-flash'[\s\S]{0,220}keepDisabled: true/);
   assert.doesNotMatch(source, /modelSlug: 'qwen3\.5-plus'[\s\S]{0,80}input: 2, output: 12/);
   assert.doesNotMatch(source, /modelSlug: 'qwen3\.5-flash'[\s\S]{0,80}output: 7\.2/);
 });

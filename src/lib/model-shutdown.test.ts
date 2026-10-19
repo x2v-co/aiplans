@@ -26,3 +26,16 @@ test('status is derived without a stored enum', () => {
   assert.equal(modelLifecycleStatus('2026-07-23', now), 'retired');
   assert.equal(modelLifecycleStatus('2026-10-15', now), 'retired');
 });
+
+test('shutdownReached: on and after the UTC shutdown day, for catalog strings and DB Date values', async () => {
+  const { shutdownReached, shutdownDay } = await import('./model-shutdown');
+  assert.equal(shutdownReached('2026-11-30', new Date('2026-11-29T23:59:59Z')), false);
+  assert.equal(shutdownReached('2026-11-30', new Date('2026-11-30T00:00:00Z')), true);
+  assert.equal(shutdownReached(new Date('2026-11-30T00:00:00Z'), new Date('2026-12-01T00:00:00Z')), true);
+  // 2026-11-30 08:00 in Singapore is still 11-30 00:00 UTC; 2026-11-30 07:59 SGT is 11-29 UTC.
+  assert.equal(shutdownReached('2026-11-30', new Date('2026-11-30T07:59:00+08:00')), false);
+  for (const value of [null, undefined, '', '2026-02-30', 'garbage', '2026-10-23T00:00Z']) {
+    assert.equal(shutdownReached(value, new Date('2030-01-01T00:00Z')), false);
+    assert.equal(shutdownDay(value), null);
+  }
+});
