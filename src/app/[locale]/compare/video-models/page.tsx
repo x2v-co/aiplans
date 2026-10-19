@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { modelLifecycleStatus } from '@/lib/model-shutdown';
 import { getVerticalModelCatalog } from '@/lib/vertical-models';
 import { arenaVideoLeaderboardCatalogItems } from '@/lib/arena-video-leaderboard';
 import { buildMetadata, breadcrumbList, faqPage, SITE_URL, type Locale } from '@/lib/seo';
@@ -47,8 +48,10 @@ export default async function CompareVideoModelsPage({ params }: { params: Promi
   const { locale } = await params;
   const isZh = locale === 'zh';
   const loc = (locale === 'zh' ? 'zh' : 'en') as Locale;
-  const catalogModels = await getVerticalModelCatalog('video-model');
-  const leaderboardModels = arenaVideoLeaderboardCatalogItems();
+  const stillListed = <T extends { shutdownDate?: string | null }>(model: T) =>
+    modelLifecycleStatus(model.shutdownDate) !== 'retired';
+  const catalogModels = (await getVerticalModelCatalog('video-model')).filter(stillListed);
+  const leaderboardModels = arenaVideoLeaderboardCatalogItems().filter(stillListed);
   const leaderboardSlugs = new Set(leaderboardModels.map((model) => model.slug));
   const models = [
     ...leaderboardModels,

@@ -35,13 +35,20 @@ export const OPENAI_SHUTDOWNS: readonly Shutdown[] = [
   { ...batchB, ids: ['o4-mini-2025-04-16', 'o4-mini'], replacementModel: 'gpt-5.6-terra' },
   // Audit explicitly includes these aliases / production slugs. Do not normalize.
   { shutdownDate: '2026-07-23', ids: ['gpt-5-codex', 'gpt-5.1-codex', 'gpt-5.1-codex-max', 'gpt-5.2-codex'] },
+  { shutdownDate: '2026-07-23', ids: ['gpt-5.1-codex-mini'], replacementModel: 'gpt-5.6-terra' },
+  // Production slugs use an openai- prefix and hyphenated 3-5. Official aliases
+  // are gpt-3.5-turbo and gpt-4 (2026-10-23). The batch row is that same alias's
+  // batch SKU; the deprecations table does not list a separate -batch id.
+  { ...batchB, ids: ['openai-gpt-3-5-turbo', 'openai-gpt-3-5-turbo-batch'], replacementModel: 'gpt-5.6-terra' },
+  { ...batchB, ids: ['openai-gpt-4'], replacementModel: 'gpt-5.6-sol' },
   { shutdownDate: '2026-10-23', ids: ['openai-o1-pro', 'openai-o4-mini', 'o4-mini-high', 'openai-gpt-4-turbo', 'openai-gpt-4-1-nano-batch', 'openai-gpt-4o-batch'] },
   { shutdownDate: '2026-12-11', ids: ['openai-o3', 'openai-o3-pro'] },
   { shutdownDate: '2026-12-01', ids: ['gpt-image-1.5', 'gpt-image-1.5-mini'] },
   { ...batchA, ids: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini'] },
   { shutdownDate: '2027-04-01', ids: ['gpt-5.1', 'gpt-5.3-codex', 'gpt-5.4-nano'] },
   { shutdownDate: '2027-01-06', ids: ['tts-1', 'tts-1-hd'] },
-  // gpt-5.1-codex-mini: sitemap evidence only; shutdown date needs verification.
+  // openai-o4-mini-high and openai-o4-mini-batch are not named on the
+  // deprecations page (only o4-mini and o4-mini-2025-04-16). Left unchanged.
 
 ];
 

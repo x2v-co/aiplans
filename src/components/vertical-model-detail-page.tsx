@@ -1,4 +1,5 @@
 import { NonLlmFacts } from '@/components/non-llm-catalog';
+import { modelLifecycleStatus, modelShutdownNotice } from '@/lib/model-shutdown';
 import { AuditedPricingFacts } from '@/components/audited-catalog';
 import Image from 'next/image';
 import { WorldModelFacts, WorldModelTiers } from '@/components/world-model-catalog';
@@ -120,6 +121,22 @@ export default function VerticalModelDetailPage({
             </CardContent>
           </Card>
         </section>
+
+        {item.shutdownDate && modelShutdownNotice(item.shutdownDate, locale) && (
+          <div role="note" className="mt-8 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+            <p>
+              {modelLifecycleStatus(item.shutdownDate) === 'retired'
+                ? (isZh ? `已于 ${item.shutdownDate} 退役` : `Retired on ${item.shutdownDate}`)
+                : (isZh ? `将于 ${item.shutdownDate} 退役` : `Retiring on ${item.shutdownDate}`)}
+              {item.replacementModel ? (isZh ? `。推荐替代：${item.replacementModel}` : `. Recommended replacement: ${item.replacementModel}`) : ''}
+            </p>
+            {item.deprecationSourceUrl && (
+              <a href={item.deprecationSourceUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm underline">
+                {isZh ? '弃用公告' : 'Deprecation announcement'}
+              </a>
+            )}
+          </div>
+        )}
 
         {['video-model', 'music-model', 'decision-model'].includes(kind) && <AuditedPricingFacts item={item} locale={locale} />}
 

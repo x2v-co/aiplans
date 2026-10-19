@@ -7,7 +7,7 @@ const rowsFor = (slugs: string[]): ShutdownModelRow[] => slugs.map((slug, i) => 
 
 test('all audit batches match exact production slugs without conflating snapshot dates', () => {
   const batches: Record<string, string[]> = {
-    '2026-07-23': ['gpt-5-codex','gpt-5.1-codex','gpt-5.1-codex-max','gpt-5.2-codex'],
+    '2026-07-23': ['gpt-5-codex','gpt-5.1-codex','gpt-5.1-codex-max','gpt-5.2-codex','gpt-5.1-codex-mini'],
     '2026-10-23': ['o1','openai-o1-pro','o3-mini','openai-o4-mini','o4-mini-high','openai-gpt-4-turbo','gpt-4.1-nano','openai-gpt-4-1-nano-batch','gpt-4o-2024-05-13','openai-gpt-4o-batch'],
     '2026-12-11': ['openai-o3','openai-o3-pro'],
     '2026-12-01': ['gpt-image-1.5','gpt-image-1.5-mini'],
@@ -24,13 +24,24 @@ test('all audit batches match exact production slugs without conflating snapshot
   assert.deepEqual(plan.updates.map(update => update.to.shutdown_date).sort(), ['2026-10-23','2027-01-14']);
 });
 
-test('exact slug matching reports absent models; no normalization, alias fallback, or invented Mini date', () => {
-  const rows = rowsFor(['gpt-5.1-codex-mini','gpt-4o','openai-gpt-4o']);
+test('exact slug matching reports absent models and does not invent o4-mini-high dates', () => {
+  const rows = rowsFor(['gpt-4o','openai-gpt-4o','openai-o4-mini-high','openai-o4-mini-batch']);
   const plan = planOpenAIShutdowns(rows);
   assert.deepEqual(plan.updates.map(update => update.slug), ['gpt-4o']);
   assert.equal(plan.matches.find(match => match.apiId === 'gpt-4o-2024-05-13')?.slug, null);
-  assert.ok(!OPENAI_SHUTDOWNS.some(item => item.ids.includes('gpt-5.1-codex-mini')));
+  assert.ok(!OPENAI_SHUTDOWNS.some(item => item.ids.includes('openai-o4-mini-high')));
+  assert.ok(!OPENAI_SHUTDOWNS.some(item => item.ids.includes('openai-o4-mini-batch')));
+  assert.equal(plan.updates.find(update => update.slug === 'gpt-5.1-codex-mini'), undefined);
   assert.throws(() => planOpenAIShutdowns([...rows, {...rows[0], id: 99}]), /Ambiguous/);
+});
+
+test('production aliases verified on 2026-10-19 get their own rows', () => {
+  const plan = planOpenAIShutdowns(rowsFor(['openai-gpt-3-5-turbo','openai-gpt-3-5-turbo-batch','openai-gpt-4','gpt-5.1-codex-mini']));
+  assert.equal(plan.updates.find(update => update.slug === 'openai-gpt-4')?.to.shutdown_date, '2026-10-23');
+  assert.equal(plan.updates.find(update => update.slug === 'openai-gpt-4')?.to.replacement_model, 'gpt-5.6-sol');
+  assert.equal(plan.updates.find(update => update.slug === 'openai-gpt-3-5-turbo-batch')?.to.replacement_model, 'gpt-5.6-terra');
+  assert.equal(plan.updates.find(update => update.slug === 'gpt-5.1-codex-mini')?.to.shutdown_date, '2026-07-23');
+  assert.equal(plan.updates.find(update => update.slug === 'gpt-5.1-codex-mini')?.to.replacement_model, 'gpt-5.6-terra');
 });
 
 test('idempotent and preserves unknown announcements/replacements instead of making them up', () => {

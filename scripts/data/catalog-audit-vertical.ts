@@ -17,9 +17,18 @@ export function auditVerticalModelFields(item: AiCatalogItem) {
     model_category: item.modelCategory,
     pricing_unit: item.kind === 'decision-model' ? 'per_1m_tokens'
       : item.billingUnit === 'per_second' ? 'per_second'
+      : item.billingUnit === 'per_minute' ? 'per_minute'
       : item.billingUnit === 'per_song' ? 'per_generation' : 'unknown',
     description: verticalModelDescription(item),
   };
+}
+
+/** Plan-less usage row written by the catalog-audit seed. Deploy pricing uses seed-vertical-pricing. */
+export function auditVerticalUsage(item: AiCatalogItem): readonly [string, string, number | null] {
+  if (item.billingUnit === 'per_minute') return ['minute', 'minute', item.pricePerUnit ?? null];
+  if (item.billingUnit === 'per_song') return ['generation', 'song', item.pricePerUnit ?? null];
+  if (item.billingUnit === 'per_second') return ['video_second', 'second', item.pricePerUnit ?? null];
+  return ['availability', 'unknown', item.pricePerUnit ?? null];
 }
 
 /** Keep "Unit:" and "Sources:" lines: src/lib/vertical-models.ts parses Sources from it. */

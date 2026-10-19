@@ -3,7 +3,7 @@ import { AI_VERTICAL_CATALOG } from '../../src/lib/ai-vertical-catalog';
 import { openRouterProducerSlug } from '../scrapers/openrouter';
 import { seedChanges } from './gemini-4-argon';
 import { keepUnavailableForSeed } from '../utils/manual-unavailable';
-import { auditVerticalModelFields, isAuditOwnedVertical } from './catalog-audit-vertical';
+import { auditVerticalModelFields, auditVerticalUsage, isAuditOwnedVertical } from './catalog-audit-vertical';
 import { AUDIT_TIMESTAMP, OPENROUTER_ADDITIONS, auditedModelSlug, auditedPrices,
   LEGACY_PRO_NOTE, cleanLegacyFeatures } from './catalog-audit-2026-10-15';
 import { claudeCreditValues } from './claude-api-credits-2026-10-18';
@@ -141,7 +141,7 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
     }
     const units = item.kind === 'decision-model'
       ? [['input_tokens', 'per_1m_tokens', item.inputPricePer1M ?? null], ['output_tokens', 'per_1m_tokens', item.outputPricePer1M ?? null], ['tasks', 'per_1m_tasks', null]] as const
-      : [[item.billingUnit === 'per_second' ? 'video_second' : item.billingUnit === 'per_song' ? 'generation' : 'availability', item.billingUnit === 'per_song' ? 'song' : item.billingUnit === 'per_second' ? 'second' : 'unknown', item.pricePerUnit ?? null]] as const;
+      : [auditVerticalUsage(item)] as const;
     for (const [kind, unit, price] of units) {
       const candidates = rows.usage_prices.filter(r => r.model_id === m.id && r.provider_id === (owner?.id ?? null) && r.price_kind === kind && r.plan_id == null);
       const existing = one('usage_prices', candidates, `${item.slug}/${kind}`);

@@ -1,6 +1,7 @@
 import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
 import { LimitedTimeOfferMark } from '@/components/limited-time-offer';
 import { effectivePrice } from '@/lib/effective-price';
+import { billingRedirectNote } from '@/lib/billing-redirect';
 import { modelShutdownNotice } from '@/lib/model-shutdown';
 import { getTranslations } from 'next-intl/server';
 import Link from "next/link";
@@ -377,6 +378,7 @@ export default async function ModelPage({
   const productName = formatModelName(product.name);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
   const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);
+  const billingNote = billingRedirectNote(product.slug, locale);
   const guideSlug = guideForModelSlug(product.slug);
   const pricing = buildModelPricingSeo({ ...product, name: productName }, channelPrices,
     isZh ? 'zh' : 'en', now);
@@ -609,6 +611,11 @@ export default async function ModelPage({
                 {shutdownMessages('source')} <ExternalLink className="h-3.5 w-3.5" />
               </a>
             )}
+          </div>
+        )}
+        {billingNote && (
+          <div role="note" className="mb-8 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+            {billingNote}
           </div>
         )}
 

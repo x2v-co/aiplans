@@ -60,6 +60,8 @@
     "seed:xiurouter": "tsx scripts/seed-xiurouter-provider.ts",
     "seed:openai-shutdowns": "tsx scripts/seed-openai-shutdowns.ts",
     "seed:openai-shutdowns:dry-run": "tsx scripts/seed-openai-shutdowns.ts --dry-run",
+    "seed:catalog-2026-10-19": "tsx scripts/seed-catalog-2026-10-19.ts",
+    "seed:catalog-2026-10-19:apply": "tsx scripts/seed-catalog-2026-10-19.ts --apply",
     "seed:vertical-models": "tsx scripts/seed-vertical-models.ts",
     "seed:vertical-models:dry-run": "tsx scripts/seed-vertical-models.ts",
     "seed:vertical-pricing": "tsx scripts/seed-vertical-pricing-references.ts",

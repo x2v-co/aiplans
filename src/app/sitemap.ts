@@ -1,4 +1,5 @@
 import { AI_VERTICAL_CATALOG } from '@/lib/ai-vertical-catalog';
+import { modelLifecycleStatus } from '@/lib/model-shutdown';
 import { MetadataRoute } from 'next';
 import { isIndexableVerticalDbSlug } from '@/lib/vertical-model-aliases';
 import type { AiCatalogKind } from '@/lib/ai-vertical-catalog';
@@ -99,7 +100,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('sitemap: failed to query providers', err);
   }
 
-  for (const item of AI_VERTICAL_CATALOG.filter(i => ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model'].includes(i.kind) && i.slug)) {
+  for (const item of AI_VERTICAL_CATALOG.filter(i => ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model'].includes(i.kind) && i.slug
+    && modelLifecycleStatus(i.shutdownDate) !== 'retired')) {
     for (const locale of LOCALES) urls.push({ url: `${BASE_URL}/${locale}/${item.kind}s/${item.slug}`,
       lastModified: item.verifiedAt ? new Date(item.verifiedAt) : now, changeFrequency: 'weekly', priority: 0.68 });
   }
