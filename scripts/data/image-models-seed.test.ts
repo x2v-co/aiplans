@@ -49,6 +49,9 @@ test('image catalog: every row is official-sourced, itemized and has a headline 
   assert.equal(lifecycle('gemini-2.5-flash-image').status, 'discontinued');
   assert.equal(lifecycle('gpt-image-1').shutdownDate, '2026-10-23');
   assert.equal(lifecycle('gpt-image-1.5').shutdownDate, '2026-12-01');
+  assert.equal(lifecycle('gpt-image-1-mini').shutdownDate, '2026-12-01');
+  assert.equal(lifecycle('grok-imagine-image-quality').shutdownDate, '2026-11-02');
+  assert.equal(lifecycle('grok-imagine-image-quality').pricePerUnit, 0.05);
 });
 
 test('image seed: dry-run is read-only, reuses existing LLM rows/providers and is idempotent', async () => {

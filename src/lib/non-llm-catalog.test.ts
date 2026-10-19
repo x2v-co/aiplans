@@ -14,7 +14,9 @@ test('verified tariffs retain their actual units, aliases and lifecycle dates', 
   assert.match(item('grok-voice-3.0').notes!, /grok-voice-latest → grok-voice-3.0/);
   assert.equal(item('grok-voice-2.0').deprecatedAt, undefined);
   assert.equal(item('grok-voice-2.0').replacementModel, 'grok-voice-3.0');
-  assert.match(item('grok-voice-2.0').notes!, /has not announced a deprecation/);
+  assert.match(item('grok-voice-2.0').notes!, /Deprecated/);
+  assert.equal(item('grok-voice-2.0').status, 'deprecated');
+  assert.equal(item('grok-voice-2.0').shutdownDate, undefined);
   assert.equal(item('grok-voice-transcribe-1.0').shutdownDate, '2026-10-02');
   assert.equal(item('grok-voice-transcribe-1.0').replacementModel, 'grok-voice-transcribe-2.0');
   assert.deepEqual(item('grok-voice-transcribe-2.0').usageRates?.map(rate => [rate.unit, rate.price]), [['hour', 0.1], ['hour', 0.2]]);

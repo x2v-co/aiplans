@@ -3,6 +3,7 @@ import type { AiCatalogItem } from './ai-vertical-catalog';
 // Source: /workspace/aiplans-gaps-facts.md, verified 2026-10-15.
 const verified = { deferredDbSeed: true, lastVerified: '2026-10-15', verifiedAt: '2026-10-15', currency: 'USD' };
 const voiceSource = 'https://docs.x.ai/docs/models';
+const voicePricing = 'https://docs.x.ai/developers/pricing';
 const releaseSource = 'https://docs.x.ai/docs/release-notes';
 const voiceRates = [
   { priceKind: 'speech_to_speech', unit: 'minute', price: 0.08 },
@@ -17,16 +18,22 @@ function voice(version: '3.0' | '2.0'): AiCatalogItem {
   return {
     ...verified, kind: 'voice-model', slug: `grok-voice-${version}`, name: `grok-voice-${version}`,
     provider: 'xAI', providerSlug: 'xai', modelCategory: 'speech',
-    status: 'available',
+    status: version === '2.0' ? 'deprecated' : 'available',
     pricing: 'STS $0.08/min; TTS $15/1M characters', unit: 'minute / 1M characters', pricingUnit: 'per_minute',
     priceStatus: 'priced', pricingConfidence: 'verified', usageRates: voiceRates,
     inputModalities: ['audio', 'text'], outputModalities: ['audio'], access: ['api'],
     capabilities: ['speech-to-speech', 'text-to-speech'], bestFor: 'Speech-to-speech and text-to-speech.',
     notes: version === '3.0' ? 'grok-voice-latest → grok-voice-3.0. Available October 2026.'
-      : 'Superseded: grok-voice-latest moved to grok-voice-3.0 on 2026-10-14 (same price). xAI has not announced a deprecation or shutdown date for grok-voice-2.0 (release notes checked 2026-10-15).',
-    ...(version === '2.0' ? { replacementModel: 'grok-voice-3.0' } : {}),
-    url: voiceSource, sourceUrls: [
+      : 'Pricing page marks Speech to Speech (grok-voice-2.0) Deprecated and recommends grok-voice-3.0. Both are $0.08/min ($4.80/hr) plus $0.004 per text input. No shutdown date is printed. Checked 2026-10-19.',
+    ...(version === '2.0' ? {
+      replacementModel: 'grok-voice-3.0',
+      deprecationSourceUrl: voicePricing,
+      lastVerified: '2026-10-19',
+      verifiedAt: '2026-10-19',
+    } : {}),
+    url: version === '2.0' ? voicePricing : voiceSource, sourceUrls: [
       { label: 'xAI models and pricing', url: voiceSource, publisher: 'xAI' },
+      { label: 'xAI pricing', url: voicePricing, publisher: 'xAI' },
       { label: 'xAI release notes', url: releaseSource, publisher: 'xAI' },
     ],
   };

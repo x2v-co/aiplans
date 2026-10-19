@@ -10,7 +10,7 @@ test('all audit batches match exact production slugs without conflating snapshot
     '2026-07-23': ['gpt-5-codex','gpt-5.1-codex','gpt-5.1-codex-max','gpt-5.2-codex','gpt-5.1-codex-mini'],
     '2026-10-23': ['o1','openai-o1-pro','o3-mini','openai-o4-mini','o4-mini-high','openai-gpt-4-turbo','gpt-4.1-nano','openai-gpt-4-1-nano-batch','gpt-4o-2024-05-13','openai-gpt-4o-batch'],
     '2026-12-11': ['openai-o3','openai-o3-pro'],
-    '2026-12-01': ['gpt-image-1.5','gpt-image-1.5-mini'],
+    '2026-12-01': ['gpt-image-1.5','gpt-image-1.5-mini','gpt-image-1-mini'],
     '2027-01-14': ['gpt-4o','gpt-4o-mini','gpt-4.1','gpt-4.1-mini'],
     '2027-04-01': ['gpt-5.1','gpt-5.3-codex','gpt-5.4-nano'],
     '2027-01-06': ['tts-1','tts-1-hd'],
@@ -32,6 +32,12 @@ test('exact slug matching reports absent models and does not invent o4-mini-high
   assert.ok(!OPENAI_SHUTDOWNS.some(item => item.ids.includes('openai-o4-mini-high')));
   assert.ok(!OPENAI_SHUTDOWNS.some(item => item.ids.includes('openai-o4-mini-batch')));
   assert.equal(plan.updates.find(update => update.slug === 'gpt-5.1-codex-mini'), undefined);
+  for (const alias of ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-pro']) {
+    assert.ok(!OPENAI_SHUTDOWNS.some(item => item.ids.includes(alias)), alias);
+  }
+  const imageMini = planOpenAIShutdowns(rowsFor(['gpt-image-1-mini'])).updates[0];
+  assert.equal(imageMini?.to.shutdown_date, '2026-12-01');
+  assert.equal(imageMini?.to.replacement_model, 'gpt-image-2.5-sunburst or gpt-image-2.5-flare');
   assert.throws(() => planOpenAIShutdowns([...rows, {...rows[0], id: 99}]), /Ambiguous/);
 });
 
