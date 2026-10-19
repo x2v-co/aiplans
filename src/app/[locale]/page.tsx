@@ -1,5 +1,7 @@
+import { buildHomeMetadataCopy, getHomeCatalogStats } from "@/lib/home-seo";
 import { getProducts } from "@/lib/products";
-import { faqPage, type Locale } from "@/lib/seo";
+import { buildMetadata, faqPage, type Locale } from "@/lib/seo";
+import type { Metadata } from "next";
 import HomeView, { type HotModel } from "./home-view";
 
 /**
@@ -75,6 +77,22 @@ function homeFaqs(locale: Locale, hotCount: number): FaqItem[] {
         ]
       : []),
   ];
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const loc = (locale === "zh" ? "zh" : "en") as Locale;
+  const copy = buildHomeMetadataCopy(await getHomeCatalogStats());
+  return buildMetadata({
+    locale: loc,
+    path: "",
+    title: copy.title,
+    description: copy.description,
+  });
 }
 
 export default async function HomePage({

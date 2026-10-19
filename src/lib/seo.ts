@@ -52,7 +52,9 @@ export function buildMetadata(input: PageMetaInput): Metadata {
   const isZh = input.locale === 'zh';
   const title = isZh ? input.title.zh : input.title.en;
   const description = isZh ? input.description.zh : input.description.en;
-  const path = input.path.startsWith('/') ? input.path : `/${input.path}`;
+  const path = !input.path || input.path === '/'
+    ? ''
+    : input.path.startsWith('/') ? input.path : `/${input.path}`;
   const canonical = `${SITE_URL}/${input.locale}${path}`;
 
   const openGraph: Metadata['openGraph'] = {

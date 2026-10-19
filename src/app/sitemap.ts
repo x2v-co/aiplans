@@ -3,6 +3,7 @@ import { MetadataRoute } from 'next';
 import { isIndexableVerticalDbSlug } from '@/lib/vertical-model-aliases';
 import type { AiCatalogKind } from '@/lib/ai-vertical-catalog';
 import { sql } from '@/lib/db';
+import { isGluedModelSlug } from '@/lib/glued-model-slug';
 import { selectIndexablePlanComparisons } from '@/lib/search-indexing';
 import { PRICING_GUIDE_SLUGS } from '@/lib/pricing-guides';
 import { getVerifiedQuotaEstimates } from '@/lib/quota/data';
@@ -133,7 +134,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
     const seen = new Set<string>();
     for (const m of models) {
-      if (!m.slug || seen.has(m.slug)) continue;
+      // Glued ids are one pricing cell stored as a single slug. They are not pages.
+      if (!m.slug || seen.has(m.slug) || isGluedModelSlug(m.slug)) continue;
       seen.add(m.slug);
       const lastMod = m.updated_at ? new Date(m.updated_at) : now;
       for (const locale of LOCALES) {
@@ -196,7 +198,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ORDER BY models.updated_at DESC NULLS LAST
     `;
 
+    // parseKimiModelCell used to match `^(kimi|moonshot)[a-z0-9.-]*`, so a
+    // cell that listed several ids with no separator became one models.slug.
+    // The `kimi` family selector then attached real plans, the sitemap
+    // advertised that URL, and the page returned 200. Drop any slug that is
+    // still glued in the catalog.
     for (const m of selectIndexablePlanComparisons(comparable)) {
+      if (isGluedModelSlug(m.slug)) continue;
       const lastMod = m.updated_at ? new Date(m.updated_at) : now;
       for (const locale of LOCALES) {
         urls.push({

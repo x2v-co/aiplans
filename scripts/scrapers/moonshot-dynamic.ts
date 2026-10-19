@@ -20,21 +20,34 @@ function context(text: string | undefined): number | null {
 /**
  * The model cell can carry badges/tooltips next to the id, e.g. during the
  * Kimi K3 launch promo: `kimi-k3<Badge>Promo</Badge>` plus "Promotion valid
- * until October 11, 2026". Keep only the leading model id; anything that is
- * not a plain id is dropped (and the identity guard rejects it downstream).
+ * until October 11, 2026". Keep only model ids; anything that is not a plain
+ * id is dropped (and the identity guard rejects it downstream).
+ *
+ * One cell can also list several ids with no separator
+ * (`kimi-k2-thinkingkimi-k2-instruct-0905…`). The old `^(kimi|moonshot)[a-z0-9.-]*`
+ * match consumed that whole string as a single slug. The compare sitemap then
+ * published it, and the page returned 200. Split on each new family prefix.
  */
-export function parseKimiModelCell(raw: string): string | null {
+export function parseKimiModelIds(raw: string): string[] {
   const text = raw
     .replace(/<[^>]*>/g, ' ')
     .replace(/\{[^}]*\}/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim();
-  const match = text.match(/^(kimi|moonshot)[a-z0-9.-]*/i);
-  if (!match) return null;
-  let id = match[0].toLowerCase();
-  // "kimi-k3Promo" (no separator between id and badge) → "kimi-k3"
-  id = id.replace(/(?:-?(?:promo|promotion|new|hot|limited))+$/i, '');
-  return /^[a-z0-9][a-z0-9.-]*[a-z0-9]$/.test(id) ? id : null;
+    .trim()
+    .toLowerCase();
+  const ids: string[] = [];
+  for (const token of text.split(/[^a-z0-9.-]+/)) {
+    if (!token) continue;
+    for (const part of token.split(/(?<=[a-z0-9])(?=(?:kimi|moonshot)(?:-|\d))/)) {
+      const id = part.replace(/(?:-?(?:promo|promotion|new|hot|limited))+$/i, '');
+      if (/^(?:kimi|moonshot)[a-z0-9.-]*[a-z0-9]$/.test(id)) ids.push(id);
+    }
+  }
+  return [...new Set(ids)];
+}
+
+export function parseKimiModelCell(raw: string): string | null {
+  return parseKimiModelIds(raw)[0] ?? null;
 }
 
 class MoonshotScraper extends PlaywrightScraper {
@@ -78,22 +91,25 @@ class MoonshotScraper extends PlaywrightScraper {
           continue;
         }
         if (!Array.isArray(cells) || !/1M\s*tokens/i.test(String(cells[unitIndex] ?? ''))) continue;
-        const modelId = parseKimiModelCell(String(cells[modelIndex] ?? ''));
-        if (!modelId) continue;
-        const modelName = normalizeModelName(modelId).toLowerCase();
+        const modelIds = parseKimiModelIds(String(cells[modelIndex] ?? ''));
+        if (modelIds.length === 0) continue;
         const input = price(String(cells[inputIndex] ?? ''));
         const output = price(String(cells[outputIndex] ?? ''));
-        if (!modelName || seen.has(modelName) || input == null || output == null || output < input) continue;
-        prices.push({
-          modelName,
-          inputPricePer1M: input,
-          cachedInputPricePer1M: cachedIndex >= 0 ? price(String(cells[cachedIndex] ?? '')) ?? undefined : undefined,
-          outputPricePer1M: output,
-          contextWindow: context(String(cells[contextIndex] ?? '')),
-          isAvailable: true,
-          currency: 'CNY',
-        });
-        seen.add(modelName);
+        if (input == null || output == null || output < input) continue;
+        for (const modelId of modelIds) {
+          const modelName = normalizeModelName(modelId).toLowerCase();
+          if (!modelName || seen.has(modelName)) continue;
+          prices.push({
+            modelName,
+            inputPricePer1M: input,
+            cachedInputPricePer1M: cachedIndex >= 0 ? price(String(cells[cachedIndex] ?? '')) ?? undefined : undefined,
+            outputPricePer1M: output,
+            contextWindow: context(String(cells[contextIndex] ?? '')),
+            isAvailable: true,
+            currency: 'CNY',
+          });
+          seen.add(modelName);
+        }
       }
     }
     return {

@@ -57,8 +57,8 @@ export async function generateMetadata({
   if (!provider) notFound();
   const providerName = provider.name ?? providerSlug;
   const plans = await getProviderSeoPlans(provider.id);
-  const en = buildProviderPricingCopy(providerName, plans, 'en');
-  const zh = buildProviderPricingCopy(providerName, plans, 'zh');
+  const en = buildProviderPricingCopy(providerName, plans, 'en', undefined, providerSlug);
+  const zh = buildProviderPricingCopy(providerName, plans, 'zh', undefined, providerSlug);
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: `/providers/${encodeURIComponent(providerSlug)}`,

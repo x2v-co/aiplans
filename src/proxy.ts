@@ -1,3 +1,4 @@
+import { legacySlugRedirect } from '@/lib/legacy-slug-redirects';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -44,6 +45,16 @@ export default function proxy(request: NextRequest) {
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
+
+  // Old catalog slugs 301 before the locale hop, so /models/gpt-6.1-sol does
+  // not stop at a 404 on the way to /en/models/openai-gpt-6-1-sol.
+  const localizedPath = pathnameHasLocale ? pathname : `/${defaultLocale}${pathname === '/' ? '' : pathname}`;
+  const legacyTarget = legacySlugRedirect(localizedPath);
+  if (legacyTarget) {
+    const url = request.nextUrl.clone();
+    url.pathname = legacyTarget;
+    return NextResponse.redirect(url, 301);
+  }
 
   if (pathnameHasLocale) {
     return NextResponse.next();

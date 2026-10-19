@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { sql } from '@/lib/db';
+import { legacySlugRedirect } from '@/lib/legacy-slug-redirects';
 import { findModelSlugRedirect } from '@/lib/model-slug-redirects';
 import { buildMetadata, type Locale } from '@/lib/seo';
 import { decodeSlugParam } from '@/lib/route-params';
@@ -16,6 +17,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, model: rawModel } = await params;
   const modelSlug = decodeSlugParam(rawModel);
+  const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/compare/plans/${modelSlug}`);
+  if (legacyTarget) permanentRedirect(legacyTarget);
 
   const [data, comparable] = await Promise.all([
     getComparisonSeoData(modelSlug),
