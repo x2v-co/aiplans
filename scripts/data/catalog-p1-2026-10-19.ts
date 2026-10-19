@@ -77,6 +77,200 @@ export function planZhipuGlobalPrices(models: readonly ZhipuModel[], channels: r
   return { missing, inserts, updates };
 }
 
+export const QWEN_CN_SOURCE = 'https://help.aliyun.com/zh/model-studio/model-pricing';
+
+/** 华北2（北京）and the matching「全球」deployment. US / 国际 prices are a different table. */
+export const QWEN_CN_NOTE = `Bailian China list price (华北2 北京, same CNY bands on 全球 deployment), per 1M tokens. Displayed channel price is the ≤128K band. 128K–256K and 256K–1M are context_band variants. Thinking and non-thinking output match. US and 国际 deployment prices were not written. Batch half-price and context-cache discounts are rules, not stored amounts. Source: ${QWEN_CN_SOURCE} (verified 2026-10-19).`;
+
+export interface QwenCnBand {
+  key: string;
+  name: string;
+  input: number;
+  output: number;
+  headline: boolean;
+  constraints: { prompt_tokens_lte: number; prompt_tokens_gt?: number };
+}
+
+export const QWEN_CN_MODELS: readonly { slug: string; bands: readonly QwenCnBand[] }[] = [
+  {
+    slug: 'qwen3.5-plus',
+    bands: [
+      { key: 'context-le-128k', name: '≤128K', input: 0.8, output: 4.8, headline: true, constraints: { prompt_tokens_lte: 128_000 } },
+      { key: 'context-128k-256k', name: '128K–256K', input: 2, output: 12, headline: false, constraints: { prompt_tokens_gt: 128_000, prompt_tokens_lte: 256_000 } },
+      { key: 'context-256k-1m', name: '256K–1M', input: 4, output: 24, headline: false, constraints: { prompt_tokens_gt: 256_000, prompt_tokens_lte: 1_000_000 } },
+    ],
+  },
+  {
+    slug: 'qwen3.5-flash',
+    bands: [
+      { key: 'context-le-128k', name: '≤128K', input: 0.2, output: 2, headline: true, constraints: { prompt_tokens_lte: 128_000 } },
+      { key: 'context-128k-256k', name: '128K–256K', input: 0.8, output: 8, headline: false, constraints: { prompt_tokens_gt: 128_000, prompt_tokens_lte: 256_000 } },
+      { key: 'context-256k-1m', name: '256K–1M', input: 1.2, output: 12, headline: false, constraints: { prompt_tokens_gt: 256_000, prompt_tokens_lte: 1_000_000 } },
+    ],
+  },
+  {
+    slug: 'qwen-flash',
+    bands: [
+      { key: 'context-le-128k', name: '≤128K', input: 0.15, output: 1.5, headline: true, constraints: { prompt_tokens_lte: 128_000 } },
+      { key: 'context-128k-256k', name: '128K–256K', input: 0.6, output: 6, headline: false, constraints: { prompt_tokens_gt: 128_000, prompt_tokens_lte: 256_000 } },
+      { key: 'context-256k-1m', name: '256K–1M', input: 1.2, output: 12, headline: false, constraints: { prompt_tokens_gt: 256_000, prompt_tokens_lte: 1_000_000 } },
+    ],
+  },
+];
+
+export function qwenHeadline(slug: string): QwenCnBand {
+  const model = QWEN_CN_MODELS.find(item => item.slug === slug);
+  const band = model?.bands.find(item => item.headline);
+  if (!model || !band) throw new Error(`No Qwen headline for ${slug}`);
+  return band;
+}
+
+export interface QwenCnModel { id: number; slug: string }
+export interface QwenCnChannel {
+  id: number;
+  model_id: number;
+  input_price_per_1m: number | string | null;
+  output_price_per_1m: number | string | null;
+  currency: string | null;
+  price_unit: string | null;
+  notes: string | null;
+  is_available: boolean | null;
+}
+export interface QwenCnVariant {
+  id: number;
+  model_id: number;
+  variant_key: string;
+  variant_name: string | null;
+  variant_kind: string | null;
+  input_price_per_1m: number | string | null;
+  output_price_per_1m: number | string | null;
+  currency: string | null;
+  price_unit: string | null;
+  is_headline: boolean | null;
+  is_available: boolean | null;
+  constraints_json: unknown;
+  source_url: string | null;
+  notes: string | null;
+}
+export interface QwenCnPlan {
+  missing: string[];
+  disabled: string[];
+  channelInserts: Array<{ model_id: number; slug: string; input: number; output: number }>;
+  channelUpdates: Array<{ id: number; slug: string; changes: Record<string, { from: unknown; to: unknown }> }>;
+  variantInserts: Array<{ model_id: number; slug: string; band: QwenCnBand }>;
+  variantUpdates: Array<{ id: number; slug: string; key: string; changes: Record<string, { from: unknown; to: unknown }> }>;
+}
+
+function qwenNumberSame(from: unknown, to: number): boolean {
+  const value = typeof from === 'number' ? from : typeof from === 'string' && from.trim() !== '' ? Number(from) : Number.NaN;
+  return Number.isFinite(value) && Math.abs(value - to) < 1e-4;
+}
+
+function qwenJsonSame(from: unknown, to: unknown): boolean {
+  const stable = (value: unknown): string => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const record = value as Record<string, unknown>;
+      return JSON.stringify(Object.keys(record).sort().map(key => [key, record[key]]));
+    }
+    return JSON.stringify(value ?? null);
+  };
+  return stable(from) === stable(to);
+}
+
+/** Plans the qwen provider's China headline and context bands. Missing slugs are skipped. */
+export function planQwenCnPrices(
+  models: readonly QwenCnModel[],
+  channels: readonly QwenCnChannel[],
+  variants: readonly QwenCnVariant[],
+): QwenCnPlan {
+  const missing: string[] = [];
+  const disabled: string[] = [];
+  const channelInserts: QwenCnPlan['channelInserts'] = [];
+  const channelUpdates: QwenCnPlan['channelUpdates'] = [];
+  const variantInserts: QwenCnPlan['variantInserts'] = [];
+  const variantUpdates: QwenCnPlan['variantUpdates'] = [];
+  for (const spec of QWEN_CN_MODELS) {
+    const matches = models.filter(model => model.slug === spec.slug);
+    if (matches.length > 1) throw new Error(`Duplicate model ${spec.slug}; nothing written.`);
+    if (matches.length === 0) {
+      missing.push(spec.slug);
+      continue;
+    }
+    const model = matches[0];
+    const rows = channels.filter(channel => channel.model_id === model.id);
+    if (rows.length > 1) throw new Error(`Duplicate qwen channel for ${spec.slug}; nothing written.`);
+    const headline = spec.bands.find(band => band.headline)!;
+    if (rows.length === 0) {
+      channelInserts.push({ model_id: model.id, slug: spec.slug, input: headline.input, output: headline.output });
+    } else if (rows[0].is_available === false) {
+      disabled.push(spec.slug);
+      continue;
+    } else {
+      const row = rows[0];
+      const desired = {
+        input_price_per_1m: headline.input,
+        output_price_per_1m: headline.output,
+        currency: 'CNY',
+        price_unit: 'per_1m_tokens',
+        notes: QWEN_CN_NOTE,
+      };
+      const changes: Record<string, { from: unknown; to: unknown }> = {};
+      for (const [key, to] of Object.entries(desired)) {
+        const from = row[key as keyof QwenCnChannel];
+        const same = typeof to === 'number' ? qwenNumberSame(from, to) : (from ?? null) === to;
+        if (!same) changes[key] = { from: from ?? null, to };
+      }
+      if (Object.keys(changes).length) channelUpdates.push({ id: row.id, slug: spec.slug, changes });
+    }
+    const owned = variants.filter(variant => variant.model_id === model.id);
+    for (const band of spec.bands) {
+      const found = owned.filter(variant => variant.variant_key === band.key);
+      if (found.length > 1) throw new Error(`Duplicate qwen variant ${spec.slug}/${band.key}; nothing written.`);
+      if (found.length === 0) {
+        variantInserts.push({ model_id: model.id, slug: spec.slug, band });
+        continue;
+      }
+      const row = found[0];
+      const desired = {
+        variant_name: band.name,
+        variant_kind: 'context_band',
+        input_price_per_1m: band.input,
+        output_price_per_1m: band.output,
+        currency: 'CNY',
+        price_unit: 'per_1m_tokens',
+        is_headline: band.headline,
+        is_available: true,
+        constraints_json: band.constraints,
+        source_url: QWEN_CN_SOURCE,
+        notes: QWEN_CN_NOTE,
+      };
+      const changes: Record<string, { from: unknown; to: unknown }> = {};
+      for (const [key, to] of Object.entries(desired)) {
+        const from = row[key as keyof QwenCnVariant];
+        const same = typeof to === 'number'
+          ? qwenNumberSame(from, to)
+          : typeof to === 'boolean'
+            ? from === to
+            : key === 'constraints_json'
+              ? qwenJsonSame(from, to)
+              : (from ?? null) === to;
+        if (!same) changes[key] = { from: from ?? null, to };
+      }
+      if (Object.keys(changes).length) variantUpdates.push({ id: row.id, slug: spec.slug, key: band.key, changes });
+    }
+    for (const extra of owned.filter(variant => variant.is_headline === true && !spec.bands.some(band => band.key === variant.variant_key && band.headline))) {
+      if (spec.bands.some(band => band.key === extra.variant_key)) continue;
+      variantUpdates.push({
+        id: extra.id,
+        slug: spec.slug,
+        key: extra.variant_key,
+        changes: { is_headline: { from: true, to: false } },
+      });
+    }
+  }
+  return { missing, disabled, channelInserts, channelUpdates, variantInserts, variantUpdates };
+}
+
 export function catalogP1SeedOptions(args: string[]) {
   if (args.some(arg => !['--apply', '--dry-run'].includes(arg)) || (args.includes('--apply') && args.includes('--dry-run'))) {
     throw new Error('Usage: seed-catalog-p1-2026-10-19.ts [--dry-run | --apply]');
@@ -93,7 +287,7 @@ type ModelRow = {
   deprecation_source_url: string | null;
   description: string | null;
 };
-export interface P1Step { table: 'models' | 'api_channel_prices'; target: string; id: number | null; changes: Record<string, unknown> }
+export interface P1Step { table: 'models' | 'api_channel_prices' | 'api_channel_price_variants'; target: string; id: number | null; changes: Record<string, unknown> }
 
 /** Caller owns a serializable transaction. Missing model slugs are skipped. Duplicate rows abort. */
 export async function seedCatalogP1(tx: Sql, apply = false): Promise<P1Step[]> {
@@ -164,6 +358,82 @@ export async function seedCatalogP1(tx: Sql, apply = false): Promise<P1Step[]> {
   }
   for (const slug of plan.missing) {
     steps.push({ table: 'models', target: slug, id: null, changes: { skipped: 'model slug is not in the catalog; price was not invented onto a new row' } });
+  }
+
+  const qwenProviders = await tx<Array<{ id: number }>>`SELECT id FROM providers WHERE slug = 'qwen'`;
+  if (qwenProviders.length !== 1) throw new Error(`Expected exactly one qwen provider, found ${qwenProviders.length}; nothing written.`);
+  const qwenSlugs = QWEN_CN_MODELS.map(item => item.slug);
+  const qwenModels = await tx<QwenCnModel[]>`SELECT id, slug FROM models WHERE slug IN ${tx([...qwenSlugs])}`;
+  const qwenIds = qwenModels.map(model => model.id);
+  const qwenChannels = qwenIds.length
+    ? await tx<QwenCnChannel[]>`
+        SELECT id, model_id, input_price_per_1m, output_price_per_1m, currency, price_unit, notes, is_available
+        FROM api_channel_prices WHERE provider_id = ${qwenProviders[0].id} AND model_id IN ${tx(qwenIds)}`
+    : [];
+  const qwenVariants = qwenIds.length
+    ? await tx<QwenCnVariant[]>`
+        SELECT id, model_id, variant_key, variant_name, variant_kind, input_price_per_1m, output_price_per_1m,
+          currency, price_unit, is_headline, is_available, constraints_json, source_url, notes
+        FROM api_channel_price_variants WHERE provider_id = ${qwenProviders[0].id} AND model_id IN ${tx(qwenIds)}`
+    : [];
+  const qwenPlan = planQwenCnPrices(qwenModels, qwenChannels, qwenVariants);
+  const qwenProviderId = qwenProviders[0].id;
+  for (const row of qwenPlan.channelInserts) {
+    if (apply) {
+      const inserted = await tx<Array<{ id: number }>>`
+        INSERT INTO api_channel_prices (model_id, provider_id, input_price_per_1m, output_price_per_1m,
+          currency, price_unit, is_available, last_verified, notes, updated_at)
+        VALUES (${row.model_id}, ${qwenProviderId}, ${row.input}, ${row.output},
+          'CNY', 'per_1m_tokens', true, ${verified}, ${QWEN_CN_NOTE}, ${new Date()})
+        RETURNING id`;
+      steps.push({ table: 'api_channel_prices', target: `qwen/${row.slug}`, id: inserted[0]?.id ?? null, changes: { insert: row } });
+    } else {
+      steps.push({ table: 'api_channel_prices', target: `qwen/${row.slug}`, id: null, changes: { insert: row } });
+    }
+  }
+  for (const row of qwenPlan.channelUpdates) {
+    const headline = qwenHeadline(row.slug);
+    if (apply) {
+      await tx`UPDATE api_channel_prices SET input_price_per_1m = ${headline.input}, output_price_per_1m = ${headline.output},
+        currency = 'CNY', price_unit = 'per_1m_tokens', notes = ${QWEN_CN_NOTE}, last_verified = ${verified}, updated_at = ${new Date()}
+        WHERE id = ${row.id}`;
+    }
+    steps.push({ table: 'api_channel_prices', target: `qwen/${row.slug}`, id: row.id, changes: row.changes });
+  }
+  for (const row of qwenPlan.variantInserts) {
+    const band = row.band;
+    if (apply) {
+      const inserted = await tx<Array<{ id: number }>>`
+        INSERT INTO api_channel_price_variants (model_id, provider_id, variant_key, variant_name, variant_kind,
+          input_price_per_1m, output_price_per_1m, currency, price_unit, is_available, is_public, is_headline,
+          constraints_json, source_url, notes, last_verified, updated_at)
+        VALUES (${row.model_id}, ${qwenProviderId}, ${band.key}, ${band.name}, 'context_band',
+          ${band.input}, ${band.output}, 'CNY', 'per_1m_tokens', true, true, ${band.headline},
+          ${tx.json(band.constraints)}, ${QWEN_CN_SOURCE}, ${QWEN_CN_NOTE}, ${verified}, ${new Date()})
+        RETURNING id`;
+      steps.push({ table: 'api_channel_price_variants', target: `qwen/${row.slug}#${band.key}`, id: inserted[0]?.id ?? null, changes: { insert: band } });
+    } else {
+      steps.push({ table: 'api_channel_price_variants', target: `qwen/${row.slug}#${band.key}`, id: null, changes: { insert: band } });
+    }
+  }
+  for (const row of qwenPlan.variantUpdates) {
+    const band = QWEN_CN_MODELS.find(item => item.slug === row.slug)?.bands.find(item => item.key === row.key);
+    if (apply && band) {
+      await tx`UPDATE api_channel_price_variants SET variant_name = ${band.name}, variant_kind = 'context_band',
+        input_price_per_1m = ${band.input}, output_price_per_1m = ${band.output}, currency = 'CNY', price_unit = 'per_1m_tokens',
+        is_headline = ${band.headline}, is_available = true, constraints_json = ${tx.json(band.constraints)},
+        source_url = ${QWEN_CN_SOURCE}, notes = ${QWEN_CN_NOTE}, last_verified = ${verified}, updated_at = ${new Date()}
+        WHERE id = ${row.id}`;
+    } else if (apply) {
+      await tx`UPDATE api_channel_price_variants SET is_headline = false, updated_at = ${new Date()} WHERE id = ${row.id}`;
+    }
+    steps.push({ table: 'api_channel_price_variants', target: `qwen/${row.slug}#${row.key}`, id: row.id, changes: row.changes });
+  }
+  for (const slug of qwenPlan.missing) {
+    steps.push({ table: 'models', target: slug, id: null, changes: { skipped: 'model slug is not in the catalog; Qwen China price was not invented onto a new row' } });
+  }
+  for (const slug of qwenPlan.disabled) {
+    steps.push({ table: 'api_channel_prices', target: `qwen/${slug}`, id: null, changes: { skipped: 'qwen channel is disabled; headline and variants were not written' } });
   }
   return steps;
 }

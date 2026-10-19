@@ -12,7 +12,7 @@ async function main() {
       const steps = await seedCatalogP1(tx, apply);
       console.log(JSON.stringify(steps, null, 2));
       console.log(`${apply ? 'Applied' : 'Dry-run; no writes'}: ${steps.length} steps.`);
-      console.log('Updates Sonnet 4.5 shutdown fields and Z.ai international channel prices for catalog slugs that already exist. Missing slugs are skipped.');
+      console.log('Updates Sonnet 4.5 shutdown fields, Z.ai international channel prices, and Qwen China ≤128K headlines plus context-band variants for catalog slugs that already exist. Missing slugs are skipped. Not part of deploy.');
     });
   } finally { await sql.end(); }
 }

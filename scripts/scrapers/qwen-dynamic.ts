@@ -19,15 +19,20 @@ const KNOWN_MODELS: KnownModel[] = [
   { pattern: /qwen3-max/i,            name: 'qwen3-max',         minInput: 8,    maxInput: 10,   minOutput: 50,   maxOutput: 58,   contextWindow: 32_000 },
   { pattern: /qwen-max(?!-long|-vl)/i, name: 'qwen-max',          minInput: 2.0,  maxInput: 3.0,  minOutput: 8,    maxOutput: 12,   contextWindow: 32_000 },
 
-  // Qwen3.5 Plus / Plus — base band 0-256K ¥2/12 (2026-02 snapshot pricing
-  // ¥0.8/4.8 and qwen-plus ¥2/12 rows nearby must not match this window.
-  { pattern: /qwen3\.5-plus/i,        name: 'qwen3.5-plus',      minInput: 1.5,  maxInput: 2.5,  minOutput: 10,   maxOutput: 14,   contextWindow: 128_000 },
+  // Qwen3.5 Plus — headline is the ≤128K band ¥0.8/4.8 (model-pricing,
+  // 华北2 北京, verified 2026-10-19). The old 1.5–2.5 / 10–14 window matched
+  // the 128K–256K band ¥2/12 first. Higher bands stay in price variants;
+  // this window must not accept them or the neighboring qwen-plus ¥0.8/2 row.
+  { pattern: /qwen3\.5-plus/i,        name: 'qwen3.5-plus',      minInput: 0.75, maxInput: 0.85, minOutput: 4.6,  maxOutput: 5.0,  contextWindow: 128_000 },
   { pattern: /qwen-plus(?!-long|-coder)/i, name: 'qwen-plus',     minInput: 0.5,  maxInput: 1.2,  minOutput: 1.5,  maxOutput: 3,    contextWindow: 128_000 },
 
-  // Qwen3.5 Flash / Flash — base band 0-256K ¥1.2/7.2; ¥0.2/2 is now the
-  // qwen-flash row, not qwen3.5-flash.
-  { pattern: /qwen3\.5-flash/i,       name: 'qwen3.5-flash',     minInput: 1.0,  maxInput: 1.4,  minOutput: 6,    maxOutput: 8.5,  contextWindow: 128_000 },
-  { pattern: /qwen-flash/i,           name: 'qwen-flash',        minInput: 0.1,  maxInput: 0.25, minOutput: 1,    maxOutput: 2,    contextWindow: 128_000 },
+  // Qwen3.5 Flash / qwen-flash — headline is ≤128K. qwen3.5-flash is ¥0.2/2
+  // (then ¥0.8/8 and ¥1.2/12). qwen-flash is ¥0.15/1.5, not the old ¥0.2/2
+  // pin and not qwen-flash-character ¥0.25/1.5. Windows reject those rows
+  // and the higher context bands so the positional matcher cannot store them
+  // as the displayed price.
+  { pattern: /qwen3\.5-flash/i,       name: 'qwen3.5-flash',     minInput: 0.18, maxInput: 0.22, minOutput: 1.9,  maxOutput: 2.1,  contextWindow: 128_000 },
+  { pattern: /qwen-flash/i,           name: 'qwen-flash',        minInput: 0.14, maxInput: 0.16, minOutput: 1.4,  maxOutput: 1.6,  contextWindow: 128_000 },
 
   // Turbo
   { pattern: /qwen-turbo/i,           name: 'qwen-turbo',        minInput: 0.2,  maxInput: 0.5,  minOutput: 0.4,  maxOutput: 1,    contextWindow: 8192 },
@@ -75,6 +80,25 @@ const KNOWN_MODELS: KnownModel[] = [
   { pattern: /qwen3-8b/i,            name: 'qwen3-8b',         minInput: 0.4,  maxInput: 0.6,  minOutput: 1.5,  maxOutput: 2.5,  contextWindow: 128_000 },
   { pattern: /qwen3\.5-397b-a17b/i,  name: 'qwen3.5-397b-a17b', minInput: 1.0, maxInput: 1.4,  minOutput: 6,    maxOutput: 8.5,  contextWindow: 256_000 },
 ];
+
+/** Same first-pair rule as KnownModelsExtractor positional mode. */
+export function qwenPositionalPair(name: string, candidates: readonly number[]): { input: number; output: number } | null {
+  const model = KNOWN_MODELS.find(item => item.name === name);
+  if (!model) return null;
+  let inputPrice: number | null = null;
+  let outputPrice: number | null = null;
+  for (const value of candidates) {
+    if (inputPrice == null && value >= model.minInput && value <= model.maxInput) {
+      inputPrice = value;
+      continue;
+    }
+    if (inputPrice != null && outputPrice == null && value !== inputPrice && value >= model.minOutput && value <= model.maxOutput) {
+      outputPrice = value;
+      break;
+    }
+  }
+  return inputPrice != null && outputPrice != null ? { input: inputPrice, output: outputPrice } : null;
+}
 
 class QwenScraper extends KnownModelsExtractor {
   getSourceName(): string { return 'Qwen'; }
