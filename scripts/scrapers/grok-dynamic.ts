@@ -28,7 +28,9 @@ interface XaiDirectory {
 }
 
 function canonicalModelName(name: string): string {
-  if (name === 'grok-build-0.1') return 'grok-code-fast-1';
+  // grok-code-fast-1 retired 2026-05-15. The May migration page disagrees about
+  // whether code traffic lands on grok-build-0.1 or grok-4.3, so this scraper
+  // keeps the directory slug and does not copy build prices onto the retired row.
   return name.replace(/-0309(?=-|$)/, '');
 }
 

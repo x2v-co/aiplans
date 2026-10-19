@@ -43,6 +43,8 @@ export interface ChannelPrice extends PriceSchedule, ChannelTermsFields {
   notes?: string | null;
   rate_limit?: string | null;
   is_available?: boolean;
+  /** This row's own shutdown day. The card header keeps the canonical member's date. */
+  member_shutdown_date?: string | null;
   /** Slug of the model row this price belongs to (variants merge into one card). */
   model_slug?: string;
   /** Variant tags relative to the parent model, e.g. ['mini'], ['mini', 'batch']. */
@@ -123,6 +125,34 @@ export function baseGroupName(name: string): string {
 }
 
 const VARIANT_RANK: Record<string, number> = { mini: 1, nano: 1, batch: 2 };
+const VARIANT_SUFFIX = /-(batch|mini|nano)$/;
+
+/**
+ * Group key for a catalog slug. A suffix attaches to the nearest existing
+ * parent, then follows that parent's own group. `openai-o3-mini-batch` joins
+ * `o3-mini` (the `openai-` prefix is not part of the id, and `o3` is a
+ * different shutdown). `gpt-4.1-nano` stays on `gpt-4.1`. `gpt-5-mini-batch`
+ * still joins `gpt-5` when both `gpt-5-mini` and `gpt-5` exist.
+ */
+export function groupIdentity(slug: string, slugs: ReadonlySet<string>): { key: string; tags: string[] } {
+  let parent = slug;
+  const peeled: Array<{ parent: string; tag: string }> = [];
+  for (;;) {
+    const match = parent.match(VARIANT_SUFFIX);
+    if (!match || match.index == null) break;
+    peeled.push({ parent: parent.slice(0, match.index), tag: match[1] });
+    parent = parent.slice(0, match.index);
+  }
+  for (let i = 0; i < peeled.length; i++) {
+    const step = peeled[i];
+    const unprefixed = step.parent.startsWith('openai-') ? step.parent.slice('openai-'.length) : null;
+    const hit = slugs.has(step.parent) ? step.parent : unprefixed && slugs.has(unprefixed) ? unprefixed : null;
+    if (!hit || hit === slug) continue;
+    const rest = groupIdentity(hit, slugs);
+    return { key: rest.key, tags: [...rest.tags, ...peeled.slice(0, i + 1).map((item) => item.tag).reverse()] };
+  }
+  return { key: baseGroupName(slug).toLowerCase(), tags: [] };
+}
 
 /** A dated snapshot (qwen3.5-plus-2026-04-20) never owns the card identity. */
 export function isCanonicalSlug(slug: string): boolean {
@@ -265,13 +295,13 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
   const allSlugs = new Set(products.map(product => product.slug));
   const slugById = new Map(products.map(product => [product.id, product.slug]));
 
-  // A variant model merges into its parent's card only when the parent slug
-  // exists in the catalog (gpt-5-mini → gpt-5); an orphan variant (aion-3.0-mini)
-  // keeps its own card.
-  const variantInfo = new Map<string, { tags: string[] }>();
+  // A variant joins the nearest existing parent's card (gpt-5-mini → gpt-5).
+  // An orphan variant (aion-3.0-mini) keeps its own card. Batch-of-mini stays
+  // with mini when that slug is its own card (openai-o3-mini-batch → o3-mini).
+  const variantInfo = new Map<string, { tags: string[]; key: string }>();
   for (const product of products) {
-    const v = variantOf(product.slug);
-    if (v && allSlugs.has(v.parent)) variantInfo.set(product.slug, { tags: v.tags });
+    const identity = groupIdentity(product.slug, allSlugs);
+    if (identity.tags.length) variantInfo.set(product.slug, identity);
   }
 
   products.forEach(product => {
@@ -279,14 +309,13 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
     // 提取基础名称（变体先去掉 mini/nano/batch 后缀，再走数字版本归并）。
     // 用小写 slug 而非 name：DB 里显示名大小写不一（'GPT-5.4' vs slug
     // 'gpt-5.4'），用 name 会让变体行和标准行裂成两张卡。
-    const baseName = baseGroupName(
-      variant ? variantOf(product.slug)!.parent : product.slug,
-    ).toLowerCase();
+    const baseName = variant ? variant.key : baseGroupName(product.slug).toLowerCase();
 
     let productPrices = effectiveChannelPrices.filter(cp => cp.model_id === product.id)
       .map(cp => ({
         ...cp,
         model_slug: slugById.get(cp.model_id) ?? product.slug,
+        member_shutdown_date: product.shutdown_date ?? null,
         ...(variant ? { variant: variant.tags } : {}),
       })) as ChannelPrice[];
     // Standard rows first, then mini/nano, then batch — keeps table readable.

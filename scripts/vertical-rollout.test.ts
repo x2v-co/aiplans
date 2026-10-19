@@ -260,8 +260,11 @@ test('vertical model/pricing seeds default to dry-run and --slug narrows the run
   assert.doesNotMatch(pkg.scripts['seed:vertical-models'], /--apply/);
   assert.doesNotMatch(pkg.scripts['seed:vertical-pricing'], /--apply/);
   const rollout = readFileSync(new URL('../deploy/production/rollout.sh', import.meta.url), 'utf8');
-  assert.match(rollout, /seed:vertical-models -- --apply/);
-  assert.match(rollout, /seed:vertical-pricing -- --apply/);
+  const rolloutCode = rollout.split('\n').filter((line) => !/^\s*#/.test(line)).join('\n');
+  assert.doesNotMatch(rolloutCode, /seed:vertical-models|seed:vertical-pricing/);
+  const manual = readFileSync(new URL('../deploy/production/seed-catalog.sh', import.meta.url), 'utf8');
+  assert.match(manual, /seed:vertical-models -- --apply/);
+  assert.match(manual, /seed:vertical-pricing -- --apply/);
   const bad = await f.run('seed-vertical-pricing-references', ['--slug', 'no-such-model']);
   assert.equal(bad.code, 1);
 });
@@ -308,6 +311,41 @@ test('vertical pricing seed only touches the requested slug, prints field diffs,
   assert.equal(usage.is_available, false, 'is_available only syncs with --sync-availability');
   await f.run('seed-vertical-pricing-references', ['--apply', '--slug=omnihuman-2-0', '--sync-availability']);
   assert.equal(usage.is_available, true);
+});
+
+test('discontinued usage rows are marked unavailable by the pricing seed and then pass the DB audit', async () => {
+  const f = fixture();
+  await f.seed();
+  const retiredStatuses = new Set(['discontinued', 'retired']);
+  const retired = catalog.AI_VERTICAL_CATALOG.filter(item => retiredStatuses.has(item.status) && !item.deferredDbSeed);
+  assert.deepEqual(retired.map(item => item.slug).sort(), ['minimax-audio', 'sora']);
+  const flipped: (typeof f.data.usage_prices)[number][] = [];
+  for (const item of retired) {
+    const model = f.data.models.find(row => row.slug === item.slug)!;
+    const rows = f.data.usage_prices.filter(row => row.model_id === model.id);
+    assert.ok(rows.length > 0, item.slug);
+    for (const row of rows) {
+      row.is_available = true;
+      flipped.push(row);
+    }
+  }
+  const live = f.data.usage_prices.find(row => !flipped.includes(row))!;
+  assert.equal(live.is_available, true);
+  const before = await f.run('audit-vertical-catalog', ['--db']);
+  assert.equal(before.code, 1);
+  assert.match(before.output, /music-model:minimax-audio: DB drift: missing usage_prices reference generation\/generation/);
+  assert.match(before.output, /video-model:sora: DB drift: missing usage_prices reference generation\/generation/);
+
+  const seeded = await f.run('seed-vertical-pricing-references', ['--apply']);
+  assert.equal(seeded.code, 0, seeded.output);
+  assert.match(seeded.output, /minimax-audio\/generation\/generation[\s\S]*is_available: true → false/);
+  assert.doesNotMatch(seeded.output, /--sync-availability/);
+  for (const row of flipped) assert.equal(row.is_available, false);
+  assert.equal(live.is_available, true, 'available models keep their existing availability');
+
+  const after = await f.run('audit-vertical-catalog', ['--db']);
+  assert.equal(after.code, 0, after.output);
+  assert.doesNotMatch(after.output, /CRITICAL/);
 });
 
 test('vertical models seed writes only changed fields', async () => {

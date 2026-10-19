@@ -8,7 +8,12 @@ export function auditedPrice(item: AiCatalogItem, locale: string): string {
   if (item.kind === 'decision-model') return item.pricing;
   if (item.pricePerUnit == null) return '—';
   const range = item.pricePerUnitHigh == null ? '' : `–$${item.pricePerUnitHigh.toFixed(2)}`;
-  return `${item.approximatePrice ? '≈' : ''}$${item.pricePerUnit.toFixed(2)}${range} / ${item.billingUnit === 'per_song' ? (locale === 'zh' ? '首' : 'song') : (locale === 'zh' ? '秒' : 'second')}`;
+  const unit = item.billingUnit === 'per_song'
+    ? (locale === 'zh' ? '首' : 'song')
+    : item.billingUnit === 'per_minute'
+      ? (locale === 'zh' ? '分钟' : 'minute')
+      : (locale === 'zh' ? '秒' : 'second');
+  return `${item.approximatePrice ? '≈' : ''}$${item.pricePerUnit.toFixed(2)}${range} / ${unit}`;
 }
 
 export function AuditedPricingFacts({ item, locale }: { item: AiCatalogItem; locale: string }) {

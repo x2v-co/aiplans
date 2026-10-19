@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { baseGroupName, isCanonicalSlug, variantOf } from './grouped-products';
+import { baseGroupName, groupIdentity, isCanonicalSlug, variantOf } from './grouped-products';
 
 test('variantOf parses nested mini/nano/batch suffixes', () => {
   assert.deepEqual(variantOf('gpt-5-mini'), { tags: ['mini'], parent: 'gpt-5' });
@@ -9,6 +9,15 @@ test('variantOf parses nested mini/nano/batch suffixes', () => {
   assert.deepEqual(variantOf('seed-2.0-mini'), { tags: ['mini'], parent: 'seed-2.0' });
   assert.equal(variantOf('gpt-5'), null);
   assert.equal(variantOf('aion-3.0-mini')?.parent, 'aion-3.0');
+});
+
+test('batch of a standalone mini joins that mini, while nano stays on its family card', () => {
+  const slugs = new Set(['openai-o3', 'o3-mini', 'gpt-4.1', 'gpt-4.1-nano', 'gpt-5', 'gpt-5-mini', 'openai-o4-mini']);
+  assert.deepEqual(groupIdentity('openai-o3-mini-batch', slugs), { key: 'o3-mini', tags: ['batch'] });
+  assert.deepEqual(groupIdentity('gpt-4.1-nano', slugs), { key: 'gpt-4.1', tags: ['nano'] });
+  assert.deepEqual(groupIdentity('gpt-5-mini-batch', slugs), { key: 'gpt-5', tags: ['mini', 'batch'] });
+  assert.deepEqual(groupIdentity('openai-o4-mini-batch', slugs), { key: 'openai-o4-mini', tags: ['batch'] });
+  assert.deepEqual(groupIdentity('o3-mini', slugs), { key: 'o3-mini', tags: [] });
 });
 
 test('baseGroupName keeps major versions but collapses dated snapshots', () => {

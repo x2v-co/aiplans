@@ -71,6 +71,23 @@ function sameStringArray(a: string[] | null | undefined, b: string[] | undefined
   return JSON.stringify([...(a ?? [])].sort()) === JSON.stringify([...(b ?? [])].sort());
 }
 
+function dateOnly(value: unknown): string | null {
+  if (value == null) return null;
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : String(value);
+}
+
+/** Only columns the catalog actually states. A missing date must not clear a stored one. */
+function lifecycleFields(item: AiCatalogItem): Record<string, string> {
+  const fields: Record<string, string> = {};
+  if (item.shutdownDate) fields.shutdown_date = item.shutdownDate;
+  if (item.deprecatedAt) fields.deprecated_at = item.deprecatedAt;
+  if (item.replacementModel) fields.replacement_model = item.replacementModel;
+  if (item.deprecationSourceUrl) fields.deprecation_source_url = item.deprecationSourceUrl;
+  return fields;
+}
+
 function providerWebsite(item: AiCatalogItem): string | undefined {
   if (item.sourceUrls?.[0]?.url) {
     const parsed = new URL(item.sourceUrls[0].url);
@@ -193,6 +210,7 @@ async function main() {
       capabilities: item.capabilities,
       pricing_unit: owned?.pricing_unit ?? PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown'],
       open_source: item.access?.includes('open-weights') ?? false,
+      ...lifecycleFields(item),
       updated_at: new Date().toISOString(),
     };
 
@@ -207,13 +225,18 @@ async function main() {
     }
 
     // Order of modality/capability arrays is not meaningful; keep the stored order.
-    const stored = existing as unknown as Record<string, string[] | null>;
+    const row = existing as unknown as Record<string, unknown>;
     for (const key of ['input_type', 'output_type', 'input_modalities', 'output_modalities', 'capabilities'] as const) {
-      if (sameStringArray(stored[key], (payload as Record<string, unknown>)[key] as string[] | undefined)) {
-        (payload as Record<string, unknown>)[key] = stored[key];
+      if (sameStringArray(row[key] as string[] | null, (payload as Record<string, unknown>)[key] as string[] | undefined)) {
+        (payload as Record<string, unknown>)[key] = row[key];
       }
     }
-    const { changes, patch } = diffRow(existing as unknown as Record<string, unknown>, payload);
+    const comparable = {
+      ...row,
+      shutdown_date: dateOnly(row.shutdown_date),
+      deprecated_at: dateOnly(row.deprecated_at),
+    };
+    const { changes, patch } = diffRow(comparable, payload);
     if (changes.length === 0) {
       console.log(`  ✓ ${slug}: up to date`);
       skipped++;

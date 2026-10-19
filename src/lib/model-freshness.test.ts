@@ -17,6 +17,7 @@ test('filters operational variants from latest-model discovery', () => {
   assert.equal(isPrimaryModelVariant('gemini-3.8-flash-(batch)'), false);
   assert.equal(isPrimaryModelVariant('kimi-k3-fast'), false);
   assert.equal(isPrimaryModelVariant('claude-fable-5.1'), true);
+  assert.equal(isPrimaryModelVariant('kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-instructkimi-k2-base'), false);
 });
 
 test('orders latest models and keeps the newest version in a series', () => {

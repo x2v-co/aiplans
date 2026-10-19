@@ -714,6 +714,9 @@ export default function ApiPricingView({
                                           {cp.price_variants!.length} {locale === 'zh' ? '档报价' : 'variants'}
                                         </Badge>
                                       )}
+                                      {cp.member_shutdown_date && cp.member_shutdown_date !== product.shutdown_date && (
+                                        <ModelLifecycleBadge shutdownDate={cp.member_shutdown_date} />
+                                      )}
                                       {(cp.variant ?? []).map(tag => {
                                         const label = locale === 'zh'
                                           ? { mini: '轻量', nano: 'Nano', batch: '批量' }[tag]

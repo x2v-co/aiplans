@@ -121,8 +121,9 @@ export const CLASSIFICATIONS: Classification[] = [
     selector: { families: GPT_CHAT_FAMILIES, extra: GPT_6_1_SOL },
     reason: 'Enterprise includes the Pro reasoning model' },
 
-  // ─ Anthropic — one chat line. Claude Code rides on Pro/Max/Team Premium but
-  //   explicitly NOT on Team Standard (see that plan's notes column).
+  // ─ Anthropic — one chat line. Pro, Max and Team Premium carry a coding
+  //   secondary kind; Team Standard does not. Seat notes follow claude.com/pricing
+  //   (checked 2026-10-19: both seats include Claude Code). The selector is unchanged.
   { providerSlug: 'anthropic', planSlug: 'claude-free', kind: 'chat', line: 'claude', rank: 0,
     selector: { families: ['claude-sonnet', 'claude-haiku'], current_only: true, exclude: ['claude-sonnet', 'claude-haiku'] },
     reason: 'Free is capped at the current Sonnet/Haiku; Opus is paid-only. The excludes are exact globs dropping the versionless placeholder rows that the same-named families would otherwise pull in' },

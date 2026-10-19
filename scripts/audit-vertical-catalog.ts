@@ -65,6 +65,11 @@ interface UsagePriceRow {
   is_available: boolean | null;
 }
 
+/** Same availability rule as seed-vertical-pricing-references. Retired is included so a future status cannot drift from the seed. */
+function usageReferenceAvailable(status: string): boolean {
+  return status !== 'announced' && status !== 'discontinued' && status !== 'retired';
+}
+
 const CHECK_DB = process.argv.includes('--db');
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const findings: Finding[] = [];
@@ -359,7 +364,9 @@ async function auditDatabaseDrift() {
     const expectedSource = pricingSourceUrl(item);
     const expectedProviderId = pricingProvider?.id;
     const expectedPlanId = referencePlan?.id;
-    const expectedAvailability = item.status !== 'announced' && item.status !== 'discontinued';
+    // discontinued/retired references stay in the table but must be marked unavailable.
+    // announced rows are not a live price either. Anything else stays available.
+    const expectedAvailability = usageReferenceAvailable(item.status);
     // Itemized items carry one row per rate instead of a unit-level placeholder row.
     const expectedRates = item.deferredDbSeed && item.usageRates?.length
       ? item.usageRates.map(rate => ({ kind: rate.priceKind, unit: rate.unit }))

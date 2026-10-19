@@ -8,6 +8,7 @@ on:
       - '*.md'
       - '.github/workflows/data-audit.yml'
       - '.github/workflows/scrape-pricing.yml'
+      - '.github/workflows/seed-catalog.yml'
   workflow_dispatch:
 
 permissions:
