@@ -36,6 +36,11 @@ else
   api_status=$?
 fi
 
+# Models past shutdown_date (UTC) lose their live channels even when the API
+# scrape is skipped or crashed before its own sweep. One way: true → false + lock.
+"${compose[@]}" run --rm scraper npm run seed:shutdown-availability -- --apply
+shutdown_status=$?
+
 if [[ "${SKIP_PLANS:-0}" == "1" ]]; then
   echo "SKIP_PLANS=1 — skipping plan scrapers"
   plans_status=0
@@ -119,6 +124,10 @@ fi
 if [[ "$api_status" != "0" || "$plans_status" != "0" ]]; then
   echo "Scraper group failure: api=$api_status plans=$plans_status" >&2
   exit 1
+fi
+
+if [[ "$shutdown_status" != "0" ]]; then
+  echo "Warning: past-shutdown channel sweep failed ($shutdown_status); index-dynamic's own sweep still applies when the API scrape runs." >&2
 fi
 
 if [[ "$fx_status" != "0" ]]; then

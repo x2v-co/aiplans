@@ -102,16 +102,9 @@ if [[ "$database_ready" != "1" ]]; then
 fi
 
 "${compose[@]}" run --rm --no-deps migrate
-"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-models -- --apply
-"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-logos
-"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-pricing -- --apply
-"${compose[@]}" run --rm --no-deps scraper npm run seed:verified-creative-plans
-"${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-benchmarks
-# Past-shutdown channels go unavailable on every rollout (one way, true → false),
-# then the check fails the rollout if any are still marked available.
-"${compose[@]}" run --rm --no-deps scraper npm run seed:shutdown-availability -- --apply
-"${compose[@]}" run --rm --no-deps scraper npm run audit:verticals:db
-"${compose[@]}" run --rm --no-deps scraper npm run audit:shutdown-availability
+# Catalog seeds stay out of app release. SRE runs deploy/production/seed-catalog.sh
+# (default dry-run; --apply only after a saved diff and pg_dump). See
+# docs/vertical-seeds.md and docs/launch-sample-checklist.md.
 "${compose[@]}" run --rm --no-deps scraper npm run refresh:fx
 "${compose[@]}" run --rm --no-deps scraper npm run publish:v1
 app_switched=1

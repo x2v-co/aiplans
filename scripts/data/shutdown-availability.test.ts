@@ -108,24 +108,33 @@ test('mode flags default to a dry-run and reject mixes', () => {
   assert.throws(() => shutdownAvailabilityMode(['--sync']), /Usage/);
 });
 
-test('SQL never writes is_available = true, and rollout sweeps before the audits', () => {
+test('SQL never writes is_available = true; the sweep runs daily and in the manual catalog seed, not in app release', () => {
   const sweep = readFileSync(new URL('./shutdown-availability.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(sweep, /is_available\s*=\s*true/);
   assert.match(sweep, /SET is_available = false, availability_locked = true/);
   assert.match(sweep, /\(now\(\) AT TIME ZONE 'UTC'\)::date/);
-  const rollout = readFileSync(new URL('../../deploy/production/rollout.sh', import.meta.url), 'utf8');
-  const at = (needle: string) => {
-    const index = rollout.indexOf(needle);
-    assert.ok(index > 0, needle);
-    return index;
-  };
-  const models = at('npm run seed:vertical-models -- --apply');
-  const pricing = at('npm run seed:vertical-pricing -- --apply');
-  const sweepStep = at('npm run seed:shutdown-availability -- --apply');
-  const audit = at('npm run audit:verticals:db');
-  const check = at('npm run audit:shutdown-availability');
-  const app = at('up -d --no-deps --remove-orphans app');
-  assert.ok(models < sweepStep && pricing < sweepStep && sweepStep < audit && audit < check && check < app);
+  // #224: app release writes no catalog data, so the sweep is not in rollout.sh.
+  const code = (file: string) => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n').filter(line => !/^\s*#/.test(line)).join('\n');
+  assert.doesNotMatch(code('../../deploy/production/rollout.sh'), /shutdown-availability/);
+  assert.doesNotMatch(code('../../.github/workflows/deploy-production.yml'), /shutdown-availability/);
+
+  // Manual catalog seed: dry-run goes into diff.txt; apply runs after the backup, before the audits.
+  const seed = code('../../deploy/production/seed-catalog.sh');
+  const dry = seed.indexOf('npm run seed:shutdown-availability\n');
+  const backup = seed.indexOf('pg_dump --username');
+  const apply = seed.indexOf('npm run seed:shutdown-availability -- --apply');
+  const audit = seed.indexOf('npm run audit:verticals:db');
+  const check = seed.indexOf('npm run audit:shutdown-availability');
+  assert.ok(dry > 0 && dry < backup && backup < apply && apply < audit && audit < check, `${dry} ${backup} ${apply} ${audit} ${check}`);
+  assert.match(seed, /--table=api_channel_prices --table=api_channel_price_variants/);
+
+  // Daily scraper: runs after the API scrape step and never fails the job on its own.
+  const daily = code('../../deploy/production/run-scrapers.sh');
+  const scrape = daily.indexOf('npm run scrape\n');
+  const sweepDaily = daily.indexOf('npm run seed:shutdown-availability -- --apply');
+  const setE = daily.indexOf('set -e', sweepDaily);
+  assert.ok(scrape > 0 && sweepDaily > scrape && setE > sweepDaily);
+  assert.ok(daily.lastIndexOf('set +e', sweepDaily) > daily.lastIndexOf('set -e', sweepDaily));
   const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
   assert.equal(pkg.scripts['seed:shutdown-availability'], 'tsx scripts/seed-shutdown-availability.ts');
   assert.equal(pkg.scripts['audit:shutdown-availability'], 'tsx scripts/seed-shutdown-availability.ts --check');

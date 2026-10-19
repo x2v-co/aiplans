@@ -435,17 +435,20 @@ messages/
 
 ## Common gotchas
 
-- **Vertical seed order + Arena/family slug collisions.** rollout runs
-  `seed:vertical-models` → `seed:vertical-benchmarks` → `audit:verticals:db`
-  (a hard deploy gate). `ensureArenaLeaderboardModels()` upserts a model per
-  Arena T2V entry by slug; when an entry shares a slug with a curated family
-  catalog row (currently only `sora`), it must skip the model-row upsert —
+- **Vertical seed order + Arena/family slug collisions.** App rollout does
+  not run catalog seeds. SRE runs `deploy/production/seed-catalog.sh`
+  (default dry-run; `--apply` only after a saved diff and `pg_dump`). Apply
+  order is `seed:vertical-models` → logos → pricing → verified creative plans
+  → `seed:vertical-benchmarks` → `audit:verticals:db`. The DB audit is part of
+  that write, not a deploy gate. `ensureArenaLeaderboardModels()` upserts a
+  model per Arena T2V entry by slug; when an entry shares a slug with a curated
+  family catalog row (currently only `sora`), it must skip the model-row upsert —
   otherwise the Arena version payload overwrites the family name/modalities/
   capabilities/link (its payload doesn't set `updated_at`, so the row looks
-  stale-but-touched) and the audit fails 4 criticals, blocking every deploy.
-  Guard lives in `seed-vertical-benchmarks.ts` (`catalogSlugs`); benchmark
-  scores still attach to the family row via `SCORE_SEEDS`. If a new collision
-  appears, extend the guard rather than reordering the seeds.
+  stale-but-touched) and the audit fails 4 criticals. Guard lives in
+  `seed-vertical-benchmarks.ts` (`catalogSlugs`); benchmark scores still attach
+  to the family row via `SCORE_SEEDS`. If a new collision appears, extend the
+  guard rather than reordering the seeds.
 - **Never fetch a page's own data in a `useEffect`.** A `"use client"` component
   *is* server-rendered — the boundary controls hydration, not SSR — but an effect
   only runs in the browser, so the server renders the `loading` branch and ships
