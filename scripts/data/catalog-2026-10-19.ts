@@ -1,7 +1,8 @@
 import type { Sql } from 'postgres';
 
-/** Claude Team seat prices checked 2026-10-19. US, before tax, minimum 2 seats. */
+/** Claude Team seat prices checked 2026-10-19 against https://claude.com/pricing. US, before tax, teams of 2 to 150. Both seats include Claude Code. */
 export const CLAUDE_TEAM_PRICE_SOURCES = [
+  'https://claude.com/pricing',
   'https://support.claude.com/en/articles/9266767-what-is-the-team-plan',
   'https://claude.com/blog/claude-team-updates',
 ] as const;
@@ -24,13 +25,13 @@ export const CLAUDE_TEAM_PRICES: Record<string, TeamPrice> = {
     price: 25,
     annual_price: 240,
     price_yearly_monthly: 20,
-    note: `[team-price] Standard seat, United States, before tax. Monthly $25; annual $20/seat/month ($240/seat/year). Minimum 2 seats. ${verified}. Sources: ${sources}.`,
+    note: `[team-price] Standard seat, United States, before tax. Monthly $25; annual $20/seat/month ($240/seat/year). Minimum 2 seats (teams of 2 to 150). Includes Claude Code. ${verified}. Sources: ${sources}.`,
   },
   'claude-team-premium': {
     price: 125,
     annual_price: 1200,
     price_yearly_monthly: 100,
-    note: `[team-price] Premium seat, United States, before tax. Monthly $125; annual $100/seat/month ($1,200/seat/year). Minimum 2 seats. ${verified}. Sources: ${sources}.`,
+    note: `[team-price] Premium seat, United States, before tax. Monthly $125; annual $100/seat/month ($1,200/seat/year). Minimum 2 seats (teams of 2 to 150). Includes Claude Code; 5x more usage than a Standard seat. ${verified}. Sources: ${sources}.`,
   },
 };
 

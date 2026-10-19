@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { OPENAI_SHUTDOWNS, planOpenAIShutdowns, shutdownSeedMode, type ShutdownModelRow } from './openai-shutdowns';
 
@@ -60,6 +61,15 @@ test('idempotent and preserves unknown announcements/replacements instead of mak
   assert.deepEqual(planOpenAIShutdowns(seeded).updates, []);
   assert.equal(plan.updates.find(update => update.slug === 'gpt-5.1')?.to.deprecated_at, null);
   assert.equal(plan.updates.find(update => update.slug === 'gpt-5.1')?.to.replacement_model, null);
+});
+
+test('channel disable SQL only covers slugs this script manages', () => {
+  const src = readFileSync(new URL('../seed-openai-shutdowns.ts', import.meta.url), 'utf8');
+  const apply = src.slice(src.indexOf("for (const table of ['api_channel_prices'"));
+  assert.ok(apply.length > 0);
+  assert.match(apply, /slug IN \$\{tx\(slugs\)\}/);
+  assert.match(apply, /shutdown_date <= \(now\(\) AT TIME ZONE 'UTC'\)::date/);
+  assert.doesNotMatch(apply, /WHERE shutdown_date <= \(now\(\) AT TIME ZONE 'UTC'\)::date\)/);
 });
 
 test('writes require an explicit, unambiguous apply flag', () => {

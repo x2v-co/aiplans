@@ -22,4 +22,7 @@ test('diffRow: last_verified never moves backwards; is_available insert-only by 
   const fwd = diffRow(existing, { last_verified: new Date('2026-10-18') });
   assert.deepEqual(Object.keys(fwd.patch), ['last_verified']);
   assert.deepEqual(Object.keys(diffRow(existing, { is_available: true }, { syncAvailability: true }).patch), ['is_available']);
+  assert.deepEqual(diffRow({ is_available: true }, { is_available: false }, { retireAvailability: true }).patch, { is_available: false });
+  assert.deepEqual(diffRow({ is_available: false }, { is_available: false }, { retireAvailability: true }).changes, []);
+  assert.deepEqual(diffRow({ is_available: false }, { is_available: true }, { retireAvailability: true }).changes, []);
 });

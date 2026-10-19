@@ -20,11 +20,19 @@ test('Claude Team seat prices are the 2026-10-19 verified monthly and annual amo
   );
 });
 
-test('team price notes keep the API credit line and drop the old seat description', () => {
-  const notes = teamPriceNotes('Does NOT include Claude Code.\n[api-credit] Includes $20/month Claude API credit per Standard seat.', 'claude-team');
+test('team price notes keep the API credit line and the verified minimum and Claude Code sentences', () => {
+  const notes = teamPriceNotes('Min 5 users. Does NOT include Claude Code.\n[api-credit] Includes $20/month Claude API credit per Standard seat.', 'claude-team');
   assert.match(notes, /^\[api-credit\]/);
   assert.match(notes, /\[team-price\]/);
+  assert.match(notes, /Minimum 2 seats \(teams of 2 to 150\)/);
+  assert.match(notes, /Includes Claude Code/);
+  assert.match(notes, /https:\/\/claude\.com\/pricing/);
+  assert.doesNotMatch(notes, /Min 5 users/);
   assert.doesNotMatch(notes, /Does NOT include Claude Code/);
+  const premium = teamPriceNotes(null, 'claude-team-premium');
+  assert.match(premium, /Minimum 2 seats \(teams of 2 to 150\)/);
+  assert.match(premium, /Includes Claude Code/);
+  assert.match(premium, /5x more usage than a Standard seat/);
   assert.equal(withoutCodexMiniStaleNote('kept\n[needs-verification] Codex Mini shutdown date is not established by the 2026-10-15 audit; verify official deprecations.'), 'kept');
 });
 
