@@ -83,7 +83,10 @@ export const IMAGE_MODEL_CATALOG_GOOGLE_OPENAI: AiCatalogItem[] = [
   gptImage('gpt-image-2.5-flare', 5, 8, 30),
   gptImage('gpt-image-2', 5, 8, 30),
   gptImage('gpt-image-1.5', 5, 8, 32, 10, { status: 'deprecated', shutdownDate: '2026-12-01', deprecationSourceUrl: OPENAI_DEPRECATIONS }),
-  gptImage('gpt-image-1-mini', 2, 2.5, 8),
+  gptImage('gpt-image-1-mini', 2, 2.5, 8, undefined, {
+    status: 'deprecated', shutdownDate: '2026-12-01', deprecationSourceUrl: OPENAI_DEPRECATIONS,
+    replacementModel: 'gpt-image-2.5-sunburst or gpt-image-2.5-flare',
+  }),
   gptImage('gpt-image-1', 5, 10, 40, undefined, { status: 'deprecated', shutdownDate: '2026-10-23', deprecationSourceUrl: OPENAI_DEPRECATIONS, replacementModel: 'gpt-image-2.5-sunburst or gpt-image-2.5-flare' }),
 ];
 
@@ -118,7 +121,7 @@ const seedream = (slug: string, name: string, rates: Rate[], extra: Partial<Spec
 const qwen = (slug: string, name: string, rates: Rate[]) =>
   perImage('Alibaba Cloud (Qwen)', 'qwen', QWEN, slug, name, rates, { notes: 'International (Singapore) deployment price; Mainland China prices differ.' });
 const recraft = (slug: string, name: string, rates: Rate[]) => perImage('Recraft', 'recraft', RECRAFT, slug, name, rates);
-const grok = (slug: string, name: string, price: number) => perImage('xAI', 'xai', XAI, slug, name, [img('image', price)]);
+const grok = (slug: string, name: string, price: number, extra: Partial<Spec> = {}) => perImage('xAI', 'xai', XAI, slug, name, [img('image', price)], extra);
 const ideogram = (slug: string, name: string, rates: Rate[], extra: Partial<Spec> = {}) => perImage('Ideogram', 'ideogram', IDEOGRAM, slug, name, rates, extra);
 const tiers = (prefix: string, prices: [string, number][]) => prices.map(([tier, price]) => img(`${prefix}_${tier}`, price));
 
@@ -149,7 +152,16 @@ export const IMAGE_MODEL_CATALOG_OTHERS: AiCatalogItem[] = [
   recraft('recraft-v4.1', 'Recraft V4.1', [img('raster_image', 0.035), img('vector_image', 0.08), img('pro_raster_image', 0.21), img('pro_vector_image', 0.3)]),
   recraft('recraft-v4', 'Recraft V4', [img('raster_image', 0.04), img('vector_image', 0.08), img('pro_raster_image', 0.25), img('pro_vector_image', 0.3)]),
   grok('grok-imagine-image-2.0', 'Grok Imagine Image 2.0', 0.04),
-  grok('grok-imagine-image-quality', 'Grok Imagine Image (quality)', 0.05),
+  grok('grok-imagine-image-quality', 'Grok Imagine Image (quality)', 0.05, {
+    status: 'deprecated', deprecatedAt: '2026-09-02', shutdownDate: '2026-11-02',
+    replacementModel: 'grok-imagine-image-2.0 (quality: low)',
+    deprecationSourceUrl: 'https://docs.x.ai/developers/migration/imagine-image-quality-nov-2',
+    source: [
+      { label: 'xAI pricing', url: 'https://docs.x.ai/developers/pricing', publisher: 'xAI' },
+      { label: 'grok-imagine-image-quality retirement', url: 'https://docs.x.ai/developers/migration/imagine-image-quality-nov-2', publisher: 'xAI' },
+    ],
+    notes: 'Notice began 2026-09-02. On 2026-11-02 the slug is served by grok-imagine-image-2.0 with quality low and billed at that model\'s low rate. The migration page says low is $0.01/image cheaper and does not print the low dollar amount. The $0.05 headline is the pre-retirement quality price on the pricing page (checked 2026-10-19). grok-imagine-image 1.0 is not part of this retirement.',
+  }),
   grok('grok-imagine-image', 'Grok Imagine Image', 0.02),
   ideogram('ideogram-4.5', 'Ideogram 4.5', [
     ...tiers('image', [['low', 0.03], ['medium', 0.06], ['high', 0.1]]), img('image_high_with_reference', 0.22),
