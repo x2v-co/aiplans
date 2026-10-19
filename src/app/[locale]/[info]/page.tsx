@@ -9,8 +9,8 @@ type SourceLink = { label: string; url: string };
 type Section = { heading: string; paragraphs?: string[]; bullets?: string[]; links?: SourceLink[] };
 type PageContent = { title: string; description: string; intro: string; sections: Section[] };
 
-const UPDATED = 'October 9, 2026';
-const UPDATED_ZH = '2026 年 10 月 9 日';
+const UPDATED = 'October 18, 2026';
+const UPDATED_ZH = '2026 年 10 月 18 日';
 
 const content: Record<Locale, Record<InfoSlug, PageContent>> = {
   en: {
@@ -71,9 +71,9 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
       intro: `Last updated: ${UPDATED}. This policy explains the limited information processed when you use aiplans.dev.`,
       sections: [
         { heading: 'Data controller', paragraphs: ['The data controller for the personal data described in this policy is x2v, operated by Guanchen Lin (sole proprietor), Hong Kong. Privacy requests can be sent through the contact methods on this site.'] },
-        { heading: 'Information we process', bullets: ['Language and privacy preferences stored in your browser.', 'Standard hosting and security logs, which may include IP address, browser details, requested URL, and time of access.', 'Aggregate referral events containing the campaign, source, product, and timestamp. The application does not add an IP address or account identifier to this referral table.', 'Google Analytics usage data only after you consent to analytics.'] },
-        { heading: 'Cookies and local storage', paragraphs: ['A language cookie remembers the selected locale. A local-storage record remembers your privacy choices. With analytics consent, Google Analytics may set cookies such as _ga. You can change your choice at any time through Cookie settings in the footer.'] },
-        { heading: 'Google Analytics', paragraphs: ['When analytics is accepted, Google Analytics helps us understand aggregate page usage, device categories, and approximate geography. Analytics does not load before consent through our site preference control. Google may process this data under its own privacy terms.'] },
+        { heading: 'Information we process', bullets: ['Language and privacy preferences stored in your browser.', 'Standard hosting and security logs, which may include IP address, browser details, requested URL, and time of access.', 'Aggregate referral events containing the campaign, source, product, and timestamp. The application does not add an IP address or account identifier to this referral table.', 'Google Analytics usage data only after you consent to analytics.', 'After analytics consent, an anonymous return-visit note in your browser: the first day, the last day, a session count, and whether an outbound link was used. It is not an account id and is not sent as an identifier.'] },
+        { heading: 'Cookies and local storage', paragraphs: ['A language cookie remembers the selected locale. A local-storage record remembers your privacy choices. With analytics consent, Google Analytics may set cookies such as _ga, and this site keeps the return-visit note above plus the current tab’s campaign parameters (source, medium, campaign, content) so later page views in that visit stay attributed. Query strings are not stored. Rejecting analytics deletes the note and the campaign parameters. You can change your choice at any time through Cookie settings in the footer.'] },
+        { heading: 'Google Analytics', paragraphs: ['When analytics is accepted, Google Analytics helps us understand aggregate page usage, device categories, approximate geography, and the visit → compare → outbound click → return path. Events use page family, campaign tokens, and provider channel. They do not include an account id, email address, or the full address of an outbound link. Analytics does not load before consent through our site preference control. Google may process this data under its own privacy terms.'] },
         { heading: 'Advertising', paragraphs: ['Advertising is not currently enabled. If Google AdSense is enabled later, third-party vendors including Google may use cookies to serve ads based on prior visits to this and other websites. Users can control personalized advertising through Google Ads Settings. Where required, advertising will use a Google-certified consent management platform.'] },
         { heading: 'External links and affiliates', paragraphs: ['Outbound links lead to third-party sites with their own privacy practices. Some referral links may generate an aggregate click record and may compensate aiplans.dev; see the Affiliate and Advertising Disclosure.'] },
         { heading: 'Retention and choices', paragraphs: ['We retain operational records only as long as reasonably needed for security, measurement, legal obligations, and service improvement. You may reject optional storage, reopen Cookie settings, clear site data in your browser, or contact us about a privacy request.'] },
@@ -156,9 +156,9 @@ const content: Record<Locale, Record<InfoSlug, PageContent>> = {
       intro: `最后更新：${UPDATED_ZH}。本政策说明使用 aiplans.dev 时会处理的有限信息。`,
       sections: [
         { heading: '个人信息处理者', paragraphs: ['本政策所述个人信息的处理者（数据控制者）是 x2v, operated by Guanchen Lin (sole proprietor), Hong Kong。隐私请求可通过本站联系渠道提出。'] },
-        { heading: '我们处理的信息', bullets: ['保存在浏览器中的语言与隐私偏好。', '标准托管和安全日志，可能包含 IP 地址、浏览器信息、请求网址与访问时间。', '包含活动、来源、产品和时间的汇总推荐点击事件；应用不会在该点击表中加入 IP 地址或账号标识。', '仅在你同意分析后产生的 Google Analytics 使用数据。'] },
-        { heading: 'Cookie 与本地存储', paragraphs: ['语言 Cookie 用于记住所选语言，本地存储用于记住隐私选择。同意分析后，Google Analytics 可能设置 `_ga` 等 Cookie。你可以随时通过页脚的“Cookie 设置”修改选择。'] },
-        { heading: 'Google Analytics', paragraphs: ['接受分析后，Google Analytics 帮助我们了解汇总页面使用情况、设备类别和大致地区。本站的偏好控件会在取得同意前阻止分析脚本加载；Google 也会依据其隐私条款处理相关数据。'] },
+        { heading: '我们处理的信息', bullets: ['保存在浏览器中的语言与隐私偏好。', '标准托管和安全日志，可能包含 IP 地址、浏览器信息、请求网址与访问时间。', '包含活动、来源、产品和时间的汇总推荐点击事件；应用不会在该点击表中加入 IP 地址或账号标识。', '仅在你同意分析后产生的 Google Analytics 使用数据。', '同意分析后，浏览器里一份匿名回访记录：首次日期、最近日期、会话次数，以及是否点过出站链接。它不是账号标识，也不会被当作标识发送。'] },
+        { heading: 'Cookie 与本地存储', paragraphs: ['语言 Cookie 用于记住所选语言，本地存储用于记住隐私选择。同意分析后，Google Analytics 可能设置 `_ga` 等 Cookie；本站还会保留上述回访记录，以及当前标签页的活动参数（来源、媒介、活动、内容），以便同一次访问里的后续页面仍能归到来源。不保存查询字符串。拒绝分析会删除回访记录和活动参数。你可以随时通过页脚的“Cookie 设置”修改选择。'] },
+        { heading: 'Google Analytics', paragraphs: ['接受分析后，Google Analytics 帮助我们了解汇总页面使用情况、设备类别、大致地区，以及访问 → 比较 → 出站点击 → 回访这条路径。事件只带页面分组、活动参数和供应商渠道，不包含账号、邮箱或出站链接的完整地址。本站的偏好控件会在取得同意前阻止分析脚本加载；Google 也会依据其隐私条款处理相关数据。'] },
         { heading: '广告', paragraphs: ['本站目前尚未启用广告。将来启用 Google AdSense 后，包括 Google 在内的第三方服务商可能根据用户此前访问本站或其他网站的情况，使用 Cookie 投放广告。在法规要求的地区，我们会使用经 Google 认证的同意管理平台。'] },
         { heading: '外部链接与联盟合作', paragraphs: ['外链会进入有独立隐私规则的第三方网站。部分推荐链接可能记录一次汇总点击并给 aiplans.dev 带来收益，详见《联盟链接与广告披露》。'] },
         { heading: '保留与选择', paragraphs: ['运营记录仅在安全、统计、法定义务和改进服务所合理需要的期限内保留。你可以拒绝可选存储、重新打开 Cookie 设置、清除浏览器网站数据，或联系我们提出隐私请求。'] },

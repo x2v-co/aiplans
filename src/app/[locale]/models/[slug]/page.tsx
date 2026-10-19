@@ -6,6 +6,7 @@ import { modelShutdownNotice } from '@/lib/model-shutdown';
 import { getTranslations } from 'next-intl/server';
 import Link from "next/link";
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
+import { outboundChannelDataset } from '@/lib/funnel-analytics';
 import { notFound, permanentRedirect } from "next/navigation";
 import { legacySlugRedirect } from "@/lib/legacy-slug-redirects";
 import { findModelSlugRedirect } from "@/lib/model-slug-redirects";
@@ -1026,6 +1027,11 @@ export default async function ModelPage({
                                     href={outbound.href}
                                     target="_blank"
                                     rel={outbound.affiliate ? AFFILIATE_LINK_REL : 'noopener noreferrer'}
+                                    {...outboundChannelDataset({
+                                      channelSlug: cp.providers.slug,
+                                      channelType: cp.providers.type,
+                                      modelSlug: slug,
+                                    })}
                                   >
                                     <Button variant="outline" size="sm" className="gap-1">
                                       Visit <ExternalLink className="w-3 h-3" />

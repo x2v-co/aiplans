@@ -16,6 +16,7 @@ import { verticalKindPath } from '@/lib/vertical-model-detail';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 import { PlanCoverage } from '@/components/plan-coverage';
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
+import { outboundChannelDataset } from '@/lib/funnel-analytics';
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 
 function formatMoney(value: number | null, currency: string | null): string {
@@ -69,7 +70,16 @@ export default function VerticalModelDetailPage({
             <p className="mt-6 max-w-3xl leading-8 text-zinc-700 dark:text-zinc-300">{item.bestFor}</p>
             <div className="mt-6 flex flex-wrap gap-3">
               {outbound && (
-                <a href={outbound.href} target="_blank" rel={outbound.affiliate ? AFFILIATE_LINK_REL : 'noreferrer'}>
+                <a
+                  href={outbound.href}
+                  target="_blank"
+                  rel={outbound.affiliate ? AFFILIATE_LINK_REL : 'noreferrer'}
+                  {...outboundChannelDataset({
+                    channelSlug: providerSlug,
+                    channelType: 'official',
+                    modelSlug: item.slug,
+                  })}
+                >
                   <Button className="gap-2">
                     {outbound.affiliate
                       ? (isZh ? '前往官网（联盟链接）' : 'Visit website (affiliate link)')

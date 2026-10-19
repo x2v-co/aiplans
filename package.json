@@ -11,6 +11,7 @@
     "docker:scrape": "deploy/production/run-scrapers.sh",
     "db:test": "node test-connection.mjs",
     "lint": "eslint",
+    "report:funnel": "tsx scripts/print-funnel-weekly-query.ts",
     "scrape": "tsx scripts/index-dynamic.ts",
     "scrape:plans": "tsx scripts/index-plans-dynamic.ts",
     "scrape:plans:dry-run": "tsx scripts/index-plans-dynamic.ts --dry-run",
