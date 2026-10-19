@@ -35,3 +35,20 @@ test('seed keeps -1 sentinel rows unavailable and leaves priced live rows alone'
   assert.equal(keepSeed({ is_available: true, input_price_per_1m: 1, output_price_per_1m: 2, notes: 'x' }, { is_available: true, notes: '' }).is_available, true);
   assert.equal(keepSeed({ is_available: true, input_price_per_1m: 1, output_price_per_1m: 2, notes: 'x' }, null).is_available, true);
 });
+
+test('availability_locked 的人工下架行：抓价带真实价格也不改回可用', async () => {
+  const { retainLockedUnavailable, isAvailabilityLocked, keepUnavailableForSeed } = await import('./manual-unavailable');
+  const lockedOff = { is_available: false, availability_locked: true, notes: 'qwen-flash retired' };
+  const priced = { is_available: true, input_price_per_1m: 0.15, output_price_per_1m: 1.5 };
+  assert.equal(isAvailabilityLocked(lockedOff), true);
+  assert.equal(retainManualUnavailable(priced, lockedOff).is_available, false);
+  assert.equal(retainLockedUnavailable(priced, lockedOff).is_available, false);
+  assert.equal(keepUnavailableForSeed(priced, lockedOff).is_available, false);
+  // Prices still refresh; only availability is held.
+  assert.equal(retainManualUnavailable(priced, lockedOff).input_price_per_1m, 0.15);
+  // No lock (or a lock on a live row) leaves the scraper's value alone.
+  assert.equal(retainManualUnavailable(priced, { is_available: false, availability_locked: false, notes: null }).is_available, true);
+  assert.equal(retainManualUnavailable(priced, { is_available: true, availability_locked: true, notes: null }).is_available, true);
+  // The lock never turns anything on.
+  assert.equal(retainLockedUnavailable({ is_available: false }, { is_available: true, availability_locked: true }).is_available, false);
+});

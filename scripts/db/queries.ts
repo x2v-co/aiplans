@@ -1,5 +1,5 @@
 import { retainMatchingPromo } from '../utils/promo-sync';
-import { retainManualUnavailable } from '../utils/manual-unavailable';
+import { isAvailabilityLocked, retainManualUnavailable } from '../utils/manual-unavailable';
 import { allowsUnverifiedPrice } from './unverified-price';
 import { checkModelIdentity, ModelIdentityRejectedError, isCachedPriceSane } from '../utils/model-identity-guard';
 import { canonicalizeModelSlug } from '../utils/model-normalizer';
@@ -109,13 +109,15 @@ export async function upsertChannelPriceVariant(data: {
 
   const { data: existing, error: selectError } = await db
     .from('api_channel_price_variants')
-    .select('id')
+    .select('*')
     .eq('model_id', data.model_id)
     .eq('provider_id', data.provider_id)
     .eq('variant_key', data.variant_key)
     .single();
 
   if (selectError && selectError.code !== 'PGRST116') throw selectError;
+  // A variant locked off by a person/seed stays off; the scrape still refreshes its price.
+  if (existing && isAvailabilityLocked(existing)) row.is_available = false;
 
   if (existing) {
     const { data: result, error } = await db
@@ -354,7 +356,8 @@ export async function upsertChannelPrice(data: {
   }
 
   data = retainMatchingPromo(data, existing);
-  // 审计下架的无固定价路由行（-1 哨兵）不被无价格写入改回可用。
+  // 审计下架的无固定价路由行（-1 哨兵）不被无价格写入改回可用；
+  // availability_locked 的人工/seed 下架行（discontinued/retired/过关停日）任何抓价都不改回可用。
   data = retainManualUnavailable(data, existing);
 
   if (existing) {

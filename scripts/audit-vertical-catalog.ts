@@ -6,6 +6,7 @@ import {
 } from '../src/lib/ai-vertical-catalog';
 import { VERTICAL_PROVIDER_LOGOS } from '../src/lib/vertical-provider-logos';
 import { auditVerticalModelFields, isAuditOwnedVertical } from './data/catalog-audit-vertical';
+import { shutdownReached } from '../src/lib/model-shutdown';
 
 interface Finding {
   level: 'critical' | 'warning';
@@ -25,6 +26,7 @@ interface DbModelRow {
   pricing_unit: string | null;
   offical_link: string | null;
   open_source: boolean | null;
+  shutdown_date?: string | Date | null;
 }
 
 interface ProviderRow {
@@ -280,7 +282,7 @@ async function auditDatabaseDrift() {
   ])];
   const [{ data: modelRows, error: modelError }, { data: providerRows, error: providerError }, { data: planRows, error: planError }] = await Promise.all([
     db.from('models')
-      .select('id, slug, name, provider_ids, model_category, input_modalities, output_modalities, capabilities, pricing_unit, offical_link, open_source')
+      .select('id, slug, name, provider_ids, model_category, input_modalities, output_modalities, capabilities, pricing_unit, offical_link, open_source, shutdown_date')
       .in('slug', slugs),
     db.from('providers').select('id, slug, logo_url'),
     db.from('plans').select('id, slug, provider_id, price, annual_price, currency, included_usage_unit, included_usage_amount, plan_kind, plan_category, source, last_verified, notes').in('slug', planSlugs),
@@ -365,8 +367,10 @@ async function auditDatabaseDrift() {
     const expectedProviderId = pricingProvider?.id;
     const expectedPlanId = referencePlan?.id;
     // discontinued/retired references stay in the table but must be marked unavailable.
-    // announced rows are not a live price either. Anything else stays available.
-    const expectedAvailability = usageReferenceAvailable(item.status);
+    // announced rows are not a live price either. A reached shutdown_date (UTC) also
+    // means unavailable, matching the pricing seed. Anything else stays available.
+    const expectedAvailability = usageReferenceAvailable(item.status)
+      && !shutdownReached(item.shutdownDate ?? model.shutdown_date, new Date());
     // Itemized items carry one row per rate instead of a unit-level placeholder row.
     const expectedRates = item.deferredDbSeed && item.usageRates?.length
       ? item.usageRates.map(rate => ({ kind: rate.priceKind, unit: rate.unit }))

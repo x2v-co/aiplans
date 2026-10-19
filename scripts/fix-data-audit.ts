@@ -165,7 +165,8 @@ const UPDATES: PriceUpdate[] = [
   { modelSlug: 'qwen3.5-flash', providerSlug: 'qwen', input: 0.2, output: 2, currency: 'CNY',
     reason: 'Bailuan ≤128K headline ¥0.2/2 (2026-10-19). ¥1.2/7.2 is not a current band; 128K–256K is ¥0.8/8 and 256K–1M is ¥1.2/12' },
   { modelSlug: 'qwen-flash', providerSlug: 'qwen', input: 0.15, output: 1.5, currency: 'CNY',
-    reason: 'Bailuan ≤128K headline ¥0.15/1.5 (2026-10-19). ¥0.2/2 is qwen3.5-flash, not qwen-flash' },
+    reason: 'Bailuan ≤128K headline ¥0.15/1.5 (2026-10-19). ¥0.2/2 is qwen3.5-flash, not qwen-flash', keepDisabled: true },
+  // keepDisabled: the qwen-flash channel is recorded retired (2026-08-20); a price pin must not re-enable it.
   { modelSlug: 'qwen3-coder-plus', providerSlug: 'qwen', input: 4, output: 16, currency: 'CNY',
     reason: 'Bailuan base band 0-32K: ¥4/16; alias-line digits fed ¥3 into positional matcher' },
   { modelSlug: 'qwen3-coder-flash', providerSlug: 'qwen', input: 1, output: 4, currency: 'CNY',

@@ -107,7 +107,11 @@ fi
 "${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-pricing -- --apply
 "${compose[@]}" run --rm --no-deps scraper npm run seed:verified-creative-plans
 "${compose[@]}" run --rm --no-deps scraper npm run seed:vertical-benchmarks
+# Past-shutdown channels go unavailable on every rollout (one way, true → false),
+# then the check fails the rollout if any are still marked available.
+"${compose[@]}" run --rm --no-deps scraper npm run seed:shutdown-availability -- --apply
 "${compose[@]}" run --rm --no-deps scraper npm run audit:verticals:db
+"${compose[@]}" run --rm --no-deps scraper npm run audit:shutdown-availability
 "${compose[@]}" run --rm --no-deps scraper npm run refresh:fx
 "${compose[@]}" run --rm --no-deps scraper npm run publish:v1
 app_switched=1

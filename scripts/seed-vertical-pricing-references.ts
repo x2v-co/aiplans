@@ -13,11 +13,13 @@
 import { db } from './db/queries';
 import { AI_VERTICAL_CATALOG, RIGOROUS_MODEL_KINDS, type AiCatalogItem } from '../src/lib/ai-vertical-catalog';
 import { diffRow, formatChanges, parseSeedArgs } from './utils/seed-diff';
+import { shutdownReached } from '../src/lib/model-shutdown';
 
 // Default is dry-run. Only `--apply` writes; `--slug a,b` narrows the run.
 // `--sync-availability` lets existing usage rows change is_available in either
-// direction. Without that flag, only a discontinued/retired catalog row may
-// change an existing row, and only from available to false.
+// direction. Without that flag, only a discontinued/retired catalog row, or a
+// model whose shutdown_date (UTC) has been reached, may change an existing row,
+// and only from available to false.
 const ARGS = parseSeedArgs(process.argv);
 const APPLY = ARGS.apply;
 const stats = { inserted: 0, updated: 0, unchanged: 0 };
@@ -26,7 +28,7 @@ const NOW = new Date();
 type Unit = 'credit' | 'generation' | 'second' | 'minute' | 'compute_hour' | 'license' | 'availability';
 
 interface ProviderRow { id: number; slug: string; name: string }
-interface ModelRow { id: number; slug: string; name: string; provider_ids: number[] | null }
+interface ModelRow { id: number; slug: string; name: string; provider_ids: number[] | null; shutdown_date?: string | Date | null }
 interface PlanRow { id: number; slug: string; provider_id: number | null }
 
 const UNIT_PRICE_KIND: Record<Unit, string> = {
@@ -77,6 +79,11 @@ function usageRetired(status: string): boolean {
   return status === 'discontinued' || status === 'retired';
 }
 
+/** Retired by status, or past its shutdown day (catalog date first, then the DB row). */
+function usageOff(item: AiCatalogItem, model: ModelRow): boolean {
+  return usageRetired(item.status) || shutdownReached(item.shutdownDate ?? model.shutdown_date, NOW);
+}
+
 function inferPrimaryUnit(item: AiCatalogItem): Unit {
   const text = `${item.pricingUnit ?? ''} ${item.unit ?? ''}`;
   return UNIT_PATTERNS.find(([, pattern]) => pattern.test(text))?.[0] ?? 'availability';
@@ -89,7 +96,7 @@ async function loadProviders(): Promise<Map<string, ProviderRow>> {
 }
 
 async function loadModels(slugs: string[]): Promise<Map<string, ModelRow>> {
-  const { data, error } = await db.from('models').select('id, slug, name, provider_ids').in('slug', slugs);
+  const { data, error } = await db.from('models').select('id, slug, name, provider_ids, shutdown_date').in('slug', slugs);
   if (error) throw error;
   return new Map((data ?? []).map((model: ModelRow) => [model.slug, model]));
 }
@@ -238,7 +245,7 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
       note: price == null ? 'Numeric price intentionally null until parsed and verified from source.' : 'Numeric price from audited static catalog.',
     },
     source_url: src,
-    is_available: item.status !== 'announced' && !usageRetired(item.status),
+    is_available: item.status !== 'announced' && !usageOff(item, model),
     last_verified: item.lastVerified ? new Date(item.lastVerified) : NOW,
     updated_at: NOW,
   };
@@ -247,7 +254,7 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
     const current = existing.data as Record<string, unknown>;
     const { changes, patch } = diffRow(current, row, {
       syncAvailability: ARGS.syncAvailability,
-      retireAvailability: usageRetired(item.status),
+      retireAvailability: usageOff(item, model),
     });
     if (changes.length === 0) {
       console.log(`    ✓ usage ${model.slug}/${priceKind}/${unit}: unchanged`);

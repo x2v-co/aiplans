@@ -5,14 +5,28 @@
  */
 export const VARIABLE_ROUTER_SENTINEL = '[needs-verification] Variable/router pricing';
 
-type ExistingRow = { is_available?: boolean | null; notes?: string | null } | null | undefined;
+type ExistingRow = { is_available?: boolean | null; notes?: string | null; availability_locked?: boolean | null } | null | undefined;
 type Incoming = { is_available: boolean; input_price_per_1m: number | null; output_price_per_1m: number | null };
 
 export function isManuallyUnavailable(existing: ExistingRow): boolean {
   return existing?.is_available === false && String(existing.notes ?? '').includes(VARIABLE_ROUTER_SENTINEL);
 }
 
+/**
+ * A channel taken down by a person or a data seed (discontinued, retired, past
+ * shutdown_date) carries availability_locked=true. Scrapers still refresh its
+ * price, but never turn it back on; clearing the lock is an explicit SQL step.
+ */
+export function isAvailabilityLocked(existing: ExistingRow): boolean {
+  return existing?.is_available === false && existing?.availability_locked === true;
+}
+
+export function retainLockedUnavailable<T extends { is_available: boolean }>(data: T, existing: ExistingRow): T {
+  return data.is_available && isAvailabilityLocked(existing) ? { ...data, is_available: false } : data;
+}
+
 export function retainManualUnavailable<T extends Incoming>(data: T, existing: ExistingRow): T {
+  if (data.is_available && isAvailabilityLocked(existing)) return { ...data, is_available: false };
   if (!data.is_available || !isManuallyUnavailable(existing)) return data;
   const priced = Number.isFinite(data.input_price_per_1m as number) && Number.isFinite(data.output_price_per_1m as number)
     && data.input_price_per_1m != null && data.output_price_per_1m != null;
@@ -35,7 +49,7 @@ export function keepUnavailableForSeed<T extends Incoming & { notes?: string }>(
   if (!data.is_available || existing?.is_available !== false) return data;
   const priced = data.input_price_per_1m != null && data.output_price_per_1m != null
     && Number.isFinite(data.input_price_per_1m) && Number.isFinite(data.output_price_per_1m);
-  if (!priced || isManuallyUnavailable(existing)) return { ...data, is_available: false };
+  if (!priced || isManuallyUnavailable(existing) || isAvailabilityLocked(existing)) return { ...data, is_available: false };
   if (isScrapeRetired(existing)) {
     const suffix = String(existing!.notes).match(SCRAPE_RETIRED)![0].replace(/^\s*\|?\s*/, '');
     return { ...data, is_available: false, notes: data.notes ? `${data.notes} | ${suffix}` : suffix };
