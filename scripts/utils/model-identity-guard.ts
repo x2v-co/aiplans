@@ -6,6 +6,8 @@
  * date, or punctuation that never appears in a model id is rejected and must be
  * reviewed by a human instead of being inserted.
  */
+import { isGluedModelSlug } from '../../src/lib/glued-model-slug';
+
 const MONTHS = 'jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?';
 
 const RULES: Array<{ reason: string; re: RegExp }> = [
@@ -30,6 +32,7 @@ export function checkModelIdentity(name: string, slug: string): ModelIdentityVer
   if (/^(?:[a-z0-9]+-)+?([a-z][a-z0-9]*)-\1(?:-|$)/i.test(slug ?? '')) {
     reasons.add('doubled vendor/family prefix');
   }
+  if (isGluedModelSlug(slug ?? '')) reasons.add('glued model ids');
   if (!slug || !/^[a-z0-9~][a-z0-9.\-_:~]*$/.test(slug)) reasons.add('slug charset');
   if ((slug ?? '').length > 80 || (name ?? '').length > 100) reasons.add('too long');
   return { ok: reasons.size === 0, reasons: [...reasons] };

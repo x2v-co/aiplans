@@ -51,7 +51,9 @@ export function buildModelPricingSeo(
   const updateText = updatedOn
     ? (isZh ? `更新于 ${updatedOn}` : `Updated on ${updatedOn}`)
     : (isZh ? '更新日期暂无记录' : 'Update date not recorded');
-  const title = isZh ? `${model.name} 价格 / 多少钱 / API 定价`
+  // One template for every Chinese model page. Search queries put 价格
+  // directly after the model name ("glm 5.3 flash 价格", "deepseek v4.1 flash价格").
+  const title = isZh ? `${model.name} 价格`
     : `${model.name} API Pricing / Price per 1M tokens`;
   const cheapestLabel = cheapest ? pricingLabel(cheapest.input_price_per_1m, cheapest.currency) : null;
   const description = isZh

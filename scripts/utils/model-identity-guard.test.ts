@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { checkModelIdentity, isCachedPriceSane } from './model-identity-guard';
-import { parseKimiModelCell } from '../scrapers/moonshot-dynamic';
+import { parseKimiModelCell, parseKimiModelIds } from '../scrapers/moonshot-dynamic';
 
 const dirty = [
   'kimi-k3promopromotion-valid-until-october-11,',
@@ -45,6 +45,17 @@ test('identity guard requires manual review for doubled vendor/family prefixes',
   for (const slug of ['gemini-4-argon', 'gemini-4-argon-batch', 'vendor-family-1']) {
     assert.deepEqual(checkModelIdentity('Model', slug), { ok: true, reasons: [] }, slug);
   }
+});
+
+test('Kimi pricing cell splits ids that were concatenated with no separator', () => {
+  const glued = 'kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-instructkimi-k2-base';
+  assert.deepEqual(parseKimiModelIds(glued), [
+    'kimi-k2-thinking', 'kimi-k2-instruct-0905', 'kimi-k2-instruct', 'kimi-k2-base',
+  ]);
+  assert.deepEqual(parseKimiModelIds('kimi-k2-thinking<br>kimi-k2.5'), ['kimi-k2-thinking', 'kimi-k2.5']);
+  assert.equal(checkModelIdentity(glued, glued).ok, false);
+  assert.ok(checkModelIdentity('Model', glued).reasons.includes('glued model ids'));
+  assert.equal(checkModelIdentity('Model', 'glm-5glm-5.1').ok, false);
 });
 
 test('Kimi pricing cell: badge / tooltip text is stripped to the model id', () => {

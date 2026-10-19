@@ -1,5 +1,6 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import { getPlanComparison } from "@/lib/compare-plans";
+import { legacySlugRedirect } from "@/lib/legacy-slug-redirects";
 import { findModelSlugRedirect } from "@/lib/model-slug-redirects";
 import { getActiveCouponMap } from "@/lib/coupons";
 import type { CurrencyCode } from "@/lib/currency";
@@ -30,6 +31,8 @@ export default async function ComparePlansModelPage({
 }) {
   const { locale, model: rawModel } = await params;
   const modelSlug = decodeSlugParam(rawModel);
+  const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/compare/plans/${modelSlug}`);
+  if (legacyTarget) permanentRedirect(legacyTarget);
 
   const [data, couponByProvider] = await Promise.all([
     getPlanComparison(modelSlug, "USD" as CurrencyCode),
