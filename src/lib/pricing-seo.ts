@@ -90,9 +90,18 @@ function compactNames(names: string[]): string {
 
 export function buildProviderPricingCopy(
   providerName: string, plans: SeoPlan[], locale: Locale, year = new Date().getUTCFullYear(),
+  slug?: string,
 ): PricingCopy {
   const names = compactNames(featuredPlanNames(plans));
   const from = monthlyFrom(plans, locale);
+  // Bing queries for this provider are "月之暗面api" and "月之暗面订阅".
+  // Counts and tier names still come from the plan rows, not from a fixed list.
+  if (locale === 'zh' && slug === 'moonshot-china') {
+    return {
+      title: `月之暗面 API 价格与订阅 ${year}${names ? `：${names}` : ''}`,
+      description: `月之暗面（Kimi / Moonshot）API 价格与订阅：对比 ${plans.length} 个套餐${from}${names ? `，包括 ${names}` : ''}。查看按量 API 价格、月付与年付，以及各档包含的模型。`,
+    };
+  }
   return locale === 'zh' ? {
     title: `${providerName} 套餐与价格 ${year}${names ? `：${names} 对比` : ''}`,
     description: `对比 ${providerName} 的 ${plans.length} 个套餐${from}${names ? `，包括 ${names}` : ''}。查看月付与年付价格、模型权限和使用限额，选择适合个人或团队的方案。`,

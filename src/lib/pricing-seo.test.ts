@@ -93,6 +93,23 @@ test('provider titles select existing tier names and skip repeated Pro variants'
   assert.equal(buildProviderPricingCopy('No Data', [], 'en', 2026).title, 'No Data Plans & Pricing 2026');
 });
 
+test('moonshot china chinese copy targets API price and subscription queries', () => {
+  const plans = [
+    plan({ name: 'Kimi Basic', price: 49, currency: 'CNY' }),
+    plan({ id: 2, name: 'Kimi Pro', price: 199, currency: 'CNY' }),
+  ];
+  const zh = buildProviderPricingCopy('月之暗面 (Moonshot/Kimi)', plans, 'zh', 2026, 'moonshot-china');
+  assert.match(zh.title, /^月之暗面 API 价格与订阅 2026/);
+  assert.match(zh.title, /订阅/);
+  assert.match(zh.description, /API 价格/);
+  assert.match(zh.description, /订阅/);
+  assert.match(zh.description, /2 个套餐/);
+  assert.match(zh.title, /Kimi Pro, Basic/);
+  const en = buildProviderPricingCopy('月之暗面 (Moonshot/Kimi)', plans, 'en', 2026, 'moonshot-china');
+  assert.match(en.title, /Plans & Pricing 2026/);
+  assert.doesNotMatch(en.title, /月之暗面 API/);
+});
+
 test('plans index copy takes provider names and counts from the returned catalog', () => {
   const providers = [{ name: 'OpenAI', planCount: 5 }, { name: 'Anthropic', planCount: 4 }];
   assert.equal(buildPlansIndexPricingCopy(providers, 'en', 2026).title,

@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import Link from "next/link";
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 import { notFound, permanentRedirect } from "next/navigation";
+import { legacySlugRedirect } from "@/lib/legacy-slug-redirects";
 import { findModelSlugRedirect } from "@/lib/model-slug-redirects";
 import { Metadata } from "next";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,8 @@ function planFeatures(features: unknown): string[] {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
+  const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/models/${slug}`);
+  if (legacyTarget) permanentRedirect(legacyTarget);
 
   // Get product name. An unknown slug 404s from *here*, not from the page
   // body, and there is deliberately no loading.tsx anywhere above this route.
@@ -108,8 +111,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       locale: locale === 'zh' ? 'zh' : 'en',
       path: `/models/${slug}`,
       title: {
-        en: `${productName} API Pricing / Price per 1M tokens | aiplans.dev`,
-        zh: `${productName} 价格 / 多少钱 / API 定价 | aiplans.dev`,
+        en: `${pricing.title} | aiplans.dev`,
+        zh: `${pricing.title} | aiplans.dev`,
       },
       description: { en: pricing.description, zh: pricing.description },
     }),
@@ -357,6 +360,8 @@ export default async function ModelPage({
 }) {
   const { locale, slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
+  const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/models/${slug}`);
+  if (legacyTarget) permanentRedirect(legacyTarget);
   const now = new Date();
   const [data, couponByProvider] = await Promise.all([
     getProductWithChannels(slug, now),
