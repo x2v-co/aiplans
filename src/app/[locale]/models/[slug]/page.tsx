@@ -45,7 +45,18 @@ import VariantBadges from '@/components/variant-badges';
 import { isArenaBenchmark, type ModelBenchmarkScore } from '@/lib/benchmarks';
 import { getCodingAgentRowsForModel } from '@/lib/coding-agents';
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
+import { DataTrustLabel, EntitlementLine } from '@/components/data-trust-label';
 import { PlanCoverage } from '@/components/plan-coverage';
+import {
+  channelListPriceTrust,
+  featureLooksEstimated,
+  isTrustModelSlug,
+  planEntitlementTrust,
+  planPriceTrust,
+  reviewedPlanSource,
+  usageEstimateTrust,
+  variantPriceTrust,
+} from '@/lib/data-trust';
 import type { ChannelTermsFields } from '@/lib/channel-terms';
 import type { PlanCoverageFields } from '@/lib/third-party-coverage';
 
@@ -175,7 +186,10 @@ async function getProductWithChannels(slug: string, now = new Date()) {
           'price_unit', v.price_unit,
           'is_headline', v.is_headline,
           'headline_reason', v.headline_reason,
-          'constraints_json', v.constraints_json
+          'constraints_json', v.constraints_json,
+          'source_url', v.source_url,
+          'last_verified', v.last_verified,
+          'notes', v.notes
         ) ORDER BY v.is_headline DESC, v.headline_rank ASC NULLS LAST, v.input_price_per_1m ASC NULLS LAST)
         FROM api_channel_price_variants v
         WHERE v.model_id = cp.model_id
@@ -191,6 +205,8 @@ async function getProductWithChannels(slug: string, now = new Date()) {
         'logo', p.logo,
         'logo_url', p.logo_url,
         'website', p.website,
+        'pricing_url', p.pricing_url,
+        'api_docs_url', p.api_docs_url,
         'region', p.region,
         'access_from_china', p.access_from_china,
         'description', p.description
@@ -279,11 +295,18 @@ async function getProductWithChannels(slug: string, now = new Date()) {
       pl.plan_kind,
       pl.plan_line,
       pl.tier_rank,
+      pl.last_verified,
+      pl.notes,
+      pl.legacy_ends_on,
+      pl.is_contact_sales,
+      pl.monthly_api_credit_status,
       CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object(
         'id', p.id,
         'name', p.name,
         'slug', p.slug,
-        'logo', p.logo
+        'logo', p.logo,
+        'pricing_url', p.pricing_url,
+        'website', p.website
       ) END AS providers
     FROM plans pl
     LEFT JOIN providers p ON p.id = pl.provider_id
@@ -381,6 +404,7 @@ export default async function ModelPage({
   // nothing for the vast majority of models that AA has not evaluated.
   const codingAgentRows = await getCodingAgentRowsForModel(product.id);
   const isZh = locale === 'zh';
+  const showTrust = isTrustModelSlug(slug);
   const productName = formatModelName(product.name);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
   const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);
@@ -629,6 +653,14 @@ export default async function ModelPage({
 
         <CodingAgentModelSection rows={codingAgentRows} locale={locale} />
 
+        {showTrust && (
+          <p className="mb-6 max-w-4xl text-sm text-zinc-600 dark:text-zinc-300">
+            {isZh
+              ? '本页在前 10 高流量核验范围内。每条关键价格和权益都标出来源、适用条件、最近核验时间，以及是否过期或估算。估算不是确定权益。'
+              : 'This page is in the top-10 traffic review set. Each key price and entitlement shows its source, conditions, last verification, and whether it is expired or an estimate. Estimates are not confirmed entitlements.'}
+          </p>
+        )}
+
         {/* Quick Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           {/* Cheapest Option */}
@@ -656,6 +688,9 @@ export default async function ModelPage({
               {cheapestChannel?.providers?.access_from_china && (
                 <Badge className="mt-2 bg-green-100 text-green-800">🇨🇳 China Available</Badge>
               )}
+              {showTrust && cheapestChannel && (
+                <DataTrustLabel fact={channelListPriceTrust(cheapestChannel, locale, now)} locale={locale} />
+              )}
             </CardContent>
           </Card>
 
@@ -682,6 +717,9 @@ export default async function ModelPage({
                     <Badge variant="outline" className="mt-2">🇨🇳 China Available</Badge>
                   ) : (
                     <Badge variant="outline" className="mt-2 bg-red-50 text-red-800">🚫 Not available in China</Badge>
+                  )}
+                  {showTrust && (
+                    <DataTrustLabel fact={channelListPriceTrust(officialChannel, locale, now)} locale={locale} />
                   )}
                 </>
               ) : (
@@ -721,6 +759,9 @@ export default async function ModelPage({
                     <Badge className="mt-2 bg-green-100 text-green-800">
                       支付宝/微信可用
                     </Badge>
+                    {showTrust && (
+                      <DataTrustLabel fact={channelListPriceTrust(cheapestChina, locale, now)} locale={locale} />
+                    )}
                   </>
                 ) : (
                   <div className="text-zinc-500">No China-friendly options</div>
@@ -821,6 +862,12 @@ export default async function ModelPage({
                                 )}
                               </>
                             )}
+                            {showTrust && (
+                              <DataTrustLabel
+                                fact={planPriceTrust(plan, reviewedPlanSource(plan.providers?.slug, locale, plan.providers), locale, now, plan.providers?.slug)}
+                                locale={locale}
+                              />
+                            )}
                           </div>
                           <Badge
                             variant="outline"
@@ -849,14 +896,24 @@ export default async function ModelPage({
                           <div className="space-y-2 mb-4">
                             {planFeatures(plan.features).slice(0, 4).map((feature, idx) => (
                               <div key={idx} className="flex items-start gap-2 text-sm">
-                                <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                <span className="text-zinc-700">{feature}</span>
+                                {!(showTrust && featureLooksEstimated(feature)) && (
+                                  <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                )}
+                                <span className="text-zinc-700">
+                                  {showTrust ? <EntitlementLine text={feature} locale={locale} /> : feature}
+                                </span>
                               </div>
                             ))}
                             {planFeatures(plan.features).length > 4 && (
                               <div className="text-sm text-zinc-500 ml-6">
                                 +{planFeatures(plan.features).length - 4} more features
                               </div>
+                            )}
+                            {showTrust && (
+                              <DataTrustLabel
+                                fact={planEntitlementTrust(plan, reviewedPlanSource(plan.providers?.slug, locale, plan.providers), locale, now)}
+                                locale={locale}
+                              />
                             )}
                           </div>
 
@@ -983,6 +1040,9 @@ export default async function ModelPage({
                           <ChannelTermsBadges terms={cp} />
                           <DeepSeekWindowPrices variants={cp.price_variants} />
                           <LimitedTimeOfferMark row={cp} locale={locale} now={now} />
+                          {showTrust && (
+                            <DataTrustLabel fact={channelListPriceTrust(cp, locale, now)} locale={locale} />
+                          )}
                         </TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${channelTypeLabels[cp.providers.type]?.color || 'bg-gray-100'}`}>
@@ -1075,6 +1135,9 @@ export default async function ModelPage({
                                       {variant.variant_kind && (
                                         <div className="mt-1 text-xs text-zinc-500">{variant.variant_kind}</div>
                                       )}
+                                      {showTrust && (
+                                        <DataTrustLabel fact={variantPriceTrust(variant, cp, locale, now)} locale={locale} />
+                                      )}
                                     </div>
                                   ))}
                                 </div>
@@ -1125,6 +1188,7 @@ export default async function ModelPage({
               {isZh
                 ? '基于典型使用比例（输入:输出 = 2:1），所有渠道统一换算为美元对比'
                 : 'Based on typical usage patterns (input:output = 2:1 ratio); all channels converted to USD for comparison'}
+              {showTrust && <DataTrustLabel fact={usageEstimateTrust(locale, now)} locale={locale} />}
             </CardDescription>
           </CardHeader>
           <CardContent>
