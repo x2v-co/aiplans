@@ -1,8 +1,9 @@
 # OpenAI API lifecycle data
 
-The seed now covers audit A2 #1 / A3 P0, dated 2026-10-15, as well as the
-previously reviewed batches in `scripts/data/openai-shutdowns.ts`. Prices and
-new shutdown dates are taken from the supplied audit, not guessed.
+The seed now covers audit A2 #1 / A3 P0, dated 2026-10-15, plus the
+2026-10-19 deprecations-page check, as well as the previously reviewed batches
+in `scripts/data/openai-shutdowns.ts`. Prices and new shutdown dates are taken
+from the official deprecations page, not guessed.
 
 `shutdown_date`, `replacement_model`, and `deprecation_source_url` already exist
 in migration 0003. Migration 0005 adds nullable `deprecated_at`, the announcement
@@ -14,8 +15,15 @@ All matching is by exact model slug. No redirects, name matching, or model-name
 normalization runs during the seed. GPT-4o's May snapshot and its undated alias
 therefore keep distinct shutdown dates. Missing exact rows are printed for SRE;
 no model inventory was inspected in this workspace. The four audit-listed Codex
-models retire on 2026-07-23. `gpt-5.1-codex-mini` has only sitemap evidence, so the
-pricing SQL adds a verification note without assigning it a family shutdown day.
+models retire on 2026-07-23. `gpt-5.1-codex-mini` is listed on the deprecations
+page (checked 2026-10-19) with shutdown 2026-07-23 and replacement `gpt-5.6-terra`.
+The 2026-10-15 pricing SQL no longer appends a verification sentence for it.
+`openai-o4-mini-high` and `openai-o4-mini-batch` are still absent from that page
+and are left unchanged. Production aliases `openai-gpt-3-5-turbo`,
+`openai-gpt-3-5-turbo-batch` and `openai-gpt-4` follow the official aliases
+`gpt-3.5-turbo` (replacement `gpt-5.6-terra`) and `gpt-4` (replacement `gpt-5.6-sol`),
+shutdown 2026-10-23. The batch slug is that alias's batch SKU; the page does not
+list a separate `-batch` id.
 
 The seed defaults to a serializable READ ONLY transaction and prints model field
 diffs plus channel/variant rows to disable. `--apply` writes all changes in one
@@ -53,6 +61,11 @@ npm run mappings:materialize:dry-run
 npm run mappings:materialize:apply
 npm run audit:verbose
 ```
+
+`npm run seed:catalog-2026-10-19` is separate from the steps above and is not part of
+rollout. It stays a dry-run until `--apply`. That command updates Claude Team
+Standard/Premium seat prices, `grok-code-fast-1` shutdown fields, and removes the
+stale Codex Mini verification sentence if a previous run of the pricing SQL wrote it.
 
 The migration script loads `.env.local`; `psql` requires the exported URL. The
 SQL refuses missing official providers and duplicate target channels / conflicting

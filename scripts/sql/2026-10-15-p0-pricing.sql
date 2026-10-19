@@ -17,10 +17,10 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- Mini is only mentioned as sitemap evidence; do not assign its family's date.
-UPDATE models SET description = concat_ws(E'\n', description,
-  '[needs-verification] Codex Mini shutdown date is not established by the 2026-10-15 audit; verify official deprecations.')
-WHERE slug = 'gpt-5.1-codex-mini' AND COALESCE(description, '') NOT LIKE '%[needs-verification] Codex Mini shutdown date%';
+-- gpt-5.1-codex-mini was verified on the deprecations page on 2026-10-19
+-- (shutdown 2026-07-23, replacement gpt-5.6-terra). Do not append the old
+-- needs-verification sentence. seed:catalog-2026-10-19 removes it if a previous
+-- run of this file already wrote it. Shutdown fields belong to seed:openai-shutdowns.
 
 -- SubQ Snap is an API, not a monthly subscription. No access/release specs inferred.
 INSERT INTO providers (name, slug, website, pricing_url, type, region, currency, access_from_china, notes)

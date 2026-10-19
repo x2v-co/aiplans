@@ -407,7 +407,7 @@
     "retiring": "Retiring on {date}",
     "retired": "Retired on {date}",
     "replacement": "recommended replacement: {model}",
-    "source": "OpenAI deprecation announcement"
+    "source": "Deprecation announcement"
   },
   "modelPricing": {
     "introductoryPrice": "Introductory price until {date} (Pacific time), then {input} / {output} per 1M"

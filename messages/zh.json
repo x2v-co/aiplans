@@ -405,7 +405,7 @@
   },
   "modelShutdown": {
     "replacement": "推荐替代模型：{model}",
-    "source": "OpenAI 弃用公告",
+    "source": "弃用公告",
     "retiring": "将于 {date} 退役",
     "retired": "已于 {date} 退役"
   },
