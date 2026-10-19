@@ -1,3 +1,4 @@
+import { isGluedModelSlug } from './glued-model-slug';
 import { pickNewestPerSeries } from './model-series';
 
 export type FreshModel = {
@@ -17,7 +18,9 @@ export function modelFreshnessTime(model: FreshModel): number {
 /** Hide channel-only SKUs from discovery surfaces while keeping them searchable. */
 export function isPrimaryModelVariant(slug: string): boolean {
   const normalized = slug.toLowerCase();
-  return normalized.length <= 80 && !/(?:\(batch\)|:batch|-batch|\(free\)|:free|-free|\(exacto\)|:exacto|-exacto|-highspeed|-fast|-us)$/.test(normalized);
+  return normalized.length <= 80
+    && !isGluedModelSlug(normalized)
+    && !/(?:\(batch\)|:batch|-batch|\(free\)|:free|-free|\(exacto\)|:exacto|-exacto|-highspeed|-fast|-us)$/.test(normalized);
 }
 
 export function pickLatestModels<T extends FreshModel>(items: T[], limit = 8): T[] {

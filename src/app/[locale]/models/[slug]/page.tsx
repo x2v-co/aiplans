@@ -1,11 +1,14 @@
 import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
 import { LimitedTimeOfferMark } from '@/components/limited-time-offer';
 import { effectivePrice } from '@/lib/effective-price';
+import { billingRedirectNote } from '@/lib/billing-redirect';
 import { modelShutdownNotice } from '@/lib/model-shutdown';
 import { getTranslations } from 'next-intl/server';
 import Link from "next/link";
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
+import { outboundChannelDataset } from '@/lib/funnel-analytics';
 import { notFound, permanentRedirect } from "next/navigation";
+import { legacySlugRedirect } from "@/lib/legacy-slug-redirects";
 import { findModelSlugRedirect } from "@/lib/model-slug-redirects";
 import { Metadata } from "next";
 import { Button } from "@/components/ui/button";
@@ -87,6 +90,8 @@ function planFeatures(features: unknown): string[] {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
+  const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/models/${slug}`);
+  if (legacyTarget) permanentRedirect(legacyTarget);
 
   // Get product name. An unknown slug 404s from *here*, not from the page
   // body, and there is deliberately no loading.tsx anywhere above this route.
@@ -119,8 +124,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       locale: locale === 'zh' ? 'zh' : 'en',
       path: `/models/${slug}`,
       title: {
-        en: `${productName} API Pricing / Price per 1M tokens | aiplans.dev`,
-        zh: `${productName} 价格 / 多少钱 / API 定价 | aiplans.dev`,
+        en: `${pricing.title} | aiplans.dev`,
+        zh: `${pricing.title} | aiplans.dev`,
       },
       description: { en: pricing.description, zh: pricing.description },
     }),
@@ -380,6 +385,8 @@ export default async function ModelPage({
 }) {
   const { locale, slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
+  const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/models/${slug}`);
+  if (legacyTarget) permanentRedirect(legacyTarget);
   const now = new Date();
   const [data, couponByProvider] = await Promise.all([
     getProductWithChannels(slug, now),
@@ -401,6 +408,7 @@ export default async function ModelPage({
   const productName = formatModelName(product.name);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
   const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);
+  const billingNote = billingRedirectNote(product.slug, locale);
   const guideSlug = guideForModelSlug(product.slug);
   const pricing = buildModelPricingSeo({ ...product, name: productName }, channelPrices,
     isZh ? 'zh' : 'en', now);
@@ -633,6 +641,11 @@ export default async function ModelPage({
                 {shutdownMessages('source')} <ExternalLink className="h-3.5 w-3.5" />
               </a>
             )}
+          </div>
+        )}
+        {billingNote && (
+          <div role="note" className="mb-8 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+            {billingNote}
           </div>
         )}
 
@@ -1074,6 +1087,11 @@ export default async function ModelPage({
                                     href={outbound.href}
                                     target="_blank"
                                     rel={outbound.affiliate ? AFFILIATE_LINK_REL : 'noopener noreferrer'}
+                                    {...outboundChannelDataset({
+                                      channelSlug: cp.providers.slug,
+                                      channelType: cp.providers.type,
+                                      modelSlug: slug,
+                                    })}
                                   >
                                     <Button variant="outline" size="sm" className="gap-1">
                                       Visit <ExternalLink className="w-3 h-3" />

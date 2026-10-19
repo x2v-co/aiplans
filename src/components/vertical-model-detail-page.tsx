@@ -1,4 +1,5 @@
 import { NonLlmFacts } from '@/components/non-llm-catalog';
+import { modelLifecycleStatus, modelShutdownNotice } from '@/lib/model-shutdown';
 import { AuditedPricingFacts } from '@/components/audited-catalog';
 import Image from 'next/image';
 import { WorldModelFacts, WorldModelTiers } from '@/components/world-model-catalog';
@@ -15,6 +16,7 @@ import { verticalKindPath } from '@/lib/vertical-model-detail';
 import { getVerticalProviderLogo } from '@/lib/vertical-provider-logos';
 import { PlanCoverage } from '@/components/plan-coverage';
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
+import { outboundChannelDataset } from '@/lib/funnel-analytics';
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 
 function formatMoney(value: number | null, currency: string | null): string {
@@ -68,7 +70,16 @@ export default function VerticalModelDetailPage({
             <p className="mt-6 max-w-3xl leading-8 text-zinc-700 dark:text-zinc-300">{item.bestFor}</p>
             <div className="mt-6 flex flex-wrap gap-3">
               {outbound && (
-                <a href={outbound.href} target="_blank" rel={outbound.affiliate ? AFFILIATE_LINK_REL : 'noreferrer'}>
+                <a
+                  href={outbound.href}
+                  target="_blank"
+                  rel={outbound.affiliate ? AFFILIATE_LINK_REL : 'noreferrer'}
+                  {...outboundChannelDataset({
+                    channelSlug: providerSlug,
+                    channelType: 'official',
+                    modelSlug: item.slug,
+                  })}
+                >
                   <Button className="gap-2">
                     {outbound.affiliate
                       ? (isZh ? '前往官网（联盟链接）' : 'Visit website (affiliate link)')
@@ -120,6 +131,22 @@ export default function VerticalModelDetailPage({
             </CardContent>
           </Card>
         </section>
+
+        {item.shutdownDate && modelShutdownNotice(item.shutdownDate, locale) && (
+          <div role="note" className="mt-8 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+            <p>
+              {modelLifecycleStatus(item.shutdownDate) === 'retired'
+                ? (isZh ? `已于 ${item.shutdownDate} 退役` : `Retired on ${item.shutdownDate}`)
+                : (isZh ? `将于 ${item.shutdownDate} 退役` : `Retiring on ${item.shutdownDate}`)}
+              {item.replacementModel ? (isZh ? `。推荐替代：${item.replacementModel}` : `. Recommended replacement: ${item.replacementModel}`) : ''}
+            </p>
+            {item.deprecationSourceUrl && (
+              <a href={item.deprecationSourceUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm underline">
+                {isZh ? '弃用公告' : 'Deprecation announcement'}
+              </a>
+            )}
+          </div>
+        )}
 
         {['video-model', 'music-model', 'decision-model'].includes(kind) && <AuditedPricingFacts item={item} locale={locale} />}
 

@@ -14,7 +14,7 @@ import { formatModelName } from '@/lib/model-names';
 import { formatPrice, calculateSavingsPercent } from "@/lib/currency";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
 import type { GroupedProduct } from "@/lib/grouped-products";
-import { trackAnalyticsEvent } from "@/lib/analytics";
+import { trackAnalyticsEvent, trackFunnelEvent } from "@/lib/analytics";
 import {
   usd,
   getCheapestChannel,
@@ -141,6 +141,11 @@ export default function CompareModelsView({
       action: removing ? 'remove' : 'add',
       model_slug: slug,
       selection_count: nextSelected.length,
+    });
+    trackFunnelEvent('compare', {
+      compare_type: 'models',
+      compare_action: removing ? 'remove' : 'add',
+      model_slug: slug,
     });
   };
 

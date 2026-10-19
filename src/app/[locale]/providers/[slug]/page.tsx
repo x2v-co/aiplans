@@ -26,6 +26,7 @@ import { getTranslations } from 'next-intl/server';
 import { getGroupedProducts } from '@/lib/grouped-products';
 import { ProviderApiModels } from '@/components/provider-api-models';
 import { ProviderOutboundLink } from '@/components/provider-outbound-link';
+import { outboundChannelDataset } from '@/lib/funnel-analytics';
 import { providerOrganization, providerModelPath } from '@/lib/provider-page';
 import type { ProviderRecord, ProviderPlanRecord, ProviderModelRecord } from '@/lib/provider-page';
 import { decodeSlugParam } from "@/lib/route-params";
@@ -66,8 +67,8 @@ export async function generateMetadata({
   if (!provider) notFound();
   const providerName = provider.name ?? providerSlug;
   const plans = await getProviderSeoPlans(provider.id);
-  const en = buildProviderPricingCopy(providerName, plans, 'en');
-  const zh = buildProviderPricingCopy(providerName, plans, 'zh');
+  const en = buildProviderPricingCopy(providerName, plans, 'en', undefined, providerSlug);
+  const zh = buildProviderPricingCopy(providerName, plans, 'zh', undefined, providerSlug);
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: `/providers/${encodeURIComponent(providerSlug)}`,
@@ -242,7 +243,7 @@ export default async function ProviderPage({
                 <h1 className="text-3xl font-bold">{provider.name}</h1>
                 {provider.description && <p className="mt-2 max-w-3xl text-zinc-600 dark:text-zinc-400">{provider.description}</p>}
                 <div className="mt-3">
-                  <ProviderOutboundLink url={provider.website} providerSlug={providerSlug} locale={locale} label={t('website')} />
+                  <ProviderOutboundLink url={provider.website} providerSlug={providerSlug} locale={locale} label={t('website')} channelType={provider.type} />
                 </div>
                 <p className="text-zinc-700 dark:text-zinc-300 mt-2 max-w-3xl leading-relaxed">
                   {providerCopy.summary}
@@ -260,9 +261,9 @@ export default async function ProviderPage({
         <section aria-labelledby="provider-api-heading" className="mb-10">
           <h2 id="provider-api-heading" className="mb-4 text-2xl font-bold">{t('api')}</h2>
           <div className="mb-5 flex flex-wrap gap-4">
-            <ProviderOutboundLink url={provider.api_docs_url} providerSlug={providerSlug} locale={locale} label={t('apiDocs')} />
-            <ProviderOutboundLink url={provider.pricing_url} providerSlug={providerSlug} locale={locale} label={t('pricing')} />
-            <ProviderOutboundLink url={provider.console_url} providerSlug={providerSlug} locale={locale} label={t('console')} />
+            <ProviderOutboundLink url={provider.api_docs_url} providerSlug={providerSlug} locale={locale} label={t('apiDocs')} channelType={provider.type} />
+            <ProviderOutboundLink url={provider.pricing_url} providerSlug={providerSlug} locale={locale} label={t('pricing')} channelType={provider.type} />
+            <ProviderOutboundLink url={provider.console_url} providerSlug={providerSlug} locale={locale} label={t('console')} channelType={provider.type} />
           </div>
           <ProviderApiModels products={apiModels} locale={locale} now={now} />
         </section>
@@ -453,6 +454,7 @@ export default async function ProviderPage({
                             target="_blank"
                             rel={rel}
                             className="mt-4 block w-full text-center rounded-md bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
+                            {...outboundChannelDataset({ channelSlug: providerSlug, channelType: provider.type })}
                           >
                             {plan.is_contact_sales
                               ? (isZh ? '联系销售 →' : 'Contact Sales →')

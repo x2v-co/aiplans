@@ -5,6 +5,9 @@
  * - field-level diff so only rows that actually changed are written;
  * - last_verified never moves backwards; is_available is only set on insert
  *   unless --sync-availability is passed.
+ *   One-way exception (`retireAvailability`): a discontinued or retired
+ *   catalog row may set an existing usage row's is_available to false.
+ *   That flag never turns a row back on.
  */
 
 export interface SeedArgs {
@@ -70,6 +73,11 @@ export interface DiffOptions {
   ignore?: string[];
   /** Write is_available on update too (default: insert only). */
   syncAvailability?: boolean;
+  /**
+   * Discontinued/retired exception to the insert-only rule. When the desired
+   * is_available is false, write that on an existing row. Never writes true.
+   */
+  retireAvailability?: boolean;
 }
 
 /**
@@ -92,6 +100,12 @@ export function diffRow(existing: Record<string, unknown>, desired: Record<strin
     if (sameValue(key, before, after)) continue;
     changes.push({ key, before: before ?? null, after });
     patch[key] = after;
+  }
+  // #221 keeps is_available insert-only. A discontinued/retired catalog row is
+  // the only update allowed to change it, and only toward false.
+  if (options.retireAvailability && !options.syncAvailability && desired.is_available === false && existing.is_available !== false) {
+    changes.push({ key: 'is_available', before: existing.is_available ?? null, after: false });
+    patch.is_available = false;
   }
   return { changes, patch };
 }

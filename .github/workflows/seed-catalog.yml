@@ -1,0 +1,71 @@
+name: Seed catalog data
+
+# Manual catalog write. Not part of production deploy.
+# Default dispatch is dry-run. Apply writes only after seed-catalog.sh
+# saves a field diff and a pg_dump backup on the VPS.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: '写入数据库。默认否，只产出 diff。老板批准 diff 后再选是。'
+        required: true
+        default: false
+        type: boolean
+      slugs:
+        description: '可选，逗号分隔的目录 slug。留空跑全目录。有 slug 时只跑 models 与 pricing。'
+        required: false
+        default: ''
+        type: string
+      sync_availability:
+        description: '已有行也同步 is_available。默认否。'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: planprice-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    name: Catalog seed (manual)
+    runs-on: [self-hosted, planprice-production]
+    timeout-minutes: 30
+    environment: Production
+    env:
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/x2v/planprice' }}
+      SEED_APPLY: ${{ inputs.apply }}
+      SEED_SLUGS: ${{ inputs.slugs }}
+      SEED_SYNC_AVAILABILITY: ${{ inputs.sync_availability }}
+    steps:
+      - name: Run catalog seed on devbox
+        run: |
+          set -euo pipefail
+          base="$DEPLOY_PATH"
+          script="$base/deploy/production/seed-catalog.sh"
+          test -d "$base"
+          sudo -n test -r "$base/deploy/production/.env.production"
+          sudo -n test -f "$script"
+
+          args=()
+          if [[ "$SEED_APPLY" == "true" ]]; then
+            args+=(--apply)
+          fi
+          if [[ -n "$SEED_SLUGS" ]]; then
+            args+=(--slug "$SEED_SLUGS")
+          fi
+          if [[ "$SEED_SYNC_AVAILABILITY" == "true" ]]; then
+            args+=(--sync-availability)
+          fi
+
+          # seed-catalog.sh takes the shared flock. Do not lock here.
+          sudo -n env \
+            DOCKER_CMD=/usr/bin/docker \
+            LOCK_PATH="$base" \
+            GITHUB_SHA="$GITHUB_SHA" \
+            GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+            GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:-}" \
+            "$script" "${args[@]}"

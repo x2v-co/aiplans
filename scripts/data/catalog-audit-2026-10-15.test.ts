@@ -49,8 +49,15 @@ test('only audited video/music values are numeric; range and approximation are e
   for (const item of [...catalogForKind('video-model'), ...catalogForKind('music-model')]) {
     if (known.has(item.slug!)) {
       assert.deepEqual([item.pricePerUnit, item.pricePerUnitHigh], known.get(item.slug!));
-      assert.equal(item.verifiedAt, '2026-10-15');
-      assert.equal(item.sourceUrls?.[0].url, 'https://ai.google.dev/gemini-api/docs/pricing');
+      const rechecked = ['veo-3-1', 'veo-3-1-fast', 'veo-3-1-lite', 'gemini-omni-flash'].includes(item.slug!);
+      assert.equal(item.verifiedAt, rechecked ? '2026-10-19' : '2026-10-15');
+      assert.equal(item.sourceUrls?.[0].url, rechecked
+        ? 'https://ai.google.dev/gemini-api/docs/deprecations'
+        : 'https://ai.google.dev/gemini-api/docs/pricing');
+      if (rechecked) {
+        assert.equal(item.shutdownDate, '2026-10-22');
+        assert.equal(item.needsVerification, undefined);
+      }
     } else {
       if (item.priceStatus === 'needs-verification') {
         assert.equal(item.pricePerUnit, null, item.slug);
@@ -62,6 +69,10 @@ test('only audited video/music values are numeric; range and approximation are e
       }
     }
   }
+  const music = catalogForKind('music-model').find(i => i.slug === 'elevenlabs-music')!;
+  assert.equal(music.billingUnit, 'per_minute');
+  assert.match(renderToStaticMarkup(createElement(AuditedPricingFacts, { item: music, locale: 'en' })), /\$0\.15 \/ minute/);
+  assert.match(renderToStaticMarkup(createElement(AuditedPricingFacts, { item: music, locale: 'zh' })), /\$0\.15 \/ 分钟/);
   assert.equal(catalogForKind('video-model').find(i => i.slug === 'sora')?.status, 'discontinued');
   const omni = catalogForKind('video-model').find(i => i.slug === 'gemini-omni-flash')!;
   assert.equal(omni.approximatePrice, true);

@@ -14,8 +14,10 @@ import { db } from './db/queries';
 import { AI_VERTICAL_CATALOG, RIGOROUS_MODEL_KINDS, type AiCatalogItem } from '../src/lib/ai-vertical-catalog';
 import { diffRow, formatChanges, parseSeedArgs } from './utils/seed-diff';
 
-// Default is dry-run. Only `--apply` writes; `--slug a,b` narrows the run;
-// `--sync-availability` also lets existing usage rows change is_available.
+// Default is dry-run. Only `--apply` writes; `--slug a,b` narrows the run.
+// `--sync-availability` lets existing usage rows change is_available in either
+// direction. Without that flag, only a discontinued/retired catalog row may
+// change an existing row, and only from available to false.
 const ARGS = parseSeedArgs(process.argv);
 const APPLY = ARGS.apply;
 const stats = { inserted: 0, updated: 0, unchanged: 0 };
@@ -68,6 +70,11 @@ function planSlug(item: AiCatalogItem): string {
 
 function planName(item: AiCatalogItem): string {
   return `${item.name} official pricing`;
+}
+
+/** Catalog statuses whose usage reference must not stay marked available. */
+function usageRetired(status: string): boolean {
+  return status === 'discontinued' || status === 'retired';
 }
 
 function inferPrimaryUnit(item: AiCatalogItem): Unit {
@@ -231,14 +238,17 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
       note: price == null ? 'Numeric price intentionally null until parsed and verified from source.' : 'Numeric price from audited static catalog.',
     },
     source_url: src,
-    is_available: item.status !== 'announced' && item.status !== 'discontinued',
+    is_available: item.status !== 'announced' && !usageRetired(item.status),
     last_verified: item.lastVerified ? new Date(item.lastVerified) : NOW,
     updated_at: NOW,
   };
 
   if (existing.data) {
     const current = existing.data as Record<string, unknown>;
-    const { changes, patch } = diffRow(current, row, { syncAvailability: ARGS.syncAvailability });
+    const { changes, patch } = diffRow(current, row, {
+      syncAvailability: ARGS.syncAvailability,
+      retireAvailability: usageRetired(item.status),
+    });
     if (changes.length === 0) {
       console.log(`    ✓ usage ${model.slug}/${priceKind}/${unit}: unchanged`);
       stats.unchanged++;

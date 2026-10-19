@@ -40,7 +40,9 @@ test('currency ranking retains native prices in snippets, table rows and single-
   assert.match(en.description, /CNY 6 per 1M tokens/);
   assert.match(zh.description, /CNY 6\/百万 tokens/);
   assert.match(en.title, /API Pricing \/ Price per 1M tokens/);
-  assert.match(zh.title, /价格 \/ 多少钱 \/ API 定价/);
+  assert.equal(zh.title, 'GLM 5.3 Flash 价格');
+  assert.equal(buildModelPricingSeo({ name: 'DeepSeek V4.1 Flash', slug: 'deepseek-v4.1-flash' }, [], 'zh').title,
+    'DeepSeek V4.1 Flash 价格');
   for (const content of [en, zh]) {
     assert.match(content.description, /2026-10-13/);
     assert.equal(content.faqs.length, 4);
