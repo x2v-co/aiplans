@@ -5,7 +5,7 @@
 - `--slug a,b`（或多次 `--slug x`）：只处理指定目录条目；未知 slug 直接报错退出。
 - dry-run 逐字段输出 `字段: 旧值 → 新值`；没变的行显示 `unchanged`，`--apply` 时不写。
 - `last_verified` 只往前走：库里日期更新就保留。
-- `is_available`：只在新建行时写入；已有行要同步需显式加 `--sync-availability`。
+- `is_available`：只在新建行时写入；已有行要双向同步需显式加 `--sync-availability`（#221：seed 不改已有记录的可用状态）。例外只朝停用方向：目录状态为 `discontinued` 或 `retired` 时，已有用量行可以把 `is_available` 写成 `false`，不会改回 `true`。部署不带 `--sync-availability`。
 - `deploy/production/rollout.sh` 每次发版显式带 `-- --apply`，现在只写真正变了的行。
 
 ## 生产手动执行（SRE）
