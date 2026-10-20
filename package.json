@@ -128,7 +128,11 @@
     "seed:vercel-deepseek-flash-1017": "tsx scripts/seed-vercel-deepseek-flash-1017-2026-10-18.ts",
     "seed:vercel-deepseek-flash-1017:apply": "tsx scripts/seed-vercel-deepseek-flash-1017-2026-10-18.ts --apply",
     "seed:opencode-console-security": "tsx scripts/seed-opencode-console-security-2026-10-18.ts",
-    "seed:opencode-console-security:apply": "tsx scripts/seed-opencode-console-security-2026-10-18.ts --apply"
+    "seed:opencode-console-security:apply": "tsx scripts/seed-opencode-console-security-2026-10-18.ts --apply",
+    "seed:mimo-2026-10-20": "tsx scripts/seed-mimo-2026-10-20.ts",
+    "seed:mimo-2026-10-20:apply": "tsx scripts/seed-mimo-2026-10-20.ts --apply",
+    "seed:vercel-mercury-3-2026-10-20": "tsx scripts/seed-vercel-mercury-3-2026-10-20.ts",
+    "seed:vercel-mercury-3-2026-10-20:apply": "tsx scripts/seed-vercel-mercury-3-2026-10-20.ts --apply"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
