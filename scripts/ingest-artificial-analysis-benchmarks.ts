@@ -13,30 +13,12 @@
  */
 import { databaseSql } from './db/postgres-admin';
 import { upsertBenchmarkScore } from './db/queries';
-import { AA_USER_AGENT, extractBalancedArray, parseNextFlight, resolveLocalModelId } from './utils/artificial-analysis';
+import { AA_USER_AGENT, resolveLocalModelId } from './utils/artificial-analysis';
+import { type AaModel, parseScoredModelsFromHtml } from './utils/aa-leaderboard-models';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const SOURCE_URL = 'https://artificialanalysis.ai/leaderboards/models';
 const VERSION_LABEL = 'Artificial Analysis current suite';
-
-interface AaModel {
-  name: string;
-  shortName?: string;
-  slug: string;
-  releaseDate?: string | null;
-  deprecated?: boolean;
-  intelligenceIndex?: number | null;
-  gpqa?: number | null;
-  hle?: number | null;
-  scicode?: number | null;
-  terminalbenchHard?: number | null;
-  ifbench?: number | null;
-  mmmuPro?: number | null;
-  price1mInputTokens?: number | null;
-  price1mOutputTokens?: number | null;
-  cacheHitPrice?: number | null;
-  cacheWritePrice?: number | null;
-}
 
 interface MetricSpec {
   field: keyof AaModel;
@@ -56,36 +38,15 @@ const METRICS: MetricSpec[] = [
   { field: 'mmmuPro', slug: 'mmmu-pro', name: 'MMMU-Pro', type: 'multimodal', task: 'Main', metric: 'ACCURACY' },
 ];
 
-function parseModelsFromNextHtml(html: string): AaModel[] {
-  const flight = parseNextFlight(html);
-  const marker = '"models":[';
-  let markerIndex = -1;
-  let models: AaModel[] = [];
-  do {
-    markerIndex = flight.indexOf(marker, markerIndex + 1);
-    if (markerIndex === -1) break;
-    const arrayStart = markerIndex + marker.length - 1;
-    const candidate = JSON.parse(extractBalancedArray(flight, arrayStart)) as AaModel[];
-    const candidateCoverage = candidate.filter((model) =>
-      METRICS.some((metric) => typeof model[metric.field] === 'number'),
-    ).length;
-    const currentCoverage = models.filter((model) =>
-      METRICS.some((metric) => typeof model[metric.field] === 'number'),
-    ).length;
-    if (candidateCoverage > currentCoverage) models = candidate;
-  } while (markerIndex !== -1);
-  if (models.length === 0) throw new Error('Could not find scored models payload in Artificial Analysis page');
-  if (models.length < 50) throw new Error(`Only ${models.length} models parsed; refusing a partial import`);
-  return models;
-}
-
 async function fetchModels(): Promise<AaModel[]> {
   const response = await fetch(SOURCE_URL, {
     headers: { 'user-agent': AA_USER_AGENT },
     signal: AbortSignal.timeout(90_000),
   });
   if (!response.ok) throw new Error(`Artificial Analysis returned HTTP ${response.status}`);
-  return parseModelsFromNextHtml(await response.text());
+  const { models, key } = parseScoredModelsFromHtml(await response.text(), { scoreFields: METRICS.map((m) => m.field) });
+  console.log(`Scored model rows found under "${key}".`);
+  return models;
 }
 
 /**
