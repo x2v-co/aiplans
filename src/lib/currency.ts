@@ -202,3 +202,27 @@ export function formatSavingsPercent(savings: number, locale: string = 'en'): st
   }
   return locale === 'zh' ? '同价' : 'Same price';
 }
+
+/**
+ * 价格前缀（符号）：已知币种用 CURRENCY_INFO 的符号（USD → $，CNY → ¥），
+ * 缺省视为 USD；未知币种用 Intl 的窄符号，拿不到时退回「代码 + 空格」。
+ * 不做汇率换算，只决定显示符号。
+ */
+export function currencyPrefix(currency: string | null | undefined): string {
+  const code = (currency || 'USD').trim().toUpperCase();
+  const known = CURRENCY_INFO[code as CurrencyCode];
+  if (known) return known.symbol;
+  try {
+    const symbol = new Intl.NumberFormat('en-US', { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol' })
+      .formatToParts(0).find(part => part.type === 'currency')?.value;
+    if (symbol && symbol !== code) return symbol;
+  } catch {
+    // 非法币种代码：退回代码
+  }
+  return `${code} `;
+}
+
+/** 按币种加符号，数字部分保持调用方原样（不换算、不改小数位）。 */
+export function formatCurrencyAmount(amount: number | string, currency: string | null | undefined): string {
+  return `${currencyPrefix(currency)}${amount}`;
+}

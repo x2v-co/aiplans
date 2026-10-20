@@ -1,24 +1,26 @@
 import Link from 'next/link';
 import type { AiCatalogItem } from '@/lib/ai-vertical-catalog';
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
+import { formatCurrencyAmount } from '@/lib/currency';
 
 export function auditedPrice(item: AiCatalogItem, locale: string): string {
   if (item.priceStatus === 'not-public') return locale === 'zh' ? '未公开价格' : 'Price not public';
   if (item.priceStatus !== 'priced') return locale === 'zh' ? '待核验' : 'Needs verification';
   if (item.kind === 'decision-model') return item.pricing;
   if (item.pricePerUnit == null) return '—';
-  const range = item.pricePerUnitHigh == null ? '' : `–$${item.pricePerUnitHigh.toFixed(2)}`;
+  const money = (value: number) => formatCurrencyAmount(value.toFixed(2), item.currency);
+  const range = item.pricePerUnitHigh == null ? '' : `–${money(item.pricePerUnitHigh)}`;
   const unit = item.billingUnit === 'per_song'
     ? (locale === 'zh' ? '首' : 'song')
     : item.billingUnit === 'per_minute'
       ? (locale === 'zh' ? '分钟' : 'minute')
       : (locale === 'zh' ? '秒' : 'second');
-  return `${item.approximatePrice ? '≈' : ''}$${item.pricePerUnit.toFixed(2)}${range} / ${unit}`;
+  return `${item.approximatePrice ? '≈' : ''}${money(item.pricePerUnit)}${range} / ${unit}`;
 }
 
 export function AuditedPricingFacts({ item, locale }: { item: AiCatalogItem; locale: string }) {
   const zh = locale === 'zh';
-  const money = (value: number | null | undefined) => value == null ? '—' : `$${value}`;
+  const money = (value: number | null | undefined) => value == null ? '—' : formatCurrencyAmount(value, item.currency);
   const priced = item.priceStatus === 'priced';
   return <section className="mt-8 rounded-xl border p-6">
     <h2 className="text-xl font-bold">{zh ? '价格与核验' : 'Pricing and verification'}</h2>
@@ -26,7 +28,7 @@ export function AuditedPricingFacts({ item, locale }: { item: AiCatalogItem; loc
     {item.usageRates?.length ? <dl className="mt-4 grid gap-3 sm:grid-cols-2">
       {item.usageRates.map(rate => <div key={`${rate.priceKind}/${rate.unit}`}>
         <dt>{labelNonLlmPriceKey(rate.priceKind, locale)}</dt>
-        <dd>{priced && Number.isFinite(rate.price) ? `${rate.approximate ? '≈' : ''}$${rate.price} / ${labelNonLlmPriceKey(rate.unit, locale)}` : (zh ? '待核验' : 'Needs verification')}</dd>
+        <dd>{priced && Number.isFinite(rate.price) ? `${rate.approximate ? '≈' : ''}${formatCurrencyAmount(rate.price, item.currency)} / ${labelNonLlmPriceKey(rate.unit, locale)}` : (zh ? '待核验' : 'Needs verification')}</dd>
       </div>)}
     </dl> : null}
     <dl className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -46,12 +48,12 @@ export function AuditedPricingFacts({ item, locale }: { item: AiCatalogItem; loc
 
 export function DecisionModelCatalog({ items, locale }: { items: AiCatalogItem[]; locale: string }) {
   const zh = locale === 'zh';
-  const money = (price: number | null | undefined) => price == null ? '—' : `$${price}`;
+  const money = (item: AiCatalogItem, price: number | null | undefined) => price == null ? '—' : formatCurrencyAmount(price, item.currency);
   return <div className="mt-8 overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm">
     <thead><tr>{[zh ? '模型' : 'Model', zh ? '$/百万输入 token' : '$/M input tokens', zh ? '$/百万输出 token' : '$/M output tokens', zh ? '$/百万次任务' : '$/1M tasks', zh ? '状态 / 核验' : 'Status / verification', zh ? '来源' : 'Sources'].map(h => <th key={h} className="p-4">{h}</th>)}</tr></thead>
     <tbody>{items.map(item => <tr key={item.slug} className="border-t align-top">
       <td className="p-4"><Link className="text-blue-600 underline" href={`/${locale}/decision-models/${item.slug}`}>{item.name}</Link><p>{item.provider}</p>{item.contextWindowLabel && <p>{item.contextWindowLabel}{item.status === 'preview' && ` · ${zh ? '公开预览' : 'Public preview'}`}</p>}</td>
-      <td className="p-4">{money(item.inputPricePer1M)}</td><td className="p-4">{money(item.outputPricePer1M)}</td><td className="p-4">{money(item.pricePer1MTasks)}</td>
+      <td className="p-4">{money(item, item.inputPricePer1M)}</td><td className="p-4">{money(item, item.outputPricePer1M)}</td><td className="p-4">{money(item, item.pricePer1MTasks)}</td>
       <td className="p-4">{item.priceStatus === 'priced' ? (zh ? '已标价' : 'Priced') : (zh ? '待核验' : 'Needs verification')}<p>{item.verifiedAt}</p><p>{item.notes}</p></td>
       <td className="p-4">{item.sourceUrls?.map(source => <a key={source.url} className="block text-blue-600 underline" href={source.url} target="_blank" rel="noreferrer">{source.label}</a>) ?? '—'}</td>
     </tr>)}</tbody>
