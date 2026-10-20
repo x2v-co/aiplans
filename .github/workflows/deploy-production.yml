@@ -48,6 +48,12 @@ jobs:
       - name: Audit vertical catalog
         run: npm run audit:verticals
 
+      # Gate the release on the DB-free unit suite (scripts/test-unit.mjs): a
+      # merge to main ships straight to production, so failing tests must stop
+      # the deploy job. No continue-on-error.
+      - name: Unit tests
+        run: npm test
+
       - name: Build production bundle
         env:
           NEXT_PUBLIC_GA_ID: ${{ vars.NEXT_PUBLIC_GA_ID }}
