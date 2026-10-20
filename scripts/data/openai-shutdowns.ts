@@ -41,6 +41,10 @@ export const OPENAI_SHUTDOWNS: readonly Shutdown[] = [
   // batch SKU; the deprecations table does not list a separate -batch id.
   { ...batchB, ids: ['openai-gpt-3-5-turbo', 'openai-gpt-3-5-turbo-batch'], replacementModel: 'gpt-5.6-terra' },
   { ...batchB, ids: ['openai-gpt-4'], replacementModel: 'gpt-5.6-sol' },
+  // 2026-10-20: -high is o4-mini at reasoning effort high, -batch is o4-mini's
+  // Batch API SKU. Neither is a separate model id; both stop with o4-mini
+  // (o4-mini-2025-04-16 | o4-mini, 2026-10-23). Same rule as the -batch row above.
+  { ...batchB, ids: ['openai-o4-mini-high', 'openai-o4-mini-batch'], replacementModel: 'gpt-5.6-terra' },
   { shutdownDate: '2026-10-23', ids: ['openai-o1-pro', 'openai-o4-mini', 'o4-mini-high', 'openai-gpt-4-turbo', 'openai-gpt-4-1-nano-batch', 'openai-gpt-4o-batch'] },
   { shutdownDate: '2026-12-11', ids: ['openai-o3', 'openai-o3-pro'] },
   { shutdownDate: '2026-12-01', ids: ['gpt-image-1.5', 'gpt-image-1.5-mini'] },
@@ -48,8 +52,6 @@ export const OPENAI_SHUTDOWNS: readonly Shutdown[] = [
   { ...batchA, ids: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini'] },
   { shutdownDate: '2027-04-01', ids: ['gpt-5.1', 'gpt-5.3-codex', 'gpt-5.4-nano'] },
   { shutdownDate: '2027-01-06', ids: ['tts-1', 'tts-1-hd'] },
-  // openai-o4-mini-high and openai-o4-mini-batch are not named on the
-  // deprecations page (only o4-mini and o4-mini-2025-04-16). Left unchanged.
   // Undated aliases gpt-5, gpt-5-mini, gpt-5-nano and gpt-5-pro are not on the
   // deprecations table (checked 2026-10-19). Only the dated snapshots
   // gpt-5-2025-08-07, gpt-5-mini-2025-08-07, gpt-5-nano-2025-08-07 and

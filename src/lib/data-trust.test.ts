@@ -120,13 +120,15 @@ test('plan price, entitlement and unknown credit do not promote guesses', () => 
   assert.equal(benefit.flags.estimated, false);
   assert.match(benefit.conditions.join(''), /不是厂商保证额度/);
 
-  const team = planPriceTrust({
-    name: 'Claude Team Standard', currency: 'USD', price_unit: 'per_month', price: 30,
-    last_verified: '2026-10-18T00:00:00Z',
-  }, source, 'zh', NOW, 'anthropic');
-  assert.equal(team.flags.unverified, true);
-  assert.equal(team.flags.estimated, false);
-  assert.match(team.conditions.join(''), /\$25/);
+  for (const name of ['Claude Team Standard', 'Claude Team Premium']) {
+    const team = planPriceTrust({
+      name, currency: 'USD', price_unit: 'per_month', price: name.endsWith('Premium') ? 125 : 25,
+      last_verified: '2026-10-19T00:00:00Z',
+    }, source, 'en', NOW, 'anthropic');
+    assert.equal(team.flags.unverified, false, name);
+    assert.equal(team.flags.estimated, false, name);
+    assert.doesNotMatch(team.conditions.join(''), /does not match|stays unverified/, name);
+  }
   assert.equal(planPriceTrust({
     name: 'Claude Pro', currency: 'USD', price: 20, last_verified: '2026-10-18T00:00:00Z',
   }, source, 'zh', NOW, 'anthropic').flags.unverified, false);

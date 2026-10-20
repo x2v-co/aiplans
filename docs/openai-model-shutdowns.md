@@ -18,8 +18,10 @@ no model inventory was inspected in this workspace. The four audit-listed Codex
 models retire on 2026-07-23. `gpt-5.1-codex-mini` is listed on the deprecations
 page (checked 2026-10-19) with shutdown 2026-07-23 and replacement `gpt-5.6-terra`.
 The 2026-10-15 pricing SQL no longer appends a verification sentence for it.
-`openai-o4-mini-high` and `openai-o4-mini-batch` are still absent from that page
-and are left unchanged. Production aliases `openai-gpt-3-5-turbo`,
+`openai-o4-mini-high` (o4-mini at reasoning effort high) and `openai-o4-mini-batch`
+(o4-mini's Batch API SKU) are not separate model ids on that page. Since
+2026-10-20 they follow `o4-mini` (shutdown 2026-10-23, replacement `gpt-5.6-terra`),
+the same rule as `openai-gpt-3-5-turbo-batch`. Production aliases `openai-gpt-3-5-turbo`,
 `openai-gpt-3-5-turbo-batch` and `openai-gpt-4` follow the official aliases
 `gpt-3.5-turbo` (replacement `gpt-5.6-terra`) and `gpt-4` (replacement `gpt-5.6-sol`),
 shutdown 2026-10-23. The batch slug is that alias's batch SKU; the page does not

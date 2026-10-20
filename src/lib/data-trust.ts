@@ -48,22 +48,11 @@ const REVIEWED_API_SOURCES: Record<string, { zh: string; en: string; url: string
  * 2026-10-18 source check. These notes stay on the price fact until a data fix
  * lands. They do not overwrite the stored price and they do not count as a
  * confirmed entitlement.
+ * Claude Team Standard / Premium were removed on 2026-10-20: the stored rows
+ * ($25/$125 monthly, $20/$100 annual, last_verified 2026-10-19) match
+ * https://claude.com/pricing, rechecked 2026-10-20.
  */
 const PRICE_REVIEW_NOTES: Array<{ providerSlug: string; name: RegExp; withheld: boolean; zh: string; en: string }> = [
-  {
-    providerSlug: 'anthropic',
-    name: /team standard/i,
-    withheld: true,
-    zh: '2026-10-18 对照 claude.com/pricing：标准席位为年付每席 $20、月付每席 $25。本行月费与该页不一致，先标待核验',
-    en: 'Checked claude.com/pricing on 2026-10-18: standard seats are $20/seat billed annually or $25/seat monthly. This row does not match, so it stays unverified',
-  },
-  {
-    providerSlug: 'anthropic',
-    name: /team premium/i,
-    withheld: true,
-    zh: '2026-10-18 对照 claude.com/pricing：高级席位为年付每席 $100、月付每席 $125。本行月费与该页不一致，先标待核验',
-    en: 'Checked claude.com/pricing on 2026-10-18: premium seats are $100/seat billed annually or $125/seat monthly. This row does not match, so it stays unverified',
-  },
   {
     providerSlug: 'google',
     name: /ai plus/i,
