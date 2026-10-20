@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseDeepSeekTable } from './deepseek-dynamic';
+import { parseDeepSeekTable, pickDeepSeekPricingTable } from './deepseek-dynamic';
 
 // Pricing values come exclusively from the DeepSeek section of the supplied facts.
 const rows = [
@@ -48,4 +48,25 @@ test('rowspan layout with OFF-PEAK first parses both windows', () => {
     ['deepseek-v4-flash', 'peak', 0.3, 1.2, 0.006], ['deepseek-v4-flash', 'off-peak', 0.15, 0.6, 0.003],
     ['deepseek-v4-pro', 'peak', 1.32, 3.96, 0.044], ['deepseek-v4-pro', 'off-peak', 0.66, 1.98, 0.022],
   ]);
+});
+
+// Docusaurus SSR shell renders a PARAM/VALUE table before the pricing table hydrates.
+const ssrShellRows = [
+  ['PARAM', 'VALUE'],
+  ['base_url *', 'https://api.deepseek.com'],
+  ['api_key', 'apply for an API key'],
+];
+test('multiple tables: picks the MODEL+PEAK pricing table, not the first one', () => {
+  const picked = pickDeepSeekPricingTable([ssrShellRows, liveRows, [['MODEL', 'x'], ['Concurrency', '1']]]);
+  assert.equal(picked, liveRows);
+  const result = parseDeepSeekTable(picked, new Date('2026-10-15T09:21Z'));
+  assert.equal(result.success, true);
+  assert.deepEqual(result.prices.map(p => p.modelSlug), ['deepseek-v4-flash', 'deepseek-v4-pro']);
+});
+test('SSR shell PARAM/VALUE table alone is never used as pricing', () => {
+  assert.deepEqual(pickDeepSeekPricingTable([ssrShellRows]), []);
+  assert.deepEqual(pickDeepSeekPricingTable([]), []);
+  const result = parseDeepSeekTable(pickDeepSeekPricingTable([ssrShellRows]));
+  assert.equal(result.success, false);
+  assert.deepEqual(result.errors, ['No DeepSeek peak prices found']);
 });

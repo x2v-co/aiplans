@@ -4,6 +4,7 @@ import type { ScrapedPrice, ScrapedPriceVariant, ScraperResult } from '../utils/
 import { PlaywrightScraper } from './lib/playwright-scraper';
 
 const DEEPSEEK_PRICING_URL = 'https://api-docs.deepseek.com/quick_start/pricing';
+const PRICING_TABLE_TIMEOUT_MS = 20_000;
 
 // Table headers carry footnote markers ("deepseek-flash(1)") and the current
 // flash is labeled without its generation. Map to the canonical catalog slugs
@@ -25,16 +26,43 @@ class DeepSeekScraper extends PlaywrightScraper {
   async scrape(): Promise<ScraperResult> {
     await this.navigate(DEEPSEEK_PRICING_URL);
 
-    const rows = await this.page!.locator('table').first().locator('tr').evaluateAll(tableRows =>
-      tableRows.map(row =>
-        Array.from(row.querySelectorAll('th, td')).map(cell =>
-          (cell.textContent || '').replace(/\s+/g, ' ').trim()
+    // navigate() only waits for domcontentloaded; the Docusaurus SSR shell
+    // ships a PARAM/VALUE table before the client renders the pricing table.
+    // Wait for a table carrying MODEL + PEAK cells instead of racing first().
+    try {
+      await this.page!.waitForFunction(() =>
+        Array.from(document.querySelectorAll('table')).some(table => {
+          const cells = Array.from(table.querySelectorAll('th, td'))
+            .map(cell => (cell.textContent || '').replace(/\s+/g, ' ').trim().toUpperCase());
+          return cells.includes('MODEL') && cells.includes('PEAK');
+        }), undefined, { timeout: PRICING_TABLE_TIMEOUT_MS });
+    } catch {
+      // Fall through: parsing below reports a precise error instead of a bare timeout.
+      console.warn(`DeepSeek pricing table (MODEL+PEAK) not rendered within ${PRICING_TABLE_TIMEOUT_MS}ms`);
+    }
+
+    const tables = await this.page!.locator('table').evaluateAll(nodes =>
+      nodes.map(table =>
+        Array.from(table.querySelectorAll('tr')).map(row =>
+          Array.from(row.querySelectorAll('th, td')).map(cell =>
+            (cell.textContent || '').replace(/\s+/g, ' ').trim()
+          )
         )
       )
     );
+    const rows = pickDeepSeekPricingTable(tables);
 
     return parseDeepSeekTable(rows);
   }
+}
+
+/** Pick the pricing table (MODEL header row + a PEAK cell); never the SSR PARAM/VALUE shell. */
+export function pickDeepSeekPricingTable(tables: string[][][]): string[][] {
+  const norm = (cell: string) => cell.trim().toUpperCase();
+  return tables.find(rows =>
+    rows.some(row => norm(row[0] ?? '') === 'MODEL') &&
+    rows.some(row => row.some(cell => norm(cell) === 'PEAK'))
+  ) ?? [];
 }
 
 /** Parse published windows independently; list always uses the explicit peak row. */
