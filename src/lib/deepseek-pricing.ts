@@ -19,9 +19,12 @@ export const DEEPSEEK_CN_HOLIDAYS: readonly string[] = [
 export const DEEPSEEK_HOLIDAY_SOURCE = 'https://www.gov.cn/zhengce/zhengceku/202511/content_7047091.htm';
 export const DEEPSEEK_SOURCE = 'https://api-docs.deepseek.com/quick_start/pricing';
 export const DEEPSEEK_PEAK_SCHEDULE = '01:00-04:00 & 06:00-10:00 UTC Mon-Fri, excluding CN public holidays; weekends and CN public holidays are off-peak all day';
-// Verified facts, 2026-10-15; Flash version renamed DeepSeek-V4.1-Flash-1017 on the official page (checked 2026-10-18). Flash's legacy catalog slug is reused by the scraper.
+// Verified facts, 2026-10-15; Flash version renamed DeepSeek-V4.1-Flash-1017 on the official page (checked 2026-10-18).
+// The official channel belongs to the current model version, so it lands on
+// the deepseek-v4.1-flash row. deepseek-v4-flash is the retired 0731 identity
+// that aggregators still list; its page must not carry DeepSeek's own quote.
 export const DEEPSEEK_MODELS = [
-  { slug: 'deepseek-v4-flash', apiId: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash-1017', peak: { input: 0.30, output: 1.20, cache: 0.006 } },
+  { slug: 'deepseek-v4.1-flash', apiId: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash-1017', peak: { input: 0.30, output: 1.20, cache: 0.006 } },
   { slug: 'deepseek-v4-pro', apiId: 'deepseek-v4-pro', name: 'DeepSeek-V4-Pro-0813', peak: { input: 1.32, output: 3.96, cache: 0.044 } },
 ] as const;
 

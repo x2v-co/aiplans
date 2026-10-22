@@ -8,10 +8,14 @@ const PRICING_TABLE_TIMEOUT_MS = 20_000;
 
 // Table headers carry footnote markers ("deepseek-flash(1)") and the current
 // flash is labeled without its generation. Map to the canonical catalog slugs
-// shared with OpenRouter/Fireworks so the direct channel lands on the same
-// model row instead of spawning deepseek-flash(1) / deepseek-v4-pro(2) dupes.
+// shared with OpenRouter/Fireworks/Vercel so the direct channel lands on the
+// DeepSeek-V4.1-Flash-1017 row instead of spawning deepseek-flash(1) dupes.
+// `deepseek-v4-flash` is the retired 0731 identity other hosts still sell;
+// writing the official channel there left /models/deepseek-v4.1-flash with
+// "No official channel available", and the unseen-channel retire pass then
+// disabled the stopgap CNY row that had been seeded on the canonical model.
 const CANONICAL_SLUG: Record<string, string> = {
-  'deepseek-flash': 'deepseek-v4-flash',
+  'deepseek-flash': 'deepseek-v4.1-flash',
 };
 
 function canonicalModelName(header: string): string {

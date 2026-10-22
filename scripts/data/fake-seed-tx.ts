@@ -19,8 +19,17 @@ export function fakeSeedTx(initial: Partial<Record<string, FakeRow[]>> = {}) {
       return Promise.resolve(structuredClone(data.providers.filter(r => slugs.includes(String(r.slug)))));
     }
     if (q === 'SELECT * FROM models WHERE slug = ?') return Promise.resolve(structuredClone(data.models.filter(r => r.slug === values[0])));
+    if (q === 'SELECT * FROM models WHERE slug IN ?') {
+      const slugs = frag(values[0]) as string[];
+      return Promise.resolve(structuredClone(data.models.filter(r => slugs.includes(String(r.slug)))));
+    }
     const sel = q.match(/^SELECT \* FROM (api_channel_prices|api_channel_price_variants) WHERE model_id = \? AND provider_id = \?$/);
     if (sel) return Promise.resolve(structuredClone(data[sel[1]].filter(r => r.model_id === values[0] && r.provider_id === values[1])));
+    const selMany = q.match(/^SELECT \* FROM (api_channel_prices|api_channel_price_variants) WHERE provider_id = \? AND model_id IN \?$/);
+    if (selMany) {
+      const modelIds = frag(values[1]) as number[];
+      return Promise.resolve(structuredClone(data[selMany[1]].filter(r => r.provider_id === values[0] && modelIds.includes(Number(r.model_id)))));
+    }
     writes++;
     if (q.startsWith('UPDATE models SET shutdown_date')) {
       Object.assign(data.models.find(r => r.id === values[4])!, { shutdown_date: values[0], replacement_model: values[1], deprecation_source_url: values[2] });

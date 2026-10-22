@@ -527,13 +527,15 @@ export default async function ModelPage({
     if (!officialChannel || cp.id === officialChannel.id) return null;
     const price = cp.input_price_per_1m;
     const officialPrice = officialChannel.input_price_per_1m;
-    if (!officialPrice || !price) return null;
+    // 0 is a real price (limited-time free), not a missing one.
+    if (!officialPrice || price == null) return null;
     const priceUSD = convertToUSD(Number(price), channelCurrency(cp));
     const officialUSD = convertToUSD(Number(officialPrice), channelCurrency(officialChannel));
     if (!officialUSD) return null;
     const savings = ((officialUSD - priceUSD) / officialUSD) * 100;
     return savings > 0.1 ? savings.toFixed(1) : null;
   };
+  const cheapestSavings = cheapestChannel ? calculateSavings(cheapestChannel) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
@@ -680,9 +682,9 @@ export default async function ModelPage({
                 {formatPrice(cheapestChannel?.output_price_per_1m, channelCurrency(cheapestChannel), locale)}
                 <span className="text-sm font-normal text-zinc-500">/1M output</span>
               </div>
-              {cheapestChannel && officialChannel && cheapestChannel.id !== officialChannel.id && (
+              {cheapestSavings && (
                 <div className="text-sm text-green-600 mt-2 font-medium">
-                  💸 Save {calculateSavings(cheapestChannel)}% vs official
+                  💸 Save {cheapestSavings}% vs official
                 </div>
               )}
               {cheapestChannel?.providers?.access_from_china && (
@@ -690,6 +692,17 @@ export default async function ModelPage({
               )}
               {showTrust && cheapestChannel && (
                 <DataTrustLabel fact={channelListPriceTrust(cheapestChannel, locale, now)} locale={locale} />
+              )}
+              {cheapestChannel?.providers?.website && (
+                <a
+                  href={cheapestChannel.providers.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  {isZh ? '访问官网' : 'Visit website'}
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
               )}
             </CardContent>
           </Card>
@@ -720,6 +733,17 @@ export default async function ModelPage({
                   )}
                   {showTrust && (
                     <DataTrustLabel fact={channelListPriceTrust(officialChannel, locale, now)} locale={locale} />
+                  )}
+                  {officialChannel.providers?.website && (
+                    <a
+                      href={officialChannel.providers.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {isZh ? '访问官网' : 'Visit website'}
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                   )}
                 </>
               ) : (

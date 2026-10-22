@@ -10,7 +10,7 @@ type Row = Record<string, unknown> & { id: number };
 function fixture() {
   const data: Record<string, Row[]> = {
     providers: [{ id: 3, slug: 'deepseek' }],
-    models: [{ id: 10, slug: 'deepseek-v4-flash' }, { id: 11, slug: 'deepseek-v4-pro' }],
+    models: [{ id: 10, slug: 'deepseek-v4.1-flash' }, { id: 11, slug: 'deepseek-v4-pro' }],
     api_channel_prices: [], api_channel_price_variants: [{ id: 12, model_id: 10, provider_id: 3, variant_key: 'old', is_headline: true }],
   };
   let writes = 0;

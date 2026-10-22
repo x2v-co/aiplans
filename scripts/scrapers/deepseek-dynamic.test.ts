@@ -13,7 +13,7 @@ test('semantic DeepSeek table keeps peak list plus cache hit/miss/output for bot
   const result = parseDeepSeekTable(rows, new Date('2026-10-17T02:00Z'));
   assert.equal(result.success, true);
   assert.deepEqual(result.prices.map(p => [p.modelSlug, p.inputPricePer1M, p.outputPricePer1M, p.cachedInputPricePer1M]), [
-    ['deepseek-v4-flash', 0.3, 1.2, 0.006], ['deepseek-v4-pro', 1.32, 3.96, 0.044],
+    ['deepseek-v4.1-flash', 0.3, 1.2, 0.006], ['deepseek-v4-pro', 1.32, 3.96, 0.044],
   ]);
   assert.deepEqual(result.variants!.map(v => [v.variantKey, v.isHeadline, v.inputPricePer1M, v.outputPricePer1M, v.cachedInputPricePer1M]), [
     ['peak', true, 0.3, 1.2, 0.006], ['off-peak', false, 0.15, 0.6, 0.003],
@@ -45,7 +45,7 @@ test('rowspan layout with OFF-PEAK first parses both windows', () => {
   assert.equal(result.errors, undefined);
   assert.equal(result.success, true);
   assert.deepEqual(result.variants!.map(v => [v.modelSlug, v.variantKey, v.inputPricePer1M, v.outputPricePer1M, v.cachedInputPricePer1M]), [
-    ['deepseek-v4-flash', 'peak', 0.3, 1.2, 0.006], ['deepseek-v4-flash', 'off-peak', 0.15, 0.6, 0.003],
+    ['deepseek-v4.1-flash', 'peak', 0.3, 1.2, 0.006], ['deepseek-v4.1-flash', 'off-peak', 0.15, 0.6, 0.003],
     ['deepseek-v4-pro', 'peak', 1.32, 3.96, 0.044], ['deepseek-v4-pro', 'off-peak', 0.66, 1.98, 0.022],
   ]);
 });
@@ -61,7 +61,7 @@ test('multiple tables: picks the MODEL+PEAK pricing table, not the first one', (
   assert.equal(picked, liveRows);
   const result = parseDeepSeekTable(picked, new Date('2026-10-15T09:21Z'));
   assert.equal(result.success, true);
-  assert.deepEqual(result.prices.map(p => p.modelSlug), ['deepseek-v4-flash', 'deepseek-v4-pro']);
+  assert.deepEqual(result.prices.map(p => p.modelSlug), ['deepseek-v4.1-flash', 'deepseek-v4-pro']);
 });
 test('SSR shell PARAM/VALUE table alone is never used as pricing', () => {
   assert.deepEqual(pickDeepSeekPricingTable([ssrShellRows]), []);
