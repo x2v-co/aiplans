@@ -786,6 +786,17 @@ export default async function ModelPage({
                     {showTrust && (
                       <DataTrustLabel fact={channelListPriceTrust(cheapestChina, locale, now)} locale={locale} />
                     )}
+                    {cheapestChina.providers?.website && (
+                      <a
+                        href={cheapestChina.providers.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        {isZh ? '访问官网' : 'Visit website'}
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
                   </>
                 ) : (
                   <div className="text-zinc-500">No China-friendly options</div>
