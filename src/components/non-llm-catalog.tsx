@@ -4,6 +4,7 @@ import zh from '../../messages/zh.json';
 import { CatalogProviderLogo } from '@/components/catalog-provider-logo';
 import type { AiCatalogItem } from '@/lib/ai-vertical-catalog';
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
+import { formatCurrencyAmount } from '@/lib/currency';
 
 export function nonLlmCopy(locale: string) {
   return locale === 'zh' ? zh.nonLlmModels : en.nonLlmModels;
@@ -18,7 +19,7 @@ export function NonLlmFacts({ item, locale }: { item: AiCatalogItem; locale: str
     {item.usageRates?.length ? <dl className="grid gap-3 sm:grid-cols-2">
       {item.usageRates.map(rate => <div key={`${rate.priceKind}/${rate.unit}`}>
         <dt>{label(rate.priceKind)}</dt>
-        <dd>{priced && Number.isFinite(rate.price) ? `${rate.approximate ? '≈' : ''}$${rate.price} / ${label(rate.unit)}` : t.needsVerification}</dd>
+        <dd>{priced && Number.isFinite(rate.price) ? `${rate.approximate ? '≈' : ''}${formatCurrencyAmount(rate.price, item.currency)} / ${label(rate.unit)}` : t.needsVerification}</dd>
       </div>)}
     </dl> : <p>{priced ? item.pricing : t.needsVerification}</p>}
     <dl className="grid gap-3 sm:grid-cols-2">
@@ -57,7 +58,7 @@ export function NonLlmCatalog({ items, locale }: { items: AiCatalogItem[]; local
         <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           {priced && rates.length ? rates.map(rate => <div key={`${rate.priceKind}/${rate.unit}`} className="min-w-0">
             <dt className="truncate text-xs text-zinc-500">{label(rate.priceKind)}</dt>
-            <dd className="truncate font-medium">{rate.approximate ? '≈' : ''}${rate.price} <span className="font-normal text-zinc-500">/ {label(rate.unit)}</span></dd>
+            <dd className="truncate font-medium">{rate.approximate ? '≈' : ''}{formatCurrencyAmount(rate.price, item.currency)} <span className="font-normal text-zinc-500">/ {label(rate.unit)}</span></dd>
           </div>) : <div className="col-span-2"><dt className="text-xs text-zinc-500">{t.pricing}</dt><dd className="line-clamp-2">{priced ? item.pricing : t.needsVerification}</dd></div>}
         </dl>
         <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-4 text-xs text-zinc-500">
