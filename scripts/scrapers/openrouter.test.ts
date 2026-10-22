@@ -13,6 +13,16 @@ test('OpenRouter slug generation uses canonical Argon base and batch identities'
   assert.equal(generateOpenRouterSlug('google/gemini-4-argon:free'), 'google-gemini-gemini-4-argon-free');
 });
 
+test('OpenRouter prefix ids resolve to the pre-prefix catalog rows that hold the official quote', () => {
+  // Merged 2026-10-22: the prefixed copies were live but had no official price.
+  assert.equal(generateOpenRouterSlug('anthropic/claude-opus-4.5'), 'claude-opus-4.5');
+  assert.equal(generateOpenRouterSlug('anthropic/claude-sonnet-4.5'), 'claude-sonnet-4.5');
+  assert.equal(generateOpenRouterSlug('anthropic/claude-haiku-5.5'), 'claude-haiku-5.5');
+  assert.equal(generateOpenRouterSlug('minimax/minimax-m2.5'), 'minimax-m2.5');
+  assert.equal(generateOpenRouterSlug('meta/muse-wonder'), 'muse-wonder');
+  assert.equal(generateOpenRouterSlug('mistralai/mistral-large-2512'), 'mistral-large');
+});
+
 test('OpenRouter: router sentinel "-1" is variable pricing, not an error', () => {
   // Live /api/v1/models on 2026-10-09: typesafe/jev-router, nvidia/switchyard.
   assert.equal(classifyOpenRouterPricing({ prompt: '-1', completion: '-1' }).kind, 'variable');

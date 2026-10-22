@@ -19,6 +19,16 @@ const AUDITED_MODEL_SLUGS: Record<string, string> = {
   'mistralai/mistral-large': 'mistral-large-batch',
   'qwen/qwen3.6-35b-a3b': 'qwen-qwen3-6-35b-a3b',
   'qwen/qwen3.8-27b': 'qwen-qwen3-8-27b',
+  // Prefixing these created a second model row (2026-10-22 merge): the nightly
+  // scrape wrote OpenRouter to `anthropic-claude-opus-4-5` etc. while the
+  // canonical page kept a stale, unavailable OpenRouter row and no live
+  // channel from it. Verified against the catalog rows and official prices.
+  'anthropic/claude-opus-4.5': 'claude-opus-4.5',
+  'anthropic/claude-sonnet-4.5': 'claude-sonnet-4.5',
+  'anthropic/claude-haiku-5.5': 'claude-haiku-5.5',
+  'minimax/minimax-m2.5': 'minimax-m2.5',
+  'meta/muse-wonder': 'muse-wonder',
+  'mistralai/mistral-large-2512': 'mistral-large',
 };
 
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/models';
