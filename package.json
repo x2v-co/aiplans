@@ -59,6 +59,8 @@
     "fetch-logos": "tsx scripts/fetch-provider-logos.ts",
     "fetch-logos:force": "tsx scripts/fetch-provider-logos.ts --force",
     "seed:xiurouter": "tsx scripts/seed-xiurouter-provider.ts",
+    "seed:catalog-2026-10-20": "tsx scripts/seed-catalog-2026-10-20.ts",
+    "seed:catalog-2026-10-20:apply": "tsx scripts/seed-catalog-2026-10-20.ts --apply",
     "seed:catalog-p1-2026-10-19": "tsx scripts/seed-catalog-p1-2026-10-19.ts",
     "seed:catalog-p1-2026-10-19:apply": "tsx scripts/seed-catalog-p1-2026-10-19.ts --apply",
     "seed:openai-shutdowns": "tsx scripts/seed-openai-shutdowns.ts",

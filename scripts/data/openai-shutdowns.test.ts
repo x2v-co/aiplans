@@ -25,13 +25,17 @@ test('all audit batches match exact production slugs without conflating snapshot
   assert.deepEqual(plan.updates.map(update => update.to.shutdown_date).sort(), ['2026-10-23','2027-01-14']);
 });
 
-test('exact slug matching reports absent models and does not invent o4-mini-high dates', () => {
+test('exact slug matching reports absent models; o4-mini -high/-batch follow o4-mini', () => {
   const rows = rowsFor(['gpt-4o','openai-gpt-4o','openai-o4-mini-high','openai-o4-mini-batch']);
   const plan = planOpenAIShutdowns(rows);
-  assert.deepEqual(plan.updates.map(update => update.slug), ['gpt-4o']);
+  assert.deepEqual(plan.updates.map(update => update.slug).sort(), ['gpt-4o','openai-o4-mini-batch','openai-o4-mini-high']);
   assert.equal(plan.matches.find(match => match.apiId === 'gpt-4o-2024-05-13')?.slug, null);
-  assert.ok(!OPENAI_SHUTDOWNS.some(item => item.ids.includes('openai-o4-mini-high')));
-  assert.ok(!OPENAI_SHUTDOWNS.some(item => item.ids.includes('openai-o4-mini-batch')));
+  for (const slug of ['openai-o4-mini-high', 'openai-o4-mini-batch']) {
+    const update = plan.updates.find(item => item.slug === slug);
+    assert.equal(update?.to.shutdown_date, '2026-10-23', slug);
+    assert.equal(update?.to.replacement_model, 'gpt-5.6-terra', slug);
+    assert.equal(update?.to.deprecated_at, '2026-04-22', slug);
+  }
   assert.equal(plan.updates.find(update => update.slug === 'gpt-5.1-codex-mini'), undefined);
   for (const alias of ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-pro']) {
     assert.ok(!OPENAI_SHUTDOWNS.some(item => item.ids.includes(alias)), alias);

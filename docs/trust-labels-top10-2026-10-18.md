@@ -84,7 +84,7 @@ Gemini 4 Argon 不在这 10 页的模型名单里，但它出现在 Google 厂�
 | --- | --- | --- | --- |
 | OpenAI | Free、Go $8、Plus $20、Pro 100 $100 | `https://openai.com/chatgpt/pricing/` 本环境 403，未能重抓 | 链接仍作为来源。这次不能把这几档说成重新核过。见需处理事项 |
 | Anthropic | Free $0、Pro $20、Max 5x $100、Max 20x $200 | `https://claude.com/pricing`：Free $0；Pro 月付 $20、年付预付 $200；Max「From $100」，并有 Max 5x / 20x。月度 API 额度列是 $100 与 $200，不是另一笔订阅费 | 订阅价没有看到相反数字。额度列不能被读成第二份月费 |
-| Anthropic | Team Standard $30、Team Premium $150 | 标准席位年付 $20 / 月付 $25；高级席位年付 $100 / 月付 $125 | 不一致。价格标识强制「待核验」，不显示「已核验」。不改库 |
+| Anthropic | Team Standard $30、Team Premium $150 | 标准席位年付 $20 / 月付 $25；高级席位年付 $100 / 月付 $125 | 不一致。价格标识强制「待核验」，不显示「已核验」。不改库。**2026-10-20 更新**：#228 已把库改为 $25 / $125（年付 $20 / $100，last_verified 2026-10-19），复核 claude.com/pricing 一致，已撤掉待核验说明 |
 | Google | Plus、Pro 为「价格未知」且已有待核验文案；Ultra 5x $99.99、20x $199.99 | `https://gemini.google/subscriptions/`：Plus $4.99/月（约 2 倍免费档）；$19.99/月与约 4 倍免费档用量相邻；Ultra 起价 $99.99（5x）和 $199.99（20x） | Ultra 与页面一致。Plus/Pro 的官方数字只写进待核验说明，不写入价格，也不显示成已确认权益 |
 | 智谱 | GLM Coding Lite ¥118、Pro ¥538、Max ¥1,078；额度估算为空 | `https://bigmodel.cn/pricing` 无 JavaScript 时没有价目正文 | 未能从 HTML 复核这三个月费。空估算保持「暂无已核验的额度估算」 |
 
