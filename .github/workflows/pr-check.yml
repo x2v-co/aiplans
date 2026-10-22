@@ -1,15 +1,10 @@
 name: PR check
 
+# Runs on every PR so the job context "Type-check, unit tests, build" always
+# reports and can be a required status check on main. PRs that touch none of
+# the code/workflow paths skip the heavy steps but the job still succeeds.
 on:
   pull_request:
-    paths:
-      - 'src/**'
-      - 'scripts/**'
-      - 'drizzle/**'
-      - 'messages/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/pr-check.yml'
 
 permissions:
   contents: read
@@ -21,18 +16,43 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          fetch-depth: 0
+
+      - name: Detect relevant changes
+        id: changes
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          changed=$(git diff --name-only "origin/${BASE_REF}...HEAD")
+          echo "Changed files:"; echo "$changed"
+          if echo "$changed" | grep -qE '^(src|scripts|drizzle|messages|\.github/workflows)/|^package(-lock)?\.json$'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "No code/workflow paths changed; skipping type-check, tests and build." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.changes.outputs.relevant == 'true'
+        with:
+          node-version: '22'
           cache: 'npm'
-      - run: npm ci
+      - if: steps.changes.outputs.relevant == 'true'
+        run: npm ci
       - name: Type-check
+        if: steps.changes.outputs.relevant == 'true'
         run: npx tsc --noEmit
       - name: Quota schema type-check
+        if: steps.changes.outputs.relevant == 'true'
         run: npx tsc --noEmit -p scripts/tsconfig.quota.json
       - name: Unit tests
+        if: steps.changes.outputs.relevant == 'true'
         run: npm test
       - name: Build
+        if: steps.changes.outputs.relevant == 'true'
         run: npm run build
         env:
           DATABASE_URL: postgres://ci:ci@127.0.0.1:1/ci
