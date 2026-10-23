@@ -150,6 +150,12 @@ async function LocaleLayoutContent({
     // have to sit on <html> because that is the only element every page shares.
     <html lang={htmlLang} className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
+        <script
+          defer
+          src="https://vibeloft.ai/telemetry/v1.js"
+          data-vl-product-id="f40d0112-f5cc-4732-a453-4355c9d13bf8"
+          data-vl-auth-key="vl_web.5BfHRFfajj3ANkuqhpPdGAX6mOygl_n_YBk0csyOWyA"
+        />
         {/* Two site-wide JSON-LD graphs. Page-level JSON-LD (Product,
             Breadcrumb, FAQ, ItemList) is emitted by each route's own
             layout or page; these Organization + WebSite blocks stay
