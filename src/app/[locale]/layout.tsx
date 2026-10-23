@@ -154,7 +154,7 @@ async function LocaleLayoutContent({
           defer
           src="https://vibeloft.ai/telemetry/v1.js"
           data-vl-product-id="f40d0112-f5cc-4732-a453-4355c9d13bf8"
-          data-vl-auth-key="vl_web.5BfHRFfajj3ANkuqhpPdGAX6mOygl_n_YBk0csyOWyA"
+          data-vl-auth-key="vl_web.9f3cYBNaX3BnCQcisqKckhQOhenQwruv-HXQFjP6VPo"
         />
         {/* Two site-wide JSON-LD graphs. Page-level JSON-LD (Product,
             Breadcrumb, FAQ, ItemList) is emitted by each route's own
