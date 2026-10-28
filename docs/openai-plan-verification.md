@@ -16,12 +16,14 @@ The October 28, 2026 investigation found three independent failures:
 `npx tsx scripts/refresh-openai-plans.ts --fetch-only` reads current official
 Help Center articles plus the Business pricing page. Each source gets a fresh
 browser context so a challenge on one article does not contaminate the next.
-Unresolved challenges, missing paid amounts, or changed table structure abort
-before database writes. There is no automatic stale-data fallback.
+Unresolved challenges on required sources, missing paid amounts, or changed table
+structure abort before database writes. There is no automatic stale-data fallback.
 
 Without flags the command previews a serializable, read-only database transaction.
 `--apply` writes the reviewed OpenAI rows together in one transaction. Only the
 new Business Premium row may be inserted; other missing/ambiguous identities abort.
+New Business Premium mappings are derived from its inherited selector in the same
+transaction. Evidence older than an existing verified review is rejected.
 The review clears unverified numeric message/token/context limits rather than
 refreshing dates on old quota guesses. It never edits existing model selectors.
 
@@ -45,7 +47,8 @@ When the production network is challenged, an operator may collect fresh evidenc
 on a working browser host and explicitly pass `--evidence=/path/to/source.json`.
 This path checks all source URLs, content hashes and the capture time (at most 24
 hours old). It re-runs the parser and retains the original capture timestamp; it
-never marks replayed evidence as newly verified. Timers do not use evidence replay.
+never marks replayed evidence as newly verified. The VPS timer does not use evidence
+replay; the separate operator automation described below passes it explicitly.
 
 Before an apply, save the preview and take a production PostgreSQL backup. After
 apply, inspect the rows and the rendered provider page; publish the catalog using
@@ -62,3 +65,17 @@ manual rows and alert on stale or missing verification, with the plan identity.
 Enable the opt-in only after a successful preview/apply. Preserve operator pauses
 and other providers' existing configuration. Do not claim a blocked scheduled
 fetch is a successful verification.
+
+As of October 28, the server opt-in remains disabled: production direct fetches
+still intermittently return 403. Eleven rows were applied from freshly captured
+official evidence after a serializable preview and PostgreSQL backup at
+`/opt/x2v/backups/aiplans-openai-review-20261028-1793164321.dump`. This does not
+establish that unattended direct fetching works.
+
+The active renewal path is the Codex thread heartbeat `openai`, scheduled daily
+at 04:00 Asia/Singapore. It collects fresh official evidence on the local browser
+host, transfers it to `x2v-global`, then previews, backs up, applies and verifies
+the result. It depends on the local Codex host and production SSH access being
+available. It reports meaningful changes or failures and stays quiet otherwise.
+The first scheduled execution still needs observation; an installed schedule is
+not proof of a successful unattended renewal.
