@@ -7,6 +7,8 @@ import type { ScrapedPlan, PlanScraperResult } from '../utils/plan-validator';
 import { validatePlanPrice, slugifyPlan, normalizePlanName } from '../utils/plan-validator';
 import { fetchHTMLSmart } from './base-fetcher';
 
+type FetchPlansPage = typeof fetchHTMLSmart;
+
 const OPENAI_PLANS_URL = 'https://openai.com/chatgpt/pricing/';
 
 interface OpenAIPlan {
@@ -24,28 +26,21 @@ interface OpenAIPlan {
 /**
  * Fetch and parse OpenAI subscription plans from their website
  */
-async function fetchOpenAIPlans(): Promise<{ plans: OpenAIPlan[], errors: string[], skipped?: boolean }> {
-  const result = await fetchHTMLSmart(OPENAI_PLANS_URL);
+async function fetchOpenAIPlans(fetchPage: FetchPlansPage): Promise<{ plans: OpenAIPlan[], errors: string[] }> {
+  const result = await fetchPage(OPENAI_PLANS_URL);
   const errors: string[] = [];
 
+  // A skipped fetch is not a verification. Fail closed so the runner reports
+  // failure and preserves existing rows and their original verification dates.
   if (!result.success || !result.data) {
-    // OpenAI's consumer pricing page is currently behind a Cloudflare
-    // challenge for headless/VPS traffic. Treat that specific source outage as
-    // a non-destructive skip: an empty result never cleans existing plans, so
-    // the last verified OpenAI catalog remains in place. Other fetch failures
-    // still fail closed.
-    const blocked = result.status === 403 || /cloudflare|challenge|forbidden/i.test(result.error ?? '');
-    if (blocked) {
-      return {
-        plans: [],
-        errors: [],
-        skipped: true,
-      };
-    }
-    return { plans: [], errors: ['Failed to fetch OpenAI plans page - no HTML returned'] };
+    return { plans: [], errors: [`Failed to fetch OpenAI plans page: ${result.error ?? `HTTP ${result.status ?? 'unknown'}; no HTML returned`}`] };
   }
-
   const html = result.data;
+  // Some upstream challenges return HTTP 200; never parse their navigation or
+  // script text as a free plan / Enterprise offer.
+  if (/cf-chl-|_cf_chl_opt|challenge-platform|<title[^>]*>\s*Just a moment/i.test(html)) {
+    return { plans: [], errors: ['OpenAI plans page returned an anti-bot challenge; existing plans were not verified.'] };
+  }
   const plans: OpenAIPlan[] = [];
 
   // Extract prices from HTML - only proceed if we can find actual pricing data
@@ -81,7 +76,7 @@ async function fetchOpenAIPlans(): Promise<{ plans: OpenAIPlan[], errors: string
 
   // Plus plan - only add if we found the price
   if (plusPriceMatch) {
-    const priceMatch = plusPriceMatch[0].match(/\$?\s*([\d.]+)/);
+    const priceMatch = plusPriceMatch[0].match(/\$\s*([\d.]+)/);
     if (priceMatch) {
       const plusPlan: OpenAIPlan = {
         name: 'ChatGPT Plus',
@@ -100,7 +95,7 @@ async function fetchOpenAIPlans(): Promise<{ plans: OpenAIPlan[], errors: string
 
   // Team plan - only add if we found the price
   if (teamPriceMatch) {
-    const priceMatch = teamPriceMatch[0].match(/\$?\s*([\d.]+)/);
+    const priceMatch = teamPriceMatch[0].match(/\$\s*([\d.]+)/);
     if (priceMatch) {
       const teamPlan: OpenAIPlan = {
         name: 'ChatGPT Team',
@@ -143,7 +138,7 @@ async function fetchOpenAIPlans(): Promise<{ plans: OpenAIPlan[], errors: string
     addedProTier = true;
   }
   if (!addedProTier && proPriceMatch) {
-    const priceMatch = proPriceMatch[0].match(/\$?\s*([\d.]+)/);
+    const priceMatch = proPriceMatch[0].match(/\$\s*([\d.]+)/);
     if (priceMatch) {
       plans.push({
         name: `ChatGPT Pro ${parseFloat(priceMatch[1])}`,
@@ -181,7 +176,7 @@ async function fetchOpenAIPlans(): Promise<{ plans: OpenAIPlan[], errors: string
   return { plans, errors };
 }
 
-export async function scrapeOpenAIPlans(): Promise<PlanScraperResult> {
+export async function scrapeOpenAIPlans(fetchPage: FetchPlansPage = fetchHTMLSmart): Promise<PlanScraperResult> {
   const startTime = Date.now();
   const errors: string[] = [];
   const plans: ScrapedPlan[] = [];
@@ -189,19 +184,8 @@ export async function scrapeOpenAIPlans(): Promise<PlanScraperResult> {
   try {
     console.log('🔄 Fetching OpenAI subscription plans...');
 
-    const { plans: openaiPlans, errors: fetchErrors, skipped } = await fetchOpenAIPlans();
+    const { plans: openaiPlans, errors: fetchErrors } = await fetchOpenAIPlans(fetchPage);
     errors.push(...fetchErrors);
-
-    if (skipped) {
-      const warning = 'OpenAI plans page is blocked by an upstream anti-bot challenge; preserving last-known-good plans.';
-      console.warn(`⚠️ ${warning}`);
-      return {
-        source: 'OpenAI-Plans',
-        success: true,
-        plans: [],
-        errors: [warning],
-      };
-    }
 
     console.log(`📦 Found ${openaiPlans.length} plans from OpenAI`);
 
@@ -240,7 +224,7 @@ export async function scrapeOpenAIPlans(): Promise<PlanScraperResult> {
     }
 
     const duration = Date.now() - startTime;
-    console.log(`✅ OpenAI plans scrape completed in ${duration}ms`);
+    console.log(`${errors.length === 0 && plans.length > 0 ? '✅' : '❌'} OpenAI plans scrape completed in ${duration}ms`);
     console.log(`   - Plans processed: ${plans.length}`);
     console.log(`   - Errors: ${errors.length}`);
 
