@@ -22,6 +22,8 @@ test('annual quote and monthly quote keep their own units and amounts', () => {
   const plan = {price: 30, annual_price: 300, price_unit: 'per_month'};
   assert.match(render(plan), /US\$300\.00/);
   assert.match(render(plan), /\/年/);
+  assert.match(render(plan), /（US\$25\.00\/月）/);
+  assert.doesNotMatch(render(plan, false), /年付价格折算到每月/);
   assert.doesNotMatch(render(plan), /暂无年付报价/);
   assert.match(render(plan, false), /US\$30\.00/);
   assert.match(render(plan, false), /\/月/);
@@ -44,5 +46,6 @@ test('English uses the same annual fallback and zero-valued annual prices are re
   assert.match(render({price: 20, price_unit: 'per_month'}, true, 'en'), /\/mo/);
   assert.match(render({price: 20, price_unit: 'per_month'}, true, 'en'), /Annual price unavailable/);
   assert.match(render({price: 30, annual_price: 300}, true, 'en'), /\/year/);
+  assert.match(render({price: 30, annual_price: 300}, true, 'en'), /\(\$25\.00\/mo\)/);
   assert.match(render({price: 30, annual_price: 0}), /免费/);
 });

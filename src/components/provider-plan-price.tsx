@@ -48,6 +48,11 @@ export function ProviderPlanPrice({ plan, showYearly, currency, locale }: {
     {!plan.is_contact_sales && value != null && value > 0 && unitLabel && (
       <span className="text-zinc-500 text-sm ml-1">/{unitLabel}</span>
     )}
+    {!plan.is_contact_sales && value != null && value > 0 && unit === 'per_year' && (
+      <span className="ml-2 inline-block text-sm text-zinc-500" title={isZh ? '年付价格折算到每月' : 'Monthly equivalent of the annual price'}>
+        {isZh ? '（' : '('}{formatPrice(value / 12, currency, locale)}/{isZh ? '月' : 'mo'}{isZh ? '）' : ')'}
+      </span>
+    )}
     {!plan.is_contact_sales && fallback && (
       <p className="mt-1 text-xs text-zinc-500">
         {isZh ? '暂无年付报价，显示月付价格。' : 'Annual price unavailable; showing monthly price.'}
