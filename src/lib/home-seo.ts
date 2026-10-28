@@ -19,8 +19,8 @@ export const FALLBACK_HOME_COPY: HomeMetadataCopy = {
     zh: 'aiplans.dev — 全网 AI 价格对比',
   },
   description: {
-    en: 'Compare GPT-4, Claude, DeepSeek, Gemini pricing across official and aggregator channels. Find the cheapest AI API.',
-    zh: '对比 GPT-4、Claude、DeepSeek、Gemini 等 AI 模型在官方与聚合渠道的价格，找到最便宜的 API。',
+    en: 'Compare AI API prices, subscription plans and token costs across official and aggregator channels. Explore Claude, Kimi, GLM, Grok, Gemini, Qwen and DeepSeek pricing.',
+    zh: '对比 AI API 价格、订阅套餐与 token 费用，查看 Claude、Kimi、GLM、Grok、Gemini、Qwen 和 DeepSeek 的官方与渠道报价。',
   },
 };
 

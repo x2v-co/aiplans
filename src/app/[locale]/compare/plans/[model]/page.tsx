@@ -1,3 +1,4 @@
+import { guideForModelSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import { notFound, permanentRedirect } from "next/navigation";
 import { getPlanComparison } from "@/lib/compare-plans";
 import { legacySlugRedirect } from "@/lib/legacy-slug-redirects";
@@ -45,6 +46,8 @@ export default async function ComparePlansModelPage({
   }
 
   const isZh = locale === "zh";
+  const guideSlug = guideForModelSlug(modelSlug);
+  const pricingGuide = guideSlug ? { href: `/${locale}/guides/${guideSlug}`, label: PRICING_GUIDES[guideSlug].title[isZh ? 'zh' : 'en'] } : undefined;
   const quotaEstimates = await getVerifiedQuotaEstimates(
     [...data.officialPlans, ...data.thirdPartyPlans].map(entry => entry.plan.slug),
   );
@@ -62,7 +65,7 @@ export default async function ComparePlansModelPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage(faqs) }} />
-      <ComparePlansView locale={locale} data={data} faqs={faqs} couponByProvider={couponByProvider} quotaEstimates={quotaEstimates} />
+      <ComparePlansView pricingGuide={pricingGuide} locale={locale} data={data} faqs={faqs} couponByProvider={couponByProvider} quotaEstimates={quotaEstimates} />
     </>
   );
 }

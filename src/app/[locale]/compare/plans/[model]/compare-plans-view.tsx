@@ -1,5 +1,7 @@
 "use client";
 
+import { subscriptionSearchCopy } from '@/lib/subscription-search';
+
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -41,6 +43,7 @@ interface ComparePlansViewProps {
   /** Active plan-scoped coupons keyed by provider slug. */
   couponByProvider: Record<string, CouponOffer[]>;
   quotaEstimates: VerifiedQuotaEstimate[];
+  pricingGuide?: { href: string; label: string };
 }
 
 interface CheapestByKind {
@@ -62,7 +65,7 @@ interface PlanGroup {
   plans: any[];
 }
 
-export default function ComparePlansView({ locale, data, faqs, couponByProvider, quotaEstimates }: ComparePlansViewProps) {
+export default function ComparePlansView({ locale, data, faqs, couponByProvider, quotaEstimates, pricingGuide }: ComparePlansViewProps) {
   // Billing toggle
   const [showYearly, setShowYearly] = useState(false);
   // Every provider starts expanded, and it has to be the *initial* state rather
@@ -191,6 +194,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
 
   const { model, summary } = data;
   const modelName = formatModelName(model.name);
+  const searchCopy = subscriptionSearchCopy(model.slug, modelName, locale);
   const providerVisitUrl = getProviderVisitUrl(model.provider, 'plan');
   const planCount = planGroups.reduce((sum, g) => sum + g.plans.length, 0);
   // The API emits convertedMonthlyPrice/monthlyPrice on summary.cheapestPlan; the
@@ -223,13 +227,22 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
             ) : (
               <span className="text-4xl">{model.provider?.logoFallback || getProviderLogoFallback(model.provider)}</span>
             )}
-            <h1 className="text-4xl font-bold">{modelName} Plans</h1>
+            <h1 className="text-3xl font-bold md:text-4xl">{searchCopy.heading}</h1>
           </div>
-          <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-6 max-w-2xl mx-auto">
-            {locale === "zh"
-              ? `比较 ${modelName} 在不同渠道的订阅计划，找到最适合您的方案`
-              : `Compare ${modelName} subscription plans across different channels to find the best option for you`}
+          <p className="text-base text-zinc-600 dark:text-zinc-400 mb-6 max-w-2xl mx-auto md:text-lg">
+            {searchCopy.intro}
           </p>
+
+          <Link href={`/${locale}/models/${encodeURIComponent(model.slug)}`} className="mb-6 inline-block text-blue-600 hover:underline">
+            {searchCopy.apiLink} →
+          </Link>
+
+          <nav aria-label={locale === 'zh' ? '相关价格与套餐' : 'Related pricing and plans'} className="mb-6 flex flex-wrap justify-center gap-4 text-sm">
+            {model.provider?.slug && <Link href={`/${locale}/providers/${encodeURIComponent(model.provider.slug)}`} className="text-blue-600 hover:underline">
+              {model.provider.name} {locale === 'zh' ? '价格与订阅套餐' : 'pricing & subscription plans'}
+            </Link>}
+            {pricingGuide && <Link href={pricingGuide.href} className="text-blue-600 hover:underline">{pricingGuide.label}</Link>}
+          </nav>
 
           {(providerVisitUrl || couponsFor(couponByProvider, model.provider?.slug).length > 0) && (
             <div className="mb-8 flex flex-wrap items-center justify-center gap-2">

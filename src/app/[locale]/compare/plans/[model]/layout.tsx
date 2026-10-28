@@ -43,8 +43,8 @@ export async function generateMetadata({
     notFound();
   }
   const modelName = formatModelName(data.model.name);
-  const en = buildComparisonPricingCopy(modelName, data.plans, 'en');
-  const zh = buildComparisonPricingCopy(modelName, data.plans, 'zh');
+  const en = buildComparisonPricingCopy(modelName, data.plans, 'en', undefined, modelSlug);
+  const zh = buildComparisonPricingCopy(modelName, data.plans, 'zh', undefined, modelSlug);
   // Old releases, operational SKUs, and pages with fewer than two plans still
   // work for existing users, but should not compete with the useful current
   // comparison in search results.

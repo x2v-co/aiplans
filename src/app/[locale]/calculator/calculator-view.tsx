@@ -144,8 +144,8 @@ export default function CalculatorView({
           </h1>
           <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">
             {isZh
-              ? '输入真实调用模式，同时比较最多 4 个模型的全部可用渠道。原价保留渠道币种，排名统一按美元折算。'
-              : 'Enter your real request pattern and compare every available channel for up to four models. Native prices stay in their published currency; ranking is normalised to USD.'}
+              ? '按请求量、输入输出 token、缓存和批处理用量估算 AI 推理费用，同时比较最多 4 个模型及其渠道，排名统一折算美元。本页是预算计算器，不会读取你的实际账单。'
+              : 'Estimate AI inference and token costs from your request volume, input/output tokens, caching and batch usage. Compare up to four models and their channels in USD. This is a budget calculator, not a connected billing dashboard.'}
           </p>
         </div>
 

@@ -50,7 +50,7 @@ test('monthly floors retain free tiers and exclude sales placeholders, packs, an
   ];
   assert.deepEqual(monthlyPlanFloors(plans), [{ name: 'Free', price: 0, currency: 'USD' }]);
   assert.equal(buildComparisonPricingCopy('Kimi K2', plans, 'en', 2026).title,
-    'Kimi K2 Plans & Pricing 2026: 10 Plans, from $0/mo');
+    'Kimi K2 Subscription Plans & Pricing 2026: 9 Plans, from $0/mo');
 });
 
 test('comparison snippets use DB row counts and monthly prices in both locales', () => {
@@ -83,14 +83,14 @@ test('provider titles select existing tier names and skip repeated Pro variants'
     plan({ id: 4, name: 'ChatGPT Team', price: 30 }),
   ];
   const en = buildProviderPricingCopy('OpenAI', plans, 'en', 2026);
-  assert.equal(en.title, 'OpenAI Plans & Pricing 2026: ChatGPT Plus, Pro, Team Compared');
-  assert.match(en.description, /5 OpenAI plans, from \$0\/mo/);
+  assert.equal(en.title, 'OpenAI Pricing: API Costs & Subscription Plans 2026: ChatGPT Plus, Pro, Team');
+  assert.match(en.description, /5 listed subscription plans, from \$0\/mo/);
   assert.equal(buildProviderPricingCopy('OpenAI', plans, 'zh', 2026).title,
-    'OpenAI 套餐与价格 2026：ChatGPT Plus, Pro, Team 对比');
+    'OpenAI API 价格与订阅套餐 2026：ChatGPT Plus, Pro, Team');
   const single = buildProviderPricingCopy('Other', [plan({ name: 'Actual Tier' })], 'en', 2026);
   assert.match(single.title, /Actual Tier/);
   assert.doesNotMatch(single.title, /Plus|Pro|Team|ChatGPT/);
-  assert.equal(buildProviderPricingCopy('No Data', [], 'en', 2026).title, 'No Data Plans & Pricing 2026');
+  assert.equal(buildProviderPricingCopy('No Data', [], 'en', 2026).title, 'No Data API Pricing & Model Costs 2026');
 });
 
 test('moonshot china chinese copy targets API price and subscription queries', () => {
@@ -99,14 +99,14 @@ test('moonshot china chinese copy targets API price and subscription queries', (
     plan({ id: 2, name: 'Kimi Pro', price: 199, currency: 'CNY' }),
   ];
   const zh = buildProviderPricingCopy('月之暗面 (Moonshot/Kimi)', plans, 'zh', 2026, 'moonshot-china');
-  assert.match(zh.title, /^月之暗面 API 价格与订阅 2026/);
+  assert.match(zh.title, /Kimi.*月之暗面.*API 价格与订阅套餐 2026/);
   assert.match(zh.title, /订阅/);
   assert.match(zh.description, /API 价格/);
   assert.match(zh.description, /订阅/);
-  assert.match(zh.description, /2 个套餐/);
+  assert.match(zh.description, /2 个已收录订阅套餐/);
   assert.match(zh.title, /Kimi Pro, Basic/);
   const en = buildProviderPricingCopy('月之暗面 (Moonshot/Kimi)', plans, 'en', 2026, 'moonshot-china');
-  assert.match(en.title, /Plans & Pricing 2026/);
+  assert.match(en.title, /Pricing: API Costs & Subscription Plans 2026/);
   assert.doesNotMatch(en.title, /月之暗面 API/);
 });
 
