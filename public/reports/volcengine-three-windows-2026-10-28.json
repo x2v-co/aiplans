@@ -1,0 +1,536 @@
+{
+  "calls": 30,
+  "models": [
+    "kimi-k3"
+  ],
+  "tokens": {
+    "input": 1237470,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "output": 21228
+  },
+  "totalTokens": 1258698,
+  "meters": [
+    {
+      "observedAt": "2026-10-28T03:27:28.622Z",
+      "afterCalls": 0,
+      "used5h": 0.57,
+      "usedWeek": 12.07,
+      "usedMonth": 33.71,
+      "reset5h": "1小时45分后重置",
+      "resetWeek": "4天12小时后重置",
+      "resetMonth": "12天12小时后重置",
+      "source": "authenticated console DOM; refreshed; unchanged from initial read"
+    },
+    {
+      "observedAt": "2026-10-28T03:31:37.962Z",
+      "afterCalls": 10,
+      "used5h": 3.72,
+      "usedWeek": 12.49,
+      "usedMonth": 33.92,
+      "reset5h": "1小时41分后重置",
+      "resetWeek": "4天12小时后重置",
+      "resetMonth": "12天12小时后重置",
+      "source": "authenticated console DOM; refreshed"
+    },
+    {
+      "observedAt": "2026-10-28T03:32:32.494Z",
+      "afterCalls": 10,
+      "used5h": 3.72,
+      "usedWeek": 12.49,
+      "usedMonth": 33.92,
+      "reset5h": "1小时40分后重置",
+      "resetWeek": "4天12小时后重置",
+      "resetMonth": "12天12小时后重置",
+      "source": "authenticated console DOM; refreshed"
+    },
+    {
+      "observedAt": "2026-10-28T03:36:24.479Z",
+      "afterCalls": 20,
+      "used5h": 6.86,
+      "usedWeek": 12.91,
+      "usedMonth": 34.13,
+      "reset5h": "1小时36分后重置",
+      "resetWeek": "4天12小时后重置",
+      "resetMonth": "12天12小时后重置",
+      "source": "authenticated console DOM; refreshed"
+    },
+    {
+      "observedAt": "2026-10-28T03:37:16.449Z",
+      "afterCalls": 20,
+      "used5h": 6.86,
+      "usedWeek": 12.91,
+      "usedMonth": 34.13,
+      "reset5h": "1小时35分后重置",
+      "resetWeek": "4天12小时后重置",
+      "resetMonth": "12天12小时后重置",
+      "source": "authenticated console DOM; refreshed"
+    },
+    {
+      "observedAt": "2026-10-28T03:41:46.361Z",
+      "afterCalls": 30,
+      "used5h": 10.01,
+      "usedWeek": 13.33,
+      "usedMonth": 34.34,
+      "reset5h": "1小时30分后重置",
+      "resetWeek": "4天12小时后重置",
+      "resetMonth": "12天12小时后重置",
+      "source": "authenticated console DOM; refreshed"
+    },
+    {
+      "observedAt": "2026-10-28T03:42:54.645Z",
+      "afterCalls": 30,
+      "used5h": 10.01,
+      "usedWeek": 13.33,
+      "usedMonth": 34.34,
+      "reset5h": "1小时29分后重置",
+      "resetWeek": "4天12小时后重置",
+      "resetMonth": "12天12小时后重置",
+      "source": "authenticated console DOM; refreshed"
+    },
+    {
+      "observedAt": "2026-10-28T03:43:23.012Z",
+      "afterCalls": 30,
+      "used5h": 10.01,
+      "usedWeek": 13.33,
+      "usedMonth": 34.34,
+      "reset5h": "1小时29分后重置",
+      "resetWeek": "4天12小时后重置",
+      "resetMonth": "12天12小时后重置",
+      "source": "authenticated console DOM; refreshed"
+    }
+  ],
+  "estimates": {
+    "5h": {
+      "deltaPp": 9.44,
+      "sameMixTokens": 13333665.254237289,
+      "roundingLow": 13319555,
+      "roundingHigh": 13347805,
+      "roundingDeltaRelativePct": 0.1059322033898305
+    },
+    "Week": {
+      "deltaPp": 1.26,
+      "sameMixTokens": 99896666.66666667,
+      "roundingLow": 99110078,
+      "roundingHigh": 100695840,
+      "roundingDeltaRelativePct": 0.7936507936507936
+    },
+    "Month": {
+      "deltaPp": 0.63,
+      "sameMixTokens": 199793333.33333334,
+      "roundingLow": 196671562,
+      "roundingHigh": 203015807,
+      "roundingDeltaRelativePct": 1.5873015873015872
+    }
+  },
+  "batches": [
+    {
+      "calls": [
+        1,
+        10
+      ],
+      "tokens": 419479,
+      "deltaPp": {
+        "5h": 3.15,
+        "Week": 0.42,
+        "Month": 0.21
+      }
+    },
+    {
+      "calls": [
+        11,
+        20
+      ],
+      "tokens": 418954,
+      "deltaPp": {
+        "5h": 3.14,
+        "Week": 0.42,
+        "Month": 0.21
+      }
+    },
+    {
+      "calls": [
+        21,
+        30
+      ],
+      "tokens": 420265,
+      "deltaPp": {
+        "5h": 3.15,
+        "Week": 0.42,
+        "Month": 0.21
+      }
+    }
+  ],
+  "ledger": [
+    {
+      "call": 1,
+      "startedAt": "2026-10-28T03:27:39.754224+00:00",
+      "endedAt": "2026-10-28T03:27:59.206251+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 648
+    },
+    {
+      "call": 2,
+      "startedAt": "2026-10-28T03:27:39.754189+00:00",
+      "endedAt": "2026-10-28T03:28:15.123708+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 574
+    },
+    {
+      "call": 3,
+      "startedAt": "2026-10-28T03:27:59.265948+00:00",
+      "endedAt": "2026-10-28T03:28:21.631714+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 669
+    },
+    {
+      "call": 4,
+      "startedAt": "2026-10-28T03:28:15.173169+00:00",
+      "endedAt": "2026-10-28T03:29:03.196716+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 698
+    },
+    {
+      "call": 5,
+      "startedAt": "2026-10-28T03:28:21.680394+00:00",
+      "endedAt": "2026-10-28T03:28:48.032648+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 694
+    },
+    {
+      "call": 6,
+      "startedAt": "2026-10-28T03:28:48.082750+00:00",
+      "endedAt": "2026-10-28T03:29:09.875910+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 790
+    },
+    {
+      "call": 7,
+      "startedAt": "2026-10-28T03:29:03.256237+00:00",
+      "endedAt": "2026-10-28T03:29:27.011317+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 688
+    },
+    {
+      "call": 8,
+      "startedAt": "2026-10-28T03:29:09.921977+00:00",
+      "endedAt": "2026-10-28T03:29:29.337846+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 610
+    },
+    {
+      "call": 9,
+      "startedAt": "2026-10-28T03:29:27.069743+00:00",
+      "endedAt": "2026-10-28T03:30:46.103392+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 574
+    },
+    {
+      "call": 10,
+      "startedAt": "2026-10-28T03:29:29.378181+00:00",
+      "endedAt": "2026-10-28T03:30:21.542310+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 1044
+    },
+    {
+      "call": 11,
+      "startedAt": "2026-10-28T03:32:39.740940+00:00",
+      "endedAt": "2026-10-28T03:32:58.448556+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 547
+    },
+    {
+      "call": 12,
+      "startedAt": "2026-10-28T03:32:39.740939+00:00",
+      "endedAt": "2026-10-28T03:33:22.023132+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 679
+    },
+    {
+      "call": 13,
+      "startedAt": "2026-10-28T03:32:58.510861+00:00",
+      "endedAt": "2026-10-28T03:33:44.592596+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 890
+    },
+    {
+      "call": 14,
+      "startedAt": "2026-10-28T03:33:22.071429+00:00",
+      "endedAt": "2026-10-28T03:33:39.590750+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 582
+    },
+    {
+      "call": 15,
+      "startedAt": "2026-10-28T03:33:39.672930+00:00",
+      "endedAt": "2026-10-28T03:34:08.830210+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 665
+    },
+    {
+      "call": 16,
+      "startedAt": "2026-10-28T03:33:44.640666+00:00",
+      "endedAt": "2026-10-28T03:34:24.423703+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 522
+    },
+    {
+      "call": 17,
+      "startedAt": "2026-10-28T03:34:08.894640+00:00",
+      "endedAt": "2026-10-28T03:34:31.243834+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 612
+    },
+    {
+      "call": 18,
+      "startedAt": "2026-10-28T03:34:24.469583+00:00",
+      "endedAt": "2026-10-28T03:34:45.904584+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 734
+    },
+    {
+      "call": 19,
+      "startedAt": "2026-10-28T03:34:31.299977+00:00",
+      "endedAt": "2026-10-28T03:34:57.000343+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 603
+    },
+    {
+      "call": 20,
+      "startedAt": "2026-10-28T03:34:45.968763+00:00",
+      "endedAt": "2026-10-28T03:35:37.096870+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 630
+    },
+    {
+      "call": 21,
+      "startedAt": "2026-10-28T03:37:22.597291+00:00",
+      "endedAt": "2026-10-28T03:38:01.075013+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 747
+    },
+    {
+      "call": 22,
+      "startedAt": "2026-10-28T03:37:22.597273+00:00",
+      "endedAt": "2026-10-28T03:38:07.029064+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 844
+    },
+    {
+      "call": 23,
+      "startedAt": "2026-10-28T03:38:01.128498+00:00",
+      "endedAt": "2026-10-28T03:38:20.351576+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 595
+    },
+    {
+      "call": 24,
+      "startedAt": "2026-10-28T03:38:07.064775+00:00",
+      "endedAt": "2026-10-28T03:38:24.102104+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 563
+    },
+    {
+      "call": 25,
+      "startedAt": "2026-10-28T03:38:20.394974+00:00",
+      "endedAt": "2026-10-28T03:39:44.807314+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 695
+    },
+    {
+      "call": 26,
+      "startedAt": "2026-10-28T03:38:24.152695+00:00",
+      "endedAt": "2026-10-28T03:39:34.085816+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 872
+    },
+    {
+      "call": 27,
+      "startedAt": "2026-10-28T03:39:34.161084+00:00",
+      "endedAt": "2026-10-28T03:39:58.283606+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 589
+    },
+    {
+      "call": 28,
+      "startedAt": "2026-10-28T03:39:44.853538+00:00",
+      "endedAt": "2026-10-28T03:40:08.045365+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 874
+    },
+    {
+      "call": 29,
+      "startedAt": "2026-10-28T03:39:58.338804+00:00",
+      "endedAt": "2026-10-28T03:40:26.262831+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 844
+    },
+    {
+      "call": 30,
+      "startedAt": "2026-10-28T03:40:08.097753+00:00",
+      "endedAt": "2026-10-28T03:40:56.885241+00:00",
+      "models": [
+        "kimi-k3"
+      ],
+      "input": 41249,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "output": 1152
+    }
+  ],
+  "schemaVersion": 1,
+  "methodology": {
+    "perReadingRoundingPp": 0.005,
+    "confidence": "conditional; rounding bounds only, not statistical confidence intervals",
+    "monthly": "rough estimate",
+    "meterSource": "authenticated console rendered text, two decimals; not a direct API integration",
+    "accountIsolation": "no provider-wide request audit; other devices cannot be ruled out",
+    "modelWeights": "single model and input-heavy mix only; cache weights not calibrated",
+    "resetEvidence": "displayed countdown remained consistent; no exact reset timestamp captured"
+  }
+}
