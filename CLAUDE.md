@@ -269,15 +269,15 @@ rows from web ground truth so `/api-pricing` filter "🇨🇳 China" shows them.
 ### GitHub Actions
 
 - `.github/workflows/deploy-production.yml` — auto-rollout on push to `main`
-  (self-hosted devbox runner, always builds with `BUILD_SCRAPER=1`, runs
+  (self-hosted runner on `x2v-global`, always builds with `BUILD_SCRAPER=1`, runs
   migrations, health-gates on `/api/health`).
 - `.github/workflows/data-audit.yml` — PRs touching scripts/scrapers/schema
   get a DB-free `tsc --noEmit` gate; the real 19-check audit runs nightly on
-  the devbox timer, with `workflow_dispatch` re-runnable on the self-hosted
+  the `x2v-global` timer, with `workflow_dispatch` re-runnable on the self-hosted
   runner inside the compose network.
 - `.github/workflows/scrape-pricing.yml` — manual-only `workflow_dispatch`
   recovery trigger that runs the same `run-scrapers.sh` chain as the timer on
-  devbox (`skip_api` → `SKIP_API=1`). Scheduling itself is
+  `x2v-global` (`skip_api` → `SKIP_API=1`). Scheduling itself is
   `planprice-scraper.timer` on the VPS — GitHub-hosted runners have no path
   to the private Postgres and no `DATABASE_URL` secret exists any more.
   PostgreSQL stays private and runners never need network access to it.
