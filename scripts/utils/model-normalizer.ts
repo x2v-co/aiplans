@@ -18,6 +18,10 @@ export function canonicalizeModelSlug(value: string): string {
     .replace(/:batch$/, '-batch')
     .replace(/:\s*/g, '-')
     .replace(/[\s/]+/g, '-');
+  // The official K3.1 ID and OpenRouter's namespaced ID are the same model.
+  // Preserve the already-published OpenRouter URL; do not merge Highspeed,
+  // dated snapshots, or other separately priced variants into Pro.
+  if (/^(?:moonshotai-)?kimi-k3[.-]1-pro$/.test(candidate)) return 'moonshotai-kimi-k3-1-pro';
   const argon = candidate.match(/^(?:google(?:-ai|-gemini)?-)?(gemini-4-argon(?:-batch)?)$/);
   return argon?.[1] ?? value;
 }

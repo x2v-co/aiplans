@@ -3,19 +3,7 @@ import { normalizeModelName } from '../utils/validator';
 import { PlaywrightScraper, type PriceData, type ScraperResult } from './lib/playwright-scraper';
 
 const PRICING_PAGE = 'https://platform.kimi.com/docs/pricing/chat';
-const PRICING_MARKDOWN_URL = `${PRICING_PAGE}.md`;
 
-function price(text: string | undefined): number | null {
-  const match = text?.match(/[¥￥]?\s*([\d.]+)/);
-  if (!match) return null;
-  const value = Number(match[1]);
-  return Number.isFinite(value) ? value : null;
-}
-
-function context(text: string | undefined): number | null {
-  const match = text?.match(/([\d,]+)\s*tokens?/i);
-  return match ? Number(match[1].replace(/,/g, '')) : null;
-}
 
 /**
  * The model cell can carry badges/tooltips next to the id, e.g. during the
@@ -50,74 +38,89 @@ export function parseKimiModelCell(raw: string): string | null {
   return parseKimiModelIds(raw)[0] ?? null;
 }
 
-class MoonshotScraper extends PlaywrightScraper {
+export interface KimiPricingTable {
+  headers: string[];
+  rows: string[][];
+  contextText: string;
+}
+
+/** Fail the full-catalog scrape on any incomplete table/row: a partial result
+ * would otherwise retire valid Moonshot channels in index-dynamic. */
+export function parseKimiPricingTables(tables: KimiPricingTable[]): PriceData[] {
+  const prices: PriceData[] = [];
+  const seen = new Set<string>();
+  for (const table of tables) {
+    const headers = table.headers.map(value => value.trim());
+    const modelIndex = headers.findIndex(value => /^(名称|模型)$/.test(value));
+    const inputIndex = headers.indexOf('输入');
+    const outputIndex = headers.indexOf('输出');
+    const cacheIndex = headers.indexOf('缓存命中');
+    if ([modelIndex, inputIndex, outputIndex, cacheIndex].some(index => index < 0)) {
+      throw new Error('Unrecognized Kimi pricing table headers');
+    }
+    const contextMatch = table.contextText.match(/([\d,]+)\s*tokens?\s*上下文窗口/i);
+    const contextWindow = contextMatch ? Number(contextMatch[1].replace(/,/g, '')) : 0;
+    if (!contextWindow || !table.rows.length) throw new Error('Incomplete Kimi pricing table');
+    for (const cells of table.rows) {
+      const modelIds = parseKimiModelIds(cells[modelIndex] ?? '');
+      if (modelIds.length !== 1) throw new Error('Invalid Kimi pricing model cell');
+      const modelName = normalizeModelName(modelIds[0]).toLowerCase();
+      const readPrice = (index: number): number => {
+        // Require CNY and per-million units; never reinterpret cache-write TTLs
+        // or a changed currency/unit as a token price.
+        const match = cells[index]?.trim().match(/^[¥￥]\s*(\d+(?:\.\d+)?)\s*\/\s*MTok$/i);
+        if (!match) throw new Error(`Invalid Kimi price for ${modelName}: ${headers[index]}`);
+        return Number(match[1]);
+      };
+      const input = readPrice(inputIndex);
+      const output = readPrice(outputIndex);
+      const cached = readPrice(cacheIndex);
+      if (output < input || cached > input || seen.has(modelName)) {
+        throw new Error(`Inconsistent Kimi pricing row: ${modelName}`);
+      }
+      prices.push({ modelName, inputPricePer1M: input, outputPricePer1M: output,
+        cachedInputPricePer1M: cached, contextWindow, isAvailable: true, currency: 'CNY' });
+      seen.add(modelName);
+    }
+  }
+  if (!prices.length) throw new Error('No Moonshot token pricing rows found');
+  return prices;
+}
+
+export class MoonshotScraper extends PlaywrightScraper {
   getSourceName(): string { return 'Moonshot'; }
   getSourceUrl(): string { return PRICING_PAGE; }
 
   async scrape(): Promise<ScraperResult> {
-    // Mintlify exposes the same rendered tables as a small, documented
-    // markdown representation. The old per-model URLs now redirect to a
-    // generic page, so parsing this source avoids a brittle DOM wait.
-    const response = await fetch(PRICING_MARKDOWN_URL, {
-      headers: {
-        Accept: 'text/markdown,text/plain',
-        'User-Agent': 'aiplans.dev pricing scraper (+https://aiplans.dev)',
-      },
-      signal: AbortSignal.timeout(15_000),
+    // Mintlify's Markdown now contains empty tables. Read the rendered tables,
+    // including the leaf header row beneath the grouped cache/token headings.
+    await this.navigate(PRICING_PAGE, 'table tbody tr');
+    await this.page!.waitForFunction(() => {
+      const tables = [...document.querySelectorAll('table')];
+      return tables.length > 0 && tables.every(table => table.querySelector('tbody tr'));
     });
-    if (!response.ok) throw new Error(`Kimi pricing markdown returned HTTP ${response.status}`);
-    const markdown = await response.text();
-
-    const prices: PriceData[] = [];
-    const seen = new Set<string>();
-    const tablePattern = /columns=\{\[\s*(.*?)\]\}\s*rows=\{\[\s*(.*?)\]\}\s*\/>/gs;
-    for (const table of markdown.matchAll(tablePattern)) {
-      const columns = [...table[1].matchAll(/\{\s*title:\s*"([^"]+)"/g)].map(match => match[1]);
-      const modelIndex = columns.findIndex(column => /^模型$/.test(column));
-      const unitIndex = columns.findIndex(column => /^计费单位$/.test(column));
-      const inputIndex = columns.findIndex(column => /输入价格.*缓存未命中/.test(column));
-      const cachedIndex = columns.findIndex(column => /输入价格.*缓存命中/.test(column));
-      const outputIndex = columns.findIndex(column => /^输出价格$/.test(column));
-      const contextIndex = columns.findIndex(column => /上下文窗口/.test(column));
-      if ([modelIndex, unitIndex, inputIndex, outputIndex].some(index => index < 0)) continue;
-
-      for (const line of table[2].split('\n')) {
-        const rowText = line.trim().replace(/,$/, '');
-        if (!rowText.startsWith('[')) continue;
-        let cells: unknown;
-        try {
-          cells = JSON.parse(rowText);
-        } catch {
-          continue;
-        }
-        if (!Array.isArray(cells) || !/1M\s*tokens/i.test(String(cells[unitIndex] ?? ''))) continue;
-        const modelIds = parseKimiModelIds(String(cells[modelIndex] ?? ''));
-        if (modelIds.length === 0) continue;
-        const input = price(String(cells[inputIndex] ?? ''));
-        const output = price(String(cells[outputIndex] ?? ''));
-        if (input == null || output == null || output < input) continue;
-        for (const modelId of modelIds) {
-          const modelName = normalizeModelName(modelId).toLowerCase();
-          if (!modelName || seen.has(modelName)) continue;
-          prices.push({
-            modelName,
-            inputPricePer1M: input,
-            cachedInputPricePer1M: cachedIndex >= 0 ? price(String(cells[cachedIndex] ?? '')) ?? undefined : undefined,
-            outputPricePer1M: output,
-            contextWindow: context(String(cells[contextIndex] ?? '')),
-            isAvailable: true,
-            currency: 'CNY',
-          });
-          seen.add(modelName);
-        }
+    const tables = await this.page!.evaluate(() => {
+      let heading: Element | null = null;
+      const result: KimiPricingTable[] = [];
+      for (const element of document.querySelectorAll('h2, h3, table')) {
+        if (element.closest('table') !== element && element.closest('table')) continue;
+        if (/^H[23]$/.test(element.tagName)) heading = element;
+        if (element.tagName !== 'TABLE') continue;
+        const headerRows = element.querySelectorAll('thead tr');
+        const header = headerRows[headerRows.length - 1];
+        const range = document.createRange();
+        if (heading) range.setStartAfter(heading);
+        range.setEndBefore(element);
+        const contextText = heading ? range.toString() : '';
+        result.push({ contextText,
+          headers: header ? [...header.querySelectorAll('th, td')].map(cell => cell.textContent ?? '') : [],
+          rows: [...element.querySelectorAll('tbody tr')].map(row =>
+            [...row.querySelectorAll('th, td')].map(cell => cell.textContent ?? '')),
+        });
       }
-    }
-    return {
-      source: this.getSourceName(),
-      success: prices.length > 0,
-      prices,
-      errors: prices.length > 0 ? undefined : ['No Moonshot token pricing rows found'],
-    };
+      return result;
+    });
+    return { source: this.getSourceName(), success: true, prices: parseKimiPricingTables(tables) };
   }
 }
 

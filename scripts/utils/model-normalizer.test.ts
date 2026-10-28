@@ -31,3 +31,13 @@ test('explicit slug canonicalization preserves unverified IDs and distinct prici
     'vendor-family-family-1', 'gemini-4-argonish',
   ]) assert.equal(canonicalizeModelSlug(value), value);
 });
+
+test('Kimi K3.1 official pricing joins the published OpenRouter model', () => {
+  for (const value of ['kimi-k3.1-pro', 'kimi-k3-1-pro', 'moonshotai/kimi-k3.1-pro', 'moonshotai-kimi-k3-1-pro']) {
+    assert.equal(canonicalizeModelSlug(value), 'moonshotai-kimi-k3-1-pro');
+    assert.equal(normalizeSlug(value), 'moonshotai-kimi-k3-1-pro');
+  }
+  for (const value of ['kimi-k3.1-pro-highspeed', 'kimi-k3.1-pro-20261023', 'kimi-k3', 'kimi-k3.1-pro-batch']) {
+    assert.equal(canonicalizeModelSlug(value), value);
+  }
+});
