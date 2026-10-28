@@ -1,3 +1,4 @@
+import { QuotaBenchResults } from '@/components/quota-bench-results';
 import SiteHeader from '@/components/SiteHeader';
 import { QuotaChanges } from '@/components/quota-changes';
 import { getVerifiedQuotaEstimates } from '@/lib/quota/data';
@@ -19,6 +20,7 @@ export default async function QuotaChangesPage({ params }: { params: Promise<{ l
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: quotaHistoryJsonLd(locale === 'zh' ? 'zh' : 'en', changes) }} />
       <SiteHeader locale={locale} />
+      <div className="container mx-auto max-w-6xl px-4 py-6"><QuotaBenchResults locale={locale} compact /></div>
       <QuotaChanges changes={changes} locale={locale} />
     </>
   );

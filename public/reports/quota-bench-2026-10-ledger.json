@@ -1,0 +1,912 @@
+{
+  "schemaVersion": 1,
+  "runs": [
+    {
+      "run": "codex-01/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:47:01.581768+00:00",
+      "endedAt": "2026-10-28T01:47:23.108019+00:00",
+      "model": "gpt-6.1-sol",
+      "tokens": {
+        "input": 81474,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 426
+      },
+      "totalTokens": 94188
+    },
+    {
+      "run": "codex-01/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:47:01.586882+00:00",
+      "endedAt": "2026-10-28T01:47:21.642704+00:00",
+      "model": "gpt-6.1-sol",
+      "tokens": {
+        "input": 81474,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 416
+      },
+      "totalTokens": 94178
+    },
+    {
+      "run": "codex-01/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:47:01.592868+00:00",
+      "endedAt": "2026-10-28T01:47:20.219297+00:00",
+      "model": "gpt-6.1-sol",
+      "tokens": {
+        "input": 81474,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 427
+      },
+      "totalTokens": 94189
+    },
+    {
+      "run": "codex-01/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:47:01.590104+00:00",
+      "endedAt": "2026-10-28T01:47:21.963653+00:00",
+      "model": "gpt-6.1-sol",
+      "tokens": {
+        "input": 81474,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 419
+      },
+      "totalTokens": 94181
+    },
+    {
+      "run": "codex-02/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:50:30.001516+00:00",
+      "endedAt": "2026-10-28T01:50:59.302453+00:00",
+      "model": "gpt-6.1-sol",
+      "tokens": {
+        "input": 86632,
+        "cacheRead": 7168,
+        "cacheWrite": 0,
+        "output": 422
+      },
+      "totalTokens": 94222
+    },
+    {
+      "run": "codex-02/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:50:30.719850+00:00",
+      "endedAt": "2026-10-28T01:51:02.352097+00:00",
+      "model": "gpt-6.1-sol",
+      "tokens": {
+        "input": 81512,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 427
+      },
+      "totalTokens": 94227
+    },
+    {
+      "run": "codex-02/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:50:30.736622+00:00",
+      "endedAt": "2026-10-28T01:51:04.108058+00:00",
+      "model": "gpt-6.1-sol",
+      "tokens": {
+        "input": 81512,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 426
+      },
+      "totalTokens": 94226
+    },
+    {
+      "run": "codex-02/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:50:30.748080+00:00",
+      "endedAt": "2026-10-28T01:51:01.057488+00:00",
+      "model": "gpt-6.1-sol",
+      "tokens": {
+        "input": 81512,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 421
+      },
+      "totalTokens": 94221
+    },
+    {
+      "run": "codex-03/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:53:45.357491+00:00",
+      "endedAt": "2026-10-28T01:54:21.836246+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 75688,
+        "cacheRead": 18048,
+        "cacheWrite": 0,
+        "output": 440
+      },
+      "totalTokens": 94176
+    },
+    {
+      "run": "codex-03/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:53:45.359683+00:00",
+      "endedAt": "2026-10-28T01:54:25.898691+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 85672,
+        "cacheRead": 8064,
+        "cacheWrite": 0,
+        "output": 442
+      },
+      "totalTokens": 94178
+    },
+    {
+      "run": "codex-03/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:53:45.358085+00:00",
+      "endedAt": "2026-10-28T01:54:20.136000+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80202,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 425
+      },
+      "totalTokens": 92915
+    },
+    {
+      "run": "codex-03/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:53:45.362953+00:00",
+      "endedAt": "2026-10-28T01:54:18.578261+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 81448,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 435
+      },
+      "totalTokens": 94171
+    },
+    {
+      "run": "codex-04/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:55:48.916261+00:00",
+      "endedAt": "2026-10-28T01:56:20.294328+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 81448,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 437
+      },
+      "totalTokens": 94173
+    },
+    {
+      "run": "codex-04/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:55:48.916599+00:00",
+      "endedAt": "2026-10-28T01:56:19.742970+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 81448,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 432
+      },
+      "totalTokens": 94168
+    },
+    {
+      "run": "codex-04/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:55:48.920035+00:00",
+      "endedAt": "2026-10-28T01:56:18.147475+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 93736,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "output": 441
+      },
+      "totalTokens": 94177
+    },
+    {
+      "run": "codex-04/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:55:48.916649+00:00",
+      "endedAt": "2026-10-28T01:56:25.684872+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 75688,
+        "cacheRead": 18048,
+        "cacheWrite": 0,
+        "output": 425
+      },
+      "totalTokens": 94161
+    },
+    {
+      "run": "codex-05/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:58:18.779144+00:00",
+      "endedAt": "2026-10-28T01:58:51.298295+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 93736,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "output": 438
+      },
+      "totalTokens": 94174
+    },
+    {
+      "run": "codex-05/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:58:18.778285+00:00",
+      "endedAt": "2026-10-28T01:58:52.830071+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 86568,
+        "cacheRead": 7168,
+        "cacheWrite": 0,
+        "output": 429
+      },
+      "totalTokens": 94165
+    },
+    {
+      "run": "codex-05/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:58:18.780576+00:00",
+      "endedAt": "2026-10-28T01:58:54.969004+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80202,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 427
+      },
+      "totalTokens": 92917
+    },
+    {
+      "run": "codex-05/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:58:18.780437+00:00",
+      "endedAt": "2026-10-28T01:58:55.661957+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80255,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 427
+      },
+      "totalTokens": 92970
+    },
+    {
+      "run": "codex-06/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:59:11.293456+00:00",
+      "endedAt": "2026-10-28T01:59:39.210666+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 92490,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "output": 434
+      },
+      "totalTokens": 92924
+    },
+    {
+      "run": "codex-06/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:59:11.294045+00:00",
+      "endedAt": "2026-10-28T01:59:39.841749+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80202,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 436
+      },
+      "totalTokens": 92926
+    },
+    {
+      "run": "codex-06/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:59:11.295394+00:00",
+      "endedAt": "2026-10-28T01:59:37.356405+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 75688,
+        "cacheRead": 18048,
+        "cacheWrite": 0,
+        "output": 440
+      },
+      "totalTokens": 94176
+    },
+    {
+      "run": "codex-06/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:59:11.294074+00:00",
+      "endedAt": "2026-10-28T01:59:40.973663+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 81448,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 436
+      },
+      "totalTokens": 94172
+    },
+    {
+      "run": "codex-07/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:59:58.900583+00:00",
+      "endedAt": "2026-10-28T02:00:32.895081+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 75688,
+        "cacheRead": 18048,
+        "cacheWrite": 0,
+        "output": 437
+      },
+      "totalTokens": 94173
+    },
+    {
+      "run": "codex-07/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:59:58.901235+00:00",
+      "endedAt": "2026-10-28T02:00:47.478704+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 81448,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 453
+      },
+      "totalTokens": 94189
+    },
+    {
+      "run": "codex-07/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:59:58.901357+00:00",
+      "endedAt": "2026-10-28T02:00:42.384640+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 86568,
+        "cacheRead": 7168,
+        "cacheWrite": 0,
+        "output": 438
+      },
+      "totalTokens": 94174
+    },
+    {
+      "run": "codex-07/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:59:58.901280+00:00",
+      "endedAt": "2026-10-28T02:00:42.028744+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 75722,
+        "cacheRead": 16768,
+        "cacheWrite": 0,
+        "output": 432
+      },
+      "totalTokens": 92922
+    },
+    {
+      "run": "codex-08/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:01:20.112127+00:00",
+      "endedAt": "2026-10-28T02:01:56.149951+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80202,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 440
+      },
+      "totalTokens": 92930
+    },
+    {
+      "run": "codex-08/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:01:20.112749+00:00",
+      "endedAt": "2026-10-28T02:01:54.336702+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80202,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 450
+      },
+      "totalTokens": 92940
+    },
+    {
+      "run": "codex-08/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:01:20.112776+00:00",
+      "endedAt": "2026-10-28T02:01:56.045765+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80202,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 440
+      },
+      "totalTokens": 92930
+    },
+    {
+      "run": "codex-08/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:01:20.112885+00:00",
+      "endedAt": "2026-10-28T02:01:59.828919+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 81448,
+        "cacheRead": 12288,
+        "cacheWrite": 0,
+        "output": 432
+      },
+      "totalTokens": 94168
+    },
+    {
+      "run": "codex-09/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:02:15.630587+00:00",
+      "endedAt": "2026-10-28T02:02:47.130219+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80345,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 436
+      },
+      "totalTokens": 92941
+    },
+    {
+      "run": "codex-09/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:02:15.630939+00:00",
+      "endedAt": "2026-10-28T02:02:44.300687+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80345,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 454
+      },
+      "totalTokens": 92959
+    },
+    {
+      "run": "codex-09/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:02:15.630967+00:00",
+      "endedAt": "2026-10-28T02:02:49.446788+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80292,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 432
+      },
+      "totalTokens": 92884
+    },
+    {
+      "run": "codex-09/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:02:15.631052+00:00",
+      "endedAt": "2026-10-28T02:02:47.541730+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80292,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 441
+      },
+      "totalTokens": 92893
+    },
+    {
+      "run": "codex-10/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:03:05.005972+00:00",
+      "endedAt": "2026-10-28T02:03:28.426007+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80292,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 432
+      },
+      "totalTokens": 92884
+    },
+    {
+      "run": "codex-10/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:03:05.005768+00:00",
+      "endedAt": "2026-10-28T02:03:36.372126+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80292,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 438
+      },
+      "totalTokens": 92890
+    },
+    {
+      "run": "codex-10/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:03:05.005998+00:00",
+      "endedAt": "2026-10-28T02:03:32.398237+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80292,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 439
+      },
+      "totalTokens": 92891
+    },
+    {
+      "run": "codex-10/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:03:05.005985+00:00",
+      "endedAt": "2026-10-28T02:03:33.244076+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80292,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 437
+      },
+      "totalTokens": 92889
+    },
+    {
+      "run": "codex-11/run-0",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:03:51.923108+00:00",
+      "endedAt": "2026-10-28T02:04:20.531016+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80292,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 442
+      },
+      "totalTokens": 92894
+    },
+    {
+      "run": "codex-11/run-1",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:03:51.923334+00:00",
+      "endedAt": "2026-10-28T02:04:21.046911+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80292,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 423
+      },
+      "totalTokens": 92875
+    },
+    {
+      "run": "codex-11/run-2",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:03:51.924379+00:00",
+      "endedAt": "2026-10-28T02:04:22.097691+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80292,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 444
+      },
+      "totalTokens": 92896
+    },
+    {
+      "run": "codex-11/run-3",
+      "provider": "codex",
+      "profile": "input",
+      "startedAt": "2026-10-28T02:03:51.925662+00:00",
+      "endedAt": "2026-10-28T02:04:22.814622+00:00",
+      "model": "gpt-6-astra",
+      "tokens": {
+        "input": 80292,
+        "cacheRead": 12160,
+        "cacheWrite": 0,
+        "output": 441
+      },
+      "totalTokens": 92893
+    },
+    {
+      "run": "cursor-01/run-0",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:47:04.309600+00:00",
+      "endedAt": "2026-10-28T01:47:30.752620+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 85666,
+        "cacheRead": 4016,
+        "cacheWrite": 0,
+        "output": 1118
+      },
+      "totalTokens": 90800
+    },
+    {
+      "run": "cursor-01/run-1",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:47:04.310035+00:00",
+      "endedAt": "2026-10-28T01:47:31.310276+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 84837,
+        "cacheRead": 4035,
+        "cacheWrite": 0,
+        "output": 1026
+      },
+      "totalTokens": 89898
+    },
+    {
+      "run": "cursor-01/run-2",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:47:04.310286+00:00",
+      "endedAt": "2026-10-28T01:47:34.557928+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 84851,
+        "cacheRead": 4021,
+        "cacheWrite": 0,
+        "output": 1470
+      },
+      "totalTokens": 90342
+    },
+    {
+      "run": "cursor-01/run-3",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:47:04.312785+00:00",
+      "endedAt": "2026-10-28T01:47:30.751244+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 85661,
+        "cacheRead": 4021,
+        "cacheWrite": 0,
+        "output": 1040
+      },
+      "totalTokens": 90722
+    },
+    {
+      "run": "cursor-02/run-0",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:49:52.224886+00:00",
+      "endedAt": "2026-10-28T01:50:36.497520+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 84851,
+        "cacheRead": 4021,
+        "cacheWrite": 0,
+        "output": 1022
+      },
+      "totalTokens": 89894
+    },
+    {
+      "run": "cursor-02/run-1",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:49:52.215905+00:00",
+      "endedAt": "2026-10-28T01:50:36.497302+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 84856,
+        "cacheRead": 4016,
+        "cacheWrite": 0,
+        "output": 1324
+      },
+      "totalTokens": 90196
+    },
+    {
+      "run": "cursor-02/run-2",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:49:52.219347+00:00",
+      "endedAt": "2026-10-28T01:50:36.491049+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 85663,
+        "cacheRead": 4019,
+        "cacheWrite": 0,
+        "output": 1047
+      },
+      "totalTokens": 90729
+    },
+    {
+      "run": "cursor-02/run-3",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:49:52.225359+00:00",
+      "endedAt": "2026-10-28T01:50:36.493627+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 84838,
+        "cacheRead": 4034,
+        "cacheWrite": 0,
+        "output": 1093
+      },
+      "totalTokens": 89965
+    },
+    {
+      "run": "cursor-03/run-0",
+      "provider": "cursor",
+      "profile": "output",
+      "startedAt": "2026-10-28T01:53:32.463202+00:00",
+      "endedAt": "2026-10-28T01:55:33.085762+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 10966,
+        "cacheRead": 4019,
+        "cacheWrite": 0,
+        "output": 4549
+      },
+      "totalTokens": 19534
+    },
+    {
+      "run": "cursor-03/run-1",
+      "provider": "cursor",
+      "profile": "output",
+      "startedAt": "2026-10-28T01:53:32.463696+00:00",
+      "endedAt": "2026-10-28T01:55:07.024794+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 10268,
+        "cacheRead": 4016,
+        "cacheWrite": 0,
+        "output": 5035
+      },
+      "totalTokens": 19319
+    },
+    {
+      "run": "cursor-03/run-2",
+      "provider": "cursor",
+      "profile": "output",
+      "startedAt": "2026-10-28T01:53:32.463580+00:00",
+      "endedAt": "2026-10-28T01:54:49.664033+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 11075,
+        "cacheRead": 4019,
+        "cacheWrite": 0,
+        "output": 4717
+      },
+      "totalTokens": 19811
+    },
+    {
+      "run": "cursor-03/run-3",
+      "provider": "cursor",
+      "profile": "output",
+      "startedAt": "2026-10-28T01:53:32.463619+00:00",
+      "endedAt": "2026-10-28T01:54:52.592890+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 11078,
+        "cacheRead": 4016,
+        "cacheWrite": 0,
+        "output": 5456
+      },
+      "totalTokens": 20550
+    },
+    {
+      "run": "cursor-04/run-0",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:56:18.610469+00:00",
+      "endedAt": "2026-10-28T01:57:18.343564+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 84851,
+        "cacheRead": 4021,
+        "cacheWrite": 0,
+        "output": 1052
+      },
+      "totalTokens": 89924
+    },
+    {
+      "run": "cursor-04/run-1",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:56:18.610337+00:00",
+      "endedAt": "2026-10-28T01:56:50.686038+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 84856,
+        "cacheRead": 4016,
+        "cacheWrite": 0,
+        "output": 1202
+      },
+      "totalTokens": 90074
+    },
+    {
+      "run": "cursor-04/run-2",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:56:18.609793+00:00",
+      "endedAt": "2026-10-28T01:57:22.152190+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 84856,
+        "cacheRead": 4016,
+        "cacheWrite": 0,
+        "output": 1437
+      },
+      "totalTokens": 90309
+    },
+    {
+      "run": "cursor-04/run-3",
+      "provider": "cursor",
+      "profile": "input",
+      "startedAt": "2026-10-28T01:56:18.610432+00:00",
+      "endedAt": "2026-10-28T01:56:59.287320+00:00",
+      "model": "composer-2.5",
+      "tokens": {
+        "input": 84856,
+        "cacheRead": 4016,
+        "cacheWrite": 0,
+        "output": 1318
+      },
+      "totalTokens": 90190
+    }
+  ],
+  "codexControlAggregate": {
+    "input": 30478,
+    "cacheRead": 5447936,
+    "cacheWrite": 0,
+    "output": 7571
+  },
+  "note": "Codex batches 01–02 use Sol and are excluded from the Astra estimate. Control aggregate is counted separately. Cursor batch04 has no final quota observation."
+}

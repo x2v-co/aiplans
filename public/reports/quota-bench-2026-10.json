@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "publishedAt": "2026-10-28",
+  "records": [
+    {
+      "id": "codex-pro",
+      "plan": "Codex Pro",
+      "model": "gpt-6-astra",
+      "modelIdentity": "requested",
+      "date": "2026-10-28",
+      "window": "weekly",
+      "status": "conditional",
+      "tierVerified": false,
+      "calls": 36,
+      "tokens": {
+        "input": 2931009,
+        "cacheRead": 417024,
+        "cacheWrite": 0,
+        "output": 15725
+      },
+      "controlTokens": {
+        "input": 30478,
+        "cacheRead": 5447936,
+        "cacheWrite": 0,
+        "output": 7571
+      },
+      "usedBefore": 47,
+      "usedAfter": 52,
+      "estimate": {
+        "low": 147495716,
+        "high": 221243575,
+        "mid": 176994860
+      },
+      "apiEquivalentUsd": {
+        "low": 610.743833,
+        "high": 916.11575,
+        "mid": 732.8926
+      },
+      "caveats": {
+        "zh": "Pro 子档未核验，不适用于任何指定价格档位。估算包含同账号控制会话，约 66% 为缓存读取；区间只反映整数仪表盘舍入，不能证明无其他设备调用。不可折算月额度。",
+        "en": "Pro sub-tier unverified; not assigned to any specific price tier. Includes the same-account controller, with about 66% cache reads. Bounds cover meter rounding only, not activity on other devices. No monthly projection."
+      }
+    },
+    {
+      "id": "volcengine-pro",
+      "plan": "Volcengine Coding Plan Pro",
+      "model": "kimi-k3",
+      "modelIdentity": "observed",
+      "date": "2026-10-27",
+      "window": "5h",
+      "status": "conditional",
+      "tierVerified": true,
+      "calls": 3,
+      "tokens": {
+        "input": 82735,
+        "cacheRead": 0,
+        "cacheWrite5m": 0,
+        "cacheWrite1h": 0,
+        "cacheWriteUnknown": 0,
+        "output": 6968
+      },
+      "controlTokens": null,
+      "usedBefore": 0.57,
+      "usedAfter": 1.24,
+      "estimate": {
+        "low": 13191617,
+        "high": 13591364,
+        "mid": 13388507
+      },
+      "apiEquivalentUsd": null,
+      "caveats": {
+        "zh": "单模型小样本，无缓存命中或写入。区间仅在读数误差为 ±0.005 个百分点、无并发及结算延迟、扣量线性的假设下成立。不是固定 token 上限。",
+        "en": "Small single-model sample, without cache hits or writes. Bounds assume ±0.005 percentage-point reading error, no concurrent activity or settlement lag, and linear consumption. Not a fixed token allowance."
+      }
+    },
+    {
+      "id": "cursor-ultra",
+      "plan": "Cursor Ultra (legacy)",
+      "model": "composer-2.5",
+      "modelIdentity": "requested",
+      "date": "2026-10-28",
+      "window": "monthly",
+      "status": "pending",
+      "tierVerified": true,
+      "calls": 16,
+      "tokens": {
+        "input": 1064029,
+        "cacheRead": 64322,
+        "cacheWrite": 0,
+        "output": 33906
+      },
+      "controlTokens": null,
+      "usedBefore": 34.7423,
+      "usedAfter": 34.757,
+      "estimate": null,
+      "apiEquivalentUsd": null,
+      "caveats": {
+        "zh": "仅前三批 12 轮（801,760 tokens）与此额度区间对应；第 4 批没有最终额度读数。浏览器断开后已暂停，16 轮大样本尚未完成 CSV 对账。月窗口由旧套餐双池规则推断，未捕获重置时刻，不发布容量数值。",
+        "en": "Only the first 12 calls (801,760 tokens) belong to this meter interval; batch 4 has no final reading. Paused after browser disconnection; the 16-call sample lacks CSV reconciliation. Monthly window inferred from legacy two-pool rules; reset time not captured. Capacity withheld."
+      }
+    }
+  ],
+  "sources": [
+    "https://developers.openai.com/api/docs/models/gpt-6-astra",
+    "https://cursor.com/docs/models/cursor-composer-2-5",
+    "https://cursor.com/docs/account/pricing/legacy-cursor-plans"
+  ],
+  "publicationPolicy": "Observations and conditional estimates only; no official allowance, automatic monthly extrapolation, or authoritative plan-tier assignment."
+}

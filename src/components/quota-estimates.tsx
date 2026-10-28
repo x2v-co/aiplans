@@ -57,6 +57,7 @@ export function PlanQuotaEstimates({ estimates, planSlug, locale, showTrust = fa
           )}
         </div>
       )) : <p className="text-xs text-zinc-500">{t('empty')}</p>}
+      <Link href={`/${locale}/quota-bench`} className="mr-4 text-xs text-blue-600 underline">{locale === 'zh' ? '额度实测数据与报告' : 'Measured quota data and reports'}</Link>
       <Link href={`/${locale}/quota-changes`} className="text-xs text-blue-600 underline">{t('historyTitle')}</Link>
     </section>
   );

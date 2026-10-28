@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
-import { unstable_getResponseFromNextConfig } from 'next/experimental/testing/server';
-import nextConfig from '../../next.config';
+import test, { before } from 'node:test';
+import { AsyncLocalStorage } from 'node:async_hooks';
+
+// Next normally installs this during server bootstrap. The standalone Node test
+// runner must install the real implementation before loading Next's helpers.
+let unstable_getResponseFromNextConfig: typeof import('next/experimental/testing/server').unstable_getResponseFromNextConfig;
+let nextConfig: typeof import('../../next.config').default;
+before(async () => {
+  Object.assign(globalThis, { AsyncLocalStorage });
+  ({ unstable_getResponseFromNextConfig } = await import('next/experimental/testing/server'));
+  ({ default: nextConfig } = await import('../../next.config'));
+});
 import { providerRedirects } from './provider-redirects';
 
 const origin = 'https://aiplans.dev';
