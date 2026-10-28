@@ -26,3 +26,26 @@ test('both locales show caveats, controller accounting and downloadable evidence
     assert.doesNotMatch(html, /\/Users\/|account_id|AUTH_TOKEN|COOKIE/);
   }
 });
+
+test('Volcengine three-window estimates reconcile to the same 30-call ledger', async () => {
+  const evidence = (await import('../../public/reports/volcengine-three-windows-2026-10-28.json')).default;
+  const record = data.records.find(r => r.id === 'volcengine-pro')!;
+  assert.equal(evidence.ledger.length, 30);
+  assert.equal(new Set(evidence.ledger.map(r => r.call)).size, 30);
+  const tokens = evidence.ledger.reduce((sum, r) => sum + r.input + r.output + r.cacheRead + r.cacheWrite, 0);
+  assert.equal(tokens, 1258698);
+  assert.equal(tokens, record.tokens.input + record.tokens.output);
+  assert.equal(record.windowMeasurements!.length, 3);
+  for (const w of record.windowMeasurements!) {
+    const delta = Math.round((w.usedAfter - w.usedBefore) * 100) / 100;
+    assert.equal(w.estimate.mid, Math.round(tokens * 100 / delta));
+    assert.ok(Math.abs(w.estimate.low - tokens * 100 / (delta + .01)) <= 1);
+    assert.ok(Math.abs(w.estimate.high - tokens * 100 / (delta - .01)) <= 1);
+  }
+  for (const locale of ['zh', 'en']) {
+    const html = renderToStaticMarkup(createElement(QuotaBenchResults, { locale }));
+    assert.ok(html.includes('/reports/volcengine-three-windows-2026-10-28.md'));
+    assert.ok(html.includes('/reports/volcengine-three-windows-2026-10-28.json'));
+    assert.ok(html.includes(locale === 'zh' ? '月（粗估）' : 'month (rough)'));
+  }
+});

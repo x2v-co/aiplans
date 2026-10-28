@@ -39,39 +39,74 @@
       "caveats": {
         "zh": "Pro 子档未核验，不适用于任何指定价格档位。估算包含同账号控制会话，约 66% 为缓存读取；区间只反映整数仪表盘舍入，不能证明无其他设备调用。不可折算月额度。",
         "en": "Pro sub-tier unverified; not assigned to any specific price tier. Includes the same-account controller, with about 66% cache reads. Bounds cover meter rounding only, not activity on other devices. No monthly projection."
-      }
+      },
+      "windowMeasurements": null,
+      "measurementReport": null,
+      "measurementData": null
     },
     {
       "id": "volcengine-pro",
       "plan": "Volcengine Coding Plan Pro",
       "model": "kimi-k3",
       "modelIdentity": "observed",
-      "date": "2026-10-27",
+      "date": "2026-10-28",
       "window": "5h",
       "status": "conditional",
       "tierVerified": true,
-      "calls": 3,
+      "calls": 30,
       "tokens": {
-        "input": 82735,
+        "input": 1237470,
         "cacheRead": 0,
-        "cacheWrite5m": 0,
-        "cacheWrite1h": 0,
-        "cacheWriteUnknown": 0,
-        "output": 6968
+        "cacheWrite": 0,
+        "output": 21228
       },
       "controlTokens": null,
       "usedBefore": 0.57,
-      "usedAfter": 1.24,
+      "usedAfter": 10.01,
       "estimate": {
-        "low": 13191617,
-        "high": 13591364,
-        "mid": 13388507
+        "low": 13319555,
+        "high": 13347805,
+        "mid": 13333665
       },
       "apiEquivalentUsd": null,
       "caveats": {
-        "zh": "单模型小样本，无缓存命中或写入。区间仅在读数误差为 ±0.005 个百分点、无并发及结算延迟、扣量线性的假设下成立。不是固定 token 上限。",
-        "en": "Small single-model sample, without cache hits or writes. Bounds assume ±0.005 percentage-point reading error, no concurrent activity or settlement lag, and linear consumption. Not a fixed token allowance."
-      }
+        "zh": "30 次、3 批同模型实测，约 98.31% 为普通输入，无缓存命中或写入。三窗口分别测量，月额度为粗估。区间仅含读数舍入误差，仍假设线性扣量及无其他账号流量；不是跨模型通用 token 上限。",
+        "en": "30 calls in 3 batches, one model, about 98.31% fresh input and no cache reads/writes. Each window measured directly; monthly capacity is rough. Bounds cover meter rounding only and assume linear consumption without other account traffic; not a universal cross-model token cap."
+      },
+      "windowMeasurements": [
+        {
+          "window": "5h",
+          "usedBefore": 0.57,
+          "usedAfter": 10.01,
+          "estimate": {
+            "low": 13319555,
+            "high": 13347805,
+            "mid": 13333665
+          }
+        },
+        {
+          "window": "weekly",
+          "usedBefore": 12.07,
+          "usedAfter": 13.33,
+          "estimate": {
+            "low": 99110078,
+            "high": 100695840,
+            "mid": 99896667
+          }
+        },
+        {
+          "window": "monthly",
+          "usedBefore": 33.71,
+          "usedAfter": 34.34,
+          "estimate": {
+            "low": 196671562,
+            "high": 203015807,
+            "mid": 199793333
+          }
+        }
+      ],
+      "measurementReport": "/reports/volcengine-three-windows-2026-10-28.md",
+      "measurementData": "/reports/volcengine-three-windows-2026-10-28.json"
     },
     {
       "id": "cursor-ultra",
@@ -97,7 +132,10 @@
       "caveats": {
         "zh": "仅前三批 12 轮（801,760 tokens）与此额度区间对应；第 4 批没有最终额度读数。浏览器断开后已暂停，16 轮大样本尚未完成 CSV 对账。月窗口由旧套餐双池规则推断，未捕获重置时刻，不发布容量数值。",
         "en": "Only the first 12 calls (801,760 tokens) belong to this meter interval; batch 4 has no final reading. Paused after browser disconnection; the 16-call sample lacks CSV reconciliation. Monthly window inferred from legacy two-pool rules; reset time not captured. Capacity withheld."
-      }
+      },
+      "windowMeasurements": null,
+      "measurementReport": null,
+      "measurementData": null
     }
   ],
   "sources": [

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { QuotaBenchWindows } from './quota-bench-windows';
 import dataset from '../../public/reports/quota-bench-2026-10.json';
 
 export function QuotaBenchResults({ locale, compact = false }: { locale: string; compact?: boolean }) {
@@ -19,9 +20,11 @@ export function QuotaBenchResults({ locale, compact = false }: { locale: string;
           {record.controlTokens && <tr><td className="p-2">{zh ? '同账号控制会话' : 'Same-account controller'}</td><td className="p-2">{fmt(record.controlTokens.input)}</td><td className="p-2">{fmt(record.controlTokens.cacheRead)}</td><td className="p-2">{fmt(record.controlTokens.output)}</td></tr>}</tbody>
         </table></div>
         <p className="text-sm">{zh ? '缓存写入均为 0；未标定写入权重。输出包含 reasoning，未重复相加。' : 'Cache writes were zero; write weights are uncalibrated. Output includes reasoning without double-counting.'}</p>
-        {record.estimate && <p className="font-medium">{zh ? '同负载配比条件区间' : 'Conditional range at the observed mix'}: {fmt(record.estimate.low)}–{fmt(record.estimate.high)} tokens / {record.window}</p>}
+        {record.windowMeasurements && <QuotaBenchWindows windows={record.windowMeasurements} locale={locale} />}
+        {!record.windowMeasurements && record.estimate && <p className="font-medium">{zh ? '同负载配比条件区间' : 'Conditional range at the observed mix'}: {fmt(record.estimate.low)}–{fmt(record.estimate.high)} tokens / {record.window}</p>}
         {record.apiEquivalentUsd && <p className="text-sm">{zh ? '标准 API 标价等价价值（不是余额）' : 'Standard API list-value equivalent (not credit)'}: ${fmt(record.apiEquivalentUsd.mid)} / {record.window}</p>}
         <p className="text-sm text-amber-800 dark:text-amber-300">{zh ? record.caveats.zh : record.caveats.en}</p>
+        {record.measurementReport && <div className="flex flex-wrap gap-4 text-sm underline"><a href={record.measurementReport}>{zh ? '本次评测过程与计算依据' : 'Measurement process and calculations (Chinese)'}</a>{record.measurementData && <a href={record.measurementData}>{zh ? '本次读数与逐次用量' : 'Meter readings and per-call usage'}</a>}</div>}
       </article>)}
       <div className="flex flex-wrap gap-4 text-sm underline">
         <a href="/reports/quota-bench-2026-10.md">{zh ? '完整实测报告' : 'Full report (Chinese)'}</a>

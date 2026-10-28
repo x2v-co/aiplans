@@ -1,3 +1,5 @@
+> 更新：火山最新 30 次三窗口同步实测见[完整报告](/reports/volcengine-three-windows-2026-10-28.md)与[数据账本](/reports/volcengine-three-windows-2026-10-28.json)。本文火山 3 次样本保留为历史结果。
+
 # Codex 与 Cursor 大样本测试报告
 
 2026-10-28（Asia/Singapore）。用户明确授权增加测试流量与轮数。共完成 60 次成功客户端调用：Codex 44 次、Cursor 16 次。逐份重新解析原始 events 后，60 份用量均与汇总账本一致，未发现失败、超时、重复 run 或工具执行事件。
