@@ -4,13 +4,13 @@
   "records": [
     {
       "id": "codex-pro",
-      "plan": "Codex Pro",
+      "plan": "ChatGPT Pro 200 (Codex)",
       "model": "gpt-6-astra",
       "modelIdentity": "requested",
       "date": "2026-10-28",
       "window": "weekly",
       "status": "conditional",
-      "tierVerified": false,
+      "tierVerified": true,
       "calls": 36,
       "tokens": {
         "input": 2931009,
@@ -37,12 +37,19 @@
         "mid": 732.8926
       },
       "caveats": {
-        "zh": "Pro 子档未核验，不适用于任何指定价格档位。估算包含同账号控制会话，约 66% 为缓存读取；区间只反映整数仪表盘舍入，不能证明无其他设备调用。不可折算月额度。",
-        "en": "Pro sub-tier unverified; not assigned to any specific price tier. Includes the same-account controller, with about 66% cache reads. Bounds cover meter rounding only, not activity on other devices. No monthly projection."
+        "zh": "仅适用于 ChatGPT Pro 200；档位由账号持有人于 2026-10-28 确认，不适用于 Pro 100 或 Pro 500。估算包含同账号控制会话，约 66% 为缓存读取；区间只反映整数仪表盘舍入，不能证明无其他设备调用。不可折算月额度。",
+        "en": "Applies only to ChatGPT Pro 200; tier confirmed by the account owner on 2026-10-28, not Pro 100 or Pro 500. Includes the same-account controller, with about 66% cache reads. Bounds cover meter rounding only, not activity on other devices. No monthly projection."
       },
       "windowMeasurements": null,
       "measurementReport": null,
-      "measurementData": null
+      "measurementData": null,
+      "planSlug": "chatgpt-pro-200",
+      "tierVerification": {
+        "source": "account_owner_confirmation",
+        "confirmedAt": "2026-10-28",
+        "priceUsdPerMonth": 200,
+        "note": "Account owner confirmed the measured plan is Pro 200, not Pro 100 or Pro 500. This is not independent billing verification."
+      }
     },
     {
       "id": "volcengine-pro",
