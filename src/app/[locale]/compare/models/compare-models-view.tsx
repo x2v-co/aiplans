@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Check, Search, Star, Layers, DollarSign, HelpCircle, Info, Trophy } from "lucide-react";
+import { ArrowRight, Check, Search, Star, Layers, DollarSign, HelpCircle, Trophy } from "lucide-react";
 import SiteHeader from '@/components/SiteHeader';
 import { formatModelName } from '@/lib/model-names';
 import { formatPrice, calculateSavingsPercent } from "@/lib/currency";
@@ -23,18 +23,9 @@ import {
 import type { FaqItem } from "./faqs";
 import { benchmarkKey, benchmarkValue, isArenaBenchmark, sortBenchmarks, type ModelBenchmarkScore } from '@/lib/benchmarks';
 
-const MAX_SELECT = 4;
+import { comparisonPickerProducts, defaultComparisonSlugs } from '@/lib/compare-model-discovery';
 
-// Flagship defaults when the URL doesn't preselect models and the benchmark
-// join returns no usable scores (e.g. a stale dev DB). The first two slugs
-// present in the dataset are used; this keeps the SSR'd default a sensible
-// comparison instead of an alphabetically-first junk row.
-const DEFAULT_SLUGS = [
-  "claude-opus-4",
-  "gpt-4o",
-  "deepseek-chat",
-  "gemini-2.5-pro",
-];
+const MAX_SELECT = 4;
 
 function formatContext(ctx: number | null | undefined, locale: string): string {
   if (!ctx || ctx <= 0) return "—";
@@ -89,36 +80,9 @@ export default function CompareModelsView({
   const [searchQuery, setSearchQuery] = useState("");
   const deferredQuery = useDeferredValue(searchQuery);
 
-  const [selected, setSelected] = useState<string[]>(() => {
-    const bySlug = new Map(products.map((p) => [p.slug, p] as const));
-    // Start from whatever valid slugs the URL preselected (e.g. the CTA from a
-    // model's plan comparison passes one), then fill up to two so the SSR'd
-    // page always shows a comparison rather than the "select 2 models" state.
-    const seeds = initialSlugs.filter((s) => bySlug.has(s)).slice(0, MAX_SELECT);
-    const ordered = new Set(seeds);
-
-    // Top-up candidates, in priority order: highest Agent-scored models, then
-    // well-known flagships present in the dataset, then alphabetical.
-    const vendorLeaders = vendorLeaderSlugs
-      .map((slug) => bySlug.get(slug))
-      .filter((product): product is GroupedProduct => Boolean(product))
-      .sort((a, b) => (b.benchmark_arena_elo ?? -1) - (a.benchmark_arena_elo ?? -1))
-      .map((product) => product.slug);
-    const topScored = [...products]
-      .filter((p) => p.benchmark_arena_elo != null)
-      .sort((a, b) => (b.benchmark_arena_elo ?? -1) - (a.benchmark_arena_elo ?? -1))
-      .map((p) => p.slug);
-    const curated = DEFAULT_SLUGS.filter((s) => bySlug.has(s));
-    const alphabetical = [...products]
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((p) => p.slug);
-
-    for (const slug of [...vendorLeaders, ...topScored, ...curated, ...alphabetical]) {
-      if (ordered.size >= 2) break;
-      ordered.add(slug);
-    }
-    return Array.from(ordered).slice(0, MAX_SELECT);
-  });
+  const [selected, setSelected] = useState<string[]>(() =>
+    defaultComparisonSlugs(products, vendorLeaderSlugs, initialSlugs),
+  );
 
   const vendorLeaders = useMemo(
     () => vendorLeaderSlugs
@@ -126,7 +90,6 @@ export default function CompareModelsView({
       .filter((product): product is GroupedProduct => Boolean(product)),
     [products, vendorLeaderSlugs],
   );
-  const hasGpt6Astra = products.some((product) => product.slug === "gpt-6-astra");
 
   const toggleSelect = (slug: string) => {
     const removing = selected.includes(slug);
@@ -149,21 +112,10 @@ export default function CompareModelsView({
     });
   };
 
-  const pickerProducts = useMemo(() => {
-    const q = deferredQuery.trim().toLowerCase();
-    const filtered = q
-      ? products.filter((p) =>
-          [p.name, p.slug, p.baseName, p.providers?.name]
-            .filter(Boolean)
-            .some((v) => String(v).toLowerCase().includes(q)),
-        )
-      : // Without a query, show the highest-scored models first and cap the
-        // list so we don't render 250+ toggle buttons at once.
-        [...products].sort(
-          (a, b) => (b.benchmark_arena_elo ?? -1) - (a.benchmark_arena_elo ?? -1),
-        );
-    return q ? filtered : filtered.slice(0, 60);
-  }, [products, deferredQuery]);
+  const pickerProducts = useMemo(
+    () => comparisonPickerProducts(products, deferredQuery),
+    [products, deferredQuery],
+  );
 
   const selectedProducts = useMemo(
     () =>
@@ -259,22 +211,6 @@ export default function CompareModelsView({
                 {t("vendorLeaders.description")}
               </p>
             </div>
-            {!hasGpt6Astra && (
-              <div className="mb-6 flex max-w-4xl gap-3 border-l-2 border-amber-500 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
-                <Info className="mt-0.5 h-4 w-4 shrink-0" />
-                <p>
-                  {t("vendorLeaders.gpt6Notice")}{' '}
-                  <a
-                    href="https://developers.openai.com/api/docs/models/gpt-6-astra"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium underline underline-offset-2"
-                  >
-                    {t("vendorLeaders.officialSource")}
-                  </a>
-                </p>
-              </div>
-            )}
             <div className="overflow-x-auto rounded-md border bg-white dark:bg-zinc-950">
               <Table>
                 <TableHeader>
@@ -306,7 +242,10 @@ export default function CompareModelsView({
                           </button>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          {formatReleaseDate(product.released_at, locale)}
+                          {formatReleaseDate(product.released_at || product.created_at, locale)}
+                          {!product.released_at && product.created_at && (
+                            <span className="ml-1 text-xs text-zinc-500">{isZh ? '收录' : 'added'}</span>
+                          )}
                         </TableCell>
                         <TableCell>{product.benchmark_arena_elo != null ? `${product.benchmark_arena_elo}%` : "—"}</TableCell>
                         <TableCell>{formatContext(product.context_window, locale)}</TableCell>
