@@ -1,3 +1,4 @@
+import { ProviderPlanPrice, providerPlanPrice } from '@/components/provider-plan-price';
 import Link from "next/link";
 import { ProviderLogo } from '@/components/provider-logo';
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from "@/lib/affiliate-links";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, CheckCircle2, SquarePen } from "lucide-react";
 import { sql, INT4_ARRAY } from "@/lib/db";
-import { formatPrice, CurrencyCode } from "@/lib/currency";
+import { CurrencyCode } from "@/lib/currency";
 import { getAllModelIdsForProvider, getPlanYearlyMonthly } from "@/lib/schema-adapters";
 import { groupPlansByKind, planKindDescription, planKindIcon, planKindLabel } from "@/lib/plan-kinds";
 import { gatewaySubscriptionEconomics, gatewaySubscriptionSummary } from "@/lib/gateway-subscription";
@@ -334,28 +335,9 @@ export default async function ProviderPage({
                   </CardHeader>
                   <CardContent>
                     <div className="mb-4">
-                      <span className="text-3xl font-bold">
-                        {/* is_contact_sales is checked before price, because
-                            these rows store price=0 to mean "no public price".
-                            Reading that as free advertised ChatGPT Enterprise
-                            and Claude Enterprise as costing nothing. */}
-                        {plan.is_contact_sales
-                          ? (isZh ? '按需报价' : 'Custom')
-                          : plan.price === 0
-                            ? 'Free'
-                            : plan.price == null
-                              ? (isZh ? '价格未知' : 'Price unknown')
-                            : showYearly && getPlanYearlyMonthly(plan)
-                              ? formatPrice(getPlanYearlyMonthly(plan)! * 12, planCurrency(plan), locale)
-                              : formatPrice(plan.price, planCurrency(plan), locale)}
-                      </span>
-                      {plan.price_unit && plan.price != null && plan.price !== 0 && !plan.is_contact_sales && (
-                        <span className="text-zinc-500 text-sm ml-1">
-                          /{showYearly ? 'year' : (plan.price_unit === 'per_month' ? 'mo' : plan.price_unit.replace('_', ' '))}
-                        </span>
-                      )}
+                      <ProviderPlanPrice plan={plan} showYearly={showYearly} currency={planCurrency(plan)} locale={locale} />
                       {showTrust && (
-                        <DataTrustLabel fact={planPriceTrust(plan, planSource, locale, now, provider.slug)} locale={locale} />
+                        <DataTrustLabel fact={planPriceTrust({ ...plan, ...providerPlanPrice(plan, showYearly) }, planSource, locale, now, provider.slug)} locale={locale} />
                       )}
                     </div>
 
