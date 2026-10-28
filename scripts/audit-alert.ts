@@ -6,7 +6,7 @@
  * have never alerted on before:
  *   - every `critical` finding (data integrity), and
  *   - the external-reference checks (C19 price divergence, C20 coding-plan
- *     entitlement drift), even at warning severity.
+ *     entitlement drift), plus stale/missing plan verification, even at warning severity.
  *
  * State lives in audit_alert_state (migration 022). New fingerprints are
  * upserted; the human-readable digest is printed to stdout. Exit code is
@@ -18,6 +18,7 @@
  *   ... | AUDIT_ALERT_APPLY=1 npx tsx scripts/audit-alert.ts   # persist state
  */
 import { databaseSql } from './db/postgres-admin';
+import { shouldAlertFinding, resolvedPlanFreshnessAlerts } from './utils/audit-plan-policy';
 
 const APPLY = process.env.AUDIT_ALERT_APPLY === '1';
 
@@ -27,12 +28,6 @@ type Finding = {
   message: string;
   ref?: Record<string, unknown>;
 };
-
-const ALWAYS_ALERT_CHECKS = new Set([
-  'prices.modelsdev_divergence',
-  'prices.aa_official_divergence',
-  'plans.modelsdev_entitlements',
-]);
 
 /** Stable identity: check name + the entity slug (the part before '#'/id). */
 function fingerprint(f: Finding): string {
@@ -63,17 +58,24 @@ async function main() {
   }
 
   const findings = (report.findings ?? []).filter(
-    f => f.severity === 'critical' || ALWAYS_ALERT_CHECKS.has(f.check),
+    shouldAlertFinding,
   );
-  if (findings.length === 0) {
-    console.log('audit-alert: no critical/models.dev findings');
+  if (!Array.isArray(report.findings)) {
+    console.error('audit-alert: incomplete report; keeping alert state unchanged');
     return;
   }
-
   const existing = new Set(
     (await databaseSql<{ fingerprint: string }[]>`SELECT fingerprint FROM audit_alert_state`)
       .map(r => r.fingerprint),
   );
+  const resolved = resolvedPlanFreshnessAlerts([...existing], new Set(findings.map(fingerprint)));
+  if (APPLY) {
+    for (const key of resolved) await databaseSql`DELETE FROM audit_alert_state WHERE fingerprint = ${key}`;
+  }
+  if (findings.length === 0) {
+    console.log('audit-alert: no actionable findings');
+    return;
+  }
 
   const fresh = findings.filter(f => !existing.has(fingerprint(f)));
   if (fresh.length === 0) {
@@ -102,7 +104,7 @@ async function main() {
   // Human digest (one line per finding) for Telegram.
   const lines = fresh.map(f => {
     const icon = f.severity === 'critical' ? '🔴' : '🟡';
-    return `${icon} ${f.check.replace(/^(prices|plans)\./, '')}\n   ${f.message}`;
+    return `${icon} ${f.check.replace(/^(prices|plans)\./, '')}\n   ${fingerprint(f).split(':').slice(1).join(':')}: ${f.message}`;
   });
   const digest = [
     `⚠️ planprice data audit: ${fresh.length} NEW finding(s)${APPLY ? '' : ' [dry-run]'}`,

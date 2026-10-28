@@ -65,6 +65,9 @@ npm run fix:plans:dry-run   # preview plan fixes
 npm run migrate             # apply idempotent DB migrations
 ```
 
+For current OpenAI source review, evidence handling, and renewal scheduling, see
+[OpenAI plan verification](docs/openai-plan-verification.md).
+
 See `scripts/README.md` and `CLAUDE.md` for the full data-layer
 architecture (write-boundary validation, NO FALLBACK principle,
 `plans.source` protection, Chatbot Arena ELO ingestion).
@@ -174,6 +177,9 @@ tsx scripts/scrapers/openai-dynamic.ts
 tsx scripts/scrapers/anthropic-dynamic.ts
 tsx scripts/scrapers/deepseek-dynamic.ts
 ```
+
+OpenAI 套餐的官方来源核验、证据保存和定时更新流程见
+[OpenAI 套餐核验说明](docs/openai-plan-verification.md)。
 
 ### 环境变量
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2] - 2026-10-28
+
+### Fixed
+- OpenAI plan verification now distinguishes blocked or incomplete prices from successful reviews, with exact official source links.
+- Stale manually maintained plans trigger actionable alerts, including when a previously resolved plan becomes stale again.
+- Review current Business seat pricing, preserve unknown Go prices, and stop displaying obsolete quota guesses as freshly verified.
+
 ## [0.1.1] - 2026-10-28
 
 ### Changed

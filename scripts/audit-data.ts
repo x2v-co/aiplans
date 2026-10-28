@@ -46,7 +46,7 @@
  */
 import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice as isVerifiedFreeChannel } from './utils/audit-price-policy';
 import { db } from './db/queries';
-import { auditExitCode, missingPlanFields } from './utils/audit-plan-policy';
+import { auditExitCode, missingPlanFields, planVerificationFinding } from './utils/audit-plan-policy';
 import { databaseSql } from './db/postgres-admin';
 import { resolveSelector, type ModelSelector, type SelectableModel } from '../src/lib/plan-selector';
 import { fetchModelsDevCatalog, isModelsDevComparable, PLAN_DRIFT_SKIP, type ModelsDevCatalog } from './scrapers/modelsdev';
@@ -655,20 +655,10 @@ async function main() {
     }
   }
 
-  // ---------- C13: plan staleness ----------
+  // ---------- C13: plan staleness (including manually curated plans) ----------
   for (const pl of plans) {
-    // Manual plans are curated ground truth and are intentionally outside the
-    // scraper freshness contract. See cleanupOutdatedPlans().
-    if (pl.source === 'manual') continue;
-    if (!pl.last_verified) {
-      add('plans.missing_verified', 'warning', 'plan.last_verified is null', { plan: `${pl.slug}#${pl.id}` });
-      continue;
-    }
-    const lv = new Date(pl.last_verified).getTime();
-    if (lv < staleCutoff) {
-      const days = Math.floor((now - lv) / (86400 * 1000));
-      add('plans.stale', 'warning', `plan.last_verified ${days}d ago`, { plan: `${pl.slug}#${pl.id}`, days });
-    }
+    const finding = planVerificationFinding(pl, now, STALE_DAYS);
+    if (finding) findings.push(finding);
   }
 
   // ---------- C14-C18: plan classification and derived model links ----------

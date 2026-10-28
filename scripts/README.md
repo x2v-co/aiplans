@@ -58,6 +58,13 @@ The 2026-04 cleanup introduced a full feedback loop:
 
 Both fix scripts support `--dry-run`.
 
+`npx tsx scripts/refresh-openai-plans.ts --fetch-only` reviews live official
+OpenAI sources without database access. Without flags it previews database
+changes; only `--apply` writes. See [OpenAI plan verification](../docs/openai-plan-verification.md)
+for evidence capture, guarded replay, backups, and the current renewal path.
+Plan freshness auditing includes manually curated rows; stale or missing
+verification triggers alerts and can alert again after a resolved plan ages.
+
 ## Migrations
 
 `migrate-data-accuracy.ts` runs idempotent schema/data migrations against
@@ -217,6 +224,14 @@ and timer:
   skip flags to bypass plans, audits, and benchmark ingestions
 - **`scrape-pricing.yml`** — manual recovery only
 - **`data-audit.yml`** — pull-request and manual audit workflow
+
+The OpenAI review pipeline has a separate `OPENAI_REVIEW_APPLY=1` opt-in,
+independent of `SKIP_PLANS`. On October 28, production on `x2v-global` retains
+`SKIP_PLANS=1` and has not enabled that opt-in because direct source fetches
+intermittently return 403. A daily 04:00 Asia/Singapore Codex heartbeat collects
+fresh official evidence locally and runs guarded production review operations;
+see the [runbook](../docs/openai-plan-verification.md#scheduling) for prerequisites
+and failure handling.
 
 The deployment workflow installs and restarts the systemd timer after each
 successful release. Do not expose PostgreSQL publicly for GitHub-hosted runners.

@@ -389,6 +389,16 @@ export type PlanTrustRow = {
   third_party_coverage_note?: string | null;
 };
 
+/** A reviewed plan may use a more specific official source than its provider. */
+function planReviewSource(plan: PlanTrustRow, fallback: TrustSource, locale: string): TrustSource {
+  const url = plan.notes?.match(/\[aiplans:review-source\] (https:\/\/[^\s]+)/)?.[1];
+  if (!url) return fallback;
+  try {
+    if (!['openai.com', 'help.openai.com', 'chatgpt.com'].includes(new URL(url).hostname)) return fallback;
+    return {url, label: zh(locale) ? 'OpenAI 官方套餐说明' : 'OpenAI official plan details'};
+  } catch { return fallback; }
+}
+
 export function planPriceTrust(
   plan: PlanTrustRow,
   source: TrustSource,
@@ -396,6 +406,7 @@ export function planPriceTrust(
   now = new Date(),
   providerSlug?: string | null,
 ): TrustAssessment {
+  source = planReviewSource(plan, source, locale);
   const review = priceReviewNote(providerSlug, plan.name, locale);
   return assessTrust({
     locale,
@@ -422,6 +433,7 @@ export function planPriceTrust(
 }
 
 export function planEntitlementTrust(plan: PlanTrustRow, source: TrustSource, locale: string, now = new Date()): TrustAssessment {
+  source = planReviewSource(plan, source, locale);
   return assessTrust({
     locale,
     kind: 'entitlement',
