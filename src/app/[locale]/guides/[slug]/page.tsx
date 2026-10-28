@@ -1,3 +1,4 @@
+import { providerSearchProfile } from '@/lib/provider-search';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -116,6 +117,11 @@ export default async function PricingGuidePage({
           <Link href={`/${locale}/compare/models`} className="inline-flex items-center gap-2 font-semibold text-blue-700 hover:underline dark:text-blue-400">
             {locale === 'zh' ? '对比渠道' : 'Compare channels'} <ArrowRight className="h-4 w-4" />
           </Link>
+          {guide.providerSlugs.map(providerSlug => (
+            <Link key={providerSlug} href={`/${locale}/providers/${providerSlug}`} className="font-semibold text-blue-700 hover:underline dark:text-blue-400">
+              {providerSearchProfile(providerSlug, providerSlug, locale).name} {locale === 'zh' ? '价格与订阅套餐' : 'pricing & subscription plans'}
+            </Link>
+          ))}
           {guide.priceTable === false && (
             <Link href={`/${locale}/compare/plans`} className="inline-flex items-center gap-2 font-semibold text-blue-700 hover:underline dark:text-blue-400">
               {locale === 'zh' ? '对比订阅套餐' : 'Compare subscription plans'} <ArrowRight className="h-4 w-4" />

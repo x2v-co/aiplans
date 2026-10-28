@@ -1,3 +1,7 @@
+import { providerSearchProfile } from '@/lib/provider-search';
+import { providerSubscriptionComparisons, subscriptionSearchCopy } from '@/lib/subscription-search';
+import type { PlanComparisonCandidate } from '@/lib/search-indexing';
+import { formatModelName } from '@/lib/model-names';
 import { ProviderPlanPrice, providerPlanPrice } from '@/components/provider-plan-price';
 import Link from "next/link";
 import { ProviderLogo } from '@/components/provider-logo';
@@ -106,7 +110,17 @@ async function getPlansByProvider(providerSlug: string) {
       `]
     : [];
 
-  return { provider, models: uniqueModels, plans };
+  // Match the global indexability pool before narrowing to this provider.
+  const comparisonCandidates = modelIds.length ? await sql<Array<PlanComparisonCandidate & { name: string; provider_ids: number[] }>>`
+    SELECT m.slug, m.name, m.provider_ids, m.released_at, m.updated_at, count(DISTINCT p.id)::int AS plan_count
+    FROM models m
+    JOIN model_plan_mapping mpm ON mpm.model_id = m.id
+    JOIN plans p ON p.id = mpm.plan_id
+    WHERE m.type ILIKE '%llm%' AND p.pricing_model = 'subscription'
+      AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date)
+    GROUP BY m.id, m.slug, m.name, m.released_at, m.updated_at
+  ` : [];
+  return { provider, models: uniqueModels, plans, comparisons: providerSubscriptionComparisons(comparisonCandidates.map(model => ({ ...model, isPrimaryProvider: model.provider_ids?.[0] === provider.id })), new Set(uniqueModels.map(model => model.slug))) };
 }
 
 export default async function ProviderPage({
@@ -129,7 +143,8 @@ export default async function ProviderPage({
     notFound();
   }
 
-  const { provider, models, plans } = data;
+  const { provider, models, plans, comparisons } = data;
+  const searchProfile = providerSearchProfile(providerSlug, provider.name, locale === 'zh' ? 'zh' : 'en');
   const now = new Date();
   const [apiModels, t, quotaEstimates] = await Promise.all([
     getGroupedProducts(null, provider.id, now),
@@ -241,7 +256,7 @@ export default async function ProviderPage({
             <div className="flex items-center gap-4">
               <ProviderLogo provider={provider} size={64} />
               <div>
-                <h1 className="text-3xl font-bold">{provider.name}</h1>
+                <h1 className="text-3xl font-bold">{searchProfile.name} {isZh ? '价格与套餐' : 'Pricing & Plans'}</h1>
                 {provider.description && <p className="mt-2 max-w-3xl text-zinc-600 dark:text-zinc-400">{provider.description}</p>}
                 <div className="mt-3">
                   <ProviderOutboundLink url={provider.website} providerSlug={providerSlug} locale={locale} label={t('website')} channelType={provider.type} />
@@ -258,6 +273,38 @@ export default async function ProviderPage({
             </div>
           </div>
         </div>
+
+        <section className="mb-8 max-w-4xl" aria-labelledby="provider-pricing-guide">
+          <h2 id="provider-pricing-guide" className="text-xl font-bold">{isZh ? `${searchProfile.name} API 费用、订阅与免费额度怎么选？` : `${searchProfile.name} API costs, subscriptions and free allowances`}</h2>
+          <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">{searchProfile.guidance}</p>
+          <nav className="mt-4 flex flex-wrap gap-4" aria-label={isZh ? '价格与套餐入口' : 'Pricing and plan links'}>
+            <Link href="#provider-api-heading" className="text-blue-600 hover:underline">{searchProfile.name} {isZh ? 'API 价格' : 'API pricing'}</Link>
+            <Link href="#provider-plans-heading" className="text-blue-600 hover:underline">{searchProfile.name} {isZh ? '套餐价格与计费方式' : 'plan prices & billing options'}</Link>
+            <Link href={`/${locale}/calculator`} className="text-blue-600 hover:underline">{isZh ? 'API 用量成本计算器' : 'API usage cost calculator'}</Link>
+            {guideSlug && <Link href={`/${locale}/guides/${guideSlug}`} className="text-blue-600 hover:underline">{PRICING_GUIDES[guideSlug].title[isZh ? 'zh' : 'en']}</Link>}
+          </nav>
+        </section>
+
+        {comparisons.length > 0 && (
+          <section aria-labelledby="provider-subscriptions-heading" className="mb-10 rounded-xl border p-6">
+            <h2 id="provider-subscriptions-heading" className="text-xl font-bold">
+              {isZh ? `${provider.name} 模型订阅套餐对比` : `${provider.name} model subscription plans`}
+            </h2>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              {isZh ? '想按月订阅使用某个模型？查看包含该模型的跨供应商套餐，比较价格、额度与使用限制。第三方套餐不等于原厂会员；API 按量费用另列于下方。'
+                : 'Looking for a monthly model subscription? Compare plans across providers by price, quota and usage limits. Third-party plans are distinct from the creator’s own membership; pay-as-you-go API prices are listed below.'}
+            </p>
+            <ul className="mt-4 grid gap-3 md:grid-cols-2">
+              {comparisons.map(model => (
+                <li key={model.slug}>
+                  <Link className="text-blue-600 hover:underline" href={`/${locale}/compare/plans/${encodeURIComponent(model.slug)}`}>
+                    {subscriptionSearchCopy(model.slug, formatModelName(model.name), locale).linkLabel} →
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section aria-labelledby="provider-api-heading" className="mb-10">
           <h2 id="provider-api-heading" className="mb-4 text-2xl font-bold">{t('api')}</h2>
@@ -278,7 +325,7 @@ export default async function ProviderPage({
         )}
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-2xl font-bold">{t('plans')}</h2>
+          <h2 id="provider-plans-heading" className="text-2xl font-bold">{searchProfile.name} {isZh ? '套餐价格与计费方式' : 'plan prices & billing options'}</h2>
           <div className="flex items-center gap-2 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
             <Link href={`/${locale}/providers/${providerSlug}`} className={`rounded-md px-4 py-2 text-sm font-medium ${!showYearly ? 'bg-white shadow-sm dark:bg-zinc-700' : 'text-zinc-500'}`}>
               {t('monthly')}
