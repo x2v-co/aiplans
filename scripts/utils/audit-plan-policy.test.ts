@@ -72,3 +72,12 @@ test('OpenAI genuine priced page still parses successfully', async () => {
   assert.equal(result.plans[0].planSlug, 'chatgpt-plus');
   assert.equal(result.plans[0].priceMonthly, 20);
 });
+
+
+test('OpenAI HTTP 200 without paid amounts cannot verify Free/Enterprise alone', async () => {
+  const result = await scrapeOpenAIPlans(async () => ({ success: true, status: 200,
+    data: '<nav>Enterprise</nav><h2>Free</h2><h2>Plus</h2><p>/ month</p><h2>Pro</h2><p>From / month</p>' }));
+  assert.equal(result.success, false);
+  assert.deepEqual(result.plans, []);
+  assert.match(result.errors![0], /Plus, Pro.*no supported USD price/);
+});

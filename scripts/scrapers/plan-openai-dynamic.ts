@@ -51,6 +51,16 @@ async function fetchOpenAIPlans(fetchPage: FetchPlansPage): Promise<{ plans: Ope
   const proPriceMatch = html.match(/ChatGPT\s*Pro[^$]*?\$\s*(?:100|200|500)|Pro\s*(?:100|200|500)[^$]*?\$\s*(?:100|200|500)/i);
   const enterpriseMatch = html.match(/Enterprise/i);
 
+  // A rendered pricing page can omit localized paid amounts. Free/Enterprise
+  // name matches alone must not make that incomplete response a verification.
+  const missingPaidPrices = [
+    /\bPlus\b/i.test(html) && !plusPriceMatch ? 'Plus' : null,
+    /\bPro\b/i.test(html) && !proPriceMatch ? 'Pro' : null,
+  ].filter(Boolean);
+  if (missingPaidPrices.length > 0) {
+    return { plans: [], errors: [`OpenAI pricing page mentions ${missingPaidPrices.join(', ')} but no supported USD price could be parsed; existing plans were not verified.`] };
+  }
+
   // Check if we found any pricing information
   if (!freeMatch && !plusPriceMatch && !teamPriceMatch && !proPriceMatch && !enterpriseMatch) {
     return {
