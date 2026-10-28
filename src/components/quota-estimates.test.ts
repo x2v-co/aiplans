@@ -81,8 +81,11 @@ test('plan cards show benchmark results with scope warnings and deep links inste
         assert.ok(html.includes(locale === 'zh' ? '不代表本价格档额度' : 'not this price tier’s allowance'));
         assert.ok(html.includes(`/${locale}/quota-bench#codex-pro`));
       } else if (planSlug === 'seed-pro') {
-        assert.match(html, /89,703/);
-        assert.match(html, /13,191,617–13,591,364/);
+        assert.match(html, /1,258,698/);
+        assert.match(html, /13,319,555–13,347,805/);
+        assert.match(html, /99,110,078–100,695,840/);
+        assert.match(html, /196,671,562–203,015,807/);
+        assert.ok(html.includes(locale === 'zh' ? '月（粗估）' : 'month (rough)'));
         assert.ok(html.includes(`/${locale}/quota-bench#volcengine-pro`));
       } else {
         assert.match(html, /1,162,257/);
