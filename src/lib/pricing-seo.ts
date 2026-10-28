@@ -1,3 +1,4 @@
+import { subscriptionSearchCopy } from './subscription-search';
 import type { Locale } from './seo';
 import type { GroupedProduct } from './grouped-products';
 
@@ -58,14 +59,17 @@ function monthlyFrom(plans: SeoPlan[], locale: Locale): string {
 
 export function buildComparisonPricingCopy(
   modelName: string, plans: SeoPlan[], locale: Locale, year = new Date().getUTCFullYear(),
+  modelSlug = '',
 ): PricingCopy {
-  const from = monthlyFrom(plans, locale);
+  const subscriptions = plans.filter(plan => plan.pricing_model === 'subscription');
+  const from = monthlyFrom(subscriptions, locale);
+  const heading = subscriptionSearchCopy(modelSlug, modelName, locale).heading;
   return locale === 'zh' ? {
-    title: `${modelName} 套餐价格对比 ${year}：${plans.length} 个套餐${from}`,
-    description: `对比包含 ${modelName} 的 ${plans.length} 个套餐${from}。查看供应商、月付与年付价格、消息限额和模型权限；不同货币分别列出最低月付价。`,
+    title: `${heading} ${year}：${subscriptions.length} 个套餐${from}`,
+    description: `对比包含 ${modelName} 的 ${subscriptions.length} 个订阅套餐${from}。查看供应商、月付与年付价格、消息限额和模型权限；不同货币分别列出最低月付价。`,
   } : {
-    title: `${modelName} Plans & Pricing ${year}: ${plans.length} ${plans.length === 1 ? 'Plan' : 'Plans'}${from}`,
-    description: `Compare ${plans.length} plans with ${modelName} access${from}. See monthly vs annual subscription prices and message limits. Lowest monthly prices shown by currency.`,
+    title: `${heading} & Pricing ${year}: ${subscriptions.length} ${subscriptions.length === 1 ? 'Plan' : 'Plans'}${from}`,
+    description: `Compare ${subscriptions.length} plans with ${modelName} access${from}. See monthly vs annual subscription prices and message limits. Lowest monthly prices shown by currency.`,
   };
 }
 

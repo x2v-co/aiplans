@@ -50,7 +50,7 @@ test('monthly floors retain free tiers and exclude sales placeholders, packs, an
   ];
   assert.deepEqual(monthlyPlanFloors(plans), [{ name: 'Free', price: 0, currency: 'USD' }]);
   assert.equal(buildComparisonPricingCopy('Kimi K2', plans, 'en', 2026).title,
-    'Kimi K2 Plans & Pricing 2026: 10 Plans, from $0/mo');
+    'Kimi K2 Subscription Plans & Pricing 2026: 9 Plans, from $0/mo');
 });
 
 test('comparison snippets use DB row counts and monthly prices in both locales', () => {

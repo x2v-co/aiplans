@@ -1,3 +1,6 @@
+import { providerSubscriptionComparisons, subscriptionSearchCopy } from '@/lib/subscription-search';
+import type { PlanComparisonCandidate } from '@/lib/search-indexing';
+import { formatModelName } from '@/lib/model-names';
 import { ProviderPlanPrice, providerPlanPrice } from '@/components/provider-plan-price';
 import Link from "next/link";
 import { ProviderLogo } from '@/components/provider-logo';
@@ -106,7 +109,17 @@ async function getPlansByProvider(providerSlug: string) {
       `]
     : [];
 
-  return { provider, models: uniqueModels, plans };
+  // Match the global indexability pool before narrowing to this provider.
+  const comparisonCandidates = modelIds.length ? await sql<Array<PlanComparisonCandidate & { name: string }>>`
+    SELECT m.slug, m.name, m.released_at, m.updated_at, count(DISTINCT p.id)::int AS plan_count
+    FROM models m
+    JOIN model_plan_mapping mpm ON mpm.model_id = m.id
+    JOIN plans p ON p.id = mpm.plan_id
+    WHERE m.type ILIKE '%llm%' AND p.pricing_model = 'subscription'
+      AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date)
+    GROUP BY m.id, m.slug, m.name, m.released_at, m.updated_at
+  ` : [];
+  return { provider, models: uniqueModels, plans, comparisons: providerSubscriptionComparisons(comparisonCandidates, new Set(uniqueModels.map(model => model.slug))) };
 }
 
 export default async function ProviderPage({
@@ -129,7 +142,7 @@ export default async function ProviderPage({
     notFound();
   }
 
-  const { provider, models, plans } = data;
+  const { provider, models, plans, comparisons } = data;
   const now = new Date();
   const [apiModels, t, quotaEstimates] = await Promise.all([
     getGroupedProducts(null, provider.id, now),
@@ -258,6 +271,27 @@ export default async function ProviderPage({
             </div>
           </div>
         </div>
+
+        {comparisons.length > 0 && (
+          <section aria-labelledby="provider-subscriptions-heading" className="mb-10 rounded-xl border p-6">
+            <h2 id="provider-subscriptions-heading" className="text-xl font-bold">
+              {isZh ? `${provider.name} 模型订阅套餐对比` : `${provider.name} model subscription plans`}
+            </h2>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              {isZh ? '想按月订阅使用某个模型？查看包含该模型的跨供应商套餐，比较价格、额度与使用限制。第三方套餐不等于原厂会员；API 按量费用另列于下方。'
+                : 'Looking for a monthly model subscription? Compare plans across providers by price, quota and usage limits. Third-party plans are distinct from the creator’s own membership; pay-as-you-go API prices are listed below.'}
+            </p>
+            <ul className="mt-4 grid gap-3 md:grid-cols-2">
+              {comparisons.map(model => (
+                <li key={model.slug}>
+                  <Link className="text-blue-600 hover:underline" href={`/${locale}/compare/plans/${encodeURIComponent(model.slug)}`}>
+                    {subscriptionSearchCopy(model.slug, formatModelName(model.name), locale).linkLabel} →
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section aria-labelledby="provider-api-heading" className="mb-10">
           <h2 id="provider-api-heading" className="mb-4 text-2xl font-bold">{t('api')}</h2>

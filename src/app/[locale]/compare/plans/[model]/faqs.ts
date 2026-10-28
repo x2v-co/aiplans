@@ -1,3 +1,4 @@
+import { subscriptionSearchCopy } from '@/lib/subscription-search';
 /**
  * Data-driven FAQ for the per-model plan comparison page.
  *
@@ -48,7 +49,8 @@ export function buildCompareFaqs(
   const free = hasFree(rows);
   const discount = maxDiscount(rows);
   const chinaRows = rows.filter((r) => r.channel.accessFromChina);
-  const faqs: FaqItem[] = [];
+  const searchCopy = subscriptionSearchCopy(model.slug, modelName, locale);
+  const faqs: FaqItem[] = [{ question: searchCopy.question, answer: searchCopy.answer }];
 
   // 1. Cheapest plan
   if (cheapest && typeof cheapest.monthlyPrice === 'number') {

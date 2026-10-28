@@ -970,7 +970,7 @@ export default async function ModelPage({
                               }`}
                               variant={isRecommended ? 'default' : 'outline'}
                             >
-                              View Details
+                              {isZh ? `${productName} 订阅套餐价格对比` : `${productName} subscription plans & pricing`}
                             </Button>
                           </Link>
                         </CardContent>
