@@ -68,3 +68,33 @@ test('history renders old → new intervals, stable citations and separate evide
     for (const value of [copy.previous, copy.next, copy.recordedAt, 'change-1-2', '2026-10-03', '2026-10-02', '2026-10-01', 'medium', 'high', 'Example vendor', 'example-pro', 'example-model', '9,400,000', '12,000,000', 'https://example.com/evidence', 'https://example.com/new']) assert.ok(html.includes(value), value);
   }
 });
+
+test('plan cards show benchmark results with scope warnings and deep links instead of empty state', () => {
+  for (const locale of ['en', 'zh'] as const) {
+    for (const planSlug of ['chatgpt-pro', 'chatgpt-pro-100', 'chatgpt-pro-200', 'chatgpt-pro-500', 'seed-pro', 'cursor-ultra']) {
+      const html = render(locale, createElement(PlanQuotaEstimates, { locale, planSlug, estimates: [] }));
+      assert.ok(!html.includes((locale === 'zh' ? zh : en).quota.empty));
+      assert.match(html, /data-quota-bench=/);
+      if (planSlug.startsWith('chatgpt-pro')) {
+        assert.match(html, /8,849,743/);
+        assert.match(html, /147,495,716–221,243,575/);
+        assert.ok(html.includes(locale === 'zh' ? '不代表本价格档额度' : 'not this price tier’s allowance'));
+        assert.ok(html.includes(`/${locale}/quota-bench#codex-pro`));
+      } else if (planSlug === 'seed-pro') {
+        assert.match(html, /89,703/);
+        assert.match(html, /13,191,617–13,591,364/);
+        assert.ok(html.includes(`/${locale}/quota-bench#volcengine-pro`));
+      } else {
+        assert.match(html, /1,162,257/);
+        assert.ok(html.includes(locale === 'zh' ? '暂不估算容量' : 'capacity withheld'));
+        assert.ok(html.includes(locale === 'zh' ? '仅前 12 次' : 'first 12 calls only'));
+        assert.doesNotMatch(html, /tokens \/ /);
+      }
+    }
+    for (const planSlug of ['chatgpt-plus', 'seed-lite', 'cursor-pro', 'x-premium-plus']) {
+      const html = render(locale, createElement(PlanQuotaEstimates, { locale, planSlug, estimates: [] }));
+      assert.doesNotMatch(html, /data-quota-bench=/);
+      assert.ok(html.includes((locale === 'zh' ? zh : en).quota.empty));
+    }
+  }
+});

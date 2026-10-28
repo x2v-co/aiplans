@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { currentPlanEstimates, tokenRange, type VerifiedQuotaEstimate } from '@/lib/quota/estimates';
 import { quotaEstimateTrust } from '@/lib/data-trust';
 import { DataTrustLabel } from '@/components/data-trust-label';
+import { PlanBenchSummary, benchmarkForPlan } from './quota-bench-summary';
 
 export function QuotaEstimateDetails({ estimate, locale }: { estimate: VerifiedQuotaEstimate; locale: string }) {
   const t = useTranslations('quota');
@@ -35,10 +36,12 @@ export function PlanQuotaEstimates({ estimates, planSlug, locale, showTrust = fa
 }) {
   const t = useTranslations('quota');
   const current = currentPlanEstimates(estimates, planSlug);
+  const benchmark = benchmarkForPlan(planSlug);
   return (
     <section className="my-4 space-y-3 rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
       <h3 className="text-sm font-semibold">{t('title')}</h3>
-      <p className="text-xs text-zinc-500">{t('caveat')}</p>
+      {(!benchmark || current.length > 0) && <p className="text-xs text-zinc-500">{t('caveat')}</p>}
+      {benchmark && <PlanBenchSummary record={benchmark} locale={locale} />}
       {current.length ? current.map(estimate => (
         <div key={estimate.id}>
           <QuotaEstimateDetails estimate={estimate} locale={locale} />
@@ -56,8 +59,8 @@ export function PlanQuotaEstimates({ estimates, planSlug, locale, showTrust = fa
             />
           )}
         </div>
-      )) : <p className="text-xs text-zinc-500">{t('empty')}</p>}
-      <Link href={`/${locale}/quota-bench`} className="mr-4 text-xs text-blue-600 underline">{locale === 'zh' ? '额度实测数据与报告' : 'Measured quota data and reports'}</Link>
+      )) : !benchmark ? <p className="text-xs text-zinc-500">{t('empty')}</p> : null}
+      {!benchmark && <Link href={`/${locale}/quota-bench`} className="mr-4 text-xs text-blue-600 underline">{locale === 'zh' ? '额度实测数据与报告' : 'Measured quota data and reports'}</Link>}
       <Link href={`/${locale}/quota-changes`} className="text-xs text-blue-600 underline">{t('historyTitle')}</Link>
     </section>
   );
