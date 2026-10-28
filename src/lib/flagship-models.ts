@@ -75,3 +75,20 @@ export function selectVendorLeaders(products: GroupedProduct[]): VendorLeader[] 
     } satisfies VendorLeader];
   });
 }
+
+/** Discovery is separate from the scored-leader ranking: a new model must
+ * not wait for an Arena score before it appears in the comparison table. */
+export function selectLatestVendorModels(products: GroupedProduct[]): VendorLeader[] {
+  return VENDORS.flatMap((vendor) => {
+    const product = products
+      .filter((item) => vendor.matches(`${item.providers?.name || ''} ${item.providers?.slug || ''}`))
+      .filter(isGeneralPurposeCandidate)
+      .filter((item) => item.versionCounts > 0
+        && (!item.modelCategory || item.modelCategory === 'text')
+        && !item.slug.startsWith('~')
+        && !/(?:^|-)(?:er|ocr|rosalind|embedding|tts|search|latest)(?:-|$)/.test(item.slug))
+      .sort((a, b) => modelFreshnessTime(b) - modelFreshnessTime(a)
+        || compareCandidates(a, b) || a.slug.localeCompare(b.slug))[0];
+    return product ? [{ vendorKey: vendor.key, product, selectionBasis: 'latest-available' as const }] : [];
+  });
+}
