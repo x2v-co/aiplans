@@ -97,9 +97,11 @@ async function main() {
           if(standard.length!==1) throw new Error('Missing Business seed identity');
           console.log(JSON.stringify({slug:review.slug,action:'insert',after:review}));
           const models=await tx`SELECT model.id,model.slug,
-            coalesce((SELECT array_agg(provider.slug) FROM providers provider WHERE provider.id=ANY(model.provider_ids)),'{}') AS provider_slugs
+            coalesce((SELECT array_agg(provider.slug) FROM providers provider WHERE provider.id=ANY(model.provider_ids)),'{}') AS provider_slugs,
+            (SELECT max(score.value) FROM model_benchmark_scores score JOIN benchmark_metrics metric ON metric.id=score.metric_id
+              WHERE score.model_id=model.id AND metric.name='ELO') AS elo
             FROM models model`;
-          const resolved=resolveSelector(standard[0].model_selector,models.map(model=>({id:model.id,slug:model.slug,providerSlugs:model.provider_slugs,elo:null})),['openai']);
+          const resolved=resolveSelector(standard[0].model_selector,models.map(model=>({id:model.id,slug:model.slug,providerSlugs:model.provider_slugs,elo:model.elo})),['openai']);
           if (!resolved.models.length || resolved.unknownExtra.length) throw new Error('Business Premium selector did not resolve safely');
           console.log(JSON.stringify({slug:review.slug,initialModelMappings:resolved.models.map(model=>model.slug)}));
           if(apply) {
