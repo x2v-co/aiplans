@@ -8,7 +8,10 @@ import data from '../../public/reports/quota-bench-2026-10.json';
 test('published measurements preserve native windows and withhold unreconciled capacity', () => {
   const codex = data.records.find(r => r.id === 'codex-pro')!;
   assert.equal(codex.window, 'weekly');
-  assert.equal(codex.tierVerified, false);
+  assert.equal(codex.tierVerified, true);
+  assert.equal(codex.planSlug, 'chatgpt-pro-200');
+  assert.equal(codex.tierVerification!.source, 'account_owner_confirmation');
+  assert.equal(codex.tierVerification!.priceUsdPerMonth, 200);
   assert.equal(codex.tokens.input + codex.tokens.cacheRead + codex.tokens.output, 3363758);
   const control = codex.controlTokens!;
   const total = codex.tokens.input + codex.tokens.cacheRead + codex.tokens.output + control.input + control.cacheRead + control.output;
@@ -21,7 +24,7 @@ test('both locales show caveats, controller accounting and downloadable evidence
   for (const locale of ['zh', 'en']) {
     const html = renderToStaticMarkup(createElement(QuotaBenchResults, { locale }));
     for (const value of ['147,495,716', '221,243,575', '5,447,936', '/reports/quota-bench-2026-10.json', '/reports/quota-bench-2026-10.md']) assert.ok(html.includes(value), value);
-    assert.ok(html.includes(locale === 'zh' ? 'Pro 子档未核验' : 'Pro sub-tier unverified'));
+    assert.ok(html.includes(locale === 'zh' ? '仅适用于 ChatGPT Pro 200' : 'Applies only to ChatGPT Pro 200'));
     assert.ok(html.includes(locale === 'zh' ? '待核对' : 'Pending reconciliation'));
     assert.doesNotMatch(html, /\/Users\/|account_id|AUTH_TOKEN|COOKIE/);
   }
