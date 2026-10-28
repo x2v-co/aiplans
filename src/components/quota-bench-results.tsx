@@ -1,3 +1,5 @@
+import type { BenchRecord } from './quota-bench-summary';
+import { CodexModelMeasurements } from './codex-model-measurements';
 import Link from 'next/link';
 import { VolcengineModelMeasurements } from './volcengine-model-measurements';
 import { QuotaBenchWindows } from './quota-bench-windows';
@@ -10,7 +12,7 @@ export function QuotaBenchResults({ locale, compact = false }: { locale: string;
     <h2 className="text-lg font-semibold">{zh ? '额度实测数据 · 2026-10' : 'Measured quota data · 2026-10'}</h2>
     <p className="text-sm text-zinc-500">{zh ? '实测记录与条件估算，不是官方承诺额度。保持原始窗口，不自动折算月额度。' : 'Observations and conditional estimates, not official allowances. Native windows only; no automatic monthly projections.'}</p>
     {compact ? <Link className="underline" href={`/${locale}/quota-bench`}>{zh ? '查看 Codex、火山与 Cursor 的实测数据和报告' : 'View Codex, Volcengine and Cursor measurements and reports'}</Link> : <>
-      {dataset.records.map(record => <article key={record.id} id={record.id} className="scroll-mt-20 space-y-3 border-t pt-4">
+      {(dataset.records as BenchRecord[]).map(record => <article key={record.id} id={record.id} className="scroll-mt-20 space-y-3 border-t pt-4">
         <h3 className="font-semibold">{record.plan} · {record.model}</h3>
         <p className="text-sm">{record.status === 'pending' ? (zh ? '待核对 · 暂不发布容量' : 'Pending reconciliation · capacity withheld') : (zh ? '条件估算 · 低置信度' : 'Conditional estimate · low confidence')} · <time dateTime={record.date}>{record.date}</time></p>
         <p className="text-sm">{zh ? '原始窗口' : 'Native window'}: {record.window} · {record.calls} {zh ? '轮' : 'calls'} · {zh ? '已用比例' : 'Used'} {record.usedBefore}% → {record.usedAfter}%</p>
@@ -26,6 +28,7 @@ export function QuotaBenchResults({ locale, compact = false }: { locale: string;
         {record.apiEquivalentUsd && <p className="text-sm">{zh ? '标准 API 标价等价价值（不是余额）' : 'Standard API list-value equivalent (not credit)'}: ${fmt(record.apiEquivalentUsd.mid)} / {record.window}</p>}
         <p className="text-sm text-amber-800 dark:text-amber-300">{zh ? record.caveats.zh : record.caveats.en}</p>
         {record.measurementReport && <div className="flex flex-wrap gap-4 text-sm underline"><a href={record.measurementReport}>{zh ? '本次评测过程与计算依据' : 'Measurement process and calculations (Chinese)'}</a>{record.measurementData && <a href={record.measurementData}>{zh ? '本次读数与逐次用量' : 'Meter readings and per-call usage'}</a>}</div>}
+        {record.id === 'codex-pro' && <CodexModelMeasurements locale={locale} />}
         {record.id === 'volcengine-pro' && <VolcengineModelMeasurements locale={locale} />}
       </article>)}
       <div className="flex flex-wrap gap-4 text-sm underline">

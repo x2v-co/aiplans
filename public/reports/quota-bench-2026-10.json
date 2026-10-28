@@ -11,38 +11,29 @@
       "window": "weekly",
       "status": "conditional",
       "tierVerified": true,
-      "calls": 36,
+      "calls": 28,
       "tokens": {
-        "input": 2931009,
-        "cacheRead": 417024,
+        "input": 2320149,
+        "cacheRead": 271104,
         "cacheWrite": 0,
-        "output": 15725
+        "output": 4070
       },
-      "controlTokens": {
-        "input": 30478,
-        "cacheRead": 5447936,
-        "cacheWrite": 0,
-        "output": 7571
-      },
-      "usedBefore": 47,
-      "usedAfter": 52,
+      "controlTokens": null,
+      "usedBefore": 89,
+      "usedAfter": 92,
       "estimate": {
-        "low": 147495716,
-        "high": 221243575,
-        "mid": 176994860
+        "low": 64883075,
+        "mid": 86510767,
+        "high": 129766150
       },
-      "apiEquivalentUsd": {
-        "low": 610.743833,
-        "high": 916.11575,
-        "mid": 732.8926
-      },
+      "apiEquivalentUsd": null,
       "caveats": {
-        "zh": "仅适用于 ChatGPT Pro 200；档位由账号持有人于 2026-10-28 确认，不适用于 Pro 100 或 Pro 500。估算包含同账号控制会话，约 66% 为缓存读取；区间只反映整数仪表盘舍入，不能证明无其他设备调用。不可折算月额度。",
-        "en": "Applies only to ChatGPT Pro 200; tier confirmed by the account owner on 2026-10-28, not Pro 100 or Pro 500. Includes the same-account controller, with about 66% cache reads. Bounds cover meter rounding only, not activity on other devices. No monthly projection."
+        "zh": "仅适用于 ChatGPT Pro 200，档位由账号持有人确认。本轮 Astra 主测 28 次，控制会话 token 计数未变；约 10.45% 为缓存读取。范围仅含读数舍入，仍假设线性扣量、计量已结算且无其他设备流量。5 小时/月窗口未返回；Sol 读数异常，暂不发布容量。",
+        "en": "Applies only to ChatGPT Pro 200; tier confirmed by the account owner. Astra main batch: 28 calls with unchanged controller token counters. Bounds cover meter rounding only, assuming linear consumption, settled meters and no other-device traffic. No 5-hour/monthly window returned; Sol capacity withheld due to inconsistent readings."
       },
       "windowMeasurements": null,
-      "measurementReport": null,
-      "measurementData": null,
+      "measurementReport": "/reports/codex-models-2026-10-28.md",
+      "measurementData": "/reports/codex-models-2026-10-28.json",
       "planSlug": "chatgpt-pro-200",
       "tierVerification": {
         "source": "account_owner_confirmation",

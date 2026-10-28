@@ -1,3 +1,5 @@
+> 更新：Codex Pro 200 的当前摘要已改用 [Astra / Sol 复测](./codex-models-2026-10-28.md)。下文 Codex 数据为历史混合控制会话样本；不要与新一轮配比混算。
+
 > 更新：火山最新 30 次三窗口同步实测见[完整报告](/reports/volcengine-three-windows-2026-10-28.md)与[数据账本](/reports/volcengine-three-windows-2026-10-28.json)。本文火山 3 次样本保留为历史结果。
 
 # Codex 与 Cursor 大样本测试报告
