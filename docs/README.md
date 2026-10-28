@@ -26,5 +26,6 @@ docs/
 
 ## Related
 
+- [QuotaBench 默认实测规则](quota-bench-policy.md) — 所有可用周期同轮采集、误差说明及数据与报告同步发布
 - `scripts/README.md` — data-layer tooling walkthrough
 - `scripts/scrapers/DYNAMIC_SCRAPERS.md` — scraper-specific architecture notes
