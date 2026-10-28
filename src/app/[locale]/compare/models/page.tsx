@@ -1,5 +1,5 @@
 import { getGroupedProducts } from '@/lib/grouped-products';
-import { selectVendorLeaders } from '@/lib/flagship-models';
+import { selectLatestVendorModels } from '@/lib/flagship-models';
 import { breadcrumbList, faqPage, SITE_URL, type Locale } from '@/lib/seo';
 import CompareModelsView from './compare-models-view';
 import { FAQS } from './faqs';
@@ -25,7 +25,7 @@ export default async function CompareModelsPage({
   const { locale } = await params;
   const { models: modelsParam } = await searchParams;
   const products = await getGroupedProducts('llm');
-  const vendorLeaders = selectVendorLeaders(products);
+  const vendorLeaders = selectLatestVendorModels(products);
   const loc = (locale === 'zh' ? 'zh' : 'en') as Locale;
 
   const validSlugs = new Set(products.map((p) => p.slug));
