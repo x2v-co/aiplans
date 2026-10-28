@@ -1,0 +1,1573 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-28",
+  "plan": "Volcengine Coding Plan Pro",
+  "records": [
+    {
+      "model": "deepseek-v4.1-flash",
+      "servedModel": "deepseek-v4-1-flash",
+      "pilot": null,
+      "inputTokensPerCall": {
+        "min": 40195,
+        "max": 40195
+      },
+      "calls": 24,
+      "inputExpansion": null,
+      "tokens": {
+        "input": 964680,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "output": 32386
+      },
+      "totalTokens": 997066,
+      "mix": {
+        "inputPct": 96.75,
+        "outputPct": 3.25,
+        "cacheReadPct": 0.0,
+        "cacheWritePct": 0.0
+      },
+      "status": "conditional",
+      "windows": [
+        {
+          "window": "5h",
+          "usedBefore": 10.01,
+          "usedAfter": 11.51,
+          "deltaPp": 1.5,
+          "mid": 66471067,
+          "low": 66030860,
+          "high": 66917182,
+          "roundingDeltaRelativePct": 0.6666666666666666
+        },
+        {
+          "window": "weekly",
+          "usedBefore": 13.33,
+          "usedAfter": 13.53,
+          "deltaPp": 0.2,
+          "mid": 498533000,
+          "low": 474793333,
+          "high": 524771579,
+          "roundingDeltaRelativePct": 5.0
+        },
+        {
+          "window": "monthly",
+          "usedBefore": 34.34,
+          "usedAfter": 34.44,
+          "deltaPp": 0.1,
+          "mid": 997066000,
+          "low": 906423636,
+          "high": 1107851112,
+          "roundingDeltaRelativePct": 10.0
+        }
+      ],
+      "batches": [
+        {
+          "firstCall": 1,
+          "lastCall": 4,
+          "tokens": 166237,
+          "deltaPp": {
+            "5h": 0.25,
+            "Week": 0.03,
+            "Month": 0.02
+          }
+        },
+        {
+          "firstCall": 5,
+          "lastCall": 14,
+          "tokens": 415194,
+          "deltaPp": {
+            "5h": 0.62,
+            "Week": 0.08,
+            "Month": 0.04
+          }
+        },
+        {
+          "firstCall": 15,
+          "lastCall": 24,
+          "tokens": 415635,
+          "deltaPp": {
+            "5h": 0.63,
+            "Week": 0.09,
+            "Month": 0.04
+          }
+        }
+      ],
+      "meters": [
+        {
+          "observedAt": "2026-10-28T04:37:16.364Z",
+          "afterCalls": 0,
+          "used5h": 10.01,
+          "usedWeek": 13.33,
+          "usedMonth": 34.34,
+          "reset5h": "35分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:38:01.747Z",
+          "afterCalls": 4,
+          "used5h": 10.26,
+          "usedWeek": 13.36,
+          "usedMonth": 34.36,
+          "reset5h": "34分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:38:51.538Z",
+          "afterCalls": 4,
+          "used5h": 10.26,
+          "usedWeek": 13.36,
+          "usedMonth": 34.36,
+          "reset5h": "33分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:40:21.328Z",
+          "afterCalls": 14,
+          "used5h": 10.88,
+          "usedWeek": 13.44,
+          "usedMonth": 34.4,
+          "reset5h": "32分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:41:06.204Z",
+          "afterCalls": 14,
+          "used5h": 10.88,
+          "usedWeek": 13.44,
+          "usedMonth": 34.4,
+          "reset5h": "31分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:42:39.045Z",
+          "afterCalls": 24,
+          "used5h": 11.51,
+          "usedWeek": 13.53,
+          "usedMonth": 34.44,
+          "reset5h": "29分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:43:26.954Z",
+          "afterCalls": 24,
+          "used5h": 11.51,
+          "usedWeek": 13.53,
+          "usedMonth": 34.44,
+          "reset5h": "29分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        }
+      ],
+      "ledger": [
+        {
+          "call": 1,
+          "startedAt": "2026-10-28T04:37:24.203902+00:00",
+          "endedAt": "2026-10-28T04:37:32.563779+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 993
+        },
+        {
+          "call": 2,
+          "startedAt": "2026-10-28T04:37:24.203897+00:00",
+          "endedAt": "2026-10-28T04:37:38.832955+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1721
+        },
+        {
+          "call": 3,
+          "startedAt": "2026-10-28T04:37:32.611021+00:00",
+          "endedAt": "2026-10-28T04:37:43.745837+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1604
+        },
+        {
+          "call": 4,
+          "startedAt": "2026-10-28T04:37:38.881930+00:00",
+          "endedAt": "2026-10-28T04:37:46.308467+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1139
+        },
+        {
+          "call": 5,
+          "startedAt": "2026-10-28T04:38:59.719784+00:00",
+          "endedAt": "2026-10-28T04:39:09.229407+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1108
+        },
+        {
+          "call": 6,
+          "startedAt": "2026-10-28T04:38:59.719778+00:00",
+          "endedAt": "2026-10-28T04:39:10.332973+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1205
+        },
+        {
+          "call": 7,
+          "startedAt": "2026-10-28T04:39:09.273785+00:00",
+          "endedAt": "2026-10-28T04:39:20.441662+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1113
+        },
+        {
+          "call": 8,
+          "startedAt": "2026-10-28T04:39:10.376582+00:00",
+          "endedAt": "2026-10-28T04:39:22.733314+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1624
+        },
+        {
+          "call": 9,
+          "startedAt": "2026-10-28T04:39:20.493611+00:00",
+          "endedAt": "2026-10-28T04:39:31.850698+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1300
+        },
+        {
+          "call": 10,
+          "startedAt": "2026-10-28T04:39:22.781300+00:00",
+          "endedAt": "2026-10-28T04:39:33.868650+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1560
+        },
+        {
+          "call": 11,
+          "startedAt": "2026-10-28T04:39:31.899191+00:00",
+          "endedAt": "2026-10-28T04:39:41.280842+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1124
+        },
+        {
+          "call": 12,
+          "startedAt": "2026-10-28T04:39:33.916562+00:00",
+          "endedAt": "2026-10-28T04:39:44.370322+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1793
+        },
+        {
+          "call": 13,
+          "startedAt": "2026-10-28T04:39:41.331797+00:00",
+          "endedAt": "2026-10-28T04:39:49.601417+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1297
+        },
+        {
+          "call": 14,
+          "startedAt": "2026-10-28T04:39:44.424599+00:00",
+          "endedAt": "2026-10-28T04:39:52.776638+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1120
+        },
+        {
+          "call": 15,
+          "startedAt": "2026-10-28T04:41:12.012672+00:00",
+          "endedAt": "2026-10-28T04:41:23.267451+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1832
+        },
+        {
+          "call": 16,
+          "startedAt": "2026-10-28T04:41:12.012671+00:00",
+          "endedAt": "2026-10-28T04:41:20.265388+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 815
+        },
+        {
+          "call": 17,
+          "startedAt": "2026-10-28T04:41:20.300466+00:00",
+          "endedAt": "2026-10-28T04:41:31.489422+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1263
+        },
+        {
+          "call": 18,
+          "startedAt": "2026-10-28T04:41:23.310320+00:00",
+          "endedAt": "2026-10-28T04:41:32.835276+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1512
+        },
+        {
+          "call": 19,
+          "startedAt": "2026-10-28T04:41:31.528819+00:00",
+          "endedAt": "2026-10-28T04:41:38.709556+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1263
+        },
+        {
+          "call": 20,
+          "startedAt": "2026-10-28T04:41:32.884975+00:00",
+          "endedAt": "2026-10-28T04:41:46.752003+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 2323
+        },
+        {
+          "call": 21,
+          "startedAt": "2026-10-28T04:41:38.743669+00:00",
+          "endedAt": "2026-10-28T04:41:47.501376+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1230
+        },
+        {
+          "call": 22,
+          "startedAt": "2026-10-28T04:41:46.792829+00:00",
+          "endedAt": "2026-10-28T04:41:56.077334+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1133
+        },
+        {
+          "call": 23,
+          "startedAt": "2026-10-28T04:41:47.548157+00:00",
+          "endedAt": "2026-10-28T04:41:59.341989+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1515
+        },
+        {
+          "call": 24,
+          "startedAt": "2026-10-28T04:41:56.124680+00:00",
+          "endedAt": "2026-10-28T04:42:01.541276+00:00",
+          "models": [
+            "deepseek-v4-1-flash"
+          ],
+          "input": 40195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 799
+        }
+      ]
+    },
+    {
+      "model": "deepseek-v4-pro",
+      "servedModel": "deepseek-v4-pro",
+      "pilot": null,
+      "inputTokensPerCall": {
+        "min": 40245,
+        "max": 40245
+      },
+      "calls": 12,
+      "inputExpansion": null,
+      "tokens": {
+        "input": 482940,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "output": 20989
+      },
+      "totalTokens": 503929,
+      "mix": {
+        "inputPct": 95.83,
+        "outputPct": 4.17,
+        "cacheReadPct": 0.0,
+        "cacheWritePct": 0.0
+      },
+      "status": "conditional",
+      "windows": [
+        {
+          "window": "5h",
+          "usedBefore": 11.51,
+          "usedAfter": 14.28,
+          "deltaPp": 2.77,
+          "mid": 18192383,
+          "low": 18126942,
+          "high": 18258298,
+          "roundingDeltaRelativePct": 0.36101083032490977
+        },
+        {
+          "window": "weekly",
+          "usedBefore": 13.53,
+          "usedAfter": 13.9,
+          "deltaPp": 0.37,
+          "mid": 136197027,
+          "low": 132612894,
+          "high": 139980278,
+          "roundingDeltaRelativePct": 2.7027027027027026
+        },
+        {
+          "window": "monthly",
+          "usedBefore": 34.44,
+          "usedAfter": 34.63,
+          "deltaPp": 0.19,
+          "mid": 265225789,
+          "low": 251964500,
+          "high": 279960556,
+          "roundingDeltaRelativePct": 5.2631578947368425
+        }
+      ],
+      "batches": [
+        {
+          "firstCall": 1,
+          "lastCall": 4,
+          "tokens": 167565,
+          "deltaPp": {
+            "5h": 0.92,
+            "Week": 0.12,
+            "Month": 0.06
+          }
+        },
+        {
+          "firstCall": 5,
+          "lastCall": 12,
+          "tokens": 336364,
+          "deltaPp": {
+            "5h": 1.85,
+            "Week": 0.25,
+            "Month": 0.13
+          }
+        }
+      ],
+      "meters": [
+        {
+          "observedAt": "2026-10-28T04:43:26.954Z",
+          "afterCalls": 0,
+          "used5h": 11.51,
+          "usedWeek": 13.53,
+          "usedMonth": 34.44,
+          "reset5h": "29分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:44:53.856Z",
+          "afterCalls": 4,
+          "used5h": 12.43,
+          "usedWeek": 13.65,
+          "usedMonth": 34.5,
+          "reset5h": "27分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:45:40.580Z",
+          "afterCalls": 4,
+          "used5h": 12.43,
+          "usedWeek": 13.65,
+          "usedMonth": 34.5,
+          "reset5h": "26分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:48:16.394Z",
+          "afterCalls": 12,
+          "used5h": 14.28,
+          "usedWeek": 13.9,
+          "usedMonth": 34.63,
+          "reset5h": "24分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:49:02.704Z",
+          "afterCalls": 12,
+          "used5h": 14.28,
+          "usedWeek": 13.9,
+          "usedMonth": 34.63,
+          "reset5h": "23分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        }
+      ],
+      "ledger": [
+        {
+          "call": 1,
+          "startedAt": "2026-10-28T04:43:33.726670+00:00",
+          "endedAt": "2026-10-28T04:44:14.395624+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 2545
+        },
+        {
+          "call": 2,
+          "startedAt": "2026-10-28T04:43:33.726689+00:00",
+          "endedAt": "2026-10-28T04:44:03.728890+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1739
+        },
+        {
+          "call": 3,
+          "startedAt": "2026-10-28T04:44:03.792386+00:00",
+          "endedAt": "2026-10-28T04:44:17.569180+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 854
+        },
+        {
+          "call": 4,
+          "startedAt": "2026-10-28T04:44:14.456969+00:00",
+          "endedAt": "2026-10-28T04:44:35.862593+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1447
+        },
+        {
+          "call": 5,
+          "startedAt": "2026-10-28T04:45:47.865979+00:00",
+          "endedAt": "2026-10-28T04:46:26.960275+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 2491
+        },
+        {
+          "call": 6,
+          "startedAt": "2026-10-28T04:45:47.865978+00:00",
+          "endedAt": "2026-10-28T04:46:25.801663+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 2598
+        },
+        {
+          "call": 7,
+          "startedAt": "2026-10-28T04:46:25.854897+00:00",
+          "endedAt": "2026-10-28T04:46:48.693951+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1411
+        },
+        {
+          "call": 8,
+          "startedAt": "2026-10-28T04:46:26.998718+00:00",
+          "endedAt": "2026-10-28T04:46:47.536556+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1213
+        },
+        {
+          "call": 9,
+          "startedAt": "2026-10-28T04:46:47.593438+00:00",
+          "endedAt": "2026-10-28T04:47:13.102551+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1789
+        },
+        {
+          "call": 10,
+          "startedAt": "2026-10-28T04:46:48.738031+00:00",
+          "endedAt": "2026-10-28T04:47:15.222996+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1723
+        },
+        {
+          "call": 11,
+          "startedAt": "2026-10-28T04:47:13.151494+00:00",
+          "endedAt": "2026-10-28T04:47:44.149673+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1875
+        },
+        {
+          "call": 12,
+          "startedAt": "2026-10-28T04:47:15.270900+00:00",
+          "endedAt": "2026-10-28T04:47:36.297906+00:00",
+          "models": [
+            "deepseek-v4-pro"
+          ],
+          "input": 40245,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1304
+        }
+      ]
+    },
+    {
+      "model": "glm-5.3",
+      "servedModel": "glm-5.3",
+      "pilot": null,
+      "inputTokensPerCall": {
+        "min": 40903,
+        "max": 40903
+      },
+      "calls": 12,
+      "inputExpansion": null,
+      "tokens": {
+        "input": 490836,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "output": 12863
+      },
+      "totalTokens": 503699,
+      "mix": {
+        "inputPct": 97.45,
+        "outputPct": 2.55,
+        "cacheReadPct": 0.0,
+        "cacheWritePct": 0.0
+      },
+      "status": "conditional",
+      "windows": [
+        {
+          "window": "5h",
+          "usedBefore": 14.28,
+          "usedAfter": 17.05,
+          "deltaPp": 2.77,
+          "mid": 18184079,
+          "low": 18118669,
+          "high": 18249964,
+          "roundingDeltaRelativePct": 0.36101083032490977
+        },
+        {
+          "window": "weekly",
+          "usedBefore": 13.9,
+          "usedAfter": 14.26,
+          "deltaPp": 0.36,
+          "mid": 139916389,
+          "low": 136134864,
+          "high": 143914000,
+          "roundingDeltaRelativePct": 2.7777777777777777
+        },
+        {
+          "window": "monthly",
+          "usedBefore": 34.63,
+          "usedAfter": 34.81,
+          "deltaPp": 0.18,
+          "mid": 279832778,
+          "low": 265104736,
+          "high": 296293530,
+          "roundingDeltaRelativePct": 5.555555555555555
+        }
+      ],
+      "batches": [
+        {
+          "firstCall": 1,
+          "lastCall": 4,
+          "tokens": 167772,
+          "deltaPp": {
+            "5h": 0.92,
+            "Week": 0.12,
+            "Month": 0.06
+          }
+        },
+        {
+          "firstCall": 5,
+          "lastCall": 12,
+          "tokens": 335927,
+          "deltaPp": {
+            "5h": 1.85,
+            "Week": 0.24,
+            "Month": 0.12
+          }
+        }
+      ],
+      "meters": [
+        {
+          "observedAt": "2026-10-28T04:49:02.704Z",
+          "afterCalls": 0,
+          "used5h": 14.28,
+          "usedWeek": 13.9,
+          "usedMonth": 34.63,
+          "reset5h": "23分后重置",
+          "source": "authenticated console DOM; refreshed",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置"
+        },
+        {
+          "observedAt": "2026-10-28T04:50:26.982Z",
+          "afterCalls": 4,
+          "used5h": 15.2,
+          "usedWeek": 14.02,
+          "usedMonth": 34.69,
+          "reset5h": "22分后重置",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置",
+          "source": "authenticated console DOM; refreshed"
+        },
+        {
+          "observedAt": "2026-10-28T04:51:11.141Z",
+          "afterCalls": 4,
+          "used5h": 15.2,
+          "usedWeek": 14.02,
+          "usedMonth": 34.69,
+          "reset5h": "21分后重置",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置",
+          "source": "authenticated console DOM; refreshed"
+        },
+        {
+          "observedAt": "2026-10-28T04:52:47.668Z",
+          "afterCalls": 12,
+          "used5h": 17.05,
+          "usedWeek": 14.26,
+          "usedMonth": 34.81,
+          "reset5h": "19分后重置",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置",
+          "source": "authenticated console DOM; refreshed"
+        },
+        {
+          "observedAt": "2026-10-28T04:53:30.292Z",
+          "afterCalls": 12,
+          "used5h": 17.05,
+          "usedWeek": 14.26,
+          "usedMonth": 34.81,
+          "reset5h": "19分后重置",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置",
+          "source": "authenticated console DOM; refreshed"
+        }
+      ],
+      "ledger": [
+        {
+          "call": 1,
+          "startedAt": "2026-10-28T04:49:09.608081+00:00",
+          "endedAt": "2026-10-28T04:49:24.274691+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 862
+        },
+        {
+          "call": 2,
+          "startedAt": "2026-10-28T04:49:09.608081+00:00",
+          "endedAt": "2026-10-28T04:49:28.979553+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1023
+        },
+        {
+          "call": 3,
+          "startedAt": "2026-10-28T04:49:24.326141+00:00",
+          "endedAt": "2026-10-28T04:49:47.781964+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1345
+        },
+        {
+          "call": 4,
+          "startedAt": "2026-10-28T04:49:29.030552+00:00",
+          "endedAt": "2026-10-28T04:49:44.647203+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 930
+        },
+        {
+          "call": 5,
+          "startedAt": "2026-10-28T04:51:18.392744+00:00",
+          "endedAt": "2026-10-28T04:51:36.981871+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 986
+        },
+        {
+          "call": 6,
+          "startedAt": "2026-10-28T04:51:18.392759+00:00",
+          "endedAt": "2026-10-28T04:51:37.199598+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 884
+        },
+        {
+          "call": 7,
+          "startedAt": "2026-10-28T04:51:37.043660+00:00",
+          "endedAt": "2026-10-28T04:51:52.552376+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 948
+        },
+        {
+          "call": 8,
+          "startedAt": "2026-10-28T04:51:37.236208+00:00",
+          "endedAt": "2026-10-28T04:51:58.139405+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1247
+        },
+        {
+          "call": 9,
+          "startedAt": "2026-10-28T04:51:52.610486+00:00",
+          "endedAt": "2026-10-28T04:52:11.060191+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1109
+        },
+        {
+          "call": 10,
+          "startedAt": "2026-10-28T04:51:58.191086+00:00",
+          "endedAt": "2026-10-28T04:52:18.052129+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1390
+        },
+        {
+          "call": 11,
+          "startedAt": "2026-10-28T04:52:11.120288+00:00",
+          "endedAt": "2026-10-28T04:52:31.148514+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1125
+        },
+        {
+          "call": 12,
+          "startedAt": "2026-10-28T04:52:18.102210+00:00",
+          "endedAt": "2026-10-28T04:52:34.857537+00:00",
+          "models": [
+            "glm-5.3"
+          ],
+          "input": 40903,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1014
+        }
+      ]
+    },
+    {
+      "model": "glm-5.3-flash",
+      "servedModel": "glm-5-3-flash",
+      "pilot": {
+        "calls": 4,
+        "ledger": [
+          {
+            "call": 1,
+            "startedAt": "2026-10-28T04:53:39.549487+00:00",
+            "endedAt": "2026-10-28T04:54:04.952943+00:00",
+            "models": [
+              "glm-5-3-flash"
+            ],
+            "input": 40904,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "output": 933
+          },
+          {
+            "call": 2,
+            "startedAt": "2026-10-28T04:53:39.549597+00:00",
+            "endedAt": "2026-10-28T04:54:04.182054+00:00",
+            "models": [
+              "glm-5-3-flash"
+            ],
+            "input": 40904,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "output": 901
+          },
+          {
+            "call": 3,
+            "startedAt": "2026-10-28T04:54:04.233940+00:00",
+            "endedAt": "2026-10-28T04:54:26.803811+00:00",
+            "models": [
+              "glm-5-3-flash"
+            ],
+            "input": 40904,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "output": 866
+          },
+          {
+            "call": 4,
+            "startedAt": "2026-10-28T04:54:05.002620+00:00",
+            "endedAt": "2026-10-28T04:54:24.258268+00:00",
+            "models": [
+              "glm-5-3-flash"
+            ],
+            "input": 40904,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "output": 676
+          }
+        ],
+        "meters": [
+          {
+            "observedAt": "2026-10-28T04:53:30.292Z",
+            "afterCalls": 0,
+            "used5h": 17.05,
+            "usedWeek": 14.26,
+            "usedMonth": 34.81,
+            "reset5h": "19分后重置",
+            "resetWeek": "4天11小时后重置",
+            "resetMonth": "12天11小时后重置",
+            "source": "authenticated console DOM; refreshed"
+          },
+          {
+            "observedAt": "2026-10-28T04:55:14.991Z",
+            "afterCalls": 4,
+            "used5h": 17.13,
+            "usedWeek": 14.28,
+            "usedMonth": 34.82,
+            "reset5h": "17分后重置",
+            "resetWeek": "4天11小时后重置",
+            "resetMonth": "12天11小时后重置",
+            "source": "authenticated console DOM; refreshed"
+          },
+          {
+            "observedAt": "2026-10-28T04:56:32.298Z",
+            "afterCalls": 4,
+            "used5h": 17.13,
+            "usedWeek": 14.28,
+            "usedMonth": 34.82,
+            "reset5h": "16分后重置",
+            "resetWeek": "4天11小时后重置",
+            "resetMonth": "12天11小时后重置",
+            "source": "authenticated console DOM; refreshed"
+          }
+        ],
+        "status": "pilot-only; excluded from long-input estimate",
+        "reason": "Different input length and observed consumption per token; do not pool these profiles",
+        "totalTokens": 166992,
+        "windows": [
+          {
+            "window": "5h",
+            "deltaPp": 0.08,
+            "mid": 208740000,
+            "low": 185546666,
+            "high": 238560000
+          },
+          {
+            "window": "weekly",
+            "deltaPp": 0.02,
+            "mid": 834960000,
+            "low": 556640000,
+            "high": 1669920000
+          },
+          {
+            "window": "monthly",
+            "deltaPp": 0.01,
+            "mid": 1669920000,
+            "low": 834960000,
+            "high": null
+          }
+        ]
+      },
+      "inputTokensPerCall": {
+        "min": 163116,
+        "max": 163116
+      },
+      "calls": 20,
+      "inputExpansion": {
+        "fromSourceCall": 5,
+        "sourceMultiplier": 4
+      },
+      "tokens": {
+        "input": 3262320,
+        "output": 17335,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "totalTokens": 3279655,
+      "mix": {
+        "inputPct": 99.47,
+        "outputPct": 0.53,
+        "cacheReadPct": 0.0,
+        "cacheWritePct": 0.0
+      },
+      "status": "conditional",
+      "windows": [
+        {
+          "window": "5h",
+          "usedBefore": 17.13,
+          "usedAfter": 19.59,
+          "deltaPp": 2.46,
+          "mid": 133319309,
+          "low": 132779554,
+          "high": 133863470,
+          "roundingDeltaRelativePct": 0.4065040650406504
+        },
+        {
+          "window": "weekly",
+          "usedBefore": 14.28,
+          "usedAfter": 14.6,
+          "deltaPp": 0.32,
+          "mid": 1024892188,
+          "low": 993834848,
+          "high": 1057953226,
+          "roundingDeltaRelativePct": 3.125
+        },
+        {
+          "window": "monthly",
+          "usedBefore": 34.82,
+          "usedAfter": 34.98,
+          "deltaPp": 0.16,
+          "mid": 2049784375,
+          "low": 1929208823,
+          "high": 2186436667,
+          "roundingDeltaRelativePct": 6.25
+        }
+      ],
+      "batches": [
+        {
+          "firstCall": 1,
+          "lastCall": 10,
+          "tokens": 1639312,
+          "deltaPp": {
+            "5h": 1.23,
+            "Week": 0.16,
+            "Month": 0.08
+          }
+        },
+        {
+          "firstCall": 11,
+          "lastCall": 20,
+          "tokens": 1640343,
+          "deltaPp": {
+            "5h": 1.23,
+            "Week": 0.16,
+            "Month": 0.08
+          }
+        }
+      ],
+      "meters": [
+        {
+          "observedAt": "2026-10-28T04:55:14.991Z",
+          "afterCalls": 0,
+          "used5h": 17.13,
+          "usedWeek": 14.28,
+          "usedMonth": 34.82,
+          "reset5h": "17分后重置",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置",
+          "source": "authenticated console DOM; refreshed",
+          "sourceAfterCalls": 4
+        },
+        {
+          "observedAt": "2026-10-28T04:56:32.298Z",
+          "afterCalls": 0,
+          "used5h": 17.13,
+          "usedWeek": 14.28,
+          "usedMonth": 34.82,
+          "reset5h": "16分后重置",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置",
+          "source": "authenticated console DOM; refreshed",
+          "sourceAfterCalls": 4
+        },
+        {
+          "observedAt": "2026-10-28T04:59:47.729Z",
+          "afterCalls": 10,
+          "used5h": 18.36,
+          "usedWeek": 14.44,
+          "usedMonth": 34.9,
+          "reset5h": "12分后重置",
+          "resetWeek": "4天11小时后重置",
+          "resetMonth": "12天11小时后重置",
+          "source": "authenticated console DOM; refreshed",
+          "sourceAfterCalls": 14
+        },
+        {
+          "observedAt": "2026-10-28T05:01:22.325Z",
+          "afterCalls": 10,
+          "used5h": 18.36,
+          "usedWeek": 14.44,
+          "usedMonth": 34.9,
+          "reset5h": "11分后重置",
+          "resetWeek": "4天10小时后重置",
+          "resetMonth": "12天10小时后重置",
+          "source": "authenticated console DOM; refreshed",
+          "sourceAfterCalls": 14
+        },
+        {
+          "observedAt": "2026-10-28T05:04:39.729Z",
+          "afterCalls": 20,
+          "used5h": 19.59,
+          "usedWeek": 14.6,
+          "usedMonth": 34.98,
+          "reset5h": "8分后重置",
+          "resetWeek": "4天10小时后重置",
+          "resetMonth": "12天10小时后重置",
+          "source": "authenticated console DOM; refreshed",
+          "sourceAfterCalls": 24
+        },
+        {
+          "observedAt": "2026-10-28T05:05:34.002Z",
+          "afterCalls": 20,
+          "used5h": 19.59,
+          "usedWeek": 14.6,
+          "usedMonth": 34.98,
+          "reset5h": "7分后重置",
+          "resetWeek": "4天10小时后重置",
+          "resetMonth": "12天10小时后重置",
+          "source": "authenticated console DOM; refreshed",
+          "sourceAfterCalls": 24
+        }
+      ],
+      "ledger": [
+        {
+          "call": 1,
+          "startedAt": "2026-10-28T04:56:39.487049+00:00",
+          "endedAt": "2026-10-28T04:57:15.060977+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 676,
+          "sourceCall": 5
+        },
+        {
+          "call": 2,
+          "startedAt": "2026-10-28T04:56:39.487059+00:00",
+          "endedAt": "2026-10-28T04:57:09.995363+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 853,
+          "sourceCall": 6
+        },
+        {
+          "call": 3,
+          "startedAt": "2026-10-28T04:57:10.053894+00:00",
+          "endedAt": "2026-10-28T04:57:37.841608+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 751,
+          "sourceCall": 7
+        },
+        {
+          "call": 4,
+          "startedAt": "2026-10-28T04:57:15.108601+00:00",
+          "endedAt": "2026-10-28T04:57:49.685542+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1037,
+          "sourceCall": 8
+        },
+        {
+          "call": 5,
+          "startedAt": "2026-10-28T04:57:37.900459+00:00",
+          "endedAt": "2026-10-28T04:58:00.669925+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 701,
+          "sourceCall": 9
+        },
+        {
+          "call": 6,
+          "startedAt": "2026-10-28T04:57:49.740483+00:00",
+          "endedAt": "2026-10-28T04:58:18.613479+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 992,
+          "sourceCall": 10
+        },
+        {
+          "call": 7,
+          "startedAt": "2026-10-28T04:58:00.705524+00:00",
+          "endedAt": "2026-10-28T04:58:40.252564+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 781,
+          "sourceCall": 11
+        },
+        {
+          "call": 8,
+          "startedAt": "2026-10-28T04:58:18.670681+00:00",
+          "endedAt": "2026-10-28T04:58:50.412933+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 904,
+          "sourceCall": 12
+        },
+        {
+          "call": 9,
+          "startedAt": "2026-10-28T04:58:40.311859+00:00",
+          "endedAt": "2026-10-28T04:59:02.324464+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 666,
+          "sourceCall": 13
+        },
+        {
+          "call": 10,
+          "startedAt": "2026-10-28T04:58:50.456889+00:00",
+          "endedAt": "2026-10-28T04:59:15.076307+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 791,
+          "sourceCall": 14
+        },
+        {
+          "call": 11,
+          "startedAt": "2026-10-28T05:01:29.291680+00:00",
+          "endedAt": "2026-10-28T05:02:01.624318+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 739,
+          "sourceCall": 15
+        },
+        {
+          "call": 12,
+          "startedAt": "2026-10-28T05:01:29.291682+00:00",
+          "endedAt": "2026-10-28T05:01:57.459194+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 976,
+          "sourceCall": 16
+        },
+        {
+          "call": 13,
+          "startedAt": "2026-10-28T05:01:57.518280+00:00",
+          "endedAt": "2026-10-28T05:02:23.126404+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 747,
+          "sourceCall": 17
+        },
+        {
+          "call": 14,
+          "startedAt": "2026-10-28T05:02:01.669654+00:00",
+          "endedAt": "2026-10-28T05:02:33.948609+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 924,
+          "sourceCall": 18
+        },
+        {
+          "call": 15,
+          "startedAt": "2026-10-28T05:02:23.186746+00:00",
+          "endedAt": "2026-10-28T05:02:53.543387+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1184,
+          "sourceCall": 19
+        },
+        {
+          "call": 16,
+          "startedAt": "2026-10-28T05:02:34.002628+00:00",
+          "endedAt": "2026-10-28T05:03:00.503400+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 846,
+          "sourceCall": 20
+        },
+        {
+          "call": 17,
+          "startedAt": "2026-10-28T05:02:53.596705+00:00",
+          "endedAt": "2026-10-28T05:03:23.427174+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1142,
+          "sourceCall": 21
+        },
+        {
+          "call": 18,
+          "startedAt": "2026-10-28T05:03:00.682359+00:00",
+          "endedAt": "2026-10-28T05:03:25.019119+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 788,
+          "sourceCall": 22
+        },
+        {
+          "call": 19,
+          "startedAt": "2026-10-28T05:03:23.473983+00:00",
+          "endedAt": "2026-10-28T05:03:58.012125+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 1064,
+          "sourceCall": 23
+        },
+        {
+          "call": 20,
+          "startedAt": "2026-10-28T05:03:25.053886+00:00",
+          "endedAt": "2026-10-28T05:04:00.384333+00:00",
+          "models": [
+            "glm-5-3-flash"
+          ],
+          "input": 163116,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 773,
+          "sourceCall": 24
+        }
+      ]
+    }
+  ],
+  "baselineData": "/reports/volcengine-three-windows-2026-10-28.json",
+  "methodology": {
+    "concurrency": 2,
+    "workload": "synthetic code-review task as kimi-k3; GLM-5.3-Flash calls 5–24 expand source input 4x; actual tokenizer/output mix and context length differ by model",
+    "meterSource": "authenticated console visible DOM; not automated allowance API",
+    "perReadingRoundingPp": 0.005,
+    "monthly": "rough estimate",
+    "confidence": "rounding bounds only, not overall accuracy or a statistical confidence interval",
+    "isolation": "models tested sequentially with stable meter rereads; other devices not independently audited",
+    "pricing": "no API-price conversion; pure input/output/cache weights not identified",
+    "reset": "no reset observed during measured intervals; relative countdowns captured",
+    "globalConfiguration": "explicit per-request model selection; account default model unchanged"
+  }
+}

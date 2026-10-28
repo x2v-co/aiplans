@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { VolcengineModelMeasurements } from './volcengine-model-measurements';
 import { QuotaBenchWindows } from './quota-bench-windows';
 import dataset from '../../public/reports/quota-bench-2026-10.json';
 
@@ -36,6 +37,7 @@ export function PlanBenchSummary({ record, locale }: { record: BenchRecord; loca
     <p className="text-zinc-500">{record.id === 'codex-pro'
       ? (zh ? '约 66% 为缓存读取；区间仅反映读数舍入。仅适用于本次负载配比，非固定 token 上限，不折算月额度。' : 'About 66% cache reads; bounds cover meter rounding only. Applies to this workload mix, not a fixed token cap or monthly allowance.')
       : zh ? record.caveats.zh : record.caveats.en}</p>
+    {record.id === 'volcengine-pro' && <VolcengineModelMeasurements locale={locale} />}
     <Link href={`/${locale}/quota-bench#${record.id}`} className="inline-block text-blue-600 underline">{zh ? '评测过程与计算依据 →' : 'Measurement process and calculations →'}</Link>
   </div>;
 }

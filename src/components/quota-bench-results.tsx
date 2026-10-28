@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { VolcengineModelMeasurements } from './volcengine-model-measurements';
 import { QuotaBenchWindows } from './quota-bench-windows';
 import dataset from '../../public/reports/quota-bench-2026-10.json';
 
@@ -25,6 +26,7 @@ export function QuotaBenchResults({ locale, compact = false }: { locale: string;
         {record.apiEquivalentUsd && <p className="text-sm">{zh ? '标准 API 标价等价价值（不是余额）' : 'Standard API list-value equivalent (not credit)'}: ${fmt(record.apiEquivalentUsd.mid)} / {record.window}</p>}
         <p className="text-sm text-amber-800 dark:text-amber-300">{zh ? record.caveats.zh : record.caveats.en}</p>
         {record.measurementReport && <div className="flex flex-wrap gap-4 text-sm underline"><a href={record.measurementReport}>{zh ? '本次评测过程与计算依据' : 'Measurement process and calculations (Chinese)'}</a>{record.measurementData && <a href={record.measurementData}>{zh ? '本次读数与逐次用量' : 'Meter readings and per-call usage'}</a>}</div>}
+        {record.id === 'volcengine-pro' && <VolcengineModelMeasurements locale={locale} />}
       </article>)}
       <div className="flex flex-wrap gap-4 text-sm underline">
         <a href="/reports/quota-bench-2026-10.md">{zh ? '完整实测报告' : 'Full report (Chinese)'}</a>

@@ -106,7 +106,9 @@
         }
       ],
       "measurementReport": "/reports/volcengine-three-windows-2026-10-28.md",
-      "measurementData": "/reports/volcengine-three-windows-2026-10-28.json"
+      "measurementData": "/reports/volcengine-three-windows-2026-10-28.json",
+      "modelMeasurementsData": "/reports/volcengine-models-2026-10-28.json",
+      "modelMeasurementsReport": "/reports/volcengine-models-2026-10-28.md"
     },
     {
       "id": "cursor-ultra",
