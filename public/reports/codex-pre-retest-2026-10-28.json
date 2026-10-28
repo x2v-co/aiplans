@@ -1,0 +1,49 @@
+{
+  "id": "codex-pro",
+  "plan": "ChatGPT Pro 200 (Codex)",
+  "model": "gpt-6-astra",
+  "modelIdentity": "requested",
+  "date": "2026-10-28",
+  "window": "weekly",
+  "status": "conditional",
+  "tierVerified": true,
+  "calls": 36,
+  "tokens": {
+    "input": 2931009,
+    "cacheRead": 417024,
+    "cacheWrite": 0,
+    "output": 15725
+  },
+  "controlTokens": {
+    "input": 30478,
+    "cacheRead": 5447936,
+    "cacheWrite": 0,
+    "output": 7571
+  },
+  "usedBefore": 47,
+  "usedAfter": 52,
+  "estimate": {
+    "low": 147495716,
+    "high": 221243575,
+    "mid": 176994860
+  },
+  "apiEquivalentUsd": {
+    "low": 610.743833,
+    "high": 916.11575,
+    "mid": 732.8926
+  },
+  "caveats": {
+    "zh": "仅适用于 ChatGPT Pro 200；档位由账号持有人于 2026-10-28 确认，不适用于 Pro 100 或 Pro 500。估算包含同账号控制会话，约 66% 为缓存读取；区间只反映整数仪表盘舍入，不能证明无其他设备调用。不可折算月额度。",
+    "en": "Applies only to ChatGPT Pro 200; tier confirmed by the account owner on 2026-10-28, not Pro 100 or Pro 500. Includes the same-account controller, with about 66% cache reads. Bounds cover meter rounding only, not activity on other devices. No monthly projection."
+  },
+  "windowMeasurements": null,
+  "measurementReport": null,
+  "measurementData": null,
+  "planSlug": "chatgpt-pro-200",
+  "tierVerification": {
+    "source": "account_owner_confirmation",
+    "confirmedAt": "2026-10-28",
+    "priceUsdPerMonth": 200,
+    "note": "Account owner confirmed the measured plan is Pro 200, not Pro 100 or Pro 500. This is not independent billing verification."
+  }
+}

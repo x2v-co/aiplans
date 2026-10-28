@@ -1,0 +1,1602 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-28",
+  "plan": "ChatGPT Pro 200 (Codex)",
+  "planSlug": "chatgpt-pro-200",
+  "tierSource": "account_owner_confirmation",
+  "controllerModel": "gpt-6-astra",
+  "profile": "Synthetic Python review, ~93K inclusive input tokens per call, short output, unique user-prompt nonce",
+  "uncertaintyPpPerReading": 0.5,
+  "records": [
+    {
+      "model": "gpt-6-astra",
+      "modelIdentity": "requested",
+      "calls": 32,
+      "totalTokens": 2970893,
+      "tokens": {
+        "input": 2640248,
+        "cacheRead": 326016,
+        "cacheWrite": 0,
+        "output": 4629
+      },
+      "batches": [
+        {
+          "batch": "gpt-6-astra-01",
+          "calls": 4,
+          "tokens": {
+            "input": 320099,
+            "cacheRead": 54912,
+            "cacheWrite": 0,
+            "output": 559
+          },
+          "controllerTokens": {
+            "input": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "output": 0
+          },
+          "controllerQuiet": true,
+          "sameWindow": true,
+          "meters": {
+            "idle-start": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:28:03.901Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 87,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "before": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:28:10.076Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 87,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-immediate": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:28:38.726Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 88,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-settled": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:28:44.983Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 88,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ]
+          }
+        },
+        {
+          "batch": "gpt-6-astra-02",
+          "calls": 28,
+          "tokens": {
+            "input": 2320149,
+            "cacheRead": 271104,
+            "cacheWrite": 0,
+            "output": 4070
+          },
+          "controllerTokens": {
+            "input": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "output": 0
+          },
+          "controllerQuiet": true,
+          "sameWindow": true,
+          "meters": {
+            "idle-start": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:31:12.183Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 89,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "before": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:31:16.890Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 89,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-immediate": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:32:20.412Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 92,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-settled": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:32:29.840Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 92,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ]
+          }
+        }
+      ],
+      "ledger": [
+        {
+          "call": "gpt-6-astra-01/run-0",
+          "startedAt": "2026-10-28T06:28:10.170942+00:00",
+          "endedAt": "2026-10-28T06:28:34.427994+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 75705,
+          "cacheRead": 18048,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6-astra-01/run-1",
+          "startedAt": "2026-10-28T06:28:10.171213+00:00",
+          "endedAt": "2026-10-28T06:28:37.445659+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 81464,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6-astra-01/run-2",
+          "startedAt": "2026-10-28T06:28:10.171198+00:00",
+          "endedAt": "2026-10-28T06:28:33.430386+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 81464,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6-astra-01/run-3",
+          "startedAt": "2026-10-28T06:28:10.171223+00:00",
+          "endedAt": "2026-10-28T06:28:36.158296+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 81466,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 138
+        },
+        {
+          "call": "gpt-6-astra-02/run-0",
+          "startedAt": "2026-10-28T06:31:16.970649+00:00",
+          "endedAt": "2026-10-28T06:32:15.012504+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92658,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 146
+        },
+        {
+          "call": "gpt-6-astra-02/run-1",
+          "startedAt": "2026-10-28T06:31:16.971169+00:00",
+          "endedAt": "2026-10-28T06:32:06.203879+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 75738,
+          "cacheRead": 16768,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6-astra-02/run-2",
+          "startedAt": "2026-10-28T06:31:16.971207+00:00",
+          "endedAt": "2026-10-28T06:32:08.331293+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80272,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6-astra-02/run-3",
+          "startedAt": "2026-10-28T06:31:16.972358+00:00",
+          "endedAt": "2026-10-28T06:32:14.904057+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80223,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6-astra-02/run-4",
+          "startedAt": "2026-10-28T06:31:16.972222+00:00",
+          "endedAt": "2026-10-28T06:32:08.570205+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80274,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 138
+        },
+        {
+          "call": "gpt-6-astra-02/run-5",
+          "startedAt": "2026-10-28T06:31:16.973801+00:00",
+          "endedAt": "2026-10-28T06:32:08.072071+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80274,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6-astra-02/run-6",
+          "startedAt": "2026-10-28T06:31:16.978745+00:00",
+          "endedAt": "2026-10-28T06:31:57.334428+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92653,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6-astra-02/run-7",
+          "startedAt": "2026-10-28T06:31:16.981428+00:00",
+          "endedAt": "2026-10-28T06:32:10.699159+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80268,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 142
+        },
+        {
+          "call": "gpt-6-astra-02/run-8",
+          "startedAt": "2026-10-28T06:31:16.984373+00:00",
+          "endedAt": "2026-10-28T06:32:17.164141+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92657,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6-astra-02/run-9",
+          "startedAt": "2026-10-28T06:31:16.989008+00:00",
+          "endedAt": "2026-10-28T06:32:09.794113+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80222,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 160
+        },
+        {
+          "call": "gpt-6-astra-02/run-10",
+          "startedAt": "2026-10-28T06:31:16.992479+00:00",
+          "endedAt": "2026-10-28T06:32:08.772314+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92508,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6-astra-02/run-11",
+          "startedAt": "2026-10-28T06:31:16.992595+00:00",
+          "endedAt": "2026-10-28T06:32:06.742695+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80275,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 156
+        },
+        {
+          "call": "gpt-6-astra-02/run-12",
+          "startedAt": "2026-10-28T06:31:16.994104+00:00",
+          "endedAt": "2026-10-28T06:32:18.150689+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 75740,
+          "cacheRead": 16768,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6-astra-02/run-13",
+          "startedAt": "2026-10-28T06:31:17.005184+00:00",
+          "endedAt": "2026-10-28T06:32:03.830160+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80223,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 161
+        },
+        {
+          "call": "gpt-6-astra-02/run-14",
+          "startedAt": "2026-10-28T06:31:17.001020+00:00",
+          "endedAt": "2026-10-28T06:32:11.458109+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80216,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6-astra-02/run-15",
+          "startedAt": "2026-10-28T06:31:17.014680+00:00",
+          "endedAt": "2026-10-28T06:32:08.665153+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80221,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 147
+        },
+        {
+          "call": "gpt-6-astra-02/run-16",
+          "startedAt": "2026-10-28T06:31:17.017024+00:00",
+          "endedAt": "2026-10-28T06:32:15.414957+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80219,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6-astra-02/run-17",
+          "startedAt": "2026-10-28T06:31:17.029527+00:00",
+          "endedAt": "2026-10-28T06:32:05.467776+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80273,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 146
+        },
+        {
+          "call": "gpt-6-astra-02/run-18",
+          "startedAt": "2026-10-28T06:31:17.039894+00:00",
+          "endedAt": "2026-10-28T06:32:13.850428+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 75664,
+          "cacheRead": 16896,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6-astra-02/run-19",
+          "startedAt": "2026-10-28T06:31:17.086787+00:00",
+          "endedAt": "2026-10-28T06:32:10.420241+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80272,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 140
+        },
+        {
+          "call": "gpt-6-astra-02/run-20",
+          "startedAt": "2026-10-28T06:31:17.074088+00:00",
+          "endedAt": "2026-10-28T06:32:08.065017+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80271,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 149
+        },
+        {
+          "call": "gpt-6-astra-02/run-21",
+          "startedAt": "2026-10-28T06:31:17.115705+00:00",
+          "endedAt": "2026-10-28T06:32:04.682533+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80275,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 142
+        },
+        {
+          "call": "gpt-6-astra-02/run-22",
+          "startedAt": "2026-10-28T06:31:17.088341+00:00",
+          "endedAt": "2026-10-28T06:32:10.313177+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 85393,
+          "cacheRead": 7168,
+          "cacheWrite": 0,
+          "output": 167
+        },
+        {
+          "call": "gpt-6-astra-02/run-23",
+          "startedAt": "2026-10-28T06:31:17.079708+00:00",
+          "endedAt": "2026-10-28T06:32:12.699235+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92660,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 145
+        },
+        {
+          "call": "gpt-6-astra-02/run-24",
+          "startedAt": "2026-10-28T06:31:17.093945+00:00",
+          "endedAt": "2026-10-28T06:32:16.578218+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92358,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 146
+        },
+        {
+          "call": "gpt-6-astra-02/run-25",
+          "startedAt": "2026-10-28T06:31:17.079339+00:00",
+          "endedAt": "2026-10-28T06:32:14.157813+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92452,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 144
+        },
+        {
+          "call": "gpt-6-astra-02/run-26",
+          "startedAt": "2026-10-28T06:31:17.093524+00:00",
+          "endedAt": "2026-10-28T06:32:12.595890+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 75668,
+          "cacheRead": 16896,
+          "cacheWrite": 0,
+          "output": 145
+        },
+        {
+          "call": "gpt-6-astra-02/run-27",
+          "startedAt": "2026-10-28T06:31:17.066716+00:00",
+          "endedAt": "2026-10-28T06:32:14.152410+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80222,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 139
+        }
+      ],
+      "status": "conditional",
+      "selectedBatch": "gpt-6-astra-02",
+      "estimate": {
+        "window": "weekly",
+        "calls": 28,
+        "totalTokens": 2595323,
+        "usedBefore": 89,
+        "usedAfter": 92,
+        "deltaPp": 3,
+        "low": 64883075,
+        "mid": 86510767,
+        "high": 129766150,
+        "tokens": {
+          "input": 2320149,
+          "cacheRead": 271104,
+          "cacheWrite": 0,
+          "output": 4070
+        }
+      },
+      "unavailableWindows": [
+        "5h",
+        "monthly"
+      ]
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "modelIdentity": "requested",
+      "calls": 72,
+      "totalTokens": 6679074,
+      "tokens": {
+        "input": 5849628,
+        "cacheRead": 818816,
+        "cacheWrite": 0,
+        "output": 10630
+      },
+      "batches": [
+        {
+          "batch": "gpt-6.1-sol-01",
+          "calls": 4,
+          "tokens": {
+            "input": 322390,
+            "cacheRead": 49152,
+            "cacheWrite": 0,
+            "output": 620
+          },
+          "controllerTokens": {
+            "input": 5373,
+            "cacheRead": 172800,
+            "cacheWrite": 0,
+            "output": 365
+          },
+          "controllerQuiet": false,
+          "sameWindow": true,
+          "meters": {
+            "idle-start": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:25:33.531Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 87,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "before": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:25:40.563Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 87,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-immediate": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:26:16.295Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 87,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-settled": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:26:22.833Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 87,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ]
+          }
+        },
+        {
+          "batch": "gpt-6.1-sol-02",
+          "calls": 4,
+          "tokens": {
+            "input": 323745,
+            "cacheRead": 49152,
+            "cacheWrite": 0,
+            "output": 576
+          },
+          "controllerTokens": {
+            "input": 1836,
+            "cacheRead": 147584,
+            "cacheWrite": 0,
+            "output": 551
+          },
+          "controllerQuiet": false,
+          "sameWindow": true,
+          "meters": {
+            "idle-start": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:26:57.078Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 87,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "before": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:27:01.497Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 87,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-immediate": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:27:37.082Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 87,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-settled": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:27:44.378Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 87,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ]
+          }
+        },
+        {
+          "batch": "gpt-6.1-sol-03",
+          "calls": 24,
+          "tokens": {
+            "input": 1960228,
+            "cacheRead": 262400,
+            "cacheWrite": 0,
+            "output": 3555
+          },
+          "controllerTokens": {
+            "input": 279,
+            "cacheRead": 104832,
+            "cacheWrite": 0,
+            "output": 205
+          },
+          "controllerQuiet": false,
+          "sameWindow": true,
+          "meters": {
+            "idle-start": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:29:24.693Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 88,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "before": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:29:29.889Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 88,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-immediate": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:30:36.905Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 89,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-settled": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:30:45.688Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 89,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ]
+          }
+        },
+        {
+          "batch": "gpt-6.1-sol-04",
+          "calls": 40,
+          "tokens": {
+            "input": 3243265,
+            "cacheRead": 458112,
+            "cacheWrite": 0,
+            "output": 5879
+          },
+          "controllerTokens": {
+            "input": 228,
+            "cacheRead": 109184,
+            "cacheWrite": 0,
+            "output": 261
+          },
+          "controllerQuiet": false,
+          "sameWindow": false,
+          "meters": {
+            "idle-start": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:33:06.609Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 92,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "before": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:33:12.030Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 92,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-immediate": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:35:15.217Z",
+                "resetsAt": "2026-11-02T06:22:01.000Z",
+                "usedPercent": 94,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ],
+            "after-settled": [
+              {
+                "pool": "codex/primary",
+                "window": "10080m",
+                "observedAt": "2026-10-28T06:35:21.603Z",
+                "resetsAt": "2026-11-04T06:35:21.000Z",
+                "usedPercent": 0,
+                "uncertaintyPp": 0.5,
+                "source": "codex-app-server"
+              }
+            ]
+          }
+        }
+      ],
+      "ledger": [
+        {
+          "call": "gpt-6.1-sol-01/run-0",
+          "startedAt": "2026-10-28T06:25:40.651970+00:00",
+          "endedAt": "2026-10-28T06:26:10.154632+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 81531,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 171
+        },
+        {
+          "call": "gpt-6.1-sol-01/run-1",
+          "startedAt": "2026-10-28T06:25:40.651730+00:00",
+          "endedAt": "2026-10-28T06:26:07.811357+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80285,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6.1-sol-01/run-2",
+          "startedAt": "2026-10-28T06:25:40.651984+00:00",
+          "endedAt": "2026-10-28T06:26:14.891128+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80285,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6.1-sol-01/run-3",
+          "startedAt": "2026-10-28T06:25:40.654466+00:00",
+          "endedAt": "2026-10-28T06:26:09.249225+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80289,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 163
+        },
+        {
+          "call": "gpt-6.1-sol-02/run-0",
+          "startedAt": "2026-10-28T06:27:01.578587+00:00",
+          "endedAt": "2026-10-28T06:27:23.242646+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 81533,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 140
+        },
+        {
+          "call": "gpt-6.1-sol-02/run-1",
+          "startedAt": "2026-10-28T06:27:01.578992+00:00",
+          "endedAt": "2026-10-28T06:27:32.934558+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 81534,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 147
+        },
+        {
+          "call": "gpt-6.1-sol-02/run-2",
+          "startedAt": "2026-10-28T06:27:01.579006+00:00",
+          "endedAt": "2026-10-28T06:27:30.962911+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80339,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 138
+        },
+        {
+          "call": "gpt-6.1-sol-02/run-3",
+          "startedAt": "2026-10-28T06:27:01.579019+00:00",
+          "endedAt": "2026-10-28T06:27:24.315502+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80339,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 151
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-0",
+          "startedAt": "2026-10-28T06:29:29.973802+00:00",
+          "endedAt": "2026-10-28T06:30:26.533180+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80286,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-1",
+          "startedAt": "2026-10-28T06:29:29.974046+00:00",
+          "endedAt": "2026-10-28T06:30:27.376605+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80265,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 154
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-2",
+          "startedAt": "2026-10-28T06:29:29.974082+00:00",
+          "endedAt": "2026-10-28T06:30:18.730426+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80338,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 146
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-3",
+          "startedAt": "2026-10-28T06:29:29.974183+00:00",
+          "endedAt": "2026-10-28T06:30:28.555346+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80338,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 138
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-4",
+          "startedAt": "2026-10-28T06:29:29.975297+00:00",
+          "endedAt": "2026-10-28T06:30:29.750819+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80099,
+          "cacheRead": 12416,
+          "cacheWrite": 0,
+          "output": 148
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-5",
+          "startedAt": "2026-10-28T06:29:29.980357+00:00",
+          "endedAt": "2026-10-28T06:30:23.337439+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 81533,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 145
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-6",
+          "startedAt": "2026-10-28T06:29:29.981782+00:00",
+          "endedAt": "2026-10-28T06:30:30.826418+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80262,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-7",
+          "startedAt": "2026-10-28T06:29:29.983776+00:00",
+          "endedAt": "2026-10-28T06:30:27.894503+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92574,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 145
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-8",
+          "startedAt": "2026-10-28T06:29:29.994078+00:00",
+          "endedAt": "2026-10-28T06:30:19.356301+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80340,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 146
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-9",
+          "startedAt": "2026-10-28T06:29:29.995719+00:00",
+          "endedAt": "2026-10-28T06:30:19.717140+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80285,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 140
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-10",
+          "startedAt": "2026-10-28T06:29:30.000706+00:00",
+          "endedAt": "2026-10-28T06:30:26.997382+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80305,
+          "cacheRead": 12416,
+          "cacheWrite": 0,
+          "output": 145
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-11",
+          "startedAt": "2026-10-28T06:29:30.000007+00:00",
+          "endedAt": "2026-10-28T06:30:30.010600+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80285,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 161
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-12",
+          "startedAt": "2026-10-28T06:29:30.017303+00:00",
+          "endedAt": "2026-10-28T06:30:28.092986+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80338,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 144
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-13",
+          "startedAt": "2026-10-28T06:29:30.011760+00:00",
+          "endedAt": "2026-10-28T06:30:20.301459+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80286,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 162
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-14",
+          "startedAt": "2026-10-28T06:29:30.018102+00:00",
+          "endedAt": "2026-10-28T06:30:34.297776+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80006,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 144
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-15",
+          "startedAt": "2026-10-28T06:29:30.035354+00:00",
+          "endedAt": "2026-10-28T06:30:12.320545+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80343,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 152
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-16",
+          "startedAt": "2026-10-28T06:29:30.052680+00:00",
+          "endedAt": "2026-10-28T06:30:26.622874+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80339,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 164
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-17",
+          "startedAt": "2026-10-28T06:29:30.054557+00:00",
+          "endedAt": "2026-10-28T06:30:10.006845+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80341,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 163
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-18",
+          "startedAt": "2026-10-28T06:29:30.054598+00:00",
+          "endedAt": "2026-10-28T06:30:19.647425+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80287,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 160
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-19",
+          "startedAt": "2026-10-28T06:29:30.095212+00:00",
+          "endedAt": "2026-10-28T06:30:26.242416+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92721,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-20",
+          "startedAt": "2026-10-28T06:29:30.075331+00:00",
+          "endedAt": "2026-10-28T06:30:25.192247+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92578,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-21",
+          "startedAt": "2026-10-28T06:29:30.071583+00:00",
+          "endedAt": "2026-10-28T06:30:31.051500+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80007,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 156
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-22",
+          "startedAt": "2026-10-28T06:29:30.090395+00:00",
+          "endedAt": "2026-10-28T06:30:33.440026+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 75732,
+          "cacheRead": 16896,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6.1-sol-03/run-23",
+          "startedAt": "2026-10-28T06:29:30.109216+00:00",
+          "endedAt": "2026-10-28T06:30:14.788337+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80340,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-0",
+          "startedAt": "2026-10-28T06:33:12.115781+00:00",
+          "endedAt": "2026-10-28T06:34:37.459738+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80341,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 144
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-1",
+          "startedAt": "2026-10-28T06:33:12.116033+00:00",
+          "endedAt": "2026-10-28T06:34:23.466214+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80007,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 147
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-2",
+          "startedAt": "2026-10-28T06:33:12.116045+00:00",
+          "endedAt": "2026-10-28T06:34:22.191305+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80288,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 142
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-3",
+          "startedAt": "2026-10-28T06:33:12.116141+00:00",
+          "endedAt": "2026-10-28T06:33:58.321381+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80340,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 142
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-4",
+          "startedAt": "2026-10-28T06:33:12.117580+00:00",
+          "endedAt": "2026-10-28T06:34:34.967343+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80341,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 144
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-5",
+          "startedAt": "2026-10-28T06:33:12.119547+00:00",
+          "endedAt": "2026-10-28T06:34:17.353629+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80309,
+          "cacheRead": 12416,
+          "cacheWrite": 0,
+          "output": 155
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-6",
+          "startedAt": "2026-10-28T06:33:12.123109+00:00",
+          "endedAt": "2026-10-28T06:34:22.189829+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80267,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 153
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-7",
+          "startedAt": "2026-10-28T06:33:12.127221+00:00",
+          "endedAt": "2026-10-28T06:34:09.932318+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80287,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 144
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-8",
+          "startedAt": "2026-10-28T06:33:12.143220+00:00",
+          "endedAt": "2026-10-28T06:34:02.140324+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80287,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-9",
+          "startedAt": "2026-10-28T06:33:12.134068+00:00",
+          "endedAt": "2026-10-28T06:34:21.806747+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80292,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 155
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-10",
+          "startedAt": "2026-10-28T06:33:12.135654+00:00",
+          "endedAt": "2026-10-28T06:34:17.299807+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80338,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 151
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-11",
+          "startedAt": "2026-10-28T06:33:12.138766+00:00",
+          "endedAt": "2026-10-28T06:34:30.163217+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80008,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 152
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-12",
+          "startedAt": "2026-10-28T06:33:12.143378+00:00",
+          "endedAt": "2026-10-28T06:34:15.340248+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92623,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 140
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-13",
+          "startedAt": "2026-10-28T06:33:12.151074+00:00",
+          "endedAt": "2026-10-28T06:34:13.596588+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80341,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-14",
+          "startedAt": "2026-10-28T06:33:12.166146+00:00",
+          "endedAt": "2026-10-28T06:34:20.894942+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80339,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 156
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-15",
+          "startedAt": "2026-10-28T06:33:12.163663+00:00",
+          "endedAt": "2026-10-28T06:34:21.146856+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80101,
+          "cacheRead": 12416,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-16",
+          "startedAt": "2026-10-28T06:33:12.164912+00:00",
+          "endedAt": "2026-10-28T06:35:12.811098+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80336,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-17",
+          "startedAt": "2026-10-28T06:33:12.194266+00:00",
+          "endedAt": "2026-10-28T06:34:13.595165+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80341,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 138
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-18",
+          "startedAt": "2026-10-28T06:33:12.181492+00:00",
+          "endedAt": "2026-10-28T06:33:57.616540+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80285,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 149
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-19",
+          "startedAt": "2026-10-28T06:33:12.229889+00:00",
+          "endedAt": "2026-10-28T06:34:21.850606+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 75731,
+          "cacheRead": 16896,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-20",
+          "startedAt": "2026-10-28T06:33:12.230346+00:00",
+          "endedAt": "2026-10-28T06:34:14.960016+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92426,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 156
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-21",
+          "startedAt": "2026-10-28T06:33:12.258438+00:00",
+          "endedAt": "2026-10-28T06:34:04.467993+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80285,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 151
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-22",
+          "startedAt": "2026-10-28T06:33:12.226455+00:00",
+          "endedAt": "2026-10-28T06:34:19.930816+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80343,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 140
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-23",
+          "startedAt": "2026-10-28T06:33:12.253604+00:00",
+          "endedAt": "2026-10-28T06:34:26.763282+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80100,
+          "cacheRead": 12416,
+          "cacheWrite": 0,
+          "output": 140
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-24",
+          "startedAt": "2026-10-28T06:33:12.286890+00:00",
+          "endedAt": "2026-10-28T06:34:17.098588+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80286,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-25",
+          "startedAt": "2026-10-28T06:33:12.301168+00:00",
+          "endedAt": "2026-10-28T06:34:11.126800+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 92516,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "output": 149
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-26",
+          "startedAt": "2026-10-28T06:33:12.303218+00:00",
+          "endedAt": "2026-10-28T06:34:33.794961+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80339,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 138
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-27",
+          "startedAt": "2026-10-28T06:33:12.309039+00:00",
+          "endedAt": "2026-10-28T06:34:24.128152+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80266,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 142
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-28",
+          "startedAt": "2026-10-28T06:33:12.319247+00:00",
+          "endedAt": "2026-10-28T06:34:22.431206+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80100,
+          "cacheRead": 12416,
+          "cacheWrite": 0,
+          "output": 156
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-29",
+          "startedAt": "2026-10-28T06:33:12.314201+00:00",
+          "endedAt": "2026-10-28T06:34:09.753328+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80289,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-30",
+          "startedAt": "2026-10-28T06:33:12.331142+00:00",
+          "endedAt": "2026-10-28T06:34:21.123542+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 85513,
+          "cacheRead": 6912,
+          "cacheWrite": 0,
+          "output": 144
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-31",
+          "startedAt": "2026-10-28T06:33:12.344681+00:00",
+          "endedAt": "2026-10-28T06:34:06.995583+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80266,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 143
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-32",
+          "startedAt": "2026-10-28T06:33:12.344490+00:00",
+          "endedAt": "2026-10-28T06:34:29.341855+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80338,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 141
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-33",
+          "startedAt": "2026-10-28T06:33:12.366227+00:00",
+          "endedAt": "2026-10-28T06:34:22.921080+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80285,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 151
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-34",
+          "startedAt": "2026-10-28T06:33:12.353041+00:00",
+          "endedAt": "2026-10-28T06:34:20.787089+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 75734,
+          "cacheRead": 16896,
+          "cacheWrite": 0,
+          "output": 173
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-35",
+          "startedAt": "2026-10-28T06:33:12.382440+00:00",
+          "endedAt": "2026-10-28T06:34:22.244018+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80008,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 139
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-36",
+          "startedAt": "2026-10-28T06:33:12.391936+00:00",
+          "endedAt": "2026-10-28T06:34:18.218820+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80289,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 159
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-37",
+          "startedAt": "2026-10-28T06:33:12.399366+00:00",
+          "endedAt": "2026-10-28T06:34:22.791382+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80006,
+          "cacheRead": 12160,
+          "cacheWrite": 0,
+          "output": 155
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-38",
+          "startedAt": "2026-10-28T06:33:12.412784+00:00",
+          "endedAt": "2026-10-28T06:34:22.938238+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80338,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 144
+        },
+        {
+          "call": "gpt-6.1-sol-04/run-39",
+          "startedAt": "2026-10-28T06:33:12.407296+00:00",
+          "endedAt": "2026-10-28T06:34:09.130308+00:00",
+          "complete": true,
+          "toolEvents": 0,
+          "input": 80336,
+          "cacheRead": 12288,
+          "cacheWrite": 0,
+          "output": 157
+        }
+      ],
+      "status": "pending",
+      "selectedBatch": null,
+      "estimate": null,
+      "unavailableWindows": [
+        "5h",
+        "monthly"
+      ]
+    }
+  ]
+}

@@ -1,9 +1,13 @@
+import { CodexModelMeasurements } from './codex-model-measurements';
 import Link from 'next/link';
 import { VolcengineModelMeasurements } from './volcengine-model-measurements';
 import { QuotaBenchWindows } from './quota-bench-windows';
 import dataset from '../../public/reports/quota-bench-2026-10.json';
 
-type BenchRecord = (typeof dataset.records)[number];
+export type BenchRecord = Omit<(typeof dataset.records)[number], 'controlTokens' | 'apiEquivalentUsd'> & {
+  controlTokens: { input: number; cacheRead: number; cacheWrite: number; output: number } | null;
+  apiEquivalentUsd: { low: number; mid: number; high: number } | null;
+};
 
 // The account owner confirmed Pro 200. The legacy chatgpt-pro slug is the
 // historical $200 SKU; never attach this measurement to Pro 100 or Pro 500.
@@ -34,9 +38,8 @@ export function PlanBenchSummary({ record, locale }: { record: BenchRecord; loca
     <p>{record.model} · <time dateTime={record.date}>{record.date}</time> · {record.calls} {zh ? '次调用' : 'calls'}</p>
     <p>{zh ? '实测用量' : 'Measured usage'}: {fmt(totalTokens)} tokens{record.controlTokens ? (zh ? '（含同账号控制会话）' : ' (including same-account controller)') : ''}</p>
     {!record.windowMeasurements && <p>{zh ? '已用额度' : 'Used allowance'}: {record.usedBefore}% → {record.usedAfter}%{record.status === 'pending' ? (zh ? '（仅前 12 次）' : ' (first 12 calls only)') : ''}</p>}
-    <p className="text-zinc-500">{record.id === 'codex-pro'
-      ? (zh ? '仅限 ChatGPT Pro 200，档位由账号持有人确认。约 66% 为缓存读取；区间仅反映读数舍入。仅适用于本次负载配比，非固定 token 上限，不折算月额度。' : 'ChatGPT Pro 200 only; tier confirmed by the account owner. About 66% cache reads; bounds cover meter rounding only. Applies to this workload mix, not a fixed token cap or monthly allowance.')
-      : zh ? record.caveats.zh : record.caveats.en}</p>
+    <p className="text-zinc-500">{zh ? record.caveats.zh : record.caveats.en}</p>
+    {record.id === 'codex-pro' && <CodexModelMeasurements locale={locale} />}
     {record.id === 'volcengine-pro' && <VolcengineModelMeasurements locale={locale} />}
     <Link href={`/${locale}/quota-bench#${record.id}`} className="inline-block text-blue-600 underline">{zh ? '评测过程与计算依据 →' : 'Measurement process and calculations →'}</Link>
   </div>;

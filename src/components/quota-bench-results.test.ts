@@ -12,10 +12,9 @@ test('published measurements preserve native windows and withhold unreconciled c
   assert.equal(codex.planSlug, 'chatgpt-pro-200');
   assert.equal(codex.tierVerification!.source, 'account_owner_confirmation');
   assert.equal(codex.tierVerification!.priceUsdPerMonth, 200);
-  assert.equal(codex.tokens.input + codex.tokens.cacheRead + codex.tokens.output, 3363758);
-  const control = codex.controlTokens!;
-  const total = codex.tokens.input + codex.tokens.cacheRead + codex.tokens.output + control.input + control.cacheRead + control.output;
-  assert.equal(codex.estimate!.mid, total / .05);
+  assert.equal(codex.tokens.input + codex.tokens.cacheRead + codex.tokens.output, 2595323);
+  assert.equal(codex.controlTokens, null);
+  assert.equal(codex.estimate!.mid, Math.round(2595323 / .03));
   assert.equal(data.records.find(r => r.id === 'cursor-ultra')!.estimate, null);
   assert.equal(data.records.find(r => r.id === 'volcengine-pro')!.window, '5h');
 });
@@ -23,7 +22,7 @@ test('published measurements preserve native windows and withhold unreconciled c
 test('both locales show caveats, controller accounting and downloadable evidence', () => {
   for (const locale of ['zh', 'en']) {
     const html = renderToStaticMarkup(createElement(QuotaBenchResults, { locale }));
-    for (const value of ['147,495,716', '221,243,575', '5,447,936', '/reports/quota-bench-2026-10.json', '/reports/quota-bench-2026-10.md']) assert.ok(html.includes(value), value);
+    for (const value of ['64,883,075', '129,766,150', '6,679,074', '/reports/quota-bench-2026-10.json', '/reports/quota-bench-2026-10.md']) assert.ok(html.includes(value), value);
     assert.ok(html.includes(locale === 'zh' ? '仅适用于 ChatGPT Pro 200' : 'Applies only to ChatGPT Pro 200'));
     assert.ok(html.includes(locale === 'zh' ? '待核对' : 'Pending reconciliation'));
     assert.doesNotMatch(html, /\/Users\/|account_id|AUTH_TOKEN|COOKIE/);
