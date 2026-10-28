@@ -27,6 +27,7 @@ export default function ModelPricingSummary({ pricing, locale, now }: {
   const isZh = locale === 'zh';
   return (
     <section className="mb-6 rounded-lg border p-4" aria-label={isZh ? 'API 定价速览' : 'API pricing at a glance'}>
+      <h2 className="mb-3 text-lg font-semibold">{isZh ? 'API 价格与 token 费用速览' : 'API pricing and token costs at a glance'}</h2>
       <p className="mb-2 text-sm text-zinc-600 dark:text-zinc-400">
         {pricing.updatedOn ? <>{isZh ? '更新于' : 'Updated on'} <time dateTime={pricing.updatedOn}>{pricing.updatedOn}</time></> : pricing.updateText}
         {' · '}{isZh ? '各币种原始报价 / 每百万 tokens；最低按输入价格排序' : 'Published currencies / per 1M tokens; cheapest ranked by input'}
@@ -58,6 +59,7 @@ export default function ModelPricingSummary({ pricing, locale, now }: {
           </tbody>
         </table>
       </div>
+      <p className="mt-4 max-w-4xl text-sm leading-6 text-zinc-600 dark:text-zinc-400">{pricing.costAnswer}</p>
       <p className="mt-2 text-xs text-zinc-500">{isZh ? '— 表示价格或日期未记录。跨币种排名使用汇率换算。' : '— means the price or date is not recorded. Cross-currency ranking uses exchange rates.'}</p>
     </section>
   );

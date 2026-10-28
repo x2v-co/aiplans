@@ -1,3 +1,4 @@
+import { providerSearchProfile } from './provider-search';
 import { subscriptionSearchCopy } from './subscription-search';
 import type { Locale } from './seo';
 import type { GroupedProduct } from './grouped-products';
@@ -96,22 +97,18 @@ export function buildProviderPricingCopy(
   providerName: string, plans: SeoPlan[], locale: Locale, year = new Date().getUTCFullYear(),
   slug?: string,
 ): PricingCopy {
-  const names = compactNames(featuredPlanNames(plans));
-  const from = monthlyFrom(plans, locale);
-  // Bing queries for this provider are "月之暗面api" and "月之暗面订阅".
-  // Counts and tier names still come from the plan rows, not from a fixed list.
-  if (locale === 'zh' && slug === 'moonshot-china') {
-    return {
-      title: `月之暗面 API 价格与订阅 ${year}${names ? `：${names}` : ''}`,
-      description: `月之暗面（Kimi / Moonshot）API 价格与订阅：对比 ${plans.length} 个套餐${from}${names ? `，包括 ${names}` : ''}。查看按量 API 价格、月付与年付，以及各档包含的模型。`,
-    };
-  }
+  const subscriptions = plans.filter(plan => plan.pricing_model === 'subscription');
+  const names = compactNames(featuredPlanNames(subscriptions));
+  const from = monthlyFrom(subscriptions, locale);
+  const brand = providerSearchProfile(slug ?? '', providerName, locale).name;
+  const suffix = subscriptions.length ? (locale === 'zh' ? 'API 价格与订阅套餐' : 'Pricing: API Costs & Subscription Plans')
+    : (locale === 'zh' ? 'API 价格与模型费用' : 'API Pricing & Model Costs');
   return locale === 'zh' ? {
-    title: `${providerName} 套餐与价格 ${year}${names ? `：${names} 对比` : ''}`,
-    description: `对比 ${providerName} 的 ${plans.length} 个套餐${from}${names ? `，包括 ${names}` : ''}。查看月付与年付价格、模型权限和使用限额，选择适合个人或团队的方案。`,
+    title: `${brand} ${suffix} ${year}${names ? `：${names}` : ''}`,
+    description: `查看 ${brand} API 价格、计费单位与模型费用。${subscriptions.length ? `另有 ${subscriptions.length} 个已收录订阅套餐${from}${names ? `，包括 ${names}` : ''}，可比较月付、年付与使用限额。` : '暂无已收录订阅套餐；可通过模型入口查看其他供应商的订阅方案。'}免费额度与按量费用应分别核对。`,
   } : {
-    title: `${providerName} Plans & Pricing ${year}${names ? `: ${names} Compared` : ''}`,
-    description: `Compare ${plans.length} ${providerName} plans${from}${names ? `: ${names}` : ''}. Check monthly vs annual prices, model access and usage limits.`,
+    title: `${brand} ${suffix} ${year}${names ? `: ${names}` : ''}`,
+    description: `Compare ${brand} API pricing, billing units and model costs. ${subscriptions.length ? `${subscriptions.length} listed subscription ${subscriptions.length === 1 ? 'plan' : 'plans'}${from}${names ? `: ${names}` : ''}, with monthly/annual prices and usage limits.` : 'No subscription plans are listed; model links compare access through other providers.'} Check free allowances separately from metered charges.`,
   };
 }
 
@@ -155,7 +152,7 @@ export function buildApiPricingSeo(
   const updateText = updatedOn ? (isZh ? `价格数据更新于 ${updatedOn}。` : `Updated ${updatedOn}.`) : '';
   const introduction = isZh
     ? `AI API 比价：对比 ${products.length} 个模型、${providerCount} 家供应商的 ${channels.length} 个渠道，查看每百万 token 的输入、输出和缓存价格，寻找便宜 API。`
-    : `Compare ${products.length} AI models across ${channels.length} API channels & ${providerCount} providers. Find cheaper input, output & cached rates per million tokens.`;
+    : `Explore the AI API market: compare ${products.length} models across ${channels.length} channels and ${providerCount} providers. Compare input, output and cached token prices per million tokens before estimating total cost.`;
   const description = isZh ? `${introduction}${updateText}` : `${introduction} ${updateText}`.trim();
   const faqs = [{
     question: isZh ? 'AI 大模型 API 的 token 价格怎么对比？' : 'How do I compare AI model API token prices?',

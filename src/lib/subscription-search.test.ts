@@ -48,3 +48,12 @@ test('subscription snippets exclude pay-as-you-go and packs from counts', () => 
   assert.match(buildComparisonPricingCopy('Kimi K2', plans, 'zh', 2026).title, /1 个套餐/);
   assert.match(buildComparisonPricingCopy('Kimi K2', plans, 'en', 2026).title, /1 Plan,/);
 });
+
+
+test('provider discovery leads with its own models before cross-provider entitlements', () => {
+  const results = providerSubscriptionComparisons([
+    { slug: 'minimax-m2.5', name: 'MiniMax', plan_count: 20, isPrimaryProvider: false },
+    { slug: 'qwen3-coder-plus', name: 'Qwen', plan_count: 3, isPrimaryProvider: true },
+  ]);
+  assert.equal(results[0].slug, 'qwen3-coder-plus');
+});

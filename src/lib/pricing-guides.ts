@@ -158,7 +158,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
   },
   'glm-chatglm-api-pricing': {
     slug: 'glm-chatglm-api-pricing',
-    title: { en: 'GLM and ChatGLM API Pricing Guide', zh: 'GLM 与 ChatGLM API 价格指南' },
+    title: { en: 'GLM Pricing: ChatGLM API Costs, Free Routes & Coding Plans', zh: 'GLM / ChatGLM 价格：API 费用、免费渠道与编程套餐' },
     description: {
       en: 'Compare current GLM and ChatGLM API prices, free variants, China access, official channels, and example token costs.',
       zh: '对比 GLM 与 ChatGLM 当前 API 价格、免费版本、中国大陆访问、官方渠道和 token 成本示例。',
@@ -232,7 +232,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
   },
   'claude-anthropic-pricing': {
     slug: 'claude-anthropic-pricing',
-    title: { en: 'Claude API Cost and Anthropic Plan Pricing', zh: 'Claude API 成本与 Anthropic 套餐价格' },
+    title: { en: 'Claude Pricing: API Cost & Anthropic Subscription Plans', zh: 'Claude 价格：API 成本与 Anthropic 订阅套餐' },
     description: {
       en: 'Compare Claude API token costs with Anthropic subscription plans, official pricing, cloud channels, and example workloads.',
       zh: '对比 Claude API token 成本、Anthropic 订阅套餐、官方价格、云渠道和示例用量。',
@@ -310,7 +310,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
   },
   'grok-pricing': {
     slug: 'grok-pricing',
-    title: { en: 'Grok API and Subscription Pricing Guide', zh: 'Grok API 与订阅价格指南' },
+    title: { en: 'Grok Pricing: API Costs, Subscription Plans & Imagine', zh: 'Grok 价格：API 费用、订阅与 Imagine 计费' },
     description: {
       en: 'Compare current Grok API prices, xAI official channels, subscription options, and example token costs.',
       zh: '对比 Grok 当前 API 价格、xAI 官方渠道、订阅选择和 token 成本示例。',
@@ -385,7 +385,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
   },
   'kimi-api-pricing': {
     slug: 'kimi-api-pricing',
-    title: { en: 'Kimi API Pricing and Moonshot Plan Guide', zh: 'Kimi API 价格与月之暗面套餐指南' },
+    title: { en: 'Kimi Pricing: API Costs, Subscription & Coding Plans', zh: 'Kimi 价格：月之暗面 API、会员订阅与编程套餐' },
     description: {
       en: 'Compare current Kimi and Moonshot API prices, subscription plans, China and global channels, and example costs.',
       zh: '对比 Kimi 与 Moonshot 当前 API 价格、订阅套餐、国内外渠道和示例成本。',

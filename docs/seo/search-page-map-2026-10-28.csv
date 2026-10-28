@@ -1,0 +1,879 @@
+source_url,clicks,impressions,destination,treatment
+https://aiplans.dev/zh/plans/deepseek,4,21,/zh/providers/deepseek,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/plans/vertex-ai,3,19,/zh/providers/vertex-ai,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/plans/mistral,2,32,/zh/providers/mistral,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/plans/anthropic,1,1911,/en/providers/anthropic,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/compare/plans/kimi-k2,1,619,/en/compare/plans/kimi-k2,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/qwen3.8-max,1,144,/en/models/qwen3.8-max,active model route; shared pricing or existing category route
+https://aiplans.dev/en/reports/api-price-index,1,91,/en/reports/api-price-index,existing route; shared content or navigation improvements
+https://aiplans.dev/en/plans/qwen,1,88,/en/providers/qwen,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/guides/glm-chatglm-api-pricing,1,76,/en/guides/glm-chatglm-api-pricing,existing route; shared content or navigation improvements
+https://aiplans.dev/en/models/claude-opus-5.5,1,65,/en/models/claude-opus-5.5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/plans/minimax-china,1,63,/zh/providers/minimax-china,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/plans/openai,1,47,/zh/providers/openai,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/plans/mistral,1,41,/en/providers/mistral,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/plans/anthropic,1,33,/zh/providers/anthropic,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/glm-5.2-(free),1,32,/en/models/glm-5.2-(free),not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/doubao-seed-2.0-pro,1,16,/en/compare/plans/doubao-seed-2.0-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/claude-opus-5.5,1,12,/zh/models/claude-opus-5.5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/gpt-6-luna,1,9,/zh/models/gpt-6-luna,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/plans/fireworks,1,9,/zh/providers/fireworks,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/compare/plans/qwen-vl-max,1,8,/en/compare/plans/qwen-vl-max,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/claude-opus-5:batch,1,7,/en/compare/plans/claude-opus-5:batch,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/grok-4.6,1,5,/zh/models/grok-4.6,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/grok-imagine-video,1,5,/zh/models/grok-imagine-video,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/gpt-5-pro,1,4,/zh/compare/plans/gpt-5-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gemma-3-12b-(free),1,4,/en/models/gemma-3-12b-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/minimax-m2.1,1,4,/zh/compare/plans/minimax-m2.1,subscription copy; indexable current comparison
+https://aiplans.dev/zh/models/qwen3.5-397b-a17b,1,2,/zh/models/qwen3.5-397b-a17b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh,1,2,/zh/,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/compare/plans/qwen3.5-35b-a3b,1,2,/zh/compare/plans/qwen3.5-35b-a3b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/qwen3.5-397b-a17b,1,2,/zh/compare/plans/qwen3.5-397b-a17b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/gpt-5.6-cyber,1,2,/zh/models/gpt-5.6-cyber,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/claude-sonnet-5,1,2,/zh/models/claude-sonnet-5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/qwen3.5-9b,1,2,/zh/models/qwen3.5-9b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/hunyuan-turbos-vision-video,1,1,/en/models/hunyuan-turbos-vision-video,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gpt-5.1-codex-max,1,1,/en/models/gpt-5.1-codex-max,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/plans/grok,0,706,/en/providers/grok,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/compare/plans/kimi-k2-thinking,0,611,/en/compare/plans/kimi-k2-thinking,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/kimi-k2.5,0,508,/en/compare/plans/kimi-k2.5,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en,0,274,/en/,existing route; shared content or navigation improvements
+https://aiplans.dev/en/compare/plans/kimi-k2.7-code-fast,0,274,/en/compare/plans/kimi-k2.7-code-fast,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/kimi-k2.6,0,267,/en/compare/plans/kimi-k2.6,subscription copy; indexable current comparison
+https://aiplans.dev/en/plans/google,0,244,/en/providers/google,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/compare/plans/gemini-3-pro,0,231,/en/compare/plans/gemini-3-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/qwen3.5-max,0,224,/en/compare/plans/qwen3.5-max,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/plans/vertex-ai,0,223,/en/providers/vertex-ai,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/gemini-2.0-flash-lite,0,209,/en/models/gemini-2.0-flash-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/en/plans/openai,0,207,/en/providers/openai,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/gpt-4,0,207,/en/models/gpt-4,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/gemini-2.5-pro,0,201,/en/compare/plans/gemini-2.5-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-3.5-turbo,0,200,/en/models/gpt-3.5-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gpt-image-2,0,199,/en/models/gpt-image-2,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-4-turbo,0,198,/en/models/gpt-4-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/qwen3.8-max,0,196,/en/compare/plans/qwen3.8-max,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/glm-5.2-fast,0,194,/en/compare/plans/glm-5.2-fast,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/deepseek-v4-pro,0,192,/en/models/deepseek-v4-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/claude-sonnet-4.5,0,190,/en/compare/plans/claude-sonnet-4.5,subscription copy; indexable current comparison
+https://aiplans.dev/en/compare/plans/kimi-k2.7-code-highspeed,0,189,/en/compare/plans/kimi-k2.7-code-highspeed,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/glm-5glm-5.1,0,183,/en/compare/plans/glm-5glm-5.1,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/kimi-k3,0,152,/en/compare/plans/kimi-k3,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/nano-banana-pro-(gemini-3-pro-image),0,145,/en/models/nano-banana-pro-(gemini-3-pro-image),active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen3-max,0,142,/en/compare/plans/qwen3-max,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/claude-3.7-sonnet-(thinking),0,142,/en/models/claude-3.7-sonnet-(thinking),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-6.1-sol,0,140,/en/models/gpt-6.1-sol,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/glm-4.5-air,0,137,/en/compare/plans/glm-4.5-air,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/claude-opus-4.6,0,136,/en/compare/plans/claude-opus-4.6,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/claude-3.7-sonnet,0,133,/en/models/claude-3.7-sonnet,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-1.5-pro,0,120,/en/models/gemini-1.5-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen-turbo,0,119,/en/compare/plans/qwen-turbo,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-5.2,0,118,/en/models/gpt-5.2,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/claude-opus-4.6-batch,0,117,/en/models/claude-opus-4.6-batch,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gpt-5-pro,0,115,/en/models/gpt-5-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gpt-5,0,114,/en/compare/plans/gpt-5,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-5.1-codex,0,111,/en/models/gpt-5.1-codex,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/qwen-plus,0,109,/en/models/qwen-plus,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gemini-3.1-pro,0,108,/en/compare/plans/gemini-3.1-pro,subscription copy; indexable current comparison
+https://aiplans.dev/en/plans,0,102,/en/plans,existing route; shared content or navigation improvements
+https://aiplans.dev/en/plans/openrouter,0,102,/en/providers/openrouter,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/plans/moonshot-china,0,99,/zh/providers/moonshot-china,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/qwen3.6-27b,0,92,/en/models/qwen3.6-27b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/gemini-2.5-flash,0,88,/en/compare/plans/gemini-2.5-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/gpt-5.3-codex,0,88,/en/compare/plans/gpt-5.3-codex,subscription copy; indexable current comparison
+https://aiplans.dev/plans/azure-openai,0,86,/en/providers/azure-openai,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/kimi-k2-thinking,0,85,/en/models/kimi-k2-thinking,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gemini-2.0-flash-exp,0,85,/en/models/gemini-2.0-flash-exp,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-instructkimi-k2-base,0,82,/en/models/kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-instructkimi-k2-base,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/claude-opus-4.8-fast,0,81,/en/models/claude-opus-4.8-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/plans/fireworks,0,80,/en/providers/fireworks,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/gpt-5.1,0,80,/en/models/gpt-5.1,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gpt-5.1-codex-max,0,80,/en/compare/plans/gpt-5.1-codex-max,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/nano-banana-pro-(gemini-3-pro-image-preview),0,80,/en/models/nano-banana-pro-(gemini-3-pro-image-preview),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-3.7-flash,0,79,/en/models/gemini-3.7-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/glm-5,0,74,/en/compare/plans/glm-5,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/plans/moonshot-china,0,73,/en/providers/moonshot-china,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/gpt-5.5,0,73,/en/models/gpt-5.5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/claude-sonnet-4,0,73,/en/compare/plans/claude-sonnet-4,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/qwen3-turbo,0,72,/en/compare/plans/qwen3-turbo,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/plans/together-ai,0,71,/en/providers/together-ai,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/glm-4.6v-flashx,0,69,/en/models/glm-4.6v-flashx,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/claude-opus-4.1,0,69,/zh/models/claude-opus-4.1,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-code-fast-1,0,68,/en/models/grok-code-fast-1,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gemini-3.5-flash-lite,0,66,/en/models/gemini-3.5-flash-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-imagine-video,0,65,/en/models/grok-imagine-video,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-realtime-2.1,0,65,/en/models/gpt-realtime-2.1,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/glm-4.6v-flashx,0,63,/zh/models/glm-4.6v-flashx,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/kimi-k2.6,0,62,/en/models/kimi-k2.6,active model route; shared pricing or existing category route
+https://aiplans.dev/en/plans/replicate,0,62,/en/providers/replicate,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/models/gpt-5,0,62,/zh/models/gpt-5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-imagine-image,0,61,/en/models/grok-imagine-image,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5.4-pro,0,60,/en/models/gpt-5.4-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/claude-sonnet-5,0,60,/en/compare/plans/claude-sonnet-5,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/plans/zhipu-global,0,59,/en/providers/zhipu-global,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/gemini-3-pro,0,55,/en/models/gemini-3-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt,0,54,/en/models/gpt,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/plans/qwen,0,53,/zh/providers/qwen,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/claude-opus-4.7-fast,0,53,/en/models/claude-opus-4.7-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/chatgpt-4o-latest,0,53,/en/models/chatgpt-4o-latest,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/gpt-5-pro,0,53,/en/compare/plans/gpt-5-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/claude-fable-5,0,52,/en/models/claude-fable-5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/gpt-5.2,0,51,/en/compare/plans/gpt-5.2,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/providers/openai,0,50,/en/providers/openai,provider pricing copy and subscription links
+https://aiplans.dev/en/compare/plans/gemini-1.5-flash,0,49,/en/compare/plans/gemini-1.5-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/claude-opus-4.8,0,48,/zh/models/claude-opus-4.8,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/glm-4.6v-flashx,0,47,/en/compare/plans/glm-4.6v-flashx,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/qwen3.5-27b,0,47,/en/compare/plans/qwen3.5-27b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/qwen3-coder-480b-a35b,0,46,/en/models/qwen3-coder-480b-a35b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/doubao-1.5-lite,0,45,/en/compare/plans/doubao-1.5-lite,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/deepseek-r1-lite,0,45,/en/models/deepseek-r1-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/claude-3-haiku,0,45,/en/models/claude-3-haiku,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/glm-5.2,0,44,/en/models/glm-5.2,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/claude-fable-5,0,44,/en/compare/plans/claude-fable-5,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/plans/stepfun,0,43,/zh/providers/stepfun,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/plans/zhipu-china,0,42,/en/providers/zhipu-china,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/calculator,0,42,/en/calculator,existing route; shared content or navigation improvements
+https://aiplans.dev/en/models/mistral-(7b),0,41,/en/models/mistral-(7b),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/kimi-k3,0,40,/zh/compare/plans/kimi-k3,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/openai-gpt-4,0,40,/en/models/openai-gpt-4,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/qwen-vl-plus,0,40,/en/compare/plans/qwen-vl-plus,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/claude-fable-5-batch,0,40,/en/models/claude-fable-5-batch,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gpt-oss-120b-(free),0,40,/en/models/gpt-oss-120b-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5-(batch),0,40,/en/models/gpt-5-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/api-pricing,0,39,/en/api-pricing,existing route; shared content or navigation improvements
+https://aiplans.dev/en/models/gemini-2.5-pro-preview-05-06,0,39,/en/models/gemini-2.5-pro-preview-05-06,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/models,0,38,/en/compare/models,existing route; shared content or navigation improvements
+https://aiplans.dev/en/models/gpt-5.2-(batch),0,38,/en/models/gpt-5.2-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/deepseek-chat,0,37,/en/models/deepseek-chat,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-3.5-flash,0,37,/en/models/gemini-3.5-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/grok-4.5,0,36,/en/compare/plans/grok-4.5,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/claude-sonnet-4.6-batch,0,36,/en/models/claude-sonnet-4.6-batch,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/kimi-k2.6-fast,0,35,/en/compare/plans/kimi-k2.6-fast,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-5.5-pro-(batch),0,35,/en/models/gpt-5.5-pro-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5.2-pro,0,35,/en/models/gpt-5.2-pro,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/qwen3-plus,0,34,/en/models/qwen3-plus,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/doubao-seed-2.0,0,33,/en/compare/plans/doubao-seed-2.0,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans,0,33,/en/compare/plans,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/plans/zhipu-china,0,33,/zh/providers/zhipu-china,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/kimi,0,33,/en/models/kimi,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/gemini-3-flash,0,33,/en/compare/plans/gemini-3-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-5.2-pro-(batch),0,33,/en/models/gpt-5.2-pro-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/claude-3-sonnet,0,33,/en/models/claude-3-sonnet,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-5-turbo,0,32,/en/models/glm-5-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/claude-opus-4,0,31,/zh/models/claude-opus-4,active model route; shared pricing or existing category route
+https://aiplans.dev/en/plans/dmxapi,0,29,/en/providers/dmxapi,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/compare/plans/gpt-5.2-codex,0,29,/en/compare/plans/gpt-5.2-codex,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/claude-opus-4.5,0,28,/zh/models/claude-opus-4.5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/openai-gpt-4-1-mini,0,27,/en/models/openai-gpt-4-1-mini,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-3-flash,0,27,/zh/models/gemini-3-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/nano-banana-2-(gemini-3.1-flash-image),0,27,/en/models/nano-banana-2-(gemini-3.1-flash-image),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/minimax-m3,0,26,/zh/models/minimax-m3,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/doubao-1.5-vision-pro,0,26,/en/compare/plans/doubao-1.5-vision-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/kimi-k2.7-code-highspeed,0,26,/en/models/kimi-k2.7-code-highspeed,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/deepseek-r1,0,26,/en/compare/plans/deepseek-r1,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-5-codex,0,26,/en/models/gpt-5-codex,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/grok-4.1-fast,0,26,/en/models/grok-4.1-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/o1-pro,0,26,/en/models/o1-pro,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/kimi-k2.6-fast,0,25,/en/models/kimi-k2.6-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/kimi-k3,0,25,/en/models/kimi-k3,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-4.7-flashx,0,25,/en/models/glm-4.7-flashx,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-4-fast-non-reasoning,0,25,/en/models/grok-4-fast-non-reasoning,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gpt-4o,0,24,/en/compare/plans/gpt-4o,subscription copy; indexable current comparison
+https://aiplans.dev/en/compare/plans/mistral-medium-3.5,0,24,/en/compare/plans/mistral-medium-3.5,subscription copy; indexable current comparison
+https://aiplans.dev/zh/models/claude-3.5-sonnet,0,24,/zh/models/claude-3.5-sonnet,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5.4-pro-(batch),0,24,/en/models/gpt-5.4-pro-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen-vl-ocr,0,24,/en/compare/plans/qwen-vl-ocr,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/qwen2.5-7b-instruct-turbo,0,24,/en/compare/plans/qwen2.5-7b-instruct-turbo,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/mistral-medium-3.5,0,23,/en/models/mistral-medium-3.5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-4.5,0,23,/en/models/glm-4.5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/grok-3,0,23,/en/models/grok-3,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/doubao-seed-2.1-pro,0,22,/en/compare/plans/doubao-seed-2.1-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/glm-5.3,0,22,/en/compare/plans/glm-5.3,subscription copy; indexable current comparison
+https://aiplans.dev/zh/plans/google,0,22,/zh/providers/google,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/o1-mini,0,22,/en/models/o1-mini,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-imagine-image-pro,0,22,/en/models/grok-imagine-image-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/kimi-k2.7-code-fast,0,21,/zh/models/kimi-k2.7-code-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/kimi-k2-0905-(exacto),0,21,/en/compare/plans/kimi-k2-0905-(exacto),retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/minimax-m2.5-highspeed,0,21,/en/models/minimax-m2.5-highspeed,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-oss-120b,0,21,/en/models/gpt-oss-120b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gpt-5.5-pro,0,21,/en/compare/plans/gpt-5.5-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/gpt-5.5,0,21,/en/compare/plans/gpt-5.5,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/gpt-5,0,21,/en/models/gpt-5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/deepseek-v4-flash-vision,0,21,/en/models/deepseek-v4-flash-vision,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/claude-opus-5,0,21,/en/models/claude-opus-5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/qwen3-14b,0,21,/en/compare/plans/qwen3-14b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/grok-4,0,21,/en/models/grok-4,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/guides/claude-anthropic-pricing,0,20,/zh/guides/claude-anthropic-pricing,existing route; shared content or navigation improvements
+https://aiplans.dev/en/models/gpt-4.1-mini-(batch),0,20,/en/models/gpt-4.1-mini-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/minimax-m3,0,19,/en/models/minimax-m3,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/openai-gpt-chat-latest,0,19,/en/models/openai-gpt-chat-latest,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5.2-codex,0,19,/en/models/gpt-5.2-codex,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/qwen3-vl-8b,0,19,/en/compare/plans/qwen3-vl-8b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-5-image,0,19,/en/models/gpt-5-image,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/claude-sonnet-4.5,0,19,/zh/models/claude-sonnet-4.5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-5.2-fast,0,19,/en/models/glm-5.2-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/minimax-m2-her,0,17,/en/compare/plans/minimax-m2-her,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/doubao-seed-1.6-vision,0,17,/en/compare/plans/doubao-seed-1.6-vision,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/kimi-k2,0,17,/zh/compare/plans/kimi-k2,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/glm-5.3-fast,0,17,/en/models/glm-5.3-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gpt-4.1-nano,0,17,/en/compare/plans/gpt-4.1-nano,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/glm-4.5v,0,17,/en/models/glm-4.5v,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/o3,0,17,/en/models/o3,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/qwen3-coder-plus,0,17,/en/models/qwen3-coder-plus,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/deepseek-v3.2-thinking,0,17,/en/models/deepseek-v3.2-thinking,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/reports/api-price-index,0,16,/zh/reports/api-price-index,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/models/kimi-k2.7-code-(batch),0,16,/zh/models/kimi-k2.7-code-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen-flash,0,16,/en/models/qwen-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/kimi-k2.7-code,0,16,/en/compare/plans/kimi-k2.7-code,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/claude-opus-4.8-batch,0,16,/en/models/claude-opus-4.8-batch,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/claude-opus-4.5,0,16,/en/models/claude-opus-4.5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gemini-2.0-flash-lite,0,16,/en/compare/plans/gemini-2.0-flash-lite,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/gpt-5.2-pro,0,16,/en/compare/plans/gpt-5.2-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/openai-gpt-3-5-turbo,0,16,/en/models/openai-gpt-3-5-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/nano-banana-2-lite-(gemini-3.1-flash-lite-image),0,16,/en/models/nano-banana-2-lite-(gemini-3.1-flash-lite-image),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans/dmxapi,0,15,/zh/providers/dmxapi,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/plans/azure-openai,0,15,/en/providers/azure-openai,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/o3-mini,0,15,/en/models/o3-mini,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/gemini-2.0-flash-exp,0,15,/zh/models/gemini-2.0-flash-exp,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-3-mini,0,15,/en/models/grok-3-mini,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/glm-5.2,0,14,/en/compare/plans/glm-5.2,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/glm-5.3-flash-(batch),0,14,/en/models/glm-5.3-flash-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-5.3-codex,0,14,/zh/models/gpt-5.3-codex,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/minimax-m2.7-highspeed,0,14,/en/compare/plans/minimax-m2.7-highspeed,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gemma-4-26b-a4b-(free),0,14,/en/models/gemma-4-26b-a4b-(free),not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gpt-5.5-(batch),0,14,/en/models/gpt-5.5-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/~openai-gpt-mini-latest,0,14,/en/models/~openai-gpt-mini-latest,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-4.20-multi-agent,0,14,/en/models/grok-4.20-multi-agent,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-4-fast-reasoning,0,14,/en/models/grok-4-fast-reasoning,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/claude-3-7-sonnet,0,14,/zh/models/claude-3-7-sonnet,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/kimi-k2.6,0,13,/zh/models/kimi-k2.6,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/doubao-1.5-vision-pro,0,13,/en/models/doubao-1.5-vision-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/anthropic-claude-haiku-4-5,0,13,/en/models/anthropic-claude-haiku-4-5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5-mini,0,13,/en/models/gpt-5-mini,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/moonshot-v1-8k,0,13,/en/models/moonshot-v1-8k,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen3-vl-235b-a22b,0,13,/en/compare/plans/qwen3-vl-235b-a22b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/gemini-1.5-pro,0,13,/en/compare/plans/gemini-1.5-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/grok-build-0.1,0,13,/en/models/grok-build-0.1,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gpt-4.5,0,13,/en/models/gpt-4.5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/gemini-nano-banana-2.1,0,12,/en/compare/plans/gemini-nano-banana-2.1,subscription copy; indexable current comparison
+https://aiplans.dev/zh/models/minimax-m2,0,12,/zh/models/minimax-m2,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/glm-4.5,0,12,/zh/models/glm-4.5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/compare/models,0,12,/zh/compare/models,existing route; shared content or navigation improvements
+https://aiplans.dev/en/plans/deepseek,0,12,/en/providers/deepseek,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/anthropic-claude-opus-4-6,0,12,/en/models/anthropic-claude-opus-4-6,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-instructkimi-k2-basekimi-k2.5kimi-k2.6kimi-k2.7-code,0,12,/en/models/kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-instructkimi-k2-basekimi-k2.5kimi-k2.6kimi-k2.7-code,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-oss-20b,0,12,/en/models/gpt-oss-20b,not active in snapshot; retain existing redirect/404 policy
+https://www.aiplans.dev/en/api-pricing,0,12,/en/api-pricing,existing route; shared content or navigation improvements
+https://aiplans.dev/en/compare/plans/glm-4.6v,0,11,/en/compare/plans/glm-4.6v,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/gemini-nano-banana-2.1,0,11,/zh/compare/plans/gemini-nano-banana-2.1,subscription copy; indexable current comparison
+https://aiplans.dev/zh/plans/minimax-global,0,11,/zh/providers/minimax-global,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/providers/moonshot-china,0,11,/zh/providers/moonshot-china,provider pricing copy and subscription links
+https://aiplans.dev/en/compare/plans/glm-4.7-flash,0,11,/en/compare/plans/glm-4.7-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gemini-3-flash,0,11,/en/models/gemini-3-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/minimax-m2.7-highspeed,0,11,/en/models/minimax-m2.7-highspeed,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/claude-sonnet-4.6,0,11,/en/compare/plans/claude-sonnet-4.6,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/qwen3-vl-8b,0,11,/en/models/qwen3-vl-8b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gpt-5-nano,0,11,/en/models/gpt-5-nano,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-4.20,0,11,/en/models/grok-4.20,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/chat,0,11,/en/models/chat,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen-coder-plus,0,10,/en/compare/plans/qwen-coder-plus,subscription copy; indexable current comparison
+https://aiplans.dev/en/compare/plans/glm-4.6v-flash,0,10,/en/compare/plans/glm-4.6v-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/music-models,0,10,/en/music-models,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/plans/hunyuan,0,10,/zh/providers/hunyuan,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/models/kimi-k2.7-code-highspeed,0,10,/zh/models/kimi-k2.7-code-highspeed,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans/google?period=yearly,0,10,/zh/providers/google,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/kimi-k3-fast,0,10,/en/models/kimi-k3-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-4.7,0,10,/en/models/grok-4.7,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/kimi-k2.7-code,0,10,/en/models/kimi-k2.7-code,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/grok-imagine-image,0,10,/zh/models/grok-imagine-image,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-2.5-flash,0,10,/zh/models/gemini-2.5-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-3.1-flash-lite-(batch),0,10,/en/models/gemini-3.1-flash-lite-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-2.5-flash-lite-preview-09,0,10,/en/models/gemini-2.5-flash-lite-preview-09,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemma-3-4b-(free),0,10,/en/models/gemma-3-4b-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/kimi-k2.6-(free),0,10,/en/models/kimi-k2.6-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemma-3-27b-(free),0,10,/en/models/gemma-3-27b-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/nano-banana-(gemini-2.5-flash-image),0,10,/en/models/nano-banana-(gemini-2.5-flash-image),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-3-pro,0,10,/zh/models/gemini-3-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-4-fast,0,10,/en/models/grok-4-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-vl-max,0,9,/zh/models/qwen3-vl-max,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans/zhipu-global,0,9,/zh/providers/zhipu-global,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/video-models/runway-gen-4,0,9,/en/video-models/runway-gen-4,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/plans/moonshot,0,9,/zh/providers/moonshot,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/models/moonshot-v1-128k,0,9,/zh/models/moonshot-v1-128k,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans/moonshot-global,0,9,/zh/providers/moonshot-global,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/providers/moonshot-china,0,9,/en/providers/moonshot-china,provider pricing copy and subscription links
+https://aiplans.dev/zh/models/kimi-k2.6-(free),0,9,/zh/models/kimi-k2.6-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/hunyuan-embedding,0,9,/en/compare/plans/hunyuan-embedding,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/qwen3-vl-flash,0,9,/en/models/qwen3-vl-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5.3,0,9,/en/models/gpt-5.3,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-4,0,9,/zh/models/gpt-4,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gemma-4-31b-(free),0,9,/en/models/gemma-4-31b-(free),not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/grok-vision-beta,0,9,/en/models/grok-vision-beta,active model route; shared pricing or existing category route
+https://aiplans.dev/en/plans/aws-bedrock,0,9,/en/providers/aws-bedrock,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/glm-5.2-(batch),0,9,/en/models/glm-5.2-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gemini-2.5-flash-lite,0,9,/en/compare/plans/gemini-2.5-flash-lite,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/plans/anyscale,0,9,/en/providers/anyscale,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/gpt-audio,0,9,/en/models/gpt-audio,active model route; shared pricing or existing category route
+https://aiplans.dev/en/plans/seed,0,8,/en/providers/seed,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/gpt-6-luna,0,8,/en/models/gpt-6-luna,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/hunyuan-translation,0,8,/zh/models/hunyuan-translation,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans/grok,0,8,/zh/providers/grok,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/compare/plans/mistral-large-2,0,8,/en/compare/plans/mistral-large-2,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-5.3-codex,0,8,/en/models/gpt-5.3-codex,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/codestral,0,8,/en/compare/plans/codestral,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/~moonshotai-kimi-latest,0,8,/en/models/~moonshotai-kimi-latest,active model route; shared pricing or existing category route
+https://aiplans.dev/en/calculator?models=openai-gpt-4-1-mini-batch,0,8,/en/calculator,existing route; shared content or navigation improvements
+https://aiplans.dev/en/models/doubao-seed-evolving,0,8,/en/models/doubao-seed-evolving,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/glm-5.3-flash,0,8,/zh/models/glm-5.3-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/glm-5.2-fast,0,8,/zh/compare/plans/glm-5.2-fast,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/plans/moonshot,0,8,/en/providers/moonshot,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/models/gemini-1.5-pro,0,8,/zh/models/gemini-1.5-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/providers/aws-bedrock,0,8,/en/providers/aws-bedrock,provider pricing copy and subscription links
+https://aiplans.dev/en/models/o3-deep-research,0,8,/en/models/o3-deep-research,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/claude-haiku-4-5,0,8,/en/compare/plans/claude-haiku-4-5,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-instructkimi-k2-base,0,8,/en/compare/plans/kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-instructkimi-k2-base,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-5.4-nano,0,8,/en/models/gpt-5.4-nano,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen3.5-397b-a17b,0,8,/en/compare/plans/qwen3.5-397b-a17b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gemma-3-27b,0,8,/en/models/gemma-3-27b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/world-models/robotics-foundation-models,0,8,/en/world-models/robotics-foundation-models,existing route; shared content or navigation improvements
+https://aiplans.dev/en/models/qwen3-14b,0,8,/en/models/qwen3-14b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gemini-1.0-pro,0,8,/en/models/gemini-1.0-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gemini-1.0-pro,0,8,/en/compare/plans/gemini-1.0-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gemini-pro,0,8,/en/models/gemini-pro,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/o1-pro-(batch),0,8,/en/models/o1-pro-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/hunyuan-turbos-vision,0,7,/en/models/hunyuan-turbos-vision,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/glm-5.3-fast,0,7,/zh/models/glm-5.3-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-4.6v,0,7,/en/models/glm-4.6v,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/doubao-seed-2.0-lite,0,7,/en/models/doubao-seed-2.0-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/en/plans/baidu,0,7,/en/providers/baidu,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/plans/volcengine,0,7,/en/providers/volcengine,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/providers/meta,0,7,/en/providers/meta,provider pricing copy and subscription links
+https://aiplans.dev/zh/compare/plans/kimi-k2.6,0,7,/zh/compare/plans/kimi-k2.6,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/x-ai-grok-build-0-1,0,7,/en/models/x-ai-grok-build-0-1,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/kimi-k2.7-code,0,7,/zh/models/kimi-k2.7-code,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/doubao-seed-1.6-vision,0,7,/zh/models/doubao-seed-1.6-vision,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/openai-gpt-4-1-mini-batch,0,7,/en/models/openai-gpt-4-1-mini-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen3-plus,0,7,/en/compare/plans/qwen3-plus,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gemma-3-12b,0,7,/en/models/gemma-3-12b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/qwen3-vl-8b-thinking,0,7,/en/models/qwen3-vl-8b-thinking,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/grok-4.3,0,7,/en/compare/plans/grok-4.3,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/qwen3-coder-next,0,7,/zh/models/qwen3-coder-next,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/qwen-max,0,7,/zh/models/qwen-max,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-4.1-mini,0,7,/zh/models/gpt-4.1-mini,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-3.5-turbo,0,7,/zh/models/gpt-3.5-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/mistral-mistral-nemo,0,7,/en/models/mistral-mistral-nemo,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans/replicate,0,7,/zh/providers/replicate,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/models/o1,0,7,/zh/models/o1,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/claude-sonnet,0,7,/zh/models/claude-sonnet,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/claude-3-opus,0,6,/zh/models/claude-3-opus,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-5.3-flash,0,6,/en/models/glm-5.3-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-6.1-sol,0,6,/zh/models/gpt-6.1-sol,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/qwen-flash,0,6,/en/compare/plans/qwen-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/glm-5.3-flash-(batch),0,6,/zh/models/glm-5.3-flash-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen3.6-max,0,6,/en/compare/plans/qwen3.6-max,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/claude-opus-5-batch,0,6,/zh/models/claude-opus-5-batch,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/gpt-5.6-luna,0,6,/en/compare/plans/gpt-5.6-luna,subscription copy; indexable current comparison
+https://aiplans.dev/en/plans/siliconflow,0,6,/en/providers/siliconflow,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/compare/plans/gpt-5-image,0,6,/en/compare/plans/gpt-5-image,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/qwen3.5-max,0,6,/en/models/qwen3.5-max,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/o4,0,6,/en/models/o4,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-coder-flash,0,6,/zh/models/qwen3-coder-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gpt-realtime-2.1,0,6,/en/compare/plans/gpt-realtime-2.1,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/qwen3-next-80b-a3b,0,6,/en/compare/plans/qwen3-next-80b-a3b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/mistral-7b,0,6,/en/models/mistral-7b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen-2.5-coder-32b,0,6,/en/models/qwen-2.5-coder-32b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gpt-5-pro-(batch),0,6,/en/models/gpt-5-pro-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3.5-max,0,6,/zh/models/qwen3.5-max,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gemini-2.5-pro-preview-06-05,0,6,/en/models/gemini-2.5-pro-preview-06-05,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/grok-2,0,6,/en/models/grok-2,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-4o-mini,0,6,/zh/models/gpt-4o-mini,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/claude-fable,0,6,/zh/models/claude-fable,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/qwen2.5-7b-instruct-turbo,0,5,/zh/models/qwen2.5-7b-instruct-turbo,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-4.6v-flash,0,5,/en/models/glm-4.6v-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/stepaudio-2.5-realtime,0,5,/en/models/stepaudio-2.5-realtime,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-vl-flash,0,5,/zh/models/qwen3-vl-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-4.5-air,0,5,/en/models/glm-4.5-air,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/z-ai-glm-5-3-flash-batch,0,5,/en/models/z-ai-glm-5-3-flash-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/doubao-seed-2.1-pro,0,5,/en/models/doubao-seed-2.1-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/kimi-k2.5,0,5,/en/models/kimi-k2.5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/codestral,0,5,/en/models/codestral,active model route; shared pricing or existing category route
+https://aiplans.dev/plans/moonshot-global,0,5,/en/providers/moonshot-global,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/models/hunyuan-translation-lite,0,5,/zh/models/hunyuan-translation-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/qwen3.7-flash,0,5,/zh/compare/plans/qwen3.7-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/claude-opus-5,0,5,/zh/models/claude-opus-5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/kimi-k3-(batch),0,5,/zh/models/kimi-k3-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans,0,5,/zh/plans,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/models/zai-glm-5-2,0,5,/zh/models/zai-glm-5-2,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans/openrouter,0,5,/zh/providers/openrouter,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/models/deepseek-reasoner,0,5,/zh/models/deepseek-reasoner,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/doubao-seed-2.0,0,5,/zh/models/doubao-seed-2.0,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/claude-opus-4,0,5,/en/compare/plans/claude-opus-4,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/plans/minimax-global,0,5,/en/providers/minimax-global,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/compare/plans/glm-5.2,0,5,/zh/compare/plans/glm-5.2,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/gemini-3.6-flash,0,5,/en/compare/plans/gemini-3.6-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/providers/runway,0,5,/en/providers/runway,provider pricing copy and subscription links
+https://aiplans.dev/en/models/qwen3-32b,0,5,/en/models/qwen3-32b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/compare/plans,0,5,/zh/compare/plans,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/models/qwen3.8-27b,0,5,/zh/models/qwen3.8-27b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/qwen2.5-vl-7b,0,5,/en/compare/plans/qwen2.5-vl-7b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/hunyuan-embedding,0,5,/en/models/hunyuan-embedding,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/gpt-5.6-terra,0,5,/en/compare/plans/gpt-5.6-terra,subscription copy; indexable current comparison
+https://aiplans.dev/zh/compare/plans/gemini-exp,0,5,/zh/compare/plans/gemini-exp,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/moonshot-v1-32k,0,5,/en/models/moonshot-v1-32k,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/deepseek-r1t2-chimera,0,5,/en/models/deepseek-r1t2-chimera,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/minimax-m2,0,5,/en/compare/plans/minimax-m2,subscription copy; indexable current comparison
+https://aiplans.dev/zh/plans/anyscale,0,5,/zh/providers/anyscale,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/gpt-5.4-nano-(batch),0,5,/en/models/gpt-5.4-nano-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5-nano-(batch),0,5,/en/models/gpt-5-nano-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-2.5-flash-(batch),0,5,/zh/models/gemini-2.5-flash-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/minimax-m2.7,0,5,/en/compare/plans/minimax-m2.7,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/gemma-4-26b-a4b,0,5,/en/models/gemma-4-26b-a4b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/qwen2.5-coder-32b,0,5,/en/models/qwen2.5-coder-32b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-5v-turbo,0,5,/en/models/glm-5v-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/qwen-math-plus,0,5,/en/models/qwen-math-plus,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gemini-exp,0,5,/en/compare/plans/gemini-exp,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/o3-pro-(batch),0,5,/en/models/o3-pro-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/ernie-4.5-turbo,0,5,/en/models/ernie-4.5-turbo,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-4-1-fast-non-reasoning,0,5,/en/models/grok-4-1-fast-non-reasoning,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok,0,5,/en/models/grok,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/claude-3.7-sonnet-(thinking),0,5,/zh/models/claude-3.7-sonnet-(thinking),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/codestral,0,4,/zh/compare/plans/codestral,subscription copy; indexable current comparison
+https://aiplans.dev/zh/models/glm-5.2-fast,0,4,/zh/models/glm-5.2-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/google-gemini-gemma-3-4b-it,0,4,/en/models/google-gemini-gemma-3-4b-it,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen-vl-max,0,4,/en/models/qwen-vl-max,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen-max,0,4,/en/models/qwen-max,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/glm-5.3,0,4,/zh/models/glm-5.3,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3.6-flash,0,4,/en/models/qwen3.6-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/step-r1-v,0,4,/zh/models/step-r1-v,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/kimi-k3,0,4,/zh/models/kimi-k3,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans/aws-bedrock?period=yearly,0,4,/zh/providers/aws-bedrock,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/doubao-seed-2.1-turbo,0,4,/en/models/doubao-seed-2.1-turbo,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/glm-4.6v-flashx,0,4,/zh/compare/plans/glm-4.6v-flashx,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/ernie-4.5-turbo-vl,0,4,/zh/models/ernie-4.5-turbo-vl,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3-235b-a22b,0,4,/en/models/qwen3-235b-a22b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/plans/meta,0,4,/en/providers/meta,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/compare/plans/kimi-k2.7-code-highspeed,0,4,/zh/compare/plans/kimi-k2.7-code-highspeed,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/qwen3-8b,0,4,/en/compare/plans/qwen3-8b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/plans/azure-openai,0,4,/zh/providers/azure-openai,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/world-models,0,4,/en/world-models,existing route; shared content or navigation improvements
+https://aiplans.dev/en/compare/plans/claude-opus-4.8,0,4,/en/compare/plans/claude-opus-4.8,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gemini-3.5-transcribe,0,4,/en/models/gemini-3.5-transcribe,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gpt-5.6-sol,0,4,/en/compare/plans/gpt-5.6-sol,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/seed-2.1-turbo,0,4,/en/models/seed-2.1-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/grok-4-1-fast-reasoning,0,4,/zh/models/grok-4-1-fast-reasoning,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/hunyuan-translation,0,4,/en/models/hunyuan-translation,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/ernie-4.5-21b-a3b,0,4,/en/models/ernie-4.5-21b-a3b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/minimax-m2.5,0,4,/zh/models/minimax-m2.5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5.6-cyber,0,4,/en/models/gpt-5.6-cyber,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/qwen3.7-plus,0,4,/zh/compare/plans/qwen3.7-plus,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/qwen-coder-plus,0,4,/zh/compare/plans/qwen-coder-plus,subscription copy; indexable current comparison
+https://aiplans.dev/zh/models/deepseek-r1-lite,0,4,/zh/models/deepseek-r1-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3.6-27b,0,4,/zh/models/qwen3.6-27b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/gpt-4o-mini,0,4,/en/compare/plans/gpt-4o-mini,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/openai-gpt-5-4-pro-batch,0,4,/en/models/openai-gpt-5-4-pro-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemma-4-31b,0,4,/en/models/gemma-4-31b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-2.5-flash-(batch),0,4,/en/models/gemini-2.5-flash-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-4.3,0,4,/en/models/grok-4.3,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/claude-3.7-sonnet,0,4,/zh/models/claude-3.7-sonnet,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/openai-gpt-3-5-turbo,0,4,/zh/models/openai-gpt-3-5-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/gpt-5.2-pro-(batch),0,4,/en/compare/plans/gpt-5.2-pro-(batch),retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/grok-3,0,4,/zh/models/grok-3,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/doubao-seed-1.6-vision,0,3,/en/models/doubao-seed-1.6-vision,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/minimax-m3-(batch),0,3,/en/models/minimax-m3-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/claude-opus-4.6,0,3,/zh/models/claude-opus-4.6,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/qwen-qwen3-vl-32b-instruct,0,3,/zh/models/qwen-qwen3-vl-32b-instruct,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/kimi-k3-fast,0,3,/zh/models/kimi-k3-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-4b-(free),0,3,/zh/models/qwen3-4b-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3.7-flash,0,3,/zh/models/qwen3.7-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/doubao-seed-2.0,0,3,/zh/compare/plans/doubao-seed-2.0,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/deepseek-deepseek-v4-1-flash-batch,0,3,/en/models/deepseek-deepseek-v4-1-flash-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-5.3,0,3,/en/models/glm-5.3,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/moonshotai-kimi-k2,0,3,/en/models/moonshotai-kimi-k2,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/kimi-k2.6-fast,0,3,/zh/models/kimi-k2.6-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/~moonshotai-kimi-latest,0,3,/zh/models/~moonshotai-kimi-latest,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/mistral-small,0,3,/en/compare/plans/mistral-small,subscription copy; indexable current comparison
+https://aiplans.dev/en/compare/plans/gemini-3.7-flash,0,3,/en/compare/plans/gemini-3.7-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/grok-2-vision-1212,0,3,/zh/models/grok-2-vision-1212,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/moonshotai-kimi-k2,0,3,/zh/models/moonshotai-kimi-k2,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen2.5-vl-7b,0,3,/en/models/qwen2.5-vl-7b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/step-1-32k,0,3,/en/models/step-1-32k,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-4.5,0,3,/en/models/grok-4.5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/~google-gemini-flash-latest,0,3,/en/models/~google-gemini-flash-latest,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/kimi-k2.5,0,3,/zh/compare/plans/kimi-k2.5,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/claude-opus-5-fast,0,3,/zh/models/claude-opus-5-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/en/coding-agents,0,3,/en/coding-agents,existing route; shared content or navigation improvements
+https://aiplans.dev/en/compare/plans/qwen3.5-flash,0,3,/en/compare/plans/qwen3.5-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/minimax-minimax-m2-her,0,3,/en/models/minimax-minimax-m2-her,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/doubao-seed-evolving,0,3,/zh/compare/plans/doubao-seed-evolving,subscription copy; indexable current comparison
+https://aiplans.dev/zh/models/moonshot-v1-32k,0,3,/zh/models/moonshot-v1-32k,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/seed-2.1-turbo,0,3,/zh/models/seed-2.1-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/qwen3.5-4b,0,3,/en/models/qwen3.5-4b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/minimax-m2,0,3,/zh/compare/plans/minimax-m2,subscription copy; indexable current comparison
+https://aiplans.dev/zh/providers/deepseek,0,3,/zh/providers/deepseek,provider pricing copy and subscription links
+https://aiplans.dev/en/models/z-ai-glm-4-7-flash,0,3,/en/models/z-ai-glm-4-7-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/gpt-5.6-luna,0,3,/zh/compare/plans/gpt-5.6-luna,subscription copy; indexable current comparison
+https://aiplans.dev/en/providers/pika,0,3,/en/providers/pika,provider pricing copy and subscription links
+https://aiplans.dev/en/video-models/sora-2-pro,0,3,/en/video-models/sora-2-pro,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/compare/plans/gemini-2.0-flash-lite,0,3,/zh/compare/plans/gemini-2.0-flash-lite,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-realtime-2.1-mini,0,3,/en/models/gpt-realtime-2.1-mini,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/minimax-m2.7,0,3,/en/models/minimax-m2.7,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-2.0-flash-lite,0,3,/zh/models/gemini-2.0-flash-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/openai-gpt-5-2-pro-batch,0,3,/en/models/openai-gpt-5-2-pro-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/ernie-5.0,0,3,/en/models/ernie-5.0,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/hunyuan-vision,0,3,/en/models/hunyuan-vision,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/claude-sonnet-5,0,3,/en/models/claude-sonnet-5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/step-asr,0,3,/en/models/step-asr,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/mistral-large,0,3,/en/models/mistral-large,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen2.5-vl-32b,0,3,/en/compare/plans/qwen2.5-vl-32b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/o4-mini-deep-research,0,3,/en/models/o4-mini-deep-research,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen-turbo,0,3,/zh/models/qwen-turbo,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/doubao-1.5-lite,0,3,/en/models/doubao-1.5-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-turbo,0,3,/zh/models/qwen3-turbo,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/r1-distill-qwen-32b,0,3,/en/models/r1-distill-qwen-32b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-5-nano,0,3,/zh/models/gpt-5-nano,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5-mini-(batch),0,3,/en/models/gpt-5-mini-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gpt-5.4-pro,0,3,/en/compare/plans/gpt-5.4-pro,subscription copy; indexable current comparison
+https://aiplans.dev/zh/models/qwen3.7-max,0,3,/zh/models/qwen3.7-max,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5.6-luna,0,3,/en/models/gpt-5.6-luna,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/qwen-turbo,0,3,/zh/compare/plans/qwen-turbo,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/qwen2.5-72b,0,3,/zh/models/qwen2.5-72b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwq-32b,0,3,/en/models/qwq-32b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-2-vision-1212,0,3,/en/models/grok-2-vision-1212,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen3.7-max,0,3,/en/compare/plans/qwen3.7-max,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/mistral-medium-3,0,3,/en/models/mistral-medium-3,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gemini-3.5-flash-lite-(batch),0,3,/en/models/gemini-3.5-flash-lite-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/plans/hunyuan,0,3,/en/providers/hunyuan,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/o3-pro,0,3,/en/models/o3-pro,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/claude-3.5-haiku,0,3,/zh/models/claude-3.5-haiku,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/openai-o3-pro,0,3,/en/models/openai-o3-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-2.5-flash-lite,0,3,/zh/models/gemini-2.5-flash-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/o4-mini-high-(batch),0,3,/en/models/o4-mini-high-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-4-(older-v0314),0,3,/en/models/gpt-4-(older-v0314),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/mixtral-8x22b,0,3,/en/models/mixtral-8x22b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/deepseek-v4-flash-(free),0,3,/en/models/deepseek-v4-flash-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-4.20-reasoning,0,3,/en/models/grok-4.20-reasoning,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-4.1,0,3,/zh/models/gpt-4.1,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/coupons,0,2,/zh/coupons,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/models/~google-gemini-flash-latest,0,2,/zh/models/~google-gemini-flash-latest,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/qwen3-vl-30b-a3b,0,2,/zh/compare/plans/qwen3-vl-30b-a3b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/grok-4.20-non-reasoning,0,2,/zh/models/grok-4.20-non-reasoning,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-vl-8b,0,2,/zh/models/qwen3-vl-8b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/glm-4.6,0,2,/en/models/glm-4.6,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/qwq-plus,0,2,/zh/models/qwq-plus,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/music-models,0,2,/zh/music-models,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/compare/plans/qwen2.5-72b,0,2,/zh/compare/plans/qwen2.5-72b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/glm-5v-turbo,0,2,/zh/models/glm-5v-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/providers/zhipu-china,0,2,/zh/providers/zhipu-china,provider pricing copy and subscription links
+https://aiplans.dev/en/models/claude-3.5-haiku,0,2,/en/models/claude-3.5-haiku,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-4.7-flash,0,2,/en/models/glm-4.7-flash,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/step-3.7-flash,0,2,/en/models/step-3.7-flash,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/deepseek-v4-flash-vision,0,2,/zh/models/deepseek-v4-flash-vision,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/glm-5.1-fast,0,2,/en/models/glm-5.1-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans/seed,0,2,/zh/providers/seed,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/models/chat,0,2,/zh/models/chat,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/deepseek-v4.1-flash-us,0,2,/zh/models/deepseek-v4.1-flash-us,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/grok-4.3,0,2,/zh/models/grok-4.3,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/kimi-k3-(batch),0,2,/en/models/kimi-k3-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/doubao-seed-1.6-lite,0,2,/zh/models/doubao-seed-1.6-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen-vl-max,0,2,/zh/models/qwen-vl-max,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/hunyuan-translation-lite,0,2,/en/models/hunyuan-translation-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/ernie-lite,0,2,/zh/compare/plans/ernie-lite,subscription copy; indexable current comparison
+https://aiplans.dev/zh/plans/meta,0,2,/zh/providers/meta,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/submit-provider,0,2,/zh/submit-provider,existing route; shared content or navigation improvements
+https://aiplans.dev/en/providers/baidu,0,2,/en/providers/baidu,provider pricing copy and subscription links
+https://aiplans.dev/en/providers/stepfun,0,2,/en/providers/stepfun,provider pricing copy and subscription links
+https://aiplans.dev/zh/models/deepseek-v4-pro-0813-(batch),0,2,/zh/models/deepseek-v4-pro-0813-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/doubao-seed-evolving,0,2,/zh/models/doubao-seed-evolving,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/hunyuan-turbos-vision,0,2,/zh/models/hunyuan-turbos-vision,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/video-models/seedance,0,2,/zh/video-models/seedance,existing route; shared content or navigation improvements
+https://aiplans.dev/en/models/hunyuan-turbos,0,2,/en/models/hunyuan-turbos,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3.7-plus,0,2,/en/models/qwen3.7-plus,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/kimi-k2.7-code-fast,0,2,/zh/compare/plans/kimi-k2.7-code-fast,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/claude-sonnet-5-(batch),0,2,/zh/models/claude-sonnet-5-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/doubao-seed-2.0-code,0,2,/zh/models/doubao-seed-2.0-code,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen2.5-7b,0,2,/zh/models/qwen2.5-7b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/claude-opus-4.7,0,2,/en/compare/plans/claude-opus-4.7,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/moonshot-v1-128k,0,2,/en/models/moonshot-v1-128k,active model route; shared pricing or existing category route
+https://aiplans.dev/en/providers/hunyuan,0,2,/en/providers/hunyuan,provider pricing copy and subscription links
+https://aiplans.dev/zh/models/qwen3-vl-32b,0,2,/zh/models/qwen3-vl-32b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/step-1-32k,0,2,/zh/models/step-1-32k,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/step-2,0,2,/zh/models/step-2,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/step-3.7-flash,0,2,/zh/models/step-3.7-flash,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/qwen3.5-plus,0,2,/en/models/qwen3.5-plus,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/step-1-8k,0,2,/zh/models/step-1-8k,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/z-ai-glm-5v-turbo,0,2,/zh/models/z-ai-glm-5v-turbo,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gpt-5.6-luna-pro,0,2,/en/compare/plans/gpt-5.6-luna-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/glm-4.6v-flash,0,2,/zh/compare/plans/glm-4.6v-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/qwen3-vl-plus,0,2,/zh/compare/plans/qwen3-vl-plus,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/doubao-seed-2.1-turbo,0,2,/zh/models/doubao-seed-2.1-turbo,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/doubao-seed-character,0,2,/zh/models/doubao-seed-character,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/grok-4.7,0,2,/zh/models/grok-4.7,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/minimax-m1,0,2,/zh/models/minimax-m1,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/step-3.5-flash,0,2,/zh/models/step-3.5-flash,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/seed-1.6,0,2,/en/compare/plans/seed-1.6,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/ernie-speed,0,2,/zh/compare/plans/ernie-speed,subscription copy; indexable current comparison
+https://aiplans.dev/zh/compare/plans/gpt-5.1-codex-max,0,2,/zh/compare/plans/gpt-5.1-codex-max,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/minimax-m2.1,0,2,/zh/models/minimax-m2.1,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen-qwen3-vl-30b-a3b-thinking,0,2,/en/models/qwen-qwen3-vl-30b-a3b-thinking,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen2.5-vl-32b,0,2,/en/models/qwen2.5-vl-32b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/kimi-k2.6-fast,0,2,/zh/compare/plans/kimi-k2.6-fast,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/gemini-2.5-pro-(batch),0,2,/zh/models/gemini-2.5-pro-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/google-gemini-gemini-3-8-flash-batch,0,2,/en/models/google-gemini-gemini-3-8-flash-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemma-2-9b,0,2,/en/models/gemma-2-9b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/glm-4.7-flash,0,2,/zh/compare/plans/glm-4.7-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/claude-opus-5-batch,0,2,/en/compare/plans/claude-opus-5-batch,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/qwen-flash,0,2,/zh/compare/plans/qwen-flash,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/coding-agents,0,2,/zh/coding-agents,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/models/gemini-3.6-flash,0,2,/zh/models/gemini-3.6-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3.5-35b-a3b,0,2,/zh/models/qwen3.5-35b-a3b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/x-ai-grok-4-20,0,2,/en/models/x-ai-grok-4-20,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/kimi-k2.5,0,2,/zh/models/kimi-k2.5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/gpt,0,2,/zh/models/gpt,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/plans/suno,0,2,/en/providers/suno,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/models/doubao-seed-1.8,0,2,/en/models/doubao-seed-1.8,active model route; shared pricing or existing category route
+https://aiplans.dev/en/video-models/wan-video,0,2,/en/video-models/wan-video,existing route; shared content or navigation improvements
+https://aiplans.dev/en/compare/plans/qwen-vl,0,2,/en/compare/plans/qwen-vl,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/video-models/veo-3-1-audio-1080p,0,2,/en/video-models/veo-3-1-audio-1080p,existing route; shared content or navigation improvements
+https://aiplans.dev/en/video-models/gemini-omni-flash,0,2,/en/video-models/gemini-omni-flash,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/models/gpt-5.1-codex,0,2,/zh/models/gpt-5.1-codex,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/gpt-realtime-2.1,0,2,/zh/models/gpt-realtime-2.1,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/qwen3.8-2.4t-a95b,0,2,/en/compare/plans/qwen3.8-2.4t-a95b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/x-ai-grok-build-0-1,0,2,/zh/models/x-ai-grok-build-0-1,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/hunyuan-turbo,0,2,/en/models/hunyuan-turbo,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/mistral-7b,0,2,/zh/models/mistral-7b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-3.1-pro,0,2,/zh/models/gemini-3.1-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-pro,0,2,/zh/models/gemini-pro,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/openai-gpt-4-turbo,0,2,/en/models/openai-gpt-4-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/providers/azure-openai,0,2,/en/providers/azure-openai,provider pricing copy and subscription links
+https://aiplans.dev/en/compare/plans/claude-3.7-sonnet,0,2,/en/compare/plans/claude-3.7-sonnet,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/ernie-5.1,0,2,/en/models/ernie-5.1,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/step-r1-v,0,2,/en/models/step-r1-v,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3-vl-plus,0,2,/en/models/qwen3-vl-plus,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/claude-opus-5-batch,0,2,/en/models/claude-opus-5-batch,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/kimi-k2,0,2,/en/models/kimi-k2,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/openai-o3-batch,0,2,/en/models/openai-o3-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/o3-(batch),0,2,/en/models/o3-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/kimi-k2.7-code-(batch),0,2,/en/models/kimi-k2.7-code-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/minimax-m2.1-highspeed,0,2,/zh/models/minimax-m2.1-highspeed,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/claude-opus-4.8,0,2,/en/models/claude-opus-4.8,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gemini-3-flash-preview-(batch),0,2,/en/models/gemini-3-flash-preview-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-3.1-pro-preview-(batch),0,2,/en/models/gemini-3.1-pro-preview-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-oss-safeguard-20b,0,2,/en/models/gpt-oss-safeguard-20b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/qwen3-next-80b-a3b-instruct-(free),0,2,/en/models/qwen3-next-80b-a3b-instruct-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/gpt-5.4,0,2,/en/compare/plans/gpt-5.4,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/hunyuan-t1,0,2,/en/models/hunyuan-t1,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-mini,0,2,/en/models/gpt-mini,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/doubao-seed-code,0,2,/en/models/doubao-seed-code,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/gemini-2.5-flash-lite,0,2,/zh/compare/plans/gemini-2.5-flash-lite,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/step-audio-2,0,2,/en/models/step-audio-2,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/grok-2,0,2,/zh/models/grok-2,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-4.5,0,2,/zh/models/gpt-4.5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/claude-haiku-4-5,0,2,/zh/models/claude-haiku-4-5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/o1,0,2,/en/models/o1,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/glm-4.5v,0,2,/en/compare/plans/glm-4.5v,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/o1-(batch),0,2,/en/models/o1-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/,0,1,/en/,existing route; shared content or navigation improvements
+https://aiplans.dev/en/coding-agents?utm_source=chatgpt.com,0,1,/en/coding-agents,existing route; shared content or navigation improvements
+https://aiplans.dev/en/models/gpt-5.6-sol-pro,0,1,/en/models/gpt-5.6-sol-pro,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/compare/plans/claude-opus-5,0,1,/zh/compare/plans/claude-opus-5,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/providers/stepfun,0,1,/zh/providers/stepfun,provider pricing copy and subscription links
+https://aiplans.dev/coupons,0,1,/en/coupons,existing route; shared content or navigation improvements
+https://aiplans.dev/en/compare/plans/qwen3.8-27b,0,1,/en/compare/plans/qwen3.8-27b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/hunyuan-role,0,1,/en/models/hunyuan-role,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/stepaudio-2.5,0,1,/en/models/stepaudio-2.5,active model route; shared pricing or existing category route
+https://aiplans.dev/en/providers/mureka,0,1,/en/providers/mureka,provider pricing copy and subscription links
+https://aiplans.dev/en/providers/zhipu-china,0,1,/en/providers/zhipu-china,provider pricing copy and subscription links
+https://aiplans.dev/zh/compare/plans/doubao-seed-2.1-turbo,0,1,/zh/compare/plans/doubao-seed-2.1-turbo,subscription copy; indexable current comparison
+https://aiplans.dev/zh/models/deepseek-v4-flash,0,1,/zh/models/deepseek-v4-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/doubao-1.5-vision-pro,0,1,/zh/models/doubao-1.5-vision-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/hunyuan-t1-vision,0,1,/zh/models/hunyuan-t1-vision,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/providers/hunyuan,0,1,/zh/providers/hunyuan,provider pricing copy and subscription links
+https://aiplans.dev/en/models/doubao-seed-character,0,1,/en/models/doubao-seed-character,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/gemini-3-pro,0,1,/zh/compare/plans/gemini-3-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/gpt-5-image,0,1,/zh/compare/plans/gpt-5-image,subscription copy; indexable current comparison
+https://aiplans.dev/zh/compare/plans/gpt-realtime-2.1,0,1,/zh/compare/plans/gpt-realtime-2.1,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/2508-(batch),0,1,/zh/models/2508-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/glm-4.6v,0,1,/zh/models/glm-4.6v,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/glm-5.1-fast,0,1,/zh/models/glm-5.1-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen-qwen-2-5-72b-instruct,0,1,/zh/models/qwen-qwen-2-5-72b-instruct,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-vl-235b-a22b,0,1,/zh/models/qwen3-vl-235b-a22b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/minimax-m2.5,0,1,/en/compare/plans/minimax-m2.5,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/mistral-small-batch,0,1,/en/models/mistral-small-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3.5-9b-(batch),0,1,/en/models/qwen3.5-9b-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/plans/pika,0,1,/en/providers/pika,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/en/video-models/grok-imagine-video-720p,0,1,/en/video-models/grok-imagine-video-720p,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/compare/plans/chat,0,1,/zh/compare/plans/chat,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/claude-opus-5:batch,0,1,/zh/compare/plans/claude-opus-5:batch,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/ernie-4.5-vl-28b-a3b,0,1,/zh/compare/plans/ernie-4.5-vl-28b-a3b,subscription copy; indexable current comparison
+https://aiplans.dev/zh/compare/plans/seed-2.0,0,1,/zh/compare/plans/seed-2.0,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/bytedance-seed-seed-1-6,0,1,/zh/models/bytedance-seed-seed-1-6,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen2.5-vl-7b,0,1,/zh/models/qwen2.5-vl-7b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/stepaudio-2.5-realtime,0,1,/zh/models/stepaudio-2.5-realtime,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/providers/anthropic,0,1,/zh/providers/anthropic,provider pricing copy and subscription links
+https://aiplans.dev/zh/providers/aws-bedrock,0,1,/zh/providers/aws-bedrock,provider pricing copy and subscription links
+https://aiplans.dev/en/compare/plans/doubao-seed-evolving,0,1,/en/compare/plans/doubao-seed-evolving,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/kimi-k3-us,0,1,/en/models/kimi-k3-us,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen2.5-7b-instruct-turbo,0,1,/en/models/qwen2.5-7b-instruct-turbo,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3-next-80b-a3b-thinking,0,1,/en/models/qwen3-next-80b-a3b-thinking,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/~z-ai-glm-flash-latest,0,1,/en/models/~z-ai-glm-flash-latest,active model route; shared pricing or existing category route
+https://aiplans.dev/en/video-models/seedance,0,1,/en/video-models/seedance,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/compare/plans/doubao-seed-2.0-lite,0,1,/zh/compare/plans/doubao-seed-2.0-lite,subscription copy; indexable current comparison
+https://aiplans.dev/zh/compare/plans/qwen3.8-2.4t-a95b,0,1,/zh/compare/plans/qwen3.8-2.4t-a95b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/glm-5,0,1,/zh/models/glm-5,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/glm-5.1,0,1,/zh/models/glm-5.1,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/hunyuan-turbos-vision-video,0,1,/zh/models/hunyuan-turbos-vision-video,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/qwen3-32b,0,1,/zh/models/qwen3-32b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/providers/google?period=yearly,0,1,/zh/providers/google,provider pricing copy and subscription links
+https://www.aiplans.dev/en/compare/plans/gemini-3.1-pro,0,1,/en/compare/plans/gemini-3.1-pro,subscription copy; indexable current comparison
+https://aiplans.dev/en/compare/plans/ernie-4.5-vl-28b-a3b,0,1,/en/compare/plans/ernie-4.5-vl-28b-a3b,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/doubao-seed-2.0-pro,0,1,/en/models/doubao-seed-2.0-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/z-ai-glm-5-turbo,0,1,/en/models/z-ai-glm-5-turbo,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/zai-glm-5-2,0,1,/en/models/zai-glm-5-2,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/qwen3-235b-a22b-instruct-2507-fp8-throughput,0,1,/zh/compare/plans/qwen3-235b-a22b-instruct-2507-fp8-throughput,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/qwen3-max-thinking,0,1,/zh/compare/plans/qwen3-max-thinking,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/glm-4.7-flashx,0,1,/zh/models/glm-4.7-flashx,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/openai-gpt-4-1-mini,0,1,/zh/models/openai-gpt-4-1-mini,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-vl-8b-thinking,0,1,/zh/models/qwen3-vl-8b-thinking,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/qwen-2.5-72b,0,1,/en/compare/plans/qwen-2.5-72b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/qwen3.5-35b-a3b,0,1,/en/compare/plans/qwen3.5-35b-a3b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-5.6-terra-pro,0,1,/en/models/gpt-5.6-terra-pro,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/hunyuan-lite,0,1,/en/models/hunyuan-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3-coder-flash,0,1,/en/models/qwen3-coder-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/video-models/ray-3,0,1,/en/video-models/ray-3,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/compare/plans/glm-4.6v,0,1,/zh/compare/plans/glm-4.6v,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/kimi-k2-0905-(exacto),0,1,/zh/compare/plans/kimi-k2-0905-(exacto),retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/qwen2.5-7b,0,1,/zh/compare/plans/qwen2.5-7b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/claude-opus-4.8-batch,0,1,/zh/models/claude-opus-4.8-batch,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/codestral-batch,0,1,/zh/models/codestral-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-3.5-flash-lite,0,1,/zh/models/gemini-3.5-flash-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-4o,0,1,/zh/models/gpt-4o,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-5.4-pro,0,1,/zh/models/gpt-5.4-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gpt-5.6-sol-pro,0,1,/zh/models/gpt-5.6-sol-pro,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/o1-pro-(batch),0,1,/zh/models/o1-pro-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/openai-gpt-6-luna-pro-batch,0,1,/zh/models/openai-gpt-6-luna-pro-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-max-thinking,0,1,/zh/models/qwen3-max-thinking,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/stepfun-step-3-7-flash,0,1,/zh/models/stepfun-step-3-7-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/ernie-5.1,0,1,/en/compare/plans/ernie-5.1,subscription copy; indexable current comparison
+https://aiplans.dev/en/compare/plans/qwen3-vl-8b-thinking,0,1,/en/compare/plans/qwen3-vl-8b-thinking,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/glm-4.5-air-(free),0,1,/en/models/glm-4.5-air-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/glm-5glm-5.1,0,1,/en/models/glm-5glm-5.1,active model route; shared pricing or existing category route
+https://aiplans.dev/en/providers/anthropic,0,1,/en/providers/anthropic,provider pricing copy and subscription links
+https://aiplans.dev/zh/compare/plans/qwen2.5-coder-7b,0,1,/zh/compare/plans/qwen2.5-coder-7b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/claude-opus-4.7,0,1,/zh/models/claude-opus-4.7,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/deepseek-v4-flash-(free),0,1,/zh/models/deepseek-v4-flash-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/glm-4.6v-flash,0,1,/zh/models/glm-4.6v-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/glm-5-turbo,0,1,/zh/models/glm-5-turbo,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/gpt-5.1,0,1,/zh/models/gpt-5.1,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/hunyuan-a13b,0,1,/zh/models/hunyuan-a13b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/kimi-k3-us,0,1,/zh/models/kimi-k3-us,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/minimax-m2.7-highspeed,0,1,/zh/models/minimax-m2.7-highspeed,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/~deepseek-deepseek-pro-latest,0,1,/zh/models/~deepseek-deepseek-pro-latest,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/providers/google,0,1,/zh/providers/google,provider pricing copy and subscription links
+https://aiplans.dev/en/compare/plans/ernie-speed,0,1,/en/compare/plans/ernie-speed,subscription copy; indexable current comparison
+https://aiplans.dev/en/compare/plans/gpt-5.4-nano,0,1,/en/compare/plans/gpt-5.4-nano,subscription copy; indexable current comparison
+https://aiplans.dev/en/models/deepseek-v4-flash,0,1,/en/models/deepseek-v4-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5.6-terra-pro-(batch),0,1,/en/models/gpt-5.6-terra-pro-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/minimax-01,0,1,/en/models/minimax-01,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/openai-gpt-5-nano-batch,0,1,/en/models/openai-gpt-5-nano-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3-vl-30b-a3b,0,1,/en/models/qwen3-vl-30b-a3b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/qwen3.5-397b-a17b,0,1,/en/models/qwen3.5-397b-a17b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3.8-2.4t-a95b,0,1,/en/models/qwen3.8-2.4t-a95b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/submit-provider,0,1,/en/submit-provider,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/models/anthropic-claude-3-haiku,0,1,/zh/models/anthropic-claude-3-haiku,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/hunyuan-t1,0,1,/zh/models/hunyuan-t1,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen-math-plus,0,1,/zh/models/qwen-math-plus,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen-qwen3-8-27b,0,1,/zh/models/qwen-qwen3-8-27b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/providers/aws-bedrock?period=yearly,0,1,/zh/providers/aws-bedrock,provider pricing copy and subscription links
+https://aiplans.dev/zh/providers/baidu,0,1,/zh/providers/baidu,provider pricing copy and subscription links
+https://aiplans.dev/en/compare/plans/gemini-3.1-flash-lite,0,1,/en/compare/plans/gemini-3.1-flash-lite,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/qwen3-235b-a22b-instruct-2507-fp8-throughput,0,1,/en/compare/plans/qwen3-235b-a22b-instruct-2507-fp8-throughput,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/qwen3-max-thinking,0,1,/en/compare/plans/qwen3-max-thinking,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/compare/plans/qwen3.5-plus,0,1,/en/compare/plans/qwen3.5-plus,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/claude-opus-4.1,0,1,/en/models/claude-opus-4.1,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/deepseek-v4-flash-0731-(batch),0,1,/en/models/deepseek-v4-flash-0731-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/doubao-seed-1.6,0,1,/en/models/doubao-seed-1.6,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-2.5-flash-lite-(batch),0,1,/en/models/gemini-2.5-flash-lite-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/hunyuan-a13b,0,1,/en/models/hunyuan-a13b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3-235b-a22b-thinking,0,1,/en/models/qwen3-235b-a22b-thinking,active model route; shared pricing or existing category route
+https://aiplans.dev/en/providers/deepseek,0,1,/en/providers/deepseek,provider pricing copy and subscription links
+https://aiplans.dev/en/video-models/skyreels,0,1,/en/video-models/skyreels,existing route; shared content or navigation improvements
+https://aiplans.dev/zh/compare/plans/minimax-m2.7-highspeed,0,1,/zh/compare/plans/minimax-m2.7-highspeed,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/anthropic-claude-sonnet-4-5,0,1,/zh/models/claude-sonnet-4.5,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-3.7-flash,0,1,/zh/models/gemini-3.7-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/glm-4.5-air,0,1,/zh/models/glm-4.5-air,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/glm-4.7-flash,0,1,/zh/models/glm-4.7-flash,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/qwen-vl,0,1,/zh/models/qwen-vl,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-vl-plus,0,1,/zh/models/qwen3-vl-plus,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3.6-35b-a3b,0,1,/zh/models/qwen3.6-35b-a3b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/google-gemini-gemini-3-1-pro-preview-batch,0,1,/en/models/gemini-3.1-pro-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/minimax-m1,0,1,/en/models/minimax-m1,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/compare/plans/gpt-5.6-sol-pro,0,1,/zh/compare/plans/gpt-5.6-sol-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/o1-mini,0,1,/zh/models/o1-mini,active model route; shared pricing or existing category route
+https://aiplans.dev/en/compare/plans/doubao-seed-1.6-lite,0,1,/en/compare/plans/doubao-seed-1.6-lite,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/qwen3-coder-480b-a35b-(free),0,1,/zh/models/qwen3-coder-480b-a35b-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/plans/together-ai,0,1,/zh/providers/together-ai,existing permanent provider redirect; new provider pricing copy
+https://aiplans.dev/zh/compare/plans/qwen3-14b,0,1,/zh/compare/plans/qwen3-14b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/qwen-flash,0,1,/zh/models/qwen-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemma-4-31b-it-pearl,0,1,/zh/models/gemma-4-31b-it-pearl,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/ernie-lite,0,1,/zh/models/ernie-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3-72b,0,1,/zh/models/qwen3-72b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/mistral-small,0,1,/zh/models/mistral-small,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/ernie-lite,0,1,/en/models/ernie-lite,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-1.5-flash,0,1,/zh/models/gemini-1.5-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/providers/openai,0,1,/zh/providers/openai,provider pricing copy and subscription links
+https://aiplans.dev/en/image-models/flux-kontext-max,0,1,/en/image-models/flux-kontext-max,existing route; shared content or navigation improvements
+https://aiplans.dev/en/compare/plans/kimi-k3-fast,0,1,/en/compare/plans/kimi-k3-fast,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/hunyuan-standard,0,1,/en/models/hunyuan-standard,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/anthropic-claude-3-haiku,0,1,/en/models/anthropic-claude-3-haiku,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/qwen3-235b-a22b-thinking,0,1,/zh/compare/plans/qwen3-235b-a22b-thinking,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/compare/plans/qwen3.5-9b,0,1,/zh/compare/plans/qwen3.5-9b,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/doubao-seed-2.0-code,0,1,/en/models/doubao-seed-2.0-code,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemma-2-27b,0,1,/en/models/gemma-2-27b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gpt-oss-20b-(free),0,1,/en/models/gpt-oss-20b-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/qwen3-max-thinking,0,1,/en/models/qwen3-max-thinking,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/tongyi-deepresearch-30b-a3b,0,1,/en/models/tongyi-deepresearch-30b-a3b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/providers/ideogram,0,1,/en/providers/ideogram,provider pricing copy and subscription links
+https://aiplans.dev/en/models/gemini-3.6-flash-(batch),0,1,/en/models/gemini-3.6-flash-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/nano-banana-(gemini-2.5-flash-image),0,1,/zh/models/nano-banana-(gemini-2.5-flash-image),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemma-3n-4b,0,1,/en/models/gemma-3n-4b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemma-4-31b-it-pearl,0,1,/en/models/gemma-4-31b-it-pearl,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/claude-opus-4.8-fast,0,1,/zh/models/claude-opus-4.8-fast,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/kimi,0,1,/zh/models/kimi,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/mixtral-8x7b,0,1,/en/models/mixtral-8x7b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-2.5-pro-preview-05-06,0,1,/zh/models/gemini-2.5-pro-preview-05-06,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/seed-1.6,0,1,/en/models/seed-1.6,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/gemini-3.7-flash-(batch),0,1,/en/models/gemini-3.7-flash-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/ministral-8b,0,1,/en/models/ministral-8b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemma-4-31b,0,1,/zh/models/gemma-4-31b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-2.5-flash,0,1,/en/models/gemini-2.5-flash,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/kimi-k2-thinking,0,1,/zh/compare/plans/kimi-k2-thinking,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/gpt-5.2-pro,0,1,/zh/models/gpt-5.2-pro,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/compare/plans/minimax-m2.5-highspeed,0,1,/en/compare/plans/minimax-m2.5-highspeed,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/step-3.5-flash,0,1,/en/models/step-3.5-flash,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/gemini-2.5-pro-preview-06-05,0,1,/zh/models/gemini-2.5-pro-preview-06-05,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/gpt-5.2-high,0,1,/zh/models/gpt-5.2-high,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/hunyuan-pro,0,1,/en/models/hunyuan-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/mistral-large-2,0,1,/zh/models/mistral-large-2,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/gemini-2.5-flash-lite-(batch),0,1,/zh/models/gemini-2.5-flash-lite-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen2.5-vl-72b,0,1,/zh/models/qwen2.5-vl-72b,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/en/models/o4-mini-high,0,1,/en/models/o4-mini-high,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/gemma-3-27b-(free),0,1,/zh/models/gemma-3-27b-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-3.1-pro-preview-custom-tools,0,1,/en/models/gemini-3.1-pro-preview-custom-tools,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/gemma-3-12b-(free),0,1,/zh/models/gemma-3-12b-(free),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/grok-beta,0,1,/en/models/grok-beta,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/wan2-6-t2v,0,1,/en/models/wan2-6-t2v,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/gemini-3.5-flash-lite,0,1,/zh/compare/plans/gemini-3.5-flash-lite,subscription copy; indexable current comparison
+https://aiplans.dev/en/compare/plans/glm-5v-turbo,0,1,/en/compare/plans/glm-5v-turbo,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/openai-gpt-6-astra-batch,0,1,/en/models/openai-gpt-6-astra-batch,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/seed-2.0,0,1,/en/models/seed-2.0,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/nano-banana-2-(gemini-3.1-flash-image-preview),0,1,/en/models/nano-banana-2-(gemini-3.1-flash-image-preview),active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-5.6-terra,0,1,/en/models/gpt-5.6-terra,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/doubao-1.5-pro,0,1,/en/models/doubao-1.5-pro,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gpt-4.1-nano-(batch),0,1,/en/models/gpt-4.1-nano-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/gemini-2.5-pro,0,1,/zh/compare/plans/gemini-2.5-pro,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/zh/models/qwen2.5-coder-7b,0,1,/zh/models/qwen2.5-coder-7b,active model route; shared pricing or existing category route
+https://aiplans.dev/zh/compare/plans/mistral-medium,0,1,/zh/compare/plans/mistral-medium,subscription copy; indexable current comparison
+https://aiplans.dev/en/compare/plans/seed-2.0,0,1,/en/compare/plans/seed-2.0,retain existing noindex/redirect for historic or thin comparison; guide/provider navigation
+https://aiplans.dev/en/models/gpt-5.5-pro,0,1,/en/models/gpt-5.5-pro,not active in snapshot; retain existing redirect/404 policy
+https://aiplans.dev/zh/models/mixtral-8x7b,0,1,/zh/models/mixtral-8x7b,active model route; shared pricing or existing category route
+https://aiplans.dev/en/models/gemini-2.5-pro-(batch),0,1,/en/models/gemini-2.5-pro-(batch),active model route; shared pricing or existing category route
+https://aiplans.dev/zh/models/qwen3.5-plus,0,1,/zh/models/qwen3.5-plus,active model route; shared pricing or existing category route

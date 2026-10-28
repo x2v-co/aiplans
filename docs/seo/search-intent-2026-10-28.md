@@ -1,5 +1,7 @@
 # Search intent improvements — 2026-10-28
 
+Initial-round notes. See [full query coverage](search-coverage-2026-10-28.md) for the completed release scope.
+
 Source: supplied Search Console exports `查询数.csv` (1,000 rows) and `网页.csv` (878 rows). Export date is not the reporting window. Query and page tables are independent aggregates: they cannot establish which URL appeared for every query.
 
 ## Evidence and landing pages
@@ -31,6 +33,6 @@ Live target inspection showed HTTP 200, a self-canonical URL, two plans and a $1
 
 Local production preview was checked against existing database data through the SSH tunnel to x2v-global (read-only page queries). The DeepSeek provider page links first to the requested V4.1 Flash comparison. The comparison returns HTTP 200, index/follow, the production self-canonical URL, the subscription heading, a database-derived two-plan/$10 snippet, and matching FAQ JSON-LD. At 375px viewport width there is no horizontal overflow; introductory copy was shortened for mobile. The legacy Kimi K2 comparison retains its existing noindex and canonical-to-current-catalog behavior rather than promoting an empty page.
 
-Work remains local on seo/search-intent-20261028. No commit, push, PR, application deployment or database writes performed. Package release-version edits were reverted; only SEO code, tests and this analysis remain changed.
+The first round was validated locally on seo/search-intent-20261028. The user subsequently requested complete export coverage and a combined deployment; see the full coverage report and PR for current release status. No pricing data writes are included.
 
 After deployment, verify the legacy provider redirect, new provider links, DeepSeek/Kimi comparison titles and visible content, FAQ JSON-LD, robots and canonical tags. Request indexing for the DeepSeek target and monitor query × page results in Search Console. Google chooses the result URL; these changes cannot guarantee a specific landing page. Preserve provider pages for brand/product intents instead of redirecting all of their traffic to one model.

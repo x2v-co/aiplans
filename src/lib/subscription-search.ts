@@ -23,10 +23,11 @@ export function subscriptionSearchCopy(modelSlug: string, modelName: string, loc
   };
 }
 
-export function providerSubscriptionComparisons<T extends PlanComparisonCandidate & { name: string }>(models: T[], providerModelSlugs?: ReadonlySet<string>) {
+export function providerSubscriptionComparisons<T extends PlanComparisonCandidate & { name: string; isPrimaryProvider?: boolean }>(models: T[], providerModelSlugs?: ReadonlySet<string>) {
   return selectIndexablePlanComparisons(models)
     .filter(model => !providerModelSlugs || providerModelSlugs.has(model.slug))
-    .sort((a, b) => Number(b.slug === 'deepseek-v4.1-flash') - Number(a.slug === 'deepseek-v4.1-flash')
+    .sort((a, b) => Number(Boolean(b.isPrimaryProvider)) - Number(Boolean(a.isPrimaryProvider))
+      || Number(b.slug === 'deepseek-v4.1-flash') - Number(a.slug === 'deepseek-v4.1-flash')
       || b.plan_count - a.plan_count || a.slug.localeCompare(b.slug))
     .slice(0, 6);
 }

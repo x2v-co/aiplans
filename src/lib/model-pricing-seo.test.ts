@@ -40,19 +40,19 @@ test('currency ranking retains native prices in snippets, table rows and single-
   assert.match(en.description, /CNY 6 per 1M tokens/);
   assert.match(zh.description, /CNY 6\/百万 tokens/);
   assert.match(en.title, /API Pricing \/ Price per 1M tokens/);
-  assert.equal(zh.title, 'GLM 5.3 Flash 价格');
+  assert.equal(zh.title, 'GLM 5.3 Flash 价格与 API 费用');
   assert.equal(buildModelPricingSeo({ name: 'DeepSeek V4.1 Flash', slug: 'deepseek-v4.1-flash' }, [], 'zh').title,
-    'DeepSeek V4.1 Flash 价格');
+    'DeepSeek V4.1 Flash 价格与 API 费用');
   for (const content of [en, zh]) {
     assert.match(content.description, /2026-10-13/);
-    assert.equal(content.faqs.length, 4);
+    assert.equal(content.faqs.length, 6);
     assert.match(content.faqs[2].answer, /CNY 0/);
     const offer = content.aggregateOffer!;
     assert.equal(offer.priceCurrency, 'USD');
     assert.equal(offer.lowPrice, '2');
     assert.equal(offer.highPrice, '4');
     assert.ok(offer.offers.every(row => row.priceCurrency === 'USD'));
-    assert.equal(JSON.parse(faqPage(content.faqs)).mainEntity.length, 4);
+    assert.equal(JSON.parse(faqPage(content.faqs)).mainEntity.length, 6);
     assert.equal(JSON.parse(jsonLd({ '@type': 'Service', alternateName: content.aliases, offers: offer })).offers.lowPrice, '2');
   }
 });
@@ -120,4 +120,25 @@ test('route keeps a single Product and FAQPage with visible FAQ and table ahead 
   assert.match(page, /alternateName: pricing.aliases/);
   assert.match(page, /keywords: \[productName, ...pricing.aliases\]/);
   assert.ok(page.indexOf('<ModelPricingSummary') < page.indexOf('<ModelBenchmarkPanel'));
+});
+
+
+test('free API needs both live token prices to be zero, not a free cache or missing output', () => {
+  const data = buildModelPricingSeo(model, [quote({ input_price_per_1m: 0, output_price_per_1m: null }),
+    quote({ cached_input_price_per_1m: 0 }), quote({ input_price_per_1m: 0, output_price_per_1m: 0, is_available: false })], 'en');
+  assert.equal(data.freeChannels.length, 0);
+  assert.match(data.faqs[4].answer, /No available recorded channel/);
+  const free = buildModelPricingSeo(model, [quote({ input_price_per_1m: 0, output_price_per_1m: 0 })], 'zh');
+  assert.equal(free.freeChannels.length, 1);
+  assert.equal(free.exampleLabel, 'USD 0');
+  assert.match(free.faqs[4].answer, /输入与输出 token 单价均为零/);
+});
+
+test('cost examples retain native currency and do not invent an unknown output cost', () => {
+  const priced = buildModelPricingSeo(model, [quote({ currency: 'CNY', input_price_per_1m: 2, output_price_per_1m: 8 })], 'zh');
+  assert.equal(priced.exampleLabel, 'CNY 4');
+  assert.match(priced.costAnswer, /不含缓存、工具、重试/);
+  const unknown = buildModelPricingSeo(model, [quote({ output_price_per_1m: null })], 'en');
+  assert.equal(unknown.exampleLabel, null);
+  assert.match(unknown.costAnswer, /No complete input\/output quote/);
 });

@@ -43,6 +43,7 @@ interface ComparePlansViewProps {
   /** Active plan-scoped coupons keyed by provider slug. */
   couponByProvider: Record<string, CouponOffer[]>;
   quotaEstimates: VerifiedQuotaEstimate[];
+  pricingGuide?: { href: string; label: string };
 }
 
 interface CheapestByKind {
@@ -64,7 +65,7 @@ interface PlanGroup {
   plans: any[];
 }
 
-export default function ComparePlansView({ locale, data, faqs, couponByProvider, quotaEstimates }: ComparePlansViewProps) {
+export default function ComparePlansView({ locale, data, faqs, couponByProvider, quotaEstimates, pricingGuide }: ComparePlansViewProps) {
   // Billing toggle
   const [showYearly, setShowYearly] = useState(false);
   // Every provider starts expanded, and it has to be the *initial* state rather
@@ -235,6 +236,13 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
           <Link href={`/${locale}/models/${encodeURIComponent(model.slug)}`} className="mb-6 inline-block text-blue-600 hover:underline">
             {searchCopy.apiLink} →
           </Link>
+
+          <nav aria-label={locale === 'zh' ? '相关价格与套餐' : 'Related pricing and plans'} className="mb-6 flex flex-wrap justify-center gap-4 text-sm">
+            {model.provider?.slug && <Link href={`/${locale}/providers/${encodeURIComponent(model.provider.slug)}`} className="text-blue-600 hover:underline">
+              {model.provider.name} {locale === 'zh' ? '价格与订阅套餐' : 'pricing & subscription plans'}
+            </Link>}
+            {pricingGuide && <Link href={pricingGuide.href} className="text-blue-600 hover:underline">{pricingGuide.label}</Link>}
+          </nav>
 
           {(providerVisitUrl || couponsFor(couponByProvider, model.provider?.slug).length > 0) && (
             <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
