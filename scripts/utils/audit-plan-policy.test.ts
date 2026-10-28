@@ -81,3 +81,14 @@ test('OpenAI HTTP 200 without paid amounts cannot verify Free/Enterprise alone',
   assert.deepEqual(result.plans, []);
   assert.match(result.errors![0], /Plus, Pro.*no supported USD price/);
 });
+
+import {resolvedPlanFreshnessAlerts} from './audit-plan-policy';
+test('stale -> fresh -> stale alerts again while ongoing findings remain deduplicated',()=>{
+  const key='plans.stale:chatgpt-free', unrelated='prices.modelsdev_divergence:gpt';
+  const state=new Set([key,unrelated]);
+  assert.deepEqual(resolvedPlanFreshnessAlerts([...state],new Set([key])),[]);
+  for(const resolved of resolvedPlanFreshnessAlerts([...state],new Set())) state.delete(resolved);
+  assert.equal(state.has(key),false);
+  assert.equal(state.has(unrelated),true);
+  assert.equal(!state.has(key),true); // next stale report is a new finding
+});

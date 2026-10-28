@@ -18,7 +18,7 @@
  *   ... | AUDIT_ALERT_APPLY=1 npx tsx scripts/audit-alert.ts   # persist state
  */
 import { databaseSql } from './db/postgres-admin';
-import { shouldAlertFinding } from './utils/audit-plan-policy';
+import { shouldAlertFinding, resolvedPlanFreshnessAlerts } from './utils/audit-plan-policy';
 
 const APPLY = process.env.AUDIT_ALERT_APPLY === '1';
 
@@ -60,15 +60,22 @@ async function main() {
   const findings = (report.findings ?? []).filter(
     shouldAlertFinding,
   );
-  if (findings.length === 0) {
-    console.log('audit-alert: no actionable findings');
+  if (!Array.isArray(report.findings)) {
+    console.error('audit-alert: incomplete report; keeping alert state unchanged');
     return;
   }
-
   const existing = new Set(
     (await databaseSql<{ fingerprint: string }[]>`SELECT fingerprint FROM audit_alert_state`)
       .map(r => r.fingerprint),
   );
+  const resolved = resolvedPlanFreshnessAlerts([...existing], new Set(findings.map(fingerprint)));
+  if (APPLY) {
+    for (const key of resolved) await databaseSql`DELETE FROM audit_alert_state WHERE fingerprint = ${key}`;
+  }
+  if (findings.length === 0) {
+    console.log('audit-alert: no actionable findings');
+    return;
+  }
 
   const fresh = findings.filter(f => !existing.has(fingerprint(f)));
   if (fresh.length === 0) {

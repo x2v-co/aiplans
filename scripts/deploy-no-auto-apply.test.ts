@@ -21,3 +21,13 @@ test('scheduled scrapers only apply mappings behind PLAN_MAPPINGS_APPLY=1', () =
     assert.doesNotMatch(read(`../deploy/production/${unit}`), /PLAN_MAPPINGS_APPLY/);
   }
 });
+
+test('reviewed OpenAI writes require their own explicit opt-in, independently of paused legacy scrapers', () => {
+  const script = read('../deploy/production/run-scrapers.sh');
+  const start = script.indexOf('if [[ "${OPENAI_REVIEW_APPLY:-0}" == "1" ]]; then');
+  const end = script.indexOf('\nfi', start);
+  assert.ok(start > 0 && end > start);
+  assert.match(script.slice(start, end), /refresh-openai-plans\.ts --apply/);
+  assert.doesNotMatch(script.slice(0, start) + script.slice(end), /refresh-openai-plans\.ts --apply/);
+  assert.match(script, /"\$openai_review_status" != "0"/);
+});

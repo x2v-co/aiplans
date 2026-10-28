@@ -48,6 +48,13 @@ else
   "${compose[@]}" run --rm scraper npm run scrape:plans
   plans_status=$?
 fi
+# Explicit opt-in for the reviewed OpenAI source pipeline. It is independent
+# of SKIP_PLANS, which operators may set to suspend legacy plan scrapers.
+openai_review_status=0
+if [[ "${OPENAI_REVIEW_APPLY:-0}" == "1" ]]; then
+  "${compose[@]}" run --rm scraper npx tsx scripts/refresh-openai-plans.ts --apply
+  openai_review_status=$?
+fi
 set -e
 
 set +e
@@ -121,8 +128,8 @@ if [[ "$audit_status" != "0" && "$audit_status" != "2" ]]; then
   exit "$audit_status"
 fi
 
-if [[ "$api_status" != "0" || "$plans_status" != "0" ]]; then
-  echo "Scraper group failure: api=$api_status plans=$plans_status" >&2
+if [[ "$api_status" != "0" || "$plans_status" != "0" || "$openai_review_status" != "0" ]]; then
+  echo "Scraper group failure: api=$api_status plans=$plans_status openai_review=$openai_review_status" >&2
   exit 1
 fi
 

@@ -197,3 +197,11 @@ test('variant rows keep their own source and constraints', () => {
   assert.equal(fact.verifiedOn, '2026-10-15');
   assert.equal(fact.flags.estimated, false);
 });
+
+test('reviewed OpenAI plan uses the exact official source for price and entitlement', () => {
+  const source = { label: 'Provider pricing', url: 'https://openai.com/chatgpt/pricing/' };
+  const plan = { price: 20, last_verified: '2026-10-28', notes: '[aiplans:review-source] https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus' };
+  assert.equal(planPriceTrust(plan, source, 'en').sourceUrl, 'https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus');
+  assert.equal(planEntitlementTrust(plan, source, 'en').sourceUrl, 'https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus');
+  assert.equal(planPriceTrust({ ...plan, notes: '[aiplans:review-source] https://untrusted.example/price' }, source, 'en').sourceUrl, source.url);
+});

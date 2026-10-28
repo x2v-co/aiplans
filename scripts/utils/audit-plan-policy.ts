@@ -62,3 +62,8 @@ export function shouldAlertFinding(finding: { check: string; severity: string })
     'plans.modelsdev_entitlements', 'plans.stale', 'plans.missing_verified',
   ]).has(finding.check);
 }
+
+/** Clearing resolved freshness fingerprints lets a later stale episode alert again. */
+export function resolvedPlanFreshnessAlerts(saved: string[], active: Set<string>): string[] {
+  return saved.filter(key => /^(plans\.stale|plans\.missing_verified):/.test(key) && !active.has(key));
+}
