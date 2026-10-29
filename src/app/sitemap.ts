@@ -6,7 +6,7 @@ import type { AiCatalogKind } from '@/lib/ai-vertical-catalog';
 import { sql } from '@/lib/db';
 import { isGluedModelSlug } from '@/lib/glued-model-slug';
 import { selectIndexablePlanComparisons } from '@/lib/search-indexing';
-import { PRICING_GUIDE_SLUGS } from '@/lib/pricing-guides';
+import { STATIC_PATHS, resolveStaticLastmod, type ChangeFrequency } from '@/lib/sitemap-static-paths';
 import { getVerifiedQuotaEstimates } from '@/lib/quota/data';
 import { quotaChanges } from '@/lib/quota/estimates';
 
@@ -17,62 +17,48 @@ export const dynamic = 'force-dynamic';
 
 interface UrlEntry {
   url: string;
-  lastModified: Date;
-  changeFrequency: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  lastModified?: Date;
+  changeFrequency: ChangeFrequency;
   priority: number;
 }
 
-const STATIC_PATHS: { path: string; priority: number; changefreq: UrlEntry['changeFrequency'] }[] = [
-  { path: '', priority: 1.0, changefreq: 'daily' },
-  { path: '/models', priority: 0.9, changefreq: 'daily' },
-  { path: '/api-pricing', priority: 0.9, changefreq: 'daily' },
-  { path: '/calculator', priority: 0.9, changefreq: 'daily' },
-  { path: '/compare/plans', priority: 0.9, changefreq: 'daily' },
-  { path: '/quota-changes', priority: 0.6, changefreq: 'daily' },
-  { path: '/compare/models', priority: 0.8, changefreq: 'daily' },
-  { path: '/compare/video-models', priority: 0.82, changefreq: 'weekly' },
-  { path: '/coding-agents', priority: 0.84, changefreq: 'weekly' },
-  { path: '/plans', priority: 0.85, changefreq: 'daily' },
-  { path: '/providers', priority: 0.85, changefreq: 'daily' },
-  { path: '/agents', priority: 0.86, changefreq: 'weekly' },
-  { path: '/creative-plans', priority: 0.82, changefreq: 'weekly' },
-  { path: '/video-models', priority: 0.84, changefreq: 'weekly' },
-  { path: '/music-models', priority: 0.8, changefreq: 'weekly' },
-  { path: '/voice-models', priority: 0.78, changefreq: 'weekly' },
-  { path: '/image-models', priority: 0.78, changefreq: 'weekly' },
-  { path: '/decision-models', priority: 0.78, changefreq: 'weekly' },
-  { path: '/world-models', priority: 0.78, changefreq: 'weekly' },
-  { path: '/coupons', priority: 0.7, changefreq: 'weekly' },
-  { path: '/about', priority: 0.4, changefreq: 'monthly' },
-  { path: '/contact', priority: 0.3, changefreq: 'monthly' },
-  { path: '/disclosure', priority: 0.3, changefreq: 'monthly' },
-  { path: '/methodology', priority: 0.6, changefreq: 'monthly' },
-  { path: '/guides', priority: 0.75, changefreq: 'weekly' },
-  ...PRICING_GUIDE_SLUGS.map((slug) => ({ path: `/guides/${slug}`, priority: 0.75, changefreq: 'daily' as const })),
-  { path: '/reports/api-price-index', priority: 0.8, changefreq: 'daily' },
-  { path: '/privacy', priority: 0.3, changefreq: 'monthly' },
-  { path: '/terms', priority: 0.3, changefreq: 'monthly' },
-  { path: '/submit-provider', priority: 0.4, changefreq: 'monthly' },
-  // Note: /compare/api was removed because it only existed as a non-locale
-  // route that proxy.ts redirected into a 404. /compare/models and /calculator
-  // are locale routes and intentionally remain in the sitemap.
-];
+/** Newest catalog write that the data-driven fixed pages render. */
+async function latestDataUpdate(): Promise<Date | string | null> {
+  try {
+    const [row] = await sql<Array<{ updated_at: Date | string | null }>>`
+      SELECT GREATEST(
+        (SELECT max(updated_at) FROM api_channel_prices),
+        (SELECT max(updated_at) FROM models),
+        (SELECT max(updated_at) FROM plans),
+        (SELECT max(updated_at) FROM providers)
+      ) AS updated_at
+    `;
+    return row?.updated_at ?? null;
+  } catch (err) {
+    console.error('sitemap: failed to query latest data update', err);
+    return null;
+  }
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const urls: UrlEntry[] = [];
   const now = new Date();
-  const hasQuotaHistory = quotaChanges(await getVerifiedQuotaEstimates()).length > 0;
+  const [quotaEstimates, dataUpdatedAt] = await Promise.all([getVerifiedQuotaEstimates(), latestDataUpdate()]);
+  const hasQuotaHistory = quotaChanges(quotaEstimates).length > 0;
 
-  const push = (path: string, priority: number, changeFrequency: UrlEntry['changeFrequency']) => {
-    urls.push({ url: `${BASE_URL}${path}`, lastModified: now, changeFrequency, priority });
-  };
-
-  // Locale roots and static paths × all locales
+  // Locale roots and static paths × all locales. lastmod is the page's real
+  // last change (see sitemap-static-paths.ts), not the request time.
   for (const locale of LOCALES) {
-    for (const { path, priority, changefreq } of STATIC_PATHS) {
+    for (const { path, priority, changefreq, lastmod } of STATIC_PATHS) {
       // Match the history page's noindex policy until a reviewed revision exists.
       if (path === '/quota-changes' && !hasQuotaHistory) continue;
-      push(`/${locale}${path}`, priority, changefreq);
+      const lastModified = resolveStaticLastmod(lastmod, { dataUpdatedAt, catalog: AI_VERTICAL_CATALOG, now });
+      urls.push({
+        url: `${BASE_URL}/${locale}${path}`,
+        ...(lastModified ? { lastModified } : {}),
+        changeFrequency: changefreq,
+        priority,
+      });
     }
   }
   // Provider pages have useful content with plans or available API pricing.

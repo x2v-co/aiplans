@@ -60,11 +60,15 @@ export default function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Redirect root to default locale
+  // Redirect root to default locale. Crawlers carry no cookie, so `/` → `/en`
+  // is a permanent 308 and Google consolidates the homepage onto /en. A
+  // visitor's saved non-default locale stays a temporary 307: a cached 308
+  // would keep sending that browser to the old language after they switch.
   if (pathname === '/') {
-    const locale = request.cookies.get('NEXT_LOCALE')?.value || defaultLocale;
+    const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
+    const locale = cookieLocale && locales.includes(cookieLocale) ? cookieLocale : defaultLocale;
     request.nextUrl.pathname = `/${locale}`;
-    return NextResponse.redirect(request.nextUrl);
+    return NextResponse.redirect(request.nextUrl, locale === defaultLocale ? 308 : 307);
   }
 
   // For other paths without locale, redirect to default locale

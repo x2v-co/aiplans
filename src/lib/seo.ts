@@ -91,8 +91,10 @@ export function buildMetadata(input: PageMetaInput): Metadata {
     },
     openGraph,
     twitter,
+    // noindex pages still link to the current, indexable pages (newer model
+    // in the series, provider pages), so let crawlers follow those links.
     robots: input.noindex
-      ? { index: false, follow: false }
+      ? { index: false, follow: true }
       : {
           index: true,
           follow: true,
