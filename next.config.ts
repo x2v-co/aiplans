@@ -6,8 +6,17 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n.ts');
 
+// Serialize route exclusions at build time: standalone deployments need not
+// contain src/app, and the request-time resolver must spare future static pages.
+const staticPlanSegments = readdirSync(resolve(process.cwd(), 'src/app/[locale]/plans'), { withFileTypes: true })
+  .filter(entry => entry.isDirectory() && !entry.name.startsWith('[') && !entry.name.startsWith('(') && !entry.name.startsWith('@'))
+  .map(entry => entry.name);
+
 const nextConfig: NextConfig = {
   output: 'standalone',
+  env: {
+    PLAN_REDIRECT_STATIC_SEGMENTS: JSON.stringify(staticPlanSegments),
+  },
 
   // Production-only noise suppression — keep error/warn so real issues
   // still surface in the container logs.
@@ -21,12 +30,9 @@ const nextConfig: NextConfig = {
   // gives slightly less fingerprinting info to bots.
   poweredByHeader: false,
 
-  // Read static plan children so future /plans/* pages stay outside this redirect.
+  // Only data-independent aliases run here; provider/plan resolution is in proxy.
   async redirects() {
-    const staticSegments = readdirSync(resolve(process.cwd(), 'src/app/[locale]/plans'), { withFileTypes: true })
-      .filter(entry => entry.isDirectory() && !entry.name.startsWith('[') && !entry.name.startsWith('(') && !entry.name.startsWith('@'))
-      .map(entry => entry.name);
-    return providerRedirects(staticSegments);
+    return providerRedirects();
   },
 
   // Next.js per-package imports tree-shaking. Without this, importing
