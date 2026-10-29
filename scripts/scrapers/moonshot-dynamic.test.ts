@@ -3,7 +3,10 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseNextFlight } from '../utils/artificial-analysis';
-import { extractKimiTablesFromMdx, parseKimiPricingHtml, parseKimiPricingTables, type KimiPricingTable } from './moonshot-dynamic';
+import {
+  DEFAULT_FETCH_TIMEOUT_MS, MoonshotScraper, extractKimiTablesFromMdx, fetchKimiPricingHtml,
+  parseKimiPricingHtml, parseKimiPricingTables, resolveFetchTimeoutMs, scrapeMoonshotDynamic, type KimiPricingTable,
+} from './moonshot-dynamic';
 
 // Rendered official table, 2026-10-28. Cache-write columns must not be
 // mistaken for cache hits, and the K2 context must not leak from K3.
@@ -94,4 +97,151 @@ test('static HTML fails loud on a props-stripped page, conflicting copies or int
   assert.throws(() => extractKimiTablesFromMdx(table('¥20.00 / MTok') + table('¥21.00 / MTok')), /conflicting DocTable copies/);
   assert.throws(() => extractKimiTablesFromMdx(table('¥${p} / MTok')), /Unsupported template interpolation/);
   assert.throws(() => parseKimiPricingHtml('<html><body><table></table></body></html>'), /No Next.js flight payload/);
+});
+
+test('fetch timeout defaults to 90s and MOONSHOT_FETCH_TIMEOUT_MS overrides it', () => {
+  assert.equal(DEFAULT_FETCH_TIMEOUT_MS, 90_000);
+  assert.equal(resolveFetchTimeoutMs({}), 90_000);
+  assert.equal(resolveFetchTimeoutMs({ MOONSHOT_FETCH_TIMEOUT_MS: '120000' }), 120_000);
+  for (const bad of ['', ' ', 'abc', '0', '-5', '0.1', '2147483648', 'Infinity']) {
+    assert.equal(resolveFetchTimeoutMs({ MOONSHOT_FETCH_TIMEOUT_MS: bad }), 90_000);
+  }
+});
+
+test('rendered fallback uses the same (larger) timeout budget', () => {
+  const scraper = new MoonshotScraper(123_000) as unknown as { options: { timeout: number } };
+  assert.equal(scraper.options.timeout, 123_000);
+});
+
+type FetchStep = Error | Response;
+function scriptedFetch(steps: FetchStep[]) {
+  const calls: { url: string; signal?: AbortSignal | null }[] = [];
+  const impl = (async (url: string, init?: RequestInit) => {
+    calls.push({ url: String(url), signal: init?.signal });
+    const step = steps.shift();
+    if (!step) throw new Error('unexpected fetch');
+    if (step instanceof Error) throw step;
+    return step;
+  }) as unknown as typeof fetch;
+  return { impl, calls };
+}
+const recordSleep = () => {
+  const delays: number[] = [];
+  return { delays, sleep: async (ms: number) => { delays.push(ms); } };
+};
+
+test('static fetch retries network errors with exponential backoff, then parses', async () => {
+  const { impl, calls } = scriptedFetch([
+    new TypeError('fetch failed'),
+    Object.assign(new Error('The operation was aborted due to timeout'), { name: 'TimeoutError' }),
+    new Response(html, { status: 200 }),
+  ]);
+  const { delays, sleep } = recordSleep();
+  const prices = await fetchKimiPricingHtml({ fetchImpl: impl, sleep, timeoutMs: 5_000, baseDelayMs: 1_000 });
+  assert.deepEqual(prices, parseKimiPricingTables(tables));
+  assert.equal(calls.length, 3);
+  assert.deepEqual(delays, [1_000, 2_000]);
+  assert.ok(calls.every(call => call.signal instanceof AbortSignal));
+  assert.equal(new Set(calls.map(call => call.signal)).size, 3, 'each attempt has its own timeout signal');
+});
+
+test('static fetch retries 5xx/429 and gives up after 3 attempts with every error', async () => {
+  const { impl, calls } = scriptedFetch([
+    new Response('', { status: 503 }), new Response('', { status: 429 }), new TypeError('fetch failed'),
+  ]);
+  const { delays, sleep } = recordSleep();
+  await assert.rejects(
+    fetchKimiPricingHtml({ fetchImpl: impl, sleep, timeoutMs: 5_000, baseDelayMs: 1_000 }),
+    (error: Error) => /after 3 attempts \(timeout 5000ms each\)/.test(error.message)
+      && /HTTP 503/.test(error.message) && /HTTP 429/.test(error.message) && /fetch failed/.test(error.message),
+  );
+  assert.equal(calls.length, 3);
+  assert.deepEqual(delays, [1_000, 2_000]);
+});
+
+test('static fetch retries timeout and network interruptions after a partial body download', async () => {
+  for (const error of [
+    Object.assign(new Error('aborted'), { name: 'TimeoutError' }),
+    new TypeError('terminated'),
+  ]) {
+    let reads = 0;
+    const interrupted = new Response(new ReadableStream({
+      pull(controller) {
+        if (reads++ === 0) controller.enqueue(new TextEncoder().encode('<html>'));
+        else controller.error(error);
+      },
+    }), { status: 200 });
+    const { impl, calls } = scriptedFetch([interrupted, new Response(html, { status: 200 })]);
+    const { delays, sleep } = recordSleep();
+    assert.equal((await fetchKimiPricingHtml({ fetchImpl: impl, sleep, baseDelayMs: 1 })).length, 6);
+    assert.equal(reads, 2);
+    assert.equal(calls.length, 2);
+    assert.deepEqual(delays, [1]);
+  }
+});
+
+test('static fetch does not retry HTTP 4xx or a parse failure', async () => {
+  for (const response of [
+    ...[400, 401, 403, 404, 408, 422].map(status => new Response('', { status })),
+    new Response('<html></html>', { status: 200 }),
+  ]) {
+    const { impl, calls } = scriptedFetch([response]);
+    const { delays, sleep } = recordSleep();
+    await assert.rejects(fetchKimiPricingHtml({ fetchImpl: impl, sleep }), /HTTP 4\d\d|No Next.js flight payload/);
+    assert.equal(calls.length, 1);
+    assert.deepEqual(delays, []);
+  }
+});
+
+test('static fetch caps attempts at three and normalizes invalid attempt counts', async () => {
+  for (const [attempts, expected] of [[5, 3], [Infinity, 3], [NaN, 3], [1.5, 1]]) {
+    const { impl, calls } = scriptedFetch(Array.from({ length: 4 }, () => new TypeError('fetch failed')));
+    const { delays, sleep } = recordSleep();
+    await assert.rejects(fetchKimiPricingHtml({ fetchImpl: impl, sleep, attempts }), new RegExp(`after ${expected} attempts`));
+    assert.equal(calls.length, expected);
+    assert.equal(delays.length, expected - 1);
+  }
+});
+
+test('HTTP error bodies are cancelled before retrying, including cancellation failures', async () => {
+  for (const status of [404, 429, 503]) {
+    let cancelled = false;
+    const response = new Response(new ReadableStream({
+      cancel() { cancelled = true; throw new Error('body already interrupted'); },
+    }), { status });
+    const { impl, calls } = scriptedFetch([response, new Response(html)]);
+    const sleep = async () => { assert.equal(cancelled, true); };
+    if (status === 404) {
+      await assert.rejects(fetchKimiPricingHtml({ fetchImpl: impl, sleep }), /HTTP 404/);
+      assert.equal(calls.length, 1);
+    } else {
+      assert.equal((await fetchKimiPricingHtml({ fetchImpl: impl, sleep })).length, 6);
+      assert.equal(calls.length, 2);
+    }
+    assert.equal(cancelled, true);
+  }
+});
+
+test('static fetch and rendered fallback receive the default and environment timeout', async (t) => {
+  const timeout = AbortSignal.timeout;
+  const timeouts: number[] = [];
+  t.mock.method(AbortSignal, 'timeout', (ms: number) => { timeouts.push(ms); return timeout(ms); });
+  t.mock.method(globalThis, 'fetch', async () => new Response('', { status: 404 }));
+  const renderedTimeouts: number[] = [];
+  t.mock.method(MoonshotScraper.prototype, 'run', async function (this: MoonshotScraper) {
+    renderedTimeouts.push((this as unknown as { options: { timeout: number } }).options.timeout);
+    return { source: 'Moonshot', success: true, prices: parseKimiPricingTables(tables) };
+  });
+  const saved = process.env.MOONSHOT_FETCH_TIMEOUT_MS;
+  try {
+    delete process.env.MOONSHOT_FETCH_TIMEOUT_MS;
+    assert.equal((await scrapeMoonshotDynamic()).success, true);
+    process.env.MOONSHOT_FETCH_TIMEOUT_MS = '123000';
+    assert.equal((await scrapeMoonshotDynamic()).success, true);
+    assert.deepEqual(timeouts, [90_000, 123_000]);
+    assert.deepEqual(renderedTimeouts, timeouts);
+  } finally {
+    if (saved === undefined) delete process.env.MOONSHOT_FETCH_TIMEOUT_MS;
+    else process.env.MOONSHOT_FETCH_TIMEOUT_MS = saved;
+  }
 });
