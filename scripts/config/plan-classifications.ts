@@ -46,6 +46,10 @@ const ANTHROPIC_NOISE = ['claude-opus', 'claude-sonnet', 'claude-haiku', '*-fast
 const GOOGLE_NOISE = ['gemini-pro', 'gemini-flash', '*-preview*'];
 // Gemini Code Assist is an IDE/CLI coding product; image-generation models are not part of it.
 const CODE_ASSIST_EXCLUDE = [...GOOGLE_NOISE, '*-image'];
+// Gemini Robotics-ER (catalog slug gemini-er-2.0) is a robotics VLM sold only via the Gemini API / Vertex AI
+// (ai.google.dev/gemini-api/docs/models/gemini-robotics-er-2-preview; cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing,
+// checked 2026-10-30). It is not in the Gemini app, Google AI plans or Code Assist.
+const GEMINI_ROBOTICS = ['gemini-er-*'];
 // Le Chat/Vibe routes chat to Large/Medium/Small; Saba is retired (2025-09-30), Devstral 2 retired 2026-07-31
 // (docs.mistral.ai/models), and Voxtral is a speech model, not a selectable chat model.
 const LE_CHAT_EXCLUDE = ['mistral-mistral-saba*', 'mistral-devstral-2512', 'mistral-voxtral-*'];
@@ -157,13 +161,13 @@ export const CLASSIFICATIONS: Classification[] = [
 
   // ─ Google — two genuinely separate product lines sold from one account.
   { providerSlug: 'google', planSlug: 'gemini-free', kind: 'chat', line: 'google-one', rank: 0,
-    selector: { families: ['gemini'], current_only: true, exclude: [...GOOGLE_NOISE, '*-pro*', 'gemini-4-argon'] },
+    selector: { families: ['gemini'], current_only: true, exclude: [...GOOGLE_NOISE, '*-pro*', 'gemini-4-argon', ...GEMINI_ROBOTICS] },
     reason: 'Free tier is Flash-class only; Pro-class models require a paid AI plan' },
   { providerSlug: 'google', planSlug: 'google-ai-plus', kind: 'chat', line: 'google-one', rank: 1,
-    selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
+    selector: { families: ['gemini'], exclude: [...GOOGLE_NOISE, ...GEMINI_ROBOTICS] },
     reason: 'AI Plus is the entry paid tier with the full Gemini chat catalog at lower quota' },
   { providerSlug: 'google', planSlug: 'gemini-advanced', kind: 'chat', line: 'google-one', rank: 2,
-    selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
+    selector: { families: ['gemini'], exclude: [...GOOGLE_NOISE, ...GEMINI_ROBOTICS] },
     reason: 'Google AI Pro (historical slug gemini-advanced; the live Google AI Pro row). Since 2026-10-17 includes Gemini 4 Argon in AI Studio Build and Playground; Gemini App access is unconfirmed. Source: https://x.com/GoogleAIStudio/status/2111240722426802258' },
   { providerSlug: 'google', planSlug: 'google-ai-pro', kind: 'chat', line: 'google-one', rank: 2,
     selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
@@ -172,19 +176,19 @@ export const CLASSIFICATIONS: Classification[] = [
     selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
     reason: 'AI Ultra: same catalog, highest quota' },
   { providerSlug: 'google', planSlug: 'google-ai-ultra-5x', kind: 'chat', line: 'google-one', rank: 3,
-    selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
+    selector: { families: ['gemini'], exclude: [...GOOGLE_NOISE, ...GEMINI_ROBOTICS] },
     reason: 'US AI Ultra 5x; preserves the existing Ultra catalog selector' },
   { providerSlug: 'google', planSlug: 'google-ai-ultra-20x', kind: 'chat', line: 'google-one', rank: 4,
-    selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
+    selector: { families: ['gemini'], exclude: [...GOOGLE_NOISE, ...GEMINI_ROBOTICS] },
     reason: 'US AI Ultra 20x; preserves the existing Ultra catalog selector' },
   { providerSlug: 'google', planSlug: 'gemini-code-assist-individual', kind: 'coding', line: 'gemini-code-assist', rank: 0,
-    selector: { families: ['gemini'], current_only: true, exclude: CODE_ASSIST_EXCLUDE },
+    selector: { families: ['gemini'], current_only: true, exclude: [...CODE_ASSIST_EXCLUDE, ...GEMINI_ROBOTICS] },
     reason: 'Code Assist is an IDE/CLI product, not a chat subscription — separate line, not a tier of Google One' },
   { providerSlug: 'google', planSlug: 'gemini-code-assist-standard', kind: 'coding', line: 'gemini-code-assist', rank: 1,
-    selector: { families: ['gemini'], exclude: CODE_ASSIST_EXCLUDE },
+    selector: { families: ['gemini'], exclude: [...CODE_ASSIST_EXCLUDE, ...GEMINI_ROBOTICS] },
     reason: 'Standard: 1500 model requests/day shared across CLI and Agent' },
   { providerSlug: 'google', planSlug: 'gemini-code-assist-enterprise', kind: 'coding', line: 'gemini-code-assist', rank: 2,
-    selector: { families: ['gemini'], exclude: CODE_ASSIST_EXCLUDE },
+    selector: { families: ['gemini'], exclude: [...CODE_ASSIST_EXCLUDE, ...GEMINI_ROBOTICS] },
     reason: 'Enterprise: 2000 requests/day plus private-repo customization' },
 
   // ─ Baidu.
@@ -255,15 +259,19 @@ export const CLASSIFICATIONS: Classification[] = [
     reason: 'Enterprise is contact-sales; same catalog' },
 
   // ─ Moonshot / Kimi.
+  // DB rows (Basic ¥49 / Pro ¥99 / Team ¥199) still reflect the April tier structure.
+  // The individual-plan mapping below relies only on facts shared by every individual tier:
+  // Free has limited K3.1 Pro, all paid tiers include it, and the lowest tiers exclude Highspeed.
+  // Team/Enterprise are not covered by the individual membership table.
   { providerSlug: 'moonshot-china', planSlug: 'kimi-free', kind: 'chat', line: 'kimi', rank: 0,
-    selector: { families: ['kimi'], current_only: true, exclude: MOONSHOT_NOISE },
-    reason: 'Free tier tracks the current K-series only' },
+    selector: { families: ['kimi'], current_only: true, exclude: [...MOONSHOT_NOISE, '*-highspeed'], extra: ['moonshotai-kimi-k3-1-pro'] },
+    reason: 'Free tracks the current K-series; K3.1 Pro has limited use on web/Kimi Work, without Highspeed. Source: https://www.kimi.com/resources/kimi-k3-1-pro-pricing (updated 2026-10-26; plans checked 2026-10-24)' },
   { providerSlug: 'moonshot-china', planSlug: 'kimi-basic', kind: 'chat', line: 'kimi', rank: 1,
-    selector: { families: ['kimi'], exclude: MOONSHOT_NOISE },
-    reason: 'Kimi+ 行板/Andante' },
+    selector: { families: ['kimi'], exclude: [...MOONSHOT_NOISE, '*-highspeed'], extra: ['moonshotai-kimi-k3-1-pro'] },
+    reason: 'Kimi+ 行板/Andante: every individual paid tier includes K3.1 Pro on web/Kimi Work; Go/Plus exclude Highspeed. Source: https://www.kimi.com/resources/kimi-k3-1-pro-pricing (updated 2026-10-26; plans checked 2026-10-24)' },
   { providerSlug: 'moonshot-china', planSlug: 'kimi-pro', kind: 'chat', line: 'kimi', rank: 2,
-    selector: { families: ['kimi'], exclude: MOONSHOT_NOISE },
-    reason: 'Kimi+ 中速/Moderato' },
+    selector: { families: ['kimi'], exclude: MOONSHOT_NOISE, extra: ['moonshotai-kimi-k3-1-pro'] },
+    reason: 'Kimi+ 中速/Moderato: every individual paid tier includes K3.1 Pro on web/Kimi Work. Highspeed (official Pro/Max/Ultra only) is left as-is until this April-era row is mapped to a current tier. Source: https://www.kimi.com/resources/kimi-k3-1-pro-pricing (updated 2026-10-26; plans checked 2026-10-24)' },
   { providerSlug: 'moonshot-china', planSlug: 'kimi-team', kind: 'chat', line: 'kimi', rank: 3,
     selector: { families: ['kimi'], exclude: MOONSHOT_NOISE },
     reason: 'Kimi+ 快板/Allegretto, per-seat' },

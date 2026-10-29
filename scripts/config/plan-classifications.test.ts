@@ -97,6 +97,70 @@ test('US Ultra rungs remain consumer chat plans in the existing Google line', ()
   assert.deepEqual(rungs.map(row => [row?.kind, row?.line, row?.rank]), [['chat','google-one',3],['chat','google-one',4]]);
 });
 
+test('Google app and Code Assist plans exclude API-only Gemini Robotics-ER', () => {
+  const googleCatalog: SelectableModel[] = [
+    { id: 1, slug: 'gemini-er-2.0', providerSlugs: ['google'], elo: null },
+    { id: 2, slug: 'gemini-3.8-flash', providerSlugs: ['google'], elo: null },
+  ];
+
+  for (const planSlug of [
+    'gemini-free', 'google-ai-plus', 'gemini-advanced',
+    'google-ai-ultra-5x', 'google-ai-ultra-20x',
+    'gemini-code-assist-individual', 'gemini-code-assist-standard', 'gemini-code-assist-enterprise',
+  ]) {
+    const classification = CLASSIFICATIONS.find(
+      (entry) => entry.providerSlug === 'google' && entry.planSlug === planSlug,
+    );
+    assert.ok(classification, `missing Google classification for ${planSlug}`);
+    const slugs = resolveSelector(classification.selector, googleCatalog, ['google'])
+      .models.map((model) => model.slug);
+    assert.deepEqual(slugs, ['gemini-3.8-flash'], planSlug);
+  }
+});
+
+test('Kimi individual plans include K3.1 Pro with Highspeed restricted to Pro', () => {
+  const kimiCatalog: SelectableModel[] = [
+    { id: 1, slug: 'moonshotai-kimi-k3-1-pro', providerSlugs: ['moonshot-china'], elo: null },
+    { id: 2, slug: 'kimi-k3.1-pro-highspeed', providerSlugs: ['moonshot-china'], elo: null },
+  ];
+
+  for (const planSlug of ['kimi-free', 'kimi-basic', 'kimi-pro']) {
+    const classification = CLASSIFICATIONS.find(
+      (entry) => entry.providerSlug === 'moonshot-china' && entry.planSlug === planSlug,
+    );
+    assert.ok(classification, `missing Kimi classification for ${planSlug}`);
+    const slugs = resolveSelector(classification.selector, kimiCatalog, ['moonshot-china'])
+      .models.map((model) => model.slug);
+    const expected = planSlug === 'kimi-pro'
+      ? ['kimi-k3.1-pro-highspeed', 'moonshotai-kimi-k3-1-pro']
+      : ['moonshotai-kimi-k3-1-pro'];
+    assert.deepEqual(slugs, expected, planSlug);
+  }
+});
+
+test('Kimi Team and Enterprise selectors retain their existing family and exclusions', () => {
+  const kimiCatalog: SelectableModel[] = [
+    { id: 1, slug: 'moonshotai-kimi-k3-1-pro', providerSlugs: ['moonshot-china'], elo: null },
+    { id: 2, slug: 'kimi-k3.1-pro-highspeed', providerSlugs: ['moonshot-china'], elo: null },
+    { id: 3, slug: 'kimi', providerSlugs: ['moonshot-china'], elo: null },
+    { id: 4, slug: 'kimi-k3-us', providerSlugs: ['moonshot-china'], elo: null },
+  ];
+  const expectedSelector = { families: ['kimi'], exclude: ['kimi', '*-us'] };
+  const expectedSlugs = resolveSelector(expectedSelector, kimiCatalog, ['moonshot-china'])
+    .models.map((model) => model.slug);
+
+  for (const planSlug of ['kimi-team', 'kimi-enterprise']) {
+    const classification = CLASSIFICATIONS.find(
+      (entry) => entry.providerSlug === 'moonshot-china' && entry.planSlug === planSlug,
+    );
+    assert.ok(classification, `missing Kimi classification for ${planSlug}`);
+    assert.deepEqual(classification.selector, expectedSelector, planSlug);
+    const slugs = resolveSelector(classification.selector, kimiCatalog, ['moonshot-china'])
+      .models.map((model) => model.slug);
+    assert.deepEqual(slugs, expectedSlugs, planSlug);
+  }
+});
+
 test('Le Chat excludes retired/speech models; Code Assist excludes image models (2026-10-15 mappings review)', async () => {
   
   const all = CLASSIFICATIONS;
