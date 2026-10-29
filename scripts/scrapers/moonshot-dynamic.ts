@@ -239,12 +239,13 @@ const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/
 export function resolveFetchTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
   const raw = env.MOONSHOT_FETCH_TIMEOUT_MS?.trim();
   if (!raw) return DEFAULT_FETCH_TIMEOUT_MS;
-  const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0) {
+  const value = Math.round(Number(raw));
+  // Node timers overflow above this limit and otherwise fire after just 1ms.
+  if (!Number.isFinite(value) || value < 1 || value > 2 ** 31 - 1) {
     console.warn(`⚠️ Moonshot: ignoring invalid MOONSHOT_FETCH_TIMEOUT_MS=${JSON.stringify(raw)}`);
     return DEFAULT_FETCH_TIMEOUT_MS;
   }
-  return Math.round(value);
+  return value;
 }
 
 /** Network-level failures worth retrying; a parse error or HTTP 4xx is not. */
@@ -268,10 +269,15 @@ async function fetchKimiPricingPage(fetchImpl: typeof fetch, timeoutMs: number):
   } catch (error) {
     throw new RetryableFetchError(error instanceof Error ? `${error.name}: ${error.message}` : String(error));
   }
-  if (response.status === 429 || response.status >= 500) {
-    throw new RetryableFetchError(`Kimi pricing page returned HTTP ${response.status}`);
+  if (!response.ok) {
+    // Release the connection before retrying or switching to Playwright.
+    await response.body?.cancel().catch(() => undefined);
+    const message = `Kimi pricing page returned HTTP ${response.status}`;
+    if (response.status === 429 || (response.status >= 500 && response.status < 600)) {
+      throw new RetryableFetchError(message);
+    }
+    throw new Error(message);
   }
-  if (!response.ok) throw new Error(`Kimi pricing page returned HTTP ${response.status}`);
   try {
     // The body download is what stalls on the slow route; it shares the abort signal.
     return await response.text();
@@ -288,7 +294,10 @@ export async function fetchKimiPricingHtml(options: StaticFetchOptions = {}): Pr
   const fetchImpl = options.fetchImpl ?? fetch;
   const sleep = options.sleep ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
   const timeoutMs = options.timeoutMs ?? resolveFetchTimeoutMs();
-  const attempts = Math.max(1, options.attempts ?? STATIC_FETCH_ATTEMPTS);
+  const requestedAttempts = options.attempts ?? STATIC_FETCH_ATTEMPTS;
+  const attempts = Number.isFinite(requestedAttempts)
+    ? Math.min(STATIC_FETCH_ATTEMPTS, Math.max(1, Math.floor(requestedAttempts)))
+    : STATIC_FETCH_ATTEMPTS;
   const baseDelayMs = options.baseDelayMs ?? STATIC_RETRY_BASE_DELAY_MS;
   const failures: string[] = [];
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -364,7 +373,7 @@ export class MoonshotScraper extends PlaywrightScraper {
 }
 
 /**
- * Static HTML first (one request, no browser); the rendered page is only a
+ * Static HTML first (up to three requests, no browser); the rendered page is only a
  * fallback. Both must produce a complete table set or the run fails, so a
  * full-catalog scrape never retires Moonshot channels on a partial read.
  */
