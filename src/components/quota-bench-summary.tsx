@@ -2,7 +2,7 @@ import { CodexModelMeasurements } from './codex-model-measurements';
 import Link from 'next/link';
 import { VolcengineModelMeasurements } from './volcengine-model-measurements';
 import { QuotaBenchWindows } from './quota-bench-windows';
-import { QuotaBenchUsd } from './quota-bench-usd';
+import { QuotaBenchUsd, QuotaBenchUsdHeadline } from './quota-bench-usd';
 import dataset from '../../public/reports/quota-bench-2026-10.json';
 
 export type BenchRecord = Omit<(typeof dataset.records)[number], 'controlTokens' | 'apiEquivalentUsd' | 'pricing' | 'estimateBasis' | 'tierVerification' | 'planSlug'> & {
@@ -10,6 +10,7 @@ export type BenchRecord = Omit<(typeof dataset.records)[number], 'controlTokens'
   apiEquivalentUsd: { low: number; mid: number; high: number; sample: number } | null;
   pricing: {
     model: string; variant: string; currency: string; unit: string;
+    fastVariantRisk?: boolean;
     input: number; cacheRead: number; cacheWrite: number | null; output: number;
     source: string; verifiedAt: string; note: { zh: string; en: string };
   } | null;
@@ -42,21 +43,25 @@ export function PlanBenchSummary({ record, locale }: { record: BenchRecord; loca
   const benchTokens = record.tokens.input + record.tokens.cacheRead + record.tokens.output;
   const totalTokens = benchTokens + (record.controlTokens ? record.controlTokens.input + record.controlTokens.cacheRead + record.controlTokens.output : 0);
   return <div className="space-y-2 text-xs" data-quota-bench={record.id}>
+    <QuotaBenchUsdHeadline record={record} locale={locale} compact />
     <p className="font-medium text-amber-800 dark:text-amber-300">{!record.tierVerified
       ? (zh ? '套餐档位未核验 · 仅供参考' : 'Plan tier unverified · reference only')
       : record.status === 'pending' ? (zh ? '实测待对账 · 暂不估算容量' : 'Measurement pending reconciliation · capacity withheld')
         : (zh ? '实测条件估算 · 低置信度' : 'Measured conditional estimate · low confidence')}</p>
-    {record.windowMeasurements && <QuotaBenchWindows windows={record.windowMeasurements} locale={locale} compact />}
-    {!record.windowMeasurements && record.estimate && <p className="text-base font-semibold" title={`${fmt(record.estimate.low)}–${fmt(record.estimate.high)} tokens / ${window}`}>
-      {compact(record.estimate.low)}–{compact(record.estimate.high)} tokens / {window}
-    </p>}
-    <p>{record.model} · <time dateTime={record.date}>{record.date}</time> · {record.calls} {zh ? '次调用' : 'calls'}</p>
-    <p>{zh ? '实测用量' : 'Measured usage'}: {fmt(totalTokens)} tokens{record.controlTokens ? (zh ? '（含同账号控制会话）' : ' (including same-account controller)') : ''}</p>
-    {!record.windowMeasurements && <p>{zh ? '已用额度' : 'Used allowance'}: {record.usedBefore}% → {record.usedAfter}%{record.estimateBasis ? (zh ? `（仅前 ${record.estimateBasis.calls} 次）` : ` (first ${record.estimateBasis.calls} calls only)`) : ''}</p>}
-    <QuotaBenchUsd record={record} locale={locale} />
-    <p className="text-zinc-500">{zh ? record.caveats.zh : record.caveats.en}</p>
-    {record.id === 'codex-pro' && <CodexModelMeasurements locale={locale} />}
-    {record.id === 'volcengine-pro' && <VolcengineModelMeasurements locale={locale} />}
+    <details className="space-y-2">
+      <summary className="cursor-pointer text-sm underline">{zh ? '方法说明' : 'Method'}</summary>
+      {record.windowMeasurements && <QuotaBenchWindows windows={record.windowMeasurements} locale={locale} compact />}
+      {!record.windowMeasurements && record.estimate && <p className="text-base font-semibold" title={`${fmt(record.estimate.low)}–${fmt(record.estimate.high)} tokens / ${window}`}>
+        {compact(record.estimate.low)}–{compact(record.estimate.high)} tokens / {window}
+      </p>}
+      <p>{record.model} · <time dateTime={record.date}>{record.date}</time> · {record.calls} {zh ? '次调用' : 'calls'}</p>
+      <p>{zh ? '实测用量' : 'Measured usage'}: {fmt(totalTokens)} tokens{record.controlTokens ? (zh ? '（含同账号控制会话）' : ' (including same-account controller)') : ''}</p>
+      {!record.windowMeasurements && <p>{zh ? '已用额度' : 'Used allowance'}: {record.usedBefore}% → {record.usedAfter}%{record.estimateBasis ? (zh ? `（仅前 ${record.estimateBasis.calls} 次）` : ` (first ${record.estimateBasis.calls} calls only)`) : ''}</p>}
+      <QuotaBenchUsd record={record} locale={locale} />
+      <p className="text-zinc-500">{zh ? record.caveats.zh : record.caveats.en}</p>
+      {record.id === 'codex-pro' && <CodexModelMeasurements locale={locale} />}
+      {record.id === 'volcengine-pro' && <VolcengineModelMeasurements locale={locale} />}
+    </details>
     <Link href={`/${locale}/quota-bench#${record.id}`} className="inline-block text-blue-600 underline">{zh ? '评测过程与计算依据 →' : 'Measurement process and calculations →'}</Link>
   </div>;
 }

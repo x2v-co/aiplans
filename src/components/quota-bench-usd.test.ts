@@ -1,10 +1,15 @@
+import { jsx } from 'react/jsx-runtime';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { NextIntlClientProvider } from 'next-intl';
+import en from '../../messages/en.json';
+import zh from '../../messages/zh.json';
 import { benchmarkForPlan, type BenchRecord } from './quota-bench-summary';
-import { QuotaBenchUsd } from './quota-bench-usd';
+import { QuotaBenchBadge, QuotaBenchUsd, QuotaBenchUsdHeadline } from './quota-bench-usd';
 import { QuotaBenchResults } from './quota-bench-results';
+import { PlanQuotaEstimates } from './quota-estimates';
 import data from '../../public/reports/quota-bench-2026-10.json';
 import v1 from '../../public/reports/quota-bench-2026-10.v1.json';
 import ledger from '../../public/reports/quota-bench-2026-10-ledger.json';
@@ -104,18 +109,90 @@ test('v2 supersedes the reviewed v1 snapshot without changing prior Codex or Vol
   assert.equal(benchmarkForPlan('cursor-ultra'), undefined);
 });
 
-test('USD helper renders localized values, samples, windows and prices', () => {
+test('USD method renders localized samples and prices without repeating the headline', () => {
   for (const locale of ['zh', 'en']) {
     const html = renderToStaticMarkup(createElement(QuotaBenchUsd, { record: cursor, locale }));
     const phrases = locale === 'zh'
-      ? ['token 折合金额（按公开标准价，不是余额）: $3,001–$3,042 / 月（中值约 $3,022）', '推算样本：前 12 轮 801,760 tokens ≈ $0.444198', '第 4 批 4 轮 360,497 tokens 未计入', '输入 $0.5 / 缓存读取 $0.2 / 输出 $2.5', '核验于 2026-10-29', '价格来源']
-      : ['Token value at public list price (not credit): $3,001–$3,042 / month (mid ≈ $3,022)', 'Estimate sample: first 12 calls, 801,760 tokens ≈ $0.444198', 'batch 4 (4 calls, 360,497 tokens) excluded', 'input $0.5 / cache read $0.2 / output $2.5', 'verified 2026-10-29', 'Price source'];
+      ? ['推算样本：前 12 轮 801,760 tokens ≈ $0.444198', '第 4 批 4 轮 360,497 tokens 未计入', '输入 $0.5 / 缓存读取 $0.2 / 输出 $2.5', '核验于 2026-10-29', '价格来源']
+      : ['Estimate sample: first 12 calls, 801,760 tokens ≈ $0.444198', 'batch 4 (4 calls, 360,497 tokens) excluded', 'input $0.5 / cache read $0.2 / output $2.5', 'verified 2026-10-29', 'Price source'];
     for (const phrase of phrases) assert.ok(html.includes(phrase), phrase);
+    assert.ok(!html.includes('$3,022'));
     const codexHtml = renderToStaticMarkup(createElement(QuotaBenchUsd, { record: codex, locale }));
-    for (const phrase of locale === 'zh' ? ['样本 token 折合 $23.676094', '缓存写入 $12.5', '/ 周'] : ['Sample tokens ≈ $23.676094', 'cache write $12.5', '/ week']) assert.ok(codexHtml.includes(phrase), phrase);
-    const shortWindow: BenchRecord = { ...codex, window: '5h' };
-    assert.ok(renderToStaticMarkup(createElement(QuotaBenchUsd, { record: shortWindow, locale })).includes(locale === 'zh' ? '/ 5 小时' : '/ 5 hours'));
+    for (const phrase of locale === 'zh' ? ['样本 token 折合 $23.676094', '缓存写入 $12.5'] : ['Sample tokens ≈ $23.676094', 'cache write $12.5']) assert.ok(codexHtml.includes(phrase), phrase);
     assert.equal(renderToStaticMarkup(createElement(QuotaBenchUsd, { record: { ...cursor, apiEquivalentUsd: null }, locale })), '');
+  }
+});
+
+test('USD headlines render localized windows, rounding ranges and data-driven qualifiers', () => {
+  for (const locale of ['zh', 'en']) {
+    const cursorHtml = renderToStaticMarkup(createElement(QuotaBenchUsdHeadline, { record: cursor, locale }));
+    const codexHtml = renderToStaticMarkup(createElement(QuotaBenchUsdHeadline, { record: codex, locale, compact: true }));
+    for (const phrase of locale === 'zh'
+      ? ['≈ $3,022', '/ 月池', '区间 $3,001–$3,042（读数舍入误差）', 'token 折合（按公开 API 标准价）', '有条件实测，不是官方额度或余额', '套餐档位未核验', '可能按 Fast 版计费']
+      : ['≈ $3,022', '/ monthly pool', 'Range $3,001–$3,042 (meter rounding)', 'Token value at public API list price', 'Conditional measurement, not an official allowance or credit', 'plan tier unverified', 'may be billed as the Fast variant']) assert.ok(cursorHtml.includes(phrase), phrase);
+    for (const phrase of ['≈ $789', '$592–$1,184', 'text-2xl', locale === 'zh' ? '/ 周' : '/ week']) assert.ok(codexHtml.includes(phrase), phrase);
+    assert.ok(cursorHtml.includes('text-3xl'));
+    assert.doesNotMatch(codexHtml, /Fast|tier unverified|套餐档位未核验/);
+    const shortWindow: BenchRecord = { ...codex, window: '5h' };
+    assert.ok(renderToStaticMarkup(createElement(QuotaBenchUsdHeadline, { record: shortWindow, locale })).includes(locale === 'zh' ? '/ 5 小时' : '/ 5 hours'));
+    assert.equal(renderToStaticMarkup(createElement(QuotaBenchUsdHeadline, { record: { ...cursor, apiEquivalentUsd: null }, locale })), '');
+    for (const pricing of [{ ...cursor.pricing!, fastVariantRisk: false }, { ...cursor.pricing!, variant: 'fast' }]) {
+      const html = renderToStaticMarkup(createElement(QuotaBenchUsdHeadline, { record: { ...cursor, pricing }, locale }));
+      assert.doesNotMatch(html, /Fast/);
+    }
+  }
+});
+
+test('benchmark results lead with both USD summaries before folded methods', () => {
+  for (const locale of ['zh', 'en']) {
+    const html = renderToStaticMarkup(createElement(QuotaBenchResults, { locale }));
+    for (const phrase of locale === 'zh'
+      ? ['≈ $3,022', '≈ $789', '/ 月池', '/ 周', '套餐档位未核验', '可能按 Fast 版计费', '查看详情 ↓', '方法说明与完整口径']
+      : ['≈ $3,022', '≈ $789', '/ monthly pool', '/ week', 'plan tier unverified', 'may be billed as the Fast variant', 'Details ↓', 'Method, full scope and reconciliation']) assert.ok(html.includes(phrase), phrase);
+    assert.ok(html.includes('<details'));
+    assert.ok(html.includes('<summary'));
+    assert.ok(html.indexOf('$3,022') < html.indexOf('<details'));
+    assert.ok(html.indexOf('$789') < html.indexOf('<details'));
+    const codexTile = html.slice(html.indexOf(codex.plan), html.indexOf('href="#codex-pro"'));
+    assert.ok(codexTile.includes('≈ $789'));
+    assert.doesNotMatch(codexTile, /Fast|tier unverified|套餐档位未核验/);
+    const cursorTile = html.slice(html.indexOf(cursor.plan), html.indexOf('href="#cursor-ultra"'));
+    assert.ok(cursorTile.includes(locale === 'zh' ? '套餐档位未核验；可能按 Fast 版计费' : 'plan tier unverified; may be billed as the Fast variant'));
+  }
+});
+
+test('benchmark badges show only verified tiers with a measured USD equivalent', () => {
+  for (const locale of ['zh', 'en']) {
+    const description = locale === 'zh'
+      ? '有条件实测：样本 token 按公开 API 标准价折合的金额，不是官方额度或余额。点击查看方法。'
+      : 'Conditional measurement: sample tokens valued at public API list price; not an official allowance or credit. Click for method.';
+    for (const planSlug of ['chatgpt-pro', 'chatgpt-pro-200']) {
+      const html = renderToStaticMarkup(createElement(QuotaBenchBadge, { planSlug, locale }));
+      assert.ok(html.includes(locale === 'zh' ? '实测 ≈ $789 / 周 ⓘ' : 'Measured ≈ $789 / week ⓘ'));
+      assert.ok(html.includes(`href="/${locale}/quota-bench#codex-pro"`));
+      assert.ok(html.includes(`title="${description}"`));
+      assert.ok(html.includes(`aria-label="${description}"`));
+      assert.ok(html.includes('data-quota-bench-badge="codex-pro"'));
+      assert.ok(html.includes('border-dashed'));
+    }
+    for (const planSlug of ['cursor-ultra', 'cursor-pro', 'seed-pro', 'unknown', 'chatgpt-pro-100', 'chatgpt-pro-500']) {
+      assert.equal(renderToStaticMarkup(createElement(QuotaBenchBadge, { planSlug, locale })), '');
+    }
+  }
+});
+
+test('Pro 200 plan quota widget puts the USD headline before folded evidence', () => {
+  for (const locale of ['zh', 'en']) {
+    const children = createElement(PlanQuotaEstimates, { locale, planSlug: 'chatgpt-pro-200', estimates: [] });
+    const html = renderToStaticMarkup(jsx(NextIntlClientProvider, {
+      locale, timeZone: 'UTC', messages: locale === 'zh' ? zh : en, children,
+    }));
+    assert.ok(html.includes('≈ $789'));
+    assert.ok(html.includes('<details'));
+    assert.ok(html.indexOf('≈ $789') < html.indexOf('<details'));
+    assert.ok(html.includes('64,883,075–129,766,150'));
+    assert.ok(html.includes('data-quota-bench="codex-pro"'));
+    assert.ok(html.indexOf(`href="/${locale}/quota-bench#codex-pro"`) > html.indexOf('</details>'));
   }
 });
 

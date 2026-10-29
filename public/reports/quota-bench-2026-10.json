@@ -200,6 +200,7 @@
       "pricing": {
         "model": "composer-2.5",
         "variant": "standard",
+        "fastVariantRisk": true,
         "currency": "USD",
         "unit": "per 1M tokens",
         "input": 0.5,
