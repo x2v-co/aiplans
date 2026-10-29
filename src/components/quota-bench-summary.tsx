@@ -2,20 +2,35 @@ import { CodexModelMeasurements } from './codex-model-measurements';
 import Link from 'next/link';
 import { VolcengineModelMeasurements } from './volcengine-model-measurements';
 import { QuotaBenchWindows } from './quota-bench-windows';
+import { QuotaBenchUsd } from './quota-bench-usd';
 import dataset from '../../public/reports/quota-bench-2026-10.json';
 
-export type BenchRecord = Omit<(typeof dataset.records)[number], 'controlTokens' | 'apiEquivalentUsd'> & {
+export type BenchRecord = Omit<(typeof dataset.records)[number], 'controlTokens' | 'apiEquivalentUsd' | 'pricing' | 'estimateBasis' | 'tierVerification' | 'planSlug'> & {
   controlTokens: { input: number; cacheRead: number; cacheWrite: number; output: number } | null;
-  apiEquivalentUsd: { low: number; mid: number; high: number } | null;
+  apiEquivalentUsd: { low: number; mid: number; high: number; sample: number } | null;
+  pricing: {
+    model: string; variant: string; currency: string; unit: string;
+    input: number; cacheRead: number; cacheWrite: number | null; output: number;
+    source: string; verifiedAt: string; note: { zh: string; en: string };
+  } | null;
+  estimateBasis: {
+    calls: number; batches: string[];
+    tokens: { input: number; cacheRead: number; cacheWrite: number; output: number };
+    totalTokens: number; usedDeltaPp: number; meterPrecisionPp: number;
+    excluded: { batches: string[]; calls: number; totalTokens: number; reason: string };
+  } | null;
+  tierVerification: { source: string; note: string; confirmedAt?: string; priceUsdPerMonth?: number } | null;
+  planSlug: string | null;
 };
 
 // The account owner confirmed Pro 200. The legacy chatgpt-pro slug is the
 // historical $200 SKU; never attach this measurement to Pro 100 or Pro 500.
+// Cursor's legacy plan tier is unverified; never attach its measurement to
+// Ultra or any other specific tier's plan card.
 export function benchmarkForPlan(planSlug: string): BenchRecord | undefined {
   const id = ['chatgpt-pro', 'chatgpt-pro-200'].includes(planSlug)
     ? 'codex-pro'
-    : planSlug === 'seed-pro' ? 'volcengine-pro'
-      : planSlug === 'cursor-ultra' ? 'cursor-ultra' : undefined;
+    : planSlug === 'seed-pro' ? 'volcengine-pro' : undefined;
   return dataset.records.find(record => record.id === id);
 }
 
@@ -37,7 +52,8 @@ export function PlanBenchSummary({ record, locale }: { record: BenchRecord; loca
     </p>}
     <p>{record.model} · <time dateTime={record.date}>{record.date}</time> · {record.calls} {zh ? '次调用' : 'calls'}</p>
     <p>{zh ? '实测用量' : 'Measured usage'}: {fmt(totalTokens)} tokens{record.controlTokens ? (zh ? '（含同账号控制会话）' : ' (including same-account controller)') : ''}</p>
-    {!record.windowMeasurements && <p>{zh ? '已用额度' : 'Used allowance'}: {record.usedBefore}% → {record.usedAfter}%{record.status === 'pending' ? (zh ? '（仅前 12 次）' : ' (first 12 calls only)') : ''}</p>}
+    {!record.windowMeasurements && <p>{zh ? '已用额度' : 'Used allowance'}: {record.usedBefore}% → {record.usedAfter}%{record.estimateBasis ? (zh ? `（仅前 ${record.estimateBasis.calls} 次）` : ` (first ${record.estimateBasis.calls} calls only)`) : ''}</p>}
+    <QuotaBenchUsd record={record} locale={locale} />
     <p className="text-zinc-500">{zh ? record.caveats.zh : record.caveats.en}</p>
     {record.id === 'codex-pro' && <CodexModelMeasurements locale={locale} />}
     {record.id === 'volcengine-pro' && <VolcengineModelMeasurements locale={locale} />}

@@ -71,13 +71,14 @@ test('history renders old → new intervals, stable citations and separate evide
 
 test('plan cards show benchmark results with scope warnings and deep links instead of empty state', () => {
   for (const locale of ['en', 'zh'] as const) {
-    for (const planSlug of ['chatgpt-pro', 'chatgpt-pro-200', 'seed-pro', 'cursor-ultra']) {
+    for (const planSlug of ['chatgpt-pro', 'chatgpt-pro-200', 'seed-pro']) {
       const html = render(locale, createElement(PlanQuotaEstimates, { locale, planSlug, estimates: [] }));
       assert.ok(!html.includes((locale === 'zh' ? zh : en).quota.empty));
       assert.match(html, /data-quota-bench=/);
       if (planSlug.startsWith('chatgpt-pro')) {
         assert.match(html, /2,595,323/);
         assert.match(html, /64,883,075–129,766,150/);
+        assert.ok(html.includes('$789'));
         assert.ok(html.includes(locale === 'zh' ? '仅适用于 ChatGPT Pro 200' : 'Applies only to ChatGPT Pro 200'));
         assert.ok(html.includes(`/${locale}/quota-bench#codex-pro`));
       } else if (planSlug === 'seed-pro') {
@@ -87,14 +88,9 @@ test('plan cards show benchmark results with scope warnings and deep links inste
         assert.match(html, /196,671,562–203,015,807/);
         assert.ok(html.includes(locale === 'zh' ? '月（粗估）' : 'month (rough)'));
         assert.ok(html.includes(`/${locale}/quota-bench#volcengine-pro`));
-      } else {
-        assert.match(html, /1,162,257/);
-        assert.ok(html.includes(locale === 'zh' ? '暂不估算容量' : 'capacity withheld'));
-        assert.ok(html.includes(locale === 'zh' ? '仅前 12 次' : 'first 12 calls only'));
-        assert.doesNotMatch(html, /tokens \/ /);
       }
     }
-    for (const planSlug of ['chatgpt-pro-100', 'chatgpt-pro-500', 'chatgpt-plus', 'seed-lite', 'cursor-pro', 'x-premium-plus']) {
+    for (const planSlug of ['chatgpt-pro-100', 'chatgpt-pro-500', 'chatgpt-plus', 'seed-lite', 'cursor-ultra', 'cursor-pro', 'x-premium-plus']) {
       const html = render(locale, createElement(PlanQuotaEstimates, { locale, planSlug, estimates: [] }));
       assert.doesNotMatch(html, /data-quota-bench=|64,883,075|129,766,150|2,595,323/);
       assert.ok(html.includes((locale === 'zh' ? zh : en).quota.empty));
