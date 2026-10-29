@@ -15,6 +15,10 @@ import { splitGluedModelSlug } from './glued-model-slug';
  * family that is in the sitemap (checked 2026-10-29); a family with no
  * indexable comparison falls back to the list page. /models targets are
  * always indexable and keep the exact successor.
+ *
+ * The table is the only redirect layer for these slugs: `model_slug_redirects`
+ * in the database covers renames the crawler inserted, and the seeds do not
+ * backfill historical aliases.
  */
 export type LegacySlugTarget = {
   models?: string;
@@ -56,6 +60,67 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'gemini-pro': {},
   'qwen3.5-max': {},
   'claude-sonnet-4': {},
+
+  // Backfilled 2026-10-29 from the Search Console page export (878 URLs):
+  // every slug below still carried impressions while returning 404, because
+  // the catalog moved the same model under a vendor-prefixed slug. Each
+  // `models` target was fetched on 2026-10-29 and returns 200 with
+  // `index, follow`; a `compare` target is only set when the same model family
+  // has an indexable /compare/plans page (an older member of the series is
+  // noindex, so redirecting onto it drops the old URL).
+  'gpt-3.5-turbo': { models: 'openai-gpt-3-5-turbo' },
+  'gpt-4': { models: 'openai-gpt-4' },
+  'gpt-4-turbo': { models: 'openai-gpt-4-turbo' },
+  'gpt-5.2-pro': { models: 'openai-gpt-5-2-pro', compare: 'gpt-5.4-pro' },
+  'gpt-5.5-pro': { models: 'openai-gpt-5-5-pro', compare: 'gpt-5.5' },
+  'gpt-5.6-luna-pro': { models: 'openai-gpt-5-6-luna-pro', compare: 'gpt-5.6-luna' },
+  'gpt-5.6-sol-pro': { models: 'openai-gpt-5-6-sol-pro' },
+  'gpt-5.6-terra-pro': { models: 'openai-gpt-5-6-terra-pro' },
+  'gpt-oss-20b': { models: 'openai-gpt-oss-20b' },
+  'gpt-oss-safeguard-20b': { models: 'openai-gpt-oss-safeguard-20b' },
+  'o1-pro': { models: 'openai-o1-pro' },
+  'o3': { models: 'openai-o3' },
+  'o3-pro': { models: 'openai-o3-pro' },
+  'o4-mini-high': { models: 'openai-o4-mini-high' },
+  'claude-3-haiku': { models: 'anthropic-claude-3-haiku' },
+  'claude-fable-5': { models: 'anthropic-claude-fable-5' },
+  'claude-fable-5-batch': { models: 'anthropic-claude-fable-5-batch' },
+  'claude-opus-4.6-batch': { models: 'anthropic-claude-opus-4-6-batch' },
+  'claude-opus-4.8-batch': { models: 'anthropic-claude-opus-4-8-batch', compare: 'claude-opus-4.5' },
+  'claude-opus-5': { models: 'anthropic-claude-opus-5', compare: 'claude-opus-4.5' },
+  'claude-sonnet-4.6': { models: 'anthropic-claude-sonnet-4-6', compare: 'claude-sonnet-4.5' },
+  'glm-4.5-air': { models: 'z-ai-glm-4-5-air', compare: 'glm-5.3' },
+  'glm-4.5v': { models: 'z-ai-glm-4-5v' },
+  'glm-4.6': { models: 'z-ai-glm-4-6', compare: 'glm-5.3' },
+  'glm-5-turbo': { models: 'z-ai-glm-5-turbo' },
+  'glm-5.1': { models: 'z-ai-glm-5-1' },
+  'glm-5.2-(free)': { models: 'z-ai-glm-5-2-free' },
+  'glm-5v-turbo': { models: 'z-ai-glm-5v-turbo', compare: 'glm-5.3' },
+  'qwen3-32b': { models: 'qwen-qwen3-32b' },
+  'qwen3-coder-next': { models: 'qwen-qwen3-coder-next' },
+  'qwen3-max-thinking': { models: 'qwen-qwen3-max-thinking' },
+  'qwen3-next-80b-a3b-thinking': { models: 'qwen-qwen3-next-80b-a3b-thinking' },
+  'qwen3-vl-8b-thinking': { models: 'qwen-qwen3-vl-8b-thinking' },
+  'qwen3.6-27b': { models: 'qwen-qwen3-6-27b' },
+  'qwen3.6-35b-a3b': { models: 'qwen-qwen3-6-35b-a3b' },
+  'grok-4.20': { models: 'x-ai-grok-4-20' },
+  'grok-build-0.1': { models: 'x-ai-grok-build-0-1' },
+  'minimax-m1': { models: 'minimax-minimax-m1' },
+  'mistral-medium-3': { models: 'mistral-mistral-medium-3' },
+  'step-3.5-flash': { models: 'stepfun-step-3-5-flash' },
+};
+
+/**
+ * `/compare/plans` pages that are gone while the same slug's `/models` page is
+ * still live and indexable. They cannot live in LEGACY_MODEL_SLUGS: an entry
+ * with a `compare` target but no `models` target also redirects `/models` to
+ * the section list, which would drop a page that currently serves traffic.
+ */
+export const LEGACY_COMPARE_ONLY_SLUGS: Record<string, string> = {
+  // Same 2026-10-29 export; the /models page returns 200 + index, follow.
+  'gpt-4.1-nano': 'gpt-5.4-nano',
+  'gpt-5.1-codex-max': 'gpt-5.3-codex',
+  'gpt-5.2-codex': 'gpt-5.3-codex',
 };
 
 const ROUTE = /^\/(en|zh)\/(models|compare\/plans)\/([^/]+)\/?$/;
@@ -73,7 +138,10 @@ export function legacySlugRedirect(pathname: string): string | null {
   const sectionKey = section === 'models' ? 'models' : 'compare';
   const parts = splitGluedModelSlug(slug);
   const lookup = parts?.[0] ?? slug;
-  if (!parts && !Object.hasOwn(LEGACY_MODEL_SLUGS, lookup)) return null;
+  if (!parts && !Object.hasOwn(LEGACY_MODEL_SLUGS, lookup)) {
+    const compareOnly = sectionKey === 'compare' ? LEGACY_COMPARE_ONLY_SLUGS[lookup] : undefined;
+    return compareOnly ? `/${locale}/${section}/${compareOnly}` : null;
+  }
   const targetSlug = LEGACY_MODEL_SLUGS[lookup]?.[sectionKey];
   const destination = targetSlug
     ? `/${locale}/${section}/${targetSlug}`
