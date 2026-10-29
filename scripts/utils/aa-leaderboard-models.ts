@@ -8,6 +8,11 @@
  * page. So instead of trusting one key we try the known keys first, then every
  * other `"<key>":[{"slug":...` array, and keep whichever has the most rows with
  * at least one selected benchmark score.
+ *
+ * Around 2026-10-21 AA also moved the per-benchmark scores off the row into a
+ * nested `"scores":{"gpqa-diamond":0.83,...}` object keyed by eval slug (same
+ * 0–1 scale). `normalizeAaRow` lifts those back onto the flat camelCase fields
+ * the importer reads; flat fields still win when both are present.
  */
 import { extractBalancedArray, parseNextFlight } from './artificial-analysis';
 
@@ -28,6 +33,8 @@ export interface AaModel {
   price1mOutputTokens?: number | null;
   cacheHitPrice?: number | null;
   cacheWritePrice?: number | null;
+  /** Nested eval-slug → score map used by the leaderboard since ~2026-10-21. */
+  scores?: Record<string, number | null> | null;
 }
 
 /** Benchmark fields imported from AA rows; a row counts as scored if any is numeric. */
@@ -38,18 +45,61 @@ export const AA_KNOWN_MODEL_KEYS = ['initialModels', 'models'] as const;
 
 export const AA_MIN_MODELS = 50;
 
+/**
+ * Eval slugs AA uses in the nested `scores` object for each flat field, in
+ * preference order. Note `hle-diamond` is a different eval from HLE text-only.
+ */
+export const AA_NESTED_SCORE_KEYS: Readonly<Record<string, readonly string[]>> = {
+  gpqa: ['gpqa-diamond', 'gpqa'],
+  hle: ['humanitys-last-exam', 'hle'],
+  scicode: ['scicode'],
+  terminalbenchHard: ['terminalbench-hard', 'terminal-bench-hard', 'terminalbenchHard'],
+  ifbench: ['ifbench'],
+  mmmuPro: ['mmmu-pro', 'mmmuPro'],
+};
+
+const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+/** Copy nested `scores[evalSlug]` values onto missing flat score fields. Non-objects pass through. */
+export function normalizeAaRow<T>(row: T): T {
+  if (row === null || typeof row !== 'object') return row;
+  const nested = (row as { scores?: unknown }).scores;
+  if (nested === null || typeof nested !== 'object' || Array.isArray(nested)) return row;
+  const out: Record<string, unknown> = { ...(row as Record<string, unknown>) };
+  for (const [field, keys] of Object.entries(AA_NESTED_SCORE_KEYS)) {
+    if (isFiniteNumber(out[field])) continue;
+    const key = keys.find((candidate) => isFiniteNumber((nested as Record<string, unknown>)[candidate]));
+    if (key) out[field] = (nested as Record<string, unknown>)[key];
+  }
+  return out as T;
+}
+
+/** "slug,name,…; nested scores{gpqa-diamond,…}" for the error message when nothing is scored. */
+export function describeRowShape(row: unknown): string {
+  if (row === null || typeof row !== 'object') return `non-object row (${row === null ? 'null' : typeof row})`;
+  const entries = Object.entries(row as Record<string, unknown>);
+  const nested = entries
+    .filter(([, value]) => value !== null && typeof value === 'object' && !Array.isArray(value))
+    .map(([key, value]) => {
+      const keys = Object.keys(value as object);
+      return `${key}{${keys.slice(0, 15).join(',')}${keys.length > 15 ? `,…+${keys.length - 15}` : ''}}`;
+    });
+  return `keys=${entries.map(([key]) => key).join(',')}${nested.length ? `; nested ${nested.join(' ')}` : ''}`;
+}
+
 interface CandidateReport {
   key: string;
   offset: number;
   rows: number;
   scored: number;
   error?: string;
+  sample?: unknown;
 }
 
 function scoredCount(rows: unknown[], scoreFields: readonly string[]): number {
   return rows.filter((row) =>
     row !== null && typeof row === 'object' && typeof (row as { slug?: unknown }).slug === 'string'
-      && scoreFields.some((field) => typeof (row as Record<string, unknown>)[field] === 'number'),
+      && scoreFields.some((field) => isFiniteNumber((row as Record<string, unknown>)[field])),
   ).length;
 }
 
@@ -71,9 +121,11 @@ export function extractScoredModelsFromFlight(
     const report: CandidateReport = { key, offset: arrayStart, rows: 0, scored: 0 };
     reports.push(report);
     try {
-      const parsed: unknown = JSON.parse(extractBalancedArray(flight, arrayStart));
-      if (!Array.isArray(parsed)) return;
+      const raw: unknown = JSON.parse(extractBalancedArray(flight, arrayStart));
+      if (!Array.isArray(raw)) return;
+      const parsed = raw.map((row) => normalizeAaRow(row));
       report.rows = parsed.length;
+      report.sample = raw[0];
       report.scored = scoredCount(parsed, scoreFields);
       if (report.scored > 0 && (!best || report.scored > best.scored)) {
         best = { models: parsed as AaModel[], key, scored: report.scored };
@@ -99,9 +151,16 @@ export function extractScoredModelsFromFlight(
     ? reports.map((r) => `${r.key}@${r.offset}(rows=${r.rows}, scored=${r.scored}${r.error ? `, error=${r.error}` : ''})`).join('; ')
     : 'none';
   if (!best) {
+    // Show the shape of the largest candidate so a renamed/moved score field is
+    // obvious from the log alone (no need to re-fetch the page to debug).
+    const withRows = reports.filter((r) => r.rows > 0);
+    const sampled = withRows.find((r) => (AA_KNOWN_MODEL_KEYS as readonly string[]).includes(r.key))
+      ?? [...withRows].sort((a, b) => b.rows - a.rows)[0];
+    const shape = sampled ? ` Sample row ${sampled.key}[0]: ${describeRowShape(sampled.sample)}.` : '';
     throw new Error(
       `Could not find scored models payload in Artificial Analysis page; tried keys ${AA_KNOWN_MODEL_KEYS.join(', ')} `
-      + `and generic "<key>":[{"slug" scan. Candidates: ${tried}`,
+      + `and generic "<key>":[{"slug" scan. Looked for numeric ${scoreFields.join('/')} on the row or in a nested `
+      + `"scores" object (${Object.values(AA_NESTED_SCORE_KEYS).map((k) => k[0]).join('/')}). Candidates: ${tried}.${shape}`,
     );
   }
   if (best.models.length < minModels) {
