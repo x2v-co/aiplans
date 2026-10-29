@@ -22,7 +22,7 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/zh/models/glm-4.5', '/zh/models/z-ai-glm-4-5'],
   ['/en/models/qwen3.8-27b', '/en/models/qwen-qwen3-8-27b'],
   ['/en/compare/plans/claude-haiku-4-5', '/en/compare/plans/claude-haiku-5.5'],
-  ['/en/compare/plans/qwen-2.5-72b', '/en/compare/plans'],
+  ['/en/compare/plans/qwen-2.5-72b', '/en/models/qwen-qwen-2-5-72b-instruct'],
   ['/en/models/claude-sonnet-4.6-batch', '/en/models/anthropic-claude-sonnet-4-6-batch'],
   ['/en/models/minimax-01', '/en/models/minimax-minimax-01'],
   ['/en/models/kimi-k2.5', '/en/models/moonshotai-kimi-k2-5'],
@@ -32,11 +32,11 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/en/compare/plans/glm-4.6v', '/en/compare/plans/glm-5.3'],
   ['/en/compare/plans/glm-4.7-flash', '/en/compare/plans/glm-5.3-flash'],
   ['/en/compare/plans/minimax-m2-her', '/en/compare/plans/minimax-minimax-m2-her'],
-  ['/en/compare/plans/qwen3.5-35b-a3b', '/en/compare/plans'],
+  ['/en/compare/plans/qwen3.5-35b-a3b', '/en/models/qwen-qwen3-5-35b-a3b'],
   ['/en/models/claude-sonnet-5', '/en/models/anthropic-claude-sonnet-5'],
-  ['/zh/compare/plans/qwen3-14b', '/zh/compare/plans'],
+  ['/zh/compare/plans/qwen3-14b', '/zh/models/qwen-qwen3-14b'],
   ['/zh/models/claude-opus-4.7', '/zh/models/anthropic-claude-opus-4-7'],
-  ['/en/compare/plans/claude-fable-5.1-batch', '/en/compare/plans'],
+  ['/en/compare/plans/claude-fable-5.1-batch', '/en/models/anthropic-claude-fable-5-1-batch'],
   ['/en/compare/plans/seed-2.1-turbo', '/en/compare/plans/doubao-seed-2.1-turbo'],
   ['/en/compare/plans/glm-5', '/en/compare/plans/glm-5.3'],
   // Backfilled 2026-10-29 from the Search Console page export. These are the
@@ -55,14 +55,29 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/en/models/qwen3.6-27b', '/en/models/qwen-qwen3-6-27b'],
   ['/en/models/grok-4.20', '/en/models/x-ai-grok-4-20'],
   ['/en/compare/plans/gpt-5.2-pro', '/en/compare/plans/gpt-5.4-pro'],
+  // Bundle 2: matched against the full /api/products catalog, not the prefix.
+  ['/en/models/gemma-3-27b', '/en/models/google-gemini-gemma-3-27b-it'],
+  ['/en/models/gemma-4-26b-a4b-(free)', '/en/models/google-gemini-gemma-4-26b-a4b-it-free'],
+  ['/en/models/qwen3-vl-8b', '/en/models/qwen-qwen3-vl-8b-instruct'],
+  ['/en/models/qwen3-coder-480b-a35b', '/en/models/qwen-qwen3-coder'],
+  ['/en/models/seed-1.6', '/en/models/bytedance-seed-seed-1-6'],
+  ['/en/models/kimi', '/en/models/~moonshotai-kimi-latest'],
+  ['/zh/models/gemini-pro', '/zh/models/~google-gemini-pro-latest'],
 ];
 
 const LIST_FALLBACKS: Array<[string, string]> = [
-  ['/en/models/kimi', '/en/models'],
-  ['/zh/models/qwen2.5-7b', '/zh/models'],
-  ['/zh/models/gemini-pro', '/zh/models'],
+  // No single successor survives in the catalog.
+  ['/en/models/qwen3.5-max', '/en/models'],
   ['/en/compare/plans/qwen3.5-max', '/en/compare/plans'],
-  ['/en/compare/plans/claude-sonnet-4', '/en/compare/plans'],
+];
+
+// A dead compare URL whose model page exists: the model page carries the same
+// plan table, so it beats dumping the visitor on the section list.
+const COMPARE_TO_MODEL: Array<[string, string]> = [
+  ['/en/compare/plans/claude-sonnet-4', '/en/models/anthropic-claude-sonnet-4'],
+  ['/zh/compare/plans/claude-fable-5.1-batch', '/zh/models/anthropic-claude-fable-5-1-batch'],
+  ['/en/compare/plans/qwen-2.5-72b', '/en/models/qwen-qwen-2-5-72b-instruct'],
+  ['/en/compare/plans/seed-1.6', '/en/models/bytedance-seed-seed-1-6'],
 ];
 
 test('impressed 404 slugs redirect to the live catalog slug', () => {
@@ -74,6 +89,13 @@ test('impressed 404 slugs redirect to the live catalog slug', () => {
 test('slugs with no single successor redirect to the section list', () => {
   for (const [from, to] of LIST_FALLBACKS) {
     assert.equal(legacySlugRedirect(from), to, from);
+  }
+});
+
+test('a dead compare URL falls through to the model page, not the list', () => {
+  for (const [from, to] of COMPARE_TO_MODEL) {
+    assert.equal(legacySlugRedirect(from), to, from);
+    assert.equal(legacySlugRedirect(to), null, `${to} must not redirect again`);
   }
 });
 
@@ -158,10 +180,10 @@ test('the 18 impressed compare URLs that hit noindex now 301 to indexable pages 
     ['/en/compare/plans/claude-opus-5-batch', '/en/compare/plans/claude-opus-4.5'],
     ['/en/compare/plans/claude-opus-4.7', '/en/compare/plans/claude-opus-4.5'],
     ['/en/compare/plans/claude-haiku-4-5', '/en/compare/plans/claude-haiku-5.5'],
-    ['/zh/compare/plans/qwen3-14b', '/zh/compare/plans'],
+    ['/zh/compare/plans/qwen3-14b', '/zh/models/qwen-qwen3-14b'],
     ['/zh/compare/plans/kimi-k2.5', '/zh/compare/plans/kimi-k3'],
-    ['/en/compare/plans/qwen3.5-35b-a3b', '/en/compare/plans'],
-    ['/en/compare/plans/qwen-2.5-72b', '/en/compare/plans'],
+    ['/en/compare/plans/qwen3.5-35b-a3b', '/en/models/qwen-qwen3-5-35b-a3b'],
+    ['/en/compare/plans/qwen-2.5-72b', '/en/models/qwen-qwen-2-5-72b-instruct'],
   ];
   for (const [from, to] of cases) {
     assert.equal(legacySlugRedirect(from), to, from);

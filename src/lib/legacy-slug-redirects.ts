@@ -53,13 +53,16 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'seed-2.1-turbo': { models: 'doubao-seed-2.1-turbo', compare: 'doubao-seed-2.1-turbo' },
   'minimax-01': { models: 'minimax-minimax-01', compare: 'minimax-minimax-01' },
   'minimax-m2-her': { models: 'minimax-minimax-m2-her', compare: 'minimax-minimax-m2-her' },
-  // No single live page: two 7B rows, a floating "latest" alias, or a newer
-  // version that is a different model.
-  'kimi': {},
-  'qwen2.5-7b': {},
-  'gemini-pro': {},
+  // Brand-level slugs point at the catalog's floating "latest" page; the guard
+  // is only that the page exists (checked 2026-10-29). `qwen3.5-max` still has
+  // no single successor, so it falls back to the section list.
+  'kimi': { models: '~moonshotai-kimi-latest' },
+  'claude-sonnet': { models: '~anthropic-claude-sonnet-latest' },
+  'grok': { models: '~x-ai-grok-latest' },
+  'gemini-pro': { models: '~google-gemini-pro-latest' },
+  'qwen2.5-7b': { models: 'qwen-qwen-2-5-7b-instruct' },
+  'claude-sonnet-4': { models: 'anthropic-claude-sonnet-4' },
   'qwen3.5-max': {},
-  'claude-sonnet-4': {},
 
   // Backfilled 2026-10-29 from the Search Console page export (878 URLs):
   // every slug below still carried impressions while returning 404, because
@@ -108,6 +111,38 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'minimax-m1': { models: 'minimax-minimax-m1' },
   'mistral-medium-3': { models: 'mistral-mistral-medium-3' },
   'step-3.5-flash': { models: 'stepfun-step-3-5-flash' },
+
+  // Bundle 2 (2026-10-29): the slugs above were resolved by vendor prefix, which
+  // misses models whose catalog slug also renames the variant (`gemma-3-27b` ->
+  // `google-gemini-gemma-3-27b-it`, `qwen3-vl-8b` -> `qwen-qwen3-vl-8b-instruct`).
+  // These were matched against the full `/api/products` catalog (928 rows) and
+  // each target fetched on 2026-10-29: 200 + `index, follow`.
+  'qwen3-coder-480b-a35b': { models: 'qwen-qwen3-coder' },
+  'deepseek-v4-flash-vision': { models: 'deepseek-deepseek-v4-flash-vision-exp' },
+  'qwen3-vl-8b': { models: 'qwen-qwen3-vl-8b-instruct' },
+  'qwen3-vl-32b': { models: 'qwen-qwen3-vl-32b-instruct' },
+  'qwen3-vl-235b-a22b': { models: 'qwen-qwen3-vl-235b-a22b-instruct' },
+  'qwen3-vl-30b-a3b': { models: 'qwen-qwen3-vl-30b-a3b-instruct' },
+  'qwen2.5-vl-72b': { models: 'qwen-qwen2-5-vl-72b-instruct' },
+  'qwen-2.5-coder-32b': { models: 'qwen-qwen-2-5-coder-32b-instruct' },
+  'gemma-4-26b-a4b-(free)': { models: 'google-gemini-gemma-4-26b-a4b-it-free' },
+  'gemma-4-31b-(free)': { models: 'google-gemini-gemma-4-31b-it-free' },
+  'gemma-4-26b-a4b': { models: 'google-gemini-gemma-4-26b-a4b-it' },
+  'gemma-3-27b': { models: 'google-gemini-gemma-3-27b-it' },
+  'gemma-3-12b': { models: 'google-gemini-gemma-3-12b-it' },
+  'gemma-2-27b': { models: 'google-gemini-gemma-2-27b-it' },
+  'mixtral-8x22b': { models: 'mistral-mixtral-8x22b-instruct' },
+  'gemini-2.5-pro-preview-06-05': { models: 'google-gemini-gemini-2-5-pro-preview' },
+  'gemini-3.1-pro-preview-custom-tools': { models: 'google-gemini-gemini-3-1-pro-preview-customtools' },
+  'seed-1.6': { models: 'bytedance-seed-seed-1-6' },
+  // Same catalog pass; these only ever appeared as /compare/plans URLs in the
+  // export, and their /models page is 404 too, so the compare URL falls
+  // through to the model page (see the section fallback below).
+  'qwen3.5-27b': { models: 'qwen-qwen3-5-27b' },
+  'qwen3.6-max': { models: 'qwen-qwen3-6-max-preview' },
+  'qwen3-next-80b-a3b': { models: 'qwen-qwen3-next-80b-a3b-instruct' },
+  'claude-fable': { models: '~anthropic-claude-fable-latest' },
+  'gpt-mini': { models: '~openai-gpt-mini-latest' },
 };
 
 /**
@@ -138,13 +173,26 @@ export function legacySlugRedirect(pathname: string): string | null {
   const sectionKey = section === 'models' ? 'models' : 'compare';
   const parts = splitGluedModelSlug(slug);
   const lookup = parts?.[0] ?? slug;
-  if (!parts && !Object.hasOwn(LEGACY_MODEL_SLUGS, lookup)) {
+  if (!Object.hasOwn(LEGACY_MODEL_SLUGS, lookup)) {
+    // An unresolvable glued id (one price cell stored as a slug) still lands on
+    // the section list, as it always has.
+    if (parts) return `/${locale}/${section}`;
     const compareOnly = sectionKey === 'compare' ? LEGACY_COMPARE_ONLY_SLUGS[lookup] : undefined;
     return compareOnly ? `/${locale}/${section}/${compareOnly}` : null;
   }
-  const targetSlug = LEGACY_MODEL_SLUGS[lookup]?.[sectionKey];
-  const destination = targetSlug
-    ? `/${locale}/${section}/${targetSlug}`
-    : `/${locale}/${section}`;
-  return destination === `/${locale}/${section}/${slug}` ? null : destination;
+  const entry = LEGACY_MODEL_SLUGS[lookup];
+  const targetSlug = entry[sectionKey];
+  if (targetSlug) {
+    const destination = `/${locale}/${section}/${targetSlug}`;
+    return destination === `/${locale}/${section}/${slug}` ? null : destination;
+  }
+  // The family has no indexable comparison: hand the compare URL to the model
+  // page, which renders the same plan table, instead of the section list.
+  // selectIndexablePlanComparisons marks every older member of a series
+  // noindex (their plan set is a subset of the newest one), so those pages are
+  // near-duplicates and must stay noindex rather than becoming compare targets.
+  if (sectionKey === 'compare' && entry.models) {
+    return `/${locale}/models/${entry.models}`;
+  }
+  return `/${locale}/${section}`;
 }
