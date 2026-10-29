@@ -24,39 +24,7 @@ class OpenAIScraper extends PlaywrightScraper {
       ))
     );
 
-    const prices: PriceData[] = [];
-    const seen = new Set<string>();
-    for (const rows of tables) {
-      const header = rows.find(row => row.some(cell => /^Model$/i.test(cell)));
-      if (!header) continue;
-      if (header.some(cell => /^Training$/i.test(cell))) continue;
-      const modelIndex = header.findIndex(cell => /^Model$/i.test(cell));
-      const inputIndex = header.findIndex(cell => /^Input$/i.test(cell));
-      const cachedIndex = header.findIndex(cell => /^Cached input$/i.test(cell));
-      const outputIndex = header.findIndex(cell => /^Output(?: \/ cost)?$/i.test(cell));
-      if ([modelIndex, inputIndex, cachedIndex, outputIndex].some(index => index < 0)) continue;
-
-      for (const cells of rows.slice(rows.indexOf(header) + 1)) {
-        const modelName = (cells[modelIndex] || '').toLowerCase();
-        if (!/^(?:gpt-|o\d|chat-latest)/i.test(modelName) || seen.has(modelName)) continue;
-
-        const input = parseDollar(cells[inputIndex]);
-        const cachedInput = parseDollar(cells[cachedIndex]);
-        const output = parseDollar(cells[outputIndex]);
-        if (input == null || output == null || output < input) continue;
-
-        prices.push({
-          modelName,
-          inputPricePer1M: input,
-          outputPricePer1M: output,
-          cachedInputPricePer1M: cachedInput,
-          contextWindow: 128_000,
-          isAvailable: true,
-          currency: 'USD',
-        });
-        seen.add(modelName);
-      }
-    }
+    const prices = parseOpenAIPricingTables(tables);
 
     const errors = prices.length === 0
       ? ['No standard token prices found in the official OpenAI pricing table.']
@@ -68,6 +36,49 @@ class OpenAIScraper extends PlaywrightScraper {
       errors,
     };
   }
+}
+
+/**
+ * Pure parser for the official pricing tables. The pricing page carries no
+ * context window, so none is emitted: the previous hard-coded 128_000 was
+ * written as context_window whenever this scraper created a model row (GPT-6 /
+ * GPT-5 rows showed 128K instead of 1.05M / 400K, Intel audit 2026-10-29).
+ */
+export function parseOpenAIPricingTables(tables: string[][][]): PriceData[] {
+  const prices: PriceData[] = [];
+  const seen = new Set<string>();
+  for (const rows of tables) {
+    const header = rows.find(row => row.some(cell => /^Model$/i.test(cell)));
+    if (!header) continue;
+    if (header.some(cell => /^Training$/i.test(cell))) continue;
+    const modelIndex = header.findIndex(cell => /^Model$/i.test(cell));
+    const inputIndex = header.findIndex(cell => /^Input$/i.test(cell));
+    const cachedIndex = header.findIndex(cell => /^Cached input$/i.test(cell));
+    const outputIndex = header.findIndex(cell => /^Output(?: \/ cost)?$/i.test(cell));
+    if ([modelIndex, inputIndex, cachedIndex, outputIndex].some(index => index < 0)) continue;
+
+    for (const cells of rows.slice(rows.indexOf(header) + 1)) {
+      const modelName = (cells[modelIndex] || '').toLowerCase();
+      if (!/^(?:gpt-|o\d|chat-latest)/i.test(modelName) || seen.has(modelName)) continue;
+
+      const input = parseDollar(cells[inputIndex]);
+      const cachedInput = parseDollar(cells[cachedIndex]);
+      const output = parseDollar(cells[outputIndex]);
+      if (input == null || output == null || output < input) continue;
+
+      prices.push({
+        modelName,
+        inputPricePer1M: input,
+        outputPricePer1M: output,
+        cachedInputPricePer1M: cachedInput,
+        isAvailable: true,
+        currency: 'USD',
+      });
+      seen.add(modelName);
+    }
+  }
+
+  return prices;
 }
 
 function parseDollar(value: string | undefined): number | null {
