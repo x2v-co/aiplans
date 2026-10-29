@@ -3,6 +3,7 @@ import { LimitedTimeOfferMark } from '@/components/limited-time-offer';
 import { effectivePrice } from '@/lib/effective-price';
 import { billingRedirectNote } from '@/lib/billing-redirect';
 import { modelShutdownNotice } from '@/lib/model-shutdown';
+import { modelAvailabilityStatus, modelAnnouncementLabel } from '@/lib/model-announcement';
 import { getTranslations } from 'next-intl/server';
 import Link from "next/link";
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
@@ -157,7 +158,7 @@ async function getProductWithChannels(slug: string, now = new Date()) {
   const [model] = await sql<any[]>`
     SELECT id, name, slug, type, description, context_window, max_output_tokens,
            open_source, license, license_url, parameters, "active parameters" AS active_parameters,
-           provider_ids, released_at, created_at, updated_at, shutdown_date::text,
+           provider_ids, offical_link, released_at, created_at, updated_at, shutdown_date::text,
            replacement_model, deprecation_source_url
     FROM models
     WHERE slug = ${slug}
@@ -220,6 +221,19 @@ async function getProductWithChannels(slug: string, now = new Date()) {
   `;
 
   const normalizedChannelPrices = rawChannelPrices.map(cp => effectivePrice(cp, now));
+
+  // Reference rows never enter channelPrices, cheapest calculations, history,
+  // SEO offers or the comparison table. Fetch only for explicitly announced models.
+  const referencePrices = modelAvailabilityStatus(model.description) === 'announced'
+    ? await sql<Array<{ id: number; input_price_per_1m: number | null; output_price_per_1m: number | null;
+        cached_input_price_per_1m: number | null; currency: string | null; notes: string | null }>>`
+        SELECT cp.id, cp.input_price_per_1m, cp.output_price_per_1m,
+               cp.cached_input_price_per_1m, cp.currency, cp.notes
+        FROM api_channel_prices cp JOIN providers p ON p.id = cp.provider_id
+        WHERE cp.model_id = ${model.id} AND cp.is_available = false
+          AND p.type IN ('official', 'producer') AND cp.price_unit = 'per_1m_tokens'
+        ORDER BY cp.id
+      ` : [];
 
   // Related models from the same producer (provider_ids[1] is the primary
   // producer in our data). Internal links distribute crawl equity and give
@@ -370,6 +384,7 @@ async function getProductWithChannels(slug: string, now = new Date()) {
   return {
     product,
     channelPrices: normalizedChannelPrices,
+    referencePrices,
     plans: plansData,
     arenaElo,
     benchmarkScores,
@@ -399,7 +414,7 @@ export default async function ModelPage({
     notFound();
   }
 
-  const { product, channelPrices, plans, arenaElo, benchmarkScores, priceHistory, relatedModels } = data;
+  const { product, channelPrices, referencePrices, plans, arenaElo, benchmarkScores, priceHistory, relatedModels } = data;
   // Agent-harness results (Claude Code, Codex, ...) on this host model. Renders
   // nothing for the vast majority of models that AA has not evaluated.
   const codingAgentRows = await getCodingAgentRowsForModel(product.id);
@@ -408,6 +423,8 @@ export default async function ModelPage({
   const productName = formatModelName(product.name);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
   const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);
+  const announcementMessages = await getTranslations({ locale, namespace: 'modelAnnouncement' });
+  const announcementLabel = modelAnnouncementLabel(product.description, { announced: announcementMessages('announced') });
   const billingNote = billingRedirectNote(product.slug, locale);
   const guideSlug = guideForModelSlug(product.slug);
   const pricing = buildModelPricingSeo({ ...product, name: productName }, channelPrices,
@@ -543,7 +560,7 @@ export default async function ModelPage({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd }} />
       )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
-      {pricing.faqs.length > 0 && (
+      {!announcementLabel && pricing.faqs.length > 0 && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: faqPage(pricing.faqs) }}
@@ -581,7 +598,7 @@ export default async function ModelPage({
             </div>
           </div>
           <p className="mb-3 text-sm text-zinc-500">{isZh ? '也称' : 'Also known as'}: {pricing.aliases.join(' · ')}</p>
-          <ModelPricingSummary pricing={pricing} locale={locale} now={now} />
+          {!announcementLabel && <ModelPricingSummary pricing={pricing} locale={locale} now={now} />}
           <div className="flex flex-wrap gap-3">
             {product.context_window && (
               <Badge variant="outline" className="text-sm">
@@ -627,11 +644,31 @@ export default async function ModelPage({
 
           {/* Data-driven model summary — unique, factual prose for crawlers and
               answer engines (GEO). Omitted facts are simply absent, never invented. */}
-          <p className="mt-4 text-zinc-700 dark:text-zinc-300 leading-relaxed max-w-4xl">
+          {!announcementLabel && <p className="mt-4 text-zinc-700 dark:text-zinc-300 leading-relaxed max-w-4xl">
             {modelCopy.summary}
-          </p>
+          </p>}
         </div>
 
+        {announcementLabel && (
+          <section role="note" className="mb-8 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+            <Badge variant="outline">{announcementLabel}</Badge>
+            <p className="mt-2">{announcementMessages('referenceNote')}</p>
+            {referencePrices.map(reference => (
+              <div key={reference.id} className="mt-4 space-y-1">
+                <h2 className="font-semibold">{announcementMessages('referencePrice')}</h2>
+                <p>{announcementMessages('input', { price: formatPrice(reference.input_price_per_1m, channelCurrency(reference), locale) })}</p>
+                <p>{announcementMessages('output', { price: formatPrice(reference.output_price_per_1m, channelCurrency(reference), locale) })}</p>
+                <p>{announcementMessages('cachedInput', { price: formatPrice(reference.cached_input_price_per_1m, channelCurrency(reference), locale) })}</p>
+                {reference.notes && <p className="text-sm">{reference.notes}</p>}
+              </div>
+            ))}
+            {product.offical_link && (
+              <a href={product.offical_link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm underline">
+                {announcementMessages('source')} <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            )}
+          </section>
+        )}
         {shutdown && (
           <div role="note" className="mb-8 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
             <p>
@@ -664,7 +701,7 @@ export default async function ModelPage({
         )}
 
         {/* Quick Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        {!announcementLabel && <div className="grid md:grid-cols-3 gap-6 mb-8">
           {/* Cheapest Option */}
           <Card className={cheapestChannel?.id === officialChannel?.id ? "border-blue-500" : "border-green-500"}>
             <CardHeader className="pb-2">
@@ -804,7 +841,7 @@ export default async function ModelPage({
               })()}
             </CardContent>
           </Card>
-        </div>
+        </div>}
 
         <Separator className="my-8" />
 
@@ -1273,7 +1310,7 @@ export default async function ModelPage({
 
         {/* FAQ — visible mirror of the FAQPage JSON-LD emitted in <head>.
             Direct, factual answers are what answer engines (GEO) extract. */}
-        {pricing.faqs.length > 0 && (
+        {!announcementLabel && pricing.faqs.length > 0 && (
           <section className="mt-8">
             <h2 className="text-2xl font-bold mb-4">
               {isZh ? `关于 ${product.name} 的常见问题` : `Frequently asked questions about ${product.name}`}

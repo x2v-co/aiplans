@@ -69,10 +69,11 @@ async function loadPlans(): Promise<PlanRow[]> {
 
 async function loadCatalog(): Promise<SelectableModel[]> {
   const rows = await databaseSql<
-    { id: number; slug: string; provider_slugs: string[] | null; elo: number | null }[]
+    { id: number; slug: string; description: string | null; provider_slugs: string[] | null; elo: number | null }[]
   >`
     SELECT model.id,
            model.slug,
+           model.description,
            coalesce(
              (SELECT array_agg(provider.slug)
                 FROM providers AS provider
@@ -88,6 +89,7 @@ async function loadCatalog(): Promise<SelectableModel[]> {
   return rows.map((row) => ({
     id: row.id,
     slug: row.slug,
+    description: row.description,
     providerSlugs: row.provider_slugs ?? [],
     elo: row.elo,
   }));

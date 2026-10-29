@@ -13,6 +13,7 @@ usage() {
 有 --slug 时只跑 vertical models 与 pricing。logo、已核实创作套餐、benchmark
 不能按 slug 缩小，这次会跳过。
 kimi-k3 仅修正已有 models.context_window（NULL/128000 → 1048576），跳过 vertical pricing。
+gemini-4-carbon 使用独立 LLM seed，写入未开放状态及不可用的参考报价。
 --sync-availability 才会改已有行的 is_available。
 
 记录目录: ${LOCK_PATH:-仓库根}/snapshots/seed-catalog/<UTC 时间>/
@@ -120,9 +121,24 @@ finish() {
 }
 trap finish EXIT
 
+# Route the LLM announcement seed separately; vertical seeds reject its slug.
+CARBON=0
+VERTICAL_SLUGS=""
+if [[ -z "$SLUGS" ]]; then
+  CARBON=1
+else
+  IFS=',' read -r -a selected_slugs <<< "$SLUGS"
+  for slug in "${selected_slugs[@]}"; do
+    if [[ "$slug" == gemini-4-carbon ]]; then
+      CARBON=1
+    else
+      VERTICAL_SLUGS+="${VERTICAL_SLUGS:+,}$slug"
+    fi
+  done
+fi
 extra=()
-if [[ -n "$SLUGS" ]]; then
-  extra+=(--slug "$SLUGS")
+if [[ -n "$VERTICAL_SLUGS" ]]; then
+  extra+=(--slug "$VERTICAL_SLUGS")
 fi
 if [[ "$SYNC" == 1 ]]; then
   extra+=(--sync-availability)
@@ -141,7 +157,9 @@ set -o pipefail
   echo "# slugs: ${SLUGS:-<full catalog>}"
   echo "# sync_availability: $SYNC"
   echo "=== seed:vertical-models dry-run ==="
-  run_scraper npm run seed:vertical-models -- "${extra[@]}"
+  if [[ -z "$SLUGS" || -n "$VERTICAL_SLUGS" ]]; then
+    run_scraper npm run seed:vertical-models -- "${extra[@]}"
+  fi
   if [[ -z "$SLUGS" ]]; then
     echo "=== seed:vertical-logos dry-run ==="
     run_scraper npm run seed:vertical-logos:dry-run
@@ -149,7 +167,13 @@ set -o pipefail
     echo "slug set; skip logos (cannot narrow that seed)"
   fi
   echo "=== seed:vertical-pricing dry-run ==="
-  run_scraper npm run seed:vertical-pricing -- "${extra[@]}"
+  if [[ -z "$SLUGS" || -n "$VERTICAL_SLUGS" ]]; then
+    run_scraper npm run seed:vertical-pricing -- "${extra[@]}"
+  fi
+  if [[ "$CARBON" == 1 ]]; then
+    echo "=== seed:gemini-4-carbon dry-run ==="
+    run_scraper npm run seed:gemini-4-carbon
+  fi
   if [[ -z "$SLUGS" ]]; then
     echo "=== seed:verified-creative-plans dry-run ==="
     run_scraper npm run seed:verified-creative-plans:dry-run
@@ -204,7 +228,9 @@ set -o pipefail
   echo "# apply $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "# backup: $record/backup.dump"
   echo "=== seed:vertical-models apply ==="
-  run_scraper npm run seed:vertical-models -- --apply "${extra[@]}"
+  if [[ -z "$SLUGS" || -n "$VERTICAL_SLUGS" ]]; then
+    run_scraper npm run seed:vertical-models -- --apply "${extra[@]}"
+  fi
   if [[ -z "$SLUGS" ]]; then
     echo "=== seed:vertical-logos apply ==="
     run_scraper npm run seed:vertical-logos -- --apply
@@ -212,7 +238,13 @@ set -o pipefail
     echo "slug set; skip logos"
   fi
   echo "=== seed:vertical-pricing apply ==="
-  run_scraper npm run seed:vertical-pricing -- --apply "${extra[@]}"
+  if [[ -z "$SLUGS" || -n "$VERTICAL_SLUGS" ]]; then
+    run_scraper npm run seed:vertical-pricing -- --apply "${extra[@]}"
+  fi
+  if [[ "$CARBON" == 1 ]]; then
+    echo "=== seed:gemini-4-carbon apply ==="
+    run_scraper npm run seed:gemini-4-carbon -- --apply
+  fi
   if [[ -z "$SLUGS" ]]; then
     echo "=== seed:verified-creative-plans apply ==="
     run_scraper npm run seed:verified-creative-plans -- --apply

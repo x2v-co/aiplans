@@ -143,7 +143,7 @@ async function main() {
     .catch((e: unknown) => ({ catalog: null, error: e instanceof Error ? e.message : String(e) }));
 
   const [modelsRes, providersRes, pricesRes, plansRes, mappingsRes, ratesRes] = await Promise.all([
-    db.from('models').select('id, name, slug, provider_ids, type'),
+    db.from('models').select('id, name, slug, provider_ids, type, description'),
     db.from('providers').select('id, name, slug, type'),
     db.from('api_channel_prices').select('id, model_id, provider_id, input_price_per_1m, output_price_per_1m, is_available, last_verified, updated_at, currency, notes'),
     db.from('plans').select(planColumns),
@@ -672,9 +672,10 @@ async function main() {
     providers.map((pr: { id: number; slug: string }) => [pr.id, pr.slug]),
   );
   const modelCatalog: SelectableModel[] = models.map(
-    (m: { id: number; slug: string; provider_ids: number[] | null }) => ({
+    (m: { id: number; slug: string; provider_ids: number[] | null; description?: string | null }) => ({
       id: m.id,
       slug: m.slug,
+      description: m.description,
       providerSlugs: (m.provider_ids ?? [])
         .map((pid) => providerSlugById.get(pid))
         .filter((slug): slug is string => Boolean(slug)),

@@ -14,6 +14,7 @@
  */
 
 import { pickNewestPerSeries } from './model-series';
+import { modelAvailabilityStatus } from './model-announcement';
 
 export type ModelSelector = {
   /** Producer provider slugs whose models are candidates. Defaults to the plan's own provider. */
@@ -41,6 +42,8 @@ export type ModelSelector = {
 export type SelectableModel = {
   id: number;
   slug: string;
+  /** Optional catalog metadata; announced APIs cannot imply subscription access. */
+  description?: string | null;
   /** Slugs of every provider in the model's `provider_ids` array. */
   providerSlugs: string[];
   elo: number | null;
@@ -109,6 +112,7 @@ export function resolveSelector(
 
   let candidates = catalog.filter(
     (model) =>
+      modelAvailabilityStatus(model.description) !== 'announced' &&
       isSubscribableSlug(model.slug) &&
       model.providerSlugs.some((slug) => providers.includes(slug.toLowerCase())),
   );
@@ -159,7 +163,8 @@ export function resolveSelector(
     for (const slug of hits) selected.delete(slug);
   }
 
-  const models = [...selected.values()].sort(
+  // Extras may bypass provider/family rules, but cannot grant unreleased access.
+  const models = [...selected.values()].filter(model => modelAvailabilityStatus(model.description) !== 'announced').sort(
     (left, right) => (right.elo || 0) - (left.elo || 0) || left.slug.localeCompare(right.slug),
   );
 
