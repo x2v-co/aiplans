@@ -15,7 +15,8 @@ export const COPILOT_PREVIEW_SELECTOR: ModelSelector = {
   exclude: POOL.flatMap(slug => [`${slug}-*`, `${slug}.*`]),
 };
 
-export const COPILOT_PREVIEW_PLANS = ['copilot-pro', 'copilot-pro-plus', 'copilot-business', 'copilot-enterprise'];
+// Standalone inherits Enterprise eligibility, including this verified pool.
+export const COPILOT_PREVIEW_PLANS = ['copilot-pro', 'copilot-pro-plus', 'copilot-business', 'copilot-enterprise', 'copilot-standalone'];
 
 export const COPILOT_DEPRECATION_SOURCE = 'https://github.blog/changelog/2026-10-15-upcoming-deprecation-of-selected-github-copilot-models-in-mid-november';
 /** Removed from all Copilot experiences on the date below (changelog 2026-10-15). */
