@@ -6,7 +6,7 @@ import type { Sql } from 'postgres';
 import ts from 'typescript';
 import { COPILOT_PREVIEW_SELECTOR } from '../../src/lib/copilot';
 import { buildProviderCopy, type ProviderCopyPlan } from '../../src/lib/provider-copy';
-import { monthlyPlanFloors, type SeoPlan } from '../../src/lib/pricing-seo';
+import { buildComparisonPricingCopy, monthlyPlanFloors, type SeoPlan } from '../../src/lib/pricing-seo';
 import { planEconomics, type EconomicPlan } from '../../src/lib/plan-economics';
 import { planEntitlementTrust, planPriceTrust, type PlanTrustRow } from '../../src/lib/data-trust';
 import { resolveSelector, type ModelSelector } from '../../src/lib/plan-selector';
@@ -201,7 +201,7 @@ test('Standalone has a seat fee plus metered budget, no allowance, and the same 
   assert.equal(standalone.billing_granularity, 'flat_monthly');
   assert.equal(standalone.plan_line, 'github-copilot');
   assert.equal(standalone.tier, 'enterprise');
-  assert.equal(standalone.is_contact_sales, true);
+  assert.equal(standalone.is_contact_sales, false);
   assert.equal(standalone.included_credits, 0);
   assert.equal(standalone.included_usage_amount, 0);
   assert.deepEqual(standalone.quotas, []);
@@ -212,7 +212,10 @@ test('Standalone has a seat fee plus metered budget, no allowance, and the same 
   assert.deepEqual(standalone.model_selector, enterprise.model_selector);
   const modelIds = (plan: Row) => f.data.model_plan_mapping.filter(row => row.plan_id === plan.id).map(row => row.model_id);
   assert.deepEqual(modelIds(standalone), modelIds(enterprise));
+  assert.match((standalone.features as string[])[0], /\$10 USD per user per month/);
   assert.match((standalone.features as string[])[0], /no included AI credits; metered usage billed separately from first use/);
+  assert.match((standalone.features as string[])[1], /Sales-assisted only through a GitHub\/Microsoft account team/);
+  assert.match((standalone.features as string[])[1], /Self-serve is not yet available/);
   const notes = String(standalone.notes);
   for (const source of [COPILOT_ACCESS_SOURCE, COPILOT_BILLING_SOURCE, COPILOT_DOCS_SOURCE]) assert.ok(notes.includes(source));
   for (const claim of [/at model rates against the enterprise budget/, /Sales-assisted only/, /2026-10-28/,
@@ -226,16 +229,45 @@ test('Standalone has a seat fee plus metered budget, no allowance, and the same 
   // The GHE bundle is documented inside Standalone, never offered as a free row.
   assert.deepEqual(f.data.plans.filter(plan => plan.price === 0).map(plan => plan.slug), ['copilot-free']);
   assert.equal(planEconomics({ ...standalone, pack_validity_days: null } as unknown as EconomicPlan).state, 'none_published');
-  // Existing provider prose, subscription SEO and trust logic consume these fields.
-  assert.deepEqual(monthlyPlanFloors([standalone as unknown as SeoPlan]), []);
+  // A public seat fee now participates in price floors; it is not a usage budget.
+  assert.deepEqual(monthlyPlanFloors([standalone as unknown as SeoPlan]), [
+    { price: 10, currency: 'USD', name: 'Copilot Standalone' },
+  ]);
   for (const locale of ['en', 'zh'] as const) {
     const copy = buildProviderCopy({ name: 'GitHub', plans: [standalone, enterprise] as unknown as ProviderCopyPlan[], modelCount: 4 }, locale);
-    assert.ok(copy.summary.includes('Copilot Enterprise'));
-    assert.ok(!copy.summary.includes('Copilot Standalone'));
+    assert.ok(copy.summary.includes('Copilot Standalone'));
+    assert.ok(!copy.summary.includes('Copilot Enterprise'));
     const source = { label: 'GitHub billing', url: COPILOT_BILLING_SOURCE };
     const now = new Date('2026-10-29T12:00:00Z');
     assert.equal(planPriceTrust(standalone as PlanTrustRow, source, locale, now).flags.unverified, false);
     assert.equal(planEntitlementTrust(standalone as PlanTrustRow, source, locale, now).flags.unverified, false);
+  }
+});
+
+test('Pro retains the $10 tie in tier-ordered copy; seat-only SEO floors remain a documented ranking caveat', async () => {
+  const f = fixture();
+  await seedCopilot(f.sql, true);
+  const pro = f.data.plans.find(plan => plan.slug === 'copilot-pro')!;
+  const standalone = f.data.plans.find(plan => plan.slug === 'copilot-standalone')!;
+  assert.equal(pro.tier_rank, 1);
+  assert.equal(standalone.tier_rank, 6);
+  assert.ok(Number(pro.tier_rank) < Number(standalone.tier_rank));
+  const plans = f.data.plans as unknown as SeoPlan[];
+  // Full GitHub metadata still starts at $0 because Free is present.
+  assert.deepEqual(monthlyPlanFloors(plans), [{ price: 0, currency: 'USD', name: 'Copilot Free' }]);
+  // Model comparisons share Pro's pool. First equal-price row wins the floor.
+  const mappedPlans = f.data.plans.filter(plan => plan.model_selector) as unknown as SeoPlan[];
+  assert.deepEqual(monthlyPlanFloors(mappedPlans), [{ price: 10, currency: 'USD', name: 'Copilot Pro' }]);
+  for (const locale of ['en', 'zh'] as const) {
+    const copy = buildProviderCopy({ name: 'GitHub', plans: f.data.plans as unknown as ProviderCopyPlan[], modelCount: 4 }, locale);
+    assert.ok(copy.summary.includes('Copilot Pro'));
+    assert.ok(!copy.summary.includes('Copilot Standalone'));
+    assert.ok(copy.faqs.some(faq => faq.answer.includes('Copilot Pro')));
+    assert.ok(copy.faqs.every(faq => !faq.answer.includes('Copilot Standalone')));
+    // Without Pro, generic metadata treats the seat fee as an unqualified floor.
+    const seo = buildComparisonPricingCopy('Preview model', [standalone as unknown as SeoPlan], locale, 2026);
+    assert.ok(seo.title.includes('$10'));
+    assert.ok(!seo.description.includes('enterprise budget'));
   }
 });
 
@@ -262,7 +294,8 @@ test('repairs old NULL organization prices and stale derived mappings while pres
     providers: [{ id: 1, slug: 'github', name: 'GitHub', logo_url: '/existing.svg' }],
     plans: [{ id: 2, provider_id: 1, slug: 'copilot-business', price: null, included_credits: null, last_verified: null, notes: '[needs-verification] Per-seat price', annual_price: 999, monthly_message_limit: 999 },
       { id: 3, provider_id: 1, slug: 'unrelated', price: 123 },
-      { id: 6, provider_id: 1, slug: 'copilot-enterprise', price: null, included_credits: null, last_verified: null }],
+      { id: 6, provider_id: 1, slug: 'copilot-enterprise', price: null, included_credits: null, last_verified: null },
+      { id: 7, provider_id: 1, slug: 'copilot-standalone', price: 10, is_contact_sales: true }],
     model_plan_mapping: [{ id: 4, plan_id: 2, model_id: 20, source: 'manual', priority: 8 },
       { id: 5, plan_id: 2, model_id: 999, source: 'derived', priority: 0 }],
   });
@@ -281,6 +314,9 @@ test('repairs old NULL organization prices and stale derived mappings while pres
   assert.doesNotMatch(String(business.notes), /\[needs-verification\] Per-seat price/);
   const enterprise = f.data.plans.find(plan => plan.id === 6)!;
   assert.equal(enterprise.price, 39); assert.equal(enterprise.included_credits, 3900);
+  const standalone = f.data.plans.find(plan => plan.id === 7)!;
+  assert.equal(standalone.price, 10); assert.equal(standalone.is_contact_sales, false);
+  assert.equal(standalone.included_credits, 0); assert.deepEqual(standalone.quotas, []);
   assert.equal(f.data.providers[0].logo_url, '/existing.svg');
   assert.equal(f.data.providers[0].pricing_url, COPILOT_SOURCE);
   assert.deepEqual(f.data.models, before.models);
