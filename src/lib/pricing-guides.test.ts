@@ -45,7 +45,8 @@ test('maps relevant providers and validates only own guide slugs', () => {
 });
 
 test('the sitemap and guides index discover every slug from the shared catalog', () => {
-  const sitemap = readFileSync(new URL('../app/sitemap.ts', import.meta.url), 'utf8');
+  // Fixed sitemap paths live in sitemap-static-paths.ts (with their lastmod source).
+  const sitemap = readFileSync(new URL('./sitemap-static-paths.ts', import.meta.url), 'utf8');
   const index = readFileSync(new URL('../app/[locale]/guides/page.tsx', import.meta.url), 'utf8');
   assert.match(sitemap, /PRICING_GUIDE_SLUGS\.map/);
   assert.ok(sitemap.includes('`/guides/${slug}`'));

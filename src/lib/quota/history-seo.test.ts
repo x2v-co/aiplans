@@ -7,7 +7,7 @@ import { quotaChanges } from './estimates';
 test('empty history is noindex; reviewed history has localized canonical and hreflang metadata', () => {
   for (const locale of ['en', 'zh'] as const) {
     const empty = quotaHistoryMetadata(locale, false);
-    assert.deepEqual(empty.robots, { index: false, follow: false });
+    assert.deepEqual(empty.robots, { index: false, follow: true });
     const ready = quotaHistoryMetadata(locale, true);
     assert.equal(typeof ready.robots === 'object' && ready.robots?.index, true);
     assert.equal(ready.alternates?.canonical, `https://aiplans.dev/${locale}/quota-changes`);
