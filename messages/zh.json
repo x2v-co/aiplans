@@ -401,6 +401,15 @@
     "methodology": "每日从官方定价页面和已验证渠道审计价格。",
     "copyright": "© x2v"
   },
+  "modelAnnouncement": {
+    "announced": "已公布 · API 未开放",
+    "referencePrice": "已公布标价（仅供参考）",
+    "referenceNote": "开发者 API 尚未开放。以下为已公布的参考价格，不代表可用报价。",
+    "input": "输入：{price} / 百万 tokens",
+    "output": "输出：{price} / 百万 tokens",
+    "cachedInput": "缓存输入：{price} / 百万 tokens",
+    "source": "官方公告与访问条件"
+  },
   "modelShutdown": {
     "replacement": "推荐替代模型：{model}",
     "source": "弃用公告",

@@ -125,6 +125,7 @@
     "seed:glimpse-decider": "tsx scripts/seed-glimpse-decider-2026-10-17.ts",
     "seed:glimpse-decider:apply": "tsx scripts/seed-glimpse-decider-2026-10-17.ts --apply",
     "seed:reflection-beam": "tsx scripts/seed-reflection-beam-2026-10-17.ts",
+    "seed:gemini-4-carbon": "tsx scripts/seed-gemini-4-carbon.ts",
     "seed:gemini-advanced-argon": "tsx scripts/seed-gemini-advanced-argon-2026-10-17.ts",
     "seed:gemini-advanced-argon:apply": "tsx scripts/seed-gemini-advanced-argon-2026-10-17.ts --apply",
     "seed:deepseek-flash-1017-display": "tsx scripts/seed-deepseek-flash-1017-display-2026-10-18.ts",

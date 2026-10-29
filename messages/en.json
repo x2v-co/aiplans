@@ -401,6 +401,15 @@
     "methodology": "Prices audited daily from official provider pages and verified channels.",
     "copyright": "© x2v"
   },
+  "modelAnnouncement": {
+    "announced": "Announced · API not yet available",
+    "referencePrice": "Announced list price (reference only)",
+    "referenceNote": "The developer API is not yet available. These announced prices are references, not available offers.",
+    "input": "Input: {price} per 1M tokens",
+    "output": "Output: {price} per 1M tokens",
+    "cachedInput": "Cached input: {price} per 1M tokens",
+    "source": "Official announcement and access terms"
+  },
   "modelShutdown": {
     "retiring": "Retiring on {date}",
     "retired": "Retired on {date}",

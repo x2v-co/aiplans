@@ -4,6 +4,7 @@ import type { CurrencyCode } from '@/lib/currency';
 import { convertToUSD } from '@/lib/currency-conversion';
 import { isPrimaryModelVariant } from '@/lib/model-freshness';
 import { formatModelName } from '@/lib/model-names';
+import { ANNOUNCED_DESCRIPTION_PATTERN } from '@/lib/model-announcement';
 
 type CurrentPriceRow = PriceSchedule & {
   model_id: number;
@@ -105,6 +106,7 @@ export async function getPriceIndexSnapshot(): Promise<PriceIndexSnapshot> {
         JOIN models m ON m.id = cp.model_id
         JOIN providers p ON p.id = cp.provider_id
         WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND m.type ILIKE '%llm%'
+          AND COALESCE(m.description, '') !~ ${ANNOUNCED_DESCRIPTION_PATTERN}
         ORDER BY ph.channel_price_id, ph.recorded_at DESC
       ) latest_channel_changes
       ORDER BY recorded_at DESC
