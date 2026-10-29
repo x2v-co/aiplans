@@ -1,5 +1,6 @@
 /** Moonshot/Kimi token pricing from the official Kimi pricing tables. */
 import { normalizeModelName } from '../utils/validator';
+import { parseNextFlight } from '../utils/artificial-analysis';
 import { PlaywrightScraper, type PriceData, type ScraperResult } from './lib/playwright-scraper';
 
 const PRICING_PAGE = 'https://platform.kimi.com/docs/pricing/chat';
@@ -87,6 +88,154 @@ export function parseKimiPricingTables(tables: KimiPricingTable[]): PriceData[] 
   return prices;
 }
 
+/**
+ * Index just past the bracket/brace/paren that closes the one at `start`.
+ * Skips JS string and template literals; refuses `${…}` interpolation so a
+ * computed cell can never be read as a literal price.
+ */
+function closeOf(source: string, start: number): number {
+  const pairs: Record<string, string> = { '[': ']', '{': '}', '(': ')' };
+  const stack: string[] = [];
+  for (let index = start; index < source.length; index += 1) {
+    const char = source[index];
+    if (char === '`' || char === '"' || char === "'") {
+      for (index += 1; index < source.length && source[index] !== char; index += 1) {
+        if (source[index] === '\\') index += 1;
+        else if (char === '`' && source[index] === '$' && source[index + 1] === '{') {
+          throw new Error('Unsupported template interpolation in Kimi pricing table');
+        }
+      }
+      continue;
+    }
+    if (pairs[char]) stack.push(pairs[char]);
+    else if (char === ']' || char === '}' || char === ')') {
+      if (stack.pop() !== char) throw new Error('Unbalanced Kimi pricing table source');
+      if (stack.length === 0) return index + 1;
+    }
+  }
+  throw new Error('Unterminated Kimi pricing table source');
+}
+
+/** Split the inside of `[a,b,…]` at top-level commas. */
+function topLevelItems(list: string): string[] {
+  const items: string[] = [];
+  let index = 1;
+  while (index < list.length - 1) {
+    const char = list[index];
+    if (char === ',' || /\s/.test(char)) { index += 1; continue; }
+    let end = index;
+    while (end < list.length - 1 && list[end] !== ',') {
+      end = '[{(`"\''.includes(list[end]) ? (/[`"']/.test(list[end]) ? closeString(list, end) : closeOf(list, end)) : end + 1;
+    }
+    items.push(list.slice(index, end));
+    index = end + 1;
+  }
+  return items;
+}
+
+function closeString(source: string, start: number): number {
+  const quote = source[start];
+  for (let index = start + 1; index < source.length; index += 1) {
+    if (source[index] === '\\') index += 1;
+    else if (source[index] === quote) return index + 1;
+  }
+  throw new Error('Unterminated string in Kimi pricing table source');
+}
+
+const literal = (text: string): string => text.slice(1, -1).replace(/\\(.)/g, '$1');
+
+/** Text content of a compiled MDX cell: a bare literal, or every `children:` literal. */
+function cellText(cell: string): string {
+  if (cell.startsWith('`')) return literal(cell);
+  return [...cell.matchAll(/children:(`(?:[^`\\]|\\.)*`)/g)].map(match => literal(match[1])).join('');
+}
+
+/**
+ * Read the pricing tables straight from the server-rendered HTML. Mintlify
+ * ships the page as compiled MDX inside the Next.js flight payload; the
+ * DocTable props carry `columns:[{title:…}]` and `rows:[[…]]` with the same
+ * strings the browser later renders. This needs no browser, so a slow
+ * client-side hydration (the 2026-10-21→29 production timeouts on
+ * `table tbody tr`) cannot fail the scrape.
+ */
+function tablesInModule(source: string): KimiPricingTable[] | null {
+  const tables: KimiPricingTable[] = [];
+  const marker = '_jsx(DocTable,{';
+  let previousEnd = 0;
+  for (let start = source.indexOf(marker); start !== -1; start = source.indexOf(marker, start + 1)) {
+    const propsStart = start + marker.length - 1;
+    const propsEnd = closeOf(source, propsStart);
+    const props = source.slice(propsStart, propsEnd);
+    const columnsAt = props.indexOf('columns:[');
+    const rowsAt = props.indexOf('rows:[');
+    // Mintlify also ships a props-stripped copy of the page (DocTable=()=>null).
+    if (columnsAt < 0 || rowsAt < 0) return null;
+    const columns = props.slice(columnsAt + 8, closeOf(props, columnsAt + 8));
+    const rows = props.slice(rowsAt + 5, closeOf(props, rowsAt + 5));
+    const headers = topLevelItems(columns).map(column => {
+      const plain = column.match(/^\{title:(`(?:[^`\\]|\\.)*`)/);
+      if (plain) return literal(plain[1]);
+      const titleEnd = column.search(/,width:|\}$/);
+      return cellText(column.slice(0, titleEnd < 0 ? undefined : titleEnd));
+    });
+    // Section copy between the last heading and this table (e.g. "K3 系列模型均支持
+    // 1,048,576 tokens 上下文窗口。"); never reach back past the previous table.
+    const before = source.slice(previousEnd, start);
+    const headingAt = Math.max(before.lastIndexOf('_jsx(Heading,{level:`2`'), before.lastIndexOf('_jsx(Heading,{level:`3`'));
+    const section = headingAt >= 0 ? before.slice(headingAt) : before;
+    const contextText = [...section.matchAll(/`((?:[^`\\]|\\.)*)`/g)].map(match => match[1]).join(' ');
+    tables.push({
+      contextText,
+      headers,
+      rows: topLevelItems(rows).map(row => topLevelItems(row).map(cellText)),
+    });
+    previousEnd = propsEnd;
+  }
+  return tables.length ? tables : null;
+}
+
+/**
+ * The flight payload can carry several compiled copies of the page; use the
+ * ones whose every DocTable has columns and rows, and require them to agree.
+ */
+export function extractKimiTablesFromMdx(source: string): KimiPricingTable[] {
+  const starts = [...source.matchAll(/const DocTable=/g)].map(match => match.index);
+  const modules = starts.length
+    ? starts.map((start, index) => source.slice(start, starts[index + 1] ?? source.length))
+    : [source];
+  const complete = modules.map(tablesInModule).filter((tables): tables is KimiPricingTable[] => tables !== null);
+  if (!complete.length) throw new Error('No complete Kimi DocTable set (columns/rows) in pricing HTML');
+  const first = JSON.stringify(complete[0]);
+  if (complete.some(tables => JSON.stringify(tables) !== first)) {
+    throw new Error('Kimi pricing HTML carries conflicting DocTable copies');
+  }
+  return complete[0];
+}
+
+export function parseKimiPricingHtml(html: string): PriceData[] {
+  let flight: string;
+  try {
+    flight = parseNextFlight(html);
+  } catch {
+    throw new Error('No Next.js flight payload in Kimi pricing HTML');
+  }
+  const tables = extractKimiTablesFromMdx(flight);
+  if (!tables.length) throw new Error('No DocTable found in Kimi pricing HTML');
+  return parseKimiPricingTables(tables);
+}
+
+const HTML_FETCH_TIMEOUT_MS = 30_000;
+const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+async function fetchKimiPricingHtml(): Promise<PriceData[]> {
+  const response = await fetch(PRICING_PAGE, {
+    headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html', 'Accept-Language': 'zh-CN,zh;q=0.9' },
+    signal: AbortSignal.timeout(HTML_FETCH_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`Kimi pricing page returned HTTP ${response.status}`);
+  return parseKimiPricingHtml(await response.text());
+}
+
 export class MoonshotScraper extends PlaywrightScraper {
   getSourceName(): string { return 'Moonshot'; }
   getSourceUrl(): string { return PRICING_PAGE; }
@@ -94,11 +243,24 @@ export class MoonshotScraper extends PlaywrightScraper {
   async scrape(): Promise<ScraperResult> {
     // Mintlify's Markdown now contains empty tables. Read the rendered tables,
     // including the leaf header row beneath the grouped cache/token headings.
-    await this.navigate(PRICING_PAGE, 'table tbody tr');
-    await this.page!.waitForFunction(() => {
-      const tables = [...document.querySelectorAll('table')];
-      return tables.length > 0 && tables.every(table => table.querySelector('tbody tr'));
-    });
+    try {
+      await this.navigate(PRICING_PAGE, 'table tbody tr');
+      await this.page!.waitForFunction(() => {
+        const tables = [...document.querySelectorAll('table')];
+        return tables.length > 0 && tables.every(table => table.querySelector('tbody tr'));
+      });
+    } catch (error) {
+      // Say what the page looked like when the wait gave up (keeps the original
+      // message first so the runner's transient-retry regex still matches).
+      const state = await this.page!.evaluate(() => ({
+        url: location.href,
+        title: document.title,
+        tables: document.querySelectorAll('table').length,
+        rows: document.querySelectorAll('table tbody tr').length,
+      })).catch(() => null);
+      const detail = state ? ` [url=${state.url} title=${JSON.stringify(state.title)} tables=${state.tables} rows=${state.rows}]` : '';
+      throw new Error(`${error instanceof Error ? error.message.split('\n')[0] : String(error)}${detail}`);
+    }
     const tables = await this.page!.evaluate(() => {
       let heading: Element | null = null;
       const result: KimiPricingTable[] = [];
@@ -124,8 +286,27 @@ export class MoonshotScraper extends PlaywrightScraper {
   }
 }
 
+/**
+ * Static HTML first (one request, no browser); the rendered page is only a
+ * fallback. Both must produce a complete table set or the run fails, so a
+ * full-catalog scrape never retires Moonshot channels on a partial read.
+ */
 export async function scrapeMoonshotDynamic(): Promise<ScraperResult> {
-  return new MoonshotScraper().run();
+  let htmlError: string;
+  try {
+    const prices = await fetchKimiPricingHtml();
+    console.log(`Moonshot: ${prices.length} prices from server-rendered HTML`);
+    return {
+      source: 'Moonshot', success: true, prices,
+      metadata: { isRealTime: true, confidence: 'high', sourceUrl: PRICING_PAGE, lastVerified: new Date() },
+    };
+  } catch (error) {
+    htmlError = error instanceof Error ? error.message : String(error);
+    console.warn(`⚠️ Moonshot: static HTML read failed (${htmlError}); falling back to the rendered page`);
+  }
+  const result = await new MoonshotScraper().run();
+  if (!result.success) result.errors = [...(result.errors ?? []), `static HTML: ${htmlError}`];
+  return result;
 }
 
 if (require.main === module) scrapeMoonshotDynamic().then(result => console.log(JSON.stringify(result, null, 2)));

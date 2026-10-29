@@ -66,6 +66,15 @@ const GROUP_LABELS: Record<string, string> = {
  *   snapshots billed at upstream list; the bare aliases below are the
  *   current pooled routes at XiuRouter's own price, so mapping both would
  *   collide on one slug with contradictory prices
+ * - claude-haiku-5-5 (2026-10-29) — model_ratio 37.5 (= $75/M input) contradicts
+ *   its own billing_expr (standard tier p * 0.1); hold until XiuRouter's price
+ *   page confirms which one bills
+ *
+ * 2026-10-29: XiuRouter dropped the Gemini, Grok, GPT-5.4/5.5 and older Claude
+ * rows and added the GPT-6 / Claude 5.5 generation, so only 14 mapped rows
+ * remained (< MIN_PRICES) and the scrape failed on 10-28 and 10-29. The new
+ * rows map to the live aiplans.dev model slugs (each /en/models/<slug> → 200 on
+ * 2026-10-29); old entries stay so a row that comes back is priced again.
  */
 const MODEL_SLUGS: Record<string, string> = {
   'deepseek-v4-flash': 'deepseek-v4-flash',
@@ -93,6 +102,12 @@ const MODEL_SLUGS: Record<string, string> = {
   'gemini-flash-latest': 'gemini-flash',
   'grok-4.5': 'grok-4.5',
   'grok-4.6': 'grok-4.6',
+  'gpt-6-luna': 'openai-gpt-6-luna',
+  'gpt-6-sol': 'openai-gpt-6-sol',
+  'gpt-6.1-sol': 'openai-gpt-6-1-sol',
+  'gpt-6.1-terra': 'gpt-6.1-terra',
+  'claude-opus-5-5': 'anthropic-claude-opus-5-5',
+  'claude-sonnet-5-5': 'anthropic-claude-sonnet-5-5',
 };
 
 /** Fail loud if a silent payload change shrinks the catalog below this. */
@@ -368,7 +383,12 @@ export async function scrapeXiuRouterDynamic(): Promise<ScraperResult> {
     }
 
     if (prices.length < MIN_PRICES) {
-      errors.push(`only ${prices.length} mapped prices (minimum ${MIN_PRICES}) — catalog or mapping changed`);
+      const listed = new Set(payload.data.map(row => row.model_name));
+      const gone = Object.keys(MODEL_SLUGS).filter(name => !listed.has(name));
+      const unmapped = skipped.filter(reason => reason.endsWith(': no canonical model mapping'))
+        .map(reason => reason.split(':')[0]);
+      errors.push(`only ${prices.length} mapped prices (minimum ${MIN_PRICES}) — catalog or mapping changed; `
+        + `unmapped rows: ${unmapped.join(', ') || 'none'}; mapped names no longer listed: ${gone.join(', ') || 'none'}`);
     }
 
     const duration = Date.now() - startTime;
