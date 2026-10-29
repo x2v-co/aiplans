@@ -84,8 +84,10 @@ if [[ "${SKIP_AUDIT:-0}" == "1" ]]; then
   echo "SKIP_AUDIT=1 — skipping data audit and audit alerts"
   audit_status=0
 else
-  "${compose[@]}" run --rm scraper npm run audit
-  audit_status=$?
+  audit_output="$(mktemp)"
+  trap 'rm -f -- "$audit_output"' EXIT
+  "${compose[@]}" run --rm scraper npm run audit 2>&1 | tee "$audit_output"
+  audit_status=${PIPESTATUS[0]}
 
   # Alert on NEW critical / models.dev-reference findings. Runs after the audit
   # so audit_alert_state is current; dedup means a recurring finding never spams.
@@ -122,23 +124,33 @@ else
 fi
 set -e
 
-# audit-data uses 2 for warnings-only; only critical findings or an execution
-# failure should fail the scheduled job.
-if [[ "$audit_status" != "0" && "$audit_status" != "2" ]]; then
-  exit "$audit_status"
-fi
-
 # 2026-10-29 (boss-approved): publish v1 whenever the API scrape succeeds.
 # Plans are not in the v1 snapshot; the DB retains their last successful data.
 # If FX refresh fails, retain the previous exchange-rate file.
 publish_status=0
 if [[ "$api_status" == "0" ]]; then
-  if [[ "$plans_status" != "0" || "$fx_status" != "0" || "$openai_review_status" != "0" ]]; then
-    echo "Publishing v1 with api=0; plans=$plans_status fx=$fx_status openai_review=$openai_review_status; previous plans/FX data retained" >&2
+  publish_note=""
+  if [[ "$plans_status" != "0" || "$fx_status" != "0" ]]; then
+    publish_note="; previous plans/FX data retained"
   fi
+  echo "Publishing v1: api=0 plans=$plans_status fx=$fx_status openai_review=$openai_review_status audit=$audit_status$publish_note" >&2
   "${compose[@]}" run --rm scraper npm run publish:v1 || publish_status=$?
 else
-  echo "Skipping v1 catalog publication: api=$api_status plans=$plans_status fx=$fx_status" >&2
+  echo "Skipping v1 catalog publication: api=$api_status plans=$plans_status fx=$fx_status audit=$audit_status" >&2
+fi
+
+# Report critical findings before any later failure exit, without gating v1.
+if [[ "$audit_status" != "0" && "$audit_status" != "2" ]]; then
+  audit_total="$(grep -E '^[[:space:]]*Total:' "$audit_output" || true)"
+  audit_categories="$(grep -E '^[[:space:]]*🔴[[:space:]]+[^[:space:]]+[[:space:]]+\([0-9]+\)' "$audit_output" || true)"
+  if [[ -n "$audit_total" || -n "$audit_categories" ]]; then
+    echo "Data audit reported critical findings (exit $audit_status): ${audit_total:-total unavailable}" >&2
+    if [[ -n "$audit_categories" ]]; then
+      printf '%s\n' "$audit_categories" >&2
+    fi
+  else
+    echo "Data audit reported critical findings (exit $audit_status): audit exited $audit_status with no parsable summary" >&2
+  fi
 fi
 
 if [[ "$api_status" != "0" || "$plans_status" != "0" || "$openai_review_status" != "0" ]]; then
@@ -184,4 +196,11 @@ fi
 if [[ "$publish_status" != "0" ]]; then
   echo "v1 catalog publication failed ($publish_status)." >&2
   exit 1
+fi
+
+# audit-data uses 2 for warnings-only; critical findings or execution failures
+# still fail the scheduled job after v1 publication has been attempted.
+if [[ "$audit_status" != "0" && "$audit_status" != "2" ]]; then
+  echo "Exiting with audit status $audit_status (critical findings; v1 publication was not blocked)" >&2
+  exit "$audit_status"
 fi
