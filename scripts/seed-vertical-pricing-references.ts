@@ -14,6 +14,7 @@ import { db } from './db/queries';
 import { AI_VERTICAL_CATALOG, RIGOROUS_MODEL_KINDS, type AiCatalogItem } from '../src/lib/ai-vertical-catalog';
 import { diffRow, formatChanges, parseSeedArgs } from './utils/seed-diff';
 import { shutdownReached } from '../src/lib/model-shutdown';
+import { KIMI_K3_CONTEXT_FIX } from './data/catalog-2026-10-29';
 
 // Default is dry-run. Only `--apply` writes; `--slug a,b` narrows the run.
 // `--sync-availability` lets existing usage rows change is_available in either
@@ -282,13 +283,17 @@ async function main() {
   const eligible = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && !item.deferredDbSeed);
   const items = ARGS.slugs ? eligible.filter((item) => ARGS.slugs!.has(item.slug!)) : eligible;
   if (ARGS.slugs) {
-    const unknown = [...ARGS.slugs].filter((slug) => !items.some((item) => item.slug === slug));
+    const unknown = [...ARGS.slugs].filter((slug) => slug !== KIMI_K3_CONTEXT_FIX.slug && !items.some((item) => item.slug === slug));
     if (unknown.length) {
       console.error(`Unknown or non-seedable --slug: ${unknown.join(', ')}`);
       process.exitCode = 1;
       return;
     }
+    if (ARGS.slugs.has(KIMI_K3_CONTEXT_FIX.slug)) {
+      console.log(`${KIMI_K3_CONTEXT_FIX.slug}: context-only repair in seed:vertical-models; no vertical pricing references`);
+    }
   }
+  if (!items.length) return;
   const providers = await loadProviders();
   const models = await loadModels(items.map((item) => item.slug!).filter(Boolean));
 

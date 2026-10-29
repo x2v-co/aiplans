@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   CHANNELS, CHINA_PLANS, CONTEXT_FIXES, FLASH_IMAGE, KIMI_K2_SLUGS, KIMI_REPLACEMENT, KIMI_SOURCE,
+  KIMI_K3_CONTEXT_FIX, KIMI_K3_CONTEXT_SOURCES,
   catalog20261029SeedOptions, planChannels, planChinaAccess, planContext, planFlashImage, planKimi,
   type ChannelRow, type LockedRow, type ModelRow, type PlanRow,
 } from './catalog-2026-10-29';
@@ -26,6 +27,31 @@ test('context fixes replace only NULL or the stale 128K default, and are idempot
   assert.deepEqual(planContext(seeded), []);
   assert.equal(planContext([]).every(step => step.action === 'skip'), true);
   assert.throws(() => planContext([model('gpt-5'), model('gpt-5')]), /Duplicate/);
+});
+
+test('Kimi K3 context is 1048576, never the max_completion_tokens default; variants stay untouched', () => {
+  assert.deepEqual(KIMI_K3_CONTEXT_FIX, { slug: 'kimi-k3', contextWindow: 1_048_576 });
+  assert.deepEqual(KIMI_K3_CONTEXT_SOURCES, [
+    'https://platform.kimi.ai/docs/guide/kimi-k3-quickstart',
+    'https://github.com/MoonshotAI/Kimi-K3#readme',
+  ]);
+  const variants = ['kimi-k3.1-pro', 'kimi-k3.1-pro-highspeed', 'moonshotai-kimi-k3-1-pro',
+    'kimi-k3-fast', 'kimi-k3-batch', 'kimi-k3-us', 'moonshotai-kimi-k3'];
+  const others = variants.map(slug => model(slug, { context_window: 128_000 }));
+  const before = structuredClone(others);
+  for (const context_window of [null, 128_000]) {
+    const row = model('kimi-k3', { context_window });
+    const updates = planContext([row, ...others]).filter(step => step.action === 'update');
+    assert.deepEqual(updates, [{ table: 'models', target: 'kimi-k3', id: row.id, action: 'update',
+      changes: { context_window: { from: context_window, to: 1_048_576 } } }]);
+    assert.deepEqual(planContext([{ ...row, context_window: 1_048_576 }], [KIMI_K3_CONTEXT_FIX]), []);
+  }
+  assert.deepEqual(others, before);
+  const unexpected = planContext([model('kimi-k3', { context_window: 262_144 })], [KIMI_K3_CONTEXT_FIX]);
+  assert.equal(unexpected[0].action, 'skip');
+  assert.match(unexpected[0].reason!, /262144/);
+  assert.equal(planContext([], [KIMI_K3_CONTEXT_FIX])[0].action, 'skip');
+  assert.throws(() => planContext([model('kimi-k3'), model('kimi-k3')], [KIMI_K3_CONTEXT_FIX]), /Duplicate/);
 });
 
 test('Kimi K2 gets source + migration target but never a made-up date', () => {
