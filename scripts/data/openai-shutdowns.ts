@@ -1,6 +1,6 @@
 /**
  * Exact-slug shutdown catalog, extended from audit A2 #1 (2026-10-15).
- * Verified 2026-10-14: https://platform.openai.com/docs/deprecations
+ * Verified 2026-10-14, re-checked 2026-10-29: https://platform.openai.com/docs/deprecations
  * Fine-tunes follow their base; we do not invent fine-tune catalog rows.
  */
 export const OPENAI_DEPRECATION_SOURCE = 'https://platform.openai.com/docs/deprecations';
@@ -16,6 +16,7 @@ export interface Shutdown {
 
 const batchA = { announcedOn: '2026-10-14', shutdownDate: '2027-01-14', replacementModel: 'gpt-6-luna' };
 const batchB = { announcedOn: '2026-04-22', shutdownDate: '2026-10-23' };
+const batchC = { announcedOn: '2026-06-11', shutdownDate: '2026-12-11' };
 
 export const OPENAI_SHUTDOWNS: readonly Shutdown[] = [
   { ...batchA, ids: ['gpt-4o-2024-08-06', 'gpt-4o-2024-11-20'], snapshotFamily: 'gpt-4o' },
@@ -52,11 +53,19 @@ export const OPENAI_SHUTDOWNS: readonly Shutdown[] = [
   { ...batchA, ids: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini'] },
   { shutdownDate: '2027-04-01', ids: ['gpt-5.1', 'gpt-5.3-codex', 'gpt-5.4-nano'] },
   { shutdownDate: '2027-01-06', ids: ['tts-1', 'tts-1-hd'] },
-  // Undated aliases gpt-5, gpt-5-mini, gpt-5-nano and gpt-5-pro are not on the
-  // deprecations table (checked 2026-10-19). Only the dated snapshots
-  // gpt-5-2025-08-07, gpt-5-mini-2025-08-07, gpt-5-nano-2025-08-07 and
-  // gpt-5-pro-2025-10-06 are listed for 2026-12-11. Those snapshot slugs are
-  // not rows here, so the aliases stay without a shutdown date.
+  // 2026-10-29 (Intel P0-1): the 2026-06-11 table lists each row as
+  // "alias | snapshot", e.g. "gpt-5 | gpt-5-2025-08-07", so the undated aliases
+  // are covered too (the 2026-10-19 note that only snapshots were listed was a
+  // misread). Re-checked live 2026-10-29: all four shut down 2026-12-11.
+  // The -batch slugs are each alias's Batch API SKU (same rule as the
+  // openai-gpt-3-5-turbo-batch row above).
+  { ...batchC, ids: ['gpt-5', 'openai-gpt-5-batch'], replacementModel: 'gpt-5.6-sol' },
+  { ...batchC, ids: ['gpt-5-mini', 'openai-gpt-5-mini-batch'], replacementModel: 'gpt-5.6-terra' },
+  { ...batchC, ids: ['gpt-5-nano', 'openai-gpt-5-nano-batch'], replacementModel: 'gpt-5.6-luna' },
+  { ...batchC, ids: ['gpt-5-pro', 'openai-gpt-5-pro-batch'], replacementModel: 'gpt-5.6-sol (reasoning.mode: pro)' },
+  // 2026-10-29 (Intel P2-6/P2-7): production -batch / openai- slugs of
+  // gpt-4o-mini and gpt-4.1-mini follow their base (2026-10-14 table, 2027-01-14).
+  { ...batchA, ids: ['openai-gpt-4o-mini-batch', 'openai-gpt-4-1-mini', 'openai-gpt-4-1-mini-batch'] },
   // gpt-5.1-codex-mini has its own 2026-07-23 row above.
 
 ];

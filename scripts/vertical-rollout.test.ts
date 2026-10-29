@@ -321,7 +321,7 @@ test('discontinued usage rows are marked unavailable by the pricing seed and the
   await f.seed();
   const retiredStatuses = new Set(['discontinued', 'retired']);
   const retired = catalog.AI_VERTICAL_CATALOG.filter(item => retiredStatuses.has(item.status) && !item.deferredDbSeed);
-  assert.deepEqual(retired.map(item => item.slug).sort(), ['minimax-audio', 'sora']);
+  assert.deepEqual(retired.map(item => item.slug).sort(), ['gemini-omni-flash', 'minimax-audio', 'sora', 'veo-3-1', 'veo-3-1-fast', 'veo-3-1-lite']);
   const flipped: (typeof f.data.usage_prices)[number][] = [];
   for (const item of retired) {
     const model = f.data.models.find(row => row.slug === item.slug)!;
@@ -351,11 +351,16 @@ test('discontinued usage rows are marked unavailable by the pricing seed and the
   assert.doesNotMatch(after.output, /CRITICAL/);
 });
 
-test('usage references of a model past its shutdown_date go unavailable one way, and the DB audit agrees', async () => {
-  const f = fixture();
-  await f.seed();
+test('usage references of a model past its shutdown_date go unavailable one way, and the DB audit agrees', async t => {
   const ending = catalog.AI_VERTICAL_CATALOG.filter(item => item.shutdownDate === '2026-10-22' && !item.deferredDbSeed);
   assert.ok(ending.length > 0, 'catalog has rows retiring 2026-10-22');
+  // Since 2026-10-29 these rows are 'discontinued'; replay them as the 'deprecated' rows they were
+  // before shutdown so this test still covers the shutdown_date path on its own.
+  const statuses = ending.map(item => item.status);
+  for (const item of ending) (item as { status: string }).status = 'deprecated';
+  t.after(() => ending.forEach((item, i) => { (item as { status: string }).status = statuses[i]; }));
+  const f = fixture();
+  await f.seed();
   const usageOf = (slug: string) => {
     const model = f.data.models.find(row => row.slug === slug)!;
     return f.data.usage_prices.filter(row => row.model_id === model.id);

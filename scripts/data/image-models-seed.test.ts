@@ -46,7 +46,9 @@ test('image catalog: every row is official-sourced, itemized and has a headline 
   }
   for (const slug of ['gemini-nano-banana-2.1', 'gemini-3-pro-image', 'imagen-4', 'gpt-image-2', 'gpt-image-1-mini']) assert.ok(slugs.has(slug), slug);
   const lifecycle = (slug: string) => IMAGE_MODEL_CATALOG.find(i => i.slug === slug)!;
-  assert.equal(lifecycle('gemini-2.5-flash-image').status, 'discontinued');
+  assert.equal(lifecycle('gemini-2.5-flash-image').status, 'deprecated');
+  assert.equal(lifecycle('gemini-2.5-flash-image').shutdownDate, '2027-03-15');
+  assert.equal(lifecycle('gemini-2.5-flash-image').replacementModel, 'gemini-3.1-flash-lite-image');
   assert.equal(lifecycle('gpt-image-1').shutdownDate, '2026-10-23');
   assert.equal(lifecycle('gpt-image-1.5').shutdownDate, '2026-12-01');
   assert.equal(lifecycle('gpt-image-1-mini').shutdownDate, '2026-12-01');
@@ -82,8 +84,9 @@ test('image seed: dry-run is read-only, reuses existing LLM rows/providers and i
   const imagen = f.data.models.find(row => row.slug === 'imagen-4')!;
   assert.ok(f.data.usage_prices.filter(row => row.model_id === imagen.id).every(row => row.provider_id === 3 && row.price === 0.04));
   assert.ok(!f.data.usage_prices.some(row => row.price_kind === 'availability'));
-  const retired = f.data.models.find(row => row.slug === 'gemini-2.5-flash-image')!;
-  assert.ok(f.data.usage_prices.filter(row => row.model_id === retired.id).every(row => row.is_available === false));
+  // Deprecated (shutdown 2027-03-15), still sold: its references stay available.
+  const deprecated = f.data.models.find(row => row.slug === 'gemini-2.5-flash-image')!;
+  assert.ok(f.data.usage_prices.filter(row => row.model_id === deprecated.id).every(row => row.is_available === true));
   const i45 = f.data.models.find(row => row.slug === 'ideogram-4.5')!;
   assert.equal(f.data.usage_prices.filter(row => row.model_id === i45.id).length, 8);
   const writes = f.writeCount();
