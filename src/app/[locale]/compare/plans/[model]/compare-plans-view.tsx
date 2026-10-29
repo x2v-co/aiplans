@@ -25,6 +25,7 @@ import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { CopilotPlanNotes } from '@/components/copilot-plan-notes';
 import { PlanCoverage } from "@/components/plan-coverage";
 import { PlanQuotaEstimates } from '@/components/quota-estimates';
+import { QuotaBenchBadge } from '@/components/quota-bench-usd';
 import type { VerifiedQuotaEstimate } from '@/lib/quota/estimates';
 import type { FaqItem } from "./faqs";
 import { trackFunnelEvent } from "@/lib/analytics";
@@ -452,6 +453,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                                       Save {plan.pricing.yearlyDiscountPercent.toFixed(2)}%
                                     </div>
                                   )}
+                                  <div className="mt-1"><QuotaBenchBadge planSlug={plan.plan.slug} locale={locale} /></div>
                                 </div>
 
                                 {/* Key Limits - Always show */}

@@ -24,6 +24,7 @@ import { DataTrustLabel, EntitlementLine } from '@/components/data-trust-label';
 import { CopilotPlanNotes } from '@/components/copilot-plan-notes';
 import { PlanCoverage } from "@/components/plan-coverage";
 import { PlanQuotaEstimates } from '@/components/quota-estimates';
+import { QuotaBenchBadge } from '@/components/quota-bench-usd';
 import { getVerifiedQuotaEstimates } from '@/lib/quota/data';
 import { buildMetadata, breadcrumbList, priceItemList, faqPage, SITE_URL, type Locale } from "@/lib/seo";
 import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
@@ -386,6 +387,7 @@ export default async function ProviderPage({
                       {showTrust && (
                         <DataTrustLabel fact={planPriceTrust({ ...plan, ...providerPlanPrice(plan, showYearly) }, planSource, locale, now, provider.slug)} locale={locale} />
                       )}
+                      <div className="mt-1"><QuotaBenchBadge planSlug={plan.slug} locale={locale} /></div>
                     </div>
 
                     {typeof plan.notes === 'string' && plan.notes.startsWith('[needs-verification]') && (
