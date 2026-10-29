@@ -14,7 +14,7 @@ async function main() {
       const writes = steps.filter(step => step.action !== 'skip').length;
       const skips = steps.length - writes;
       console.log(`${apply ? 'Applied' : 'Dry-run; no writes'}: ${writes} write steps, ${skips} skipped (see reason).`);
-      console.log('Fixes stale 128K context windows (GPT-6 / GPT-6.1 to 1,050,000, GPT-5 family to 400,000), records the Kimi K2 deprecation source without a date, sets access_from_china=false on Claude Team, ChatGPT Business/Team and Google AI Ultra 20x, moves gemini-2.5-flash-image to shutdown 2027-03-15 and re-enables channels the shutdown sweep locked, and adds the zhipu-global GLM-5.3-FlashX and minimax-global MiniMax-M3.1-Flash channels. Not part of deploy.');
+      console.log('Fixes stale 128K context windows (GPT-6 / GPT-6.1 to 1,050,000, GPT-5 family to 400,000, kimi-k3 to 1,048,576), records the Kimi K2 deprecation source without a date, sets access_from_china=false on Claude Team, ChatGPT Business/Team and Google AI Ultra 20x, moves gemini-2.5-flash-image to shutdown 2027-03-15 and re-enables channels the shutdown sweep locked, and adds the zhipu-global GLM-5.3-FlashX and minimax-global MiniMax-M3.1-Flash channels. Not part of deploy.');
     });
   } finally { await sql.end(); }
 }

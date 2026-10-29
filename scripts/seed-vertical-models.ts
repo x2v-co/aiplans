@@ -6,6 +6,8 @@
  * - source of truth for public product identity is src/lib/ai-vertical-catalog.ts;
  * - exact numeric prices still belong in plans / usage_prices after source-specific parsing;
  * - this script only seeds model taxonomy, modalities, capabilities and official links.
+ * - exact slug kimi-k3 additionally repairs NULL/128000 context_window from the
+ *   audited scripts/data catalog; it never creates a token model or pricing row.
  *
  * Usage:
  *   npm run seed:vertical-models -- --slug omnihuman-2-0            # dry-run (default), field diff
@@ -19,6 +21,7 @@ import {
   type AiPricingConfidence,
 } from '../src/lib/ai-vertical-catalog';
 import { auditVerticalModelFields, isAuditOwnedVertical, verticalModelDescription } from './data/catalog-audit-vertical';
+import { KIMI_K3_CONTEXT_FIX, planContext } from './data/catalog-2026-10-29';
 import { diffRow, formatChanges, parseSeedArgs } from './utils/seed-diff';
 
 const ARGS = parseSeedArgs(process.argv);
@@ -158,17 +161,44 @@ async function loadExistingModels(slugs: string[]): Promise<Map<string, ModelRow
   return new Map((data ?? []).map((model: ModelRow) => [model.slug, model]));
 }
 
+/** Repair existing token-model metadata without materializing a vertical catalog row. */
+async function seedKimiK3Context() {
+  const { slug } = KIMI_K3_CONTEXT_FIX;
+  if (ARGS.slugs && !ARGS.slugs.has(slug)) return;
+  const { data, error } = await db.from('models').select('id, slug, context_window').eq('slug', slug);
+  if (error) throw error;
+  const steps = planContext(data ?? [], [KIMI_K3_CONTEXT_FIX]);
+  console.log(`\n${slug} context [${APPLY ? 'APPLY' : 'DRY-RUN'}]`);
+  if (!steps.length) console.log(`  ✓ ${slug}: context_window up to date`);
+  for (const step of steps) {
+    if (step.action === 'skip') {
+      console.log(`  ⚠ ${slug}: ${step.reason}`);
+      continue;
+    }
+    const change = step.changes!.context_window;
+    console.log(`  ↻ ${slug} (id ${step.id}): context_window: ${change.from} → ${change.to}`);
+    if (APPLY) {
+      const { error } = await db.from('models')
+        .update({ context_window: change.to, updated_at: new Date().toISOString() })
+        .eq('id', step.id).eq('slug', slug);
+      if (error) throw error;
+    }
+  }
+}
+
 async function main() {
   const eligible = AI_VERTICAL_CATALOG.filter((item) => RIGOROUS_MODEL_KINDS.includes(item.kind) && !item.deferredDbSeed);
   const rows = ARGS.slugs ? eligible.filter((item) => ARGS.slugs!.has(item.slug!)) : eligible;
   if (ARGS.slugs) {
-    const unknown = [...ARGS.slugs].filter((slug) => !rows.some((item) => item.slug === slug));
+    const unknown = [...ARGS.slugs].filter((slug) => slug !== KIMI_K3_CONTEXT_FIX.slug && !rows.some((item) => item.slug === slug));
     if (unknown.length) {
       console.error(`Unknown or non-seedable --slug: ${unknown.join(', ')}`);
       process.exitCode = 1;
       return;
     }
   }
+  await seedKimiK3Context();
+  if (!rows.length) return;
   const slugs = rows.map((item) => item.slug).filter(Boolean) as string[];
   const providers = await loadProviders();
   const existingModels = await loadExistingModels(slugs);
