@@ -5,10 +5,14 @@ import { runInNewContext } from 'node:vm';
 import type { Sql } from 'postgres';
 import ts from 'typescript';
 import { COPILOT_PREVIEW_SELECTOR } from '../../src/lib/copilot';
+import { buildProviderCopy, type ProviderCopyPlan } from '../../src/lib/provider-copy';
+import { monthlyPlanFloors, type SeoPlan } from '../../src/lib/pricing-seo';
+import { planEconomics, type EconomicPlan } from '../../src/lib/plan-economics';
+import { planEntitlementTrust, planPriceTrust, type PlanTrustRow } from '../../src/lib/data-trust';
 import { resolveSelector, type ModelSelector } from '../../src/lib/plan-selector';
 import { QUOTA_TEXT_SOURCES } from '../config/quota-text-sources';
 import { generateOpenRouterSlug } from '../scrapers/openrouter';
-import { COPILOT_PLANS, COPILOT_SOURCE, HYDRAFUSION_SOURCE, copilotSeedOptions, seedCopilot } from './copilot-2026-10-15';
+import { COPILOT_PLANS, COPILOT_SOURCE, COPILOT_ACCESS_SOURCE, COPILOT_BILLING_SOURCE, COPILOT_DOCS_SOURCE, HYDRAFUSION_SOURCE, copilotSeedOptions, seedCopilot } from './copilot-2026-10-15';
 
 type Row = Record<string, unknown> & { id: number };
 const catalog = ['claude-opus-5.5', 'gpt-6-astra', 'openai-gpt-6-1-sol', 'gpt-6-luna'].map((slug, index) => ({
@@ -39,6 +43,7 @@ function fixture(initial: Record<string, Row[]> = {}) {
       data.model_plan_mapping = data.model_plan_mapping.filter(row => row.id !== values[0] || row.source !== 'derived');
       writes++; return Promise.resolve([]);
     }
+    assert.match(query, /^(INSERT INTO|UPDATE) /, `Unexpected SQL: ${query}`);
     const table = String(fragment(values[0]));
     assert.ok(['providers', 'plans', 'model_plan_mapping'].includes(table), `Unexpected write to ${table}`);
     const raw = fragment(values[1]) as Record<string, unknown>;
@@ -98,6 +103,8 @@ test('actual CLI defaults to SELECT-only dry-run; unsafe flags fail; npm scripts
   assert.equal(result.code, 0, result.output);
   assert.match(result.output, /Dry-run; no writes/);
   assert.match(result.output, /copilot-enterprise/);
+  assert.match(result.output, /copilot-standalone/);
+  assert.doesNotMatch(result.output, /Unverified: Business\/Enterprise seat prices/);
   assert.ok(f.readOnly()); assert.ok(f.ended()); assert.equal(f.writes(), 0);
   assert.deepEqual(f.data, before);
   assert.deepEqual(copilotSeedOptions([]), { apply: false });
@@ -113,15 +120,20 @@ test('actual CLI defaults to SELECT-only dry-run; unsafe flags fail; npm scripts
   }
 });
 
-test('apply creates all six plans, unknown prices stay NULL, preview models are derived and reruns are no-ops', async () => {
+test('memory-only apply creates seven plans with verified prices, derived preview models, and no-op reruns', async () => {
   const f = fixture();
   const result = await f.cli(['--apply']);
   assert.equal(result.code, 0, result.output);
   assert.equal(f.data.providers.length, 1);
   assert.equal(f.data.providers[0].slug, 'github');
   assert.deepEqual(f.data.models, catalog);
-  assert.equal(f.data.plans.length, 6);
-  assert.equal(f.data.model_plan_mapping.length, 16);
+  assert.equal(f.data.plans.length, 7);
+  assert.equal(f.data.model_plan_mapping.length, 20);
+  assert.deepEqual(COPILOT_PLANS.map(plan => [plan.slug, plan.price, plan.credits]), [
+    ['copilot-free', 0, null], ['copilot-pro', 10, 1500], ['copilot-pro-plus', 39, 7000],
+    ['copilot-max', 100, 20000], ['copilot-business', 19, 1900],
+    ['copilot-enterprise', 39, 3900], ['copilot-standalone', 10, 0],
+  ]);
   for (const [index, plan] of f.data.plans.entries()) {
     const fact = COPILOT_PLANS[index];
     assert.equal(plan.price, fact.price);
@@ -130,12 +142,22 @@ test('apply creates all six plans, unknown prices stay NULL, preview models are 
     assert.equal(plan.source, 'manual'); assert.equal(plan.quota_unit, 'credits');
     assert.equal(plan.data_for_discount, false);
     assert.equal(plan.included_credits, fact.credits);
+    assert.equal(plan.included_usage_amount, fact.credits);
+    assert.equal(plan.included_usage_unit, fact.credits === null ? null : 'credit');
     assert.equal(plan.annual_price, null);
+    assert.equal(plan.price_yearly_monthly, null);
+    assert.equal(plan.region, null);
+    assert.equal(plan.last_verified instanceof Date && plan.last_verified.toISOString(), '2026-10-29T00:00:00.000Z');
     assert.match(String(plan.notes), /1 credit = \$0\.01/);
     assert.match(String(plan.notes), /Flex credits may change/);
-    if (fact.price === null) {
-      assert.equal(plan.last_verified, null);
-      assert.match(String(plan.notes), /^\[needs-verification\] Per-seat price/);
+    assert.match(String(plan.notes), /\[needs-verification\] Annual pricing, regional access and payment methods/);
+    for (const note of [
+      ...String(plan.notes).split('\n'), ...(plan.features as string[]),
+      ...String(plan.third_party_coverage_note).split('\n'), String(plan.data_for_discount_note),
+      ...((plan.quotas ?? []) as Array<{ note: string }>).map(quota => quota.note),
+    ]) {
+      assert.match(note, /https:\/\/(?:github\.com|github\.blog|docs\.github\.com)\//);
+      assert.match(note, /verified 2026-10-29/);
     }
     const mappings = f.data.model_plan_mapping.filter(row => row.plan_id === plan.id);
     if (plan.model_selector) {
@@ -151,12 +173,70 @@ test('apply creates all six plans, unknown prices stay NULL, preview models are 
   }
   assert.match(String(f.data.plans[0].notes), /2,000 completions \+ 50 chat requests/);
   for (const plan of f.data.plans.slice(0, 3)) assert.match(String(plan.notes), /training unless opted out/);
-  for (const plan of f.data.plans.slice(4)) assert.match(String(plan.notes), /not used for training/);
+  for (const plan of f.data.plans.slice(4, 6)) {
+    assert.match(String(plan.notes), /not used for training/);
+    assert.match(String(plan.notes), /per user per month/);
+    assert.match(String(plan.notes), /pooled across the organization/);
+    assert.ok(String(plan.notes).includes(COPILOT_BILLING_SOURCE));
+    assert.doesNotMatch(String(plan.notes), /\[needs-verification\] Per-seat price/);
+    assert.deepEqual((plan.quotas as Array<Record<string, unknown>>).map(({ amount, unit, period }) => ({ amount, unit, period })),
+      [{ amount: plan.included_credits, unit: 'credit', period: 'month' }]);
+  }
+  assert.match(String(f.data.plans[5].notes), /organizations using GitHub Enterprise Cloud/);
   assert.match(String(f.data.plans[3].notes), /\[needs-verification\] Max plan training policy/);
   const writes = f.writes();
   assert.deepEqual(await seedCopilot(f.sql, true), []);
   assert.equal(f.writes(), writes);
   assert.deepEqual(await seedCopilot(f.sql), []);
+});
+
+test('Standalone has a seat fee plus metered budget, no allowance, and the same selector as Enterprise', async () => {
+  const f = fixture();
+  await seedCopilot(f.sql, true);
+  const standalone = f.data.plans.find(plan => plan.slug === 'copilot-standalone')!;
+  const enterprise = f.data.plans.find(plan => plan.slug === 'copilot-enterprise')!;
+  assert.equal(standalone.price, 10);
+  assert.equal(standalone.price_unit, 'per_month');
+  assert.equal(standalone.pricing_model, 'subscription');
+  assert.equal(standalone.billing_granularity, 'flat_monthly');
+  assert.equal(standalone.plan_line, 'github-copilot');
+  assert.equal(standalone.tier, 'enterprise');
+  assert.equal(standalone.is_contact_sales, true);
+  assert.equal(standalone.included_credits, 0);
+  assert.equal(standalone.included_usage_amount, 0);
+  assert.deepEqual(standalone.quotas, []);
+  assert.equal(standalone.monthly_api_credit_usd, null);
+  assert.equal(standalone.monthly_api_credit_status, null);
+  assert.equal(standalone.monthly_message_limit, null);
+  assert.equal(standalone.requests_per_month, null);
+  assert.deepEqual(standalone.model_selector, enterprise.model_selector);
+  const modelIds = (plan: Row) => f.data.model_plan_mapping.filter(row => row.plan_id === plan.id).map(row => row.model_id);
+  assert.deepEqual(modelIds(standalone), modelIds(enterprise));
+  assert.match((standalone.features as string[])[0], /no included AI credits; metered usage billed separately from first use/);
+  const notes = String(standalone.notes);
+  for (const source of [COPILOT_ACCESS_SOURCE, COPILOT_BILLING_SOURCE, COPILOT_DOCS_SOURCE]) assert.ok(notes.includes(source));
+  for (const claim of [/at model rates against the enterprise budget/, /Sales-assisted only/, /2026-10-28/,
+    /Self-serve is not yet available/, /GitHub Free\/Team/, /self-service GitHub Enterprise Cloud trials/,
+    /Same features and model eligibility as Copilot Enterprise/, /Code completion and next edit suggestions work with no budget/,
+    /Copilot Chat, code review and Copilot cloud agent require available enterprise budget/, /exhausted budget never removes the seat/,
+    /cannot coexist with Business\/Enterprise seats in the same enterprise/, /\$0 Copilot seat charge/,
+    /license cost excluded here/, /Enterprise owners must still assign seats/, /this option can coexist with Standalone/]) {
+    assert.match(notes, claim);
+  }
+  // The GHE bundle is documented inside Standalone, never offered as a free row.
+  assert.deepEqual(f.data.plans.filter(plan => plan.price === 0).map(plan => plan.slug), ['copilot-free']);
+  assert.equal(planEconomics({ ...standalone, pack_validity_days: null } as unknown as EconomicPlan).state, 'none_published');
+  // Existing provider prose, subscription SEO and trust logic consume these fields.
+  assert.deepEqual(monthlyPlanFloors([standalone as unknown as SeoPlan]), []);
+  for (const locale of ['en', 'zh'] as const) {
+    const copy = buildProviderCopy({ name: 'GitHub', plans: [standalone, enterprise] as unknown as ProviderCopyPlan[], modelCount: 4 }, locale);
+    assert.ok(copy.summary.includes('Copilot Enterprise'));
+    assert.ok(!copy.summary.includes('Copilot Standalone'));
+    const source = { label: 'GitHub billing', url: COPILOT_BILLING_SOURCE };
+    const now = new Date('2026-10-29T12:00:00Z');
+    assert.equal(planPriceTrust(standalone as PlanTrustRow, source, locale, now).flags.unverified, false);
+    assert.equal(planEntitlementTrust(standalone as PlanTrustRow, source, locale, now).flags.unverified, false);
+  }
 });
 
 test('selector matches only the verified pool, tolerates missing models, and never creates priced HydraFusion models', async () => {
@@ -171,26 +251,36 @@ test('selector matches only the verified pool, tolerates missing models, and nev
   assert.equal(result.code, 0, result.output);
   assert.match(result.output, /Missing catalog models are skipped/);
   assert.equal(f.data.models.length, 0);
-  assert.equal(f.data.plans.length, 6);
+  assert.equal(f.data.plans.length, 7);
   assert.equal(f.data.model_plan_mapping.length, 0);
   // A NULL selector emits only the existing missing-selector warning; no empty-selector critical.
   assert.ok(f.data.plans.every(plan => plan.model_selector === null));
 });
 
-test('repairs stale owned plans and derived mappings while preserving manual mappings and unrelated records', async () => {
+test('repairs old NULL organization prices and stale derived mappings while preserving manual mappings and unrelated records', async () => {
   const f = fixture({
     providers: [{ id: 1, slug: 'github', name: 'GitHub', logo_url: '/existing.svg' }],
-    plans: [{ id: 2, provider_id: 1, slug: 'copilot-business', price: 19, annual_price: 999, monthly_message_limit: 999 },
-      { id: 3, provider_id: 1, slug: 'unrelated', price: 123 }],
+    plans: [{ id: 2, provider_id: 1, slug: 'copilot-business', price: null, included_credits: null, last_verified: null, notes: '[needs-verification] Per-seat price', annual_price: 999, monthly_message_limit: 999 },
+      { id: 3, provider_id: 1, slug: 'unrelated', price: 123 },
+      { id: 6, provider_id: 1, slug: 'copilot-enterprise', price: null, included_credits: null, last_verified: null }],
     model_plan_mapping: [{ id: 4, plan_id: 2, model_id: 20, source: 'manual', priority: 8 },
       { id: 5, plan_id: 2, model_id: 999, source: 'derived', priority: 0 }],
   });
   const before = structuredClone(f.data);
-  assert.ok((await seedCopilot(f.sql)).length);
+  const steps = await seedCopilot(f.sql);
+  assert.ok(steps.length);
+  assert.deepEqual(steps.filter(step => step.action === 'delete'), [{
+    table: 'model_plan_mapping', target: 'copilot-business/999', action: 'delete',
+    changes: { model_id: { from: 999, to: null } },
+  }]);
   assert.equal(f.writes(), 0); assert.deepEqual(f.data, before);
   await seedCopilot(f.sql, true);
   const business = f.data.plans.find(plan => plan.id === 2)!;
-  assert.equal(business.price, null); assert.equal(business.annual_price, null); assert.equal(business.monthly_message_limit, null);
+  assert.equal(business.price, 19); assert.equal(business.included_credits, 1900);
+  assert.equal(business.annual_price, null); assert.equal(business.monthly_message_limit, null);
+  assert.doesNotMatch(String(business.notes), /\[needs-verification\] Per-seat price/);
+  const enterprise = f.data.plans.find(plan => plan.id === 6)!;
+  assert.equal(enterprise.price, 39); assert.equal(enterprise.included_credits, 3900);
   assert.equal(f.data.providers[0].logo_url, '/existing.svg');
   assert.equal(f.data.providers[0].pricing_url, COPILOT_SOURCE);
   assert.deepEqual(f.data.models, before.models);

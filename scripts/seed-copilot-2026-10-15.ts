@@ -14,7 +14,7 @@ async function main() {
       const steps = await seedCopilot(tx, apply);
       console.log(JSON.stringify(steps, null, 2));
       console.log(`${apply ? 'Applied' : 'Dry-run; no writes'}: ${steps.length} changes. Negative IDs in dry-run represent new rows.`);
-      console.log('Unverified: Business/Enterprise seat prices, HydraFusion multiplier, Max training/preview availability, annual pricing and regional terms. Missing catalog models are skipped.');
+      console.log('Unverified: HydraFusion multiplier, Max/Standalone training policy, Max preview availability, annual pricing, regional access and payment methods. Missing catalog models are skipped.');
     });
   } finally { await sql.end(); }
 }
