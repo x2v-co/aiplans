@@ -27,6 +27,16 @@ the same rule as `openai-gpt-3-5-turbo-batch`. Production aliases `openai-gpt-3-
 shutdown 2026-10-23. The batch slug is that alias's batch SKU; the page does not
 list a separate `-batch` id.
 
+2026-10-29 (Intel audit P0-1): the 2026-06-11 table lists each row as
+`alias | snapshot` (e.g. `gpt-5 | gpt-5-2025-08-07`), so the undated aliases
+`gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5-pro` and their production Batch
+SKUs (`openai-gpt-5-batch`, `openai-gpt-5-mini-batch`, `openai-gpt-5-nano-batch`,
+`openai-gpt-5-pro-batch`) shut down 2026-12-11 (announced 2026-06-11).
+Replacements: `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`,
+`gpt-5.6-sol (reasoning.mode: pro)`. `openai-gpt-4o-mini-batch`,
+`openai-gpt-4-1-mini` and `openai-gpt-4-1-mini-batch` follow the 2026-10-14
+batch (2027-01-14, `gpt-6-luna`).
+
 The seed defaults to a serializable READ ONLY transaction and prints model field
 diffs plus channel/variant rows to disable. `--apply` writes all changes in one
 transaction. It disables every channel and variant whose model's shutdown day

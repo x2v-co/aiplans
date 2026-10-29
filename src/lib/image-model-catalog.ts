@@ -34,6 +34,7 @@ const GEMINI = { label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini
 const VERTEX = { label: 'Vertex AI generative AI pricing', url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', publisher: 'Google Cloud' };
 const OPENAI = { label: 'OpenAI API pricing', url: 'https://developers.openai.com/api/docs/pricing', publisher: 'OpenAI' };
 const OPENAI_DEPRECATIONS = 'https://platform.openai.com/docs/deprecations';
+const GEMINI_DEPRECATIONS = 'https://ai.google.dev/gemini-api/docs/deprecations';
 
 const tok = (kind: string, price: number): Rate => ({ priceKind: kind, unit: 'per_1m_tokens', price });
 const img = (kind: string, price: number, approximate = false): Rate => ({ priceKind: kind, unit: 'image', price, ...(approximate ? { approximate } : {}) });
@@ -68,9 +69,11 @@ export const IMAGE_MODEL_CATALOG_GOOGLE_OPENAI: AiCatalogItem[] = [
     [img('image_1k_2k', 0.134, true), img('image_4k', 0.24, true)]),
   image({
     slug: 'gemini-2.5-flash-image', name: 'Nano Banana (Gemini 2.5 Flash Image)', provider: 'Google', providerSlug: 'google',
-    status: 'discontinued', deprecatedAt: '2026-10-02', shutdownDate: '2026-10-02', replacementModel: 'gemini-3.1-flash-image or gemini-3.1-flash-lite-image',
-    deprecationSourceUrl: GEMINI.url, pricingUnit: 'per_1m_tokens', headline: 30,
-    pricing: '$0.30/1M input; $30/1M image output (≈ $0.039 per ≤1024px image). Shut down 2026-10-02.',
+    // Re-checked 2026-10-29: deprecated, shutdown 2027-03-15 (the earlier 2026-10-02 was the
+    // release-date column of the deprecations table). Announcement date unknown, so no deprecatedAt.
+    status: 'deprecated', shutdownDate: '2027-03-15', replacementModel: 'gemini-3.1-flash-lite-image',
+    deprecationSourceUrl: GEMINI_DEPRECATIONS, pricingUnit: 'per_1m_tokens', headline: 30,
+    pricing: '$0.30/1M input; $30/1M image output (≈ $0.039 per ≤1024px image). Deprecated; shuts down 2027-03-15.',
     rates: [tok('input_tokens', 0.3), tok('image_output_tokens', 30), img('image_1k', 0.039, true)], source: [GEMINI, VERTEX],
   }),
   ...([['imagen-4-ultra', 'Imagen 4 Ultra', 0.06], ['imagen-4', 'Imagen 4', 0.04], ['imagen-4-fast', 'Imagen 4 Fast', 0.02]] as const).map(([slug, name, price]) => image({

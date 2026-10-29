@@ -50,7 +50,7 @@ test('only audited video/music values are numeric; range and approximation are e
     if (known.has(item.slug!)) {
       assert.deepEqual([item.pricePerUnit, item.pricePerUnitHigh], known.get(item.slug!));
       const rechecked = ['veo-3-1', 'veo-3-1-fast', 'veo-3-1-lite', 'gemini-omni-flash'].includes(item.slug!);
-      assert.equal(item.verifiedAt, rechecked ? '2026-10-19' : '2026-10-15');
+      assert.equal(item.verifiedAt, rechecked ? '2026-10-29' : '2026-10-15');
       assert.equal(item.sourceUrls?.[0].url, rechecked
         ? 'https://ai.google.dev/gemini-api/docs/deprecations'
         : 'https://ai.google.dev/gemini-api/docs/pricing');
