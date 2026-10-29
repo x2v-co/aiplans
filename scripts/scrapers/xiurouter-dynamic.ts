@@ -29,6 +29,7 @@
 
 import type { ScrapedPrice, ScrapedPriceVariant, ScraperResult } from '../utils/validator';
 import { validatePrice } from '../utils/validator';
+import { runScraperCli } from './lib/cli-exit';
 
 const XIUROUTER_PRICING_API = 'https://router.xiu.ai/api/pricing';
 const XIUROUTER_PRICING_PAGE = 'https://router.xiu.ai/en/pricing';
@@ -417,7 +418,7 @@ export async function scrapeXiuRouterDynamic(): Promise<ScraperResult> {
 
 // CLI test
 if (require.main === module) {
-  scrapeXiuRouterDynamic().then(result => {
+  void runScraperCli(scrapeXiuRouterDynamic, result => {
     console.log('\n📊 Scrape Result:');
     console.log(JSON.stringify({
       source: result.source,

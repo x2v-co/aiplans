@@ -2,6 +2,7 @@
 import { normalizeModelName } from '../utils/validator';
 import { parseNextFlight } from '../utils/artificial-analysis';
 import { PlaywrightScraper, type PriceData, type ScraperResult } from './lib/playwright-scraper';
+import { runScraperCli } from './lib/cli-exit';
 
 const PRICING_PAGE = 'https://platform.kimi.com/docs/pricing/chat';
 
@@ -224,19 +225,95 @@ export function parseKimiPricingHtml(html: string): PriceData[] {
   return parseKimiPricingTables(tables);
 }
 
-const HTML_FETCH_TIMEOUT_MS = 30_000;
+/**
+ * Per-request timeout for both the static HTML fetch and the rendered fallback.
+ * The production host's route to platform.kimi.com is slow and lossy (10-29:
+ * 163KB of 301KB in 30s), so the old 30s budget failed both paths. Override with
+ * MOONSHOT_FETCH_TIMEOUT_MS.
+ */
+export const DEFAULT_FETCH_TIMEOUT_MS = 90_000;
+export const STATIC_FETCH_ATTEMPTS = 3;
+const STATIC_RETRY_BASE_DELAY_MS = 2_000;
 const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-async function fetchKimiPricingHtml(): Promise<PriceData[]> {
-  const response = await fetch(PRICING_PAGE, {
-    headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html', 'Accept-Language': 'zh-CN,zh;q=0.9' },
-    signal: AbortSignal.timeout(HTML_FETCH_TIMEOUT_MS),
-  });
+export function resolveFetchTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = env.MOONSHOT_FETCH_TIMEOUT_MS?.trim();
+  if (!raw) return DEFAULT_FETCH_TIMEOUT_MS;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) {
+    console.warn(`⚠️ Moonshot: ignoring invalid MOONSHOT_FETCH_TIMEOUT_MS=${JSON.stringify(raw)}`);
+    return DEFAULT_FETCH_TIMEOUT_MS;
+  }
+  return Math.round(value);
+}
+
+/** Network-level failures worth retrying; a parse error or HTTP 4xx is not. */
+class RetryableFetchError extends Error {}
+
+export interface StaticFetchOptions {
+  fetchImpl?: typeof fetch;
+  sleep?: (ms: number) => Promise<void>;
+  timeoutMs?: number;
+  attempts?: number;
+  baseDelayMs?: number;
+}
+
+async function fetchKimiPricingPage(fetchImpl: typeof fetch, timeoutMs: number): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetchImpl(PRICING_PAGE, {
+      headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html', 'Accept-Language': 'zh-CN,zh;q=0.9' },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (error) {
+    throw new RetryableFetchError(error instanceof Error ? `${error.name}: ${error.message}` : String(error));
+  }
+  if (response.status === 429 || response.status >= 500) {
+    throw new RetryableFetchError(`Kimi pricing page returned HTTP ${response.status}`);
+  }
   if (!response.ok) throw new Error(`Kimi pricing page returned HTTP ${response.status}`);
-  return parseKimiPricingHtml(await response.text());
+  try {
+    // The body download is what stalls on the slow route; it shares the abort signal.
+    return await response.text();
+  } catch (error) {
+    throw new RetryableFetchError(error instanceof Error ? `${error.name}: ${error.message}` : String(error));
+  }
+}
+
+/**
+ * Static HTML read with exponential backoff (2s, 4s, …) on network errors,
+ * timeouts, 429 and 5xx. Parsing is deterministic, so a parse failure is not retried.
+ */
+export async function fetchKimiPricingHtml(options: StaticFetchOptions = {}): Promise<PriceData[]> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const sleep = options.sleep ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
+  const timeoutMs = options.timeoutMs ?? resolveFetchTimeoutMs();
+  const attempts = Math.max(1, options.attempts ?? STATIC_FETCH_ATTEMPTS);
+  const baseDelayMs = options.baseDelayMs ?? STATIC_RETRY_BASE_DELAY_MS;
+  const failures: string[] = [];
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    let html: string;
+    try {
+      html = await fetchKimiPricingPage(fetchImpl, timeoutMs);
+    } catch (error) {
+      if (!(error instanceof RetryableFetchError)) throw error;
+      failures.push(`attempt ${attempt}: ${error.message}`);
+      if (attempt === attempts) break;
+      const delay = baseDelayMs * 2 ** (attempt - 1);
+      console.warn(`⚠️ Moonshot: static HTML fetch failed (${error.message}); retry ${attempt + 1}/${attempts} in ${delay}ms`);
+      await sleep(delay);
+      continue;
+    }
+    return parseKimiPricingHtml(html);
+  }
+  throw new Error(`Kimi pricing page fetch failed after ${attempts} attempts (timeout ${timeoutMs}ms each): ${failures.join('; ')}`);
 }
 
 export class MoonshotScraper extends PlaywrightScraper {
+  constructor(timeoutMs = resolveFetchTimeoutMs()) {
+    super({ timeout: timeoutMs });
+  }
+
   getSourceName(): string { return 'Moonshot'; }
   getSourceUrl(): string { return PRICING_PAGE; }
 
@@ -309,4 +386,6 @@ export async function scrapeMoonshotDynamic(): Promise<ScraperResult> {
   return result;
 }
 
-if (require.main === module) scrapeMoonshotDynamic().then(result => console.log(JSON.stringify(result, null, 2)));
+if (require.main === module) {
+  void runScraperCli(scrapeMoonshotDynamic, result => console.log(JSON.stringify(result, null, 2)));
+}
