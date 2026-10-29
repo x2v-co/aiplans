@@ -117,7 +117,8 @@ export async function seedCopilot(tx: Sql, apply = false): Promise<CopilotSeedSt
     const plan = await save('plans', one(plans.filter(plan => plan.slug === seed.slug), `plans/${seed.slug}`), {
       provider_id: provider.id, product_id: provider.id, name: seed.name, slug: seed.slug,
       price: seed.price, currency: 'USD', price_unit: 'per_month', pricing_model: 'subscription',
-      annual_price: null, price_yearly_monthly: null, is_contact_sales: standalone,
+      // Sales-assisted availability is in the sourced terms; the seat price is public.
+      annual_price: null, price_yearly_monthly: null, is_contact_sales: false,
       plan_kind: 'coding', plan_category: 'coding', plan_line: 'github-copilot', tier: seed.tier, tier_rank: rank,
       billing_granularity: 'flat_monthly', source: 'manual', is_official: true,
       quota_unit: 'credits', included_credits: seed.credits,
