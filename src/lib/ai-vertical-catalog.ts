@@ -388,6 +388,19 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     ], url: 'https://ai.google.dev/gemini-api/docs/deprecations',
   },
   {
+    kind: 'video-model', slug: 'gemini-omni-1-1-flash', name: 'Gemini Omni Flash (gemini-omni-1.1-flash)', provider: 'Google', providerSlug: 'google',
+    status: 'available', pricing: '$1.50/1M input (text / image / video / audio); $17.50/1M video output; $9.00/1M text output',
+    unit: 'token', billingUnit: 'per_token', pricingUnit: 'per 1M tokens', pricePerUnit: 17.5, currency: 'USD', priceStatus: 'priced',
+    capabilities: ['text-to-video', 'video editing'], bestFor: 'Video generation and editing on the Gemini API paid tier.', modelCategory: 'video', access: ['api'],
+    inputModalities: ['text', 'image', 'video', 'audio'], outputModalities: ['video', 'text'],
+    pricingConfidence: 'verified', lastVerified: '2026-10-29', verifiedAt: '2026-10-29',
+    notes: 'Generally available on the Gemini API paid tier (no free tier). Billed by output tokens; the headline is the video-output rate per 1M tokens. Replacement for the Veo 3.1 previews and gemini-omni-flash-preview, which shut down 2026-10-22. Vertex AI pricing was not verified.',
+    sourceUrls: [
+      { label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing', publisher: 'Google' },
+      { label: 'Gemini API deprecations', url: 'https://ai.google.dev/gemini-api/docs/deprecations', publisher: 'Google' },
+    ], url: 'https://ai.google.dev/gemini-api/docs/pricing',
+  },
+  {
     kind: 'music-model', slug: 'lyria-3-5', name: 'Lyria 3.5', provider: 'Google', providerSlug: 'google',
     status: 'available', pricing: '$0.08 / song', unit: 'song', pricingUnit: 'per_song',
     billingUnit: 'per_song', pricePerUnit: 0.08, currency: 'USD', priceStatus: 'priced',

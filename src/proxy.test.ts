@@ -43,7 +43,7 @@ test('301s a locale-less dotted slug in one hop', () => {
   });
   const response = proxy(request);
   assert.equal(response.status, 301);
-  assert.match(response.headers.get('location') ?? '', /\/en\/compare\/plans\/moonshotai-kimi-k2-5$/);
+  assert.match(response.headers.get('location') ?? '', /\/en\/compare\/plans\/kimi-k3$/);
 });
 
 test('301s a glued compare slug to the first model', () => {
@@ -52,7 +52,7 @@ test('301s a glued compare slug to the first model', () => {
   });
   const response = proxy(request);
   assert.equal(response.status, 301);
-  assert.match(response.headers.get('location') ?? '', /\/zh\/compare\/plans\/z-ai-glm-5$/);
+  assert.match(response.headers.get('location') ?? '', /\/zh\/compare\/plans\/glm-5\.3$/);
 });
 
 test('uses X-Forwarded-Proto when Cloudflare metadata is unavailable', () => {
@@ -62,4 +62,26 @@ test('uses X-Forwarded-Proto when Cloudflare metadata is unavailable', () => {
 
   assert.equal(requestUsedHttp(request), true);
   assert.equal(proxy(request).headers.get('location'), 'https://www.aiplans.dev/en/api-pricing');
+});
+
+test('root redirects permanently (308) to the default locale for crawlers', () => {
+  const response = proxy(new NextRequest('https://aiplans.dev/', { headers: { 'x-forwarded-proto': 'https' } }));
+  assert.equal(response.status, 308);
+  assert.match(response.headers.get('location') ?? '', /\/en$/);
+});
+
+test('root keeps a temporary 307 for a saved non-default locale', () => {
+  const response = proxy(new NextRequest('https://aiplans.dev/', {
+    headers: { 'x-forwarded-proto': 'https', cookie: 'NEXT_LOCALE=zh' },
+  }));
+  assert.equal(response.status, 307);
+  assert.match(response.headers.get('location') ?? '', /\/zh$/);
+});
+
+test('root ignores an unknown locale cookie', () => {
+  const response = proxy(new NextRequest('https://aiplans.dev/', {
+    headers: { 'x-forwarded-proto': 'https', cookie: 'NEXT_LOCALE=fr' },
+  }));
+  assert.equal(response.status, 308);
+  assert.match(response.headers.get('location') ?? '', /\/en$/);
 });

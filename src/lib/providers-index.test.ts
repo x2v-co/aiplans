@@ -32,7 +32,8 @@ test('providers index metadata has localized canonical and hreflang', () => {
 });
 
 test('providers list route, sitemap and search index discover /providers', () => {
-  const sitemap = readFileSync(new URL('../app/sitemap.ts', import.meta.url), 'utf8');
+  // Fixed sitemap paths live in sitemap-static-paths.ts (with their lastmod source).
+  const sitemap = readFileSync(new URL('./sitemap-static-paths.ts', import.meta.url), 'utf8');
   const search = readFileSync(new URL('../app/api/search-index/route.ts', import.meta.url), 'utf8');
   const page = readFileSync(new URL('../app/[locale]/providers/page.tsx', import.meta.url), 'utf8');
   const detail = readFileSync(new URL('../app/[locale]/providers/[slug]/page.tsx', import.meta.url), 'utf8');

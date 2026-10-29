@@ -7,6 +7,7 @@ import * as catalog from '../src/lib/ai-vertical-catalog';
 import * as logos from '../src/lib/vertical-provider-logos';
 import { PERPLEXITY_DECIDER_CATALOG } from '../src/lib/perplexity-decider-catalog';
 import * as auditVertical from './data/catalog-audit-vertical';
+import * as catalog20261029 from './data/catalog-2026-10-29';
 import * as seedDiff from './utils/seed-diff';
 import type { Sql } from 'postgres';
 import { seedImageModels, seedNonLlm } from './data/non-llm-seed';
@@ -78,6 +79,7 @@ function fixture(initial: Record<string, Row[]> = {}) {
       '../src/lib/ai-vertical-catalog': catalog,
       '../src/lib/vertical-provider-logos': logos,
       './data/catalog-audit-vertical': auditVertical,
+      './data/catalog-2026-10-29': catalog20261029,
       './utils/seed-diff': seedDiff,
       '../src/lib/model-shutdown': modelShutdown,
     };
@@ -270,6 +272,79 @@ test('vertical model/pricing seeds default to dry-run and --slug narrows the run
   assert.match(manual, /seed:vertical-pricing -- --apply/);
   const bad = await f.run('seed-vertical-pricing-references', ['--slug', 'no-such-model']);
   assert.equal(bad.code, 1);
+});
+
+test('production --slug kimi-k3 repairs only context, previews without writes and is idempotent', async () => {
+  const variants = ['kimi-k3.1-pro', 'kimi-k3.1-pro-highspeed', 'moonshotai-kimi-k3-1-pro',
+    'kimi-k3-fast', 'kimi-k3-batch', 'kimi-k3-us', 'moonshotai-kimi-k3'];
+  const f = fixture({ models: [
+    { id: 1, slug: 'kimi-k3', name: 'Kimi K3', type: 'llm', context_window: 128_000,
+      provider_ids: [33], description: 'Keep metadata', updated_at: '2026-10-01T00:00:00Z' },
+    ...variants.map((slug, i) => ({ id: i + 2, slug, context_window: 128_000 })),
+    { id: 100, slug: 'gpt-5', context_window: 128_000 },
+  ] });
+  const before = structuredClone(f.data);
+  const scripts = ['seed-vertical-models', 'seed-vertical-pricing-references'];
+  for (const name of scripts) {
+    const dry = await f.run(name, ['--slug', 'kimi-k3']);
+    assert.equal(dry.code, 0, dry.output);
+    if (name === 'seed-vertical-models') {
+      assert.match(dry.output, /\[DRY-RUN\]/);
+      assert.match(dry.output, /context_window: 128000 → 1048576/);
+    } else assert.match(dry.output, /no vertical pricing references/);
+  }
+  assert.equal(f.writeCount(), 0);
+  assert.deepEqual(f.data, before);
+  for (const name of scripts) {
+    const applied = await f.run(name, ['--apply', '--slug', 'kimi-k3']);
+    assert.equal(applied.code, 0, applied.output);
+  }
+  assert.equal(f.writeCount(), 1);
+  assert.deepEqual(f.data, { ...before, models: [
+    { ...before.models[0], context_window: 1_048_576, updated_at: '2026-10-15T00:00:00.000Z' },
+    ...before.models.slice(1),
+  ] });
+  for (const name of scripts) assert.equal((await f.run(name, ['--apply', '--slug=kimi-k3'])).code, 0);
+  assert.equal(f.writeCount(), 1);
+});
+
+test('Kimi context seed handles NULL, missing/duplicate rows, unexpected context and slug scope', async () => {
+  const blank = fixture({ models: [{ id: 1, slug: 'kimi-k3', context_window: null }] });
+  assert.equal((await blank.run('seed-vertical-models', ['--apply', '--slug', 'kimi-k3'])).code, 0);
+  assert.equal(blank.data.models[0].context_window, 1_048_576);
+  const missing = fixture();
+  const skip = await missing.run('seed-vertical-models', ['--apply', '--slug', 'kimi-k3']);
+  assert.equal(skip.code, 0, skip.output);
+  assert.match(skip.output, /model row not found/);
+  assert.equal(missing.writeCount(), 0);
+  const duplicate = fixture({ models: [
+    { id: 1, slug: 'kimi-k3', context_window: 128_000 },
+    { id: 2, slug: 'kimi-k3', context_window: 128_000 },
+  ] });
+  await assert.rejects(duplicate.run('seed-vertical-models', ['--apply', '--slug', 'kimi-k3']), /Duplicate rows for kimi-k3/);
+  assert.equal(duplicate.writeCount(), 0);
+  const f = fixture({ models: [{ id: 1, slug: 'kimi-k3', context_window: 262_144 }] });
+  const unexpected = await f.run('seed-vertical-models', ['--apply', '--slug', 'kimi-k3']);
+  assert.equal(unexpected.code, 0, unexpected.output);
+  assert.match(unexpected.output, /262144.*left for review/);
+  assert.equal(f.writeCount(), 0);
+  f.data.models[0].context_window = 128_000;
+  for (const name of ['seed-vertical-models', 'seed-vertical-pricing-references']) {
+    const writes = f.writeCount();
+    const invalid = await f.run(name, ['--apply', '--slug', 'kimi-k3,no-such-model']);
+    assert.equal(invalid.code, 1);
+    assert.equal(f.writeCount(), writes);
+    const unrelated = await f.run(name, ['--apply', '--slug', 'omnihuman-2-0']);
+    assert.equal(unrelated.code, 0, unrelated.output);
+    assert.equal(f.data.models[0].context_window, 128_000);
+  }
+  const mixed = ['--apply', '--slug', 'kimi-k3,omnihuman-2-0'];
+  for (const name of ['seed-vertical-models', 'seed-vertical-pricing-references']) {
+    const result = await f.run(name, mixed);
+    assert.equal(result.code, 0, result.output);
+  }
+  assert.equal(f.data.models[0].context_window, 1_048_576);
+  assert.ok(f.data.models.some(row => row.slug === 'omnihuman-2-0'));
 });
 
 test('vertical pricing seed only touches the requested slug, prints field diffs, keeps newer last_verified and is_available', async () => {

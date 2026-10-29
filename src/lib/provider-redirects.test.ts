@@ -47,3 +47,21 @@ test('excludes static plan children from the provider rule', async () => {
   const response = await unstable_getResponseFromNextConfig({ url: `${origin}/en/plans/featured-ai`, nextConfig: config });
   assert.equal(response.status, 301);
 });
+
+test('locale-less provider plan URLs reach the provider page in one 301 hop', async () => {
+  for (const slug of ['mistral', 'azure-openai', 'moonshot-global', 'grok']) {
+    const response = await unstable_getResponseFromNextConfig({ url: `${origin}/plans/${slug}?period=yearly`, nextConfig });
+    assert.equal(response.status, 301, slug);
+    assert.equal(response.headers.get('location'), `${origin}/en/providers/${slug}?period=yearly`);
+  }
+  const cursor = await unstable_getResponseFromNextConfig({ url: `${origin}/plans/cursor`, nextConfig });
+  assert.equal(cursor.status, 301);
+  assert.equal(cursor.headers.get('location'), `${origin}/en/providers/xai`);
+});
+
+test('locale-less plan index and metadata routes are left to the proxy', async () => {
+  for (const path of ['/plans', '/plans/opengraph-image', '/plans/openai/plus']) {
+    const response = await unstable_getResponseFromNextConfig({ url: `${origin}${path}`, nextConfig });
+    assert.equal(response.headers.get('location'), null, path);
+  }
+});

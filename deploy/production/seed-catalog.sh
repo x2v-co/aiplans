@@ -12,6 +12,7 @@ usage() {
 --apply 会先做 pg_dump 备份，再写入。没有 diff.txt 和非空 backup.dump 不会写。
 有 --slug 时只跑 vertical models 与 pricing。logo、已核实创作套餐、benchmark
 不能按 slug 缩小，这次会跳过。
+kimi-k3 仅修正已有 models.context_window（NULL/128000 → 1048576），跳过 vertical pricing。
 --sync-availability 才会改已有行的 is_available。
 
 记录目录: ${LOCK_PATH:-仓库根}/snapshots/seed-catalog/<UTC 时间>/

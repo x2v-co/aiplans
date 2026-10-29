@@ -12,7 +12,6 @@ export function isBenchmarkOnlySlug(slug: string): boolean {
  */
 export const VERTICAL_MODEL_PARENT: Partial<Record<AiCatalogKind, Record<string, string>>> = {
   'video-model': {
-    'gemini-omni-1-1-flash': 'gemini-omni-flash',
     'veo-3-1-audio': 'veo-3-1',
     'veo-3-1-audio-1080p': 'veo-3-1',
     'veo-3-1-fast-audio': 'veo-3-1-fast',

@@ -31,3 +31,17 @@ test('MiMo v2.5 slugs explain auto-routing, billing model and removal time', () 
   }
   assert.equal(billingRedirectNote('xiaomi-mimo-v2-6-pro', 'en'), null);
 });
+
+test('Kimi K2 models carry the undated Moonshot deprecation notice; K3 does not', () => {
+  for (const slug of ['kimi-k2.6', 'kimi-k2.7-code-highspeed', 'moonshotai-kimi-k2-thinking']) {
+    for (const locale of ['en', 'zh']) {
+      const note = billingRedirectNote(slug, locale)!;
+      assert.match(note, /2026-10-31/);
+      assert.match(note, locale === 'zh' ? /12 月底/ : /end of December 2026/);
+      assert.match(note, /platform\.moonshot\.cn\/docs\/pricing\/chat/);
+      assert.doesNotMatch(note, /2026-12-\d\d/);
+    }
+  }
+  assert.equal(billingRedirectNote('kimi-k3', 'en'), null);
+  assert.equal(billingRedirectNote('moonshotai-kimi-k3-1-pro', 'zh'), null);
+});

@@ -2,9 +2,10 @@ import type { Sql } from 'postgres';
 import { VARIABLE_ROUTER_SENTINEL } from '../utils/manual-unavailable';
 
 /**
- * 2026-10-29 Intel data audit. Every value below was re-checked on the official
- * page named next to it on 2026-10-29. Exact-slug matching only; missing rows
- * are reported and skipped, duplicates abort. Optional SRE seed, not on deploy.
+ * 2026-10-29 Intel data audit. Original audit values were re-checked on the
+ * official pages on 2026-10-29; the Kimi K3 correction below uses user-supplied
+ * official evidence. Exact-slug matching only; missing rows are reported and
+ * skipped, duplicates abort. Optional SRE seed, not on deploy.
  *
  *  1. context_window (P1-1): OpenAI model pages list GPT-6 Luna / Sol, GPT-6.1
  *     Sol / Terra at 1,050,000 and GPT-5 / 5 mini / 5 nano / 5.6-Cyber at 400,000.
@@ -28,6 +29,11 @@ import { VARIABLE_ROUTER_SENTINEL } from '../utils/manual-unavailable';
  *     $0.37 / cached $0.075 / $1.25; MiniMax international MiniMax-M3.1-Flash
  *     $0.15 / cached $0.015 / $0.60 (USD per 1M tokens). Neither provider's API
  *     scraper writes these provider ids, so the rows are not overwritten.
+ *  6. Kimi K3: user-supplied official quickstart + MoonshotAI/Kimi-K3 README
+ *     state Context Length 1048576. max_completion_tokens default 131072 is
+ *     an output limit, not context length. Repair only exact slug kimi-k3
+ *     from NULL/128000; other K3 variants require separate verification.
+ *     This single fix is also consumed by the manual vertical-models seed.
  */
 export const VERIFIED = '2026-10-29';
 export const OPENAI_MODELS_SOURCE = 'https://platform.openai.com/docs/models';
@@ -38,11 +44,18 @@ export const ZAI_SOURCE = 'https://docs.z.ai/guides/overview/pricing';
 export const MINIMAX_SOURCE = 'https://platform.minimax.io/docs/guides/pricing';
 export const STALE_CONTEXT = 128_000;
 
+export const KIMI_K3_CONTEXT_FIX = { slug: 'kimi-k3', contextWindow: 1_048_576 } as const;
+export const KIMI_K3_CONTEXT_SOURCES = [
+  'https://platform.kimi.ai/docs/guide/kimi-k3-quickstart',
+  'https://github.com/MoonshotAI/Kimi-K3#readme',
+] as const;
+
 export const CONTEXT_FIXES: ReadonlyArray<{ slug: string; contextWindow: number }> = [
   ...['openai-gpt-6-luna', 'openai-gpt-6-luna-batch', 'openai-gpt-6-sol', 'openai-gpt-6-sol-batch',
     'openai-gpt-6-1-sol', 'openai-gpt-6-1-sol-batch', 'gpt-6.1-terra'].map(slug => ({ slug, contextWindow: 1_050_000 })),
   ...['gpt-5', 'openai-gpt-5-batch', 'gpt-5-mini', 'openai-gpt-5-mini-batch', 'gpt-5-nano', 'openai-gpt-5-nano-batch',
     'gpt-5.6-cyber'].map(slug => ({ slug, contextWindow: 400_000 })),
+  KIMI_K3_CONTEXT_FIX,
 ];
 
 export const KIMI_K2_SLUGS = ['kimi-k2.6', 'kimi-k2.6-fast', 'kimi-k2.7-code', 'kimi-k2.7-code-fast', 'kimi-k2.7-code-highspeed',
@@ -89,8 +102,11 @@ function one<T extends { slug: string }>(rows: readonly T[], slug: string, extra
   return hits[0] ?? null;
 }
 
-export function planContext(models: readonly ModelRow[]): Step[] {
-  return CONTEXT_FIXES.flatMap(({ slug, contextWindow }): Step[] => {
+export function planContext(
+  models: ReadonlyArray<Pick<ModelRow, 'id' | 'slug' | 'context_window'>>,
+  fixes = CONTEXT_FIXES,
+): Step[] {
+  return fixes.flatMap(({ slug, contextWindow }): Step[] => {
     const row = one(models, slug);
     if (!row) return [{ table: 'models', target: slug, id: null, action: 'skip', reason: 'model row not found' }];
     const current = num(row.context_window);

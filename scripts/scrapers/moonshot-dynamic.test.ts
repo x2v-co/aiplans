@@ -69,6 +69,14 @@ test('empty, partial, changed-unit and changed-currency catalogs fail closed', (
 // followed by a props-stripped copy (DocTable=()=>null) that must be ignored.
 const html = readFileSync(join(__dirname, 'fixtures', 'kimi-pricing-chat-2026-10-29.html'), 'utf8');
 
+test('kimi-k3 uses the explicit context window even when max_completion_tokens appears first', () => {
+  const k3 = structuredClone(tables[0]);
+  k3.contextText = 'max_completion_tokens 默认 131072。' + k3.contextText;
+  k3.rows = k3.rows.filter(row => row[0] === 'kimi-k3');
+  assert.equal(parseKimiPricingTables([k3])[0].contextWindow, 1_048_576);
+  assert.equal(parseKimiPricingHtml(html).find(price => price.modelName === 'kimi-k3')?.contextWindow, 1_048_576);
+});
+
 test('static HTML yields the same six SKUs as the rendered tables, no browser needed', () => {
   assert.deepEqual(parseKimiPricingHtml(html), parseKimiPricingTables(tables));
 });
