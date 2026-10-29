@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { isGluedModelSlug, splitGluedModelSlug } from './glued-model-slug';
-import { LEGACY_MODEL_SLUGS, legacySlugRedirect } from './legacy-slug-redirects';
+import { LEGACY_COMPARE_ONLY_SLUGS, LEGACY_MODEL_SLUGS, legacySlugRedirect } from './legacy-slug-redirects';
 
 const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/en/compare/plans/kimi-k2', '/en/compare/plans/kimi-k3'],
@@ -39,6 +39,22 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/en/compare/plans/claude-fable-5.1-batch', '/en/compare/plans'],
   ['/en/compare/plans/seed-2.1-turbo', '/en/compare/plans/doubao-seed-2.1-turbo'],
   ['/en/compare/plans/glm-5', '/en/compare/plans/glm-5.3'],
+  // Backfilled 2026-10-29 from the Search Console page export. These are the
+  // highest-impression rows that were still returning 404.
+  ['/en/models/gpt-4', '/en/models/openai-gpt-4'],
+  ['/zh/models/gpt-4', '/zh/models/openai-gpt-4'],
+  ['/en/models/gpt-3.5-turbo', '/en/models/openai-gpt-3-5-turbo'],
+  ['/en/models/gpt-4-turbo', '/en/models/openai-gpt-4-turbo'],
+  ['/en/models/claude-opus-4.6-batch', '/en/models/anthropic-claude-opus-4-6-batch'],
+  ['/en/models/claude-sonnet-4.6', '/en/models/anthropic-claude-sonnet-4-6'],
+  ['/en/compare/plans/claude-sonnet-4.6', '/en/compare/plans/claude-sonnet-4.5'],
+  ['/en/models/glm-4.5-air', '/en/models/z-ai-glm-4-5-air'],
+  ['/en/compare/plans/glm-4.5-air', '/en/compare/plans/glm-5.3'],
+  ['/zh/models/glm-5.2-(free)', '/zh/models/z-ai-glm-5-2-free'],
+  ['/en/models/o3', '/en/models/openai-o3'],
+  ['/en/models/qwen3.6-27b', '/en/models/qwen-qwen3-6-27b'],
+  ['/en/models/grok-4.20', '/en/models/x-ai-grok-4-20'],
+  ['/en/compare/plans/gpt-5.2-pro', '/en/compare/plans/gpt-5.4-pro'],
 ];
 
 const LIST_FALLBACKS: Array<[string, string]> = [
@@ -103,13 +119,26 @@ test('the redirect table does not chain and every target is a different slug', (
 const INDEXABLE_COMPARE_TARGETS = new Set([
   'claude-haiku-5.5', 'claude-opus-4.5', 'claude-sonnet-4.5', 'doubao-seed-2.1-turbo',
   'glm-5.3', 'glm-5.3-flash', 'kimi-k3', 'minimax-minimax-01', 'minimax-minimax-m2-her',
-  'openai-gpt-6-1-sol',
+  'openai-gpt-6-1-sol', 'gpt-5.3-codex', 'gpt-5.4-nano', 'gpt-5.4-pro', 'gpt-5.5', 'gpt-5.6-luna',
 ]);
 
 test('every compare redirect lands on an indexable sitemap page or the list', () => {
   for (const [from, target] of Object.entries(LEGACY_MODEL_SLUGS)) {
     if (!target.compare) continue;
     assert.ok(INDEXABLE_COMPARE_TARGETS.has(target.compare), `${from} -> ${target.compare} is not indexable`);
+  }
+  for (const [from, target] of Object.entries(LEGACY_COMPARE_ONLY_SLUGS)) {
+    assert.ok(INDEXABLE_COMPARE_TARGETS.has(target), `${from} -> ${target} is not indexable`);
+  }
+});
+
+test('compare-only backfills leave the live /models page untouched', () => {
+  for (const [from, target] of Object.entries(LEGACY_COMPARE_ONLY_SLUGS)) {
+    assert.equal(Object.hasOwn(LEGACY_MODEL_SLUGS, from), false, from);
+    assert.notEqual(target, from);
+    assert.equal(legacySlugRedirect(`/en/compare/plans/${from}`), `/en/compare/plans/${target}`, from);
+    assert.equal(legacySlugRedirect(`/zh/compare/plans/${from}`), `/zh/compare/plans/${target}`, from);
+    assert.equal(legacySlugRedirect(`/en/models/${from}`), null, `${from} /models must stay live`);
   }
 });
 
