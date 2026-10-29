@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { extractScoredModelsFromFlight, parseScoredModelsFromHtml } from './aa-leaderboard-models';
+import { describeRowShape, extractScoredModelsFromFlight, normalizeAaRow, parseScoredModelsFromHtml } from './aa-leaderboard-models';
 
 // Trimmed from https://artificialanalysis.ai/leaderboards/models on 2026-10-20:
 // scored rows now ride under "initialModels", split across two flight chunks,
@@ -50,4 +50,41 @@ test('error lists every candidate tried when nothing has scores', () => {
 
 test('refuses a partial import below the minimum row count', () => {
   assert.throws(() => parseScoredModelsFromHtml(fixture), /Only 3 models parsed from "initialModels"; refusing a partial import/);
+});
+
+// Trimmed from the live page on 2026-10-29: scores moved into a nested
+// "scores" object keyed by eval slug; the flat gpqa/hle/... fields are gone.
+const nestedFixture = readFileSync(join(__dirname, 'fixtures', 'aa-leaderboard-models-2026-10-29.html'), 'utf8');
+
+test('parses the 2026-10-29 layout with scores nested under "scores" by eval slug', () => {
+  const { models, key } = parseScoredModelsFromHtml(nestedFixture, { minModels: 1 });
+  assert.equal(key, 'initialModels');
+  assert.deepEqual(models.map((m) => m.slug), ['jt-35b-flash', 'gpt-5-3-codex', 'exaone-4-5-33b-non-reasoning']);
+  const codex = models[1];
+  assert.equal(codex.gpqa, 0.915151515151515);
+  assert.equal(codex.hle, 0.424930491195551);
+  assert.equal(codex.terminalbenchHard, 0.53030303030303);
+  assert.equal(codex.ifbench, 0.753741496598639);
+  assert.equal(codex.mmmuPro, 0.784971098265896);
+  assert.equal(codex.scicode, undefined);
+  assert.equal(codex.price1mInputTokens, 1.75);
+});
+
+test('normalizeAaRow keeps flat fields, ignores non-numeric and hle-diamond', () => {
+  const row = normalizeAaRow({ slug: 'a', gpqa: 0.5, scores: { 'gpqa-diamond': 0.9, 'hle-diamond': 0.3, scicode: null, ifbench: 'x' } });
+  assert.equal(row.gpqa, 0.5);
+  assert.equal((row as { hle?: unknown }).hle, undefined);
+  assert.equal((row as { scicode?: unknown }).scicode, undefined);
+  assert.equal((row as { ifbench?: unknown }).ifbench, undefined);
+  assert.equal(normalizeAaRow(null), null);
+});
+
+test('zero scored rows: error shows the sample row keys and nested object keys', () => {
+  const rows = [{ slug: 'a', name: 'A', evals: { 'gpqa-v2': 0.5 } }];
+  assert.throws(
+    () => extractScoredModelsFromFlight(`{"models":[{"slug":"x","name":"X"},{"slug":"y"}],"initialModels":${JSON.stringify(rows)}}`),
+    (error: Error) => /Sample row initialModels\[0\]: keys=slug,name,evals; nested evals\{gpqa-v2\}/.test(error.message)
+      && /nested "scores" object/.test(error.message),
+  );
+  assert.equal(describeRowShape(null), 'non-object row (null)');
 });
