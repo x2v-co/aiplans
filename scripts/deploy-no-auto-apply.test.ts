@@ -31,3 +31,43 @@ test('reviewed OpenAI writes require their own explicit opt-in, independently of
   assert.doesNotMatch(script.slice(0, start) + script.slice(end), /refresh-openai-plans\.ts --apply/);
   assert.match(script, /"\$openai_review_status" != "0"/);
 });
+
+test('v1 publication is gated only on API scraper success', () => {
+  const script = read('../deploy/production/run-scrapers.sh');
+  assert.match(script, /if \[\[ "\$api_status" == "0" \]\]; then/);
+  assert.doesNotMatch(script, /"\$(?:plans|fx)_status" == "0"/);
+});
+
+test('v1 publication precedes scraper group and mappings failure exits', () => {
+  const script = read('../deploy/production/run-scrapers.sh');
+  const publish = script.indexOf('npm run publish:v1');
+  assert.ok(publish > 0);
+  for (const message of ['Scraper group failure', 'model_plan_mapping materialization failed']) {
+    const failure = script.indexOf(message);
+    const exit = script.indexOf('\n  exit 1', failure);
+    assert.ok(failure > publish && exit > failure, `${message} must exit after publication`);
+  }
+});
+
+test('v1 publisher rejects empty offerings before writing any files', () => {
+  const script = read('./publish-planprice-v1-snapshot.ts');
+  const guard = script.match(/if \(offerings.length === 0\) \{([\s\S]*?)\n\}/);
+  assert.ok(guard && guard.index !== undefined);
+  assert.match(guard[1], /console\.error\(/);
+  assert.match(guard[1], /process\.exitCode = 1;/);
+  assert.match(guard[1], /return;/);
+  assert.ok(guard.index < script.indexOf('await mkdir('));
+  assert.ok(guard.index < script.indexOf('await atomicWrite('));
+});
+
+test('v1 publisher retains the FX file when fresh quotes are empty', () => {
+  const script = read('./publish-planprice-v1-snapshot.ts');
+  const branch = script.match(/if \(quotes.length === 0\) \{([\s\S]*?)\n\} else \{([\s\S]*?)\n\}/);
+  assert.ok(branch && branch.index !== undefined);
+  assert.match(branch[1], /console\.error\(/);
+  assert.doesNotMatch(branch[1], /atomicWrite\(fxPath/);
+  assert.match(branch[2], /await atomicWrite\(fxPath, fxSnapshot\);/);
+  assert.equal((script.match(/atomicWrite\(fxPath/g) ?? []).length, 1);
+  assert.ok(script.indexOf('await atomicWrite(snapshotPath, snapshot);') < branch.index);
+  assert.match(script, /fxSnapshot: quotes.length === 0 \? 'retained' : 'written'/);
+});

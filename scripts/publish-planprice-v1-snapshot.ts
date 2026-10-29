@@ -198,6 +198,13 @@ const offerings = prices.map((rawRow) => {
   };
 });
 
+if (offerings.length === 0) {
+  console.error('planprice-v1 publish failed: no offerings; existing snapshots retained.');
+  process.exitCode = 1;
+  await sql.end({ timeout: 5 });
+  return;
+}
+
 // The timestamp is useful to operators, but is not unique at second
 // resolution. Keep every immutable snapshot addressable even when two
 // publishes start in the same second.
@@ -214,8 +221,12 @@ async function atomicWrite(path: string, value: unknown) {
 }
 await atomicWrite(`${snapshotDir}/${payload.catalogVersion}.json`, snapshot);
 await atomicWrite(snapshotPath, snapshot);
-await atomicWrite(fxPath, fxSnapshot);
-console.log(JSON.stringify({ schemaVersion: 'planprice-v1-publish/1', status: 'published', catalogVersion: payload.catalogVersion, digest: snapshot.digest, offerings: offerings.length, fxQuotes: quotes.length, expiresAt }, null, 2));
+if (quotes.length === 0) {
+  console.error('Warning: no fresh FX quotes; retaining the previous exchange-rates.json.');
+} else {
+  await atomicWrite(fxPath, fxSnapshot);
+}
+console.log(JSON.stringify({ schemaVersion: 'planprice-v1-publish/1', status: 'published', catalogVersion: payload.catalogVersion, digest: snapshot.digest, offerings: offerings.length, fxQuotes: quotes.length, fxSnapshot: quotes.length === 0 ? 'retained' : 'written', expiresAt }, null, 2));
 await sql.end({ timeout: 5 });
 }
 

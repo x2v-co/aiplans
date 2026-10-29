@@ -128,6 +128,19 @@ if [[ "$audit_status" != "0" && "$audit_status" != "2" ]]; then
   exit "$audit_status"
 fi
 
+# 2026-10-29 (boss-approved): publish v1 whenever the API scrape succeeds.
+# Plans are not in the v1 snapshot; the DB retains their last successful data.
+# If FX refresh fails, retain the previous exchange-rate file.
+publish_status=0
+if [[ "$api_status" == "0" ]]; then
+  if [[ "$plans_status" != "0" || "$fx_status" != "0" || "$openai_review_status" != "0" ]]; then
+    echo "Publishing v1 with api=0; plans=$plans_status fx=$fx_status openai_review=$openai_review_status; previous plans/FX data retained" >&2
+  fi
+  "${compose[@]}" run --rm scraper npm run publish:v1 || publish_status=$?
+else
+  echo "Skipping v1 catalog publication: api=$api_status plans=$plans_status fx=$fx_status" >&2
+fi
+
 if [[ "$api_status" != "0" || "$plans_status" != "0" || "$openai_review_status" != "0" ]]; then
   echo "Scraper group failure: api=$api_status plans=$plans_status openai_review=$openai_review_status" >&2
   exit 1
@@ -156,15 +169,6 @@ if [[ "$mappings_status" != "0" ]]; then
   exit 1
 fi
 
-# Publish a new immutable v1 catalog only after the data and derived mappings
-# completed successfully. A failed scraper or FX refresh must leave the last
-# known-good catalog addressable rather than replacing it with a partial view.
-if [[ "$api_status" == "0" && "$plans_status" == "0" && "$fx_status" == "0" ]]; then
-  "${compose[@]}" run --rm scraper npm run publish:v1
-else
-  echo "Skipping v1 catalog publication: api=$api_status plans=$plans_status fx=$fx_status" >&2
-fi
-
 if [[ "$arena_status" != "0" ]]; then
   echo "Warning: Arena leaderboard update failed; keeping the previous ranking snapshot." >&2
 fi
@@ -175,4 +179,9 @@ fi
 
 if [[ "$coding_agents_status" != "0" ]]; then
   echo "Warning: coding agent leaderboard update failed; keeping the previous snapshot." >&2
+fi
+
+if [[ "$publish_status" != "0" ]]; then
+  echo "v1 catalog publication failed ($publish_status)." >&2
+  exit 1
 fi
