@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "publishedAt": "2026-10-28",
+  "records": [
+    {
+      "id": "codex-pro",
+      "plan": "ChatGPT Pro 200 (Codex)",
+      "model": "gpt-6-astra",
+      "modelIdentity": "requested",
+      "date": "2026-10-28",
+      "window": "weekly",
+      "status": "conditional",
+      "tierVerified": true,
+      "calls": 28,
+      "tokens": {
+        "input": 2320149,
+        "cacheRead": 271104,
+        "cacheWrite": 0,
+        "output": 4070
+      },
+      "controlTokens": null,
+      "usedBefore": 89,
+      "usedAfter": 92,
+      "estimate": {
+        "low": 64883075,
+        "mid": 86510767,
+        "high": 129766150
+      },
+      "apiEquivalentUsd": null,
+      "caveats": {
+        "zh": "仅适用于 ChatGPT Pro 200，档位由账号持有人确认。本轮 Astra 主测 28 次，控制会话 token 计数未变；约 10.45% 为缓存读取。范围仅含读数舍入，仍假设线性扣量、计量已结算且无其他设备流量。5 小时/月窗口未返回；Sol 读数异常，暂不发布容量。",
+        "en": "Applies only to ChatGPT Pro 200; tier confirmed by the account owner. Astra main batch: 28 calls with unchanged controller token counters. Bounds cover meter rounding only, assuming linear consumption, settled meters and no other-device traffic. No 5-hour/monthly window returned; Sol capacity withheld due to inconsistent readings."
+      },
+      "windowMeasurements": null,
+      "measurementReport": "/reports/codex-models-2026-10-28.md",
+      "measurementData": "/reports/codex-models-2026-10-28.json",
+      "planSlug": "chatgpt-pro-200",
+      "tierVerification": {
+        "source": "account_owner_confirmation",
+        "confirmedAt": "2026-10-28",
+        "priceUsdPerMonth": 200,
+        "note": "Account owner confirmed the measured plan is Pro 200, not Pro 100 or Pro 500. This is not independent billing verification."
+      }
+    },
+    {
+      "id": "volcengine-pro",
+      "plan": "Volcengine Coding Plan Pro",
+      "model": "kimi-k3",
+      "modelIdentity": "observed",
+      "date": "2026-10-28",
+      "window": "5h",
+      "status": "conditional",
+      "tierVerified": true,
+      "calls": 30,
+      "tokens": {
+        "input": 1237470,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "output": 21228
+      },
+      "controlTokens": null,
+      "usedBefore": 0.57,
+      "usedAfter": 10.01,
+      "estimate": {
+        "low": 13319555,
+        "high": 13347805,
+        "mid": 13333665
+      },
+      "apiEquivalentUsd": null,
+      "caveats": {
+        "zh": "30 次、3 批同模型实测，约 98.31% 为普通输入，无缓存命中或写入。三窗口分别测量，月额度为粗估。区间仅含读数舍入误差，仍假设线性扣量及无其他账号流量；不是跨模型通用 token 上限。",
+        "en": "30 calls in 3 batches, one model, about 98.31% fresh input and no cache reads/writes. Each window measured directly; monthly capacity is rough. Bounds cover meter rounding only and assume linear consumption without other account traffic; not a universal cross-model token cap."
+      },
+      "windowMeasurements": [
+        {
+          "window": "5h",
+          "usedBefore": 0.57,
+          "usedAfter": 10.01,
+          "estimate": {
+            "low": 13319555,
+            "high": 13347805,
+            "mid": 13333665
+          }
+        },
+        {
+          "window": "weekly",
+          "usedBefore": 12.07,
+          "usedAfter": 13.33,
+          "estimate": {
+            "low": 99110078,
+            "high": 100695840,
+            "mid": 99896667
+          }
+        },
+        {
+          "window": "monthly",
+          "usedBefore": 33.71,
+          "usedAfter": 34.34,
+          "estimate": {
+            "low": 196671562,
+            "high": 203015807,
+            "mid": 199793333
+          }
+        }
+      ],
+      "measurementReport": "/reports/volcengine-three-windows-2026-10-28.md",
+      "measurementData": "/reports/volcengine-three-windows-2026-10-28.json",
+      "modelMeasurementsData": "/reports/volcengine-models-2026-10-28.json",
+      "modelMeasurementsReport": "/reports/volcengine-models-2026-10-28.md"
+    },
+    {
+      "id": "cursor-ultra",
+      "plan": "Cursor Ultra (legacy)",
+      "model": "composer-2.5",
+      "modelIdentity": "requested",
+      "date": "2026-10-28",
+      "window": "monthly",
+      "status": "pending",
+      "tierVerified": true,
+      "calls": 16,
+      "tokens": {
+        "input": 1064029,
+        "cacheRead": 64322,
+        "cacheWrite": 0,
+        "output": 33906
+      },
+      "controlTokens": null,
+      "usedBefore": 34.7423,
+      "usedAfter": 34.757,
+      "estimate": null,
+      "apiEquivalentUsd": null,
+      "caveats": {
+        "zh": "仅前三批 12 轮（801,760 tokens）与此额度区间对应；第 4 批没有最终额度读数。浏览器断开后已暂停，16 轮大样本尚未完成 CSV 对账。月窗口由旧套餐双池规则推断，未捕获重置时刻，不发布容量数值。",
+        "en": "Only the first 12 calls (801,760 tokens) belong to this meter interval; batch 4 has no final reading. Paused after browser disconnection; the 16-call sample lacks CSV reconciliation. Monthly window inferred from legacy two-pool rules; reset time not captured. Capacity withheld."
+      },
+      "windowMeasurements": null,
+      "measurementReport": null,
+      "measurementData": null
+    }
+  ],
+  "sources": [
+    "https://developers.openai.com/api/docs/models/gpt-6-astra",
+    "https://cursor.com/docs/models/cursor-composer-2-5",
+    "https://cursor.com/docs/account/pricing/legacy-cursor-plans"
+  ],
+  "publicationPolicy": "Observations and conditional estimates only; no official allowance, automatic monthly extrapolation, or authoritative plan-tier assignment."
+}

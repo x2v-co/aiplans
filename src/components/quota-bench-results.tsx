@@ -3,6 +3,7 @@ import { CodexModelMeasurements } from './codex-model-measurements';
 import Link from 'next/link';
 import { VolcengineModelMeasurements } from './volcengine-model-measurements';
 import { QuotaBenchWindows } from './quota-bench-windows';
+import { QuotaBenchUsd } from './quota-bench-usd';
 import dataset from '../../public/reports/quota-bench-2026-10.json';
 
 export function QuotaBenchResults({ locale, compact = false }: { locale: string; compact?: boolean }) {
@@ -14,7 +15,8 @@ export function QuotaBenchResults({ locale, compact = false }: { locale: string;
     {compact ? <Link className="underline" href={`/${locale}/quota-bench`}>{zh ? '查看 Codex、火山与 Cursor 的实测数据和报告' : 'View Codex, Volcengine and Cursor measurements and reports'}</Link> : <>
       {(dataset.records as BenchRecord[]).map(record => <article key={record.id} id={record.id} className="scroll-mt-20 space-y-3 border-t pt-4">
         <h3 className="font-semibold">{record.plan} · {record.model}</h3>
-        <p className="text-sm">{record.status === 'pending' ? (zh ? '待核对 · 暂不发布容量' : 'Pending reconciliation · capacity withheld') : (zh ? '条件估算 · 低置信度' : 'Conditional estimate · low confidence')} · <time dateTime={record.date}>{record.date}</time></p>
+        <p className="text-sm">{record.status === 'pending' ? (zh ? '待核对 · 暂不发布容量' : 'Pending reconciliation · capacity withheld') : (zh ? '有条件实测 · 非官方承诺 · 低置信度' : 'Conditional measurement · not an official allowance · low confidence')} · <time dateTime={record.date}>{record.date}</time></p>
+        {!record.tierVerified && <p className="text-sm">{zh ? '套餐档位：未核验' : 'Plan tier: unverified'}</p>}
         <p className="text-sm">{zh ? '原始窗口' : 'Native window'}: {record.window} · {record.calls} {zh ? '轮' : 'calls'} · {zh ? '已用比例' : 'Used'} {record.usedBefore}% → {record.usedAfter}%</p>
         <div className="overflow-x-auto"><table className="w-full text-left text-sm">
           <caption className="sr-only">{record.plan} token usage</caption>
@@ -25,7 +27,7 @@ export function QuotaBenchResults({ locale, compact = false }: { locale: string;
         <p className="text-sm">{zh ? '缓存写入均为 0；未标定写入权重。输出包含 reasoning，未重复相加。' : 'Cache writes were zero; write weights are uncalibrated. Output includes reasoning without double-counting.'}</p>
         {record.windowMeasurements && <QuotaBenchWindows windows={record.windowMeasurements} locale={locale} />}
         {!record.windowMeasurements && record.estimate && <p className="font-medium">{zh ? '同负载配比条件区间' : 'Conditional range at the observed mix'}: {fmt(record.estimate.low)}–{fmt(record.estimate.high)} tokens / {record.window}</p>}
-        {record.apiEquivalentUsd && <p className="text-sm">{zh ? '标准 API 标价等价价值（不是余额）' : 'Standard API list-value equivalent (not credit)'}: ${fmt(record.apiEquivalentUsd.mid)} / {record.window}</p>}
+        <QuotaBenchUsd record={record} locale={locale} />
         <p className="text-sm text-amber-800 dark:text-amber-300">{zh ? record.caveats.zh : record.caveats.en}</p>
         {record.measurementReport && <div className="flex flex-wrap gap-4 text-sm underline"><a href={record.measurementReport}>{zh ? '本次评测过程与计算依据' : 'Measurement process and calculations (Chinese)'}</a>{record.measurementData && <a href={record.measurementData}>{zh ? '本次读数与逐次用量' : 'Meter readings and per-call usage'}</a>}</div>}
         {record.id === 'codex-pro' && <CodexModelMeasurements locale={locale} />}
