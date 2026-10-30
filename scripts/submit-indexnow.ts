@@ -17,6 +17,8 @@ const RESEARCH_PATHS = [
   '/zh/guides/kimi-api-pricing',
   '/en/guides/cursor-x-subscription-pricing',
   '/zh/guides/cursor-x-subscription-pricing',
+  '/en/guides/codex-pro-200-quota-benchmark',
+  '/zh/guides/codex-pro-200-quota-benchmark',
   '/en/reports/api-price-index',
   '/zh/reports/api-price-index',
   '/en/api-pricing',

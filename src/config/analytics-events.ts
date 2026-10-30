@@ -39,6 +39,7 @@ export const FUNNEL_GUIDE_SLUGS = [
   'kimi-api-pricing',
   'openai-api-pricing',
   'cursor-x-subscription-pricing',
+  'codex-pro-200-quota-benchmark',
 ] as const;
 
 export type FunnelGuideSlug = (typeof FUNNEL_GUIDE_SLUGS)[number];

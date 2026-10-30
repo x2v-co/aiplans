@@ -17,6 +17,7 @@ import {
   summarizeGuidePrices,
 } from './pricing-guides';
 import { buildMetadata, faqPage } from './seo';
+import { STATIC_PATHS } from './sitemap-static-paths';
 
 test('maps search-opportunity model families to their pricing guides', () => {
   assert.equal(guideForModelSlug('chatglm-4-air'), 'glm-chatglm-api-pricing');
@@ -55,17 +56,77 @@ test('the sitemap and guides index discover every slug from the shared catalog',
   for (const slug of PRICING_GUIDE_SLUGS) {
     assert.equal(PRICING_GUIDES[slug].slug, slug);
     assert.equal(isPricingGuideSlug(slug), true);
+    assert.ok(STATIC_PATHS.some((entry) => entry.path === `/guides/${slug}`));
   }
 });
 
-test('API research guides remain discoverable in both IndexNow locales', () => {
+test('all research guides remain discoverable in both IndexNow locales', () => {
   const indexnow = readFileSync(new URL('../../scripts/submit-indexnow.ts', import.meta.url), 'utf8');
   for (const slug of PRICING_GUIDE_SLUGS) {
-    // The submission script has a curated API research list, separate from the full sitemap.
-    if (PRICING_GUIDES[slug].priceTable === false) continue;
+    // The submission script has a curated research list, separate from the full sitemap.
     for (const locale of ['en', 'zh'] as const) {
       assert.ok(indexnow.includes(`'/${locale}/guides/${slug}'`));
     }
+  }
+});
+
+test('Codex Pro 200 benchmark preserves measurement limits and the final editorial policy', () => {
+  const guide = PRICING_GUIDES['codex-pro-200-quota-benchmark'];
+  assert.equal(guide.priceTable, false);
+  assert.equal(guide.planTable, undefined);
+  assert.deepEqual(guide.queryPatterns, ['%gpt-6-astra%', '%gpt-6-1-sol%']);
+  assert.deepEqual(guide.providerSlugs, ['openai']);
+  assert.equal(guide.reviewedAt, '2026-10-30');
+
+  for (const locale of ['en', 'zh'] as const) {
+    const text = [guide.intro[locale], ...guide.sections.map((section) => section.body[locale]),
+      ...(guide.faqs ?? []).map((faq) => faq.answer[locale]),
+      ...(guide.sources ?? []).map((source) => source.label[locale])].join('\n');
+    assert.doesNotMatch(`${guide.title[locale]} ${guide.description[locale]}`, /翻倍|doubl(?:e|ed|ing)/i);
+    assert.doesNotMatch(text, /凌晨|early 2026-10-30|15 hours ago|15:50/i);
+    assert.doesNotMatch(text, /\[[^\]]+\]\([^)]+\)|^> /m, 'draft markup must not reach plain-text rendering');
+    assert.match(text, /139,508,475/);
+    assert.match(text, /111,606,780/);
+    assert.match(text, /186,011,300/);
+    assert.match(text, /274,225,750/);
+    assert.match(text, /2026-10-29/);
+    assert.match(guide.intro[locale], locale === 'zh'
+      ? /9 月 29 日之后的原额度档位未核实/ : /allowance tier after September 29 has not been verified/);
+    assert.match(guide.faqs![0].answer[locale], locale === 'zh'
+      ? /既不能证明也不能否定官方说法/ : /neither prove nor disprove/);
+    const metadata = buildMetadata({ locale, path: `/guides/${guide.slug}`, title: guide.title, description: guide.description });
+    assert.equal(metadata.alternates?.canonical, `https://aiplans.dev/${locale}/guides/${guide.slug}`);
+  }
+});
+
+test('Codex benchmark links retain official evidence, aiplans reports and locale-specific canonical paths', () => {
+  const guide = PRICING_GUIDES['codex-pro-200-quota-benchmark'];
+  assert.deepEqual(guide.sourcesTitle, {
+    en: 'Sources, measurement reports and review date', zh: '来源、实测报告与核对日期',
+  });
+  const sources = new Set(guide.sources?.map((source) => source.url));
+  for (const url of [
+    'https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers',
+    'https://help.openai.com/en/articles/20001516-managing-usage-with-gpt-6-astra-in-work-and-codex',
+    'https://x.com/thsottiaux/status/2115850175868727621',
+    'https://x.com/thsottiaux/status/2104951965184925941',
+    'https://developers.openai.com/codex/pricing',
+    'https://aiplans.dev/reports/codex-models-2026-10-30.md',
+    'https://aiplans.dev/reports/codex-models-2026-10-28.md',
+  ]) assert.ok(sources.has(url), `missing source: ${url}`);
+  for (const source of guide.sources ?? []) {
+    if (new URL(source.url).hostname !== 'help.openai.com') continue;
+    for (const locale of ['en', 'zh'] as const) assert.match(source.label[locale], /2026-10-30/);
+  }
+  for (const locale of ['en', 'zh'] as const) {
+    const links = new Set(guide.relatedLinks?.map((link) => link.url[locale]));
+    for (const path of [
+      '/providers/openai#chatgpt-pro-200', '/models/openai-gpt-6-astra', '/models/openai-gpt-6-1-sol',
+      '/compare/plans/openai-gpt-6-astra', '/compare/plans/openai-gpt-6-1-sol',
+      '/quota-bench', '/guides/openai-api-pricing',
+    ]) assert.ok(links.has(`/${locale}${path}`), `missing ${locale} link: ${path}`);
+    assert.ok(links.has('/reports/codex-models-2026-10-30.json'));
+    for (const url of links) assert.ok(url.startsWith(`/${locale}/`) || url.startsWith('/reports/'));
   }
 });
 
@@ -91,7 +152,9 @@ test('every guide has reviewed sources, at least three FAQs and complete bilingu
   for (const slug of PRICING_GUIDE_SLUGS) {
     const guide = PRICING_GUIDES[slug];
     assert.ok(guide.sources && guide.sources.length >= 1, `missing sources for ${slug}`);
-    assert.equal(guide.reviewedAt, slug === 'claude-anthropic-pricing' ? '2026-10-18' : '2026-10-13');
+    const reviewedAt = slug === 'codex-pro-200-quota-benchmark' ? '2026-10-30'
+      : slug === 'claude-anthropic-pricing' ? '2026-10-18' : '2026-10-13';
+    assert.equal(guide.reviewedAt, reviewedAt);
     assert.ok(guide.reviewedAt && Number.isFinite(Date.parse(guide.reviewedAt)));
     assert.ok(guide.faqs && guide.faqs.length >= 3, `missing FAQs for ${slug}`);
     guide.sources.forEach((source) => assert.equal(new URL(source.url).protocol, 'https:'));

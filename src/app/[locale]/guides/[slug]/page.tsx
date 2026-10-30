@@ -203,9 +203,9 @@ export default async function PricingGuidePage({
               {locale === 'zh' ? '相关模型的 API 价格' : 'API prices for related models'}
             </h2>
             <p className="mt-3 max-w-3xl leading-7 text-zinc-600 dark:text-zinc-400">
-              {locale === 'zh'
+              {guide.relatedModelsDescription?.[locale] ?? (locale === 'zh'
                 ? '第三方模型在新套餐里按 API 价计费，可在模型页对比各渠道价格。'
-                : 'Third-party models are billed at API rates on the new plan; compare channel prices on each model page.'}
+                : 'Third-party models are billed at API rates on the new plan; compare channel prices on each model page.')}
             </p>
             <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
               {models.map((model, index) => (
@@ -258,7 +258,9 @@ export default async function PricingGuidePage({
           {guide.sections.map((section) => (
             <section key={section.heading.en} className="max-w-4xl py-8">
               <h2 className="text-xl font-semibold">{section.heading[locale]}</h2>
-              <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">{section.body[locale]}</p>
+              {section.body[locale].split('\n\n').map((paragraph, index) => (
+                <p key={index} className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">{paragraph}</p>
+              ))}
             </section>
           ))}
         </div>
@@ -266,7 +268,7 @@ export default async function PricingGuidePage({
         <section className="py-9">
           <h2 className="text-xl font-semibold">{locale === 'zh' ? '如何使用这些数据' : 'How to use this data'}</h2>
           <ul className="mt-4 grid gap-3 text-sm leading-6 text-zinc-700 dark:text-zinc-300 md:grid-cols-3">
-            {[
+            {(guide.usageNotes?.map((note) => note[locale]) ?? [
               guide.priceTable === false
                 ? (locale === 'zh' ? '按实际第三方模型支出与内含额度重新计算。' : 'Recalculate with actual third-party spending and included allowances.')
                 : (locale === 'zh' ? '按实际输入与输出 token 比例重新计算。' : 'Recalculate with your real input/output token mix.'),
@@ -274,7 +276,7 @@ export default async function PricingGuidePage({
                 ? (locale === 'zh' ? '核对每周限额、税费和切换规则。' : 'Check weekly limits, taxes and switching rules.')
                 : (locale === 'zh' ? '核对渠道地区、速率限制和支付方式。' : 'Check region, rate limits, and payment method.'),
               locale === 'zh' ? '购买或切换前复核官方来源。' : 'Recheck official sources before purchasing or switching.',
-            ].map((item) => (
+            ]).map((item) => (
               <li key={item} className="flex gap-2">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                 <span>{item}</span>
@@ -299,7 +301,7 @@ export default async function PricingGuidePage({
 
         {guide.sources && (
           <section className="border-t py-9" aria-labelledby="guide-sources">
-            <h2 id="guide-sources" className="text-xl font-semibold">{locale === 'zh' ? '官方来源与核对日期' : 'Official sources and review date'}</h2>
+            <h2 id="guide-sources" className="text-xl font-semibold">{guide.sourcesTitle?.[locale] ?? (locale === 'zh' ? '官方来源与核对日期' : 'Official sources and review date')}</h2>
             {guide.reviewedAt && (
               <p className="mt-3 text-sm text-zinc-500">
                 {locale === 'zh' ? '本文计费规则核对日期：' : 'Billing guidance reviewed: '}
@@ -311,6 +313,19 @@ export default async function PricingGuidePage({
               {guide.sources.map((source) => (
                 <li key={source.url}>
                   <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{source.label[locale]}</a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {guide.relatedLinks && (
+          <section className="border-t py-9" aria-labelledby="guide-related-links">
+            <h2 id="guide-related-links" className="text-xl font-semibold">{locale === 'zh' ? '延伸阅读' : 'Further reading'}</h2>
+            <ul className="mt-4 space-y-3">
+              {guide.relatedLinks.map((link) => (
+                <li key={link.url[locale]}>
+                  <Link href={link.url[locale]} className="text-blue-600 hover:underline">{link.label[locale]}</Link>
                 </li>
               ))}
             </ul>
