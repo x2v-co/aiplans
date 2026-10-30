@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Sql } from 'postgres';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
+import ts from 'typescript';
+import * as seedDiff from '../utils/seed-diff';
 import { catalogForKind } from '../../src/lib/ai-vertical-catalog';
 import { seedCatalogAudit } from './catalog-audit-seed';
 
@@ -55,7 +58,7 @@ function fixture(initial: Record<string, Row[]> = {}) {
     }
     throw new Error(`Unexpected SQL: ${query}`);
   };
-  return { tx: tx as unknown as Sql, data, writes };
+  return { tx: tx as unknown as Sql, query: tx, data, writes };
 }
 
 test('default dry-run previews full seed, handles absent providers and performs no writes', async () => {
@@ -67,6 +70,137 @@ test('default dry-run previews full seed, handles absent providers and performs 
   assert.ok(steps.some(s => s.target === 'subq-snap/tasks'));
   assert.equal(f.writes.length, 0);
   assert.deepEqual(f.data, original);
+});
+
+test('slug scope previews and applies only selected models, usage and channels, preserving shared plans', async () => {
+  const f = fixture({
+    providers: [{ id: 1, slug: 'google' }, { id: 2, slug: 'openrouter' }, { id: 3, slug: 'mistral' },
+      { id: 4, slug: 'openai' }, { id: 5, slug: 'anthropic' }, { id: 6, slug: 'liquid' }],
+    models: [{ id: 10, slug: 'gemini-omni-1-1-flash' }, { id: 11, slug: 'mistral-large' },
+      { id: 12, slug: 'mistral-large-4' }, { id: 13, slug: 'liquid-lfm-2-5-24b-a2b' }],
+    api_channel_prices: [{ id: 20, model_id: 11, provider_id: 2, input_price_per_1m: 99, last_verified: '2026-10-30' }],
+    api_channel_price_variants: [{ id: 30, model_id: 11, provider_id: 2, variant_key: 'endpoint',
+      source_url: 'https://openrouter.ai/mistralai/mistral-large-4-0', is_available: true }],
+    usage_prices: [{ id: 40, model_id: 11, provider_id: 3, plan_id: null, constraints_json: { keep: true } }],
+    plans: [{ id: 50, provider_id: 4, slug: 'chatgpt-pro', last_verified: '2026-10-30' },
+      { id: 51, provider_id: 5, slug: 'claude-max', price: 777 }],
+  });
+  const slugs = new Set(['gemini-omni-1-1-flash', 'liquid-lfm-2-5-24b-a2b']);
+  const before = structuredClone(f.data);
+  const preview = await seedCatalogAudit(f.tx, false, slugs);
+  assert.ok(preview.some(s => s.table === 'models' && s.target === 'gemini-omni-1-1-flash'));
+  assert.ok(preview.some(s => s.target === 'gemini-omni-1-1-flash/text_output_tokens'));
+  assert.ok(preview.some(s => s.table === 'api_channel_prices'));
+  for (const step of preview) {
+    assert.ok(['models', 'usage_prices', 'api_channel_prices'].includes(step.table), JSON.stringify(step));
+    if (step.table === 'models') assert.ok(slugs.has(step.target));
+    if (step.table === 'usage_prices') assert.ok(step.target.startsWith('gemini-omni-1-1-flash/'));
+    if (step.table === 'api_channel_prices') assert.ok(step.target.startsWith('13/'));
+  }
+  assert.equal(f.writes.length, 0);
+  assert.deepEqual(f.data, before);
+  await seedCatalogAudit(f.tx, true, slugs);
+  assert.deepEqual(f.data.plans, before.plans);
+  assert.deepEqual(f.data.api_channel_price_variants, before.api_channel_price_variants);
+  assert.deepEqual(f.data.models.filter(r => [11, 12].includes(r.id)), before.models.filter(r => [11, 12].includes(r.id)));
+  assert.deepEqual(f.data.api_channel_prices.find(r => r.id === 20), before.api_channel_prices[0]);
+  assert.deepEqual(f.data.usage_prices.find(r => r.id === 40), before.usage_prices[0]);
+  const geminiUsage = f.data.usage_prices.filter(r => r.model_id === 10);
+  assert.deepEqual(geminiUsage.map(r => r.price), [1.5, 9, 17.5]);
+  for (const row of geminiUsage) assert.deepEqual(row.last_verified, new Date('2026-10-30T00:00:00Z'));
+  assert.deepEqual(await seedCatalogAudit(f.tx, true, slugs), []);
+});
+
+test('scoped seeds create only needed provider identities and reject unknown slugs before writing', async () => {
+  const f = fixture();
+  const steps = await seedCatalogAudit(f.tx, true, new Set(['gemini-omni-1-1-flash']));
+  assert.deepEqual(steps.filter(s => s.table === 'providers').map(s => s.target), ['google']);
+  assert.deepEqual(f.data.models.map(r => r.slug), ['gemini-omni-1-1-flash']);
+  assert.equal(f.data.api_channel_prices.length, 0);
+  const writes = f.writes.length;
+  await assert.rejects(seedCatalogAudit(f.tx, true, new Set(['gemini-omni-1-1-flash', 'typo'])), /Unknown or non-seedable --slug: typo/);
+  assert.equal(f.writes.length, writes);
+});
+
+test('Mistral variant migration requires both model slugs in a scoped seed', async () => {
+  const initial = { providers: [{ id: 1, slug: 'openrouter' }, { id: 2, slug: 'mistral' }],
+    models: [{ id: 10, slug: 'mistral-large' }, { id: 11, slug: 'mistral-large-4' }],
+    api_channel_price_variants: [{ id: 20, provider_id: 1, model_id: 10, variant_key: 'endpoint',
+      source_url: 'https://openrouter.ai/mistralai/mistral-large-4-0', is_available: true }] };
+  for (const slug of ['mistral-large', 'mistral-large-4']) {
+    const f = fixture(initial);
+    const steps = await seedCatalogAudit(f.tx, true, new Set([slug]));
+    assert.ok(!steps.some(s => s.table === 'api_channel_price_variants'));
+    assert.deepEqual(f.data.api_channel_price_variants, initial.api_channel_price_variants);
+    const other = slug === 'mistral-large' ? 11 : 10;
+    assert.deepEqual(f.data.models.find(r => r.id === other), initial.models.find(r => r.id === other));
+  }
+  const both = fixture(initial);
+  await seedCatalogAudit(both.tx, true, new Set(['mistral-large', 'mistral-large-4']));
+  assert.equal(both.data.api_channel_price_variants[0].model_id, 11);
+});
+
+test('audit usage updates preserve omitted currency and constraint keys while inserts default to USD', async () => {
+  const f = fixture({ providers: [{ id: 1, slug: 'openai' }], models: [{ id: 2, slug: 'sora' }],
+    usage_prices: [{ id: 9, model_id: 2, provider_id: 1, plan_id: null, price_kind: 'availability', unit: 'unknown',
+      currency: 'CNY', constraints_json: { price_high: 12, approximate: true, context_window_label: 'keep', custom: 'keep' } }] });
+  const slugs = new Set(['sora']);
+  const preview = await seedCatalogAudit(f.tx, false, slugs);
+  const usageStep = preview.find(s => s.table === 'usage_prices')!;
+  assert.ok(usageStep);
+  assert.ok(!Object.hasOwn(usageStep.changes, 'currency'));
+  await seedCatalogAudit(f.tx, true, slugs);
+  assert.equal(f.data.usage_prices[0].currency, 'CNY');
+  const constraints = f.data.usage_prices[0].constraints_json as Record<string, unknown>;
+  assert.equal(constraints.price_high, 12);
+  assert.equal(constraints.approximate, true);
+  assert.equal(constraints.context_window_label, 'keep');
+  assert.equal(constraints.custom, 'keep');
+  const fresh = fixture();
+  await seedCatalogAudit(fresh.tx, true, slugs);
+  assert.equal(fresh.data.usage_prices[0].currency, 'USD');
+});
+
+test('audit CLI accepts vertical pricing slug forms and warns only for a full run', async () => {
+  const compiled = ts.transpileModule(readFileSync(new URL('../seed-catalog-audit-2026-10-15.ts', import.meta.url), 'utf8'),
+    { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  for (const args of [[], ['--slug', 'gemini-omni-1-1-flash,lyria-3-5'],
+    ['--slug=gemini-omni-1-1-flash', '--slug', 'lyria-3-5', '--apply']]) {
+    const f = fixture();
+    const warnings: string[] = [];
+    const messages: string[] = [];
+    const process = { argv: ['node', 'seed-catalog-audit', ...args], exitCode: 0 };
+    let ended = false;
+    const sql = Object.assign(f.tx, {
+      begin: async (isolation: string, fn: (tx: Sql) => Promise<void>) => {
+        assert.equal(isolation, 'isolation level serializable');
+        const tx = (parts: TemplateStringsArray | unknown, ...values: unknown[]) => {
+          if (Array.isArray(parts) && 'raw' in parts && parts.join('') === 'SET TRANSACTION READ ONLY') return Promise.resolve([]);
+          return f.query(parts, ...values);
+        };
+        await fn(tx as unknown as Sql);
+      },
+      end: async () => { ended = true; },
+    });
+    const dependencies: Record<string, unknown> = {
+      './data/catalog-audit-seed': { seedCatalogAudit }, './utils/seed-diff': seedDiff, './db/postgres-admin': { databaseSql: sql },
+    };
+    await runInNewContext(compiled, { exports: {}, process,
+      require: (id: string) => { assert.ok(Object.hasOwn(dependencies, id), id); return dependencies[id]; },
+      console: { log: (value: string) => messages.push(value), warn: (value: string) => warnings.push(value),
+        error: (error: unknown) => { throw error; } },
+    });
+    assert.equal(process.exitCode, 0);
+    assert.equal(ended, true);
+    assert.equal(warnings.length, args.length ? 0 : 1);
+    if (!args.length) assert.match(warnings[0], /no --slug.*full catalog audit/);
+    else {
+      const steps = JSON.parse(messages[0]) as Array<{ table: string; target: string }>;
+      assert.ok(steps.length > 0);
+      assert.ok(steps.every(s => ['google', 'gemini-omni-1-1-flash', 'lyria-3-5'].some(slug => s.target === slug || s.target.startsWith(`${slug}/`))));
+      assert.equal(f.writes.length > 0, args.includes('--apply'));
+    }
+  }
 });
 
 test('apply is idempotent and preserves producer ownership, new Pro, unknowns and explicit free output', async () => {

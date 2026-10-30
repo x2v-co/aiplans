@@ -7,13 +7,20 @@ import { auditVerticalModelFields, auditVerticalUsage, isAuditOwnedVertical, leg
 import { AUDIT_TIMESTAMP, OPENROUTER_ADDITIONS, auditedModelSlug, auditedPrices,
   LEGACY_PRO_NOTE, cleanLegacyFeatures } from './catalog-audit-2026-10-15';
 import { claudeCreditValues } from './claude-api-credits-2026-10-18';
+import { prepareSeedRow } from '../utils/seed-diff';
 
 type Row = Record<string, unknown> & { id: number };
 type Table = 'providers' | 'models' | 'api_channel_prices' | 'usage_prices' | 'plans' | 'api_channel_price_variants';
 export interface AuditStep { table: string; target: string; action: string; changes: Record<string, unknown> }
 
 /** The caller supplies a single serializable transaction. Dry-run issues SELECT only. */
-export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditStep[]> {
+export async function seedCatalogAudit(tx: Sql, apply: boolean, slugs: Set<string> | null = null): Promise<AuditStep[]> {
+  const verticals = AI_VERTICAL_CATALOG.filter(i => isAuditOwnedVertical(i) && !i.deferredDbSeed);
+  const eligible = new Set([...OPENROUTER_ADDITIONS.map(([id]) => auditedModelSlug(id)),
+    'mistral-large', ...verticals.map(i => i.slug!)]);
+  const unknown = slugs ? [...slugs].filter(slug => !eligible.has(slug)) : [];
+  if (unknown.length) throw new Error(`Unknown or non-seedable --slug: ${unknown.join(', ')}`);
+  const selected = (slug: string) => !slugs || slugs.has(slug);
   const tables: Table[] = ['providers', 'models', 'api_channel_prices', 'usage_prices', 'plans', 'api_channel_price_variants'];
   const rows = {} as Record<Table, Row[]>;
   for (const table of tables) rows[table] = await tx<Row[]>`SELECT * FROM ${tx(table)}`;
@@ -23,7 +30,9 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
     if (matches.length > 1) throw new Error(`Ambiguous ${table}/${target}; transaction aborted.`);
     return matches[0] ?? null;
   };
-  const save = async (table: Table, existing: Row | null, values: Record<string, unknown>, target: string) => {
+  const save = async (table: Table, existing: Row | null, desired: Record<string, unknown>, target: string,
+    insertDefaults: Record<string, unknown> = {}) => {
+    const values = prepareSeedRow(existing, desired, insertDefaults);
     const changes = seedChanges(existing, values);
     if (!Object.keys(changes).length) return existing!;
     steps.push({ table, target, action: existing ? 'update' : 'insert', changes });
@@ -67,8 +76,9 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
       input_price_per_1m: input, output_price_per_1m: output, currency: 'USD', price_unit: 'per_1m_tokens',
       is_available: guarded.is_available, notes: guarded.notes, last_verified: AUDIT_TIMESTAMP }, `${modelId}/${providerId}`);
   };
-  const or = await provider('openrouter', 'OpenRouter');
-  for (const [id, input, output] of OPENROUTER_ADDITIONS) {
+  const additions = OPENROUTER_ADDITIONS.filter(([id]) => selected(auditedModelSlug(id)));
+  const or = additions.length || selected('mistral-large') ? await provider('openrouter', 'OpenRouter') : null;
+  for (const [id, input, output] of additions) {
     const owner = await provider(openRouterProducerSlug(id));
     const slug = auditedModelSlug(id);
     const decision = id.startsWith('scaledown/') || id === 'typesafe/jev-router';
@@ -76,30 +86,34 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
     const m = await model(slug, catalogItem?.name ?? (id === 'mistralai/mistral-large-4-0' ? 'Mistral Large 4' : id.split('/')[1].replace(':batch', ' (batch)')), owner.id, decision ? 'decision' : 'text',
       { offical_link: catalogItem?.url ?? `https://openrouter.ai/${id}` });
     const price = auditedPrices(input, output);
-    await channel(m.id, or.id, price.input_price_per_1m, price.output_price_per_1m,
+    await channel(m.id, or!.id, price.input_price_per_1m, price.output_price_per_1m,
       `${price.notes} Source: https://openrouter.ai/${id}`);
     if (id === 'liquid/lfm-2.5-24b-a2b') {
       await channel(m.id, owner.id, 0.1, 1, 'Official $0.10/$1.00 per 1M input/output per audit A2 #7 (2026-10-15). Source: https://openrouter.ai/liquid/lfm-2.5-24b-a2b; official pricing URL needs verification.');
     }
   }
   // Restore the OLD identity without transferring its official/other channels.
-  const mistral = await provider('mistral', 'Mistral');
-  const old = await model('mistral-large', 'Mistral Large', mistral.id);
-  await channel(old.id, or.id, 2, 6, 'Old Mistral Large: OpenRouter $2/$6 per 1M. Large 4 is a separate model. Audit 2026-10-15; https://openrouter.ai/mistralai/mistral-large');
+  let old: Row | null = null;
+  if (selected('mistral-large')) {
+    const mistral = await provider('mistral', 'Mistral');
+    old = await model('mistral-large', 'Mistral Large', mistral.id);
+    await channel(old.id, or!.id, 2, 6, 'Old Mistral Large: OpenRouter $2/$6 per 1M. Large 4 is a separate model. Audit 2026-10-15; https://openrouter.ai/mistralai/mistral-large');
+  }
   // Repoint endpoint variants whose provenance proves they belong to Large 4.
-  const large4 = rows.models.find(r => r.slug === 'mistral-large-4')!;
-  for (const v of rows.api_channel_price_variants.filter(r => r.provider_id === or.id && r.model_id === old.id)) {
+  const large4 = rows.models.find(r => r.slug === 'mistral-large-4');
+  // Moving a variant touches both identities; require both in a scoped run.
+  for (const v of rows.api_channel_price_variants.filter(r => old && large4 && selected('mistral-large-4') && r.provider_id === or?.id && r.model_id === old.id)) {
     const provenance = JSON.stringify([v.source_url, v.raw_json]);
     // The route-level openrouter-auto row carries the model's default price; only move it when
     // that price is Large 4's (the old Large row is $2/$6 and its provenance can still list 4-0).
-    const large4Channel = rows.api_channel_prices.find(r => r.model_id === large4.id && r.provider_id === or.id);
+    const large4Channel = rows.api_channel_prices.find(r => r.model_id === large4!.id && r.provider_id === or!.id);
     const samePrice = (r: Row, c: Row | undefined) => !!c && Number(r.input_price_per_1m) === Number(c.input_price_per_1m) && Number(r.output_price_per_1m) === Number(c.output_price_per_1m);
     const belongsTo4 = provenance.includes('mistral-large-4-0') && (v.variant_key !== 'openrouter-auto' || samePrice(v, large4Channel));
     if (belongsTo4) {
-      const conflict = rows.api_channel_price_variants.some(r => r.model_id === large4.id && r.provider_id === or.id && r.variant_key === v.variant_key);
+      const conflict = rows.api_channel_price_variants.some(r => r.model_id === large4!.id && r.provider_id === or!.id && r.variant_key === v.variant_key);
       if (conflict) throw new Error(`Large 4 variant conflict ${v.variant_key}; review before retry.`);
       // The OpenRouter default route stays the headline; endpoint rows never are.
-      await save('api_channel_price_variants', v, { model_id: large4.id, is_headline: v.variant_key === 'openrouter-auto' }, `move Large 4/${v.variant_key}`);
+      await save('api_channel_price_variants', v, { model_id: large4!.id, is_headline: v.variant_key === 'openrouter-auto' }, `move Large 4/${v.variant_key}`);
     } else {
       // Existing floor/default rows may contain stale mixed prices. Daily scrape rebuilds them.
       await save('api_channel_price_variants', v, { is_available: false, is_headline: false }, `retire stale Mistral/${v.variant_key}`);
@@ -110,8 +124,8 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
   // $2/$6 route price (variants.headline_drift vs the $0.68/$2.09 channel row, which matches
   // OpenRouter /api/v1/models for mistralai/mistral-large-4-0 on 2026-10-15). Align it with the
   // Large 4 channel price and keep it as the only headline; the daily scrape refreshes it.
-  const large4Channel = rows.api_channel_prices.find(r => r.model_id === large4.id && r.provider_id === or.id);
-  const large4Variants = rows.api_channel_price_variants.filter(r => r.model_id === large4.id && r.provider_id === or.id && r.is_available !== false);
+  const large4Channel = rows.api_channel_prices.find(r => r.model_id === large4?.id && r.provider_id === or?.id);
+  const large4Variants = rows.api_channel_price_variants.filter(r => selected('mistral-large-4') && r.model_id === large4?.id && r.provider_id === or?.id && r.is_available !== false);
   const auto = large4Variants.find(r => r.variant_key === 'openrouter-auto');
   if (auto && large4Channel) {
     await save('api_channel_price_variants', auto, {
@@ -121,7 +135,7 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
   }
 
   // Source-owned static verticals, just like the audited world-model catalog.
-  for (const item of AI_VERTICAL_CATALOG.filter(i => isAuditOwnedVertical(i) && !i.deferredDbSeed)) {
+  for (const item of verticals.filter(i => selected(i.slug!))) {
     const ownerSlug = item.providerSlug ?? item.provider.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const owner = await provider(ownerSlug, item.provider);
     // Snap's decision catalog view shares the P0 token API row and its identity.
@@ -131,7 +145,7 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
     const snapCategory = isSnap ? rows.models.find(r => r.slug === item.slug)?.model_category as string | undefined : undefined;
     const m = await model(item.slug!, item.name, owner?.id ?? null, snapCategory ?? fields.model_category, {
       pricing_unit: fields.pricing_unit,
-      offical_link: item.url ?? item.sourceUrls?.[0]?.url ?? null,
+      offical_link: item.url ?? item.sourceUrls?.[0]?.url,
       ...(item.contextWindow != null ? { context_window: item.contextWindow } : item.contextWindowLabel ? { context_window: null } : {}),
       description: fields.description,
     });
@@ -151,17 +165,23 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
         const legacy = legacyVideoUsageKeys(item);
         existing = one('usage_prices', owned.filter(r => legacy.some(([k, u]) => r.price_kind === k && r.unit === u)), `${item.slug}/legacy-video-price`);
       }
+      const seedPrice = item.kind === 'decision-model'
+        ? kind === 'input_tokens' ? item.inputPricePer1M : kind === 'output_tokens' ? item.outputPricePer1M : item.pricePer1MTasks
+        : item.usageRates?.find(rate => rate.priceKind === kind)?.price ?? item.pricePerUnit;
       await save('usage_prices', existing, { model_id: m.id, provider_id: owner?.id ?? null, plan_id: null,
-        price_kind: kind, unit, price, currency: item.currency ?? 'USD', is_available: item.status !== 'discontinued',
-        constraints_json: { price_status: price == null ? 'needs-verification' : item.priceStatus,
+        price_kind: kind, unit, price: seedPrice, currency: item.currency, is_available: item.status !== 'discontinued',
+        constraints_json: { price_status: seedPrice === undefined ? undefined : price == null ? 'needs-verification' : item.priceStatus,
           ...(item.pricePerUnitHigh == null ? {} : { price_high: item.pricePerUnitHigh }),
-          ...(item.approximatePrice ? { approximate: true } : {}),
-          ...(item.contextWindowLabel ? { context_window_label: item.contextWindowLabel } : {}), notes: item.notes ?? null },
-        source_url: item.sourceUrls?.[0]?.url ?? null, last_verified: item.verifiedAt ? AUDIT_TIMESTAMP : null,
-      }, `${item.slug}/${kind}`);
+          approximate: item.approximatePrice,
+          context_window_label: item.contextWindowLabel, notes: item.notes },
+        source_url: item.sourceUrls?.[0]?.url, last_verified: item.verifiedAt ? new Date(item.verifiedAt) : undefined,
+      }, `${item.slug}/${kind}`, { currency: 'USD', price: null, source_url: null, last_verified: null });
     }
   }
 
+  // Subscription repairs are global/provider-wide, with no model-slug ownership.
+  // A scoped model seed must never rewrite or merge those shared plans.
+  if (slugs) return steps;
   const openai = rows.providers.find(r => r.slug === 'openai');
   for (const p of rows.plans.filter(r => r.provider_id === openai?.id && r.slug === 'chatgpt-pro')) {
     await save('plans', p, { name: 'ChatGPT Pro $200 (Legacy, ends 2026-10-29)', legacy_ends_on: '2026-10-29',

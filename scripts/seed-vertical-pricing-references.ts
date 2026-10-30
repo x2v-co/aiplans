@@ -12,7 +12,7 @@
  */
 import { db } from './db/queries';
 import { AI_VERTICAL_CATALOG, RIGOROUS_MODEL_KINDS, type AiCatalogItem } from '../src/lib/ai-vertical-catalog';
-import { diffRow, formatChanges, parseSeedArgs } from './utils/seed-diff';
+import { diffRow, formatChanges, parseSeedArgs, prepareSeedRow } from './utils/seed-diff';
 import { shutdownReached } from '../src/lib/model-shutdown';
 import { KIMI_K3_CONTEXT_FIX } from './data/catalog-2026-10-29';
 import { legacyVideoUsageKeys } from './data/catalog-audit-vertical';
@@ -111,25 +111,25 @@ async function upsertPlan(item: AiCatalogItem, provider: ProviderRow): Promise<P
   const existing = await db.from('plans').select('*').eq('provider_id', provider.id).eq('slug', slug).maybeSingle();
   if (existing.error) throw existing.error;
 
-  const row = {
+  const row = prepareSeedRow(existing.data, {
     provider_id: provider.id,
     product_id: provider.id,
     name: planName(item),
     slug,
-    pricing_model: item.pricingConfidence === 'not-commercial' ? 'research' : 'official_reference',
+    pricing_model: item.pricingConfidence === undefined ? undefined : item.pricingConfidence === 'not-commercial' ? 'research' : 'official_reference',
     price: null,
     annual_price: null,
-    currency: item.currency ?? 'USD',
+    currency: item.currency,
     price_unit: item.pricingUnit ?? item.unit,
-    tier: item.pricingConfidence === 'not-commercial' ? 'research' : 'official',
+    tier: item.pricingConfidence === undefined ? undefined : item.pricingConfidence === 'not-commercial' ? 'research' : 'official',
     is_official: true,
-    is_contact_sales: item.access?.includes('enterprise') ?? false,
+    is_contact_sales: item.access?.includes('enterprise'),
     access_from_china: ['qwen', 'minimax-china', 'volcengine'].includes(provider.slug),
     region: ['qwen', 'minimax-china', 'volcengine'].includes(provider.slug) ? 'china' : 'global',
     source: 'manual',
     plan_kind: 'creative',
     plan_category: 'creative',
-    plan_line: `${item.modelCategory}-${provider.slug}`,
+    plan_line: item.modelCategory ? `${item.modelCategory}-${provider.slug}` : undefined,
     included_usage_unit: unit,
     included_usage_amount: null,
     features: item.capabilities,
@@ -139,9 +139,9 @@ async function upsertPlan(item: AiCatalogItem, provider: ProviderRow): Promise<P
       `Unit: ${item.pricingUnit}.`,
       `Source: ${sourceUrl(item) ?? 'unknown'}`,
     ].join('\n'),
-    last_verified: item.lastVerified ? new Date(item.lastVerified) : NOW,
+    last_verified: item.lastVerified ? new Date(item.lastVerified) : undefined,
     updated_at: NOW,
-  };
+  }, { currency: 'USD', is_contact_sales: false, pricing_model: 'official_reference', tier: 'official', last_verified: NOW });
 
   if (existing.data) {
     const current = existing.data as Record<string, unknown>;
@@ -195,7 +195,7 @@ async function upsertMapping(model: ModelRow, plan: PlanRow) {
   }
 }
 
-interface UsageReference { unit: string; priceKind: string; price: number | null }
+interface UsageReference { unit: string; priceKind: string; price: number | null | undefined }
 
 function usageReferences(item: AiCatalogItem): UsageReference[] {
   if (item.kind === 'video-model' && item.billingUnit === 'per_1m_tokens' && item.usageRates?.length) {
@@ -205,13 +205,13 @@ function usageReferences(item: AiCatalogItem): UsageReference[] {
   const references: UsageReference[] = [{
     unit,
     priceKind: UNIT_PRICE_KIND[unit],
-    price: ['video-model', 'music-model'].includes(item.kind) ? item.pricePerUnit ?? null : null,
+    price: ['video-model', 'music-model'].includes(item.kind) ? item.pricePerUnit : null,
   }];
   if (item.kind === 'decision-model') {
     references.push(
-      { unit: 'per_1m_tokens', priceKind: 'input_tokens', price: item.inputPricePer1M ?? null },
-      { unit: 'per_1m_tokens', priceKind: 'output_tokens', price: item.outputPricePer1M ?? null },
-      { unit: 'per_1m_tasks', priceKind: 'tasks', price: item.pricePer1MTasks ?? null },
+      { unit: 'per_1m_tokens', priceKind: 'input_tokens', price: item.inputPricePer1M },
+      { unit: 'per_1m_tokens', priceKind: 'output_tokens', price: item.outputPricePer1M },
+      { unit: 'per_1m_tasks', priceKind: 'tasks', price: item.pricePer1MTasks },
     );
   }
   return references;
@@ -249,27 +249,27 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
     }
   }
 
-  const row = {
+  const row = prepareSeedRow(existing.data, {
     model_id: model.id,
     provider_id: provider.id,
     plan_id: planId,
     price_kind: priceKind,
     unit,
     price,
-    currency: item.currency ?? 'USD',
+    currency: item.currency,
     constraints_json: {
       confidence: item.pricingConfidence,
       pricingUnit: item.pricingUnit,
       publishedPricingText: item.pricing,
       ...(item.pricePerUnitHigh == null ? {} : { price_high: item.pricePerUnitHigh }),
-      ...(item.approximatePrice ? { approximate: true } : {}),
-      note: price == null ? 'Numeric price intentionally null until parsed and verified from source.' : 'Numeric price from audited static catalog.',
+      approximate: item.approximatePrice,
+      note: price === undefined ? undefined : price === null ? 'Numeric price intentionally null until parsed and verified from source.' : 'Numeric price from audited static catalog.',
     },
     source_url: src,
     is_available: item.status !== 'announced' && !usageOff(item, model),
-    last_verified: item.lastVerified ? new Date(item.lastVerified) : NOW,
+    last_verified: item.lastVerified ? new Date(item.lastVerified) : undefined,
     updated_at: NOW,
-  };
+  }, { currency: 'USD', price: null, source_url: null, last_verified: NOW });
 
   if (existing.data) {
     const current = existing.data as Record<string, unknown>;
