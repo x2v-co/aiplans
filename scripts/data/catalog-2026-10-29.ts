@@ -78,7 +78,7 @@ export const FLASH_IMAGE = {
 export const CHANNELS: ReadonlyArray<{ provider: string; slug: string; input: number; cached: number; output: number; note: string }> = [
   { provider: 'zhipu-global', slug: 'z-ai-glm-5-3-flashx', input: 0.37, cached: 0.075, output: 1.25,
     note: `Z.ai international list price for GLM-5.3-FlashX, USD per 1M tokens. Cached-input storage is limited-time free and is not stored as a price. Source: ${ZAI_SOURCE} (verified ${VERIFIED}).` },
-  { provider: 'minimax-global', slug: 'minimax-minimax-m3-1-flash', input: 0.15, cached: 0.015, output: 0.6,
+  { provider: 'minimax-global', slug: 'minimax-m3.1-flash', input: 0.15, cached: 0.015, output: 0.6,
     note: `MiniMax international (platform.minimax.io) list price for MiniMax-M3.1-Flash, USD per 1M tokens. Source: ${MINIMAX_SOURCE} (verified ${VERIFIED}).` },
 ];
 

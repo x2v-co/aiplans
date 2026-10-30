@@ -196,3 +196,12 @@ test('/models redirects keep the exact successor (those pages are indexable)', (
   assert.equal(legacySlugRedirect('/zh/models/glm-5'), '/zh/models/z-ai-glm-5');
   assert.equal(legacySlugRedirect('/en/models/claude-opus-4.8'), '/en/models/anthropic-claude-opus-4-8');
 });
+
+test('both MiniMax Flash legacy slugs land on the canonical model through the proxy 301 table', () => {
+  for (const locale of ['en', 'zh']) {
+    for (const slug of ['minimax-m3.1', 'minimax-minimax-m3-1-flash']) {
+      for (const section of ['models', 'compare/plans']) assert.equal(legacySlugRedirect(`/${locale}/${section}/${slug}`), `/${locale}/models/minimax-m3.1-flash`);
+    }
+    assert.equal(legacySlugRedirect(`/${locale}/models/minimax-m3.1-flash`), null);
+  }
+});

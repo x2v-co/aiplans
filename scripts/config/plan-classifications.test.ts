@@ -118,46 +118,22 @@ test('Google app and Code Assist plans exclude API-only Gemini Robotics-ER', () 
   }
 });
 
-test('Kimi individual plans include K3.1 Pro with Highspeed restricted to Pro', () => {
+test('current Kimi tiers restrict Highspeed to Pro, Max and Ultra; April tiers grant no current access', () => {
   const kimiCatalog: SelectableModel[] = [
     { id: 1, slug: 'moonshotai-kimi-k3-1-pro', providerSlugs: ['moonshot-china'], elo: null },
     { id: 2, slug: 'kimi-k3.1-pro-highspeed', providerSlugs: ['moonshot-china'], elo: null },
+    { id: 3, slug: 'kimi-k3', providerSlugs: ['moonshot-china'], elo: null },
   ];
-
-  for (const planSlug of ['kimi-free', 'kimi-basic', 'kimi-pro']) {
-    const classification = CLASSIFICATIONS.find(
-      (entry) => entry.providerSlug === 'moonshot-china' && entry.planSlug === planSlug,
-    );
-    assert.ok(classification, `missing Kimi classification for ${planSlug}`);
-    const slugs = resolveSelector(classification.selector, kimiCatalog, ['moonshot-china'])
-      .models.map((model) => model.slug);
-    const expected = planSlug === 'kimi-pro'
-      ? ['kimi-k3.1-pro-highspeed', 'moonshotai-kimi-k3-1-pro']
-      : ['moonshotai-kimi-k3-1-pro'];
-    assert.deepEqual(slugs, expected, planSlug);
+  for (const tier of ['free', 'go', 'plus', 'pro', 'max', 'ultra']) {
+    const c = CLASSIFICATIONS.find(c => c.planSlug === `kimi-${tier}`)!;
+    const selected = resolveSelector(c.selector, kimiCatalog, ['moonshot-china']).models.map(m => m.slug);
+    assert.deepEqual(selected, ['pro', 'max', 'ultra'].includes(tier)
+      ? ['kimi-k3.1-pro-highspeed', 'moonshotai-kimi-k3-1-pro'] : ['moonshotai-kimi-k3-1-pro'], tier);
   }
-});
-
-test('Kimi Team and Enterprise selectors retain their existing family and exclusions', () => {
-  const kimiCatalog: SelectableModel[] = [
-    { id: 1, slug: 'moonshotai-kimi-k3-1-pro', providerSlugs: ['moonshot-china'], elo: null },
-    { id: 2, slug: 'kimi-k3.1-pro-highspeed', providerSlugs: ['moonshot-china'], elo: null },
-    { id: 3, slug: 'kimi', providerSlugs: ['moonshot-china'], elo: null },
-    { id: 4, slug: 'kimi-k3-us', providerSlugs: ['moonshot-china'], elo: null },
-  ];
-  const expectedSelector = { families: ['kimi'], exclude: ['kimi', '*-us'] };
-  const expectedSlugs = resolveSelector(expectedSelector, kimiCatalog, ['moonshot-china'])
-    .models.map((model) => model.slug);
-
-  for (const planSlug of ['kimi-team', 'kimi-enterprise']) {
-    const classification = CLASSIFICATIONS.find(
-      (entry) => entry.providerSlug === 'moonshot-china' && entry.planSlug === planSlug,
-    );
-    assert.ok(classification, `missing Kimi classification for ${planSlug}`);
-    assert.deepEqual(classification.selector, expectedSelector, planSlug);
-    const slugs = resolveSelector(classification.selector, kimiCatalog, ['moonshot-china'])
-      .models.map((model) => model.slug);
-    assert.deepEqual(slugs, expectedSlugs, planSlug);
+  for (const slug of ['kimi-free-legacy-2026-04', 'kimi-basic', 'kimi-pro-legacy-2026-04', 'kimi-team', 'kimi-enterprise']) {
+    const c = CLASSIFICATIONS.find(c => c.planSlug === slug)!;
+    assert.equal(c.line, 'kimi-legacy');
+    assert.deepEqual(resolveSelector(c.selector, kimiCatalog, ['moonshot-china']).models, []);
   }
 });
 

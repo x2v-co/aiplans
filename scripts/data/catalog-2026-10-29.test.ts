@@ -111,7 +111,7 @@ test('first-party channels insert once, reprice drift, then no-op', () => {
   assert.deepEqual(planChannels(rows, models, providers)[0].changes, { output_price_per_1m: { from: 2, to: 1.25 } });
   assert.equal(planChannels([], [], providers)[0].action, 'skip');
   assert.deepEqual(CHANNELS.map(item => [item.slug, item.input, item.cached, item.output]), [
-    ['z-ai-glm-5-3-flashx', 0.37, 0.075, 1.25], ['minimax-minimax-m3-1-flash', 0.15, 0.015, 0.6]]);
+    ['z-ai-glm-5-3-flashx', 0.37, 0.075, 1.25], ['minimax-m3.1-flash', 0.15, 0.015, 0.6]]);
 });
 
 test('seed is dry-run by default and is not on the deploy path', () => {
