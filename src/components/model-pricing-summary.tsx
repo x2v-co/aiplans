@@ -1,6 +1,8 @@
 import { ExternalLink } from 'lucide-react';
 import { LimitedTimeOfferMark } from '@/components/limited-time-offer';
 import { pricingDate, pricingLabel, type buildModelPricingSeo, type PricingChannel } from '@/lib/model-pricing-seo';
+import type { ModelUsagePriceRow } from '@/lib/model-usage-prices';
+import ModelUsagePrices from './model-usage-prices';
 
 /** The channel name is the access point: a bare row label leaves the cheapest offer unreachable. */
 function ChannelName({ row, locale }: { row: PricingChannel; locale: string }) {
@@ -21,10 +23,13 @@ function ChannelName({ row, locale }: { row: PricingChannel; locale: string }) {
   );
 }
 
-export default function ModelPricingSummary({ pricing, locale, now }: {
+export default function ModelPricingSummary({ pricing, locale, now, officialUsagePrices = [] }: {
   pricing: ReturnType<typeof buildModelPricingSeo>; locale: string; now: Date;
+  officialUsagePrices?: ModelUsagePriceRow[];
 }) {
   const isZh = locale === 'zh';
+  const tableChannels = officialUsagePrices.length > 0
+    ? pricing.tableChannels.filter(row => !pricing.official.includes(row)) : pricing.tableChannels;
   return (
     <section className="mb-6 rounded-lg border p-4" aria-label={isZh ? 'API 定价速览' : 'API pricing at a glance'}>
       <h2 className="mb-3 text-lg font-semibold">{isZh ? 'API 价格与 token 费用速览' : 'API pricing and token costs at a glance'}</h2>
@@ -41,9 +46,11 @@ export default function ModelPricingSummary({ pricing, locale, now }: {
               <th key={label} scope="col" className="px-2 py-2">{label}</th>)}
           </tr></thead>
           <tbody>
-            {pricing.official.length === 0 && <tr className="border-b"><th scope="row" className="px-2 py-2">{isZh ? '官方' : 'Official'}</th>
+            {officialUsagePrices.length > 0 && <tr className="border-b"><th scope="row" className="px-2 py-2">{isZh ? '官方' : 'Official'}</th>
+              <td colSpan={4} className="px-2 py-2"><ModelUsagePrices rows={officialUsagePrices} locale={locale} /></td></tr>}
+            {pricing.official.length === 0 && officialUsagePrices.length === 0 && <tr className="border-b"><th scope="row" className="px-2 py-2">{isZh ? '官方' : 'Official'}</th>
               <td colSpan={4} className="px-2 py-2">{isZh ? '暂无官方报价' : 'No official quote recorded'}</td></tr>}
-            {pricing.tableChannels.map((row, index) => <tr key={row.id ?? index} className="border-b last:border-0">
+            {tableChannels.map((row, index) => <tr key={row.id ?? index} className="border-b last:border-0">
               <th scope="row" className="px-2 py-2 font-medium">
                 <ChannelName row={row} locale={locale} />
                 {pricing.official.includes(row) && <span className="ml-2">{isZh ? '官方' : 'Official'}</span>}
@@ -55,7 +62,7 @@ export default function ModelPricingSummary({ pricing, locale, now }: {
               <td className="px-2 py-2 whitespace-nowrap">{pricingLabel(row.cached_input_price_per_1m, row.currency)}</td>
               <td className="px-2 py-2 whitespace-nowrap">{pricingDate(row) || '—'}</td>
             </tr>)}
-            {pricing.tableChannels.length === 0 && <tr><td colSpan={5} className="px-2 py-2">{isZh ? '暂无可用渠道报价' : 'No channel quotes available'}</td></tr>}
+            {pricing.tableChannels.length === 0 && officialUsagePrices.length === 0 && <tr><td colSpan={5} className="px-2 py-2">{isZh ? '暂无可用渠道报价' : 'No channel quotes available'}</td></tr>}
           </tbody>
         </table>
       </div>

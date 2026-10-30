@@ -4,6 +4,8 @@ import { catalogForKind, type AiCatalogItem, type AiCatalogKind, type AiModelCat
 import { getVerticalModelCatalog } from '@/lib/vertical-models';
 import type { ModelBenchmarkScore } from '@/lib/benchmarks';
 import type { PlanCoverageFields } from '@/lib/third-party-coverage';
+import { getModelUsagePrices } from '@/lib/model-usage-prices-query';
+import { availableUsagePrices } from '@/lib/model-usage-prices';
 
 const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, AiModelCategory>> = {
   'video-model': 'video',
@@ -55,7 +57,7 @@ export interface VerticalModelDetail {
   source: 'db' | 'catalog';
 }
 
-/** Audited pricing is static; stale DB plans/usage rows never override it. */
+/** Audited headline pricing stays static; DB usage rows supply source/unit references. */
 export async function getVerticalModelDetail(kind: AiCatalogKind, slug: string, locale?: string): Promise<VerticalModelDetail> {
   if (!KIND_TO_CATEGORY[kind]) notFound();
   if (CATALOG_ONLY_DETAIL_KINDS.includes(kind) && !catalogForKind(kind).some(i => i.slug === slug)) notFound();
@@ -72,7 +74,12 @@ export async function getVerticalModelDetail(kind: AiCatalogKind, slug: string, 
   if (isBenchmarkOnlySlug(slug)) notFound();
   const item = catalog.find(entry => entry.slug === slug);
   if (!item) notFound();
-  return { item, plans: [], usagePrices: [], benchmarks: [], source: 'catalog' };
+  const usagePrices = kind === 'video-model'
+    ? await getModelUsagePrices(slug).catch(error => {
+      console.warn(`getModelUsagePrices(${slug}) failed`, error);
+      return [];
+    }) : [];
+  return { item, plans: [], usagePrices: availableUsagePrices(usagePrices, true), benchmarks: [], source: 'catalog' };
 }
 
 export function verticalKindPath(kind: AiCatalogKind): string {
