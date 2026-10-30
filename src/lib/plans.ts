@@ -1,3 +1,5 @@
+import { currentPlanCondition } from './plan-lifecycle-query';
+import { isSupersededPlan } from './plan-lifecycle';
 import { publicModelName } from './public-catalog-copy';
 import { sql, INT4_ARRAY } from '@/lib/db';
 import type { ChannelTermsFields } from '@/lib/channel-terms';
@@ -45,6 +47,7 @@ export interface ListedPlan extends EconomicPlan, PlanCoverageFields, ChannelTer
   provider_id: number | null;
   annual_price: number | null;
   is_official: boolean | null;
+  notes?: string | null;
   provider?: PlanProvider | null;
   models?: PlanModel[];
   [field: string]: unknown;
@@ -62,9 +65,10 @@ export async function getPlans(query: PlanQuery = {}): Promise<ListedPlan[]> {
     WHERE (${tier}::text IS NULL OR tier = ${tier})
       AND (${pricingModel}::text IS NULL OR pricing_model = ${pricingModel})
       AND (${providerId}::integer IS NULL OR provider_id = ${providerId})
+      AND ${currentPlanCondition()}
     ORDER BY tier ASC NULLS LAST, price ASC NULLS LAST
   `;
-  let plans = [...planRows];
+  let plans = planRows.filter(plan => !isSupersededPlan(plan));
 
   // Get all provider_ids from plans
   const providerIds = [...new Set(plans.map((plan) => plan.provider_id).filter((id): id is number => id != null))];

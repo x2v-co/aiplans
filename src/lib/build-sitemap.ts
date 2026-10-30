@@ -1,3 +1,4 @@
+import { currentPlanCondition } from './plan-lifecycle-query';
 import { AI_VERTICAL_CATALOG } from '@/lib/ai-vertical-catalog';
 import { modelLifecycleStatus } from '@/lib/model-shutdown';
 import { MetadataRoute } from 'next';
@@ -21,7 +22,7 @@ interface UrlEntry {
   priority: number;
 }
 
-/** Newest catalog write that the data-driven fixed pages render. */
+/** Newest catalog write, including superseding a plan (which changes listings). */
 async function latestDataUpdate(): Promise<Date | string | null> {
   try {
     const [row] = await sql<Array<{ updated_at: Date | string | null }>>`
@@ -65,7 +66,7 @@ export async function buildSitemap(applyIndexPolicy = true, catalogRows?: SeoInd
   try {
     const providers = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
       SELECT slug, updated_at FROM providers
-      WHERE EXISTS (SELECT 1 FROM plans WHERE plans.provider_id = providers.id)
+      WHERE EXISTS (SELECT 1 FROM plans WHERE plans.provider_id = providers.id AND ${currentPlanCondition()})
          OR EXISTS (SELECT 1 FROM api_channel_prices cp WHERE cp.provider_id = providers.id AND cp.is_available = true
            AND EXISTS (SELECT 1 FROM models m WHERE m.id = cp.model_id
              AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date)))

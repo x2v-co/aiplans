@@ -9,7 +9,9 @@ export interface SeoIndexRow extends SeoIndexFacts {
  * Load the connection lazily so importing the policy/report remains DB-free.
  */
 export const getSeoIndexCatalog = cache(async (): Promise<SeoIndexRow[]> => {
-  const { sql } = await import('./db');
+  const [{ sql }, { currentPlanCondition }] = await Promise.all([
+    import('./db'), import('./plan-lifecycle-query'),
+  ]);
   return sql<SeoIndexRow[]>`
     SELECT m.slug, m.description, m.released_at, m.updated_at,
       (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AS active,
@@ -30,7 +32,9 @@ export const getSeoIndexCatalog = cache(async (): Promise<SeoIndexRow[]> => {
               ))
         )) AS api_price_count,
       (SELECT count(*)::int FROM usage_prices up
+        LEFT JOIN plans pl ON pl.id = up.plan_id
         WHERE up.model_id = m.id AND up.is_available = true
+          AND ${currentPlanCondition('pl')}
           AND up.price >= 0 AND up.price < 'Infinity'::real) AS usage_price_count,
       plans.priced_plan_count, plans.plan_count,
       plans.priced_subscription_count, plans.priced_subscription_provider_count
@@ -53,7 +57,7 @@ export const getSeoIndexCatalog = cache(async (): Promise<SeoIndexRow[]> => {
             (p.annual_price >= 0 AND p.annual_price < 'Infinity'::real) OR
             (p.price_yearly_monthly >= 0 AND p.price_yearly_monthly < 'Infinity'::real)))::int AS priced_subscription_provider_count
       FROM model_plan_mapping mpm JOIN plans p ON p.id = mpm.plan_id
-      WHERE mpm.model_id = m.id
+      WHERE mpm.model_id = m.id AND ${currentPlanCondition('p')}
     ) plans
     WHERE m.slug IS NOT NULL
     ORDER BY m.updated_at DESC NULLS LAST, m.slug

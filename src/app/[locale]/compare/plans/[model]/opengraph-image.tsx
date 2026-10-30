@@ -1,3 +1,4 @@
+import { currentPlanCondition } from '@/lib/plan-lifecycle-query';
 import { ImageResponse } from 'next/og';
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og-template';
 import { sql, INT4_ARRAY } from '@/lib/db';
@@ -44,7 +45,7 @@ export default async function Image({
     ? [...await sql<any[]>`
         SELECT price, currency, provider_id
         FROM plans
-        WHERE id = ANY(${sql.array(planIds, INT4_ARRAY)})
+        WHERE id = ANY(${sql.array(planIds, INT4_ARRAY)}) AND ${currentPlanCondition()}
       `]
     : [];
 

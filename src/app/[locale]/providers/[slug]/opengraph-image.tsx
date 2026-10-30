@@ -1,3 +1,4 @@
+import { currentPlanCondition } from '@/lib/plan-lifecycle-query';
 import { ImageResponse } from 'next/og';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -17,7 +18,7 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
   if (!provider) notFound();
   const [counts] = await sql<Array<{ plans: number; models: number }>>`
     SELECT
-      (SELECT count(*)::int FROM plans WHERE provider_id = ${provider.id}) AS plans,
+      (SELECT count(*)::int FROM plans WHERE provider_id = ${provider.id} AND ${currentPlanCondition()}) AS plans,
       (SELECT count(DISTINCT model_id)::int FROM api_channel_prices
         WHERE provider_id = ${provider.id} AND is_available = true
           AND EXISTS (SELECT 1 FROM models m WHERE m.id = model_id

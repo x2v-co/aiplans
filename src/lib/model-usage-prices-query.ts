@@ -1,3 +1,4 @@
+import { currentPlanCondition } from './plan-lifecycle-query';
 import { sql } from './db';
 import type { ModelUsagePriceRow } from './model-usage-prices';
 
@@ -12,6 +13,7 @@ export async function getModelUsagePrices(slug: string): Promise<ModelUsagePrice
     LEFT JOIN providers p ON p.id = up.provider_id
     LEFT JOIN plans pl ON pl.id = up.plan_id
     WHERE m.slug = ${slug} AND COALESCE(up.is_available, true)
+      AND ${currentPlanCondition('pl')}
       AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date)
     ORDER BY up.id
   `];

@@ -1,3 +1,4 @@
+import { currentPlanCondition } from './plan-lifecycle-query';
 import { sql, INT4_ARRAY, TEXT_ARRAY } from '@/lib/db';
 import type { CurrencyCode } from '@/lib/currency';
 import {
@@ -70,6 +71,7 @@ export async function getPlanComparison(
             to_jsonb(plans)->>'quota_unit' AS quota_unit
           FROM plans
           WHERE id = ANY(${sql.array(planIds, INT4_ARRAY)})
+            AND ${currentPlanCondition()}
           ORDER BY plan_kind, plan_line NULLS LAST, tier_rank NULLS LAST, price ASC NULLS LAST
         `,
         sql<any[]>`
@@ -106,6 +108,7 @@ export async function getPlanComparison(
           pack_validity_days, quotas
         FROM plans
         WHERE slug = ANY(${sql.array([...baselineSlugs], TEXT_ARRAY)})
+          AND ${currentPlanCondition()}
       `
     : [];
 
