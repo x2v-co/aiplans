@@ -11,6 +11,7 @@ type ModelWithProviderIds = {
 type Provider = {
   id: number;
   name: string;
+  name_en?: string | null;
   slug: string;
   logo?: string | null;
   logo_url?: string | null;
@@ -36,7 +37,7 @@ export async function getProvidersByIds(providerIds: number[]): Promise<Map<numb
   }
 
   const data = await sql<Provider[]>`
-    SELECT id, name, slug, logo, logo_url, website, invite_url, pricing_url,
+    SELECT id, name, to_jsonb(providers)->>'name_en' AS name_en, slug, logo, logo_url, website, invite_url, pricing_url,
            api_docs_url, region, type, access_from_china
     FROM providers
     WHERE id = ANY(${sql.array(providerIds, INT4_ARRAY)})

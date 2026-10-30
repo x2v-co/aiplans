@@ -2,9 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { NextIntlClientProvider } from 'next-intl';
-import en from '../../messages/en.json';
-import zh from '../../messages/zh.json';
 import { groupModelPlansByOwnership } from '@/lib/model-plan-groups';
 import { ModelPlanGroups } from './model-plan-groups';
 import type { ModelPlanCardRow } from './model-plan-card';
@@ -37,13 +34,10 @@ test('unknown producer and empty/one-sided results never invent official ownersh
 
 test('both locales render official cards before third-party cards with distinct headings and an availability qualification', () => {
   for (const locale of ['zh', 'en'] as const) {
-    const html = renderToStaticMarkup(createElement(NextIntlClientProvider, {
-      locale, timeZone: 'UTC', messages: locale === 'zh' ? zh : en,
-      children: createElement(ModelPlanGroups, {
+    const html = renderToStaticMarkup(createElement(ModelPlanGroups, {
         groups: groupModelPlansByOwnership(plans, 7), locale, now: new Date('2026-10-30T00:00:00Z'),
         usagePrices: [], recommendedPlanIds: new Set<number>(), bestValuePlanId: null,
-      }),
-    }));
+      }));
     const official = html.indexOf('data-plan-group="official"');
     const thirdParty = html.indexOf('data-plan-group="third-party"');
     assert.ok(official >= 0 && thirdParty > official);
@@ -53,5 +47,22 @@ test('both locales render official cards before third-party cards with distinct 
     assert.match(html, locale === 'zh' ? />第三方套餐<\/h3>/ : />Third-party plans<\/h3>/);
     assert.match(html, locale === 'zh' ? /不代表每个套餐均包含此型号/ : /may not include this exact model/);
     assert.equal((html.match(/data-plan-card=/g) ?? []).length, 4);
+  }
+});
+
+test('explicit cross-provider bundles keep their ownership visible, including ambiguous Go plan names', () => {
+  const linkedPlans = [
+    { ...plan(2237, 256, 'coding', 'Go'), providers: { id: 256, name: 'OpenCode Go', slug: 'opencode-go', logo: null } },
+    { ...plan(2238, 256, 'coding', 'Go Plus'), providers: { id: 256, name: 'OpenCode Go', slug: 'opencode-go', logo: null } },
+    { ...plan(1651, 47, 'coding', 'Seed Enterprise'), providers: { id: 47, name: 'Seed', slug: 'seed', logo: null } },
+  ];
+  for (const locale of ['zh', 'en'] as const) {
+    const groups = groupModelPlansByOwnership(linkedPlans, 36);
+    assert.deepEqual(groups.map(g => g.official), [false]);
+    const html = renderToStaticMarkup(createElement(ModelPlanGroups, { groups, locale, now: new Date('2026-10-30T00:00:00Z'),
+        usagePrices: [], recommendedPlanIds: new Set<number>(), bestValuePlanId: null }));
+    assert.equal((html.match(/data-plan-provider="opencode-go">OpenCode Go/g) ?? []).length, 2);
+    assert.match(html, /data-plan-provider="seed"/);
+    assert.equal((html.match(/data-plan-card=/g) ?? []).length, 3);
   }
 });

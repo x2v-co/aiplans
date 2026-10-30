@@ -1,5 +1,6 @@
 import type { TrustAssessment } from '@/lib/data-trust';
 import { featureLooksEstimated } from '@/lib/data-trust';
+import { stripDisplayUrls } from '@/lib/plan-card-display';
 
 function externalUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://');
@@ -39,12 +40,12 @@ export function DataTrustLabel({ fact, locale }: { fact: TrustAssessment; locale
       </p>
       <p>
         <span className="font-semibold">{isZh ? '适用条件' : 'Conditions'}: </span>
-        {fact.conditions.join(isZh ? '；' : '; ')}
+        {fact.conditions.map(stripDisplayUrls).filter(Boolean).join(isZh ? '；' : '; ')}
       </p>
-      <p>
+      {fact.verifiedOn && <p>
         <span className="font-semibold">{isZh ? '最近核验' : 'Last verified'}: </span>
-        {fact.verifiedOn ? <time dateTime={fact.verifiedOn}>{fact.verifiedOn}</time> : (isZh ? '未记录' : 'Not recorded')}
-      </p>
+        <time dateTime={fact.verifiedOn}>{fact.verifiedOn}</time>
+      </p>}
       <p className="mt-1 flex flex-wrap gap-1">
         {flags.estimated && (
           <strong className="rounded bg-amber-300 px-1.5 py-0.5 text-amber-950">{isZh ? '估算' : 'Estimate'}</strong>

@@ -131,7 +131,11 @@ export function safeSourceUrl(value: unknown): string | null {
 
 export function verifiedInstant(value: Date | string | null | undefined): number | null {
   if (value == null || value === '') return null;
-  const time = new Date(value).getTime();
+  // JSON timestamps from timestamp-without-time-zone columns are UTC in this
+  // catalog. Browsers otherwise interpret them in the reader's local zone.
+  const normalized = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(value)
+    ? `${value.replace(' ', 'T')}Z` : value;
+  const time = new Date(normalized).getTime();
   return Number.isFinite(time) ? time : null;
 }
 
@@ -376,6 +380,7 @@ export function reviewedPlanSource(
 
 export type PlanTrustRow = {
   name?: string | null;
+  tier?: string | null;
   currency?: string | null;
   price_unit?: string | null;
   price?: number | null;
@@ -423,7 +428,7 @@ export function planPriceTrust(
       plan.is_contact_sales ? (zh(locale)
         ? '需联系销售；标成 0 或空白的价格不是公开成交价'
         : 'Contact sales; a zero or blank price is not a public purchase price') : null,
-      plan.price === 0 && !plan.is_contact_sales ? (zh(locale) ? '免费档公开标价' : 'Published free tier') : null,
+      plan.price === 0 && !plan.is_contact_sales && plan.tier === 'free' ? (zh(locale) ? '免费档公开标价' : 'Published free tier') : null,
       plan.legacy_ends_on ? (zh(locale)
         ? `旧套餐，宽限期截止 ${plan.legacy_ends_on}`
         : `Legacy tier; grace period ends ${plan.legacy_ends_on}`) : null,

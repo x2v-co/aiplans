@@ -55,3 +55,16 @@ test('estimated entitlement text is badged instead of reading as a confirmed ben
   assert.equal(firm.includes('Estimate'), false);
   assert.match(firm, /Priority support/);
 });
+
+test('API conditions remove long raw URLs in both locales and hide absent verification dates', () => {
+  for (const locale of ['zh', 'en']) {
+    const markup = html(createElement(DataTrustLabel, { locale, fact: { ...verified, verifiedOn: null,
+      conditions: ['Model rates https://openrouter.ai/models/vendor/model-name-with-a-long-path',
+        'See openrouter.ai/models/anthropic/claude-opus-5-5', 'Keep this condition'],
+    } }));
+    const prose = markup.replace(/<[^>]+>/g, '');
+    assert.doesNotMatch(prose, /https?:|openrouter\.ai|Last verified|最近核验|Not recorded|未记录/);
+    assert.match(prose, /Keep this condition/);
+    assert.match(markup, /href="https:\/\/developers.openai.com/);
+  }
+});
