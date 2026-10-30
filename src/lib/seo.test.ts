@@ -10,7 +10,7 @@ const base = {
 };
 
 test('noindex pages stay followable so link equity reaches the current pages', () => {
-  assert.deepEqual(buildMetadata({ ...base, noindex: true }).robots, { index: false, follow: true });
+  assert.deepEqual(buildMetadata({ ...base, noindex: true }).robots, { index: false, follow: true, googleBot: { index: false, follow: true } });
 });
 
 test('indexable pages keep index, follow', () => {

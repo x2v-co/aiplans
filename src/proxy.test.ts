@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NextRequest } from 'next/server';
-import proxy, { requestUsedHttp } from './proxy';
+import proxy, { config, requestUsedHttp } from './proxy';
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
 
 test('permanently redirects Cloudflare HTTP requests to the same HTTPS URL', async () => {
   const request = new NextRequest('http://aiplans.dev/zh/models/claude-opus-5?source=test', {
@@ -84,4 +85,34 @@ test('root ignores an unknown locale cookie', async () => {
   }));
   assert.equal(response.status, 308);
   assert.match(response.headers.get('location') ?? '', /\/en$/);
+});
+
+test('unknown prefix paths get the normal locale hop, never bypass routing as infrastructure', async () => {
+  for (const path of ['/api-foo', '/go2', '/v123']) {
+    const response = await proxy(new NextRequest(`https://aiplans.dev${path}`, {
+      headers: { 'x-forwarded-proto': 'https' },
+    }));
+    assert.equal(response.status, 307, path);
+    assert.equal(new URL(response.headers.get('location')!).pathname, `/en${path}`);
+  }
+});
+
+test('valid locale pages, dotted slugs and service segments stay on their own routes', async () => {
+  for (const path of ['/zh/guides', '/en/about', '/en/models/non-legacy-model', '/api/health', '/v1/catalog/models', '/go/source/campaign/product']) {
+    const response = await proxy(new NextRequest(`https://aiplans.dev${path}`, {
+      headers: { 'x-forwarded-proto': 'https' },
+    }));
+    assert.equal(response.headers.get('location'), null, path);
+    assert.equal(response.headers.get('x-middleware-next'), '1', path);
+  }
+});
+
+
+test('Next matcher excludes complete service segments while keeping similarly named pages', () => {
+  for (const url of ['/api-foo', '/go2', '/zh/xxx-not-exist', '/en', '/guides']) {
+    assert.equal(unstable_doesMiddlewareMatch({ config, url }), true, url);
+  }
+  for (const url of ['/api/health', '/v1/catalog/models', '/go/a/b/c', '/_next/static/chunk.js', '/favicon.ico']) {
+    assert.equal(unstable_doesMiddlewareMatch({ config, url }), false, url);
+  }
 });

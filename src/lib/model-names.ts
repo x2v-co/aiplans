@@ -1,3 +1,5 @@
+import { publicModelName } from './public-catalog-copy';
+
 const TOKEN_LABELS: Record<string, string> = {
   ai: 'AI',
   api: 'API',
@@ -39,7 +41,7 @@ function formatToken(token: string): string {
 
 /** Turn scraper-style slugs into readable model labels without hiding variants. */
 export function formatModelName(value: string): string {
-  const trimmed = value.trim();
+  const trimmed = publicModelName(value).trim();
   if (!trimmed) return value;
 
   const normalized = trimmed

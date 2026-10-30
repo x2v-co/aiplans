@@ -1,3 +1,4 @@
+import { isInfrastructurePath } from '@/lib/route-locale';
 import { planRedirectRequest, resolvePlanRedirect, withPlanRedirectCatalogTimeout, type PlanRedirectRow } from '@/lib/provider-redirects';
 import { legacySlugRedirect } from '@/lib/legacy-slug-redirects';
 import { NextResponse } from 'next/server';
@@ -97,7 +98,7 @@ export function createProxy(
     }
 
     // For other paths without locale, redirect to default locale
-    if (!pathname.startsWith('/api') && !pathname.startsWith('/v1') && !pathname.startsWith('/_next') && !pathname.includes('.')) {
+    if (!isInfrastructurePath(pathname) && !pathname.includes('.')) {
       request.nextUrl.pathname = `/${defaultLocale}${pathname}`;
       return NextResponse.redirect(request.nextUrl);
     }
@@ -109,5 +110,5 @@ export function createProxy(
 export default createProxy();
 
 export const config = {
-  matcher: ['/((?!api|v1|go|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!(?:api|v1|go)(?:/|$)|_next/static|_next/image|favicon\\.ico$).*)'],
 };

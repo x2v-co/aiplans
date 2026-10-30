@@ -1,3 +1,4 @@
+import { publicModelName } from '@/lib/public-catalog-copy';
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { catalogForKind, type AiCatalogKind } from '@/lib/ai-vertical-catalog';
@@ -77,7 +78,7 @@ export async function GET() {
     const payload = {
       models: models.map((m) => ({
         slug: m.slug,
-        name: m.name,
+        name: publicModelName(m.name),
         providerName: m.provider_name ?? null,
         providerSlug: m.provider_slug ?? null,
       })),

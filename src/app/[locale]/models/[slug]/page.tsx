@@ -1,3 +1,6 @@
+import { getSeoIndexCatalog } from '@/lib/seo-index-data';
+import { modelShouldIndex } from '@/lib/seo-index-policy';
+import { publicModelDescription, publicModelName } from '@/lib/public-catalog-copy';
 import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
 import { CodexModelMeasurements } from '@/components/codex-model-measurements';
 import { isCodexQuotaModel } from '@/lib/codex-pro200';
@@ -111,6 +114,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     if (target) permanentRedirect(`/${locale}/models/${encodeURIComponent(target)}`);
     notFound();
   }
+  const indexFacts = (await getSeoIndexCatalog()).find(row => row.slug === slug);
   const productName = formatModelName(product.name || slug);
 
   const statsRows = await sql<PricingChannel[]>`
@@ -126,6 +130,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     ...buildMetadata({
       locale: locale === 'zh' ? 'zh' : 'en',
       path: `/models/${slug}`,
+      noindex: !indexFacts || !modelShouldIndex(indexFacts),
       title: {
         en: `${pricing.title} | aiplans.dev`,
         zh: `${pricing.title} | aiplans.dev`,
@@ -333,6 +338,7 @@ async function getProductWithChannels(slug: string, now = new Date()) {
   // Return the model with provider attached
   const product = {
     ...model,
+    name: publicModelName(model.name),
     providers: modelProvider || derivedProvider
   };
 
@@ -391,7 +397,7 @@ async function getProductWithChannels(slug: string, now = new Date()) {
     arenaElo,
     benchmarkScores,
     priceHistory,
-    relatedModels,
+    relatedModels: relatedModels.map(model => ({ ...model, name: publicModelName(model.name) })),
   };
 }
 
@@ -423,6 +429,7 @@ export default async function ModelPage({
   const isZh = locale === 'zh';
   const showTrust = isTrustModelSlug(slug);
   const productName = formatModelName(product.name);
+  const description = publicModelDescription(product.description);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
   const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);
   const announcementMessages = await getTranslations({ locale, namespace: 'modelAnnouncement' });
@@ -521,7 +528,7 @@ export default async function ModelPage({
     serviceType: 'AI Model API',
     name: productName,
     alternateName: pricing.aliases,
-    description: product.description ?? `${productName} — ${product.context_window?.toLocaleString() ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
+    description: description || `${productName} — ${product.context_window?.toLocaleString() ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
     image: `${SITE_URL}/${locale}/models/${product.slug}/opengraph-image`,
     url: `${SITE_URL}/${locale}/models/${product.slug}`,
     ...(product.providers?.name
@@ -596,6 +603,7 @@ export default async function ModelPage({
                 {pricing.title}
                 <VariantBadges slug={product.slug} locale={locale} />
               </h1>
+              {description && <p className="mt-3 whitespace-pre-line text-zinc-600 dark:text-zinc-400">{description}</p>}
               <p className="text-zinc-600">{product.providers?.name} • {isZh ? 'API 定价对比' : 'API Price Comparison'}</p>
             </div>
           </div>

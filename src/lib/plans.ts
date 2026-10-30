@@ -1,3 +1,4 @@
+import { publicModelName } from './public-catalog-copy';
 import { sql, INT4_ARRAY } from '@/lib/db';
 import type { ChannelTermsFields } from '@/lib/channel-terms';
 import type { PlanCoverageFields } from '@/lib/third-party-coverage';
@@ -104,7 +105,7 @@ export async function getPlans(query: PlanQuery = {}): Promise<ListedPlan[]> {
         `
       : [];
 
-    const modelsMap = new Map(modelsData.map(m => [m.id, m]));
+    const modelsMap = new Map(modelsData.map(m => [m.id, { ...m, name: publicModelName(m.name) }]));
 
     // Group models by plan
     const planModelsMap = new Map<number, PlanModel[]>();

@@ -1,3 +1,5 @@
+import { notFound } from 'next/navigation';
+import { isSupportedLocale } from '@/lib/route-locale';
 import { buildHomeMetadataCopy, getHomeCatalogStats } from "@/lib/home-seo";
 import { getProducts } from "@/lib/products";
 import { buildMetadata, faqPage, type Locale } from "@/lib/seo";
@@ -85,6 +87,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  if (!isSupportedLocale(locale)) notFound();
   const loc = (locale === "zh" ? "zh" : "en") as Locale;
   const copy = buildHomeMetadataCopy(await getHomeCatalogStats());
   return buildMetadata({
@@ -101,6 +104,7 @@ export default async function HomePage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  if (!isSupportedLocale(locale)) notFound();
   const loc = (locale === "zh" ? "zh" : "en") as Locale;
 
   let hotModels: HotModel[] = [];

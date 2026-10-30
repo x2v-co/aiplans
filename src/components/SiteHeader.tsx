@@ -154,6 +154,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
   const homeLink: NavItem = { href: `/${locale}`, label: t('home'), active: pathname === `/${locale}` };
   const utilityLinks: NavItem[] = [
+    { href: `/${locale}/guides`, label: locale === 'zh' ? '价格指南' : 'Pricing guides', active: pathname?.startsWith(`/${locale}/guides`) },
     { href: `/${locale}/coupons`, label: t('coupons'), active: pathname?.startsWith(`/${locale}/coupons`) },
     { href: `/${locale}/calculator`, label: t('calculator'), active: pathname?.startsWith(`/${locale}/calculator`), icon: Calculator },
   ];

@@ -7,7 +7,7 @@ import { evidenceLink, groupQuotaEvidence, loadQuotaEvidence } from '@/lib/quota
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
-  title: 'Quota evidence — internal review',
+  title: 'Quota evidence review',
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 };
 
@@ -22,9 +22,9 @@ export default async function QuotaEvidencePage({ params }: { params: Promise<{ 
 
   return (
     <main className="container mx-auto max-w-6xl space-y-8 px-4 py-12">
-      <h1 className="text-3xl font-bold">{zh ? '额度证据（内部审核）' : 'Quota evidence (internal review)'}</h1>
+      <h1 className="text-3xl font-bold">{zh ? '额度证据审核' : 'Quota evidence review'}</h1>
       <p className="text-zinc-500">{zh ? '社区证据仅供审核。接受证据不会更新额度估算。' : 'Community evidence for review. Accepting evidence does not update quota estimates.'}</p>
-      {groups.size === 0 && <p>{zh ? '暂无证据，或尚未应用手动迁移。' : 'No evidence yet, or the manual migrations have not been applied.'}</p>}
+      {groups.size === 0 && <p>{zh ? '暂无可供审核的证据。' : 'No evidence is available for review yet.'}</p>}
       {[...groups].map(([plan, rows]) => (
         <section key={plan ?? ''} className="space-y-4">
           <h2 className="text-xl font-semibold">{plan ?? (zh ? '尚未分配套餐' : 'Unassigned plan')}</h2>

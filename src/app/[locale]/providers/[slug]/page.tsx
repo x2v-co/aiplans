@@ -1,3 +1,4 @@
+import { publicModelName } from '@/lib/public-catalog-copy';
 import { providerSearchProfile } from '@/lib/provider-search';
 import { providerSubscriptionComparisons, subscriptionSearchCopy } from '@/lib/subscription-search';
 import type { PlanComparisonCandidate } from '@/lib/search-indexing';
@@ -593,7 +594,7 @@ export default async function ProviderPage({
                 <Link key={model.id} href={`/${locale}${providerModelPath(model.slug, model.model_category)}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="py-4">
-                      <h3 className="font-medium">{model.name}</h3>
+                      <h3 className="font-medium">{publicModelName(model.name)}</h3>
                     </CardContent>
                   </Card>
                 </Link>

@@ -1,3 +1,4 @@
+import { publicModelName } from '@/lib/public-catalog-copy';
 import { providerSearchProfile } from '@/lib/provider-search';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -167,7 +168,7 @@ export default async function PricingGuidePage({
                     <TableRow key={model.slug}>
                       <TableCell className="font-medium">
                         <Link href={`/${locale}/models/${model.slug}`} data-position={index + 1} className="text-blue-600 hover:underline">
-                          {model.name}
+                          {publicModelName(model.name)}
                         </Link>
                       </TableCell>
                       <TableCell>{model.cheapest.providerName}</TableCell>
@@ -210,7 +211,7 @@ export default async function PricingGuidePage({
               {models.map((model, index) => (
                 <li key={model.slug}>
                   <Link href={`/${locale}/models/${model.slug}`} data-position={index + 1} className="text-blue-600 hover:underline">
-                    {model.name}
+                    {publicModelName(model.name)}
                   </Link>
                 </li>
               ))}

@@ -1,3 +1,4 @@
+import { publicModelName } from '@/lib/public-catalog-copy';
 import { effectivePrice } from '@/lib/effective-price';
 import { ImageResponse } from 'next/og';
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og-template';
@@ -93,7 +94,7 @@ export default async function Image({
   return new ImageResponse(
     ogTemplate({
       kicker: isZh ? 'API 价格' : 'API Pricing',
-      title: model.name,
+      title: publicModelName(model.name),
       subtitle,
       stats,
       locale: isZh ? 'zh' : 'en',

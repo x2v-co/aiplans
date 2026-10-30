@@ -1,3 +1,4 @@
+import { publicModelName } from './public-catalog-copy';
 import { sql, INT4_ARRAY } from '@/lib/db';
 
 type ModelWithProviderIds = {
@@ -93,6 +94,7 @@ export async function attachPrimaryProvidersToModels<T extends ModelWithProvider
   const modelProviders = await getPrimaryProvidersForModels(models);
   return models.map((model) => ({
     ...model,
+    ...(model.name ? { name: publicModelName(model.name) } : {}),
     providers: modelProviders.get(model.id) || null,
   }));
 }
