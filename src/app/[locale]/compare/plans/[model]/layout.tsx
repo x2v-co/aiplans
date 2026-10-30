@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { sql } from '@/lib/db';
+import { getSeoIndexCatalog } from '@/lib/seo-index-data';
 import { legacySlugRedirect } from '@/lib/legacy-slug-redirects';
 import { findModelSlugRedirect } from '@/lib/model-slug-redirects';
 import { buildMetadata, type Locale } from '@/lib/seo';
 import { decodeSlugParam } from '@/lib/route-params';
 import { formatModelName } from '@/lib/model-names';
-import { selectIndexablePlanComparisons } from '@/lib/search-indexing';
+import { selectSeoComparisons } from '@/lib/seo-index-policy';
 import { buildComparisonPricingCopy } from '@/lib/pricing-seo';
 import { getComparisonSeoData } from '@/lib/pricing-seo-data';
 
@@ -22,20 +22,7 @@ export async function generateMetadata({
 
   const [data, comparable] = await Promise.all([
     getComparisonSeoData(modelSlug),
-    sql<Array<{
-      slug: string;
-      released_at: Date | string | null;
-      updated_at: Date | string | null;
-      plan_count: number;
-    }>>`
-      SELECT models.slug, models.released_at, models.updated_at,
-             count(DISTINCT plans.id)::int AS plan_count
-      FROM models
-      JOIN model_plan_mapping mpm ON mpm.model_id = models.id
-      JOIN plans ON plans.id = mpm.plan_id
-      WHERE (models.shutdown_date IS NULL OR models.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND models.type ILIKE '%llm%' AND plans.pricing_model = 'subscription'
-      GROUP BY models.id, models.slug, models.released_at, models.updated_at
-    `,
+    getSeoIndexCatalog(),
   ]);
   if (!data) {
     const target = await findModelSlugRedirect(modelSlug);
@@ -45,10 +32,10 @@ export async function generateMetadata({
   const modelName = formatModelName(data.model.name);
   const en = buildComparisonPricingCopy(modelName, data.plans, 'en', undefined, modelSlug);
   const zh = buildComparisonPricingCopy(modelName, data.plans, 'zh', undefined, modelSlug);
-  // Old releases, operational SKUs, and pages with fewer than two plans still
-  // work for existing users, but should not compete with the useful current
-  // comparison in search results.
-  const isIndexable = selectIndexablePlanComparisons(comparable)
+  // Reuse sitemap eligibility: current primary releases need at least two
+  // priced subscriptions across two vendors. Other detail pages remain usable
+  // through existing links and pass crawlers on to useful pages.
+  const isIndexable = selectSeoComparisons(comparable)
     .some((candidate) => candidate.slug === modelSlug);
 
   return buildMetadata({

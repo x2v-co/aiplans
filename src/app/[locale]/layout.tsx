@@ -1,3 +1,5 @@
+import { notFound } from 'next/navigation';
+import { isSupportedLocale } from '@/lib/route-locale';
 import '../globals.css';
 import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
@@ -42,6 +44,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  if (!isSupportedLocale(locale)) notFound();
   const isZh = locale === 'zh';
 
   return {
@@ -137,7 +140,8 @@ async function LocaleLayoutContent({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const messages = messagesMap[locale] || enMessages;
+  if (!isSupportedLocale(locale)) notFound();
+  const messages = messagesMap[locale];
   const isZh = locale === 'zh';
 
   // BCP-47 language tag — `zh-CN` beats plain `zh` for Baidu + screen

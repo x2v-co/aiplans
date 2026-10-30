@@ -36,7 +36,7 @@ test('updates both Flash identities to mark 1017; dry-run writes nothing; idempo
   assert.equal(dry.length, 2);
   assert.equal(f.writes(), 0);
   await seedDeepSeekFlash1017Display(f.tx, true);
-  assert.match(String(f.data[0].name), /legacy slug.*1017/);
+  assert.match(String(f.data[0].name), /DeepSeek V4\.1 Flash \(1017\)/);
   assert.match(String(f.data[1].name), /1017/);
   assert.match(String(f.data[0].description), /DeepSeek-V4\.1-Flash-1017/);
   assert.deepEqual(await seedDeepSeekFlash1017Display(f.tx, true), []);

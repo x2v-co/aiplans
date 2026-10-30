@@ -79,7 +79,7 @@ test('comparison, search, sitemap and publication queries retain their availabil
     ['./pricing-guides.ts', /JOIN api_channel_prices cp ON cp\.model_id = m\.id AND cp\.is_available = true/],
     ['./pricing-seo-data.ts', /m\.type = 'llm' AND cp\.is_available = true/],
     ['../app/api/search-index/route.ts', /WHERE cp\.model_id = m\.id AND cp\.is_available = true/],
-    ['../app/sitemap.ts', /WHERE cp\.model_id = models\.id AND cp\.is_available = true/],
+    ['./seo-index-data.ts', /WHERE cp\.model_id = m\.id AND cp\.is_available = true/],
     ['../app/api/products/[slug]/channels/route.ts', /AND cp\.is_available = true/],
     ['../app/api/channels/[productId]/route.ts', /AND cp\.is_available = true/],
     ['../../scripts/publish-planprice-v1-snapshot.ts', /WHERE c\.is_available = true/],

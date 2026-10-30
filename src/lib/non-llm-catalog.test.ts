@@ -77,7 +77,7 @@ test('voice and image lists/details render units, channel and lifecycle in both 
 });
 
 test('both verticals have list/detail routes, localized navigation and static sitemap entries', () => {
-  const sitemap = readFileSync(new URL('../app/sitemap.ts', import.meta.url), 'utf8');
+  const sitemap = readFileSync(new URL('./build-sitemap.ts', import.meta.url), 'utf8');
   const staticPaths = readFileSync(new URL('./sitemap-static-paths.ts', import.meta.url), 'utf8');
   const header = readFileSync(new URL('../components/SiteHeader.tsx', import.meta.url), 'utf8');
   for (const vertical of ['voice', 'image']) {

@@ -198,7 +198,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale: rawLocale, info } = await params;
   const locale: Locale = rawLocale === 'zh' ? 'zh' : 'en';
-  if (!isInfoSlug(info)) return {};
+  if (!isInfoSlug(info)) notFound();
 
   return buildMetadata({
     locale,

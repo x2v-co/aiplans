@@ -13,15 +13,15 @@ export const VERIFIED_AT = new Date('2026-10-18T00:00:00Z');
 export const DISPLAY_MODELS = [
   {
     slugs: ['deepseek-v4-flash'],
-    name: 'DeepSeek V4 Flash (legacy slug; API DeepSeek-V4.1-Flash-1017)',
+    name: 'DeepSeek V4.1 Flash (1017)',
     description:
-      `Legacy catalog slug deepseek-v4-flash. Official API ID deepseek-flash is currently served by model version DeepSeek-V4.1-Flash-1017. Prefer the deepseek-v4.1-flash row for aggregator channels. Source: ${OFFICIAL_SOURCE} (checked 2026-10-18).`,
+      `The official API ID deepseek-flash is served by DeepSeek-V4.1-Flash-1017. Compare official and aggregator pricing for this model version. Source: ${OFFICIAL_SOURCE} (checked 2026-10-18).`,
   },
   {
     slugs: ['deepseek-v4.1-flash', 'deepseek-v4-1-flash'],
     name: 'DeepSeek V4.1 Flash (1017)',
     description:
-      `Catalog identity for DeepSeek V4.1 Flash snapshot 1017 (API ID deepseek-flash / gateway id deepseek/deepseek-v4.1-flash-1017). Official version name DeepSeek-V4.1-Flash-1017. Source: ${OFFICIAL_SOURCE} (checked 2026-10-18).`,
+      `DeepSeek V4.1 Flash snapshot 1017 (API ID deepseek-flash / gateway id deepseek/deepseek-v4.1-flash-1017). Official version name DeepSeek-V4.1-Flash-1017. Source: ${OFFICIAL_SOURCE} (checked 2026-10-18).`,
   },
 ] as const;
 
