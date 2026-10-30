@@ -10,6 +10,7 @@ import * as aliases from '../src/lib/vertical-model-aliases';
 import type { AiCatalogItem } from '../src/lib/ai-vertical-catalog';
 import type { getVerticalModelCatalog } from '../src/lib/vertical-models';
 import type { getVerticalModelDetail } from '../src/lib/vertical-model-detail';
+import { availableUsagePrices } from '../src/lib/model-usage-prices';
 import { worldModelMinuteCost, worldModelPrice, worldModelsByCostPerMinute } from '../src/lib/world-model-pricing';
 import { WorldModelCatalog, WorldModelFacts, WorldModelTiers } from '../src/components/world-model-catalog';
 
@@ -131,6 +132,8 @@ function serverFixture({ unavailable = false, benchmarkFailure = false, rows = [
     ...stubs,
     'next/navigation': { notFound: () => { throw new Error('NOT_FOUND'); } },
     '@/lib/vertical-models': models,
+    '@/lib/model-usage-prices-query': { getModelUsagePrices: async () => [] },
+    '@/lib/model-usage-prices': { availableUsagePrices },
   });
   return { ...models, ...detail, benchmarkIds, summaries, queryCount: () => queries };
 }

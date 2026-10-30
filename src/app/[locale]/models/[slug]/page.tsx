@@ -65,6 +65,9 @@ import type { PlanCoverageFields } from '@/lib/third-party-coverage';
 
 import { buildModelPricingSeo, type PricingChannel } from '@/lib/model-pricing-seo';
 import ModelPricingSummary from '@/components/model-pricing-summary';
+import ModelUsagePrices from '@/components/model-usage-prices';
+import { availableUsagePrices, officialUsageFallback } from '@/lib/model-usage-prices';
+import { getModelUsagePrices } from '@/lib/model-usage-prices-query';
 
 /** The columns the plan cards read out of the `plans` query below. */
 interface PlanRow extends PlanCoverageFields, ChannelTermsFields {
@@ -223,6 +226,7 @@ async function getProductWithChannels(slug: string, now = new Date()) {
   `;
 
   const normalizedChannelPrices = rawChannelPrices.map(cp => effectivePrice(cp, now));
+  const usagePrices = availableUsagePrices(await getModelUsagePrices(slug));
 
   // Reference rows never enter channelPrices, cheapest calculations, history,
   // SEO offers or the comparison table. Fetch only for explicitly announced models.
@@ -288,7 +292,8 @@ async function getProductWithChannels(slug: string, now = new Date()) {
   `;
 
   // Get plan IDs and fetch full plan details
-  const planIds = modelPlanMappings.map((m) => m.plan_id).filter((id): id is number => id != null);
+  const planIds = [...new Set([...modelPlanMappings.map((m) => m.plan_id),
+    ...usagePrices.map(row => row.plan_id)].filter((id): id is number => id != null))];
 
   const plansData: any[] = planIds.length > 0 ? [...await sql<any[]>`
     SELECT
@@ -387,6 +392,7 @@ async function getProductWithChannels(slug: string, now = new Date()) {
     product,
     channelPrices: normalizedChannelPrices,
     referencePrices,
+    usagePrices,
     plans: plansData,
     arenaElo,
     benchmarkScores,
@@ -416,7 +422,8 @@ export default async function ModelPage({
     notFound();
   }
 
-  const { product, channelPrices, referencePrices, plans, arenaElo, benchmarkScores, priceHistory, relatedModels } = data;
+  const { product, channelPrices, usagePrices, referencePrices, plans, arenaElo, benchmarkScores, priceHistory, relatedModels } = data;
+  const officialUsagePrices = officialUsageFallback(channelPrices, usagePrices);
   // Agent-harness results (Claude Code, Codex, ...) on this host model. Renders
   // nothing for the vast majority of models that AA has not evaluated.
   const codingAgentRows = await getCodingAgentRowsForModel(product.id);
@@ -600,7 +607,7 @@ export default async function ModelPage({
             </div>
           </div>
           <p className="mb-3 text-sm text-zinc-500">{isZh ? '也称' : 'Also known as'}: {pricing.aliases.join(' · ')}</p>
-          {!announcementLabel && <ModelPricingSummary pricing={pricing} locale={locale} now={now} />}
+          {!announcementLabel && <ModelPricingSummary pricing={pricing} locale={locale} now={now} officialUsagePrices={officialUsagePrices} />}
           <div className="flex flex-wrap gap-3">
             {product.context_window && (
               <Badge variant="outline" className="text-sm">
@@ -755,8 +762,11 @@ export default async function ModelPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{officialChannel?.providers?.name || 'N/A'}</div>
-              {officialChannel ? (
+              <div className="text-2xl font-bold">{officialChannel?.providers?.name || officialUsagePrices[0]?.provider_name || 'N/A'}</div>
+              {officialUsagePrices.length > 0 && <p className="mt-1 text-sm text-zinc-600">
+                {isZh ? '官方用量报价见上方价格表。' : 'See official usage rates in the pricing table above.'}
+              </p>}
+              {officialChannel && officialUsagePrices.length === 0 ? (
                 <>
                   <div className="text-3xl font-bold mt-1">
                     {formatPrice(officialChannel.input_price_per_1m, channelCurrency(officialChannel), locale)}
@@ -786,9 +796,9 @@ export default async function ModelPage({
                     </a>
                   )}
                 </>
-              ) : (
+              ) : officialUsagePrices.length === 0 ? (
                 <div className="text-zinc-500 mt-2">No official channel available</div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
 
@@ -916,7 +926,8 @@ export default async function ModelPage({
                           </div>
                           <div className="mt-2">
                             {plan.price == null ? (
-                              <div className="text-xl font-bold">{isZh ? '价格未知' : 'Price unknown'}</div>
+                              usagePrices.some(row => row.plan_id === plan.id) ? null
+                                : <div className="text-xl font-bold">{isZh ? '价格未知' : 'Price unknown'}</div>
                             ) : plan.tier === 'free' ? (
                               <div className="text-3xl font-bold">Free</div>
                             ) : (
@@ -937,6 +948,7 @@ export default async function ModelPage({
                                 )}
                               </>
                             )}
+                            <ModelUsagePrices rows={usagePrices.filter(row => row.plan_id === plan.id)} locale={locale} />
                             {showTrust && (
                               <DataTrustLabel
                                 fact={planPriceTrust(plan, reviewedPlanSource(plan.providers?.slug, locale, plan.providers), locale, now, plan.providers?.slug)}
