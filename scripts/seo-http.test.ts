@@ -16,7 +16,12 @@ test('unknown localized/unlocalized paths return real HTTP 404, never homepage H
       response = await request(target.pathname + target.search);
     }
     assert.equal(response.status, 404, path);
-    assert.match(await response.text(), /404/);
+    const html = await response.text();
+    assert.match(html, /404/);
+    assert.match(html, path.startsWith('/zh/')
+      ? /<title>页面不存在 \| aiplans<\/title>/
+      : /<title>Page not found \| aiplans<\/title>/);
+    assert.match(html, /name="robots" content="[^"]*noindex/);
   }
 });
 

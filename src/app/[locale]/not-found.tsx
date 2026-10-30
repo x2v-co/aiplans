@@ -1,4 +1,15 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: { absolute: locale === 'zh' ? '页面不存在 | aiplans' : 'Page not found | aiplans' },
+    robots: { index: false, follow: true, googleBot: { index: false, follow: true } },
+  };
+}
 
 export default function NotFound() {
   return (

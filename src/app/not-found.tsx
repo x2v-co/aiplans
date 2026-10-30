@@ -1,4 +1,10 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: { absolute: 'Page not found | aiplans' },
+  robots: { index: false, follow: true, googleBot: { index: false, follow: true } },
+};
 
 /** Root fallback for invalid locale segments; the locale layout is not rendered. */
 export default function NotFound() {
