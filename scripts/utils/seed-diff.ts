@@ -68,6 +68,25 @@ export function sameValue(key: string, before: unknown, after: unknown): boolean
 
 export interface FieldChange { key: string; before: unknown; after: unknown }
 
+/** Omitted seed fields preserve stored values; defaults belong to new rows only. */
+export function prepareSeedRow(
+  existing: Record<string, unknown> | null,
+  desired: Record<string, unknown>,
+  insertDefaults: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const row = Object.fromEntries(Object.entries(desired).filter(([, value]) => value !== undefined));
+  // Constraints are a partial seed too: keep keys the catalog does not specify.
+  const constraints = row.constraints_json;
+  if (constraints && typeof constraints === 'object' && !Array.isArray(constraints)) {
+    const current = existing?.constraints_json;
+    row.constraints_json = {
+      ...(current && typeof current === 'object' && !Array.isArray(current) ? current : {}),
+      ...Object.fromEntries(Object.entries(constraints).filter(([, value]) => value !== undefined)),
+    };
+  }
+  return existing ? row : { ...insertDefaults, ...row };
+}
+
 export interface DiffOptions {
   /** Keys never compared nor written on update (e.g. updated_at). */
   ignore?: string[];

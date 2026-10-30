@@ -558,3 +558,57 @@ test('Gemini pricing seed also repairs explicit per_second units without adding 
     assert.equal(repaired.price, 17.5);
   }
 });
+
+test('pricing updates preserve unspecified currency and constraints; inserts still default to USD', async () => {
+  const slug = 'sora'; // This catalog entry deliberately has no currency or price range.
+  assert.equal(catalog.AI_VERTICAL_CATALOG.find(item => item.slug === slug)!.currency, undefined);
+  const f = fixture({ providers: [{ id: 1, slug: 'openai', name: 'OpenAI' }],
+    models: [{ id: 2, slug, name: 'Sora', provider_ids: [1] }] });
+  assert.equal((await f.run('seed-vertical-pricing-references', ['--apply', '--slug', slug])).code, 0);
+  const plan = f.data.plans[0];
+  const usage = f.data.usage_prices[0];
+  assert.equal(plan.currency, 'USD');
+  assert.equal(usage.currency, 'USD');
+  plan.currency = usage.currency = 'CNY';
+  plan.name = 'Stale name'; // Exercise an actual update alongside omitted fields.
+  const extra = { region: 'china', price_high: 12, approximate: true, custom: { resolution: '720p' } };
+  Object.assign(usage.constraints_json as object, extra);
+  const before = JSON.stringify(f.data);
+  const writes = f.writeCount();
+  const preview = await f.run('seed-vertical-pricing-references', ['--slug', slug]);
+  assert.equal(preview.code, 0, preview.output);
+  assert.doesNotMatch(preview.output, /currency:|constraints_json:/);
+  assert.equal(JSON.stringify(f.data), before);
+  assert.equal(f.writeCount(), writes);
+  const applied = await f.run('seed-vertical-pricing-references', ['--apply', '--slug', slug]);
+  assert.equal(applied.code, 0, applied.output);
+  assert.equal(plan.currency, 'CNY');
+  assert.equal(usage.currency, 'CNY');
+  assert.equal(plan.name, 'Sora official pricing');
+  for (const [key, value] of Object.entries(extra)) {
+    assert.deepEqual((usage.constraints_json as Record<string, unknown>)[key], value);
+  }
+});
+
+test('Gemini pricing slug limits plan and usage changes and writes the October 30 verification date', async () => {
+  const slug = 'gemini-omni-1-1-flash';
+  const f = fixture();
+  await f.seed();
+  const model = f.data.models.find(row => row.slug === slug)!;
+  const plan = f.data.plans.find(row => row.slug === `${slug}-official-pricing`)!;
+  const usage = f.data.usage_prices.filter(row => row.model_id === model.id);
+  assert.deepEqual(usage.map(row => row.price), [1.5, 9, 17.5]);
+  for (const row of usage) row.last_verified = '2026-10-15';
+  const unrelated = f.data.usage_prices.filter(row => row.model_id !== model.id);
+  const before = JSON.stringify(unrelated);
+  const otherPlans = JSON.stringify(f.data.plans.filter(row => row.id !== plan.id));
+  const preview = await f.run('seed-vertical-pricing-references', ['--slug', slug]);
+  assert.equal(preview.code, 0, preview.output);
+  assert.doesNotMatch(preview.output, /wan-video|seedance|mistral/i);
+  assert.match(preview.output, /2026-10-30/);
+  const applied = await f.run('seed-vertical-pricing-references', ['--apply', '--slug', slug]);
+  assert.equal(applied.code, 0, applied.output);
+  for (const row of usage) assert.equal(new Date(String(row.last_verified)).toISOString(), '2026-10-30T00:00:00.000Z');
+  assert.equal(JSON.stringify(unrelated), before);
+  assert.equal(JSON.stringify(f.data.plans.filter(row => row.id !== plan.id)), otherPlans);
+});
