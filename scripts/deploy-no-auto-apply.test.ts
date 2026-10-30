@@ -38,10 +38,11 @@ test('v1 publication is gated only on API scraper success', () => {
   assert.doesNotMatch(script, /"\$(?:plans|fx)_status" == "0"/);
 });
 
-test('v1 publication precedes scraper group and mappings failure exits', () => {
+test('v1 publication precedes audit, scraper group and mappings failure exits', () => {
   const script = read('../deploy/production/run-scrapers.sh');
   const publish = script.indexOf('npm run publish:v1');
   assert.ok(publish > 0);
+  assert.doesNotMatch(script.slice(0, publish), /exit "\$audit_status"/);
   for (const message of ['Scraper group failure', 'model_plan_mapping materialization failed']) {
     const failure = script.indexOf(message);
     const exit = script.indexOf('\n  exit 1', failure);

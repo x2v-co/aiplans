@@ -193,6 +193,9 @@ runs daily at 03:15 Asia/Singapore with up to 15 minutes of randomized delay.
 Each run refreshes USD FX from Frankfurter before scraping and republishes the
 current v1 catalog snapshot after deployment; a failed FX refresh leaves the
 previous rates in place and is reported in the scraper log.
+The scraper run publishes v1 whenever the API scrape succeeds, even if the data
+audit reports critical findings. The audit summary is logged after publication,
+and critical findings still fail the job so OnFailure alerts fire.
 The deployment also installs `planprice-snapshot-cleanup.timer`, which runs
 daily at 04:15 Asia/Singapore and removes immutable v1 snapshots only after
 their 90-day retention window. `current.json` and unreadable snapshots are
