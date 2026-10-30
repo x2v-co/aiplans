@@ -11,7 +11,8 @@ export type PricingGuideSlug =
   | 'grok-pricing'
   | 'kimi-api-pricing'
   | 'openai-api-pricing'
-  | 'cursor-x-subscription-pricing';
+  | 'cursor-x-subscription-pricing'
+  | 'codex-pro-200-quota-benchmark';
 
 type LocalizedText = Record<Locale, string>;
 
@@ -32,6 +33,10 @@ export type PricingGuide = {
   sections: Array<{ heading: LocalizedText; body: LocalizedText }>;
   faqs?: Array<{ question: LocalizedText; answer: LocalizedText }>;
   sources?: Array<{ label: LocalizedText; url: string }>;
+  sourcesTitle?: LocalizedText;
+  relatedLinks?: Array<{ label: LocalizedText; url: LocalizedText }>;
+  relatedModelsDescription?: LocalizedText;
+  usageNotes?: LocalizedText[];
   reviewedAt?: string;
 };
 
@@ -603,6 +608,219 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       { label: { en: 'Cursor official legacy pricing and plans', zh: 'Cursor 官方旧套餐与价格' }, url: 'https://cursor.com/help/account-and-billing/pricing.md' },
       { label: { en: 'Cursor official X Subscription switching rules', zh: 'Cursor 官方 X Subscription 切换规则' }, url: 'https://cursor.com/help/the-x-subscription/overview' },
       { label: { en: 'xAI official X Subscription announcement', zh: 'xAI 官方 X Subscription 公告' }, url: 'https://x.ai/news/x-subscription' },
+    ],
+  },
+  'codex-pro-200-quota-benchmark': {
+    slug: 'codex-pro-200-quota-benchmark',
+    title: { en: 'Codex Pro 200 Quota Test: GPT-6 Astra and GPT-6.1 Sol Weekly Tokens', zh: 'Codex Pro 200 额度实测：GPT-6 Astra 与 GPT-6.1 Sol 每周能用多少 token' },
+    description: {
+      en: 'Codex weekly quota measured on ChatGPT Pro 200: GPT-6 Astra ~139.5M tokens (111.6M–186.0M), GPT-6.1 Sol at least ~274M. Method, caveats, plan vs API.',
+      zh: 'ChatGPT Pro 200 的 Codex 周额度实测：GPT-6 Astra 约 1.395 亿 tokens/周（1.116–1.860 亿），GPT-6.1 Sol 至少约 2.742 亿。附测法、限定条件与订阅/API 取舍。',
+    },
+    intro: {
+      en: 'This page reports weekly quota measured by aiplans with the Codex CLI on one ChatGPT Pro 200 account, not a quota published by OpenAI. The account owner reported an entitlement upgrade. Tibo announced a Pro allowance change on X on 2026-10-30 at 00:56 Singapore time (SGT, UTC+8); the OpenAI Help Center policy was checked on 2026-10-30. The account’s allowance tier after September 29 has not been verified, and we have not independently established whether or by how much the October change applied to it. The measurements neither prove nor disprove the official statement. Results apply only to Pro 200, not Pro 100 or Pro 500. Astra and Sol share one weekly pool, so their figures cannot be added. This run took place on 2026-10-30, 14:36–14:51 SGT, according to ledger timestamps; the full report is linked in Sources.',
+      zh: '本页是 aiplans 在一个 ChatGPT Pro 200 账号上用 Codex CLI 实测的周额度，不是 OpenAI 公布的额度。账号持有人报告权益已升级；Tibo 于 2026-10-30 00:56（新加坡时间，下同）在 X 上宣布 Pro 额度调整，OpenAI 帮助中心的具体规则核对日期为 2026-10-30。测试账号在 9 月 29 日之后的原额度档位未核实，这次调整是否、以及按什么倍率作用到本账号，也没有独立核验；实测既不能证明也不能否定官方说法。结果只适用于 Pro 200，不适用于 Pro 100 / Pro 500。Astra 与 Sol 共用一个周额度池，两个数字不能相加。本轮测试时间为 2026-10-30 14:36–14:51（按账本时间戳），完整报告见来源区。',
+    },
+    queryPatterns: ['%gpt-6-astra%', '%gpt-6-1-sol%'],
+    priceTable: false,
+    providerSlugs: ['openai'],
+    reviewedAt: '2026-10-30',
+    relatedModelsDescription: {
+      en: 'Compare API prices on each model page. These prices are separate from Codex subscription metering and do not determine the included token allowance.',
+      zh: '可在模型页对比各渠道 API 价格。API 计费与 Codex 订阅扣量分开，不能据此推算订阅包含的 token 额度。',
+    },
+    usageNotes: [
+      { en: 'Recalculate with your ordinary-input, cache-read and output mix.', zh: '按自己的普通输入、缓存读取和输出比例重新计算。' },
+      { en: 'Budget Astra and Sol against one shared weekly pool; these results apply only to Pro 200.', zh: 'Astra 与 Sol 按同一个周额度池做预算；结果只适用于 Pro 200。' },
+      {
+        en: 'Check your account’s meter and official policy before purchasing; measurements neither prove nor disprove the allowance change.',
+        zh: '购买前核对账号读数和官方规则；实测既不能证明也不能否定额度调整说法。',
+      },
+    ],
+    sections: [
+      {
+        heading: { en: 'Timeline (Singapore time, UTC+8)', zh: '时间线（均为新加坡时间 UTC+8）' },
+        body: {
+          en: '2026-09-29 14:41 / 23:10: Tibo of OpenAI (@thsottiaux, X bio "Codex & ChatGPT @OpenAI") posts on X that Pro 200 will reopen with a changed usage calculation (posts in Sources).\n\n2026-10-28 14:25–14:35: aiplans first retest (28-call Astra main batch); report merged into the site repo at 14:43.\n\n2026-10-28: Pro 200 price of US$200/month verified on aiplans.\n\n2026-10-29: gpt-6-astra API pricing snapshot verified (the only price basis for USD figures here).\n\n2026-10-30 00:56: Tibo announces on X the Pro 100/200/500 and Business Premium allowance change, "effective today" (posted 2026-10-29 16:56 UTC).\n\n2026-10-30: checked the OpenAI Help Center articles "About ChatGPT Pro tiers" and "Managing usage with GPT-6 Astra in Work and Codex".\n\n2026-10-30 14:36–14:51: aiplans current retest (60-call main batch each for Astra and Sol); report merged at 14:59.\n\n2026-10-30: review date for external sources on this page.',
+          zh: '2026-09-29 14:41 / 23:10：OpenAI 的 Tibo（@thsottiaux，X 简介 “Codex & ChatGPT @OpenAI”）在 X 上说明 Pro 200 将重新开放并改变用量计算方式（原帖见来源）。\n\n2026-10-28 14:25–14:35：aiplans 第一轮复测（Astra 主测 28 次）；报告 14:43 合入站点仓库。\n\n2026-10-28：站内核验 Pro 200 月费 US$200 / 月。\n\n2026-10-29：gpt-6-astra API 价格快照核验（本页美元等价的唯一价格依据）。\n\n2026-10-30 00:56：Tibo 在 X 上宣布 Pro 100/200/500 与 Business Premium 额度调整，“effective today”（原帖发布时间为 2026-10-29 16:56 UTC）。\n\n2026-10-30：核对 OpenAI 帮助中心「About ChatGPT Pro tiers」与「Managing usage with GPT-6 Astra in Work and Codex」的说明。\n\n2026-10-30 14:36–14:51：aiplans 本轮复测（Astra、Sol 各 60 次主测）；报告 14:59 合入站点仓库。\n\n2026-10-30：本页外部来源的核对日期。',
+        },
+      },
+      {
+        heading: { en: 'Key results: weekly capacity for Astra and Sol', zh: '结论：Astra 与 Sol 的周额度' },
+        body: {
+          en: 'GPT-6 Astra: all 60 main-batch calls succeeded, 5,580,339 known tokens, weekly usage 49% → 53%. Point estimate ~139.5M tokens/week (139,508,475). Treating each whole-number reading as ±0.5 percentage points gives a range of ~111.6M–186.0M (111,606,780–186,011,300). This is a rounding range, not a statistical confidence interval.\n\nGPT-6.1 Sol: 59 of 60 main-batch calls succeeded (one "Selected model is at capacity" error), 5,484,515 known tokens, weekly usage 48% → 49%. Only a conditional lower bound is available: ~274.2M tokens/week (274,225,750). There is no upper bound and no point estimate.\n\nUSD equivalent: at the standard gpt-6-astra API list price (USD per 1M tokens: input $10 / cache read $1 / output $50; pricing snapshot verified 2026-10-29, not re-verified for this test), Astra\'s test workload is worth about $1,222 per week, range $978–$1,630 (rounding only). This is an API list-price equivalent, not a plan balance, and it does not mean OpenAI deducts quota at API prices. No USD equivalent is given for Sol.\n\nPro 200 costs US$200/month (verified on aiplans 2026-10-28); see OpenAI pricing & subscription plans.',
+          zh: 'GPT-6 Astra：主测 60 次全部成功，已知 5,580,339 tokens，周窗口已用 49% → 53%。点估计约 1.395 亿 tokens / 周（139,508,475）；把每个整数读数按 ±0.5 个百分点处理，范围约 1.116 亿 – 1.860 亿（111,606,780 – 186,011,300）。这是读数舍入区间，不是统计置信区间。\n\nGPT-6.1 Sol：主测 60 次，59 次成功（1 次 “Selected model is at capacity” 报错），已知 5,484,515 tokens，周窗口已用 48% → 49%。只能给出条件下界约 2.742 亿 tokens / 周（274,225,750），没有上界，也没有点估计。\n\n美元等价：按 gpt-6-astra 标准 API 公开价（USD，每百万 tokens 输入 $10 / 缓存读取 $1 / 输出 $50，价格快照核验于 2026-10-29，本次未重新核验），Astra 这次的测试负载折合约 $1,222 / 周，范围 $978 – $1,630（同样只含读数舍入）。这只是 API 标价等价价值，不是套餐余额，也不代表 OpenAI 按 API 价格扣额度。Sol 不给美元等价。\n\nPro 200 的月费为 US$200 / 月（站内核验于 2026-10-28），见 OpenAI 套餐与价格。',
+        },
+      },
+      {
+        heading: { en: 'What these numbers mean, and when they apply', zh: '这些数字的含义与适用条件' },
+        body: {
+          en: 'ChatGPT Pro 200 only. The Pro 200 plan was confirmed by the owner, not by independent billing verification; the upgrade is owner-reported. The account’s allowance tier after September 29 has not been verified, nor has the effect of the October change on this account. The measurements neither prove nor disprove the official statement.\n\nAstra and Sol share one weekly pool. If you use both in the same week, you draw down one pool; the total is not 139.5M + 274.2M.\n\nThe Codex CLI reports only the requested model name; it cannot prove which model actually served the request.\n\nOnly the weekly (10,080-minute) window was readable. The 5-hour and monthly windows were not returned, and this page does not extrapolate them.\n\nThese are conditional estimates for one workload mix: ~93K input tokens per call, short output, high concurrency. Cache reads were about 14.45% of Astra\'s main batch and output was minimal. A different input, cache and output mix will yield a different token count.\n\nThe estimates assume linear, settled metering and no other traffic. They are not an OpenAI commitment.',
+          zh: '只适用于 ChatGPT Pro 200。Pro 200 套餐由账号持有人确认，不是账单独立核验；升级是持有人报告的。测试账号在 9 月 29 日之后的原额度档位未核实；调整是否作用到本账号、作用后额度变了多少，都未核验。实测既不能证明也不能否定官方说法。\n\nAstra 和 Sol 共用一个周额度池。同一周里两者都用，总量不是 1.395 亿 + 2.742 亿，而是共同消耗同一个池子。\n\nCodex CLI 只报告请求的模型名，无法证明实际服务的是哪个模型。\n\n只拿到了周窗口（10080 分钟）读数；5 小时窗口和月窗口接口没有返回，本页不做外推。\n\n这些是一种固定负载配比下的条件估算：每次约 9.3 万输入 token、短输出、高并发。Astra 主测中缓存读取约占 14.45%，输出很少。你的输入、缓存、输出比例不同，能跑的 token 数会不同。\n\n估算假设线性扣量、计量已结算、期间没有其他流量。它不是 OpenAI 的承诺额度。',
+        },
+      },
+      {
+        heading: { en: 'Why Sol is only a lower bound', zh: 'Sol 的数字为什么只是下界' },
+        body: {
+          en: 'During Sol\'s main batch the weekly meter moved only one point (48% → 49%), the controller session counter also increased, and one request failed with an at-capacity error that returned no usage. The report does not attribute the whole change to Sol, nor does it use API prices to subtract other usage. Instead it takes the most conservative view: with whole-number readings, the true increase was at most 2 points, so Sol\'s known usage consumed no more than 2 points. Weekly capacity is therefore at least 5,484,515 ÷ 2% ≈ 274.2M tokens.\n\nThe bound relies on four assumptions: settled metering, linear consumption, no refunds, and no reset or quota change. If any fails, the figure cannot be used. It shows a floor, not Sol\'s full weekly quota.',
+          zh: 'Sol 主测期间周读数只动了 1 个百分点（48% → 49%），控制会话计数也有增量，而且有一次请求报 at capacity，失败请求没有 usage 数据。报告没有把整段变化都算给 Sol，也没有用 API 价格去扣除其他消耗，而是取最保守的口径：两端整数读数的真实增量最多 2 个百分点，Sol 已知消耗不会超过这 2 个百分点，所以周容量至少为 5,484,515 ÷ 2% ≈ 2.742 亿 tokens。\n\n这个下界依赖四个前提：计量已结算、线性扣量、没有退款、没有重置或额度变化。任何一条不成立，这个数就不能用。它只说明“至少”，不能当成 Sol 的完整周额度。',
+        },
+      },
+      {
+        heading: { en: 'How this compares with the October 28 run', zh: '和 10 月 28 日结果怎么比' },
+        body: {
+          en: 'In the first retest on Oct 28 (run 14:25–14:35, before OpenAI\'s announcement), Astra\'s 28-call main batch gave a point estimate of ~86.5M tokens/week, range ~64.9M–129.8M; Sol\'s readings were inconsistent and no capacity was published.\n\nThis run\'s Astra point estimate is higher, but the two ranges overlap (the new lower edge, 111.6M, is below the old upper edge, 129.8M), and the cache and system-input mix differed between runs. So this result does not prove how much the quota changed, and the ratio of the two point estimates cannot be used as an upgrade multiplier.',
+          zh: '10-28（14:25–14:35 测试，早于 OpenAI 公告）的第一轮复测中，Astra 主测 28 次，点估计约 8,651 万 tokens / 周，范围约 6,488 万 – 1.298 亿；当时 Sol 读数异常，没有发布容量。\n\n这次 Astra 的点估计更高，但新旧两个区间有重叠（新区间下沿 1.116 亿低于旧区间上沿 1.298 亿），两轮的缓存和系统输入比例也不同。所以这次结果不能证明额度涨了多少，也不能用两个点估计相除来推算升级倍率。',
+        },
+      },
+      {
+        heading: { en: 'Official statements: OpenAI Help Center', zh: '官方说法：OpenAI 帮助中心' },
+        body: {
+          en: 'Official statements: OpenAI Help Center (About ChatGPT Pro tiers, checked 2026-10-30):\n\n"Pro 100 and Pro 500 now include twice their previous Work and Codex allowance. On Pro 200, only the lower allowance doubled. New subscriptions include the updated allowance, and existing subscribers receive it automatically without waiting for renewal."\n\n"The reduction announced in our September 29 email is canceled. If you already had the higher Work and Codex allowance, you keep it. If you had the lower allowance, it has doubled to match. Your subscription price stays at $200/month."\n\n"A larger allowance does not guarantee twice as many completed tasks."',
+          zh: '官方说法：OpenAI 帮助中心（About ChatGPT Pro tiers，核对日期为 2026-10-30）：\n\n"Pro 100 and Pro 500 now include twice their previous Work and Codex allowance. On Pro 200, only the lower allowance doubled. New subscriptions include the updated allowance, and existing subscribers receive it automatically without waiting for renewal."\n\n"The reduction announced in our September 29 email is canceled. If you already had the higher Work and Codex allowance, you keep it. If you had the lower allowance, it has doubled to match. Your subscription price stays at $200/month."\n\n"A larger allowance does not guarantee twice as many completed tasks."\n\n（译：Pro 100 和 Pro 500 的 Work 与 Codex 额度变为原来的两倍；Pro 200 只有原本较低的额度翻倍，原本就是较高额度的保持不变；9 月 29 日邮件里宣布的下调取消；更大的额度不保证能完成两倍任务。）',
+        },
+      },
+      {
+        heading: { en: 'Official statements: Tibo on X', zh: '官方说法：Tibo 的 X 原帖' },
+        body: {
+          en: 'Official statements: Tibo on X (original post, 2026-10-30 00:56 SGT):\n\n"We are doubling all usage limits for all Pro 100/200/500 tiers and Business Premium, effective today."\n\n"We heard your kind feedback and won’t be reducing usage limits for Pro 200, so your Work and Codex usage will stay the same."\n\nTibo\'s post is less specific about Pro 200 than the Help Center; for Pro 200 we follow the Help Center rule that only the lower allowance doubled.',
+          zh: '官方说法：Tibo 的 X 原帖（原帖，2026-10-30 00:56 新加坡时间）：\n\n"We are doubling all usage limits for all Pro 100/200/500 tiers and Business Premium, effective today."\n\n"We heard your kind feedback and won’t be reducing usage limits for Pro 200, so your Work and Codex usage will stay the same."\n\nTibo 原帖对 Pro 200 的写法比帮助中心笼统；Pro 200 的具体规则以帮助中心的“只有较低额度翻倍”为准。',
+        },
+      },
+      {
+        heading: { en: 'Official statements vs measurements: what matches', zh: '官方说法与实测：能对上的' },
+        body: {
+          en: 'Timing: one of our runs was before the announcement (Oct 28, 14:25) and one after (Oct 30, 14:36).\n\nWeekly window only: the Help Center says "Pro 100, Pro 200 and Pro 500 currently have no five-hour usage limit in Work and Codex.", consistent with us reading only a weekly window.\n\nShared pool: the Help Center says "Work and Codex share the usage allowance included with your plan." and "Switching models does not restore allowance in a shared usage pool.", consistent with Astra and Sol drawing on one weekly pool in our test.\n\nDirection: Astra\'s point estimate is higher than on Oct 28, which does not contradict "no reduction".',
+          zh: '时间：我们的两轮测试一轮在公告前（10-28 14:25），一轮在公告后（10-30 14:36），先后顺序清楚。\n\n只有周窗口：帮助中心写 “Pro 100, Pro 200 and Pro 500 currently have no five-hour usage limit in Work and Codex.”，和我们只拿到周窗口读数一致。\n\n共用额度池：帮助中心写 “Work and Codex share the usage allowance included with your plan.” 和 “Switching models does not restore allowance in a shared usage pool.”，和我们观察到 Astra、Sol 共用一个周额度池一致。\n\n方向：Astra 点估计比 10-28 高，和“额度没有下调”不矛盾。',
+        },
+      },
+      {
+        heading: { en: 'Official statements vs measurements: what cannot be shown', zh: '官方说法与实测：无法证明的' },
+        body: {
+          en: 'Multiplier: the official doubling applies only to Pro 200 accounts that had the lower allowance. The account’s original allowance tier after September 29 and before this change has not been verified, so we can\'t even say what OpenAI\'s rule implies for it.\n\nPrecision: the old and new Astra ranges overlap, so "unchanged" can\'t be ruled out; with whole-percent readings, doubling can\'t be ruled out either. Our data neither proves nor disproves the official doubling, and this page gives no multiplier of its own.\n\nSol: no Sol capacity was published on Oct 28, so there is no baseline to compare.\n\nOpenAI does not publish Pro 200 token allowances; the figures here are measured estimates for one workload, not official quotas.',
+          zh: '倍率：官方的“翻倍”只针对原本较低额度的 Pro 200。测试账号在 9 月 29 日之后、此次调整前的原额度档位未核实，所以连“官方说这个账号应该变多少”都无法确定。\n\n实测精度：新旧 Astra 区间重叠，不能排除“额度没变”；读数只有整数百分比，精度也不足以排除“翻倍”。因此我们的数据既不能证明、也不能否定官方的翻倍说法。本页不给自己计算的倍率。\n\nSol：10-28 没有发布 Sol 容量，没有基线，无法和官方说法对比。\n\n官方没有公布 Pro 200 的具体 token 额度；本页数字是一种固定负载下的实测估算，不是官方额度。',
+        },
+      },
+      {
+        heading: { en: 'Method', zh: '测法' },
+        body: {
+          en: 'Tool: Codex CLI signed in with the ChatGPT Pro 200 account, reading that account\'s weekly quota window.\n\nWorkload: the same synthetic Python code-review prompt as Oct 28, ~93K input tokens per call, short output; a random nonce per call, with caching taken from actual usage. No tool execution was observed.\n\nBatches: per model, 4 calibration calls, a 32-call concurrent extension, then a 60-call main batch (up to 12 concurrent). Capacity uses the main batch only; batches are not merged across models.\n\nReadings: weekly usage before and after each batch, with immediate and delayed end readings at least 10 seconds apart, plus checks on reset time and controller counters. Collection time is not server settlement time.\n\nCounting: ordinary input = input_tokens − cached_input_tokens; total = input_tokens + output_tokens, without double-counting reasoning; cache writes were 0.\n\nCalculation: Astra point estimate = total tokens ÷ 4%, range = total ÷ 5% to total ÷ 3%; Sol lower bound = known Sol tokens ÷ 2%.\n\nStop rule: testing stopped at about 53% used; calls were not added indefinitely after errors.\n\nThe per-call ledger and all window readings are in codex-models-2026-10-30.json.',
+          zh: '工具：Codex CLI，使用 ChatGPT Pro 200 账号登录，读取该账号的周额度窗口。\n\n负载：沿用 10-28 的合成 Python 代码审查输入，每次约 9.3 万输入 token，要求短输出；每次加随机 nonce，缓存以实际 usage 为准。没有观察到工具执行。\n\n批次：每个模型先做 4 次校准、32 次并发扩展，再做 60 次主测（最多 12 并发）。容量只用主测计算，各批次不跨模型合并。\n\n读数：每批前后读周窗口已用百分比，结束时取即时和延迟两次读数（间隔至少 10 秒），并核对重置时间和控制会话计数。采集时间不等于服务端结算时间。\n\n计数：普通输入 = input_tokens − cached_input_tokens；总量 = input_tokens + output_tokens，reasoning 不重复计数；缓存写入为 0。\n\n计算：Astra 点估计 = 总 token ÷ 4%，范围 = 总 token ÷ 5% 到 总 token ÷ 3%；Sol 下界 = 已知 Sol token ÷ 2%。\n\n停止：在约 53% 已用时停止，没有因报错无限追加调用。\n\n逐次账本和全部窗口读数在 codex-models-2026-10-30.json。',
+        },
+      },
+      {
+        heading: { en: 'Subscription or API: how to use these numbers', zh: '订阅还是 API：怎么用这些数字判断' },
+        body: {
+          en: 'First separate the two billing paths: Codex signed in with a ChatGPT plan uses the plan\'s allowance; Codex signed in with an API key is billed at API prices, and a subscription does not offset API charges (see OpenAI\'s Codex pricing).\n\n1. Measure the tokens you actually use in Codex in a week, split into ordinary input, cache reads and output.\n\n2. Price that usage at API rates: ordinary input ÷ 1M × input rate + cache reads ÷ 1M × cached rate + output ÷ 1M × output rate. For Astra you can use the 2026-10-29 snapshot above; for other models, check the current price on the model page.\n\n3. Compare with the plan: Pro 200 is US$200/month. Price a month of your real usage as in step 2 and compare it with the monthly fee. Well below the fee, pay-as-you-go API may cost less; well above it, the subscription is better value, but check whether your weekly usage would exceed the weekly capacity on this page. For reference, at the 2026-10-29 pricing snapshot, a full week of this Astra test workload is worth about $1,222 at API list price ($978–$1,630), not a plan balance or deduction rule.\n\n4. Check whether your mix is similar: this test used long input, short output and low caching. With more output or more caching, both the usable token count and its API value change, so do not apply these figures directly.\n\n5. If you mix Astra and Sol, budget against one pool; do not add the two capacities.\n\n6. Hitting the limit does not force an upgrade: per OpenAI, Plus and Pro users who reach their limit can buy additional credits, or run extra local chats with an API key at standard API rates. Check credit rates on the official page; this guide does not estimate them.\n\nYour own account\'s usage meter and OpenAI\'s official documentation take precedence. Compare channel API prices on the GPT-6 Astra and GPT-6.1 Sol model pages, and plans in the subscription comparison.',
+          zh: '先分清两条计费路径：Codex 用 ChatGPT 订阅登录时消耗订阅额度；用 API Key 登录时按 API 价格计费，订阅不能抵扣 API 账单（见 OpenAI Codex 官方计费说明）。\n\n1. 统计你一周在 Codex 里实际用掉的 token，按普通输入、缓存读取、输出分开记。\n\n2. 算出这些用量的 API 标价：普通输入 ÷ 100 万 × 输入单价 + 缓存读取 ÷ 100 万 × 缓存单价 + 输出 ÷ 100 万 × 输出单价。Astra 可用上面的 2026-10-29 价格快照，其他模型到对应模型页查当前价格。\n\n3. 和订阅比：Pro 200 是 US$200 / 月。把你一个月的实际用量按第 2 步折成 API 标价，再和月费比：明显低于月费，按量用 API 可能更省；明显高于月费，订阅更划算，但还要看周用量会不会超过本页的周容量。作为参照，按 2026-10-29 的价格快照，本次 Astra 测试负载用满一周折合 API 标价约 $1,222（$978 – $1,630），不是套餐余额或扣量规则。\n\n4. 看配比是否接近：本次是长输入、短输出、低缓存的负载。输出占比更高或缓存更多时，实际能跑的 token 数和对应的 API 金额都会变，不能直接套用本页数字。\n\n5. 混用 Astra 和 Sol 时按一个池子算，不要把两个容量加在一起做预算。\n\n6. 用满之后不一定要升级：按 OpenAI 官方说明，Plus 和 Pro 用户达到限额后可以购买额外 credits 继续用，也可以改用 API Key 按标准 API 价格跑本地任务。credits 的单价以官方页面为准，本页不估算。\n\n最终以你自己账号的用量读数和 OpenAI 官方说明为准。各渠道的 API 价格可在 GPT-6 Astra、GPT-6.1 Sol 模型页对比，订阅套餐可在订阅套餐对比中查看。',
+        },
+      },
+    ],
+    faqs: [
+      {
+        question: { en: 'How much did the Pro 200 quota grow after the upgrade?', zh: 'Pro 200 升级后额度涨了多少？' },
+        answer: {
+          en: 'The OpenAI Help Center (checked 2026-10-30) says that on Pro 200 only the lower allowance doubled, while the higher allowance stayed the same. The test account’s original allowance tier after September 29 has not been verified. The old and new Astra ranges overlap and the workload mix differed, so our measurements neither prove nor disprove that statement. We give no multiplier of our own.',
+          zh: 'OpenAI 帮助中心（核对日期为 2026-10-30）的说法是：Pro 200 只有原本较低的额度翻倍，原本较高的保持不变。测试账号在 9 月 29 日之后的原额度档位未核实；新旧 Astra 区间重叠，两轮负载配比也不同，所以实测既不能证明也不能否定官方说法，本页不给自己算的倍率。',
+        },
+      },
+      {
+        question: { en: 'Can I add the Astra and Sol quotas together?', zh: 'Astra 和 Sol 的额度能加起来吗？' },
+        answer: { en: 'No. They share one weekly pool; using both in the same week draws on the same allowance.', zh: '不能。两者共用同一个周额度池，同一周内混用时是在消耗同一份额度。' },
+      },
+      {
+        question: { en: 'Do these numbers apply to Pro 100 or Pro 500?', zh: '这些数字适用于 Pro 100 或 Pro 500 吗？' },
+        answer: { en: 'No. Only Pro 200 was measured, and we do not scale results to other tiers by price.', zh: '不适用。本次只测了 Pro 200，不按价格倍数推到其他档位。' },
+      },
+      {
+        question: { en: 'What is the 5-hour limit?', zh: '5 小时限额是多少？' },
+        answer: { en: 'The CLI returned only the weekly window in this test. There is no 5-hour or monthly data, and this page does not estimate them.', zh: '本次接口只返回周窗口，5 小时和月窗口没有数据，本页不做推算。' },
+      },
+      {
+        question: { en: 'Is the USD equivalent a balance I can spend?', zh: '美元等价是我能用的余额吗？' },
+        answer: {
+          en: 'No. It converts the test workload at the standard gpt-6-astra API list price (2026-10-29 snapshot) to give token counts a reference unit. It is not a balance or OpenAI\'s deduction rule.',
+          zh: '不是。它只是把测试负载按 gpt-6-astra 标准 API 公开价（2026-10-29 快照）折算，用来给 token 数一个参考单位，不是余额，也不是 OpenAI 的扣量规则。',
+        },
+      },
+    ],
+    sourcesTitle: { en: 'Sources, measurement reports and review date', zh: '来源、实测报告与核对日期' },
+    sources: [
+      {
+        label: { en: 'OpenAI Help Center: About ChatGPT Pro tiers (Pro allowance change; checked 2026-10-30)', zh: 'OpenAI 帮助中心：About ChatGPT Pro tiers（Pro 额度调整细则；核对日期 2026-10-30）' },
+        url: 'https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers',
+      },
+      {
+        label: {
+          en: 'OpenAI Help Center: Managing usage with GPT-6 Astra in Work and Codex (shared pool, no 5-hour limit on Pro; checked 2026-10-30)',
+          zh: 'OpenAI 帮助中心：Managing usage with GPT-6 Astra in Work and Codex（共用额度池、Pro 无 5 小时限额；核对日期 2026-10-30）',
+        },
+        url: 'https://help.openai.com/en/articles/20001516-managing-usage-with-gpt-6-astra-in-work-and-codex',
+      },
+      {
+        label: { en: 'Tibo (@thsottiaux) on X: Pro allowance announcement (2026-10-30 00:56 SGT)', zh: 'Tibo（@thsottiaux）X 原帖：Pro 额度调整公告（2026-10-30 00:56）' },
+        url: 'https://x.com/thsottiaux/status/2115850175868727621',
+      },
+      {
+        label: { en: 'Tibo (@thsottiaux) on X: Pro 200 reopening and multipliers (2026-09-29 23:10 SGT)', zh: 'Tibo（@thsottiaux）X 原帖：Pro 200 重新开放与倍数说明（2026-09-29 23:10）' },
+        url: 'https://x.com/thsottiaux/status/2104951965184925941',
+      },
+      {
+        label: { en: 'OpenAI Codex pricing: subscription usage versus API-key billing (undated page)', zh: 'OpenAI Codex 官方计费：订阅用量与 API Key 的区别（页面无日期）' },
+        url: 'https://developers.openai.com/codex/pricing',
+      },
+      {
+        label: { en: 'OpenAI GPT-6 Astra model page and API pricing (pricing snapshot verified 2026-10-29)', zh: 'OpenAI GPT-6 Astra 官方模型页与 API 价格（价格快照核验于 2026-10-29）' },
+        url: 'https://developers.openai.com/api/docs/models/gpt-6-astra',
+      },
+      {
+        label: {
+          en: 'aiplans measurement report: Codex Pro 200 current retest (run 2026-10-30 14:36–14:51, report merged 14:59 SGT; Chinese)',
+          zh: 'aiplans 实测报告：Codex Pro 200 本轮复测（测试 2026-10-30 14:36–14:51，报告合入站点仓库 14:59）',
+        },
+        url: 'https://aiplans.dev/reports/codex-models-2026-10-30.md',
+      },
+      {
+        label: {
+          en: 'aiplans measurement report: Codex Astra / Sol retest (run 2026-10-28 14:25–14:35, report merged 14:43 SGT; Chinese)',
+          zh: 'aiplans 实测报告：Codex Astra / Sol 复测（测试 2026-10-28 14:25–14:35，报告合入站点仓库 14:43）',
+        },
+        url: 'https://aiplans.dev/reports/codex-models-2026-10-28.md',
+      },
+    ],
+    relatedLinks: [
+      {
+        label: { en: 'OpenAI pricing & subscription plans · Pro 200', zh: 'OpenAI 价格与订阅套餐 · Pro 200' },
+        url: { en: '/en/providers/openai#chatgpt-pro-200', zh: '/zh/providers/openai#chatgpt-pro-200' },
+      },
+      {
+        label: { en: 'GPT-6 Astra pricing', zh: 'GPT-6 Astra 模型价格' },
+        url: { en: '/en/models/openai-gpt-6-astra', zh: '/zh/models/openai-gpt-6-astra' },
+      },
+      {
+        label: { en: 'GPT-6.1 Sol pricing', zh: 'GPT-6.1 Sol 模型价格' },
+        url: { en: '/en/models/openai-gpt-6-1-sol', zh: '/zh/models/openai-gpt-6-1-sol' },
+      },
+      {
+        label: { en: 'GPT-6 Astra subscription comparison', zh: 'GPT-6 Astra 订阅套餐对比' },
+        url: { en: '/en/compare/plans/openai-gpt-6-astra', zh: '/zh/compare/plans/openai-gpt-6-astra' },
+      },
+      {
+        label: { en: 'GPT-6.1 Sol subscription comparison', zh: 'GPT-6.1 Sol 订阅套餐对比' },
+        url: { en: '/en/compare/plans/openai-gpt-6-1-sol', zh: '/zh/compare/plans/openai-gpt-6-1-sol' },
+      },
+      {
+        label: { en: 'Quota measurements', zh: '额度实测数据' },
+        url: { en: '/en/quota-bench', zh: '/zh/quota-bench' },
+      },
+      {
+        label: { en: 'OpenAI API pricing guide', zh: 'OpenAI API 价格指南' },
+        url: { en: '/en/guides/openai-api-pricing', zh: '/zh/guides/openai-api-pricing' },
+      },
+      {
+        label: { en: 'Per-call ledger and quota readings (JSON)', zh: '逐次账本与额度窗口读数（JSON）' },
+        url: { en: '/reports/codex-models-2026-10-30.json', zh: '/reports/codex-models-2026-10-30.json' },
+      },
     ],
   },
 };
