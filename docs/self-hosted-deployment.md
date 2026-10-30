@@ -196,6 +196,13 @@ previous rates in place and is reported in the scraper log.
 The scraper run publishes v1 whenever the API scrape succeeds, even if the data
 audit reports critical findings. The audit summary is logged after publication,
 and critical findings still fail the job so OnFailure alerts fire.
+C18 `plans.mapping_drift` is a warning: it retains the affected plan count and
+example missing/stale models without failing the scheduled run. Plan kinds and
+mappings run in dry-run mode by default. When mappings differ, the runner logs
+`mapping drift: N plan(s) need PLAN_MAPPINGS_APPLY=1`; applying them requires a
+reviewed manual run with that opt-in. Broken or empty selectors (C16/C17) remain
+critical. npm update notices are disabled in the scraper container to keep the
+final status visible.
 The deployment also installs `planprice-snapshot-cleanup.timer`, which runs
 daily at 04:15 Asia/Singapore and removes immutable v1 snapshots only after
 their 90-day retention window. `current.json` and unreadable snapshots are

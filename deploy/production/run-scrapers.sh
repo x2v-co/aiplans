@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export NPM_CONFIG_UPDATE_NOTIFIER=false
+
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 compose_file="${COMPOSE_FILE:-$script_dir/compose.yml}"
 env_file="${ENV_FILE:-$script_dir/.env.production}"
@@ -24,6 +26,9 @@ if ! flock -n 9; then
   echo "Another planprice operation is active; skipping this scraper run."
   exit 0
 fi
+
+output_dir="$(mktemp -d)"
+trap 'rm -rf -- "$output_dir"' EXIT
 
 set +e
 "${compose[@]}" run --rm scraper npm run refresh:fx
@@ -76,16 +81,21 @@ else
   echo "Plan kinds / mappings: dry-run only (set PLAN_MAPPINGS_APPLY=1 for an approved apply)"
   "${compose[@]}" run --rm scraper npm run fix:kinds:dry-run
   kinds_status=$?
-  "${compose[@]}" run --rm scraper npm run mappings:materialize:dry-run
-  mappings_status=$?
+  "${compose[@]}" run --rm scraper npm run mappings:materialize:dry-run 2>&1 | tee "$output_dir/mappings"
+  mappings_status=${PIPESTATUS[0]}
+  # The materializer emits one wrench line per changed plan, including
+  # priority-only changes. Count plans rather than replaced mapping rows.
+  mapping_drift="$(awk '/^[[:space:]]*🔧[[:space:]]/ { count++ } END { print count+0 }' "$output_dir/mappings")"
+  if [[ "$mappings_status" == "0" && "$mapping_drift" -gt 0 ]]; then
+    echo "mapping drift: $mapping_drift plan(s) need PLAN_MAPPINGS_APPLY=1"
+  fi
 fi
 
 if [[ "${SKIP_AUDIT:-0}" == "1" ]]; then
   echo "SKIP_AUDIT=1 — skipping data audit and audit alerts"
   audit_status=0
 else
-  audit_output="$(mktemp)"
-  trap 'rm -f -- "$audit_output"' EXIT
+  audit_output="$output_dir/audit"
   "${compose[@]}" run --rm scraper npm run audit 2>&1 | tee "$audit_output"
   audit_status=${PIPESTATUS[0]}
 

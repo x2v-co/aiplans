@@ -247,11 +247,14 @@ Three scripts form the feedback loop:
    `plans.selector_unknown_slug`, `plans.mapping_drift`,
    `prices.aa_official_divergence` (C21; our USD official channel vs the
    `external_price_references` snapshot; non-USD regional rows skipped).
-   Exit code 0 = clean, 1 = critical, 2 = warnings only.
+   Exit code 0 = clean or warnings only, 1 = critical; `--strict` returns 2
+   for warnings only.
    `plans.mapping_drift` compares each plan's materialized mapping rows
    against a fresh selector resolution in both directions, so a broken/stale
    materializer (missing links for new models, or links the selector no
-   longer matches) goes critical even when every selector rule is valid.
+   longer matches) produces a warning with counts and examples. Scheduled
+   materialization is dry-run only; a reviewed manual `PLAN_MAPPINGS_APPLY=1`
+   run resolves drift. Empty/broken selectors (C16/C17) remain critical.
    The last four need migration 013/014; the audit probes for the columns and
    skips them with a notice rather than crashing on a pre-migration database.
 
