@@ -87,6 +87,7 @@ services:
       PLANPRICE_V1_SNAPSHOT_PATH: ${PLANPRICE_V1_SNAPSHOT_PATH:-/var/lib/planprice/snapshots/current.json}
       PLANPRICE_V1_SNAPSHOT_DIR: ${PLANPRICE_V1_SNAPSHOT_DIR:-/var/lib/planprice/snapshots}
       PLANPRICE_V1_FX_PATH: ${PLANPRICE_V1_FX_PATH:-/var/lib/planprice/snapshots/exchange-rates.json}
+      PLANPRICE_V1_TTL_HOURS: ${PLANPRICE_V1_TTL_HOURS:-30}
       PLANPRICE_FX_MAX_AGE_HOURS: ${PLANPRICE_FX_MAX_AGE_HOURS:-30}
     volumes:
       - ${PLANPRICE_V1_SNAPSHOT_HOST_DIR:-/opt/x2v/planprice/snapshots}:/var/lib/planprice/snapshots

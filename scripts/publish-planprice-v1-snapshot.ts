@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { sql } from '../src/lib/db';
 import { canonicalJson } from '../src/lib/planprice-v1-snapshot';
+import { parsePlanpriceV1TtlHours } from './utils/planprice-v1-ttl';
 
 type PriceRow = PriceSchedule & {
   channel_price_id: number;
@@ -28,7 +29,7 @@ type FxRow = { to_currency: string; rate: number | string; source: string; valid
 
 const now = new Date();
 const generatedAt = now.toISOString();
-const nominalExpiry = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+const nominalExpiry = new Date(now.getTime() + parsePlanpriceV1TtlHours(process.env.PLANPRICE_V1_TTL_HOURS) * 3_600_000);
 const fxMaxAgeHours = Number(process.env.PLANPRICE_FX_MAX_AGE_HOURS ?? 30);
 const snapshotPath = process.env.PLANPRICE_V1_SNAPSHOT_PATH ?? '/var/lib/planprice/snapshots/current.json';
 const snapshotDir = process.env.PLANPRICE_V1_SNAPSHOT_DIR ?? snapshotPath.replace(/\/[^/]+$/, '');
