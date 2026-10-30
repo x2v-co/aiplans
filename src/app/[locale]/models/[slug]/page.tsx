@@ -1,5 +1,6 @@
 import { getSeoIndexCatalog } from '@/lib/seo-index-data';
 import { modelShouldIndex } from '@/lib/seo-index-policy';
+import { localizeProvider, providerDisplayName } from '@/lib/provider-display-name';
 import { publicModelDescription, publicModelName } from '@/lib/public-catalog-copy';
 import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
 import { CodexModelMeasurements } from '@/components/codex-model-measurements';
@@ -184,6 +185,7 @@ async function getProductWithChannels(slug: string, now = new Date()) {
       jsonb_build_object(
         'id', p.id,
         'name', p.name,
+        'name_en', to_jsonb(p)->>'name_en',
         'slug', p.slug,
         'type', p.type,
         'logo', p.logo,
@@ -359,7 +361,13 @@ export default async function ModelPage({
     notFound();
   }
 
-  const { product, channelPrices, usagePrices, referencePrices, plans, arenaElo, benchmarkScores, priceHistory, relatedModels, producerId } = data;
+  const { product: rawProduct, channelPrices: rawChannelPrices, usagePrices: rawUsagePrices,
+    referencePrices, plans, arenaElo, benchmarkScores, priceHistory: rawHistory, relatedModels, producerId } = data;
+  const product = { ...rawProduct, providers: localizeProvider(rawProduct.providers, locale) };
+  const channelPrices = rawChannelPrices.map(cp => ({ ...cp, providers: localizeProvider(cp.providers, locale) }));
+  const usagePrices = rawUsagePrices.map(row => ({ ...row, provider_name: providerDisplayName({ name: row.provider_name, slug: row.provider_slug }, locale) }));
+  const priceHistory = rawHistory.map(row => ({ ...row,
+    providerName: providerDisplayName({ name: row.providerName, slug: row.providerSlug }, locale) }));
   const officialUsagePrices = officialUsageFallback(channelPrices, usagePrices);
   const officialUsageHeadline = usagePriceHeadline(officialUsagePrices);
   // Agent-harness results (Claude Code, Codex, ...) on this host model. Renders
@@ -473,7 +481,7 @@ export default async function ModelPage({
     serviceType: 'AI Model API',
     name: productName,
     alternateName: pricing.aliases,
-    description: description || `${productName} — ${product.context_window?.toLocaleString() ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
+    description: description || `${productName} — ${product.context_window?.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US') ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
     image: `${SITE_URL}/${locale}/models/${product.slug}/opengraph-image`,
     url: `${SITE_URL}/${locale}/models/${product.slug}`,
     ...(product.providers?.name
@@ -557,12 +565,12 @@ export default async function ModelPage({
           <div className="flex flex-wrap gap-3">
             {product.context_window && (
               <Badge variant="outline" className="text-sm">
-                📏 Context: {product.context_window.toLocaleString()} tokens
+                📏 Context: {product.context_window.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US')} tokens
               </Badge>
             )}
             {arenaElo != null && (
               <Badge variant="outline" className="text-sm">
-                🏟️ Agent Arena: {arenaElo.toLocaleString(undefined, { maximumFractionDigits: 1 })}%
+                🏟️ Agent Arena: {arenaElo.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', { maximumFractionDigits: 1 })}%
               </Badge>
             )}
             {product.open_source === true && (
@@ -777,7 +785,7 @@ export default async function ModelPage({
                       <span className="text-sm font-normal text-zinc-500">/1M output</span>
                     </div>
                     <Badge className="mt-2 bg-green-100 text-green-800">
-                      支付宝/微信可用
+                      {isZh ? '支付宝/微信可用' : 'Alipay/WeChat Pay accepted'}
                     </Badge>
                     {showTrust && (
                       <DataTrustLabel fact={channelListPriceTrust(cheapestChina, locale, now)} locale={locale} />

@@ -1,30 +1,31 @@
-"use client";
-
-import { useTranslations } from 'next-intl';
+import { createTranslator } from 'next-intl';
+import enMessages from '../../messages/en.json';
+import zhMessages from '../../messages/zh.json';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EntitlementLine } from '@/components/data-trust-label';
-import { planCardCopy } from '@/lib/plan-card-display';
+import { planCardCopy, planMoney, planPriceState, type PlanHighlightFields } from '@/lib/plan-card-display';
 import { planEntitlementTrust, planPriceTrust, reviewedPlanSource, safeSourceUrl, type PlanTrustRow } from '@/lib/data-trust';
-import { formatPrice, type CurrencyCode } from '@/lib/currency';
+import { providerDisplayName } from '@/lib/provider-display-name';
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 import { pricingLabel } from '@/lib/model-pricing-seo';
 import type { ModelUsagePriceRow } from '@/lib/model-usage-prices';
 import type { ChannelTermsFields } from '@/lib/channel-terms';
 import { normalizeThirdPartyCoverage, type PlanCoverageFields } from '@/lib/third-party-coverage';
 
-export interface ModelPlanCardRow extends PlanTrustRow, ChannelTermsFields, Partial<PlanCoverageFields> {
+export interface ModelPlanCardRow extends PlanTrustRow, ChannelTermsFields, Partial<PlanCoverageFields>, PlanHighlightFields {
   id: number;
   name: string;
   slug: string;
   tier: string | null;
   price: number | null;
   annual_price: number | null;
+  price_yearly_monthly?: number | null;
   currency: string | null;
   features: unknown;
   access_from_china: boolean | null;
   plan_kind: string | null;
-  providers: { id: number; name: string; slug: string; logo: string | null;
+  providers: { id: number; name: string; name_en?: string | null; slug: string; logo: string | null;
     pricing_url?: string | null; website?: string | null } | null;
 }
 
@@ -36,14 +37,20 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
   recommended?: boolean;
   bestValue?: boolean;
 }) {
-  const t = useTranslations('modelDetail');
-  const quota = useTranslations('quota');
-  const terms = useTranslations('channelTerms');
-  const source = reviewedPlanSource(plan.providers?.slug, locale, plan.providers);
+  // Native <details> needs no client state. Keep the static card on the server
+  // so dates, currency and translations are computed once per request.
+  const messages = locale === 'zh' ? zhMessages : enMessages;
+  const t = createTranslator({ locale, messages, namespace: 'modelDetail' });
+  const quota = createTranslator({ locale, messages, namespace: 'quota' });
+  const terms = createTranslator({ locale, messages, namespace: 'channelTerms' });
+  const source = reviewedPlanSource(plan.providers?.slug, locale, plan.providers
+    ? { ...plan.providers, name: providerDisplayName(plan.providers, locale) } : null);
   const priceTrust = planPriceTrust(plan, source, locale, now, plan.providers?.slug);
   const entitlementTrust = planEntitlementTrust(plan, source, locale, now);
   const copy = planCardCopy({
     name: plan.name,
+    locale,
+    structured: plan,
     features: plan.features,
     sourceLabel: priceTrust.sourceLabel,
     notes: plan.notes,
@@ -57,13 +64,15 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
   const sourceUrl = priceTrust.sourceUrl || safeSourceUrl(usagePrices[0]?.source_url)
     || safeSourceUrl(plan.notes?.match(/https?:\/\/[^\s]+/)?.[0]);
   const flags = priceTrust.flags;
-  const currency = (plan.currency || 'USD') as CurrencyCode;
+  const currency = plan.currency || 'USD';
+  const priceState = planPriceState(plan);
   const period = !plan.price_unit || plan.price_unit === 'per_month' ? t('month')
     : plan.price_unit === 'per_year' ? t('year') : labelNonLlmPriceKey(plan.price_unit, locale);
 
   return <Card data-plan-card={plan.id} className={`min-w-0 gap-3 py-4 ${recommended
     ? 'border-2 border-blue-500' : bestValue ? 'border-2 border-green-500' : ''}`}>
     <CardHeader className="gap-2 px-4">
+      {plan.providers && <div className="text-xs text-zinc-500" data-plan-provider={plan.providers.slug}>{providerDisplayName(plan.providers, locale)}</div>}
       <CardTitle className="line-clamp-2 text-lg leading-6 [overflow-wrap:anywhere]">{copy.name}</CardTitle>
       <div className="flex flex-wrap gap-1 text-xs">
         {(copy.unverified || flags.unverified) && <Badge variant="outline" className="text-amber-700 dark:text-amber-400">{t('unverified')}</Badge>}
@@ -71,14 +80,15 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
         {flags.stale && <Badge variant="outline" className="text-amber-700 dark:text-amber-400">{t('stale')}</Badge>}
       </div>
       <div>
-        {plan.price == null ? (usagePrices.length === 0 && <div className="text-xl font-bold">{t('priceUnknown')}</div>)
-          : plan.tier === 'free' ? <div className="text-2xl font-bold">{t('free')}</div>
+        {priceState === 'contactSales' ? <div className="text-xl font-bold">{t('contactSales')}</div>
+          : priceState === 'priceUnknown' ? <div className="text-xl font-bold">{t('priceUnknown')}</div>
+          : priceState === 'free' ? <div className="text-2xl font-bold">{t('free')}</div>
           : <div className="text-2xl font-bold">
-            {formatPrice(plan.price, currency, locale)}
+            {planMoney(plan.price!, currency)}
             <span className="text-sm font-normal text-zinc-500"> / {period}</span>
           </div>}
-        {plan.annual_price != null && <div className="mt-1 text-sm text-zinc-500">
-          {formatPrice(plan.annual_price, currency, locale)} / {t('year')}
+        {priceState !== 'contactSales' && plan.annual_price != null && <div className="mt-1 text-sm text-zinc-500">
+          {planMoney(plan.annual_price, currency)} / {t('year')}
         </div>}
         {usagePrices.length > 0 && <div className="mt-2 max-h-32 space-y-1 overflow-y-auto text-sm">
           {usagePrices.map(row => <div key={row.id}>
@@ -93,10 +103,9 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
           <EntitlementLine text={point} locale={locale} />
         </li>)}
       </ul>}
-      <div className="text-xs text-zinc-500">
-        {t('lastVerified')}: {priceTrust.verifiedOn
-          ? <time dateTime={priceTrust.verifiedOn}>{priceTrust.verifiedOn}</time> : t('notRecorded')}
-      </div>
+      {priceTrust.verifiedOn && <div className="text-xs text-zinc-500">
+        {t('lastVerified')}: <time dateTime={priceTrust.verifiedOn}>{priceTrust.verifiedOn}</time>
+      </div>}
       {sourceUrl ? <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">{t('source')}</a>
         : <p className="text-xs text-zinc-500">{t('sourceNotRecorded')}</p>}
       {copy.details.length > 0 && <details className="text-sm text-zinc-600 dark:text-zinc-400">
