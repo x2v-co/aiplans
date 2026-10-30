@@ -97,3 +97,19 @@ test('plan cards show benchmark results with scope warnings and deep links inste
     }
   }
 });
+
+test('Pro 200 cards suppress old DB ranges and monthly extrapolation while retaining current report', () => {
+  for (const locale of ['en', 'zh'] as const) {
+    for (const planSlug of ['chatgpt-pro', 'chatgpt-pro-200']) {
+      const old = estimate({ plan_slug: planSlug, served_model: 'gpt-6-astra', window: 'weekly', est_tokens_low: '64883075', est_tokens_high: '129766150', verified_at: '2026-10-28' });
+      const sol = estimate({ plan_slug: planSlug, served_model: 'gpt-6.1-sol', window: 'weekly', est_tokens_low: '274225750', est_tokens_high: '548451500' });
+      const html = render(locale, createElement(PlanQuotaEstimates, { locale, planSlug, estimates: [old, sol] }));
+      assert.doesNotMatch(html, /64,883,075|129,766,150|86,510,767|548,451,500|2026-10-28<\/time>|倍率/);
+      assert.ok(html.includes('111.6M–186.0M'));
+      assert.ok(html.includes('139.5M'));
+      assert.ok(html.includes('≥ 274M'));
+      assert.ok(html.includes('/reports/codex-models-2026-10-28.md'));
+      assert.ok(!html.includes((locale === 'zh' ? zh : en).quota.monthlyEstimate));
+    }
+  }
+});

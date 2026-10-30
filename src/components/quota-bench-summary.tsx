@@ -59,9 +59,9 @@ export function PlanBenchSummary({ record, locale }: { record: BenchRecord; loca
       {!record.windowMeasurements && <p>{zh ? '已用额度' : 'Used allowance'}: {record.usedBefore}% → {record.usedAfter}%{record.estimateBasis ? (zh ? `（仅前 ${record.estimateBasis.calls} 次）` : ` (first ${record.estimateBasis.calls} calls only)`) : ''}</p>}
       <QuotaBenchUsd record={record} locale={locale} />
       <p className="text-zinc-500">{zh ? record.caveats.zh : record.caveats.en}</p>
-      {record.id === 'codex-pro' && <CodexModelMeasurements locale={locale} />}
       {record.id === 'volcengine-pro' && <VolcengineModelMeasurements locale={locale} />}
     </details>
+    {record.id === 'codex-pro' && <CodexModelMeasurements locale={locale} />}
     <Link href={`/${locale}/quota-bench#${record.id}`} className="inline-block text-blue-600 underline">{zh ? '评测过程与计算依据 →' : 'Measurement process and calculations →'}</Link>
   </div>;
 }

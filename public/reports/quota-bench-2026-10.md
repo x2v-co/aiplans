@@ -1,6 +1,6 @@
 > 10月30日更新：Codex 当前结果见 [升级后复测](./codex-models-2026-10-30.md)。此前记录保留为历史证据。
 
-> 更新：Codex Pro 200 的当前摘要已改用 [Astra / Sol 复测](./codex-models-2026-10-28.md)。下文 Codex 数据为历史混合控制会话样本；不要与新一轮配比混算。
+> 更新（2026-10-30）：Codex Pro 200 的当前摘要已改用 [Astra / Sol 升级后复测](./codex-models-2026-10-30.md)。[10-28 复测报告](./codex-models-2026-10-28.md)和下文 Codex 混合控制会话样本保留为历史，不与新一轮配比混算。升级来自用户报告、未独立核验；仅适用于 Pro 200，不适用于 Pro 100/500；只有周窗口，5 小时和月窗口不外推；两个模型共用额度池，不能相加；Astra 新旧区间重叠。
 
 > 更新：火山最新 30 次三窗口同步实测见[完整报告](/reports/volcengine-three-windows-2026-10-28.md)与[数据账本](/reports/volcengine-three-windows-2026-10-28.json)。本文火山 3 次样本保留为历史结果。
 

@@ -1,4 +1,22 @@
 {
+  "codexQuota": {
+    "heading": "Astra / Sol 升级后复测 · ChatGPT Pro 200",
+    "verifiedAt": "额度核验日期",
+    "astraCapacity": "111.6M–186.0M tokens/周；点估计 139.5M",
+    "solCapacity": "≥ 274M tokens/周（条件下界）",
+    "upgrade": "升级来自用户报告，未独立核验。",
+    "scope": "仅适用于 ChatGPT Pro 200，不适用于 Pro 100/500。",
+    "windows": "只有周窗口，5 小时窗口和月窗口不外推。",
+    "pool": "两个模型共用一个额度池，容量不能相加。",
+    "overlap": "Astra 历史区间与本轮区间重叠，结果需结合负载配比解读。",
+    "assumptions": "Sol 下界假设计量已结算、线性扣量、额外消耗非负，且无退款、重置或额度变化；主测有控制会话增量。",
+    "report": "10-30 复测报告",
+    "ledger": "10-30 读数与逐次账本",
+    "history": "10-28 历史数据与报告",
+    "question": "Codex Pro 200 的周额度是多少？",
+    "modelQuestion": "{model} 在 Codex Pro 200 中的周额度是多少？",
+    "calculator": "Codex 订阅周额度参考（独立于 API 成本演算）"
+  },
   "quota": {
     "title": "订阅额度估算",
     "estimate": "估算",

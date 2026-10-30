@@ -24,6 +24,7 @@ export function QuotaBenchResults({ locale, compact = false }: { locale: string;
         <h3 className="font-semibold">{record.plan} · {record.model}</h3>
         <QuotaBenchUsdHeadline record={record} locale={locale} />
         <p className="text-sm">{record.status === 'pending' ? (zh ? '待核对 · 暂不发布容量' : 'Pending reconciliation · capacity withheld') : (zh ? '有条件实测 · 非官方承诺 · 低置信度' : 'Conditional measurement · not an official allowance · low confidence')} · <time dateTime={record.date}>{record.date}</time></p>
+        {record.id === 'codex-pro' && <CodexModelMeasurements locale={locale} />}
         {!record.apiEquivalentUsd && <p className="text-xs text-zinc-500">{zh ? '有条件实测，不是官方额度' : 'Conditional measurement, not an official allowance'}</p>}
         <details className="space-y-3">
           <summary className="cursor-pointer text-sm underline">{zh ? '方法说明与完整口径' : 'Method, full scope and reconciliation'}</summary>
@@ -41,7 +42,6 @@ export function QuotaBenchResults({ locale, compact = false }: { locale: string;
           <QuotaBenchUsd record={record} locale={locale} />
           <p className="text-sm text-amber-800 dark:text-amber-300">{zh ? record.caveats.zh : record.caveats.en}</p>
           {record.measurementReport && <div className="flex flex-wrap gap-4 text-sm underline"><a href={record.measurementReport}>{zh ? '本次评测过程与计算依据' : 'Measurement process and calculations (Chinese)'}</a>{record.measurementData && <a href={record.measurementData}>{zh ? '本次读数与逐次用量' : 'Meter readings and per-call usage'}</a>}</div>}
-          {record.id === 'codex-pro' && <CodexModelMeasurements locale={locale} />}
           {record.id === 'volcengine-pro' && <VolcengineModelMeasurements locale={locale} />}
         </details>
       </article>)}
