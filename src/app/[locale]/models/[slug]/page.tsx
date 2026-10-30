@@ -68,8 +68,8 @@ import type { PlanCoverageFields } from '@/lib/third-party-coverage';
 
 import { buildModelPricingSeo, type PricingChannel } from '@/lib/model-pricing-seo';
 import ModelPricingSummary from '@/components/model-pricing-summary';
-import ModelUsagePrices from '@/components/model-usage-prices';
-import { availableUsagePrices, officialUsageFallback } from '@/lib/model-usage-prices';
+import ModelUsagePrices, { ModelUsagePriceHeadline } from '@/components/model-usage-prices';
+import { availableUsagePrices, officialUsageFallback, usagePriceHeadline } from '@/lib/model-usage-prices';
 import { getModelUsagePrices } from '@/lib/model-usage-prices-query';
 
 /** The columns the plan cards read out of the `plans` query below. */
@@ -430,6 +430,7 @@ export default async function ModelPage({
 
   const { product, channelPrices, usagePrices, referencePrices, plans, arenaElo, benchmarkScores, priceHistory, relatedModels } = data;
   const officialUsagePrices = officialUsageFallback(channelPrices, usagePrices);
+  const officialUsageHeadline = usagePriceHeadline(officialUsagePrices);
   // Agent-harness results (Claude Code, Codex, ...) on this host model. Renders
   // nothing for the vast majority of models that AA has not evaluated.
   const codingAgentRows = await getCodingAgentRowsForModel(product.id);
@@ -496,6 +497,9 @@ export default async function ModelPage({
     return aUsd - bUsd;
   });
   const cheapestChannel = pricing.cheapest && sortedChannelPrices.find(cp => cp.id === pricing.cheapest!.id);
+  const cheapestUsageHeadline = cheapestChannel ? undefined : usagePriceHeadline([
+    ...officialUsagePrices, ...usagePrices.filter(row => row.plan_id != null),
+  ]);
 
   const officialHistoryProviderSlugs: string[] = [...new Set(
     sortedChannelPrices
@@ -728,15 +732,17 @@ export default async function ModelPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{cheapestChannel?.providers?.name || 'N/A'}</div>
-              <div className="text-3xl font-bold text-green-600 mt-1">
-                {formatPrice(cheapestChannel?.input_price_per_1m, channelCurrency(cheapestChannel), locale)}
-                <span className="text-sm font-normal text-zinc-500">/1M input</span>
-              </div>
-              <div className="text-xl text-zinc-600 mt-1">
-                {formatPrice(cheapestChannel?.output_price_per_1m, channelCurrency(cheapestChannel), locale)}
-                <span className="text-sm font-normal text-zinc-500">/1M output</span>
-              </div>
+              <div className="text-2xl font-bold">{cheapestChannel?.providers?.name || cheapestUsageHeadline?.plan_name || cheapestUsageHeadline?.provider_name || 'N/A'}</div>
+              {cheapestUsageHeadline ? <ModelUsagePriceHeadline row={cheapestUsageHeadline} locale={locale} /> : <>
+                <div className="text-3xl font-bold text-green-600 mt-1">
+                  {formatPrice(cheapestChannel?.input_price_per_1m, channelCurrency(cheapestChannel), locale)}
+                  <span className="text-sm font-normal text-zinc-500">/1M input</span>
+                </div>
+                <div className="text-xl text-zinc-600 mt-1">
+                  {formatPrice(cheapestChannel?.output_price_per_1m, channelCurrency(cheapestChannel), locale)}
+                  <span className="text-sm font-normal text-zinc-500">/1M output</span>
+                </div>
+              </>}
               {cheapestSavings && (
                 <div className="text-sm text-green-600 mt-2 font-medium">
                   💸 Save {cheapestSavings}% vs official
@@ -770,10 +776,8 @@ export default async function ModelPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{officialChannel?.providers?.name || officialUsagePrices[0]?.provider_name || 'N/A'}</div>
-              {officialUsagePrices.length > 0 && <p className="mt-1 text-sm text-zinc-600">
-                {isZh ? '官方用量报价见上方价格表。' : 'See official usage rates in the pricing table above.'}
-              </p>}
+              <div className="text-2xl font-bold">{officialChannel?.providers?.name || officialUsageHeadline?.provider_name || 'N/A'}</div>
+              {officialUsageHeadline && <ModelUsagePriceHeadline row={officialUsageHeadline} locale={locale} />}
               {officialChannel && officialUsagePrices.length === 0 ? (
                 <>
                   <div className="text-3xl font-bold mt-1">

@@ -1,5 +1,7 @@
 import type { PricingChannel } from './model-pricing-seo';
 import { isRealPrice } from './model-pricing-seo';
+import { convertToUSD } from './currency-conversion';
+import type { CurrencyCode } from './currency';
 
 export interface ModelUsagePriceRow {
   id: number;
@@ -41,4 +43,14 @@ export function officialUsageFallback(channels: PricingChannel[], rows: ModelUsa
     [row.input_price_per_1m, row.output_price_per_1m, row.cached_input_price_per_1m].some(isRealPrice));
   return hasOfficialQuote ? [] : availableUsagePrices(rows).filter(row => row.plan_id == null &&
     ['official', 'producer'].includes(row.provider_type || ''));
+}
+
+/** Prefer input rates, and compare only matching billing dimensions and units. */
+export function usagePriceHeadline(rows: ModelUsagePriceRow[]): ModelUsagePriceRow | undefined {
+  const available = availableUsagePrices(rows);
+  const primary = available.find(row => row.price_kind === 'input_tokens') || available[0];
+  if (!primary) return undefined;
+  return available.filter(row => row.price_kind === primary.price_kind && row.unit === primary.unit)
+    .sort((a, b) => convertToUSD(a.price!, (a.currency || 'USD') as CurrencyCode) -
+      convertToUSD(b.price!, (b.currency || 'USD') as CurrencyCode))[0];
 }

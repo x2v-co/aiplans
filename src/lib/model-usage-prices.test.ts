@@ -10,7 +10,7 @@ import ts from 'typescript';
 import { NextIntlClientProvider } from 'next-intl';
 import en from '../../messages/en.json';
 import zh from '../../messages/zh.json';
-import { availableUsagePrices, officialUsageFallback, type ModelUsagePriceRow } from './model-usage-prices';
+import { availableUsagePrices, officialUsageFallback, usagePriceHeadline, type ModelUsagePriceRow } from './model-usage-prices';
 import type { PricingChannel } from './model-pricing-seo';
 import { catalogForKind } from './ai-vertical-catalog';
 import type { VerticalModelDetail } from './vertical-model-detail';
@@ -75,6 +75,39 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
   }));
 }
 
+function summaryCards(html: string) {
+  return {
+    cheapest: html.split('Cheapest Option')[1].split('Official Price')[0],
+    official: html.split('Official Price')[1].split('Best in China')[0],
+  };
+}
+
+test('usage-only model gives both summary cards an input price and billing unit', async () => {
+  for (const locale of ['en', 'zh']) {
+    // Output rows arrive first: the headline must still prefer input.
+    const cards = summaryCards(await modelHtml([...rows].reverse(), [], locale));
+    for (const card of Object.values(cards)) {
+      assert.doesNotMatch(card, /N\/A|See official usage rates|官方用量报价见/);
+      assert.match(card, /Google/);
+      assert.match(card, /USD 1\.5/);
+      assert.match(card, locale === 'zh' ? /百万 token/ : /1M tokens/);
+      assert.match(card, locale === 'zh' ? /输入 token/ : /Input tokens/);
+    }
+  }
+});
+
+test('without channels the cheapest card can use a lower plan input price', async () => {
+  const discounted = planRows.map(row => ({ ...row, price: row.price_kind === 'input_tokens' ? 0.7 : 0.01 }));
+  for (const locale of ['en', 'zh']) {
+    const cards = summaryCards(await modelHtml([...rows, ...discounted], [], locale));
+    assert.match(cards.cheapest, /Gemini API paid tier/);
+    assert.match(cards.cheapest, /USD 0\.7/);
+    assert.match(cards.cheapest, locale === 'zh' ? /百万 token/ : /1M tokens/);
+    assert.match(cards.official, /Google/);
+    assert.match(cards.official, /USD 1\.5/);
+  }
+});
+
 test('usage-only model renders official dimensions and units once in each locale', async () => {
   for (const locale of ['en', 'zh']) {
     const html = await modelHtml([...rows, { ...rows[0], id: 999 }], [], locale);
@@ -89,7 +122,13 @@ test('usage-only model renders official dimensions and units once in each locale
 
 test('existing API official quotes keep exactly the same rendered page when usage rows also exist', async () => {
   for (const locale of ['en', 'zh']) {
-    assert.equal(await modelHtml(rows, [channel], locale), await modelHtml([], [channel], locale));
+    const html = await modelHtml(rows, [channel], locale);
+    assert.equal(html, await modelHtml([], [channel], locale));
+    for (const card of Object.values(summaryCards(html))) {
+      assert.match(card, /1M input/);
+      assert.match(card, /1M output/);
+      assert.doesNotMatch(card, /USD 1\.5/);
+    }
   }
   assert.deepEqual(officialUsageFallback([channel], rows), []);
   assert.equal(officialUsageFallback([{ ...channel, providers: { type: 'aggregator' } }], rows).length, 3);
@@ -114,6 +153,15 @@ test('unavailable, missing and invalid model prices are excluded; zero and disti
     [[1.5, 'per_1m_tokens'], [0, 'per_1m_tokens'], [1.5, 'minute']]);
   assert.equal(availableUsagePrices([{ ...rows[0], price: null }], true).length, 1);
   assert.deepEqual(officialUsageFallback([], [{ ...rows[0], provider_type: 'aggregator' }]), []);
+});
+
+test('usage headlines preserve free prices and compare matching input units across currencies', () => {
+  const cheaperCny = { ...rows[0], id: 900, price: 1, currency: 'CNY' };
+  const differentUnit = { ...rows[0], id: 901, price: 0.001, unit: 'per_1k_tokens' };
+  assert.equal(usagePriceHeadline([rows[1], rows[0], cheaperCny, differentUnit])?.id, 900);
+  assert.equal(usagePriceHeadline([rows[0], { ...rows[0], id: 902, price: 0 }])?.price, 0);
+  assert.equal(usagePriceHeadline([{ ...rows[0], price: -1 }, { ...rows[0], is_available: false }]), undefined);
+  assert.equal(usagePriceHeadline([rows[2]])?.price_kind, 'video_output_tokens');
 });
 
 test('video detail reads structured usage sources while retaining the audited headline in both locales', async () => {
