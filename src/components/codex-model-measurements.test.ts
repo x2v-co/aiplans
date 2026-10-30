@@ -33,8 +33,8 @@ test('Codex retest reconciles successful calls and excludes mixed or changed win
 test('both locales show actual Sol usage without inventing capacity', () => {
   for (const locale of ['zh', 'en']) {
     const html = renderToStaticMarkup(createElement(CodexModelMeasurements, { locale }));
-    for (const s of ['gpt-6-astra', 'gpt-6.1-sol', '6,679,074', '/reports/codex-models-2026-10-28.json']) assert.ok(html.includes(s));
-    assert.ok(html.includes(locale === 'zh' ? '暂不估算' : 'estimate withheld'));
+    for (const s of ['gpt-6-astra', 'gpt-6.1-sol', '8,729,647', '/reports/codex-models-2026-10-30.json']) assert.ok(html.includes(s));
+    assert.ok(html.includes(locale === 'zh' ? '无有限上界' : 'No finite upper bound'));
     assert.doesNotMatch(html, /\/Users\/|account_id|AUTH_TOKEN/);
   }
 });

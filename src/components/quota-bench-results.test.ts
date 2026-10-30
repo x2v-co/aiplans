@@ -12,9 +12,9 @@ test('published measurements preserve native windows and scope conditional capac
   assert.equal(codex.planSlug, 'chatgpt-pro-200');
   assert.equal(codex.tierVerification!.source, 'account_owner_confirmation');
   assert.equal(codex.tierVerification!.priceUsdPerMonth, 200);
-  assert.equal(codex.tokens.input + codex.tokens.cacheRead + codex.tokens.output, 2595323);
+  assert.equal(codex.tokens.input + codex.tokens.cacheRead + codex.tokens.output, 5580339);
   assert.equal(codex.controlTokens, null);
-  assert.equal(codex.estimate!.mid, Math.round(2595323 / .03));
+  assert.equal(codex.estimate!.mid, Math.round(5580339 / .04));
   const cursor = data.records.find(r => r.id === 'cursor-ultra')!;
   assert.equal(cursor.status, 'conditional');
   assert.equal(cursor.estimate!.mid, 5454149660);
@@ -30,7 +30,7 @@ test('published measurements preserve native windows and scope conditional capac
 test('both locales show caveats, controller accounting and downloadable evidence', () => {
   for (const locale of ['zh', 'en']) {
     const html = renderToStaticMarkup(createElement(QuotaBenchResults, { locale }));
-    for (const value of ['64,883,075', '129,766,150', '6,679,074', '5,417,297,297–5,491,506,849', '$3,022', '$3,001–$3,042', '$0.444198', '$789', '$592–$1,184', '$23.676094', '2026-10-29', 'https://cursor.com/docs/models/cursor-composer-2-5', '/reports/quota-bench-2026-10.json', '/reports/quota-bench-2026-10.md', '/reports/quota-bench-2026-10-ledger.json']) assert.ok(html.includes(value), value);
+    for (const value of ['111,606,780', '186,011,300', '8,729,647', '5,417,297,297–5,491,506,849', '$3,022', '$3,001–$3,042', '$0.444198', '$1,222', '$978–$1,630', '$48.89511', '2026-10-29', 'https://cursor.com/docs/models/cursor-composer-2-5', '/reports/quota-bench-2026-10.json', '/reports/quota-bench-2026-10.md', '/reports/quota-bench-2026-10-ledger.json']) assert.ok(html.includes(value), value);
     assert.ok(html.includes(locale === 'zh' ? '仅适用于 ChatGPT Pro 200' : 'Applies only to ChatGPT Pro 200'));
     const phrases = locale === 'zh'
       ? ['有条件实测 · 非官方承诺 · 低置信度', '套餐档位：未核验', '有条件实测，非官方承诺', '第 4 批未计入', 'CSV 未对账', '重置点未核验', '套餐档位未核验']

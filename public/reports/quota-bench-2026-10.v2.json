@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 2,
+  "publishedAt": "2026-10-29",
+  "supersedes": "/reports/quota-bench-2026-10.v1.json",
+  "changelog": [
+    {
+      "version": 2,
+      "date": "2026-10-29",
+      "zh": "Cursor composer-2.5 按 12 轮额度读数区间发布有条件估算，并按标准 API 公开价折合 USD；套餐档位改为未核验，解除与 Ultra 套餐卡片的关联。Codex Pro 200 新增按 OpenAI gpt-6-astra 公开价计算的 USD 等价价值。",
+      "en": "Publish Cursor composer-2.5 as a conditional estimate from the 12-call meter interval with a standard API list-price USD equivalent; mark the plan tier unverified and detach it from the Ultra plan card. Add a USD equivalent for Codex Pro 200 at OpenAI gpt-6-astra list price."
+    }
+  ],
+  "records": [
+    {
+      "id": "codex-pro",
+      "plan": "ChatGPT Pro 200 (Codex)",
+      "model": "gpt-6-astra",
+      "modelIdentity": "requested",
+      "date": "2026-10-28",
+      "window": "weekly",
+      "status": "conditional",
+      "tierVerified": true,
+      "calls": 28,
+      "tokens": {
+        "input": 2320149,
+        "cacheRead": 271104,
+        "cacheWrite": 0,
+        "output": 4070
+      },
+      "controlTokens": null,
+      "usedBefore": 89,
+      "usedAfter": 92,
+      "estimate": {
+        "low": 64883075,
+        "mid": 86510767,
+        "high": 129766150
+      },
+      "apiEquivalentUsd": {
+        "low": 591.90,
+        "mid": 789.20,
+        "high": 1183.80,
+        "sample": 23.676094
+      },
+      "pricing": {
+        "model": "gpt-6-astra",
+        "variant": "standard",
+        "currency": "USD",
+        "unit": "per 1M tokens",
+        "input": 10,
+        "cacheRead": 1,
+        "cacheWrite": 12.5,
+        "output": 50,
+        "source": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+        "verifiedAt": "2026-10-29",
+        "note": {
+          "zh": "标准 API 档。本样本单次输入最高 93,822 tokens，未触发 >272K 输入的长上下文加价。缓存写入为 0。",
+          "en": "Standard API tier. Long-context surcharge (>272K input per request) not triggered: max per-call input in this sample is 93,822 tokens. Cache writes were 0."
+        }
+      },
+      "estimateBasis": null,
+      "caveats": {
+        "zh": "仅适用于 ChatGPT Pro 200，档位由账号持有人确认。本轮 Astra 主测 28 次，控制会话 token 计数未变；约 10.45% 为缓存读取。范围仅含读数舍入，仍假设线性扣量、计量已结算且无其他设备流量。5 小时/月窗口未返回；Sol 读数异常，暂不发布容量。",
+        "en": "Applies only to ChatGPT Pro 200; tier confirmed by the account owner. Astra main batch: 28 calls with unchanged controller token counters. Bounds cover meter rounding only, assuming linear consumption, settled meters and no other-device traffic. No 5-hour/monthly window returned; Sol capacity withheld due to inconsistent readings."
+      },
+      "windowMeasurements": null,
+      "measurementReport": "/reports/codex-models-2026-10-28.md",
+      "measurementData": "/reports/codex-models-2026-10-28.json",
+      "planSlug": "chatgpt-pro-200",
+      "tierVerification": {
+        "source": "account_owner_confirmation",
+        "confirmedAt": "2026-10-28",
+        "priceUsdPerMonth": 200,
+        "note": "Account owner confirmed the measured plan is Pro 200, not Pro 100 or Pro 500. This is not independent billing verification."
+      }
+    },
+    {
+      "id": "volcengine-pro",
+      "plan": "Volcengine Coding Plan Pro",
+      "model": "kimi-k3",
+      "modelIdentity": "observed",
+      "date": "2026-10-28",
+      "window": "5h",
+      "status": "conditional",
+      "tierVerified": true,
+      "calls": 30,
+      "tokens": {
+        "input": 1237470,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "output": 21228
+      },
+      "controlTokens": null,
+      "usedBefore": 0.57,
+      "usedAfter": 10.01,
+      "estimate": {
+        "low": 13319555,
+        "high": 13347805,
+        "mid": 13333665
+      },
+      "apiEquivalentUsd": null,
+      "pricing": null,
+      "estimateBasis": null,
+      "planSlug": null,
+      "tierVerification": null,
+      "caveats": {
+        "zh": "30 次、3 批同模型实测，约 98.31% 为普通输入，无缓存命中或写入。三窗口分别测量，月额度为粗估。区间仅含读数舍入误差，仍假设线性扣量及无其他账号流量；不是跨模型通用 token 上限。",
+        "en": "30 calls in 3 batches, one model, about 98.31% fresh input and no cache reads/writes. Each window measured directly; monthly capacity is rough. Bounds cover meter rounding only and assume linear consumption without other account traffic; not a universal cross-model token cap."
+      },
+      "windowMeasurements": [
+        {
+          "window": "5h",
+          "usedBefore": 0.57,
+          "usedAfter": 10.01,
+          "estimate": {
+            "low": 13319555,
+            "high": 13347805,
+            "mid": 13333665
+          }
+        },
+        {
+          "window": "weekly",
+          "usedBefore": 12.07,
+          "usedAfter": 13.33,
+          "estimate": {
+            "low": 99110078,
+            "high": 100695840,
+            "mid": 99896667
+          }
+        },
+        {
+          "window": "monthly",
+          "usedBefore": 33.71,
+          "usedAfter": 34.34,
+          "estimate": {
+            "low": 196671562,
+            "high": 203015807,
+            "mid": 199793333
+          }
+        }
+      ],
+      "measurementReport": "/reports/volcengine-three-windows-2026-10-28.md",
+      "measurementData": "/reports/volcengine-three-windows-2026-10-28.json",
+      "modelMeasurementsData": "/reports/volcengine-models-2026-10-28.json",
+      "modelMeasurementsReport": "/reports/volcengine-models-2026-10-28.md"
+    },
+    {
+      "id": "cursor-ultra",
+      "plan": "Cursor legacy plan (tier unverified)",
+      "model": "composer-2.5",
+      "modelIdentity": "requested",
+      "date": "2026-10-28",
+      "window": "monthly",
+      "status": "conditional",
+      "tierVerified": false,
+      "planSlug": null,
+      "tierVerification": {
+        "source": "unverified",
+        "note": "The earlier record labelled this account Cursor Ultra (legacy), but neither the report nor the ledger contains tier evidence. Only the legacy two-pool layout (Cursor Models + Other Models, on-demand usage) is observed; the specific legacy tier is not verified."
+      },
+      "calls": 16,
+      "tokens": {
+        "input": 1064029,
+        "cacheRead": 64322,
+        "cacheWrite": 0,
+        "output": 33906
+      },
+      "controlTokens": null,
+      "usedBefore": 34.7423,
+      "usedAfter": 34.757,
+      "estimateBasis": {
+        "calls": 12,
+        "batches": ["cursor-01", "cursor-02", "cursor-03"],
+        "tokens": {
+          "input": 724610,
+          "cacheRead": 48253,
+          "cacheWrite": 0,
+          "output": 28897
+        },
+        "totalTokens": 801760,
+        "usedDeltaPp": 0.0147,
+        "meterPrecisionPp": 0.0001,
+        "excluded": {
+          "batches": ["cursor-04"],
+          "calls": 4,
+          "totalTokens": 360497,
+          "reason": "No final meter reading after the browser disconnected"
+        }
+      },
+      "estimate": {
+        "low": 5417297297,
+        "mid": 5454149660,
+        "high": 5491506849
+      },
+      "apiEquivalentUsd": {
+        "low": 3001.34,
+        "mid": 3021.76,
+        "high": 3042.45,
+        "sample": 0.444198
+      },
+      "pricing": {
+        "model": "composer-2.5",
+        "variant": "standard",
+        "fastVariantRisk": true,
+        "currency": "USD",
+        "unit": "per 1M tokens",
+        "input": 0.5,
+        "cacheRead": 0.2,
+        "cacheWrite": null,
+        "output": 2.5,
+        "source": "https://cursor.com/docs/models/cursor-composer-2-5",
+        "verifiedAt": "2026-10-29",
+        "note": {
+          "zh": "composer-2.5 标准公开价。产品默认 Fast 版本（输入 $3 / 缓存读取 $0.50 / 输出 $15）；账本只记录请求模型 composer-2.5，实际计费版本未核验。",
+          "en": "Standard composer-2.5 list price. Cursor's Fast variant ($3 input / $0.50 cache read / $15 output) is the in-product default; the ledger only records the requested model id composer-2.5, so the variant actually billed is not verified."
+        }
+      },
+      "caveats": {
+        "zh": "有条件实测，非官方承诺：仅前 12 轮（801,760 tokens）对应额度 34.7423% → 34.7570%；第 4 批未计入，CSV 未对账。窗口按旧套餐月度 Cursor Models 池处理，重置点未核验，套餐档位未核验。USD 为标准公开价估值，不是余额；假设线性扣量且无其他流量，区间仅覆盖仪表读数舍入。",
+        "en": "Conditional measurement, not an official allowance: only the first 12 calls (801,760 tokens) match 34.7423% → 34.7570%; batch 4 excluded, CSV not reconciled. Treated as the legacy monthly Cursor Models pool; reset point not verified, plan tier unverified. USD is a standard list-price valuation, not a credit balance; assumes linear consumption and no other traffic, with bounds covering meter rounding only."
+      },
+      "windowMeasurements": null,
+      "measurementReport": "/reports/quota-bench-2026-10.md",
+      "measurementData": "/reports/quota-bench-2026-10-ledger.json"
+    }
+  ],
+  "sources": [
+    "https://developers.openai.com/api/docs/models/gpt-6-astra",
+    "https://cursor.com/docs/models/cursor-composer-2-5",
+    "https://cursor.com/docs/account/pricing/legacy-cursor-plans"
+  ],
+  "publicationPolicy": "Observations and conditional estimates only; no official allowance, automatic monthly extrapolation, or authoritative plan-tier assignment. USD equivalents are valuations at public standard API list prices, not credit balances."
+}
