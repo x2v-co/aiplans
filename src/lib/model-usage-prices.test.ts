@@ -1,12 +1,8 @@
+import { loadQueryModule } from './test-helpers/query-module';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
-import { runInNewContext } from 'node:vm';
 import test from 'node:test';
 import { createElement, type ReactElement, type ComponentType } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import ts from 'typescript';
 import { createTranslator, NextIntlClientProvider } from 'next-intl';
 import en from '../../messages/en.json';
 import zh from '../../messages/zh.json';
@@ -33,17 +29,7 @@ const channel: PricingChannel = { id: 7, input_price_per_1m: 2, output_price_per
 
 // Load real routes and renderers with read-only data dependencies stubbed, no DB.
 function loadModule(path: string, mocks: Record<string, unknown>): Record<string, unknown> {
-  const require = createRequire(import.meta.url);
-  const source = readFileSync(new URL(path, import.meta.url), 'utf8');
-  const { outputText } = ts.transpileModule(source, { compilerOptions: {
-    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX,
-    esModuleInterop: true,
-  } });
-  const loaded = { exports: {} as Record<string, unknown> };
-  const execute = runInNewContext(`(function(require, module, exports) { ${outputText}\n})`);
-  execute((id: string) => id in mocks ? mocks[id]
-    : require(id.startsWith('@/') ? fileURLToPath(new URL(`../${id.slice(2)}`, import.meta.url)) : id), loaded, loaded.exports);
-  return loaded.exports;
+  return loadQueryModule(new URL(path, import.meta.url), mocks);
 }
 
 async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingChannel[], locale: string,
@@ -114,6 +100,7 @@ test('plan query still runs without model/usage links and binds only the exact p
   assert.doesNotMatch(calls[0].query, /provider_ids|p\.type|JOIN models/, 'shared providers and channel types must not imply plan access');
   assert.match(calls[0].query, /pl\.legacy_ends_on/);
   assert.match(calls[0].query, /NOT LIKE '%\[aiplans:superseded-by %'/);
+  assert.match(calls[0].query, /\)\)\s+AND COALESCE\(pl.notes/, 'superseded filter must cover mapping, usage and producer branches');
   assert.doesNotMatch(calls[0].query, /\b(?:INSERT|UPDATE|DELETE)\b/i);
   await fetch(10, null, [2256], new Date('2026-10-30T00:00:00Z'));
   assert.deepEqual(Array.from(calls[1].values), [10, [2256], null, '2026-10-30']);

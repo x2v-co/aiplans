@@ -97,8 +97,10 @@ export function createProxy(
       return NextResponse.redirect(request.nextUrl, locale === defaultLocale ? 308 : 307);
     }
 
-    // For other paths without locale, redirect to default locale
-    if (!isInfrastructurePath(pathname) && !pathname.includes('.')) {
+    // Dots also occur in model slugs (minimax-m3.1-flash). Only known file
+    // extensions bypass locale routing; an arbitrary dot is not a static file.
+    const isStaticFile = /\.(?:avif|bmp|css|csv|eot|gif|html|ico|jpe?g|js|json|map|mjs|mp3|mp4|ogg|otf|pdf|png|svg|ttf|txt|wasm|webm|webmanifest|webp|woff2?|xml|zip)$/i.test(pathname);
+    if (!isInfrastructurePath(pathname) && !isStaticFile) {
       request.nextUrl.pathname = `/${defaultLocale}${pathname}`;
       return NextResponse.redirect(request.nextUrl);
     }

@@ -1,3 +1,4 @@
+import { currentPlanCondition } from './plan-lifecycle-query';
 import { sql, INT4_ARRAY } from '@/lib/db';
 import { attachPrimaryProvidersToModels, getAllModelIdsForProvider } from '@/lib/schema-adapters';
 import { pickNewestPerSeries } from '@/lib/model-series';
@@ -94,10 +95,11 @@ export async function getProducts(query: ProductQuery = {}): Promise<any[]> {
     const modelIds = products.map((p: any) => p.id);
     const planMappings: Array<{ model_id: number; plan_id: number | null }> = modelIds.length > 0
       ? [...await sql<Array<{ model_id: number; plan_id: number | null }>>`
-          SELECT model_id, plan_id
-          FROM model_plan_mapping
-          WHERE plan_id IS NOT NULL
-            AND model_id = ANY(${sql.array(modelIds, INT4_ARRAY)})
+          SELECT mpm.model_id, mpm.plan_id
+          FROM model_plan_mapping mpm
+          JOIN plans pl ON pl.id = mpm.plan_id
+          WHERE ${currentPlanCondition('pl')}
+            AND mpm.model_id = ANY(${sql.array(modelIds, INT4_ARRAY)})
         `]
       : [];
 

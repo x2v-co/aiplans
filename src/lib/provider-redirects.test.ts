@@ -130,8 +130,9 @@ test('preserves static children, metadata, plan index and nested routes without 
       const path = `${prefix}/plans${segment}`;
       assert.equal(planRedirectRequest(path, ['featured', 'special.offers']), null, path);
       const response = await proxy(new NextRequest(`${origin}${path}`));
-      // Locale-less extensionless pages retain their existing locale redirect.
-      const localeHop = prefix === '' && !path.includes('.');
+      // Locale-less pages, including dotted static route names, need a locale.
+      const staticAsset = ['/featured.png', '/opengraph-image.png', '/twitter-image.jpg', '/icon.svg'].includes(segment);
+      const localeHop = prefix === '' && !staticAsset;
       assert.equal(response.status, localeHop ? 307 : 200, path);
       assert.equal(response.headers.get('location'), localeHop ? `${origin}/en${path}` : null, path);
     }

@@ -1,3 +1,4 @@
+import { currentPlanCondition } from '@/lib/plan-lifecycle-query';
 import { publicModelName } from '@/lib/public-catalog-copy';
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
@@ -55,7 +56,8 @@ export async function GET() {
             )
             OR EXISTS (
               SELECT 1 FROM model_plan_mapping mpm
-              WHERE mpm.model_id = m.id AND mpm.plan_id IS NOT NULL
+              JOIN plans pl ON pl.id = mpm.plan_id
+              WHERE mpm.model_id = m.id AND ${currentPlanCondition('pl')}
             )
           )
         ORDER BY m.name
@@ -66,6 +68,7 @@ export async function GET() {
                p.slug AS provider_slug
         FROM plans pl
         JOIN providers p ON p.id = pl.provider_id
+        WHERE ${currentPlanCondition('pl')}
         ORDER BY p.name, pl.name
       `,
       sql<ProviderRow[]>`

@@ -1,3 +1,4 @@
+import { currentPlanCondition } from './plan-lifecycle-query';
 import { sql } from '@/lib/db';
 import type { Locale } from '@/lib/seo';
 
@@ -45,6 +46,7 @@ export async function getProvidersForIndex(): Promise<ProviderIndexRow[]> {
               SELECT 1 FROM model_plan_mapping mpm
               JOIN plans pl ON pl.id = mpm.plan_id
               WHERE mpm.model_id = m.id AND pl.provider_id = providers.id
+                AND ${currentPlanCondition('pl')}
             )
             OR EXISTS (
               SELECT 1 FROM api_channel_prices cp
@@ -55,7 +57,7 @@ export async function getProvidersForIndex(): Promise<ProviderIndexRow[]> {
           )
       ) AS model_count
     FROM providers
-    WHERE EXISTS (SELECT 1 FROM plans WHERE plans.provider_id = providers.id)
+    WHERE EXISTS (SELECT 1 FROM plans WHERE plans.provider_id = providers.id AND ${currentPlanCondition()})
        OR EXISTS (
          SELECT 1 FROM api_channel_prices cp
          WHERE cp.provider_id = providers.id AND cp.is_available = true

@@ -1,3 +1,4 @@
+import { currentPlanCondition } from './plan-lifecycle-query';
 import { sql, INT4_ARRAY } from './db';
 import type { ModelPlanCardRow } from '@/components/model-plan-card';
 
@@ -77,7 +78,7 @@ export async function getModelPlans(
       ) END AS providers
     FROM plans pl
     LEFT JOIN providers p ON p.id = pl.provider_id
-    WHERE EXISTS (
+    WHERE (EXISTS (
       SELECT 1 FROM model_plan_mapping mapping
       WHERE mapping.model_id = ${modelId} AND mapping.plan_id = pl.id
     ) OR pl.id = ANY(${sql.array(usagePlanIds, INT4_ARRAY)})
@@ -85,8 +86,8 @@ export async function getModelPlans(
         pl.provider_id = ${producerId}
         AND pl.pricing_model = 'subscription'
         AND (pl.legacy_ends_on IS NULL OR pl.legacy_ends_on >= ${now.toISOString().slice(0, 10)}::date)
-        AND COALESCE(pl.notes, '') NOT LIKE '%[aiplans:superseded-by %'
-      )
+      ))
+      AND ${currentPlanCondition('pl')}
     ORDER BY pl.price ASC NULLS LAST, pl.id
   `];
 }

@@ -98,7 +98,7 @@ test('unknown prefix paths get the normal locale hop, never bypass routing as in
 });
 
 test('valid locale pages, dotted slugs and service segments stay on their own routes', async () => {
-  for (const path of ['/zh/guides', '/en/about', '/en/models/non-legacy-model', '/api/health', '/v1/catalog/models', '/go/source/campaign/product']) {
+  for (const path of ['/zh/guides', '/en/about', '/en/models/non-legacy-model', '/en/models/minimax-m3.1-flash', '/zh/models/minimax-m3.1-flash', '/api/health', '/v1/catalog/models', '/go/source/campaign/product']) {
     const response = await proxy(new NextRequest(`https://aiplans.dev${path}`, {
       headers: { 'x-forwarded-proto': 'https' },
     }));
@@ -114,5 +114,27 @@ test('Next matcher excludes complete service segments while keeping similarly na
   }
   for (const url of ['/api/health', '/v1/catalog/models', '/go/a/b/c', '/_next/static/chunk.js', '/favicon.ico']) {
     assert.equal(unstable_doesMiddlewareMatch({ config, url }), false, url);
+  }
+});
+
+test('locale-less model pages redirect even when their slug contains dots', async () => {
+  for (const path of ['/models/minimax-m3.1-flash', '/models/gpt-5']) {
+    assert.equal(unstable_doesMiddlewareMatch({ config, url: path }), true, path);
+    const response = await proxy(new NextRequest(`https://aiplans.dev${path}?source=test`));
+    assert.equal(response.status, 307, path);
+    assert.equal(response.headers.get('location'), `https://aiplans.dev/en${path}?source=test`, path);
+  }
+});
+
+test('static assets and infrastructure never receive a locale prefix', async () => {
+  for (const path of [
+    '/favicon.ico', '/sitemap.xml', '/robots.txt', '/manifest.webmanifest',
+    '/providers/moonshot.png', '/logo.svg', '/_next/static/chunk.js', '/_next/image',
+  ]) {
+    // Exercise the proxy as well as the matcher: some assets are excluded at
+    // the matcher, while others reach the proxy and must pass through.
+    const response = await proxy(new NextRequest(`https://aiplans.dev${path}`));
+    assert.equal(response.headers.get('location'), null, path);
+    assert.equal(response.headers.get('x-middleware-next'), '1', path);
   }
 });

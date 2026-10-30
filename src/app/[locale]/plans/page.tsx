@@ -1,3 +1,4 @@
+import { currentPlanCondition } from '@/lib/plan-lifecycle-query';
 import Link from "next/link";
 import { ProviderLogo } from '@/components/provider-logo';
 import type { Metadata } from "next";
@@ -37,6 +38,7 @@ async function getProvidersWithPlans() {
     SELECT p.*, COUNT(pl.id)::integer AS "planCount"
     FROM providers p
     JOIN plans pl ON pl.provider_id = p.id
+    WHERE ${currentPlanCondition('pl')}
     GROUP BY p.id
     ORDER BY "planCount" DESC, p.name ASC
   `;
@@ -49,7 +51,7 @@ async function getGatewaySubscriptionPlans() {
            p.name AS provider_name, p.slug AS provider_slug
     FROM plans pl
     JOIN providers p ON p.id = pl.provider_id
-    WHERE pl.plan_kind = 'gateway_subscription'
+    WHERE pl.plan_kind = 'gateway_subscription' AND ${currentPlanCondition('pl')}
     ORDER BY pl.id
   `;
 }

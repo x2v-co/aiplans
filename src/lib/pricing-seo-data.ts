@@ -1,3 +1,4 @@
+import { currentPlanCondition } from './plan-lifecycle-query';
 import { cache } from 'react';
 import { sql, TEXT_ARRAY } from './db';
 import { getGroupedProducts } from './grouped-products';
@@ -23,6 +24,7 @@ export const getComparisonSeoData = cache(async (slug: string) => {
     JOIN model_plan_mapping mpm ON mpm.plan_id = p.id
     JOIN models m ON m.id = mpm.model_id
     WHERE (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND m.slug = ANY(${sql.array(candidates, TEXT_ARRAY)})
+      AND ${currentPlanCondition('p')}
     ORDER BY p.id
   `;
   return { model, plans };
@@ -30,13 +32,14 @@ export const getComparisonSeoData = cache(async (slug: string) => {
 
 export const getProviderSeoPlans = cache(async (providerId: number) => sql<SeoPlan[]>`
   SELECT id, name, pricing_model, price, price_unit, currency, is_contact_sales
-  FROM plans WHERE provider_id = ${providerId}
+  FROM plans WHERE provider_id = ${providerId} AND ${currentPlanCondition()}
   ORDER BY plan_kind, plan_line NULLS LAST, tier_rank NULLS LAST, price ASC NULLS LAST, id
 `);
 
 export const getPlansSeoProviders = cache(async () => sql<Array<{ name: string; planCount: number }>>`
   SELECT p.name, count(pl.id)::int AS "planCount"
   FROM providers p JOIN plans pl ON pl.provider_id = p.id
+  WHERE ${currentPlanCondition('pl')}
   GROUP BY p.id ORDER BY "planCount" DESC, p.name ASC
 `);
 
