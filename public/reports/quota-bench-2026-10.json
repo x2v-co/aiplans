@@ -63,8 +63,8 @@
       },
       "estimateBasis": null,
       "caveats": {
-        "zh": "仅适用于 ChatGPT Pro 200。账号持有人确认权益升级后复测；升级幅度未独立核验。Astra 主测 60 次，控制会话计数未变，缓存读取 14.45%。区间仅含读数舍入，假设线性扣量、已结算且无其他流量；5 小时/月窗口未返回。Sol 仅有条件下界，不能当作完整容量。",
-        "en": "Applies only to ChatGPT Pro 200. Retested after an owner-reported upgrade; upgrade magnitude not independently verified. Astra main batch: 60 calls, unchanged controller counters. Bounds cover rounding only, assuming linear settled consumption and no other traffic. No 5-hour/monthly window returned. Sol has a conditional lower bound only, not a full capacity estimate."
+        "zh": "升级来自用户报告，未独立核验。 仅适用于 ChatGPT Pro 200，不适用于 Pro 100/500。 只有周窗口，5 小时窗口和月窗口不外推。 两个模型共用一个额度池，容量不能相加。 Astra 历史区间与本轮区间重叠，结果需结合负载配比解读。 Sol 下界假设计量已结算、线性扣量、额外消耗非负，且无退款、重置或额度变化；主测有控制会话增量。",
+        "en": "The upgrade is user-reported and has not been independently verified. Applies only to ChatGPT Pro 200, not Pro 100/500. Only the weekly window is available; no extrapolation to 5-hour or monthly windows. The two models share one allowance pool; capacities cannot be added. The historical and current Astra intervals overlap; interpret results with their workload mix. The Sol lower bound assumes settled linear metering, nonnegative extra consumption and no refunds, resets or allowance changes; the main batch included controller activity."
       },
       "windowMeasurements": null,
       "measurementReport": "/reports/codex-models-2026-10-30.md",
@@ -75,7 +75,8 @@
         "confirmedAt": "2026-10-30",
         "priceUsdPerMonth": 200,
         "note": "Account owner confirmed the measured plan is Pro 200, not Pro 100 or Pro 500. This is not independent billing verification."
-      }
+      },
+      "historicalReport": "/reports/codex-models-2026-10-28.md"
     },
     {
       "id": "volcengine-pro",

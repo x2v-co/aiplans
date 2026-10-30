@@ -2,6 +2,7 @@ import { CURRENCY_INFO, type CurrencyCode } from './currency';
 import { convertToUSD } from './currency-conversion';
 import { effectivePrice, type ScheduledChannelPrice } from './effective-price';
 import { modelAliases } from './model-aliases';
+import { codexQuotaFaq, isCodexQuotaModel } from './codex-pro200';
 import { pickOfferCurrency, priceValidUntil, SITE_URL, type Locale } from './seo';
 
 export interface PricingChannel extends ScheduledChannelPrice {
@@ -116,6 +117,7 @@ export function buildModelPricingSeo(
           : 'No available recorded channel lists both input and output at zero. Missing prices, free cache reads or a free chat tier do not establish a free API; check provider terms for trial credits.') },
     { question: isZh ? `${model.name} token 成本和每月费用怎么算？` : `How do I calculate ${model.name} token costs and monthly spend?`, answer: costAnswer },
   );
+  if (isCodexQuotaModel(model.slug)) faqs.push(codexQuotaFaq(locale, model.slug));
   return { title, description, freeChannels, exampleLabel, costAnswer, aliases: modelAliases(model.name, model.slug), channels, pricedChannels,
     cheapest, official, tableChannels, updatedOn, updateText, aggregateOffer, faqs };
 }

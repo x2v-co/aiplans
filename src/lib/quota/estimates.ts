@@ -1,4 +1,5 @@
 import { orderOfMagnitude, toRange, weeklyToMonthly, type WindowKind } from './engine';
+import { isCodexPro200 } from '../codex-pro200';
 
 export type QuotaEvidenceLink = { id: number; url: string; capturedAt: string; type: string };
 export type VerifiedQuotaEstimate = {
@@ -86,6 +87,9 @@ export async function readVerifiedQuotaEstimates(fetchRows: () => Promise<QuotaE
 }
 
 export function currentPlanEstimates(estimates: VerifiedQuotaEstimate[], planSlug: string): VerifiedQuotaEstimate[] {
+  // The published model retest is authoritative for these cards. DB rows use
+  // finite ranges and cannot represent Sol's conditional lower bound.
+  if (isCodexPro200(planSlug)) return [];
   return estimates.filter(estimate => estimate.planSlug === planSlug && estimate.isCurrent && estimate.supersededBy === null);
 }
 
@@ -111,6 +115,7 @@ export function quotaChanges(estimates: VerifiedQuotaEstimate[]): QuotaChange[] 
 }
 
 export function tokenRange(estimate: VerifiedQuotaEstimate, locale: string, monthly = false): string | null {
+  if (monthly && isCodexPro200(estimate.planSlug)) return null;
   if (monthly && estimate.window !== 'weekly' && estimate.window !== 'monthly') return null;
   const low = monthly && estimate.window === 'weekly' ? weeklyToMonthly(estimate.low) : estimate.low;
   const high = monthly && estimate.window === 'weekly' ? weeklyToMonthly(estimate.high) : estimate.high;

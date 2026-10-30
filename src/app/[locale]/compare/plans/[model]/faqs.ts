@@ -1,4 +1,5 @@
 import { subscriptionSearchCopy } from '@/lib/subscription-search';
+import { codexQuotaFaq, isCodexQuotaModel } from '@/lib/codex-pro200';
 /**
  * Data-driven FAQ for the per-model plan comparison page.
  *
@@ -51,6 +52,7 @@ export function buildCompareFaqs(
   const chinaRows = rows.filter((r) => r.channel.accessFromChina);
   const searchCopy = subscriptionSearchCopy(model.slug, modelName, locale);
   const faqs: FaqItem[] = [{ question: searchCopy.question, answer: searchCopy.answer }];
+  if (isCodexQuotaModel(model.slug)) faqs.push(codexQuotaFaq(locale, model.slug));
 
   // 1. Cheapest plan
   if (cheapest && typeof cheapest.monthlyPrice === 'number') {

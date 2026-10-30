@@ -1,4 +1,22 @@
 {
+  "codexQuota": {
+    "heading": "Astra / Sol post-upgrade retest · ChatGPT Pro 200",
+    "verifiedAt": "Quota verified on",
+    "astraCapacity": "111.6M–186.0M tokens/week; point estimate 139.5M",
+    "solCapacity": "≥ 274M tokens/week (conditional lower bound)",
+    "upgrade": "The upgrade is user-reported and has not been independently verified.",
+    "scope": "Applies only to ChatGPT Pro 200, not Pro 100/500.",
+    "windows": "Only the weekly window is available; no extrapolation to 5-hour or monthly windows.",
+    "pool": "The two models share one allowance pool; capacities cannot be added.",
+    "overlap": "The historical and current Astra intervals overlap; interpret results with their workload mix.",
+    "assumptions": "The Sol lower bound assumes settled linear metering, nonnegative extra consumption and no refunds, resets or allowance changes; the main batch included controller activity.",
+    "report": "10-30 retest report (Chinese)",
+    "ledger": "10-30 meter readings and per-call ledger",
+    "history": "10-28 historical data and report (Chinese)",
+    "question": "What is the Codex Pro 200 weekly allowance?",
+    "modelQuestion": "What is the {model} weekly allowance in Codex Pro 200?",
+    "calculator": "Codex subscription weekly reference (separate from API cost calculations)"
+  },
   "quota": {
     "title": "Subscription quota estimates",
     "estimate": "Estimate",

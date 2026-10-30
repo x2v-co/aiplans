@@ -15,6 +15,8 @@ import { estimateApiCost, type ApiUsage } from '@/lib/api-cost-calculator';
 import { formatPrice, type CurrencyCode } from '@/lib/currency';
 import { formatModelName } from '@/lib/model-names';
 import type { GroupedProduct } from '@/lib/grouped-products';
+import { CodexModelMeasurements } from '@/components/codex-model-measurements';
+import { codexQuotaCopy } from '@/lib/codex-pro200';
 
 const MAX_MODELS = 4;
 
@@ -299,6 +301,10 @@ export default function CalculatorView({
             </>
           )}
         </section>
+        <aside className="mt-8 rounded-lg border p-4">
+          <h2 className="mb-3 font-semibold">{codexQuotaCopy(locale).calculator}</h2>
+          <CodexModelMeasurements locale={locale} />
+        </aside>
       </main>
     </div>
   );
