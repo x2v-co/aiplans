@@ -1,13 +1,17 @@
 {
   "schemaVersion": 2,
-  "publishedAt": "2026-10-29",
-  "supersedes": "/reports/quota-bench-2026-10.v1.json",
+  "publishedAt": "2026-10-30",
+  "supersedes": "/reports/quota-bench-2026-10.v2.json",
   "changelog": [
     {
       "version": 2,
       "date": "2026-10-29",
       "zh": "Cursor composer-2.5 按 12 轮额度读数区间发布有条件估算，并按标准 API 公开价折合 USD；套餐档位改为未核验，解除与 Ultra 套餐卡片的关联。Codex Pro 200 新增按 OpenAI gpt-6-astra 公开价计算的 USD 等价价值。",
       "en": "Publish Cursor composer-2.5 as a conditional estimate from the 12-call meter interval with a standard API list-price USD equivalent; mark the plan tier unverified and detach it from the Ultra plan card. Add a USD equivalent for Codex Pro 200 at OpenAI gpt-6-astra list price."
+    },
+    {
+      "date": "2026-10-30",
+      "note": "Pro 200 post-upgrade retest: current Astra sample updated; API equivalent recomputed using the existing 2026-10-29 verified pricing snapshot. Sol lower-bound-only evidence published separately."
     }
   ],
   "records": [
@@ -16,30 +20,30 @@
       "plan": "ChatGPT Pro 200 (Codex)",
       "model": "gpt-6-astra",
       "modelIdentity": "requested",
-      "date": "2026-10-28",
+      "date": "2026-10-30",
       "window": "weekly",
       "status": "conditional",
       "tierVerified": true,
-      "calls": 28,
+      "calls": 60,
       "tokens": {
-        "input": 2320149,
-        "cacheRead": 271104,
+        "input": 4765206,
+        "cacheRead": 806400,
         "cacheWrite": 0,
-        "output": 4070
+        "output": 8733
       },
       "controlTokens": null,
-      "usedBefore": 89,
-      "usedAfter": 92,
+      "usedBefore": 49,
+      "usedAfter": 53,
       "estimate": {
-        "low": 64883075,
-        "mid": 86510767,
-        "high": 129766150
+        "low": 111606780,
+        "mid": 139508475,
+        "high": 186011300
       },
       "apiEquivalentUsd": {
-        "low": 591.90,
-        "mid": 789.20,
-        "high": 1183.80,
-        "sample": 23.676094
+        "low": 977.9,
+        "mid": 1222.38,
+        "high": 1629.84,
+        "sample": 48.89511
       },
       "pricing": {
         "model": "gpt-6-astra",
@@ -53,22 +57,22 @@
         "source": "https://developers.openai.com/api/docs/models/gpt-6-astra",
         "verifiedAt": "2026-10-29",
         "note": {
-          "zh": "标准 API 档。本样本单次输入最高 93,822 tokens，未触发 >272K 输入的长上下文加价。缓存写入为 0。",
-          "en": "Standard API tier. Long-context surcharge (>272K input per request) not triggered: max per-call input in this sample is 93,822 tokens. Cache writes were 0."
+          "zh": "沿用2026-10-29核验的标准API价格快照。本次主测单次输入最高 93,754 tokens，未触发 >272K 长上下文加价；缓存写入为0。不是今天重新核验的价格。",
+          "en": "Uses the standard API pricing snapshot verified 2026-10-29, not reverified today. Max main-batch input: 93,754 tokens; no >272K long-context surcharge. Cache writes were zero."
         }
       },
       "estimateBasis": null,
       "caveats": {
-        "zh": "仅适用于 ChatGPT Pro 200，档位由账号持有人确认。本轮 Astra 主测 28 次，控制会话 token 计数未变；约 10.45% 为缓存读取。范围仅含读数舍入，仍假设线性扣量、计量已结算且无其他设备流量。5 小时/月窗口未返回；Sol 读数异常，暂不发布容量。",
-        "en": "Applies only to ChatGPT Pro 200; tier confirmed by the account owner. Astra main batch: 28 calls with unchanged controller token counters. Bounds cover meter rounding only, assuming linear consumption, settled meters and no other-device traffic. No 5-hour/monthly window returned; Sol capacity withheld due to inconsistent readings."
+        "zh": "仅适用于 ChatGPT Pro 200。账号持有人确认权益升级后复测；升级幅度未独立核验。Astra 主测 60 次，控制会话计数未变，缓存读取 14.45%。区间仅含读数舍入，假设线性扣量、已结算且无其他流量；5 小时/月窗口未返回。Sol 仅有条件下界，不能当作完整容量。",
+        "en": "Applies only to ChatGPT Pro 200. Retested after an owner-reported upgrade; upgrade magnitude not independently verified. Astra main batch: 60 calls, unchanged controller counters. Bounds cover rounding only, assuming linear settled consumption and no other traffic. No 5-hour/monthly window returned. Sol has a conditional lower bound only, not a full capacity estimate."
       },
       "windowMeasurements": null,
-      "measurementReport": "/reports/codex-models-2026-10-28.md",
-      "measurementData": "/reports/codex-models-2026-10-28.json",
+      "measurementReport": "/reports/codex-models-2026-10-30.md",
+      "measurementData": "/reports/codex-models-2026-10-30.json",
       "planSlug": "chatgpt-pro-200",
       "tierVerification": {
         "source": "account_owner_confirmation",
-        "confirmedAt": "2026-10-28",
+        "confirmedAt": "2026-10-30",
         "priceUsdPerMonth": 200,
         "note": "Account owner confirmed the measured plan is Pro 200, not Pro 100 or Pro 500. This is not independent billing verification."
       }
@@ -169,7 +173,11 @@
       "usedAfter": 34.757,
       "estimateBasis": {
         "calls": 12,
-        "batches": ["cursor-01", "cursor-02", "cursor-03"],
+        "batches": [
+          "cursor-01",
+          "cursor-02",
+          "cursor-03"
+        ],
         "tokens": {
           "input": 724610,
           "cacheRead": 48253,
@@ -180,7 +188,9 @@
         "usedDeltaPp": 0.0147,
         "meterPrecisionPp": 0.0001,
         "excluded": {
-          "batches": ["cursor-04"],
+          "batches": [
+            "cursor-04"
+          ],
           "calls": 4,
           "totalTokens": 360497,
           "reason": "No final meter reading after the browser disconnected"

@@ -76,9 +76,9 @@ test('plan cards show benchmark results with scope warnings and deep links inste
       assert.ok(!html.includes((locale === 'zh' ? zh : en).quota.empty));
       assert.match(html, /data-quota-bench=/);
       if (planSlug.startsWith('chatgpt-pro')) {
-        assert.match(html, /2,595,323/);
-        assert.match(html, /64,883,075–129,766,150/);
-        assert.ok(html.includes('$789'));
+        assert.match(html, /5,580,339/);
+        assert.match(html, /111,606,780–186,011,300/);
+        assert.ok(html.includes('$1,222'));
         assert.ok(html.includes(locale === 'zh' ? '仅适用于 ChatGPT Pro 200' : 'Applies only to ChatGPT Pro 200'));
         assert.ok(html.includes(`/${locale}/quota-bench#codex-pro`));
       } else if (planSlug === 'seed-pro') {
@@ -92,7 +92,7 @@ test('plan cards show benchmark results with scope warnings and deep links inste
     }
     for (const planSlug of ['chatgpt-pro-100', 'chatgpt-pro-500', 'chatgpt-plus', 'seed-lite', 'cursor-ultra', 'cursor-pro', 'x-premium-plus']) {
       const html = render(locale, createElement(PlanQuotaEstimates, { locale, planSlug, estimates: [] }));
-      assert.doesNotMatch(html, /data-quota-bench=|64,883,075|129,766,150|2,595,323/);
+      assert.doesNotMatch(html, /data-quota-bench=|111,606,780|186,011,300|5,580,339/);
       assert.ok(html.includes((locale === 'zh' ? zh : en).quota.empty));
     }
   }
