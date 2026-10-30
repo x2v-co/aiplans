@@ -37,7 +37,7 @@ test('all 12 MiniMax plans resolve Flash after merge and have zero drift on reru
   assert.ok(planRepair275(result.after).drift.every(d => !d.missing.length && !d.stale.length));
 });
 
-test('April rows retain IDs, prices and plan references; current six tiers have no guessed annual totals or quotas', () => {
+test('April rows retain IDs, prices and plan references; current tiers use verified membership prices without guessed quotas', () => {
   const s = exampleSnapshot275();
   s.usage_prices.push({ id: 70, model_id: 3, plan_id: 22, price_kind: 'tasks', price: 1 });
   const result = planRepair275(s);
@@ -49,12 +49,53 @@ test('April rows retain IDs, prices and plan references; current six tiers have 
   const current = result.after.plans.filter(p => p.plan_line === 'kimi');
   assert.deepEqual(current.map(p => p.name), ['Kimi Free', 'Kimi Go', 'Kimi Plus', 'Kimi Pro', 'Kimi Max', 'Kimi Ultra']);
   assert.deepEqual(current.map(p => p.price_yearly_monthly), [0, 39, 79, 159, 559, 1119]);
-  assert.deepEqual(current.map(p => p.price), [0, null, null, null, null, null]);
-  assert.ok(current.every(p => p.annual_price === null && p.quotas === null && p.currency === 'CNY'));
-  const instructed = planRepair275(s, 'issue-monthly');
-  assert.deepEqual(instructed.after.plans.filter(p => p.plan_line === 'kimi').map(p => p.price), [0, 39, 79, 159, 559, 1119]);
-  assert.ok(instructed.after.plans.filter(p => p.plan_line === 'kimi').every(p => p.price_yearly_monthly === null && String(p.notes).includes('conflicts')));
-  assert.deepEqual(planRepair275(instructed.after, 'issue-monthly').steps, []);
+  assert.deepEqual(current.map(p => p.price), [0, 49, 99, 199, 699, 1399]);
+  assert.deepEqual(current.map(p => p.annual_price), [null, 468, 948, 1908, 6708, 13428]);
+  assert.ok(current.every(p => p.quotas === null && p.currency === 'CNY'
+    && p.billing_granularity === 'flat_monthly' && p.last_verified === VERIFIED_275));
+  assert.ok(current.slice(1).every(p => p.annual_price === Number(p.price_yearly_monthly) * 12));
+  for (const p of current) {
+    assert.ok(String(p.notes).includes('source_url=https://www.kimi.com/membership/pricing'));
+  }
+  assert.ok(result.steps.filter(s => s.table === 'plans' && s.values.plan_line === 'kimi')
+    .every(s => s.source_url === 'https://www.kimi.com/membership/pricing'));
+});
+
+test('agent credit multipliers and tier benefits are recorded without absolute allowances', () => {
+  const current = planRepair275(exampleSnapshot275()).after.plans.filter(p => p.plan_line === 'kimi');
+  assert.match(String(current[1].notes), /More agent credits \(base\)/);
+  for (const [index, multiplier] of [[2, '2x'], [3, '4x'], [4, '14x'], [5, '28x']] as const) {
+    assert.ok(String(current[index].notes).includes(`${multiplier} agent credits`));
+    assert.match(String(current[index].notes), /Kimi Code/);
+  }
+  for (const [index, plan] of current.entries()) {
+    assert.equal(String(plan.notes).includes('Kimi Code'), index >= 2);
+    assert.equal(String(plan.notes).includes('Agent multitasking'), index >= 3);
+    assert.equal(String(plan.notes).includes('K3.1 Pro Highspeed'), index >= 3);
+    assert.equal(plan.quotas, null);
+  }
+});
+
+test('already repaired tiers receive all three prices and replace outdated billing notes, then rerun with zero steps', () => {
+  const snapshot = planRepair275(exampleSnapshot275()).after;
+  const current = snapshot.plans.filter(p => p.plan_line === 'kimi');
+  for (const plan of current) {
+    plan.price = plan.tier === 'free' ? 0 : null;
+    plan.annual_price = null;
+    plan.billing_granularity = 'flat_yearly';
+    plan.notes = `[aiplans:issue-275 source_url=https://www.kimi.com/resources/kimi-k3-1-pro-pricing last_verified=${VERIFIED_275}]\nOutdated billing caveat.`;
+  }
+  const { after, steps } = planRepair275(snapshot);
+  assert.equal(steps.length, 6);
+  assert.ok(steps.every(s => s.table === 'plans' && s.action === 'update'
+    && s.source_url === 'https://www.kimi.com/membership/pricing'));
+  const updated = after.plans.filter(p => p.plan_line === 'kimi');
+  assert.deepEqual(updated.map(id), current.map(id));
+  assert.deepEqual(updated.slice(1).map(p => [p.price, p.price_yearly_monthly, p.annual_price]),
+    [[49, 39, 468], [99, 79, 948], [199, 159, 1908], [699, 559, 6708], [1399, 1119, 13428]]);
+  assert.ok(updated.every(p => !String(p.notes).includes('Outdated billing caveat')
+    && !String(p.notes).includes('/resources/')));
+  assert.deepEqual(planRepair275(after).steps, []);
 });
 
 test('Highspeed is removed even from manual legacy links and appears only in the three current upper tiers', () => {

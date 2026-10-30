@@ -5,7 +5,7 @@ import { resolveSelector, type ModelSelector } from '../../src/lib/plan-selector
 import {
   VERIFIED_275, MINIMAX_FLASH, MINIMAX_FLASH_ALIASES, MINIMAX_SOURCE_275,
   MINIMAX_CN_SOURCE_275, KIMI_SOURCE_275, KIMI_HIGHSPEED, KIMI_PRO,
-  KIMI_TIERS_275, KIMI_LEGACY_MARKER, KIMI_LEGACY_SELECTOR, KIMI_PRICE_CAVEAT, kimiSelector275,
+  KIMI_TIERS_275, KIMI_LEGACY_MARKER, KIMI_LEGACY_SELECTOR, kimiSelector275,
 } from './minimax-flash-kimi-tiers';
 
 export type Value = string | number | boolean | null | Value[] | { [key: string]: Value };
@@ -34,8 +34,7 @@ const note275 = (url: string) => `[aiplans:issue-275 source_url=${url} last_veri
 const append = (text: Value | undefined, line: string) => String(text ?? '').includes(line)
   ? String(text) : [text, line].filter(Boolean).join('\n');
 
-/** Monthly figures conflict with the official annual-equivalent label; default to verified basis. */
-export function planRepair275(input: Snapshot275, priceBasis: 'annual-equivalent' | 'issue-monthly' = 'annual-equivalent') {
+export function planRepair275(input: Snapshot275) {
   const state: Snapshot275 = JSON.parse(JSON.stringify(input));
   for (const table of TABLES_275) if (!Array.isArray(state[table])) throw new Error(`Missing snapshot table ${table}`);
   const steps: Step275[] = [];
@@ -166,14 +165,13 @@ export function planRepair275(input: Snapshot275, priceBasis: 'annual-equivalent
   for (const [rank, seed] of KIMI_TIERS_275.entries()) {
     const slug = `kimi-${seed.tier}`;
     const existing = one('plans', r => sameId(r.provider_id, kimi.id) && r.slug === slug, slug, false);
-    const notes = `${note275(KIMI_SOURCE_275)}\n${KIMI_PRICE_CAVEAT}${seed.tier === 'free' ? '\nK3.1 Pro: limited use on Kimi web/Kimi Work; numerical allowance unverified.' : ''}${priceBasis === 'issue-monthly' ? '\nMonthly price follows issue #275 user instruction; official article conflicts with this billing basis.' : ''}`;
+    const notes = `${note275(KIMI_SOURCE_275)}\n${seed.notes}`;
     const plan = emit('plans', existing ?? null, {
       provider_id: kimi.id, product_id: kimi.id, slug, name: `Kimi ${seed.name}`, tier: seed.tier,
-      price: seed.tier === 'free' || priceBasis === 'issue-monthly' ? seed.price : null,
-      price_yearly_monthly: priceBasis === 'annual-equivalent' ? seed.price : null,
-      annual_price: null, currency: 'CNY', price_unit: 'per_month', pricing_model: 'subscription',
+      price: seed.price, price_yearly_monthly: seed.price_yearly_monthly,
+      annual_price: seed.annual_price, currency: 'CNY', price_unit: 'per_month', pricing_model: 'subscription',
       plan_kind: 'chat', plan_category: 'chatbot', plan_line: 'kimi', tier_rank: rank,
-      billing_granularity: priceBasis === 'annual-equivalent' && seed.tier !== 'free' ? 'flat_yearly' : 'flat_monthly', source: 'manual', is_official: true, is_contact_sales: false,
+      billing_granularity: 'flat_monthly', source: 'manual', is_official: true, is_contact_sales: false,
       access_from_china: true, region: 'china', quotas: null, model_selector: kimiSelector275(seed.tier) as Value,
       third_party_coverage: 'none', notes, last_verified: VERIFIED_275,
     }, KIMI_SOURCE_275);
@@ -212,7 +210,7 @@ export function planRepair275(input: Snapshot275, priceBasis: 'annual-equivalent
       emit('model_plan_mapping', link ?? null, { plan_id: row.id, model_id: id, priority, source: 'derived' }, url);
     });
   }
-  return { steps, after: state, drift, priceBasis, caveats: [KIMI_PRICE_CAVEAT, 'Absolute token/message/request quotas and annual totals are not populated.'] };
+  return { steps, after: state, drift, caveats: ['Absolute token/message/request quotas are not populated.'] };
 }
 
 /** Illustrative issue state, never a production dump. IDs have no external meaning. */

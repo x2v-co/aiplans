@@ -14,7 +14,7 @@ import {
 } from './data/plan-minimax-flash-kimi-tiers';
 
 export function options275(args: string[]) {
-  const options = { apply: false, dbDryRun: false, snapshot: '', priceBasis: 'annual-equivalent' as 'annual-equivalent' | 'issue-monthly' };
+  const options = { apply: false, dbDryRun: false, snapshot: '' };
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--apply': options.apply = true; break;
@@ -24,7 +24,6 @@ export function options275(args: string[]) {
         options.snapshot = args[++i];
         if (!options.snapshot || options.snapshot.startsWith('--')) throw new Error('--snapshot needs a JSON file');
         break;
-      case '--issue-monthly': options.priceBasis = 'issue-monthly'; break;
       default: throw new Error(`Unknown option: ${args[i]}`);
     }
   }
@@ -43,7 +42,7 @@ export function localDatabaseUrl275(value?: string): string {
 async function main() {
   const options = options275(process.argv.slice(2));
   const report = (snapshot: Snapshot275, label: string) => {
-    const result = planRepair275(snapshot, options.priceBasis);
+    const result = planRepair275(snapshot);
     console.log(label);
     console.log(JSON.stringify({ ...result, after: undefined }, null, 2));
     console.log(`${result.steps.length} row changes; ${options.apply ? 'APPLY' : 'DRY-RUN (no writes)'}. Temporary negative IDs are resolved on insertion.`);
@@ -119,7 +118,7 @@ async function main() {
       }
       const check = emptySnapshot275();
       for (const table of TABLES_275) check[table] = JSON.parse(JSON.stringify(await tx`SELECT * FROM ${tx(table)}`));
-      if (planRepair275(check, options.priceBasis).steps.length) throw new Error('Postcondition failed: second plan must be empty; rolling back');
+      if (planRepair275(check).steps.length) throw new Error('Postcondition failed: second plan must be empty; rolling back');
       console.log('Applied atomically; second run is a no-op. Every change recorded in data_fix_275_audit.');
     });
   } finally { await sql.end(); }
