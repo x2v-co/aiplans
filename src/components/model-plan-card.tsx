@@ -64,7 +64,7 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
   return <Card data-plan-card={plan.id} className={`min-w-0 gap-3 py-4 ${recommended
     ? 'border-2 border-blue-500' : bestValue ? 'border-2 border-green-500' : ''}`}>
     <CardHeader className="gap-2 px-4">
-      <CardTitle className="line-clamp-2 text-lg leading-6 break-words">{copy.name}</CardTitle>
+      <CardTitle className="line-clamp-2 text-lg leading-6 [overflow-wrap:anywhere]">{copy.name}</CardTitle>
       <div className="flex flex-wrap gap-1 text-xs">
         {(copy.unverified || flags.unverified) && <Badge variant="outline" className="text-amber-700 dark:text-amber-400">{t('unverified')}</Badge>}
         {flags.expired && <Badge variant="outline" className="text-red-700 dark:text-red-400">{t('expired')}</Badge>}
@@ -89,7 +89,7 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
     </CardHeader>
     <CardContent className="space-y-3 px-4">
       {copy.points.length > 0 && <ul className="space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
-        {copy.points.map(point => <li key={point} className="line-clamp-2 break-words">
+        {copy.points.map(point => <li key={point} className="line-clamp-2 [overflow-wrap:anywhere]">
           <EntitlementLine text={point} locale={locale} />
         </li>)}
       </ul>}
@@ -101,7 +101,7 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
         : <p className="text-xs text-zinc-500">{t('sourceNotRecorded')}</p>}
       {copy.details.length > 0 && <details className="text-sm text-zinc-600 dark:text-zinc-400">
         <summary className="cursor-pointer">{t('details')}</summary>
-        <ul className="mt-2 max-h-64 space-y-2 overflow-y-auto break-words">
+        <ul className="mt-2 max-h-64 space-y-2 overflow-y-auto [overflow-wrap:anywhere]">
           {copy.details.map(text => <li key={text}><EntitlementLine text={text} locale={locale} /></li>)}
         </ul>
       </details>}

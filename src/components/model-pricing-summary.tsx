@@ -31,13 +31,13 @@ export default function ModelPricingSummary({ pricing, locale, now, officialUsag
   const tableChannels = officialUsagePrices.length > 0
     ? pricing.tableChannels.filter(row => !pricing.official.includes(row)) : pricing.tableChannels;
   return (
-    <section className="mb-6 rounded-lg border p-4" aria-label={isZh ? 'API 定价速览' : 'API pricing at a glance'}>
+    <section className="mb-6 min-w-0 max-w-full rounded-lg border p-4" aria-label={isZh ? 'API 定价速览' : 'API pricing at a glance'}>
       <h2 className="mb-3 text-lg font-semibold">{isZh ? 'API 价格与 token 费用速览' : 'API pricing and token costs at a glance'}</h2>
       <p className="mb-2 text-sm text-zinc-600 dark:text-zinc-400">
         {pricing.updatedOn ? <>{isZh ? '更新于' : 'Updated on'} <time dateTime={pricing.updatedOn}>{pricing.updatedOn}</time></> : pricing.updateText}
         {' · '}{isZh ? '各币种原始报价 / 每百万 tokens；最低按输入价格排序' : 'Published currencies / per 1M tokens; cheapest ranked by input'}
       </p>
-      <div className="overflow-x-auto">
+      <div className="min-w-0 w-full max-w-full overflow-x-auto">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">{isZh ? '官方与最低价渠道 API 定价' : 'Official and cheapest channel API pricing'}</caption>
           <thead><tr className="border-b">
