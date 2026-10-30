@@ -52,7 +52,10 @@ import { isArenaBenchmark, type ModelBenchmarkScore } from '@/lib/benchmarks';
 import { getCodingAgentRowsForModel } from '@/lib/coding-agents';
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { DataTrustLabel } from '@/components/data-trust-label';
-import { ModelPlanCard, type ModelPlanCardRow } from '@/components/model-plan-card';
+import type { ModelPlanCardRow } from '@/components/model-plan-card';
+import { ModelPlanGroups } from '@/components/model-plan-groups';
+import { getModelPlans } from '@/lib/model-plans-query';
+import { groupModelPlansByOwnership } from '@/lib/model-plan-groups';
 import {
   channelListPriceTrust,
   isTrustModelSlug,
@@ -261,54 +264,11 @@ async function getProductWithChannels(slug: string, now = new Date()) {
     normalizedChannelPrices.find((channel: any) => channel.providers?.type === 'official')?.providers ||
     null;
 
-  // Get plans that include this model via model_plan_mapping
-  const modelPlanMappings = await sql<Array<{ plan_id: number | null }>>`
-    SELECT plan_id FROM model_plan_mapping WHERE model_id = ${model.id}
-  `;
-
-  // Get plan IDs and fetch full plan details
-  const planIds = [...new Set([...modelPlanMappings.map((m) => m.plan_id),
-    ...usagePrices.map(row => row.plan_id)].filter((id): id is number => id != null))];
-
-  const plansData: any[] = planIds.length > 0 ? [...await sql<any[]>`
-    SELECT
-      pl.id,
-      pl.name,
-      pl.slug,
-      pl.tier,
-      pl.price,
-      pl.annual_price,
-      pl.currency,
-      pl.price_unit,
-      pl.features,
-      (to_jsonb(pl)->>'data_for_discount')::boolean AS data_for_discount,
-      to_jsonb(pl)->>'data_for_discount_note' AS data_for_discount_note,
-      to_jsonb(pl)->>'quota_unit' AS quota_unit,
-      pl.third_party_coverage,
-      pl.third_party_coverage_note,
-      pl.access_from_china,
-      pl.provider_id,
-      pl.plan_kind,
-      pl.plan_line,
-      pl.tier_rank,
-      pl.last_verified,
-      pl.notes,
-      pl.legacy_ends_on,
-      pl.is_contact_sales,
-      pl.monthly_api_credit_status,
-      CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object(
-        'id', p.id,
-        'name', p.name,
-        'slug', p.slug,
-        'logo', p.logo,
-        'pricing_url', p.pricing_url,
-        'website', p.website
-      ) END AS providers
-    FROM plans pl
-    LEFT JOIN providers p ON p.id = pl.provider_id
-    WHERE pl.id = ANY(${sql.array(planIds, INT4_ARRAY)})
-    ORDER BY pl.price ASC NULLS LAST
-  `] : [];
+  // Prefer the catalog producer (model_offical, then provider_ids[1]); an
+  // explicitly official API channel is the fallback when ownership is missing.
+  const producerId = modelProvider?.id ?? derivedProvider?.id ?? null;
+  const plansData = await getModelPlans(model.id, producerId,
+    usagePrices.flatMap(row => row.plan_id == null ? [] : [row.plan_id]), now);
 
   // Return the model with provider attached
   const product = {
@@ -370,6 +330,7 @@ async function getProductWithChannels(slug: string, now = new Date()) {
     referencePrices,
     usagePrices,
     plans: plansData,
+    producerId,
     arenaElo,
     benchmarkScores,
     priceHistory,
@@ -398,7 +359,7 @@ export default async function ModelPage({
     notFound();
   }
 
-  const { product, channelPrices, usagePrices, referencePrices, plans, arenaElo, benchmarkScores, priceHistory, relatedModels } = data;
+  const { product, channelPrices, usagePrices, referencePrices, plans, arenaElo, benchmarkScores, priceHistory, relatedModels, producerId } = data;
   const officialUsagePrices = officialUsageFallback(channelPrices, usagePrices);
   const officialUsageHeadline = usagePriceHeadline(officialUsagePrices);
   // Agent-harness results (Claude Code, Codex, ...) on this host model. Renders
@@ -435,13 +396,14 @@ export default async function ModelPage({
 
   // A model now commonly maps to several product lines at once (chat, coding,
   // agent), so the plan list is grouped instead of being one flat price ladder.
+  const ownershipGroups = groupModelPlansByOwnership(sortedPlans, producerId);
   const planKindGroups = groupPlansByKind(sortedPlans, (plan) => plan.plan_kind);
 
-  // "Recommended" has to be per product line. `tier === 'pro'` matches the Pro
+  // "Recommended" is per ownership group and product line. `tier === 'pro'` matches the Pro
   // tier of every line, so a model sold as both a chat and a coding plan used to
   // light up two blue-bordered cards in the same grid.
   const recommendedPlanIds = new Set<number>(
-    planKindGroups
+    ownershipGroups.flatMap(group => group.kindGroups)
       .map(({ plans: kindPlans }) =>
         kindPlans.find((plan) => plan.tier === 'pro' && !plan.name.includes('Max'))?.id,
       )
@@ -561,7 +523,7 @@ export default async function ModelPage({
       <SiteHeader locale={locale} />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto min-w-0 px-4 py-8 [overflow-wrap:anywhere] [&_[data-slot=card]]:min-w-0 [&_[data-slot=badge]]:max-w-full [&_[data-slot=badge]]:whitespace-normal">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
           <Link href={`/${locale}/api-pricing`} className="flex items-center gap-1 hover:text-blue-600">
@@ -576,12 +538,12 @@ export default async function ModelPage({
               <img
                 src={getProviderLogoSrc(product.providers)!}
                 alt={product.providers?.name || productName}
-                className="w-16 h-16 object-contain"
+                className="w-16 h-16 shrink-0 object-contain"
               />
             ) : (
-              <span className="text-5xl">{getProviderLogoFallback(product.providers)}</span>
+              <span className="shrink-0 text-5xl">{getProviderLogoFallback(product.providers)}</span>
             )}
-            <div>
+            <div className="min-w-0 flex-1">
               <h1 className="text-3xl font-bold flex flex-wrap items-center gap-2">
                 {pricing.title}
                 <VariantBadges slug={product.slug} locale={locale} />
@@ -695,7 +657,7 @@ export default async function ModelPage({
         )}
 
         {/* Quick Stats */}
-        {!announcementLabel && <div className="grid md:grid-cols-3 gap-6 mb-8">
+        {!announcementLabel && <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Cheapest Option */}
           <Card className={cheapestChannel?.id === officialChannel?.id ? "border-blue-500" : "border-green-500"}>
             <CardHeader className="pb-2">
@@ -852,38 +814,13 @@ export default async function ModelPage({
                 </h2>
                 <p className="text-zinc-600">
                   {isZh
-                    ? `通过以下套餐使用 ${product.name}，按产品线分组。`
-                    : `Access ${product.name} through these plans, grouped by product line.`}
+                    ? `先列出 ${product.providers?.name || product.name} 的官网套餐，再列出已关联的第三方套餐；各组内按产品线分类。`
+                    : `Plans from ${product.providers?.name || product.name} come first, followed by linked third-party plans; each group is organized by product line.`}
                 </p>
               </div>
 
-              {planKindGroups.map(({ kind, plans: kindPlans }) => (
-                <div key={kind} className="mb-8 last:mb-0">
-                  <div className="flex items-center gap-2 mb-3">
-                    <h3 className="text-lg font-semibold">
-                      {planKindIcon(kind)} {planKindLabel(kind, locale)}
-                    </h3>
-                    <Badge variant="secondary" className="font-normal">
-                      {isZh ? `${kindPlans.length} 个套餐` : `${kindPlans.length} plan${kindPlans.length === 1 ? '' : 's'}`}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-zinc-500 mb-4">{planKindDescription(kind, locale)}</p>
-
-                  <div className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {kindPlans.map(plan => (
-                      <ModelPlanCard
-                        key={plan.id}
-                        plan={plan}
-                        locale={locale}
-                        now={now}
-                        usagePrices={usagePrices.filter(row => row.plan_id === plan.id)}
-                        recommended={recommendedPlanIds.has(plan.id)}
-                        bestValue={plan.id === bestValuePlanId}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+              <ModelPlanGroups groups={ownershipGroups} locale={locale} now={now}
+                usagePrices={usagePrices} recommendedPlanIds={recommendedPlanIds} bestValuePlanId={bestValuePlanId} />
 
               <Link href={`/${locale}/compare/plans/${slug}`} className="mt-4 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">
                 {isZh ? `${productName} 订阅套餐价格对比` : `${productName} subscription plans & pricing`}
@@ -942,7 +879,7 @@ export default async function ModelPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="min-w-0 w-full max-w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1135,7 +1072,7 @@ export default async function ModelPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="min-w-0 w-full max-w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1216,7 +1153,7 @@ export default async function ModelPage({
             <h2 className="text-2xl font-bold mb-4">
               {isZh ? '同厂商相关模型' : 'Related models from the same producer'}
             </h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {relatedModels.map((m) => (
                 <Link key={m.slug} href={`/${locale}/models/${m.slug}`}>
                   <Card className="h-full hover:border-blue-400 hover:shadow-md transition-shadow">

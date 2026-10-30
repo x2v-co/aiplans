@@ -52,7 +52,9 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
       provider_ids: [], description: null }];
     if (query.includes('FROM api_channel_prices cp')) return channels;
     if (query.includes('FROM plans pl')) {
-      assert.ok((values[0] as number[]).includes(2256), 'usage-only plans are fetched without a mapping');
+      // The combined query also runs when only producer plans may be present.
+      const usagePlanIds = values[1] as number[];
+      if (!usagePlanIds.includes(2256)) return [];
       return [{ id: 2256, name: 'Gemini API paid tier', slug: 'gemini-api-paid', price: null,
         annual_price: null, tier: 'payg', currency: 'USD', plan_kind: 'api', features: [],
         providers: { id: 3, name: 'Google', slug: 'google', logo: null } }];
@@ -61,6 +63,7 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
   }, { array: (values: unknown[]) => values });
   const route = loadModule('../app/[locale]/models/[slug]/page.tsx', {
     '@/lib/db': { sql, INT4_ARRAY: 1007 },
+    '@/lib/model-plans-query': loadModule('./model-plans-query.ts', { './db': { sql, INT4_ARRAY: 1007 } }),
     '@/lib/schema-adapters': { getPrimaryProvidersForModels: async () => new Map([[10, { name: 'Google', slug: 'google' }]]) },
     '@/lib/model-usage-prices-query': { getModelUsagePrices: async () => usagePrices },
     '@/lib/coupons': { getActiveCouponMap: async () => new Map() },
@@ -82,6 +85,30 @@ function summaryCards(html: string) {
     official: html.split(/Official Price|官方价格/)[1].split(/Best in China|国内优选/)[0],
   };
 }
+
+test('plan query still runs without model/usage links and binds only the exact producer for supplementary subscriptions', async () => {
+  const calls: Array<{ query: string; values: unknown[] }> = [];
+  const sql = Object.assign(async (strings: TemplateStringsArray, ...values: unknown[]) => {
+    calls.push({ query: strings.join('?'), values });
+    return [];
+  }, { array: (values: unknown[], oid: number) => {
+    assert.equal(oid, 1007);
+    return values;
+  } });
+  const { getModelPlans } = loadModule('./model-plans-query.ts', { './db': { sql, INT4_ARRAY: 1007 } });
+  const fetch = getModelPlans as (model: number, producer: number | null, usage: number[], now: Date) => Promise<unknown[]>;
+  await fetch(10, 3, [], new Date('2026-10-30T00:00:00Z'));
+  assert.equal(calls.length, 1, 'no association must not short-circuit producer subscriptions');
+  assert.deepEqual(Array.from(calls[0].values), [10, [], 3, '2026-10-30']);
+  assert.match(calls[0].query, /mapping\.model_id = \? AND mapping\.plan_id = pl\.id/);
+  assert.match(calls[0].query, /OR pl\.id = ANY\(\?\)/);
+  assert.match(calls[0].query, /pl\.provider_id = \?\s+AND pl\.pricing_model = 'subscription'/);
+  assert.match(calls[0].query, /pl\.legacy_ends_on/);
+  assert.match(calls[0].query, /NOT LIKE '%\[aiplans:superseded-by %'/);
+  assert.doesNotMatch(calls[0].query, /\b(?:INSERT|UPDATE|DELETE)\b/i);
+  await fetch(10, null, [2256], new Date('2026-10-30T00:00:00Z'));
+  assert.deepEqual(Array.from(calls[1].values), [10, [2256], null, '2026-10-30']);
+});
 
 test('usage-only model gives both summary cards an input price and billing unit', async () => {
   for (const locale of ['en', 'zh']) {
