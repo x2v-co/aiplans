@@ -500,6 +500,7 @@
     "source-dependent": "视来源而定",
     "text_input_tokens": "文本输入 token",
     "text_output_tokens": "文本输出 token",
+    "video_output_tokens": "视频输出 token",
     "image_input_tokens": "图像输入 token",
     "image_output_tokens": "图像输出 token",
     "image_0.5k": "0.5K 图像",

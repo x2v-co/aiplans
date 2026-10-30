@@ -15,6 +15,7 @@ import { AI_VERTICAL_CATALOG, RIGOROUS_MODEL_KINDS, type AiCatalogItem } from '.
 import { diffRow, formatChanges, parseSeedArgs } from './utils/seed-diff';
 import { shutdownReached } from '../src/lib/model-shutdown';
 import { KIMI_K3_CONTEXT_FIX } from './data/catalog-2026-10-29';
+import { legacyVideoUsageKeys } from './data/catalog-audit-vertical';
 
 // Default is dry-run. Only `--apply` writes; `--slug a,b` narrows the run.
 // `--sync-availability` lets existing usage rows change is_available in either
@@ -26,13 +27,14 @@ const APPLY = ARGS.apply;
 const stats = { inserted: 0, updated: 0, unchanged: 0 };
 const NOW = new Date();
 
-type Unit = 'credit' | 'generation' | 'second' | 'minute' | 'compute_hour' | 'license' | 'availability';
+type Unit = 'credit' | 'generation' | 'second' | 'minute' | 'compute_hour' | 'license' | 'availability' | 'per_1m_tokens';
 
 interface ProviderRow { id: number; slug: string; name: string }
 interface ModelRow { id: number; slug: string; name: string; provider_ids: number[] | null; shutdown_date?: string | Date | null }
 interface PlanRow { id: number; slug: string; provider_id: number | null }
 
 const UNIT_PRICE_KIND: Record<Unit, string> = {
+  per_1m_tokens: 'video_output_tokens',
   credit: 'credit',
   generation: 'generation',
   second: 'video_second',
@@ -86,6 +88,7 @@ function usageOff(item: AiCatalogItem, model: ModelRow): boolean {
 }
 
 function inferPrimaryUnit(item: AiCatalogItem): Unit {
+  if (item.billingUnit === 'per_1m_tokens') return 'per_1m_tokens';
   const text = `${item.pricingUnit ?? ''} ${item.unit ?? ''}`;
   return UNIT_PATTERNS.find(([, pattern]) => pattern.test(text))?.[0] ?? 'availability';
 }
@@ -116,7 +119,7 @@ async function upsertPlan(item: AiCatalogItem, provider: ProviderRow): Promise<P
     pricing_model: item.pricingConfidence === 'not-commercial' ? 'research' : 'official_reference',
     price: null,
     annual_price: null,
-    currency: 'USD',
+    currency: item.currency ?? 'USD',
     price_unit: item.pricingUnit ?? item.unit,
     tier: item.pricingConfidence === 'not-commercial' ? 'research' : 'official',
     is_official: true,
@@ -195,6 +198,9 @@ async function upsertMapping(model: ModelRow, plan: PlanRow) {
 interface UsageReference { unit: string; priceKind: string; price: number | null }
 
 function usageReferences(item: AiCatalogItem): UsageReference[] {
+  if (item.kind === 'video-model' && item.billingUnit === 'per_1m_tokens' && item.usageRates?.length) {
+    return item.usageRates;
+  }
   const unit = inferPrimaryUnit(item);
   const references: UsageReference[] = [{
     unit,
@@ -218,7 +224,7 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
   // separate plan-less row with the same model/provider/kind/unit; matching it made
   // maybeSingle() fail with PGRST116 and aborted every deploy after the audit apply.
   const planId = plan && plan.id > 0 ? plan.id : null;
-  const existing = await db
+  let existing = await db
     .from('usage_prices')
     .select('*')
     .eq('model_id', model.id)
@@ -228,6 +234,20 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
     .eq('plan_id', planId) // null renders IS NULL
     .maybeSingle();
   if (existing.error) throw existing.error;
+
+  // Keep the row ID when replacing an old availability/per-second placeholder.
+  if (!existing.data && priceKind === 'video_output_tokens') {
+    const legacy = legacyVideoUsageKeys(item);
+    if (legacy.length) {
+      const previous = await db.from('usage_prices').select('*')
+        .eq('model_id', model.id).eq('provider_id', provider.id).eq('plan_id', planId);
+      if (previous.error) throw previous.error;
+      const matches = (previous.data ?? []).filter((row: Record<string, unknown>) =>
+        legacy.some(([kind, oldUnit]) => row.price_kind === kind && row.unit === oldUnit));
+      if (matches.length > 1) throw new Error(`Ambiguous legacy video price for ${model.slug}; review rows before reseeding.`);
+      if (matches.length) existing = { ...existing, data: matches[0] };
+    }
+  }
 
   const row = {
     model_id: model.id,

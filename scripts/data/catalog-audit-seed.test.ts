@@ -205,6 +205,42 @@ test('audit-owned vertical fields keep deploy seed and audit seed in agreement',
   assert.deepEqual([auditFields(snap).model_category, auditFields(snap).pricing_unit], ['decision', 'per_1m_tokens']);
 });
 
+test('audit seed repairs legacy video price units in place and replays without writes', async () => {
+  const f = fixture();
+  await seedCatalogAudit(f.tx, true);
+  const legacy: Record<string, [string, string, number]> = {
+    'gemini-omni-1-1-flash': ['availability', 'unknown', 17.5],
+    seedance: ['video_second', 'second', 0.46],
+  };
+  const ids = new Map<string, number>();
+  for (const [slug, [kind, unit, price]] of Object.entries(legacy)) {
+    const model = f.data.models.find(row => row.slug === slug)!;
+    model.pricing_unit = 'per_second';
+    const usage = f.data.usage_prices.find(row => row.model_id === model.id && row.price_kind === 'video_output_tokens')!;
+    Object.assign(usage, { price_kind: kind, unit, price });
+    ids.set(slug, usage.id);
+  }
+  const before = structuredClone(f.data);
+  const writes = f.writes.length;
+  const preview = await seedCatalogAudit(f.tx, false);
+  assert.ok(preview.some(step => step.target === 'gemini-omni-1-1-flash/video_output_tokens'));
+  assert.equal(f.writes.length, writes);
+  assert.deepEqual(f.data, before);
+  await seedCatalogAudit(f.tx, true);
+  for (const [slug, id] of ids) {
+    const item = catalogForKind('video-model').find(row => row.slug === slug)!;
+    const model = f.data.models.find(row => row.slug === slug)!;
+    assert.equal(model.pricing_unit, 'per_1m_tokens');
+    const usage = f.data.usage_prices.find(row => row.id === id)!;
+    assert.equal(usage.price_kind, 'video_output_tokens');
+    assert.equal(usage.unit, 'per_1m_tokens');
+    assert.equal(usage.price, item.pricePerUnit);
+    assert.equal(usage.currency, item.currency);
+    assert.equal(f.data.usage_prices.filter(row => row.model_id === model.id && row.price_kind === 'video_second').length, 0);
+  }
+  assert.deepEqual(await seedCatalogAudit(f.tx, true), []);
+});
+
 test('canonicalSeedValue terminates on non-midnight timestamps (17:16 RangeError)', async () => {
   const { canonicalSeedValue: c } = await import('./gemini-4-argon');
   assert.equal(c('2026-10-15T17:16:00+00:00'), '2026-10-15T17:16:00.000Z');

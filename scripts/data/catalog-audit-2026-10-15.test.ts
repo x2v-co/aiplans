@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
+import ts from 'typescript';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { OPENROUTER_ADDITIONS, auditedPrices, auditedModelSlug, cleanLegacyFeatures } from './catalog-audit-2026-10-15';
@@ -10,6 +10,38 @@ import { catalogForKind } from '../../src/lib/ai-vertical-catalog';
 import { DecisionModelCatalog, AuditedPricingFacts } from '../../src/components/audited-catalog';
 import { canonicalAnthropicPlanName } from '../scrapers/plan-anthropic-dynamic';
 import { normalizeModelName } from '../utils/model-normalizer';
+import * as catalog from '../../src/lib/ai-vertical-catalog';
+import * as logos from '../../src/lib/vertical-provider-logos';
+import * as auditVertical from './catalog-audit-vertical';
+import * as modelShutdown from '../../src/lib/model-shutdown';
+
+// Execute the real CLI without a child process or access to the DB. Each run
+// gets its own catalog, preserving undefined/NaN fixtures without shared state.
+async function staticAudit(items = structuredClone(catalog.AI_VERTICAL_CATALOG)) {
+  const source = readFileSync(new URL('../audit-vertical-catalog.ts', import.meta.url), 'utf8');
+  const compiled = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const messages: string[] = [];
+  const process = { argv: ['node', 'audit-vertical-catalog'], exitCode: 0,
+    exit(code: number) { throw new Error(`Audit exited ${code}: ${messages.join('\n')}`); } };
+  const dependencies: Record<string, unknown> = {
+    '../src/lib/ai-vertical-catalog': { ...catalog, AI_VERTICAL_CATALOG: items },
+    '../src/lib/vertical-provider-logos': logos,
+    './data/catalog-audit-vertical': auditVertical,
+    '../src/lib/model-shutdown': modelShutdown,
+  };
+  await runInNewContext(compiled, {
+    exports: {}, process, URL,
+    require(id: string) {
+      assert.ok(Object.hasOwn(dependencies, id), `Static audit must not load ${id}`);
+      return dependencies[id];
+    },
+    console: { log: (...values: unknown[]) => messages.push(values.join(' ')),
+      error: (...values: unknown[]) => messages.push(values.join(' ')) },
+  });
+  return { status: process.exitCode, stdout: messages.join('\n') };
+}
 
 test('audit contains all 37 additions, exact conversion and null router sentinels', () => {
   assert.equal(OPENROUTER_ADDITIONS.length, 37);
@@ -125,7 +157,7 @@ test('every replayed category constraint accepts decision rows and preserves the
   assert.ok(registrations[p1] > registrations[p0]);
 });
 
-test('audited entries have factual modalities and the static audit passes without DB pricing', () => {
+test('audited entries have factual modalities and the static audit passes without DB pricing', async () => {
   for (const slug of ['veo-3-1', 'veo-3-1-fast', 'veo-3-1-lite', 'gemini-omni-flash']) {
     const item = catalogForKind('video-model').find(item => item.slug === slug)!;
     assert.deepEqual(item.inputModalities, ['text', 'image'], slug);
@@ -138,17 +170,13 @@ test('audited entries have factual modalities and the static audit passes withou
     assert.deepEqual(item.inputModalities, ['text'], item.slug);
     assert.deepEqual(item.outputModalities, ['text'], item.slug);
   }
-  const result = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/audit-vertical-catalog.ts'], {
-    cwd: fileURLToPath(new URL('../../', import.meta.url)),
-    env: { ...process.env, DATABASE_URL: 'invalid-static-audit-must-not-use-db' },
-    encoding: 'utf8',
-  });
-  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const result = await staticAudit();
+  assert.equal(result.status, 0, result.stdout);
   assert.match(result.stdout, /vertical-catalog audit passed/);
   assert.doesNotMatch(result.stdout, /CRITICAL|WARNING/);
 });
 
-test('static audit still warns when verified prices lack numeric values or verification metadata', () => {
+test('static audit still warns when verified prices lack numeric values or verification metadata', async () => {
   const invalid = [
     ['veo-3-1', { pricePerUnit: null }],
     ['veo-3-1-fast', { verifiedAt: undefined }],
@@ -159,22 +187,10 @@ test('static audit still warns when verified prices lack numeric values or verif
     ['scaledown-summarize', { inputPricePer1M: null }],
     ['subq-snap', { currency: undefined }],
   ] as const;
-  // Preserve NaN and undefined in the child-process fixtures.
-  const setup = invalid.map(([slug, changes]) => {
-    const fields = Object.entries(changes).map(([key, value]) =>
-      `${key}: ${typeof value === 'number' && Number.isNaN(value) ? 'NaN' : JSON.stringify(value)}`);
-    return `Object.assign(AI_VERTICAL_CATALOG.find(item => item.slug === ${JSON.stringify(slug)}), { ${fields.join(', ')} });`;
-  }).join('\n');
-  const result = spawnSync(process.execPath, ['--import', 'tsx', '--eval', `
-    const { AI_VERTICAL_CATALOG } = require('./src/lib/ai-vertical-catalog.ts');
-    ${setup}
-    require('./scripts/audit-vertical-catalog.ts');
-  `], {
-    cwd: fileURLToPath(new URL('../../', import.meta.url)),
-    env: { ...process.env, DATABASE_URL: 'invalid-static-audit-must-not-use-db' },
-    encoding: 'utf8',
-  });
-  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const items = structuredClone(catalog.AI_VERTICAL_CATALOG);
+  for (const [slug, changes] of invalid) Object.assign(items.find(item => item.slug === slug)!, changes);
+  const result = await staticAudit(items);
+  assert.equal(result.status, 0, result.stdout);
   for (const [slug] of invalid) assert.ok(result.stdout.includes(`:${slug}: pricingConfidence=verified`), result.stdout);
   assert.match(result.stdout, /0 critical, 8 warnings/);
 });

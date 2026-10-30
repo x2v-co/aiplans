@@ -500,6 +500,7 @@
     "source-dependent": "source-dependent",
     "text_input_tokens": "Text input tokens",
     "text_output_tokens": "Text output tokens",
+    "video_output_tokens": "Video output tokens",
     "image_input_tokens": "Image input tokens",
     "image_output_tokens": "Image output tokens",
     "image_0.5k": "0.5K image",

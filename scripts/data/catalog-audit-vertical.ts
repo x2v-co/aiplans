@@ -16,6 +16,7 @@ export function auditVerticalModelFields(item: AiCatalogItem) {
     // subq-snap keeps the catalog's decision taxonomy; the P0 SQL preserves it too.
     model_category: item.modelCategory,
     pricing_unit: item.kind === 'decision-model' ? 'per_1m_tokens'
+      : item.billingUnit === 'per_1m_tokens' ? 'per_1m_tokens'
       : item.billingUnit === 'per_second' ? 'per_second'
       : item.billingUnit === 'per_minute' ? 'per_minute'
       : item.billingUnit === 'per_song' ? 'per_generation' : 'unknown',
@@ -25,10 +26,22 @@ export function auditVerticalModelFields(item: AiCatalogItem) {
 
 /** Plan-less usage row written by the catalog-audit seed. Deploy pricing uses seed-vertical-pricing. */
 export function auditVerticalUsage(item: AiCatalogItem): readonly [string, string, number | null] {
+  if (item.billingUnit === 'per_1m_tokens') return ['video_output_tokens', 'per_1m_tokens', item.pricePerUnit ?? null];
   if (item.billingUnit === 'per_minute') return ['minute', 'minute', item.pricePerUnit ?? null];
   if (item.billingUnit === 'per_song') return ['generation', 'song', item.pricePerUnit ?? null];
   if (item.billingUnit === 'per_second') return ['video_second', 'second', item.pricePerUnit ?? null];
   return ['availability', 'unknown', item.pricePerUnit ?? null];
+}
+
+/** Old seed identities to repair in place, scoped by model/provider/plan by callers. */
+export function legacyVideoUsageKeys(item: AiCatalogItem): readonly (readonly [string, string])[] {
+  const seconds = [['video_second', 'second'], ['video_second', 'per_second'],
+    ['video_output_tokens', 'second'], ['video_output_tokens', 'per_second']] as const;
+  if (item.slug === 'gemini-omni-1-1-flash') {
+    return [['availability', 'unknown'], ['availability', 'availability'], ...seconds];
+  }
+  if (item.slug === 'seedance') return [...seconds, ['generation', 'generation']];
+  return [];
 }
 
 /** Keep "Unit:" and "Sources:" lines: src/lib/vertical-models.ts parses Sources from it. */

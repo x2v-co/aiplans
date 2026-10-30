@@ -32,8 +32,11 @@ test('editorial pages use their fixed date, never the request time', () => {
   const lastmod = resolveStaticLastmod({ source: 'date', date: '2026-10-18' }, { dataUpdatedAt: now, catalog: [], now });
   assert.deepEqual(lastmod, new Date('2026-10-18'));
   for (const entry of STATIC_PATHS) {
+    if (entry.lastmod.source !== 'date') continue;
     const resolved = resolveStaticLastmod(entry.lastmod, { dataUpdatedAt: null, catalog: AI_VERTICAL_CATALOG, now });
-    if (resolved) assert.notEqual(resolved.getTime(), now.getTime(), entry.path);
+    assert.deepEqual(resolved, new Date(entry.lastmod.date), entry.path);
+    assert.ok(resolved, entry.path);
+    assert.notEqual(resolved.getTime(), now.getTime(), entry.path);
   }
 });
 
@@ -56,6 +59,12 @@ test('catalog lists use the newest verifiedAt of their kind, else the fallback d
 test('future timestamps are clamped to now', () => {
   assert.deepEqual(
     resolveStaticLastmod({ source: 'data' }, { dataUpdatedAt: '2027-01-01T00:00:00Z', catalog: [], now }),
+    now,
+  );
+  assert.deepEqual(
+    resolveStaticLastmod({ source: 'catalog', kinds: ['video-model'], date: '2026-10-01' }, {
+      dataUpdatedAt: null, catalog: [{ kind: 'video-model', verifiedAt: '2026-10-30' }], now,
+    }),
     now,
   );
 });
