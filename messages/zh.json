@@ -312,6 +312,27 @@
     "noOfficialPrice": "暂无官方渠道",
     "pricesUpdated": "价格更新时间：{date}"
   },
+  "modelDetail": {
+    "backToApiPricing": "返回 API 价格对比",
+    "cheapestOption": "最低价选项",
+    "officialPrice": "官方价格",
+    "bestInChina": "国内优选",
+    "noChinaOptions": "暂无国内友好渠道",
+    "channelPriceComparison": "渠道价格对比",
+    "unverified": "待核验",
+    "expired": "已过期",
+    "stale": "核验已超过 30 天",
+    "priceUnknown": "价格未知",
+    "free": "免费",
+    "month": "月",
+    "year": "年",
+    "lastVerified": "最近核验",
+    "notRecorded": "未记录",
+    "source": "来源",
+    "sourceNotRecorded": "来源未记录",
+    "details": "适用条件与详情",
+    "chinaAvailable": "国内可用"
+  },
   "apiPricing": {
     "title": "API 价格对比",
     "subtitle": "对比不同供应商和渠道的 AI 模型 API 价格，找到最适合你的最便宜选项。",

@@ -7,7 +7,8 @@ export async function generateMetadata({ params }: {
   const { locale } = await params;
   return {
     title: { absolute: locale === 'zh' ? '页面不存在 | aiplans' : 'Page not found | aiplans' },
-    robots: { index: false, follow: true, googleBot: { index: false, follow: true } },
+    // Next.js supplies the 404 noindex tag; suppress inherited robots metadata.
+    robots: null,
   };
 }
 

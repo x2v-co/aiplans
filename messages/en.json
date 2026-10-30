@@ -312,6 +312,27 @@
     "noOfficialPrice": "No official channel",
     "pricesUpdated": "Prices last updated: {date}"
   },
+  "modelDetail": {
+    "backToApiPricing": "Back to API Pricing",
+    "cheapestOption": "Cheapest Option",
+    "officialPrice": "Official Price",
+    "bestInChina": "Best in China",
+    "noChinaOptions": "No China-friendly options",
+    "channelPriceComparison": "Channel Price Comparison",
+    "unverified": "Unverified",
+    "expired": "Expired",
+    "stale": "Verification older than 30 days",
+    "priceUnknown": "Price unknown",
+    "free": "Free",
+    "month": "month",
+    "year": "year",
+    "lastVerified": "Last verified",
+    "notRecorded": "Not recorded",
+    "source": "Source",
+    "sourceNotRecorded": "Source not recorded",
+    "details": "Conditions and details",
+    "chinaAvailable": "Available in China"
+  },
   "apiPricing": {
     "title": "API Pricing Comparison",
     "subtitle": "Compare AI model API prices across different providers and channels. Find the cheapest option for your use case.",

@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: { absolute: 'Page not found | aiplans' },
-  robots: { index: false, follow: true, googleBot: { index: false, follow: true } },
+  // Next.js supplies the 404 noindex tag; suppress inherited robots metadata.
+  robots: null,
 };
 
 /** Root fallback for invalid locale segments; the locale layout is not rendered. */

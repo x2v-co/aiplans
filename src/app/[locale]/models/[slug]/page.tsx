@@ -51,50 +51,20 @@ import VariantBadges from '@/components/variant-badges';
 import { isArenaBenchmark, type ModelBenchmarkScore } from '@/lib/benchmarks';
 import { getCodingAgentRowsForModel } from '@/lib/coding-agents';
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
-import { DataTrustLabel, EntitlementLine } from '@/components/data-trust-label';
-import { PlanCoverage } from '@/components/plan-coverage';
+import { DataTrustLabel } from '@/components/data-trust-label';
+import { ModelPlanCard, type ModelPlanCardRow } from '@/components/model-plan-card';
 import {
   channelListPriceTrust,
-  featureLooksEstimated,
   isTrustModelSlug,
-  planEntitlementTrust,
-  planPriceTrust,
-  reviewedPlanSource,
   usageEstimateTrust,
   variantPriceTrust,
 } from '@/lib/data-trust';
-import type { ChannelTermsFields } from '@/lib/channel-terms';
-import type { PlanCoverageFields } from '@/lib/third-party-coverage';
 
 import { buildModelPricingSeo, type PricingChannel } from '@/lib/model-pricing-seo';
 import ModelPricingSummary from '@/components/model-pricing-summary';
-import ModelUsagePrices, { ModelUsagePriceHeadline } from '@/components/model-usage-prices';
+import { ModelUsagePriceHeadline } from '@/components/model-usage-prices';
 import { availableUsagePrices, officialUsageFallback, usagePriceHeadline } from '@/lib/model-usage-prices';
 import { getModelUsagePrices } from '@/lib/model-usage-prices-query';
-
-/** The columns the plan cards read out of the `plans` query below. */
-interface PlanRow extends PlanCoverageFields, ChannelTermsFields {
-  id: number;
-  name: string;
-  slug: string;
-  tier: string | null;
-  price: number | null;
-  annual_price: number | null;
-  currency: string | null;
-  // jsonb, and not consistently an array: 12 plans (claude-max-5x, chatgpt-team,
-  // claude-team, the gemini-code-assist line...) carry `{}` rather than `[]`.
-  // `{}` is truthy, so an unguarded `features && features.slice()` threw and took
-  // the whole plan section down. Read it through planFeatures() instead.
-  features: unknown;
-  access_from_china: boolean | null;
-  plan_kind: string | null;
-  providers: { id: number; name: string; slug: string; logo: string | null } | null;
-}
-
-/** Only string entries of an array-shaped `features`; [] for every other shape. */
-function planFeatures(features: unknown): string[] {
-  return Array.isArray(features) ? features.filter((f): f is string => typeof f === 'string') : [];
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug: rawSlug } = await params;
@@ -144,13 +114,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-// Channel type labels
-const channelTypeLabels: Record<string, { label: string; color: string }> = {
-  official: { label: "官方", color: "bg-blue-100 text-blue-800" },
-  producer: { label: "官方", color: "bg-blue-100 text-blue-800" },
-  cloud: { label: "云厂商", color: "bg-purple-100 text-purple-800" },
-  aggregator: { label: "聚合平台", color: "bg-green-100 text-green-800" },
-  reseller: { label: "转售商", color: "bg-orange-100 text-orange-800" },
+// Labels come from the same catalog as the API pricing page.
+const channelTypeColors: Record<string, string> = {
+  official: 'bg-blue-100 text-blue-800',
+  producer: 'bg-blue-100 text-blue-800',
+  cloud: 'bg-purple-100 text-purple-800',
+  aggregator: 'bg-green-100 text-green-800',
+  reseller: 'bg-orange-100 text-orange-800',
 };
 
 /**
@@ -435,6 +405,8 @@ export default async function ModelPage({
   // nothing for the vast majority of models that AA has not evaluated.
   const codingAgentRows = await getCodingAgentRowsForModel(product.id);
   const isZh = locale === 'zh';
+  const t = await getTranslations({ locale, namespace: 'modelDetail' });
+  const apiT = await getTranslations({ locale, namespace: 'apiPricing' });
   const showTrust = isTrustModelSlug(slug);
   const productName = formatModelName(product.name);
   const description = publicModelDescription(product.description);
@@ -450,10 +422,10 @@ export default async function ModelPage({
   // Plans can come from several providers (a bundled plan may include
   // third-party models), so normalize to USD before ordering — otherwise a
   // ¥40 plan sorts above a $20 one.
-  const planPriceUSD = (plan: PlanRow): number =>
+  const planPriceUSD = (plan: ModelPlanCardRow): number =>
     (plan.price || 0) * getExchangeRateSync(plan.currency || 'USD', 'USD');
 
-  const planRows = plans as PlanRow[];
+  const planRows = plans as ModelPlanCardRow[];
 
   const sortedPlans = [...planRows].sort((a, b) => {
     if (a.tier === 'free' && b.tier !== 'free') return -1;
@@ -593,7 +565,7 @@ export default async function ModelPage({
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
           <Link href={`/${locale}/api-pricing`} className="flex items-center gap-1 hover:text-blue-600">
-            <ArrowLeft className="w-4 h-4" /> Back to API Pricing
+            <ArrowLeft className="w-4 h-4" /> {t('backToApiPricing')}
           </Link>
         </div>
 
@@ -728,7 +700,7 @@ export default async function ModelPage({
           <Card className={cheapestChannel?.id === officialChannel?.id ? "border-blue-500" : "border-green-500"}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Zap className="w-4 h-4 text-green-600" /> 💰 Cheapest Option
+                <Zap className="w-4 h-4 text-green-600" /> 💰 {t('cheapestOption')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -772,7 +744,7 @@ export default async function ModelPage({
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Globe className="w-4 h-4 text-blue-600" /> 🏢 Official Price
+                <Globe className="w-4 h-4 text-blue-600" /> 🏢 {t('officialPrice')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -818,7 +790,7 @@ export default async function ModelPage({
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                🇨🇳 Best in China
+                🇨🇳 {t('bestInChina')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -861,7 +833,7 @@ export default async function ModelPage({
                     )}
                   </>
                 ) : (
-                  <div className="text-zinc-500">No China-friendly options</div>
+                  <div className="text-zinc-500">{t('noChinaOptions')}</div>
                 );
               })()}
             </CardContent>
@@ -897,153 +869,25 @@ export default async function ModelPage({
                   </div>
                   <p className="text-sm text-zinc-500 mb-4">{planKindDescription(kind, locale)}</p>
 
-                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {kindPlans.map((plan) => {
-                    const planCurrency = (plan.currency || 'USD') as CurrencyCode;
-                    const isRecommended = recommendedPlanIds.has(plan.id);
-                    const isBestValue = plan.id === bestValuePlanId;
-
-                    return (
-                      <Card
+                  <div className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {kindPlans.map(plan => (
+                      <ModelPlanCard
                         key={plan.id}
-                        className={`relative ${
-                          isRecommended
-                            ? 'border-2 border-blue-500 shadow-lg'
-                            : isBestValue
-                            ? 'border-2 border-green-500'
-                            : ''
-                        }`}
-                      >
-                        {isRecommended && (
-                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                            <Badge className="bg-blue-600 text-white">⭐ Recommended</Badge>
-                          </div>
-                        )}
-                        {isBestValue && !isRecommended && (
-                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                            <Badge className="bg-green-600 text-white">💰 Best Value</Badge>
-                          </div>
-                        )}
-
-                        <CardHeader className="pb-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            {plan.providers?.logo && (
-                              <img
-                                src={plan.providers.logo}
-                                alt={plan.providers.name}
-                                className="w-6 h-6 object-contain"
-                              />
-                            )}
-                            <CardTitle className="text-lg">{plan.name}</CardTitle>
-                          </div>
-                          <div className="mt-2">
-                            {plan.price == null ? (
-                              usagePrices.some(row => row.plan_id === plan.id) ? null
-                                : <div className="text-xl font-bold">{isZh ? '价格未知' : 'Price unknown'}</div>
-                            ) : plan.tier === 'free' ? (
-                              <div className="text-3xl font-bold">Free</div>
-                            ) : (
-                              <>
-                                <div className="text-3xl font-bold">
-                                  {formatPrice(plan.price, planCurrency, locale)}
-                                  <span className="text-sm font-normal text-zinc-500">/month</span>
-                                </div>
-                                {plan.annual_price && (
-                                  <div className="text-sm text-zinc-600 mt-1">
-                                    {formatPrice(plan.annual_price, planCurrency, locale)}/year
-                                    {plan.price && (
-                                      <span className="text-green-600 ml-1">
-                                        (Save {Math.round((1 - plan.annual_price / (plan.price * 12)) * 100)}%)
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </>
-                            )}
-                            <ModelUsagePrices rows={usagePrices.filter(row => row.plan_id === plan.id)} locale={locale} />
-                            {showTrust && (
-                              <DataTrustLabel
-                                fact={planPriceTrust(plan, reviewedPlanSource(plan.providers?.slug, locale, plan.providers), locale, now, plan.providers?.slug)}
-                                locale={locale}
-                              />
-                            )}
-                          </div>
-                          <Badge
-                            variant="outline"
-                            className={`mt-2 ${
-                              plan.tier === 'free'
-                                ? 'bg-gray-100'
-                                : plan.tier === 'pro'
-                                ? 'bg-blue-100 text-blue-800'
-                                : plan.tier === 'team'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-orange-100 text-orange-800'
-                            }`}
-                          >
-                            {plan.tier === 'free' ? '🆓 Free Tier' :
-                             plan.tier === 'pro' ? '👤 Individual' :
-                             plan.tier === 'team' ? '👥 Team' :
-                             '🏢 Enterprise'}
-                          </Badge>
-                        </CardHeader>
-
-                        <CardContent>
-                          <div className="mb-3">
-                            <ChannelTermsBadges terms={plan} />
-                            <PlanCoverage coverage={plan.third_party_coverage} note={plan.third_party_coverage_note} locale={locale} />
-                          </div>
-                          <div className="space-y-2 mb-4">
-                            {planFeatures(plan.features).slice(0, 4).map((feature, idx) => (
-                              <div key={idx} className="flex items-start gap-2 text-sm">
-                                {!(showTrust && featureLooksEstimated(feature)) && (
-                                  <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                )}
-                                <span className="text-zinc-700">
-                                  {showTrust ? <EntitlementLine text={feature} locale={locale} /> : feature}
-                                </span>
-                              </div>
-                            ))}
-                            {planFeatures(plan.features).length > 4 && (
-                              <div className="text-sm text-zinc-500 ml-6">
-                                +{planFeatures(plan.features).length - 4} more features
-                              </div>
-                            )}
-                            {showTrust && (
-                              <DataTrustLabel
-                                fact={planEntitlementTrust(plan, reviewedPlanSource(plan.providers?.slug, locale, plan.providers), locale, now)}
-                                locale={locale}
-                              />
-                            )}
-                          </div>
-
-                          {plan.access_from_china && (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 mb-3">
-                              🇨🇳 Available in China
-                            </Badge>
-                          )}
-
-                          <Link
-                            href={`/${locale}/compare/plans/${slug}`}
-                            className="w-full"
-                          >
-                            <Button
-                              className={`w-full ${
-                                isRecommended
-                                  ? 'bg-blue-600 hover:bg-blue-700'
-                                  : ''
-                              }`}
-                              variant={isRecommended ? 'default' : 'outline'}
-                            >
-                              {isZh ? `${productName} 订阅套餐价格对比` : `${productName} subscription plans & pricing`}
-                            </Button>
-                          </Link>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                        plan={plan}
+                        locale={locale}
+                        now={now}
+                        usagePrices={usagePrices.filter(row => row.plan_id === plan.id)}
+                        recommended={recommendedPlanIds.has(plan.id)}
+                        bestValue={plan.id === bestValuePlanId}
+                      />
+                    ))}
                   </div>
                 </div>
               ))}
+
+              <Link href={`/${locale}/compare/plans/${slug}`} className="mt-4 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">
+                {isZh ? `${productName} 订阅套餐价格对比` : `${productName} subscription plans & pricing`}
+              </Link>
 
               {/* Quick Comparison. With more than one product line present, "which
                   line" is the reader's first question and the Free/Pro/Max ladder is
@@ -1092,7 +936,7 @@ export default async function ModelPage({
         {/* Detailed Comparison Table */}
         <Card>
           <CardHeader>
-            <CardTitle>📊 Channel Price Comparison</CardTitle>
+            <CardTitle>📊 {t('channelPriceComparison')}</CardTitle>
             <CardDescription>
               Compare {product.name} API prices across all available channels • {channelPrices.length} channels available
             </CardDescription>
@@ -1144,8 +988,8 @@ export default async function ModelPage({
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${channelTypeLabels[cp.providers.type]?.color || 'bg-gray-100'}`}>
-                            {channelTypeLabels[cp.providers.type]?.label || cp.providers.type}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${channelTypeColors[cp.providers.type] || 'bg-gray-100'}`}>
+                            {channelTypeColors[cp.providers.type] ? apiT(`channelTypes.${cp.providers.type === 'producer' ? 'official' : cp.providers.type}`) : cp.providers.type}
                           </span>
                         </TableCell>
                         <TableCell className="text-right font-mono">

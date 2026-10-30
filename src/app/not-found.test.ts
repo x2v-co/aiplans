@@ -9,12 +9,11 @@ import LocalizedNotFound, { generateMetadata } from './[locale]/not-found';
 function assertNotFoundMetadata(value: Metadata, title: string) {
   // An absolute title overrides the locale layout's homepage default/template.
   assert.deepEqual(value.title, { absolute: title });
-  assert.deepEqual(value.robots, {
-    index: false, follow: true, googleBot: { index: false, follow: true },
-  });
+  // Clear layout metadata; Next.js owns the single 404 noindex tag.
+  assert.equal(value.robots, null);
 }
 
-test('root 404 has an absolute English title and noindex metadata', () => {
+test('root 404 has an absolute English title and clears inherited robots metadata', () => {
   assertNotFoundMetadata(metadata, 'Page not found | aiplans');
   assert.match(renderToStaticMarkup(createElement(RootNotFound)), /<h1>404<\/h1>/);
 });
