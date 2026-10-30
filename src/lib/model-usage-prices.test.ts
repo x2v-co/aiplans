@@ -7,7 +7,7 @@ import test from 'node:test';
 import { createElement, type ReactElement, type ComponentType } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ts from 'typescript';
-import { NextIntlClientProvider } from 'next-intl';
+import { createTranslator, NextIntlClientProvider } from 'next-intl';
 import en from '../../messages/en.json';
 import zh from '../../messages/zh.json';
 import { availableUsagePrices, officialUsageFallback, usagePriceHeadline, type ModelUsagePriceRow } from './model-usage-prices';
@@ -65,20 +65,21 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
     '@/lib/model-usage-prices-query': { getModelUsagePrices: async () => usagePrices },
     '@/lib/coupons': { getActiveCouponMap: async () => new Map() },
     '@/lib/coding-agents': { getCodingAgentRowsForModel: async () => [] },
-    'next-intl/server': { getTranslations: async () => (key: string) => key },
+    'next-intl/server': { getTranslations: async ({ namespace }: { namespace: string }) => createTranslator({ locale, messages: locale === 'zh' ? zh : en, namespace: namespace as 'modelDetail' }) },
     '@/components/SiteHeader': { default: () => null, __esModule: true },
   });
   const Page = route.default as (props: { params: Promise<{ locale: string; slug: string }> }) => Promise<ReactElement>;
-  return renderToStaticMarkup(createElement(NextIntlClientProvider, {
+  const providerProps = {
     locale, timeZone: 'UTC', messages: locale === 'zh' ? zh : en,
     children: await Page({ params: Promise.resolve({ locale, slug }) }),
-  }));
+  };
+  return renderToStaticMarkup(createElement(NextIntlClientProvider, providerProps));
 }
 
 function summaryCards(html: string) {
   return {
-    cheapest: html.split('Cheapest Option')[1].split('Official Price')[0],
-    official: html.split('Official Price')[1].split('Best in China')[0],
+    cheapest: html.split(/Cheapest Option|最低价选项/)[1].split(/Official Price|官方价格/)[0],
+    official: html.split(/Official Price|官方价格/)[1].split(/Best in China|国内优选/)[0],
   };
 }
 
@@ -210,4 +211,18 @@ test('shared usage query scopes by model and availability, reads plan ownership 
   const read = query.getModelUsagePrices as (slug: string) => Promise<ModelUsagePriceRow[]>;
   assert.deepEqual([...await read(slug)], planRows);
   assert.equal(calls, 1);
+});
+
+
+test('model overview headings and channel badges follow the requested locale', async () => {
+  const channels = [channel, { ...channel, id: 8, providers: { name: 'OpenRouter', type: 'aggregator' } }];
+  const zhHtml = await modelHtml([], channels, 'zh');
+  for (const label of Object.values(zh.modelDetail).slice(0, 6)) assert.ok(zhHtml.includes(label), label);
+  for (const label of Object.values(en.modelDetail).slice(0, 6)) assert.ok(!zhHtml.includes(label), label);
+  assert.match(zhHtml, /聚合平台/);
+  const enHtml = await modelHtml([], channels, 'en');
+  for (const label of Object.values(en.modelDetail).slice(0, 6)) assert.ok(enHtml.includes(label), label);
+  assert.match(enHtml, /Aggregator/);
+  assert.match(enHtml, /Official/);
+  assert.doesNotMatch(enHtml, /聚合平台|官方/);
 });

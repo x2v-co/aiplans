@@ -21,7 +21,9 @@ test('unknown localized/unlocalized paths return real HTTP 404, never homepage H
     assert.match(html, path.startsWith('/zh/')
       ? /<title>页面不存在 \| aiplans<\/title>/
       : /<title>Page not found \| aiplans<\/title>/);
-    assert.match(html, /name="robots" content="[^"]*noindex/);
+    const robots = html.match(/<meta\b[^>]*name="robots"[^>]*>/g) ?? [];
+    assert.equal(robots.length, 1, `${path}: exactly one robots meta`);
+    assert.match(robots[0], /content="noindex"/);
   }
 });
 
