@@ -63,6 +63,13 @@ The snapshot directory is mounted from `/opt/x2v/planprice/snapshots`; the
 publisher writes `current.json`, immutable versioned snapshots, and
 `exchange-rates.json` there.
 
+`PLANPRICE_V1_TTL_HOURS` sets the nominal catalog lifetime in hours (default
+`30`, matching `PLANPRICE_FX_MAX_AGE_HOURS`). It must be a positive finite
+number; invalid values fail publication. The default covers the daily 03:15
+Asia/Singapore publication with a six-hour buffer when the four-hourly API
+timer is masked. Pending scheduled price changes can still shorten the catalog
+expiry through `priceSnapshotExpiresAt`.
+
 ## Database cutover
 
 The initial PostgreSQL container needs a full copy of the current database.
