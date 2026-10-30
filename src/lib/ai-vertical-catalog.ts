@@ -64,10 +64,12 @@ export interface AiCatalogItem {
   lastVerified?: string;
   notes?: string;
   benchmarkSummaries?: AiBenchmarkSummary[];
-  billingUnit?: 'per_second' | 'per_minute' | 'per_world' | 'per_token' | 'subscription_included' | 'contract' | 'open_source_self_host' | 'per_song';
+  billingUnit?: 'per_second' | 'per_minute' | 'per_world' | 'per_token' | 'per_1m_tokens' | 'subscription_included' | 'contract' | 'open_source_self_host' | 'per_song';
   pricePerUnit?: number | null;
   pricePerUnitHigh?: number;
   approximatePrice?: boolean;
+  /** Source-backed output token rate; applies only at the stated video resolution. */
+  videoTokensPerSecond?: number;
   inputPricePer1M?: number | null;
   outputPricePer1M?: number | null;
   pricePer1MTasks?: number | null;
@@ -390,11 +392,17 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   {
     kind: 'video-model', slug: 'gemini-omni-1-1-flash', name: 'Gemini Omni Flash (gemini-omni-1.1-flash)', provider: 'Google', providerSlug: 'google',
     status: 'available', pricing: '$1.50/1M input (text / image / video / audio); $17.50/1M video output; $9.00/1M text output',
-    unit: 'token', billingUnit: 'per_token', pricingUnit: 'per 1M tokens', pricePerUnit: 17.5, currency: 'USD', priceStatus: 'priced',
+    unit: 'per_1m_tokens', billingUnit: 'per_1m_tokens', pricingUnit: 'per_1m_tokens', pricePerUnit: 17.5, currency: 'USD', priceStatus: 'priced',
+    videoTokensPerSecond: 5792, resolutionTier: '720p',
+    usageRates: [
+      { priceKind: 'input_tokens', unit: 'per_1m_tokens', price: 1.5 },
+      { priceKind: 'text_output_tokens', unit: 'per_1m_tokens', price: 9 },
+      { priceKind: 'video_output_tokens', unit: 'per_1m_tokens', price: 17.5 },
+    ],
     capabilities: ['text-to-video', 'video editing'], bestFor: 'Video generation and editing on the Gemini API paid tier.', modelCategory: 'video', access: ['api'],
     inputModalities: ['text', 'image', 'video', 'audio'], outputModalities: ['video', 'text'],
-    pricingConfidence: 'verified', lastVerified: '2026-10-29', verifiedAt: '2026-10-29',
-    notes: 'Generally available on the Gemini API paid tier (no free tier). Billed by output tokens; the headline is the video-output rate per 1M tokens. Replacement for the Veo 3.1 previews and gemini-omni-flash-preview, which shut down 2026-10-22. Vertex AI pricing was not verified.',
+    pricingConfidence: 'verified', lastVerified: '2026-10-30', verifiedAt: '2026-10-30',
+    notes: 'Generally available on the Gemini API paid tier (no free tier). The headline is the video-output rate per 1M tokens. At 720p, 5,792 output tokens/second gives an estimated $0.10136/second for video output only; input and text output are billed separately. Replacement for the Veo 3.1 previews and gemini-omni-flash-preview, which shut down 2026-10-22. Vertex AI pricing was not verified.',
     sourceUrls: [
       { label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing', publisher: 'Google' },
       { label: 'Gemini API deprecations', url: 'https://ai.google.dev/gemini-api/docs/deprecations', publisher: 'Google' },
@@ -664,29 +672,29 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
-    priceStatus: 'priced', billingUnit: 'per_second', pricePerUnit: 0.46, pricePerUnitHigh: 2.48, currency: 'CNY',
+    priceStatus: 'priced', billingUnit: 'per_1m_tokens', pricePerUnit: 46, pricePerUnitHigh: 51, currency: 'CNY',
     slug: 'seedance',
     name: 'Seedance',
     provider: 'ByteDance / Volcano Engine',
     providerSlug: 'volcengine',
     status: 'available',
-    pricing: 'Volcengine Ark (CNY, 16:9, no input video): doubao-seedance-2.0 ¥0.46/s (480p), ¥0.99/s (720p), ¥2.48/s (1080p), ¥5.05/s (4k); 2.0-fast ¥0.37/¥0.80 per second (480p/720p); 2.0-mini ¥0.23/¥0.50 (480p/720p); 2.5 ¥0.67/¥1.51/¥3.74 (480p/720p/1080p). Token price ¥46/1M (2.0, 480p/720p), ¥51/1M (2.0 1080p), ¥37/1M (2.0-fast), ¥23/1M (2.0-mini), ¥70/1M (2.5)',
-    unit: 'seconds, generations',
+    pricing: 'Volcengine Ark (CNY, no input video): token price ¥46/1M (2.0, 480p/720p), ¥51/1M (2.0 1080p), ¥37/1M (2.0-fast), ¥23/1M (2.0-mini), ¥70/1M (2.5 480p/720p). Estimated / 推算 examples (16:9, 5s): 2.0 ≈¥0.46/s (480p), ≈¥0.99/s (720p), ≈¥2.48/s (1080p), ≈¥5.05/s (4k); 2.0-fast ≈¥0.37/¥0.80 per second (480p/720p); 2.0-mini ≈¥0.23/¥0.50 (480p/720p); 2.5 ≈¥0.67/¥1.51/¥3.74 (480p/720p/1080p)',
+    unit: 'per_1m_tokens',
     capabilities: ['video generation', 'API', 'China access'],
     bestFor: 'Developer and enterprise video generation in ByteDance ecosystem.',
     modelCategory: 'video',
     inputModalities: ['text', 'image'],
     outputModalities: ['video'],
     access: ['cloud-api', 'enterprise'],
-    pricingUnit: 'seconds / generation',
+    pricingUnit: 'per_1m_tokens',
     pricingConfidence: 'verified',
     sourceUrls: [
       { label: 'Volcengine Ark model pricing', url: 'https://www.volcengine.com/docs/82379/1544106', publisher: 'Volcengine' },
       { label: 'Volcengine Ark', url: 'https://www.volcengine.com/product/ark', publisher: 'Volcengine' },
       { label: 'Seedance model page', url: 'https://www.volcengine.com/docs/82379/1520757', publisher: 'Volcengine' },
     ],
-    lastVerified: '2026-10-20', verifiedAt: '2026-10-20',
-    notes: 'All prices are CNY (Volcengine China). Per-second values are the official 5 s, 16:9, no-input-video examples on the Ark pricing page (2.0 720p 5s ¥4.97; 2.5 720p 5s ¥7.56). Inputs with video cost more per clip. Rechecked 2026-10-20. The headline range stays the 2.0 480p–1080p band; 4k, fast, mini and 2.5 tiers are listed in the pricing text only. BytePlus (international) USD pricing is a separate channel and not listed here.',
+    lastVerified: '2026-10-30', verifiedAt: '2026-10-30',
+    notes: 'All prices are CNY (Volcengine China), billed per 1M tokens. The headline is the 2.0 no-input-video 480p–1080p token-price band. Per-second values are estimates from the official 5 s, 16:9, no-input-video examples (2.0 720p 5s ¥4.97; 2.5 720p 5s ¥7.56); token consumption depends on dimensions, frame rate and input video. 4k, fast, mini and 2.5 tiers are listed in the pricing text only. BytePlus (international) USD pricing is a separate channel and not listed here.',
   },
   {
     kind: 'video-model',

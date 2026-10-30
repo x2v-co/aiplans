@@ -7,7 +7,15 @@ test('gemini-omni-1.1-flash is its own available row, no longer folded into the 
   const row = catalogForKind('video-model').find(item => item.slug === 'gemini-omni-1-1-flash')!;
   assert.equal(row.status, 'available');
   assert.equal(row.pricePerUnit, 17.5);
-  assert.equal(row.billingUnit, 'per_token');
+  assert.equal(row.billingUnit, 'per_1m_tokens');
+  assert.equal(row.pricingUnit, 'per_1m_tokens');
+  assert.equal(row.videoTokensPerSecond, 5792);
+  assert.equal(row.resolutionTier, '720p');
+  assert.deepEqual(row.usageRates, [
+    { priceKind: 'input_tokens', unit: 'per_1m_tokens', price: 1.5 },
+    { priceKind: 'text_output_tokens', unit: 'per_1m_tokens', price: 9 },
+    { priceKind: 'video_output_tokens', unit: 'per_1m_tokens', price: 17.5 },
+  ]);
   assert.match(row.pricing, /\$1\.50\/1M input.*\$17\.50\/1M video output.*\$9\.00\/1M text output/);
   assert.equal(row.sourceUrls?.[0].url, 'https://ai.google.dev/gemini-api/docs/pricing');
   assert.notEqual(parentSlugFor('video-model', 'gemini-omni-1-1-flash'), 'gemini-omni-flash');

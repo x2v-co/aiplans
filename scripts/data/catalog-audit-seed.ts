@@ -3,7 +3,7 @@ import { AI_VERTICAL_CATALOG } from '../../src/lib/ai-vertical-catalog';
 import { openRouterProducerSlug } from '../scrapers/openrouter';
 import { seedChanges } from './gemini-4-argon';
 import { keepUnavailableForSeed } from '../utils/manual-unavailable';
-import { auditVerticalModelFields, auditVerticalUsage, isAuditOwnedVertical } from './catalog-audit-vertical';
+import { auditVerticalModelFields, auditVerticalUsage, isAuditOwnedVertical, legacyVideoUsageKeys } from './catalog-audit-vertical';
 import { AUDIT_TIMESTAMP, OPENROUTER_ADDITIONS, auditedModelSlug, auditedPrices,
   LEGACY_PRO_NOTE, cleanLegacyFeatures } from './catalog-audit-2026-10-15';
 import { claudeCreditValues } from './claude-api-credits-2026-10-18';
@@ -141,10 +141,16 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean): Promise<AuditSt
     }
     const units = item.kind === 'decision-model'
       ? [['input_tokens', 'per_1m_tokens', item.inputPricePer1M ?? null], ['output_tokens', 'per_1m_tokens', item.outputPricePer1M ?? null], ['tasks', 'per_1m_tasks', null]] as const
-      : [auditVerticalUsage(item)] as const;
+      : item.kind === 'video-model' && item.billingUnit === 'per_1m_tokens' && item.usageRates?.length
+        ? item.usageRates.map(rate => [rate.priceKind, rate.unit, rate.price] as const)
+        : [auditVerticalUsage(item)] as const;
     for (const [kind, unit, price] of units) {
-      const candidates = rows.usage_prices.filter(r => r.model_id === m.id && r.provider_id === (owner?.id ?? null) && r.price_kind === kind && r.plan_id == null);
-      const existing = one('usage_prices', candidates, `${item.slug}/${kind}`);
+      const owned = rows.usage_prices.filter(r => r.model_id === m.id && r.provider_id === (owner?.id ?? null) && r.plan_id == null);
+      let existing = one('usage_prices', owned.filter(r => r.price_kind === kind), `${item.slug}/${kind}`);
+      if (!existing && kind === 'video_output_tokens') {
+        const legacy = legacyVideoUsageKeys(item);
+        existing = one('usage_prices', owned.filter(r => legacy.some(([k, u]) => r.price_kind === k && r.unit === u)), `${item.slug}/legacy-video-price`);
+      }
       await save('usage_prices', existing, { model_id: m.id, provider_id: owner?.id ?? null, plan_id: null,
         price_kind: kind, unit, price, currency: item.currency ?? 'USD', is_available: item.status !== 'discontinued',
         constraints_json: { price_status: price == null ? 'needs-verification' : item.priceStatus,

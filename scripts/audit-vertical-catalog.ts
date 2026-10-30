@@ -162,6 +162,7 @@ function referencePlanSlug(item: AiCatalogItem): string {
 }
 
 function referenceUnit(item: AiCatalogItem): string {
+  if (item.billingUnit === 'per_1m_tokens') return 'per_1m_tokens';
   const text = `${item.pricingUnit ?? ''} ${item.unit ?? ''}`;
   if (/credit/i.test(text)) return 'credit';
   if (/generation|song/i.test(text)) return 'generation';
@@ -175,6 +176,7 @@ function referenceUnit(item: AiCatalogItem): string {
 
 function referencePriceKind(item: AiCatalogItem): string {
   const unit = referenceUnit(item);
+  if (unit === 'per_1m_tokens') return 'video_output_tokens';
   if (unit === 'second') return 'video_second';
   return unit;
 }
@@ -372,7 +374,7 @@ async function auditDatabaseDrift() {
     const expectedAvailability = usageReferenceAvailable(item.status)
       && !shutdownReached(item.shutdownDate ?? model.shutdown_date, new Date());
     // Itemized items carry one row per rate instead of a unit-level placeholder row.
-    const expectedRates = item.deferredDbSeed && item.usageRates?.length
+    const expectedRates = (item.deferredDbSeed || (item.kind === 'video-model' && item.billingUnit === 'per_1m_tokens')) && item.usageRates?.length
       ? item.usageRates.map(rate => ({ kind: rate.priceKind, unit: rate.unit }))
       : [{ kind: referencePriceKind(item), unit: referenceUnit(item) }];
     const missingRate = expectedRates.find(rate => !usage.some((row) =>

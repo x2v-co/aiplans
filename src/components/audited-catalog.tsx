@@ -10,12 +10,25 @@ export function auditedPrice(item: AiCatalogItem, locale: string): string {
   if (item.pricePerUnit == null) return '—';
   const money = (value: number) => formatCurrencyAmount(value.toFixed(2), item.currency);
   const range = item.pricePerUnitHigh == null ? '' : `–${money(item.pricePerUnitHigh)}`;
-  const unit = item.billingUnit === 'per_song'
-    ? (locale === 'zh' ? '首' : 'song')
-    : item.billingUnit === 'per_minute'
-      ? (locale === 'zh' ? '分钟' : 'minute')
-      : (locale === 'zh' ? '秒' : 'second');
-  return `${item.approximatePrice ? '≈' : ''}${money(item.pricePerUnit)}${range} / ${unit}`;
+  const zh = locale === 'zh';
+  const units: Partial<Record<NonNullable<AiCatalogItem['billingUnit']>, string>> = {
+    per_song: zh ? '首' : 'song',
+    per_minute: zh ? '分钟' : 'minute',
+    per_second: zh ? '秒' : 'second',
+    per_token: 'token',
+    per_1m_tokens: item.kind === 'video-model'
+      ? (zh ? '百万视频输出 tokens' : '1M video output tokens')
+      : (zh ? '百万 tokens' : '1M tokens'),
+  };
+  const unit = item.billingUnit && units[item.billingUnit];
+  if (!unit) return item.pricing || '—';
+  const headline = `${item.approximatePrice ? '≈' : ''}${money(item.pricePerUnit)}${range} / ${unit}`;
+  const rate = item.videoTokensPerSecond;
+  if (item.kind !== 'video-model' || item.billingUnit !== 'per_1m_tokens' ||
+      rate == null || !Number.isFinite(rate) || rate <= 0 || !item.resolutionTier) return headline;
+  const estimated = money(item.pricePerUnit * rate / 1_000_000);
+  const context = `${zh ? '推算' : 'estimated'}, ${item.resolutionTier}, ${rate.toLocaleString('en-US')} tokens/s`;
+  return `${headline}; ≈${estimated} / ${zh ? '秒' : 'second'} (${context})`;
 }
 
 export function AuditedPricingFacts({ item, locale }: { item: AiCatalogItem; locale: string }) {

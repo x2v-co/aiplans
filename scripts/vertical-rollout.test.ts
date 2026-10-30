@@ -152,6 +152,16 @@ test('rollout seeds repair missing/stale audited rows and pass the actual DB aud
         assert.equal(rows.length, 1);
         assert.equal(rows[0].price, price, `${item.slug}/${kind}`);
       }
+    } else if (item.kind === 'video-model' && item.billingUnit === 'per_1m_tokens' && item.usageRates?.length) {
+      assert.equal(usage.length, item.usageRates.length, item.slug);
+      for (const rate of item.usageRates) {
+        const rows = usage.filter(row => row.price_kind === rate.priceKind);
+        assert.equal(rows.length, 1, `${item.slug}/${rate.priceKind}`);
+        const row = rows[0];
+        assert.equal(row.unit, 'per_1m_tokens');
+        assert.equal(row.price, rate.price);
+        assert.equal(row.currency, item.currency);
+      }
     } else {
       assert.equal(usage.length, 1);
       assert.equal(usage[0].price, item.pricePerUnit ?? null, item.slug);
@@ -479,4 +489,72 @@ test('vertical models seed writes only changed fields', async () => {
   await f.run('seed-vertical-models', ['--slug', 'omnihuman-2-0', '--apply']);
   assert.equal(f.writeCount(), writes + 1);
   assert.notEqual(model.name, 'Stale');
+});
+
+test('video token seeds repair old reference rows in place, stay scoped and are idempotent', async () => {
+  const f = fixture();
+  await f.seed();
+  const slugs = ['gemini-omni-1-1-flash', 'seedance'];
+  const ids: number[] = [];
+  const modelIds: number[] = [];
+  for (const slug of slugs) {
+    const model = f.data.models.find(row => row.slug === slug)!;
+    modelIds.push(model.id);
+    const usage = f.data.usage_prices.find(row => row.model_id === model.id && row.price_kind === 'video_output_tokens')!;
+    ids.push(usage.id);
+    Object.assign(usage, slug === 'seedance'
+      ? { price_kind: 'generation', unit: 'generation', price: 0.46 }
+      : { price_kind: 'availability', unit: 'availability', price: 17.5 });
+    model.pricing_unit = 'per_second';
+  }
+  const unrelated = JSON.stringify(f.data.usage_prices.filter(row => !modelIds.includes(Number(row.model_id))));
+  const count = f.data.usage_prices.length;
+  const writes = f.writeCount();
+  for (const name of ['seed-vertical-models', 'seed-vertical-pricing-references']) {
+    const dry = await f.run(name, ['--slug', slugs.join(',')]);
+    assert.equal(dry.code, 0, dry.output);
+    assert.equal(f.writeCount(), writes);
+  }
+  for (const name of ['seed-vertical-models', 'seed-vertical-pricing-references']) {
+    const result = await f.run(name, ['--apply', '--slug', slugs.join(',')]);
+    assert.equal(result.code, 0, result.output);
+  }
+  for (const [i, slug] of slugs.entries()) {
+    const item = catalog.AI_VERTICAL_CATALOG.find(row => row.slug === slug)!;
+    assert.equal(f.data.models.find(row => row.slug === slug)!.pricing_unit, 'per_1m_tokens');
+    const usage = f.data.usage_prices.find(row => row.id === ids[i])!;
+    assert.equal(usage.unit, 'per_1m_tokens');
+    assert.equal(usage.price_kind, 'video_output_tokens');
+    assert.equal(usage.price, item.pricePerUnit);
+    assert.equal(usage.currency, item.currency);
+    assert.equal(f.data.plans.find(row => row.slug === `${slug}-official-pricing`)!.price_unit, 'per_1m_tokens');
+  }
+  assert.equal(f.data.usage_prices.length, count);
+  assert.equal(JSON.stringify(f.data.usage_prices.filter(row => !modelIds.includes(Number(row.model_id)))), unrelated);
+  const applied = f.writeCount();
+  await f.run('seed-vertical-models', ['--apply', '--slug', slugs.join(',')]);
+  await f.run('seed-vertical-pricing-references', ['--apply', '--slug', slugs.join(',')]);
+  assert.equal(f.writeCount(), applied);
+  const audit = await f.run('audit-vertical-catalog', ['--db']);
+  assert.equal(audit.code, 0, audit.output);
+});
+
+test('Gemini pricing seed also repairs explicit per_second units without adding a duplicate', async () => {
+  for (const kind of ['video_second', 'video_output_tokens']) {
+    const f = fixture();
+    const slug = 'gemini-omni-1-1-flash';
+    await f.seed();
+    const model = f.data.models.find(row => row.slug === slug)!;
+    const usage = f.data.usage_prices.find(row => row.model_id === model.id && row.price_kind === 'video_output_tokens')!;
+    const id = usage.id;
+    const count = f.data.usage_prices.length;
+    Object.assign(usage, { price_kind: kind, unit: 'per_second' });
+    const result = await f.run('seed-vertical-pricing-references', ['--apply', '--slug', slug]);
+    assert.equal(result.code, 0, result.output);
+    assert.equal(f.data.usage_prices.length, count);
+    const repaired = f.data.usage_prices.find(row => row.id === id)!;
+    assert.equal(repaired.price_kind, 'video_output_tokens');
+    assert.equal(repaired.unit, 'per_1m_tokens');
+    assert.equal(repaired.price, 17.5);
+  }
 });
