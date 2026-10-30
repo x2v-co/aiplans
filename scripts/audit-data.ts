@@ -8,7 +8,8 @@
  *   npx tsx scripts/audit-data.ts --json > out.json  # machine-readable
  *   npx tsx scripts/audit-data.ts --stale-days 14 # override staleness threshold
  *
- * Exit code 0 if no findings; 1 if any `critical` findings; 2 if only warnings.
+ * Exit code 0 if clean or warnings only; 1 if any `critical` findings.
+ * With --strict, warnings-only returns 2.
  *
  * Check categories:
  *   C1 prices.zero_or_null        — price_per_1m <= 0 or null (critical)
@@ -31,7 +32,7 @@
  *   C16 plans.selector_empty      — model_selector resolves to 0 models (critical)
  *   C17 plans.selector_unknown_slug — selector.extra names a nonexistent model (critical)
  *   C18 plans.mapping_drift       — materialized model_plan_mapping rows disagree with
- *                                   the current selector resolution (critical)
+ *                                   the current selector resolution (warning)
  *   C19 prices.modelsdev_divergence — our USD-normalized price disagrees with the external
  *                                   models.dev community catalog (warn; read-only, skipped
  *                                   with a notice when models.dev is unreachable)
@@ -743,6 +744,8 @@ async function main() {
     // this compares the rule both directions against the actual mapping rows.
     // Manual rows are curated exceptions: they satisfy a "missing" link and
     // are never reported stale.
+    // Scheduled materialization is dry-run only; drift awaits a reviewed
+    // manual apply and must not fail the nightly job. C16/C17 stay critical.
     if (MAPPING_SOURCES) {
       const expectedIds = new Set(resolution.models.map((m) => m.id));
       const planMappings = mappingsByPlan.get(pl.id) ?? [];
@@ -756,7 +759,7 @@ async function main() {
       if (missingSlugs.length > 0 || staleSlugs.length > 0) {
         add(
           'plans.mapping_drift',
-          'critical',
+          'warning',
           `materialized mappings lag the selector (+${missingSlugs.length} not linked, −${staleSlugs.length} stale)`,
           { ...ref, missing: missingSlugs.slice(0, 20), stale: staleSlugs.slice(0, 20) },
         );

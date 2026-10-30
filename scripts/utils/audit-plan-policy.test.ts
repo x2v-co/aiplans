@@ -46,7 +46,7 @@ test('missing/invalid verification alerts; fresh and exact 30-day boundary do no
     assert.equal(planVerificationFinding({ id: 1, slug: 'free', last_verified }, now, 30), null);
   }
   assert.equal(shouldAlertFinding({ check: 'plans.missing_kind', severity: 'warning' }), false);
-  assert.equal(shouldAlertFinding({ check: 'plans.mapping_drift', severity: 'critical' }), true);
+  assert.equal(shouldAlertFinding({ check: 'plans.mapping_drift', severity: 'warning' }), false);
   assert.equal(shouldAlertFinding({ check: 'prices.modelsdev_divergence', severity: 'warning' }), true);
 });
 

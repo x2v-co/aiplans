@@ -18,17 +18,37 @@ function runScrapers(overrides: Record<string, string>) {
     writeFileSync(log, '');
     writeFileSync(docker, String.raw`#!/usr/bin/env bash
 printf '%s\n' "$*" >> "$STUB_LOG"
+if [[ "$NPM_CONFIG_UPDATE_NOTIFIER" != "false" ]]; then
+  echo 'npm update notifier must be disabled' >&2
+  exit 99
+fi
 case " $* " in
   *" scraper npm run audit ")
     if [[ "$STUB_AUDIT_SUMMARY" == "1" ]]; then
-      echo '🔴 plans.mapping_drift  (25)'
-      echo 'Total: 30 findings  (🔴 25 critical  🟡 5 warnings)'
+      echo '🟡 plans.mapping_drift  (2)'
+      echo '   · materialized mappings lag the selector (+1 not linked, −1 stale)'
+      if [[ "$STUB_AUDIT_EXIT" != "0" && "$STUB_AUDIT_EXIT" != "2" ]]; then
+        echo '🔴 prices.zero_or_null  (25)'
+        echo 'Total: 30 findings  (🔴 25 critical  🟡 5 warnings)'
+      else
+        echo 'Total: 5 findings  (🔴 0 critical  🟡 5 warnings)'
+      fi
     fi
     exit "$STUB_AUDIT_EXIT"
     ;;
   *" scraper npm run scrape ") exit "$STUB_API_EXIT" ;;
   *" scraper npm run scrape:plans ") exit "$STUB_PLANS_EXIT" ;;
   *" scraper npm run refresh:fx ") exit "$STUB_FX_EXIT" ;;
+  *" scraper npm run mappings:materialize:dry-run ")
+    echo '  ✓  provider/unchanged: 3 derived, unchanged'
+    if [[ "$STUB_MAPPING_DRIFT" == "1" ]]; then
+      echo '  🔧 provider/added [coding]: 2 → 3 derived'
+      echo '      + new-model'
+      echo '  🔧 provider/reordered [coding]: 3 → 3 derived'
+      echo '      (same models, new priority order: model-a, model-b…)'
+    fi
+    exit "$STUB_MAPPINGS_EXIT"
+    ;;
   *" scraper npm run publish:v1 ") exit "$STUB_PUBLISH_EXIT" ;;
 esac
 exit 0
@@ -52,6 +72,7 @@ exit 0
         SKIP_CODING_AGENTS: '0',
         PLAN_MAPPINGS_APPLY: '0',
         OPENAI_REVIEW_APPLY: '0',
+        NPM_CONFIG_UPDATE_NOTIFIER: 'true', // The runner must override this.
         STUB_LOG: log,
         STUB_API_EXIT: '0',
         STUB_AUDIT_EXIT: '0',
@@ -59,6 +80,8 @@ exit 0
         STUB_PLANS_EXIT: '0',
         STUB_FX_EXIT: '0',
         STUB_AUDIT_SUMMARY: '1',
+        STUB_MAPPING_DRIFT: '0',
+        STUB_MAPPINGS_EXIT: '0',
         ...overrides,
       },
     });
@@ -81,7 +104,8 @@ test('scheduled scraper publication and audit failures', async (t) => {
     assert.equal(result.status, 1, result.stderr);
     assert.match(result.stderr, /Publishing v1: api=0 plans=0 fx=0 openai_review=0 audit=1/);
     assert.match(result.stderr, /Data audit reported critical findings \(exit 1\): Total:.*25 critical/);
-    assert.match(result.stderr, /^🔴 plans\.mapping_drift  \(25\)$/m);
+    assert.match(result.stderr, /^🔴 prices\.zero_or_null  \(25\)$/m);
+    assert.doesNotMatch(result.stderr, /🔴 plans\.mapping_drift/);
     assert.match(result.stderr, /Exiting with audit status 1 \(critical findings; v1 publication was not blocked\)/);
     assert.match(result.stdout, /plans\.mapping_drift/);
     const audit = result.calls.findIndex((call) => call.endsWith('scraper npm run audit'));
@@ -104,7 +128,7 @@ test('scheduled scraper publication and audit failures', async (t) => {
     assert.equal(result.status, 1, result.stderr);
     assert.ok(!result.calls.some((call) => call.endsWith('scraper npm run publish:v1')));
     assert.match(result.stderr, /Skipping v1 catalog publication: api=1 plans=0 fx=0 audit=1/);
-    assert.match(result.stderr, /plans\.mapping_drift/);
+    assert.match(result.stderr, /prices\.zero_or_null/);
     assert.match(result.stderr, /25 critical/);
     const summary = result.stderr.indexOf('Data audit reported critical findings');
     assert.ok(summary >= 0 && summary < result.stderr.indexOf('Scraper group failure'));
@@ -139,4 +163,51 @@ test('scheduled scraper publication and audit failures', async (t) => {
     assert.match(result.stdout, /SKIP_AUDIT=1/);
     assert.doesNotMatch(result.stderr, /Data audit reported critical findings/);
   });
+
+  await t.test('mapping drift alone succeeds, publishes, and reports changed plans including priority changes', () => {
+    const result = runScrapers({ STUB_MAPPING_DRIFT: '1' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /^mapping drift: 2 plan\(s\) need PLAN_MAPPINGS_APPLY=1$/m);
+    assert.match(result.stdout, /🟡 plans\.mapping_drift  \(2\)/);
+    assert.match(result.stdout, /materialized mappings lag the selector/);
+    assert.ok(result.calls.some((call) => call.endsWith('scraper npm run publish:v1')));
+    assert.ok(result.calls.some((call) => call.endsWith('scraper npm run mappings:materialize:dry-run')));
+    assert.ok(!result.calls.some((call) => call.endsWith('scraper npm run mappings:materialize:apply')));
+    assert.doesNotMatch(result.stderr, /critical findings|Exiting with audit status/);
+  });
+
+  await t.test('other critical checks still fail when mapping drift is present', () => {
+    const result = runScrapers({ STUB_MAPPING_DRIFT: '1', STUB_AUDIT_EXIT: '1' });
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stdout, /mapping drift: 2 plan\(s\)/);
+    assert.match(result.stderr, /🔴 prices\.zero_or_null/);
+    assert.match(result.stderr, /Exiting with audit status 1/);
+  });
+
+  await t.test('no materialization diff produces no drift summary', () => {
+    const result = runScrapers({});
+    assert.equal(result.status, 0, result.stderr);
+    assert.doesNotMatch(result.stdout, /^mapping drift:/m);
+  });
+
+  for (const overrides of [{ SKIP_PLAN_MAPPINGS: '1' }, { PLAN_MAPPINGS_APPLY: '1' }]) {
+    await t.test(`does not preview drift with ${Object.keys(overrides)[0]}=1`, () => {
+      const result = runScrapers({ ...overrides, STUB_MAPPING_DRIFT: '1' });
+      assert.equal(result.status, 0, result.stderr);
+      assert.ok(!result.calls.some((call) => call.endsWith('scraper npm run mappings:materialize:dry-run')));
+      assert.doesNotMatch(result.stdout, /^mapping drift:/m);
+    });
+  }
+
+  await t.test('materializer failure survives output capture and still fails after publication', () => {
+    const result = runScrapers({ STUB_MAPPINGS_EXIT: '3' });
+    assert.equal(result.status, 1, result.stderr);
+    assert.ok(result.calls.some((call) => call.endsWith('scraper npm run publish:v1')));
+    assert.match(result.stderr, /model_plan_mapping materialization failed \(3\)/);
+  });
+});
+
+test('scraper Compose environment passes the npm notifier setting into the container', () => {
+  const compose = readFileSync(new URL('../deploy/production/compose.yml', import.meta.url), 'utf8');
+  assert.match(compose.slice(compose.indexOf('\n  scraper:')), /NPM_CONFIG_UPDATE_NOTIFIER: \$\{NPM_CONFIG_UPDATE_NOTIFIER:-false\}/);
 });

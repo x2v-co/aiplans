@@ -84,6 +84,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-planprice}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-planprice}
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      NPM_CONFIG_UPDATE_NOTIFIER: ${NPM_CONFIG_UPDATE_NOTIFIER:-false}
       PLANPRICE_V1_SNAPSHOT_PATH: ${PLANPRICE_V1_SNAPSHOT_PATH:-/var/lib/planprice/snapshots/current.json}
       PLANPRICE_V1_SNAPSHOT_DIR: ${PLANPRICE_V1_SNAPSHOT_DIR:-/var/lib/planprice/snapshots}
       PLANPRICE_V1_FX_PATH: ${PLANPRICE_V1_FX_PATH:-/var/lib/planprice/snapshots/exchange-rates.json}

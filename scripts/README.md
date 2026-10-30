@@ -45,7 +45,10 @@ The 2026-04 cleanup introduced a full feedback loop:
   input==output, cross-channel outliers with USD normalization,
   staleness, orphan mappings, missing producer channel, unclassified
   plans, plans with no models, selectors that resolve to nothing, etc.).
-  Exit code 1 on critical findings, 2 on warnings.
+  Exit code 1 on critical findings; warnings pass (exit 2 only with `--strict`).
+  C18 `plans.mapping_drift` is a warning with counts and example missing/stale
+  models. Scheduled mappings are dry-run only; drift needs a reviewed manual
+  run with `PLAN_MAPPINGS_APPLY=1` and does not fail the scheduled job.
 
 - **`fix-data-audit.ts`** — idempotent surgery on `api_channel_prices`.
   Three sections: UPDATES (ground truth from web research),
