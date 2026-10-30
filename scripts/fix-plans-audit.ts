@@ -94,18 +94,7 @@ const PLAN_UPDATES: PlanUpdate[] = [
     price: 80, annual: null, currency: 'USD',
     reason: 'Z.AI Max is $80/mo billed quarterly ($240/q); no annual billing' },
 
-  // ─ Moonshot Kimi (CN) ──────────────────────────────
-  // Kimi+ tiers (Andante/Moderato/Allegretto). DB values are stale.
-  // Per Sina/QQ news + codingplan.org confirmed prices:
-  { providerSlug: 'moonshot-china', planSlug: 'kimi-basic',
-    price: 49, annual: 468, currency: 'CNY',
-    reason: 'Kimi 行板/Andante: ¥49/mo, ¥468/yr (¥39/mo effective); DB had ¥12/¥144' },
-  { providerSlug: 'moonshot-china', planSlug: 'kimi-pro',
-    price: 99, annual: 948, currency: 'CNY',
-    reason: 'Kimi 中速/Moderato: ¥99/mo, ¥948/yr (¥79/mo effective); DB had ¥68/¥816' },
-  { providerSlug: 'moonshot-china', planSlug: 'kimi-team',
-    price: 199, annual: 1908, currency: 'CNY',
-    reason: 'Kimi 快板/Allegretto: ¥199/mo, ¥1908/yr (¥159/mo effective); DB had ¥198/¥2376' },
+  // Kimi tiers are maintained by fix-minimax-flash-kimi-tiers.ts (#275).
 
   // ─ Volcengine Seed (CN) ────────────────────────────
   // Volcengine Ark Coding Plan: monthly only, no annual.

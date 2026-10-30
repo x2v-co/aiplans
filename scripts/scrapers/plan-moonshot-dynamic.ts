@@ -8,9 +8,9 @@
  *   pricing, not subscription plans. Kimi+ subscription tiers live on a
  *   different (auth-walled) member center page that's not publicly
  *   scrapable.
- * - All 5 Kimi+ subscription tiers (kimi-free, kimi-basic, kimi-pro,
- *   kimi-team, kimi-enterprise) are already curated as source='manual' in
- *   the DB. They refresh via fix-plans-audit.ts when needed.
+ * - Current Free/Go/Plus/Pro/Max/Ultra memberships are curated as
+ *   source='manual' by fix-minimax-flash-kimi-tiers.ts (#275); April tiers
+ *   remain as superseded history.
  *
  * This stub returns an empty-but-successful result so the scraper runner
  * doesn't log a failure and so the log-only cleanupOutdatedPlans doesn't

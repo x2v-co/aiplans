@@ -25,6 +25,7 @@
  *   npx tsx scripts/materialize-model-plan-mappings.ts --apply --allow-empty
  */
 import { databaseSql } from './db/postgres-admin';
+import { isSupersededPlan } from '../src/lib/plan-lifecycle';
 import {
   resolveSelector,
   type ModelSelector,
@@ -44,6 +45,7 @@ type PlanRow = {
   id: number;
   slug: string;
   name: string;
+  notes: string | null;
   provider_slug: string | null;
   plan_kind: string | null;
   model_selector: ModelSelector | null;
@@ -55,14 +57,14 @@ const log = (line: string) => console.log(line);
 
 async function loadPlans(): Promise<PlanRow[]> {
   return databaseSql<PlanRow[]>`
-    SELECT plan.id, plan.slug, plan.name, plan.plan_kind, plan.model_selector,
+    SELECT plan.id, plan.slug, plan.name, plan.notes, plan.plan_kind, plan.model_selector,
            provider.slug AS provider_slug,
            count(mapping.id) FILTER (WHERE mapping.source = 'derived')::int AS derived_count,
            count(mapping.id) FILTER (WHERE mapping.source = 'manual')::int  AS manual_count
       FROM plans AS plan
       LEFT JOIN providers AS provider ON provider.id = plan.provider_id
       LEFT JOIN model_plan_mapping AS mapping ON mapping.plan_id = plan.id
-     GROUP BY plan.id, plan.slug, plan.name, plan.plan_kind, plan.model_selector, provider.slug
+     GROUP BY plan.id, plan.slug, plan.name, plan.notes, plan.plan_kind, plan.model_selector, provider.slug
      ORDER BY provider.slug NULLS LAST, plan.slug
   `;
 }
@@ -108,7 +110,9 @@ type PlanPlan = {
 async function main() {
   log(`\n🔗 materialize-model-plan-mappings  ${DRY_RUN ? '[DRY-RUN]' : '[APPLY]'}\n`);
 
-  const plans = await loadPlans();
+  const allPlans = await loadPlans();
+  const plans = allPlans.filter(plan => !isSupersededPlan(plan));
+  log(`Preserved ${allPlans.length - plans.length} superseded plan(s); current entitlements are not materialized for them.`);
   const catalog = await loadCatalog();
   log(`Loaded ${plans.length} plans and ${catalog.length} models\n`);
 

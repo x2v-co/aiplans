@@ -26,6 +26,9 @@ export type LegacySlugTarget = {
 };
 
 export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
+  // #275: both published IDs refer to MiniMax-M3.1-Flash. Proxy returns 301.
+  'minimax-m3.1': { models: 'minimax-m3.1-flash' },
+  'minimax-minimax-m3-1-flash': { models: 'minimax-m3.1-flash' },
   'gpt-6.1-sol': { models: 'openai-gpt-6-1-sol', compare: 'openai-gpt-6-1-sol' },
   'gpt-6-astra': { models: 'openai-gpt-6-astra' },
   'gpt-6-luna': { models: 'openai-gpt-6-luna' },

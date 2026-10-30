@@ -41,3 +41,11 @@ test('Kimi K3.1 official pricing joins the published OpenRouter model', () => {
     assert.equal(canonicalizeModelSlug(value), value);
   }
 });
+
+test('MiniMax Flash aliases converge without collapsing previews, batch or Highspeed', () => {
+  for (const value of ['minimax-m3.1', 'MiniMax-M3.1-Flash', 'minimax-minimax-m3-1-flash', 'minimax/minimax-m3.1-flash']) {
+    assert.equal(canonicalizeModelSlug(value), 'minimax-m3.1-flash', value);
+    assert.equal(normalizeSlug(value), 'minimax-m3.1-flash', value);
+  }
+  for (const value of ['minimax-m3.1-flash-preview', 'minimax-m3.1-highspeed', 'minimax-m3.1-flash-batch', 'minimax-m3']) assert.equal(canonicalizeModelSlug(value), value);
+});

@@ -45,6 +45,7 @@
  *   C22 variants.*              — channel price variant integrity (one headline,
  *                                   no inverted prices, no stale active rows)
  */
+import { isSupersededPlan } from '../src/lib/plan-lifecycle';
 import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice as isVerifiedFreeChannel } from './utils/audit-price-policy';
 import { db } from './db/queries';
 import { auditExitCode, missingPlanFields, planVerificationFinding } from './utils/audit-plan-policy';
@@ -110,8 +111,8 @@ async function main() {
   `;
   const CLASSIFIED = planKindColumns.length === 4;
   const planColumns = CLASSIFIED
-    ? 'id, name, slug, provider_id, price, last_verified, source, plan_kind, plan_line, tier_rank, model_selector, pricing_model'
-    : 'id, name, slug, provider_id, price, last_verified, source';
+    ? 'id, name, slug, provider_id, price, last_verified, source, notes, plan_kind, plan_line, tier_rank, model_selector, pricing_model'
+    : 'id, name, slug, provider_id, price, last_verified, source, notes';
 
   // model_plan_mapping.source ('derived' | 'manual') landed with the selector
   // system; like the plans probe above, skip it on a pre-migration database.
@@ -694,6 +695,7 @@ async function main() {
   }
 
   for (const pl of plans) {
+    if (isSupersededPlan(pl)) continue;
     if ((mappingCountByPlan.get(pl.id) ?? 0) === 0) {
       add('plans.no_model_mapping', 'warning', 'plan has no models in model_plan_mapping', {
         plan: `${pl.slug}#${pl.id}`,
@@ -707,6 +709,7 @@ async function main() {
   }
 
   for (const pl of CLASSIFIED ? plans : []) {
+    if (isSupersededPlan(pl)) continue;
     const ref = { plan: `${pl.slug}#${pl.id}`, provider: refProvider(pl.provider_id) };
 
     const missing = missingPlanFields(pl);
@@ -782,6 +785,7 @@ async function main() {
   if (CLASSIFIED && modelsDevResult.catalog) {
     const catalogSlugs = new Set(modelCatalog.map(m => m.slug.toLowerCase()));
     for (const pl of plans) {
+      if (isSupersededPlan(pl)) continue;
       const providerSlug = providerSlugById.get(pl.provider_id);
       if (!providerSlug) continue;
       const planKey = `${providerSlug}/${pl.slug}`;

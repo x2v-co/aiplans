@@ -10,6 +10,7 @@
  * Classification verified against each vendor's official plan page.
  */
 import type { ModelSelector } from '../../src/lib/plan-selector';
+import { KIMI_TIERS_275, KIMI_LEGACY_SELECTOR, KIMI_SOURCE_275, kimiSelector275 } from '../data/minimax-flash-kimi-tiers';
 
 export type PlanKind = 'chat' | 'coding' | 'agent' | 'creative' | 'token_pack' | 'api_tier' | 'bundle' | 'gateway_subscription';
 
@@ -53,7 +54,6 @@ const GEMINI_ROBOTICS = ['gemini-er-*'];
 // Le Chat/Vibe routes chat to Large/Medium/Small; Saba is retired (2025-09-30), Devstral 2 retired 2026-07-31
 // (docs.mistral.ai/models), and Voxtral is a speech model, not a selectable chat model.
 const LE_CHAT_EXCLUDE = ['mistral-mistral-saba*', 'mistral-devstral-2512', 'mistral-voxtral-*'];
-const MOONSHOT_NOISE = ['kimi', '*-us'];
 const MINIMAX_LEGACY = ['minimax-01', 'minimax-m1'];
 
 // Every GLM Coding Plan tier (CN and Z.AI global) supports exactly these two
@@ -258,26 +258,18 @@ export const CLASSIFICATIONS: Classification[] = [
     selector: { families: ['mistral', 'codestral'], exclude: LE_CHAT_EXCLUDE },
     reason: 'Enterprise is contact-sales; same catalog' },
 
-  // ─ Moonshot / Kimi.
-  // DB rows (Basic ¥49 / Pro ¥99 / Team ¥199) still reflect the April tier structure.
-  // The individual-plan mapping below relies only on facts shared by every individual tier:
-  // Free has limited K3.1 Pro, all paid tiers include it, and the lowest tiers exclude Highspeed.
-  // Team/Enterprise are not covered by the individual membership table.
-  { providerSlug: 'moonshot-china', planSlug: 'kimi-free', kind: 'chat', line: 'kimi', rank: 0,
-    selector: { families: ['kimi'], current_only: true, exclude: [...MOONSHOT_NOISE, '*-highspeed'], extra: ['moonshotai-kimi-k3-1-pro'] },
-    reason: 'Free tracks the current K-series; K3.1 Pro has limited use on web/Kimi Work, without Highspeed. Source: https://www.kimi.com/resources/kimi-k3-1-pro-pricing (updated 2026-10-26; plans checked 2026-10-24)' },
-  { providerSlug: 'moonshot-china', planSlug: 'kimi-basic', kind: 'chat', line: 'kimi', rank: 1,
-    selector: { families: ['kimi'], exclude: [...MOONSHOT_NOISE, '*-highspeed'], extra: ['moonshotai-kimi-k3-1-pro'] },
-    reason: 'Kimi+ 行板/Andante: every individual paid tier includes K3.1 Pro on web/Kimi Work; Go/Plus exclude Highspeed. Source: https://www.kimi.com/resources/kimi-k3-1-pro-pricing (updated 2026-10-26; plans checked 2026-10-24)' },
-  { providerSlug: 'moonshot-china', planSlug: 'kimi-pro', kind: 'chat', line: 'kimi', rank: 2,
-    selector: { families: ['kimi'], exclude: MOONSHOT_NOISE, extra: ['moonshotai-kimi-k3-1-pro'] },
-    reason: 'Kimi+ 中速/Moderato: every individual paid tier includes K3.1 Pro on web/Kimi Work. Highspeed (official Pro/Max/Ultra only) is left as-is until this April-era row is mapped to a current tier. Source: https://www.kimi.com/resources/kimi-k3-1-pro-pricing (updated 2026-10-26; plans checked 2026-10-24)' },
-  { providerSlug: 'moonshot-china', planSlug: 'kimi-team', kind: 'chat', line: 'kimi', rank: 3,
-    selector: { families: ['kimi'], exclude: MOONSHOT_NOISE },
-    reason: 'Kimi+ 快板/Allegretto, per-seat' },
-  { providerSlug: 'moonshot-china', planSlug: 'kimi-enterprise', kind: 'chat', line: 'kimi', rank: 4,
-    selector: { families: ['kimi'], exclude: MOONSHOT_NOISE },
-    reason: 'Contact-sales tier' },
+  // ─ Moonshot / Kimi. Verified 2026-10-30; April rows remain as history.
+  ...KIMI_TIERS_275.map(({ tier }, rank): Classification => ({
+    providerSlug: 'moonshot-china', planSlug: `kimi-${tier}`, kind: 'chat', line: 'kimi', rank,
+    selector: kimiSelector275(tier),
+    reason: `Current individual membership; Highspeed only on Pro/Max/Ultra. Source: ${KIMI_SOURCE_275} (verified 2026-10-30)`,
+  })),
+  ...['kimi-free-legacy-2026-04', 'kimi-basic', 'kimi-pro-legacy-2026-04', 'kimi-team', 'kimi-enterprise']
+    .map((planSlug, rank): Classification => ({
+      providerSlug: 'moonshot-china', planSlug, kind: 'chat', line: 'kimi-legacy', rank,
+      selector: KIMI_LEGACY_SELECTOR,
+      reason: `April tiers superseded; preserved without current model entitlements. Source: ${KIMI_SOURCE_275} (verified 2026-10-30)`,
+    })),
 
   // ─ Alibaba — three lines under one provider, which is exactly the case that
   //   a scalar `tier` could not express.

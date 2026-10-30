@@ -2,13 +2,51 @@
 import { normalizeModelName } from '../utils/validator';
 import { PlaywrightScraper, type PriceData, type ScraperResult } from './lib/playwright-scraper';
 
-const MINIMAX_PRICING_URL = 'https://platform.minimaxi.com/docs/guides/pricing-paygo';
+const MINIMAX_PRICING_URL = 'https://platform.minimax.cn/docs/pricing/overview';
 
 function finalPrice(text: string | undefined): number | null {
   const matches = text?.match(/[\d.]+/g);
   if (!matches?.length) return null;
   const value = Number(matches[matches.length - 1]);
   return Number.isFinite(value) ? value : null;
+}
+
+export function parseMiniMaxPriceTables(tables: string[][][]): PriceData[] {
+  const prices: PriceData[] = [];
+  const seen = new Set<string>();
+  for (const rows of tables) {
+    const header = rows[0] ?? [];
+    const modelIndex = header.findIndex(cell => /^模型$/.test(cell));
+    const inputIndex = header.findIndex(cell => /^输入价格/.test(cell));
+    const outputIndex = header.findIndex(cell => /^输出价格/.test(cell));
+    const cachedIndex = header.findIndex(cell => /^缓存读取/.test(cell));
+    if ([modelIndex, inputIndex, outputIndex].some(index => index < 0)) continue;
+
+    for (const cells of rows.slice(1)) {
+      const rawModel = cells[modelIndex] ?? '';
+      const modelMatch = rawModel.match(/^MiniMax-M[\d.]+(?:-(?:flash|highspeed))?(?=\s|$|[≤>（(])/i);
+      if (!modelMatch) continue;
+      const modelName = normalizeModelName(modelMatch[0]).toLowerCase();
+      if (seen.has(modelName)) continue;
+
+      const input = finalPrice(cells[inputIndex]);
+      const output = finalPrice(cells[outputIndex]);
+      const cachedInput = cachedIndex >= 0 ? finalPrice(cells[cachedIndex]) : null;
+      if (input == null || output == null || output < input) continue;
+      prices.push({
+        modelName,
+        inputPricePer1M: input,
+        cachedInputPricePer1M: cachedInput ?? undefined,
+        outputPricePer1M: output,
+        contextWindow: modelName === 'minimax-m3' ? 1_000_000 : null,
+        isAvailable: true,
+        currency: 'CNY',
+      });
+      seen.add(modelName);
+    }
+  }
+
+  return prices;
 }
 
 class MiniMaxScraper extends PlaywrightScraper {
@@ -33,39 +71,7 @@ class MiniMaxScraper extends PlaywrightScraper {
       ))
     );
 
-    const prices: PriceData[] = [];
-    const seen = new Set<string>();
-    for (const rows of tables) {
-      const header = rows[0] ?? [];
-      const modelIndex = header.findIndex(cell => /^模型$/.test(cell));
-      const inputIndex = header.findIndex(cell => /^输入价格/.test(cell));
-      const outputIndex = header.findIndex(cell => /^输出价格/.test(cell));
-      const cachedIndex = header.findIndex(cell => /^缓存读取/.test(cell));
-      if ([modelIndex, inputIndex, outputIndex].some(index => index < 0)) continue;
-
-      for (const cells of rows.slice(1)) {
-        const rawModel = cells[modelIndex] ?? '';
-        const modelMatch = rawModel.match(/^MiniMax-M[\d.]+(?:-highspeed)?/i);
-        if (!modelMatch) continue;
-        const modelName = normalizeModelName(modelMatch[0]).toLowerCase();
-        if (seen.has(modelName)) continue;
-
-        const input = finalPrice(cells[inputIndex]);
-        const output = finalPrice(cells[outputIndex]);
-        const cachedInput = cachedIndex >= 0 ? finalPrice(cells[cachedIndex]) : null;
-        if (input == null || output == null || output < input) continue;
-        prices.push({
-          modelName,
-          inputPricePer1M: input,
-          cachedInputPricePer1M: cachedInput ?? undefined,
-          outputPricePer1M: output,
-          contextWindow: modelName === 'minimax-m3' ? 1_000_000 : null,
-          isAvailable: true,
-          currency: 'CNY',
-        });
-        seen.add(modelName);
-      }
-    }
+    const prices = parseMiniMaxPriceTables(tables);
 
     return {
       source: this.getSourceName(),
