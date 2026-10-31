@@ -45,3 +45,14 @@
 ## 2026-10-18 午报复核
 
 Intel 12:52 午报仍写「Search/Fetch 按次价仍未入库」。当前维持静态表（`src/lib/tool-api-pricing.ts` + `/api-pricing` 底部区块）；`tool_api_prices` 表尚未获批，本轮不擅自建表。建议 PM 开需求卡走老板批准后再做 schema 迁移与 seed。
+
+## 2026-10-31 更新：百度搜索刊例价
+
+补充百度搜索静态行（国内内容刊例价，[计费文档](https://cloud.baidu.com/doc/qianfan/s/1mh4sv6c4)）：
+
+| API | 计费单位 | 刊例价 | 默认限速 | 限时活动（2026-10-30 至 2026-12-31） |
+| --- | --- | --- | --- | --- |
+| Baidu Search API 增强版 | 每 1,000 次调用 | ¥40 | 3 QPS | 量包 ¥4.9/千次，累计限 100 万次，超额按刊例价 |
+| Baidu Search API 旗舰版 | 每 1,000 次调用 | ¥72 | 3 QPS | 量包 ¥9.9/千次，需邀请码 |
+
+百度每月免费 1,500 次；国外内容 ¥0.072/次。[官方活动页](https://cloud.baidu.com/product/AI-SEARCH/campaign.html)。

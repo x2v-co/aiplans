@@ -20,6 +20,9 @@ export interface ToolApiPrice {
 }
 
 const V = '2026-10-18';
+const BAIDU_VERIFIED_AT = '2026-10-31';
+const BAIDU = 'https://cloud.baidu.com/doc/qianfan/s/1mh4sv6c4';
+const BAIDU_CAMPAIGN = 'https://cloud.baidu.com/product/AI-SEARCH/campaign.html';
 const ANTHROPIC = 'https://platform.claude.com/docs/en/about-claude/pricing';
 const OPENAI = 'https://developers.openai.com/api/docs/pricing';
 const GOOGLE = 'https://ai.google.dev/gemini-api/docs/pricing';
@@ -64,6 +67,16 @@ export const TOOL_API_PRICES: ToolApiPrice[] = [
     unit: { en: '1,000 successful requests', zh: '每千次成功请求' }, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
     note: { en: `US$0.75 on the English page (${DEEPSEEK_EN}). Same free period as Search.`, zh: '英文页为 0.75 美元。免费期同 Search。' },
     sourceUrl: DEEPSEEK_CN, verifiedAt: V },
+  { provider: 'Baidu AI Cloud', providerSlug: 'baidu', tool: 'Baidu Search API (Enhanced / 增强版)', kind: 'web_search', pricePer1k: 40, currency: 'CNY',
+    unit: PER_CALL, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
+    note: { en: `Domestic content list price: ¥0.04/call. Limited-time campaign 2026-10-30 to 2026-12-31: ¥4.9 per 1,000 calls (prepaid pack, up to 1M calls cumulative; overage billed at list price). 1,500 free calls/month; default 3 QPS. Overseas content: ¥0.072/call. Campaign: ${BAIDU_CAMPAIGN}`,
+      zh: `国内内容刊例价 0.04 元/次。限时活动 2026-10-30 至 2026-12-31：量包 4.9 元/千次（累计限 100 万次，超额按刊例价）。每月免费 1,500 次；默认 3QPS。国外内容 0.072 元/次。活动页：${BAIDU_CAMPAIGN}` },
+    sourceUrl: BAIDU, verifiedAt: BAIDU_VERIFIED_AT },
+  { provider: 'Baidu AI Cloud', providerSlug: 'baidu', tool: 'Baidu Search API (Flagship / 旗舰版)', kind: 'web_search', pricePer1k: 72, currency: 'CNY',
+    unit: PER_CALL, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
+    note: { en: `Domestic content list price: ¥0.072/call. Limited-time campaign 2026-10-30 to 2026-12-31: ¥9.9 per 1,000 calls (invite code required). 1,500 free calls/month; default 3 QPS. Overseas content: ¥0.072/call. Campaign: ${BAIDU_CAMPAIGN}`,
+      zh: `国内内容刊例价 0.072 元/次。限时活动 2026-10-30 至 2026-12-31：量包 9.9 元/千次（需邀请码）。每月免费 1,500 次；默认 3QPS。国外内容 0.072 元/次。活动页：${BAIDU_CAMPAIGN}` },
+    sourceUrl: BAIDU, verifiedAt: BAIDU_VERIFIED_AT },
 ];
 
 export function formatToolPrice(row: ToolApiPrice, locale: 'en' | 'zh'): string {
