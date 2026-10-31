@@ -84,6 +84,7 @@ test('actual CLI defaults to a read-only preview, rejects unsafe flags, and clos
   assert.equal(result.code, 0, result.output);
   assert.match(result.output, /Dry-run; no writes/);
   assert.match(result.output, /opencode-go-plus/);
+  assert.match(result.output, /opencode-go-teams/);
   assert.equal(f.isReadOnly(), true);
   assert.equal(f.ended(), true);
   assert.deepEqual(f.data, before);
@@ -104,24 +105,41 @@ test('applies verified plans, per-model limits, Contributor terms and both DeepS
   assert.equal(f.data.providers.length, 1);
   assert.equal(f.data.providers[0].name, 'OpenCode Go');
   assert.equal(f.data.providers[0].pricing_url, GO_SOURCE);
+  assert.equal(GO_SOURCE, 'https://opencode.ai/go');
   assert.equal(f.data.models.length, 6);
-  assert.equal(f.data.plans.length, 2);
+  assert.equal(f.data.plans.length, 3);
   assert.equal(f.data.api_channel_prices.length, 6);
   assert.equal(f.data.api_channel_price_variants.length, 4);
-  assert.equal(f.data.model_plan_mapping.length, 12);
+  assert.equal(f.data.model_plan_mapping.length, 18);
 
   for (const [index, plan] of f.data.plans.entries()) {
-    assert.equal(plan.name, index === 0 ? 'Go' : 'Go Plus');
-    assert.equal(plan.price, index === 0 ? 10 : 40);
+    assert.equal(plan.name, ['Go', 'Go Plus', 'Go Teams'][index]);
+    assert.equal(plan.slug, ['opencode-go', 'opencode-go-plus', 'opencode-go-teams'][index]);
+    assert.equal(plan.price, [10, 40, 20][index]);
+    assert.equal(plan.currency, 'USD');
+    assert.equal(plan.price_unit, 'per_month');
+    assert.equal(plan.plan_kind, 'coding');
+    assert.equal(plan.plan_category, 'coding');
+    assert.equal(plan.plan_line, 'opencode-go');
+    assert.equal(plan.tier, ['basic', 'pro', 'team'][index]);
+    assert.equal(plan.tier_rank, index + 1);
+    assert.equal(new Date(plan.last_verified as Date).toISOString().slice(0, 10), '2026-10-31');
+    assert.ok(String(plan.notes).includes(`Source: ${GO_SOURCE}`));
     assert.equal(plan.quota_unit, 'usd');
     assert.equal(plan.source, 'manual');
     assert.equal(plan.annual_price, null);
     assert.equal(plan.monthly_api_credit_usd, null, 'separate per-model limits must not become a shared pool');
     assert.equal(plan.access_from_china, null);
     assert.match(String(plan.notes), /5-hour = 20%, weekly = 50%, monthly = 100%/);
-    assert.match(String(plan.notes), /Single-member workspaces only/);
-    for (const [name, limits] of [['Gemini 4 Argon Contributor', [60, 240]], ['Muse Spark 1.3 Contributor', [60, 120]], ['Muse Spark 1.2 Contributor', [60, 120]], ['DeepSeek V4.1 Flash', [80, 160]], ['DeepSeek V4 Pro', [15, 60]]] as const) {
-      assert.ok(String(plan.notes).includes(`${name}: $${limits[index]}/month`));
+    assert.doesNotMatch(String(plan.notes), /Single-member workspaces only/);
+    assert.match(String(plan.notes), /Go Teams is billed per member, with separate limits for each member/);
+    if (index === 2) {
+      assert.match(String(plan.notes), /\$20\/member\/month \(per member \/ month\)/);
+      assert.match(String(plan.notes), /Each member gets their own Go limits; figures below use the Go tier per member/);
+      assert.match(String(plan.notes), /does not publish a separate Teams limit column; limits shown are Go \/ Go Plus/);
+    }
+    for (const [name, limits] of [['Gemini 4 Argon Contributor', [60, 240]], ['Muse Spark 1.3 Contributor', [60, 120]], ['Muse Spark 1.2 Contributor', [60, 120]], ['DeepSeek V4.1 Flash', [100, 200]], ['DeepSeek V4 Pro', [15, 60]]] as const) {
+      assert.ok(String(plan.notes).includes(`${name}: $${limits[index === 2 ? 0 : index]}/month`));
     }
     const resolved = resolveSelector(plan.model_selector as ModelSelector, f.data.models.map(model => ({ id: model.id, slug: String(model.slug), providerSlugs: [], elo: null })));
     assert.equal(resolved.models.length, 6);
@@ -136,7 +154,7 @@ test('applies verified plans, per-model limits, Contributor terms and both DeepS
     assert.equal(channel.quota_unit, 'usd');
     assert.equal(channel.data_for_discount, index < 3 ? true : null);
     assert.equal(channel.promo_ends_at, null);
-    assert.equal(new Date(channel.last_verified as Date).toISOString().slice(0, 10), '2026-10-15');
+    assert.equal(new Date(channel.last_verified as Date).toISOString().slice(0, 10), '2026-10-31');
     assert.ok(String(channel.notes).includes(GO_SOURCE));
   }
   const argon = f.data.api_channel_prices[0];
