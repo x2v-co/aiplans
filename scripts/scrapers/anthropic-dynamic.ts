@@ -7,11 +7,21 @@ import { addStandardHeadlines } from '../utils/variant-headlines';
 export const ANTHROPIC_PRICING_SOURCE = 'https://platform.claude.com/docs/en/about-claude/pricing';
 export const HAIKU_UNVERIFIED_NOTE = '[needs-verification] Official <=100K prompt price row not parsed; withheld. Source: ' + ANTHROPIC_PRICING_SOURCE;
 export const ANTHROPIC_FAST_MODE_SOURCE = 'https://docs.claude.com/en/docs/build-with-claude/fast-mode';
+export const ANTHROPIC_FAST_MODE_DEPRECATIONS: Readonly<Record<string, {
+  deprecatedAt: string; removalDate: string; replacement: string; deprecationSourceUrl: string;
+  replacementName: string; apiModelId: string;
+}>> = {
+  'claude-opus-4.8': {
+    deprecatedAt: '2026-10-30', removalDate: '2026-11-30', replacement: 'claude-opus-5.5',
+    deprecationSourceUrl: 'https://docs.anthropic.com/en/release-notes/api',
+    replacementName: 'Claude Opus 5.5', apiModelId: 'claude-opus-4-8',
+  },
+};
 export interface AnthropicPricingRow { cells: string[]; heading: string }
 
 /** Fast mode pricing table. Opus 5.5 is GA (Claude API + Microsoft Foundry on Azure);
  * any other model in the table is research preview (access request + beta header). */
-export function parseAnthropicFastMode(rows: AnthropicPricingRow[]): ScrapedPriceVariant[] {
+export function parseAnthropicFastMode(rows: AnthropicPricingRow[], now: Date = new Date()): ScrapedPriceVariant[] {
   const variants: ScrapedPriceVariant[] = [];
   for (const row of rows) {
     const label = row.cells[0]?.trim() ?? '';
@@ -21,13 +31,20 @@ export function parseAnthropicFastMode(rows: AnthropicPricingRow[]): ScrapedPric
     for (const version of versions) {
       const ga = version === '5.5';
       const slug = `claude-opus-${version}`;
+      const deprecation = ANTHROPIC_FAST_MODE_DEPRECATIONS[slug];
+      const deprecationNote = deprecation
+        ? `Deprecated ${deprecation.deprecatedAt}; removed ${deprecation.removalDate} (speed:"fast" on ${deprecation.apiModelId} will return an error) — migrate to ${deprecation.replacementName} fast mode. Source: ${deprecation.deprecationSourceUrl}. `
+        : '';
       variants.push({ modelName: `Claude Opus ${version}`, modelSlug: slug, variantKey: 'fast-mode',
-        variantName: ga ? 'Fast mode' : 'Fast mode (research preview)', variantKind: 'tier',
+        variantName: deprecation ? `Fast mode (research preview, removal ${deprecation.removalDate})`
+          : ga ? 'Fast mode' : 'Fast mode (research preview)', variantKind: 'tier',
         inputPricePer1M: dollars[0], outputPricePer1M: dollars[1], currency: 'USD', sourceUrl: ANTHROPIC_FAST_MODE_SOURCE,
-        isAvailable: true, isPublic: ga, isSelfService: ga, isHeadline: false,
+        isAvailable: !deprecation || now.getTime() < Date.parse(`${deprecation.removalDate}T00:00:00Z`), isPublic: ga, isSelfService: ga, isHeadline: false,
         constraints: { speed: 'fast', status: ga ? 'ga' : 'research_preview',
+          ...(deprecation ? { deprecatedAt: deprecation.deprecatedAt, removalDate: deprecation.removalDate,
+            replacement: deprecation.replacement, deprecationSourceUrl: deprecation.deprecationSourceUrl } : {}),
           platforms: ga ? ['claude-api', 'microsoft-foundry-azure'] : ['claude-api'] },
-        notes: (ga ? 'Fast mode GA (2026-10-15): Claude API incl. Managed Agents, and Microsoft Foundry deployments hosted on Azure.'
+        notes: deprecationNote + (ga ? 'Fast mode GA (2026-10-15): Claude API incl. Managed Agents, and Microsoft Foundry deployments hosted on Azure.'
           : 'Fast mode research preview: access request/waitlist and fast-mode-2026-02-01 beta header; Claude API only.')
           + ' Up to 2.5x output tokens/s. Not available with Batch API, Priority Tier or Claude Platform on AWS. Prompt caching and data residency multipliers stack. Source: '
           + ANTHROPIC_FAST_MODE_SOURCE });
