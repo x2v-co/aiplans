@@ -19,10 +19,14 @@ function selectedSlugs(planSlug: string): string[] {
     .models.map((model) => model.slug);
 }
 
-test('Claude Max plans include Fable releases but not API batch variants', () => {
-  for (const planSlug of ['claude-max', 'claude-max-5x', 'claude-max-20x']) {
+test('current Claude Max and Ultra include Fable releases but not API batch variants', () => {
+  for (const planSlug of ['claude-max', 'claude-ultra']) {
     assert.deepEqual(selectedSlugs(planSlug), ['claude-fable-5', 'claude-fable-5.1']);
   }
+});
+
+test('superseded Claude Max slugs grant no current entitlements', () => {
+  for (const slug of ['claude-max-5x', 'claude-max-20x']) assert.deepEqual(selectedSlugs(slug), []);
 });
 
 test('Claude Pro does not claim the Max-only Fable family', () => {

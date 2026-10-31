@@ -9,11 +9,11 @@ import { chromium, Browser } from 'playwright';
 
 const ANTHROPIC_PLANS_URL = 'https://claude.com/pricing';
 
-/** Keep independently priced Max tiers on the existing canonical slugs. */
+/** Current names (verified 2026-10-31); never recreate the superseded 5x/20x slugs. */
 export function canonicalAnthropicPlanName(name: string, price: number): string {
-  if (!/max/i.test(name)) return name;
-  if (price === 100) return 'Claude Max (5x)';
-  if (price === 200) return 'Claude Max (20x)';
+  if (!/max|ultra/i.test(name)) return name;
+  if (price === 100) return 'Claude Max';
+  if (price === 200) return 'Claude Ultra';
   return name;
 }
 
@@ -127,6 +127,9 @@ async function fetchAnthropicPlans(): Promise<{ plans: AnthropicPlan[], errors: 
       } else if (nameLower.includes('pro')) {
         tier = 'pro';
         planName = 'Claude Pro';
+      } else if (nameLower.includes('ultra')) {
+        tier = 'pro';
+        planName = 'Claude Ultra';
       } else if (nameLower.includes('max')) {
         tier = 'pro'; // Max is a higher tier of Pro
         planName = 'Claude Max';
@@ -176,7 +179,7 @@ async function fetchAnthropicPlans(): Promise<{ plans: AnthropicPlan[], errors: 
         const nextNextLine = lines[i + 2] || '';
 
         // Look for plan names
-        if (/^(Free|Pro|Max|Team|Enterprise)$/i.test(line)) {
+        if (/^(Free|Pro|Max|Ultra|Team|Enterprise)$/i.test(line)) {
           // Look for price in nearby lines (within next 3 lines)
           const searchArea = [nextLine, nextNextLine, lines[i + 3] || ''].join(' ');
           const priceMatch = searchArea.match(/\$(\d+(?:\.\d+)?)/);
@@ -187,7 +190,7 @@ async function fetchAnthropicPlans(): Promise<{ plans: AnthropicPlan[], errors: 
 
             if (line.toLowerCase() === 'free') tier = 'free';
             else if (line.toLowerCase() === 'pro') tier = 'pro';
-            else if (line.toLowerCase() === 'max') tier = 'pro';
+            else if (/^(max|ultra)$/i.test(line)) tier = 'pro';
             else if (line.toLowerCase() === 'team') tier = 'team';
             else if (line.toLowerCase() === 'enterprise') tier = 'enterprise';
 

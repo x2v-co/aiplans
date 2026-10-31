@@ -71,8 +71,9 @@ test('Mistral 4 and Gemini batch retain independent identities in seeds and norm
 
 test('legacy feature cleanup and Max canonicalization do not affect new Pro or unrelated plans', () => {
   assert.deepEqual(cleanLegacyFeatures(['20x Codex', '5x usage', 'China access', 'Keep feature']), ['Keep feature']);
-  assert.equal(canonicalAnthropicPlanName('Claude Max', 100), 'Claude Max (5x)');
-  assert.equal(canonicalAnthropicPlanName('Claude Max', 200), 'Claude Max (20x)');
+  assert.equal(canonicalAnthropicPlanName('Claude Max', 100), 'Claude Max');
+  assert.equal(canonicalAnthropicPlanName('Claude Max', 200), 'Claude Ultra');
+  assert.equal(canonicalAnthropicPlanName('Claude Ultra', 200), 'Claude Ultra');
   assert.equal(canonicalAnthropicPlanName('Claude Pro', 20), 'Claude Pro');
 });
 
