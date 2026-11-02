@@ -1,4 +1,5 @@
 import type { AiCatalogItem } from './ai-vertical-catalog';
+import { catalogBillingUnit } from './catalog-billing-unit';
 
 export const WORLD_MODEL_LABELS = {
   en: {
@@ -37,9 +38,10 @@ export function formatWorldMoney(value: number | null | undefined, currency: str
 }
 
 export function worldModelPrice(item: AiCatalogItem, locale: string): string {
-  if (item.priceStatus !== 'priced' || !item.billingUnit) return '—';
+  const unit = catalogBillingUnit(item);
+  if (item.priceStatus !== 'priced' || !unit) return '—';
   const price = formatWorldMoney(item.pricePerUnit, item.currency, locale);
-  return price === '—' ? price : `${price} / ${worldModelLabels(locale)[item.billingUnit]}`;
+  return price === '—' ? price : `${price} / ${worldModelLabels(locale)[unit]}`;
 }
 
 export function worldModelMinuteCost(item: AiCatalogItem, locale: string): string {

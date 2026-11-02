@@ -238,7 +238,7 @@ async function main() {
       input_modalities: item.inputModalities,
       output_modalities: item.outputModalities,
       capabilities: item.capabilities,
-      pricing_unit: owned?.pricing_unit ?? PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown'],
+      pricing_unit: owned?.pricing_unit ?? (item.billingUnit === 'per_1m_tokens' ? 'per_1m_tokens' : PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown']),
       open_source: item.access?.includes('open-weights') ?? false,
       ...lifecycleFields(item),
       updated_at: new Date().toISOString(),

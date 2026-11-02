@@ -198,7 +198,7 @@ async function upsertMapping(model: ModelRow, plan: PlanRow) {
 interface UsageReference { unit: string; priceKind: string; price: number | null | undefined }
 
 function usageReferences(item: AiCatalogItem): UsageReference[] {
-  if (item.kind === 'video-model' && item.billingUnit === 'per_1m_tokens' && item.usageRates?.length) {
+  if (item.kind === 'video-model' && item.usageRates?.length) {
     return item.usageRates;
   }
   const unit = inferPrimaryUnit(item);

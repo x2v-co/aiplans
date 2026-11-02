@@ -3,7 +3,7 @@ import type { Sql } from 'postgres';
 /** In-memory stand-in for postgres.js used by DB-free seed tests and local dry-run simulations. */
 export type FakeRow = Record<string, unknown> & { id: number };
 export function fakeSeedTx(initial: Partial<Record<string, FakeRow[]>> = {}) {
-  const data: Record<string, FakeRow[]> = { providers: [], models: [], api_channel_prices: [], api_channel_price_variants: [], ...structuredClone(initial) } as Record<string, FakeRow[]>;
+  const data: Record<string, FakeRow[]> = { providers: [], models: [], plans: [], usage_prices: [], api_channel_prices: [], api_channel_price_variants: [], ...structuredClone(initial) } as Record<string, FakeRow[]>;
   let id = 1000; let writes = 0;
   const frag = (v: unknown) => (v as { fragment: unknown }).fragment;
   const tx = ((parts: TemplateStringsArray | unknown, ...values: unknown[]) => {
@@ -27,7 +27,7 @@ export function fakeSeedTx(initial: Partial<Record<string, FakeRow[]>> = {}) {
       const slugs = frag(values[1]) as string[];
       return Promise.resolve(structuredClone((data.plans ?? []).filter(r => r.provider_id === values[0] && slugs.includes(String(r.slug)))));
     }
-    const sel = q.match(/^SELECT \* FROM (api_channel_prices|api_channel_price_variants) WHERE model_id = \? AND provider_id = \?$/);
+    const sel = q.match(/^SELECT \* FROM (api_channel_prices|api_channel_price_variants|usage_prices) WHERE model_id = \? AND provider_id = \?$/);
     if (sel) return Promise.resolve(structuredClone(data[sel[1]].filter(r => r.model_id === values[0] && r.provider_id === values[1])));
     const selMany = q.match(/^SELECT \* FROM (api_channel_prices|api_channel_price_variants) WHERE provider_id = \? AND model_id IN \?$/);
     if (selMany) {

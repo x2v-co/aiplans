@@ -2,13 +2,16 @@ import Link from 'next/link';
 import type { AiCatalogItem } from '@/lib/ai-vertical-catalog';
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 import { formatCurrencyAmount } from '@/lib/currency';
+import { catalogBillingUnit } from '@/lib/catalog-billing-unit';
 
 export function auditedPrice(item: AiCatalogItem, locale: string): string {
   if (item.priceStatus === 'not-public') return locale === 'zh' ? '未公开价格' : 'Price not public';
   if (item.priceStatus !== 'priced') return locale === 'zh' ? '待核验' : 'Needs verification';
   if (item.kind === 'decision-model') return item.pricing;
   if (item.pricePerUnit == null) return '—';
-  const money = (value: number) => formatCurrencyAmount(value.toFixed(2), item.currency);
+  const money = (value: number) => formatCurrencyAmount(value.toLocaleString('en-US', {
+    useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 4,
+  }), item.currency);
   const range = item.pricePerUnitHigh == null ? '' : `–${money(item.pricePerUnitHigh)}`;
   const zh = locale === 'zh';
   const units: Partial<Record<NonNullable<AiCatalogItem['billingUnit']>, string>> = {
@@ -20,13 +23,14 @@ export function auditedPrice(item: AiCatalogItem, locale: string): string {
       ? (zh ? '百万视频输出 tokens' : '1M video output tokens')
       : (zh ? '百万 tokens' : '1M tokens'),
   };
-  const unit = item.billingUnit && units[item.billingUnit];
+  const billingUnit = catalogBillingUnit(item);
+  const unit = billingUnit && units[billingUnit];
   if (!unit) return item.pricing || '—';
   const headline = `${item.approximatePrice ? '≈' : ''}${money(item.pricePerUnit)}${range} / ${unit}`;
   const rate = item.videoTokensPerSecond;
-  if (item.kind !== 'video-model' || item.billingUnit !== 'per_1m_tokens' ||
+  if (item.kind !== 'video-model' || billingUnit !== 'per_1m_tokens' ||
       rate == null || !Number.isFinite(rate) || rate <= 0 || !item.resolutionTier) return headline;
-  const estimated = money(item.pricePerUnit * rate / 1_000_000);
+  const estimated = formatCurrencyAmount((item.pricePerUnit * rate / 1_000_000).toFixed(2), item.currency);
   const context = `${zh ? '推算' : 'estimated'}, ${item.resolutionTier}, ${rate.toLocaleString('en-US')} tokens/s`;
   return `${headline}; ≈${estimated} / ${zh ? '秒' : 'second'} (${context})`;
 }

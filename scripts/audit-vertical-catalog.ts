@@ -328,7 +328,7 @@ async function auditDatabaseDrift() {
     if (!sameStringArray(model.capabilities, item.capabilities)) report(item, 'DB drift: capabilities mismatch');
     const expectedPricingUnit = item.deferredDbSeed ? item.pricingUnit
       : isAuditOwnedVertical(item) ? auditVerticalModelFields(item).pricing_unit
-      : PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown'];
+      : item.billingUnit === 'per_1m_tokens' ? 'per_1m_tokens' : PRICING_UNIT_MAP[item.pricingConfidence ?? 'unknown'];
     if (model.pricing_unit !== expectedPricingUnit) report(item, `DB drift: pricing_unit ${model.pricing_unit} != ${expectedPricingUnit}`);
     if (model.offical_link !== officialLink(item)) report(item, `DB drift: offical_link ${model.offical_link} != ${officialLink(item)}`);
     if ((model.open_source ?? false) !== (item.access?.includes('open-weights') ?? false)) report(item, 'DB drift: open_source mismatch');
@@ -374,7 +374,7 @@ async function auditDatabaseDrift() {
     const expectedAvailability = usageReferenceAvailable(item.status)
       && !shutdownReached(item.shutdownDate ?? model.shutdown_date, new Date());
     // Itemized items carry one row per rate instead of a unit-level placeholder row.
-    const expectedRates = (item.deferredDbSeed || (item.kind === 'video-model' && item.billingUnit === 'per_1m_tokens')) && item.usageRates?.length
+    const expectedRates = (item.deferredDbSeed || item.kind === 'video-model') && item.usageRates?.length
       ? item.usageRates.map(rate => ({ kind: rate.priceKind, unit: rate.unit }))
       : [{ kind: referencePriceKind(item), unit: referenceUnit(item) }];
     const missingRate = expectedRates.find(rate => !usage.some((row) =>

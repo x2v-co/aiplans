@@ -34,6 +34,17 @@ const AUDITED_MODEL_SLUGS: Record<string, string> = {
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/models';
 const OPENROUTER_MODEL_URL = 'https://openrouter.ai/models/';
 
+/** Known bad observation from Intel 2026-11-02. The saved channel AND auto
+ * variant contain this rate, while the audit's /models snapshot is $0.15/$0.60.
+ * Endpoint selection and the 1M conversion already preserve the model rate.
+ * Quarantine this exact regression rather than pinning future prices or
+ * substituting an endpoint. The original ingestion response is unavailable,
+ * so the historical upstream cause cannot be proven from the audit alone.
+ */
+export function isRejectedOpenRouterObservation(id: string, input: number, output: number): boolean {
+  return id === 'openai/gpt-oss-120b' && Math.abs(input - 0.015) < 1e-9 && Math.abs(output - 0.057) < 1e-9;
+}
+
 interface OpenRouterModel {
   id: string;
   name: string;
@@ -369,7 +380,7 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
   try {
     console.log('🔄 Fetching OpenRouter models...');
 
-    const response = await fetch(OPENROUTER_API);
+    const response = await fetch(OPENROUTER_API, { cache: 'no-store' });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -410,6 +421,10 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
           continue;
         }
         const { input: inputPrice, output: outputPrice, cache: cachePrice } = pricing;
+        if (isRejectedOpenRouterObservation(model.id, inputPrice, outputPrice)) {
+          warnings.push(`Quarantined ${model.id}: known bad $0.015/$0.057 observation (Intel 2026-11-02); retain the reviewed default route. No endpoint substituted.`);
+          continue;
+        }
 
         // Skip non-text-output models. OpenRouter exposes image-generation and
         // image-editing prices in the same prompt/completion fields, but those

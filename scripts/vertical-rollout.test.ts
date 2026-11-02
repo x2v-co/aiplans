@@ -152,13 +152,13 @@ test('rollout seeds repair missing/stale audited rows and pass the actual DB aud
         assert.equal(rows.length, 1);
         assert.equal(rows[0].price, price, `${item.slug}/${kind}`);
       }
-    } else if (item.kind === 'video-model' && item.billingUnit === 'per_1m_tokens' && item.usageRates?.length) {
+    } else if (item.kind === 'video-model' && item.usageRates?.length) {
       assert.equal(usage.length, item.usageRates.length, item.slug);
       for (const rate of item.usageRates) {
         const rows = usage.filter(row => row.price_kind === rate.priceKind);
         assert.equal(rows.length, 1, `${item.slug}/${rate.priceKind}`);
         const row = rows[0];
-        assert.equal(row.unit, 'per_1m_tokens');
+        assert.equal(row.unit, rate.unit);
         assert.equal(row.price, rate.price);
         assert.equal(row.currency, item.currency);
       }
