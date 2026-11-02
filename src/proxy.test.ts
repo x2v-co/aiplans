@@ -138,3 +138,51 @@ test('static assets and infrastructure never receive a locale prefix', async () 
     assert.equal(response.headers.get('x-middleware-next'), '1', path);
   }
 });
+
+test('public report files (.md and .json) are served in place without a locale hop', async () => {
+  // Regression: /reports/*.md was 307-redirected to /en/reports/*.md and 404'd
+  // because md was missing from the static file extension allowlist.
+  for (const path of [
+    '/reports/codex-models-2026-10-30.md',
+    '/reports/codex-models-2026-10-28.md',
+    '/reports/quota-bench-2026-10.md',
+    '/reports/volcengine-models-2026-10-28.md',
+    '/reports/volcengine-three-windows-2026-10-28.md',
+    '/reports/codex-models-2026-10-30.json',
+    '/reports/quota-bench-2026-10-ledger.json',
+  ]) {
+    const response = await proxy(new NextRequest(`https://aiplans.dev${path}`, {
+      headers: { 'x-forwarded-proto': 'https' },
+    }));
+    assert.equal(response.status, 200, path);
+    assert.equal(response.headers.get('location'), null, path);
+    assert.equal(response.headers.get('x-middleware-next'), '1', path);
+  }
+});
+
+test('every /reports/*.md|json file referenced from src or public/reports exists', async () => {
+  const { readdirSync, readFileSync, statSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const root = process.cwd();
+  const reportDir = join(root, 'public', 'reports');
+  const available = new Set(readdirSync(reportDir));
+  const walk = (dir: string): string[] => readdirSync(dir).flatMap((name) => {
+    const path = join(dir, name);
+    return statSync(path).isDirectory() ? walk(path) : [path];
+  });
+  const sources = [...walk(join(root, 'src')), ...walk(reportDir)].filter((file) => /\.(?:tsx?|md|json)$/.test(file));
+  const referenced = new Set<string>();
+  for (const file of sources) {
+    for (const match of readFileSync(file, 'utf8').matchAll(/\/reports\/([\w.-]+\.(?:md|json))/g)) referenced.add(match[1]);
+  }
+  assert.ok(referenced.has('codex-models-2026-10-30.md'));
+  for (const name of referenced) assert.ok(available.has(name), `missing public/reports/${name}`);
+});
+
+test('ordinary locale-less pages still get the locale prefix next to report files', async () => {
+  for (const path of ['/reports/api-price-index', '/guides', '/models/minimax-m3.1-flash']) {
+    const response = await proxy(new NextRequest(`https://aiplans.dev${path}`));
+    assert.equal(response.status, 307, path);
+    assert.equal(response.headers.get('location'), `https://aiplans.dev/en${path}`, path);
+  }
+});
