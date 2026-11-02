@@ -99,7 +99,8 @@ export function createProxy(
 
     // Dots also occur in model slugs (minimax-m3.1-flash). Only known file
     // extensions bypass locale routing; an arbitrary dot is not a static file.
-    const isStaticFile = /\.(?:avif|bmp|css|csv|eot|gif|html|ico|jpe?g|js|json|map|mjs|mp3|mp4|ogg|otf|pdf|png|svg|ttf|txt|wasm|webm|webmanifest|webp|woff2?|xml|zip)$/i.test(pathname);
+    // Keep this list in sync with the file types under public/ (md: /reports/*.md).
+    const isStaticFile = /\.(?:avif|bmp|css|csv|eot|gif|html|ico|jpe?g|js|json|map|md|mjs|mp3|mp4|ogg|otf|pdf|png|svg|ttf|txt|wasm|webm|webmanifest|webp|woff2?|xml|zip)$/i.test(pathname);
     if (!isInfrastructurePath(pathname) && !isStaticFile) {
       request.nextUrl.pathname = `/${defaultLocale}${pathname}`;
       return NextResponse.redirect(request.nextUrl);
