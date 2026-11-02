@@ -184,8 +184,8 @@ test('seeded Law slug passes the real model route metadata and renders a priced 
     assert.match(metadata.title, /GPT[ -]6 Astra for Law/);
     const content = await (route.default as (p: { params: typeof params }) => Promise<ReactElement>)({ params });
     const html = renderToStaticMarkup(createElement(NextIntlClientProvider, {
-      locale, timeZone: 'UTC', messages: locale === 'zh' ? zh : en, children: content,
-    }));
+      locale, timeZone: 'UTC', messages: locale === 'zh' ? zh : en,
+    }, content));
     assert.match(html, /GPT[ -]6 Astra for Law/);
     assert.match(html, /促销价至少至 2026-12-31/);
     assert.match(html, /USD 10/);

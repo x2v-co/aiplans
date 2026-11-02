@@ -36,7 +36,7 @@
   },
   "src/app/[locale]/models/[slug]/page.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 20
+      "count": 18
     }
   },
   "src/app/[locale]/plans/page.tsx": {

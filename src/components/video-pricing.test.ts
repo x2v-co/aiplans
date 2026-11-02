@@ -65,8 +65,8 @@ test('estimates require a known positive token rate and resolution, and honor pr
   assert.equal(auditedPrice({ ...omni, priceStatus: 'not-public' }, 'en'), 'Price not public');
   assert.equal(auditedPrice({ ...omni, priceStatus: 'needs-verification' }, 'zh'), '待核验');
   assert.match(auditedPrice({ ...omni, currency: 'CNY' }, 'en'), /≈¥0\.10 \/ second/);
-  assert.doesNotMatch(auditedPrice({ ...omni, billingUnit: undefined, pricing: 'Contact provider' }, 'en'), /second/);
-  assert.match(auditedPrice({ ...omni, billingUnit: 'per_token', videoTokensPerSecond: undefined }, 'en'), /\/ token$/);
+  assert.doesNotMatch(auditedPrice({ ...omni, billingUnit: undefined, pricingUnit: undefined, unit: 'unknown', pricing: 'Contact provider' }, 'en'), /second/);
+  assert.match(auditedPrice({ ...omni, billingUnit: 'per_token', pricingUnit: 'per_token', unit: 'token', videoTokensPerSecond: undefined }, 'en'), /\/ token$/);
   assert.equal(auditedPrice(video.find(item => item.slug === 'veo-3-1')!, 'en'), '$0.40 / second');
 });
 

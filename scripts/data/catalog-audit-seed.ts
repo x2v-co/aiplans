@@ -155,7 +155,7 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean, slugs: Set<strin
     }
     const units = item.kind === 'decision-model'
       ? [['input_tokens', 'per_1m_tokens', item.inputPricePer1M ?? null], ['output_tokens', 'per_1m_tokens', item.outputPricePer1M ?? null], ['tasks', 'per_1m_tasks', null]] as const
-      : item.kind === 'video-model' && item.billingUnit === 'per_1m_tokens' && item.usageRates?.length
+      : item.kind === 'video-model' && item.usageRates?.length
         ? item.usageRates.map(rate => [rate.priceKind, rate.unit, rate.price] as const)
         : [auditVerticalUsage(item)] as const;
     for (const [kind, unit, price] of units) {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { classifyOpenRouterPricing, generateOpenRouterSlug, scrapeOpenRouter, openRouterProducerSlug } from './openrouter';
+import { classifyOpenRouterPricing, generateOpenRouterSlug, scrapeOpenRouter, openRouterProducerSlug, isRejectedOpenRouterObservation } from './openrouter';
 import { LFM_OPENROUTER_ID, LFM_SLUG } from '../data/lfm2-5-24b-a2b';
 import { parseMistralPriceCell } from './mistral-dynamic';
 
@@ -114,6 +114,40 @@ test('cheapest endpoints reject down, malformed and negative prices; explicit fr
   assert.deepEqual(pickOpenRouterFloor([ep('Venice', '0.00000003', '0.00000015')]),
     { provider: 'Venice', input: 0.03, output: 0.15, cache: null });
   assert.equal(pickOpenRouterFloor([ep('Free', '0', '0')])?.input, 0);
+});
+
+test('Intel 11-02: default route survives cheaper endpoints and distinct batch billing', async t => {
+  const listing = { id: 'openai/gpt-oss-120b', name: 'OpenAI: gpt-oss-120b', context_length: 131072,
+    pricing: { prompt: '0.00000015', completion: '0.0000006', input_cache_read: '0.000000075' } };
+  t.mock.method(globalThis, 'fetch', async (input: string) => input.endsWith('/endpoints')
+    ? Response.json({ data: { endpoints: [{ provider_name: 'Cheap', status: 0,
+      pricing: { prompt: '0.000000015', completion: '0.000000057' } }] } })
+    : Response.json({ data: [listing, { ...listing, id: `${listing.id}:batch`, name: `${listing.name} (batch)`,
+      pricing: { prompt: '0.0000000296', completion: '0.000000136' } }] }));
+  const result = await scrapeOpenRouter();
+  assert.equal(result.success, true);
+  const headline = result.prices.find(p => p.modelSlug === 'gpt-oss-120b')!;
+  assert.deepEqual([headline.inputPricePer1M, headline.outputPricePer1M, headline.cachedInputPricePer1M], [0.15, 0.6, 0.075]);
+  assert.equal(result.prices.length, 2);
+  const variants = result.variants!.filter(v => v.modelSlug === 'gpt-oss-120b');
+  assert.equal(variants.find(v => v.isHeadline)?.inputPricePer1M, 0.15);
+  assert.ok(variants.some(v => v.inputPricePer1M === 0.015 && !v.isHeadline));
+});
+
+test('known bad model-level observation is quarantined with a warning, never published as a headline', async t => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ data: [
+    { id: 'openai/gpt-oss-120b', name: 'OpenAI: gpt-oss-120b', pricing: { prompt: '0.000000015', completion: '0.000000057' } },
+    { id: 'test/good', name: 'Good', pricing: { prompt: '0.0000001', completion: '0.0000002' } },
+  ] }));
+  const result = await scrapeOpenRouter();
+  assert.equal(result.success, true);
+  assert.deepEqual(result.prices.map(p => p.modelSlug), ['test-good']);
+  assert.ok(result.warnings?.some(w => /Quarantined openai\/gpt-oss-120b/.test(w)));
+  assert.ok(!result.variants?.some(v => v.modelSlug === 'gpt-oss-120b'));
+  // Future legitimate price changes, other models, batch SKUs and endpoint floors remain valid.
+  assert.equal(isRejectedOpenRouterObservation('openai/gpt-oss-120b', 0.14, 0.58), false);
+  assert.equal(isRejectedOpenRouterObservation('openai/gpt-oss-120b:batch', 0.015, 0.057), false);
+  assert.equal(isRejectedOpenRouterObservation('other/model', 0.015, 0.057), false);
 });
 
 import { OPENROUTER_ADDITIONS } from '../data/catalog-audit-2026-10-15';
