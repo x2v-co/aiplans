@@ -74,10 +74,11 @@ test('failed changed-version alert remains retryable without a duplicate snapsho
 });
 
 test('CLI is safe by default, supports source filtering and rejects ambiguous flags', () => {
-  assert.deepEqual(monitorOptions([]), { dryRun: true, sourceId: undefined });
-  assert.deepEqual(monitorOptions(['--source=claude-usage', '--dry-run']), { dryRun: true, sourceId: 'claude-usage' });
-  assert.deepEqual(monitorOptions(['--apply']), { dryRun: false, sourceId: undefined });
-  for (const args of [['--apply', '--dry-run'], ['--source='], ['--unknown'], ['--source=a', '--source=b']]) {
+  assert.deepEqual(monitorOptions([]), { dryRun: true, sourceId: undefined, testAlert: false });
+  assert.deepEqual(monitorOptions(['--source=claude-usage', '--dry-run']), { dryRun: true, sourceId: 'claude-usage', testAlert: false });
+  assert.deepEqual(monitorOptions(['--apply']), { dryRun: false, sourceId: undefined, testAlert: false });
+  assert.deepEqual(monitorOptions(['--test-alert']), { dryRun: true, sourceId: undefined, testAlert: true });
+  for (const args of [['--test-alert', '--apply'], ['--test-alert', '--dry-run'], ['--test-alert', '--source=a'], ['--apply', '--dry-run'], ['--source='], ['--unknown'], ['--source=a', '--source=b']]) {
     assert.throws(() => monitorOptions(args));
   }
 });
