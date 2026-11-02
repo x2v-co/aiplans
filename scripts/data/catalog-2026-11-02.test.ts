@@ -6,7 +6,8 @@ import ts from 'typescript';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AuditedPricingFacts, auditedPrice } from '../../src/components/audited-catalog';
-import { HAILUO, KIMI_CHANNELS, WORLD_SLUG, catalog20261102SeedOptions, seedCatalog20261102 } from './catalog-2026-11-02';
+import { HAILUO, KIMI_CHANNELS, WORLD_SLUG, catalog20261102SeedOptions, kimiCacheWriteVariants, seedCatalog20261102 } from './catalog-2026-11-02';
+import { assertCacheWriteHeadlines } from '../utils/variant-headlines';
 import { fakeSeedTx } from './fake-seed-tx';
 import * as seedData from './catalog-2026-11-02';
 
@@ -80,8 +81,9 @@ test('seed previews without writes, then repairs only the intended rows and is i
   }
   const cacheWrites = f.data.api_channel_price_variants.filter(r => r.provider_id === 43);
   assert.deepEqual(cacheWrites.map(r => [r.variant_key, r.cache_create_price_per_1m, r.is_headline, r.constraints_json]), [
-    ['cache-write-5m', 2, false, { cache_ttl_seconds: 300 }], ['cache-write-1h', 4, false, { cache_ttl_seconds: 3600 }],
+    ['cache-write-5m', 2, true, { cache_ttl_seconds: 300 }], ['cache-write-1h', 4, false, { cache_ttl_seconds: 3600 }],
   ]);
+  assertCacheWriteHeadlines(cacheWrites, f.data.api_channel_prices);
   for (const id of [300, 301]) {
     assert.equal(f.data.usage_prices.find(r => r.id === id)?.price, null);
     assert.equal(f.data.usage_prices.find(r => r.id === id)?.is_available, false);
@@ -104,7 +106,23 @@ test('seed reuses an existing alias; creates a model only when all exact aliases
   assert.equal(f.data.models.find(r => r.id === 10)?.slug, 'kimi-k3.1-pro');
   assert.equal(f.data.models.filter(r => r.slug === 'kimi-k2.6').length, 1);
   assert.ok(f.data.api_channel_prices.some(r => r.model_id === f.data.models.find(m => m.slug === 'kimi-k2.6')!.id && r.provider_id === 43));
+  assertCacheWriteHeadlines(f.data.api_channel_price_variants, f.data.api_channel_prices);
   assert.deepEqual(await seedCatalog20261102(f.tx, true), []);
+});
+
+test('original seed repairs previously generated non-headline cache rows and rejects a conflicting headline before writes', async () => {
+  const oldVariants = kimiCacheWriteVariants(43, 10).map((v, i) => ({ ...v, id: 210 + i, is_headline: false }));
+  const state = { ...initial, api_channel_price_variants: [...initial.api_channel_price_variants, ...oldVariants] };
+  const f = fakeSeedTx(state);
+  await seedCatalog20261102(f.tx, true);
+  assertCacheWriteHeadlines(f.data.api_channel_price_variants, f.data.api_channel_prices);
+  assert.deepEqual(await seedCatalog20261102(f.tx, true), []);
+
+  const conflicting = fakeSeedTx({ ...state, api_channel_price_variants: [...state.api_channel_price_variants,
+    { ...oldVariants[0], id: 220, variant_key: 'standard', is_headline: true },
+  ] });
+  await assert.rejects(seedCatalog20261102(conflicting.tx, true), /exactly one active headline/);
+  assert.equal(conflicting.writes(), 0);
 });
 
 test('missing/ambiguous identities abort before mutation', async () => {

@@ -72,6 +72,18 @@ test('default dry-run previews full seed, handles absent providers and performs 
   assert.deepEqual(f.data, original);
 });
 
+test('shared catalog seed guard rejects a projected cache-write group without a headline', async () => {
+  const f = fixture({
+    providers: [{ id: 1, slug: 'openrouter' }, { id: 2, slug: 'mistral' }],
+    models: [{ id: 10, slug: 'mistral-large' }, { id: 11, slug: 'mistral-large-4' }],
+    api_channel_price_variants: [{ id: 20, model_id: 10, provider_id: 1,
+      variant_key: 'cache-write-24h', cache_create_price_per_1m: 2,
+      source_url: 'https://openrouter.ai/mistralai/mistral-large-4-0', is_available: true }],
+  });
+  await assert.rejects(seedCatalogAudit(f.tx, false, new Set(['mistral-large', 'mistral-large-4'])), /exactly one active headline/);
+  assert.equal(f.writes.length, 0);
+});
+
 test('slug scope previews and applies only selected models, usage and channels, preserving shared plans', async () => {
   const f = fixture({
     providers: [{ id: 1, slug: 'google' }, { id: 2, slug: 'openrouter' }, { id: 3, slug: 'mistral' },

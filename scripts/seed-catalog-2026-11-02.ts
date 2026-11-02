@@ -5,7 +5,7 @@
  * standard headline use `npm run seed:catalog-2026-11-03-kimi-headline` instead.
  */
 import {
-  HAILUO, KIMI_CHANNELS, WORLD_SLUG, catalog20261102SeedOptions, kimiChannel,
+  HAILUO, KIMI_CHANNELS, WORLD_SLUG, catalog20261102SeedOptions, kimiChannel, kimiCacheWriteVariants,
   openRouterChannel, seedCatalog20261102,
 } from './data/catalog-2026-11-02';
 
@@ -14,7 +14,7 @@ async function main() {
   if (!apply) {
     console.log(JSON.stringify({ mode: 'DRY-RUN (offline; no database connection)',
       openrouter: openRouterChannel(-1, -1), kimi: KIMI_CHANNELS.map(spec => ({ aliases: spec.slugs, ...kimiChannel(spec, -1, -1) })),
-      cacheWrite: { model: 'kimi-k3.1-pro', per1mUsd: { '5m': 2, '1h': 4 } },
+      cacheWrite: { model: 'kimi-k3.1-pro', variants: kimiCacheWriteVariants(-1, -1) },
       hailuo: HAILUO, disableHailuoLegacyRates: ['credit', 'generation', 'availability', 'video_second', 'H3-Max'],
       modelUnits: { [WORLD_SLUG]: 'per_1m_tokens', 'hailuo-video': 'per_second' },
     }, null, 2));
