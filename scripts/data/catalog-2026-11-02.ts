@@ -2,6 +2,14 @@ import type { Sql } from 'postgres';
 import { catalogForKind } from '../../src/lib/ai-vertical-catalog';
 import { seedChanges } from './gemini-4-argon';
 
+/**
+ * DO NOT RE-RUN (2026-11-03). This seed was applied on 2026-11-02. Since then the scheduled
+ * planprice scraper owns the openrouter/gpt-oss-120b channel row and its openrouter-auto
+ * variant (fresher last_verified / notes / raw_json), so a re-run would roll those back to
+ * this snapshot. The kimi-k3.1-pro @ moonshot-global standard headline that #299 briefly added
+ * here was moved to its own narrow seed: `npm run seed:catalog-2026-11-03-kimi-headline`
+ * (scripts/data/catalog-2026-11-03-kimi-headline.ts). Kept only as history and for tests.
+ */
 export const VERIFIED_AT = new Date('2026-11-02T00:00:00Z');
 export const OPENROUTER_SOURCE = 'https://openrouter.ai/api/v1/models';
 export const KIMI_SOURCE = 'https://platform.kimi.ai/docs/pricing/chat';
@@ -125,14 +133,6 @@ export async function seedCatalog20261102(tx: Sql, apply = false): Promise<Step[
     }, spec.slugs[0]);
     const values = kimiChannel(spec, kimi.id, saved.id);
     await save('api_channel_prices', channel, values, `moonshot-global/${spec.id}`);
-    // Cache-write tiers alone left the group without a headline (audit
-    // variants.no_headline, planprice run 2026-11-03). Add the standard
-    // headline variant equal to the channel price.
-    if (spec.id === 'kimi-k3.1-pro') await save('api_channel_price_variants', variants.find(v => v.variant_key === 'standard') ?? null, {
-      ...values, variant_key: 'standard', variant_name: 'Standard', variant_kind: 'tier', source_url: KIMI_SOURCE,
-      is_headline: true, headline_rank: 0, is_public: true, is_self_service: true, is_partner_only: false,
-      headline_reason: 'Official Kimi international list price (input/output/cache-hit).',
-    }, `moonshot-global/${spec.id}/standard`);
     if (spec.id === 'kimi-k3.1-pro') for (const [ttl, seconds, price] of [['5m', 300, 2], ['1h', 3600, 4]] as const) {
       await save('api_channel_price_variants', variants.find(v => v.variant_key === `cache-write-${ttl}`) ?? null, {
         ...values, variant_key: `cache-write-${ttl}`, variant_name: `Cache write (${ttl} TTL)`, variant_kind: 'other',

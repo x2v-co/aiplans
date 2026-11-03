@@ -56,11 +56,40 @@ export function canonicalSeedValue(v: unknown): unknown {
   return v;
 }
 
+const NUMERIC_TEXT = /^[+-]?(\d+(\.\d*)?|\.\d+)(e[+-]?\d+)?$/i;
+
+/**
+ * postgres.js returns int8 / numeric columns as strings (e.g. max_output_tokens
+ * "262144"), while seeds describe them as JS numbers. Where the desired value is
+ * a number, read a numeric string (or bigint) from the database as that number
+ * before comparing, so an applied seed re-runs as a no-op. Non-numeric strings
+ * and every other type are compared unchanged.
+ */
+export function alignSeedNumeric(existing: unknown, desired: unknown): unknown {
+  if (typeof desired === 'number') {
+    if (typeof existing === 'bigint') return Number(existing);
+    if (typeof existing === 'string' && NUMERIC_TEXT.test(existing.trim())) return Number(existing.trim());
+    return existing;
+  }
+  if (Array.isArray(desired) && Array.isArray(existing)) {
+    return existing.map((item, i) => alignSeedNumeric(item, desired[i]));
+  }
+  if (desired && existing && typeof desired === 'object' && typeof existing === 'object' && !Array.isArray(desired) && !Array.isArray(existing) && !(desired instanceof Date) && !(existing instanceof Date)) {
+    const d = desired as Record<string, unknown>;
+    return Object.fromEntries(Object.entries(existing as Record<string, unknown>).map(([k, v]) => [k, k in d ? alignSeedNumeric(v, d[k]) : v]));
+  }
+  return existing;
+}
+
+export function seedValuesEqual(existing: unknown, desired: unknown): boolean {
+  return JSON.stringify(canonicalSeedValue(alignSeedNumeric(existing, desired))) === JSON.stringify(canonicalSeedValue(desired));
+}
+
 export function seedChanges(existing: Record<string, unknown> | null, desired: Record<string, unknown>) {
   const changes: Record<string, { from: unknown; to: unknown }> = {};
   for (const [key, value] of Object.entries(desired)) {
     const previous = existing?.[key] ?? null;
-    if (!existing || JSON.stringify(canonicalSeedValue(previous)) !== JSON.stringify(canonicalSeedValue(value))) {
+    if (!existing || !seedValuesEqual(previous, value)) {
       changes[key] = { from: previous, to: value };
     }
   }

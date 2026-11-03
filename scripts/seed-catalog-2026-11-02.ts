@@ -1,5 +1,9 @@
 #!/usr/bin/env tsx
-/** Intel P0-1/P1-1..P1-3. Offline preview by default; optional manual apply only. */
+/** Intel P0-1/P1-1..P1-3. Offline preview by default; optional manual apply only.
+ * DO NOT RE-RUN --apply: already applied 2026-11-02 and the scraper has since refreshed the
+ * OpenRouter rows (a re-run rolls their last_verified/notes back). For the Kimi K3.1 Pro
+ * standard headline use `npm run seed:catalog-2026-11-03-kimi-headline` instead.
+ */
 import {
   HAILUO, KIMI_CHANNELS, WORLD_SLUG, catalog20261102SeedOptions, kimiChannel,
   openRouterChannel, seedCatalog20261102,
