@@ -67,7 +67,7 @@ test('estimates require a known positive token rate and resolution, and honor pr
   assert.match(auditedPrice({ ...omni, currency: 'CNY' }, 'en'), /≈¥0\.10 \/ second/);
   assert.doesNotMatch(auditedPrice({ ...omni, billingUnit: undefined, pricingUnit: undefined, unit: 'unknown', pricing: 'Contact provider' }, 'en'), /second/);
   assert.match(auditedPrice({ ...omni, billingUnit: 'per_token', pricingUnit: 'per_token', unit: 'token', videoTokensPerSecond: undefined }, 'en'), /\/ token$/);
-  assert.equal(auditedPrice(video.find(item => item.slug === 'veo-3-1')!, 'en'), '$0.40 / second');
+  assert.equal(auditedPrice(video.find(item => item.slug === 'veo-3-1')!, 'en'), '$0.20–$0.60 / second');
 });
 
 test('all token-priced video headlines and audit units use per_1m_tokens', () => {
