@@ -1,3 +1,4 @@
+import { DECISION_1103_SPECS, decision1103ChannelProviders } from '../../src/lib/decision-models-2026-11-03';
 /** Intentional unknowns stay visible as warnings, not fabricated zero prices. */
 export function isExplicitlyUnverifiedPrice(row: {
   input_price_per_1m: number | null; output_price_per_1m: number | null;
@@ -26,7 +27,18 @@ export function isVerifiedFreePrice(modelSlug: string | undefined, providerSlug:
 /** OpenRouter /api/v1/models + /endpoints (checked 2026-10-15): ScaleDown's only endpoint bills input only, completion "0". */
 const OPENROUTER_INPUT_ONLY = new Set(['scaledown-summarize', 'scaledown-extract']);
 
+/**
+ * Intel 2026-11-03 decision models, re-checked 2026-11-03: Workers AI model pages / pricing table list only
+ * "$x per M input tokens" and say "Clef models do not charge for output tokens" (Clairic's usage reports
+ * output_tokens 0); Vercel AI Gateway /v1/models returns pricing.output "0" (type "evaluation") for
+ * Baseten Mammoth-1 / Elephant-1 and Liquid d1 / d1-ultra. Exempt only those explicitly inputOnly specs,
+ * on their verified channel, while input stays positive.
+ */
+const INPUT_ONLY_1103 = new Map(DECISION_1103_SPECS.filter(spec => spec.inputOnly)
+  .map(spec => [spec.slug, new Set(decision1103ChannelProviders(spec))]));
+
 export function isVerifiedFreeOutput(modelSlug: string | undefined, providerSlug: string | undefined, input: number | null) {
+  if (INPUT_ONLY_1103.get(modelSlug ?? '')?.has(providerSlug ?? '') && input != null && input > 0) return true;
   if (modelSlug === 'subq-snap' && providerSlug === 'subq' && input === 0.05) return true;
   // Vercel Decider announcement, verified 2026-10-17: input-only billing.
   if (providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway') {

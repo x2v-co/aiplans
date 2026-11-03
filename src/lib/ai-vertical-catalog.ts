@@ -64,6 +64,8 @@ export interface AiCatalogItem {
   sourceUrls?: AiCatalogSource[];
   lastVerified?: string;
   notes?: string;
+  /** zh copy for /zh/models/[slug]; replaces the English DB description (bestFor + notes) on zh pages. */
+  descriptionZh?: string;
   benchmarkSummaries?: AiBenchmarkSummary[];
   billingUnit?: 'per_second' | 'per_minute' | 'per_world' | 'per_token' | 'per_1m_tokens' | 'subscription_included' | 'contract' | 'open_source_self_host' | 'per_song';
   pricePerUnit?: number | null;
@@ -343,6 +345,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     inputModalities: ['text', 'image'], outputModalities: ['video'],
     pricingConfidence: 'verified', lastVerified: '2026-11-03', verifiedAt: '2026-11-03',
     notes: 'Channel status: Vertex AI available (sold on the Vertex AI generative AI pricing page, checked 2026-11-03); Gemini API preview veo-3.1-generate-preview was shut down on 2026-10-22 (replacement on the Gemini API: gemini-omni-1.1-flash). Vertex AI lists the price as "/ 1 count"; recorded per second of generated video, matching the per-second Gemini API listing. Video + audio and video-only (silent) tiers are separate rates.',
+    descriptionZh: 'Veo 3.1 API 价格（Vertex AI）。\n渠道状态：Vertex AI 仍在售（2026-11-03 核对 Vertex AI 生成式 AI 价格页）；Gemini API 预览版 veo-3.1-generate-preview 已于 2026-10-22 停用（Gemini API 上的替代模型：gemini-omni-1.1-flash）。Vertex AI 以「/ 1 count」标价，此处按生成视频的每秒计价，与 Gemini API 原先的按秒标价一致。视频 + 音频与仅视频（无声）为不同档位：720p/1080p 视频 + 音频 $0.40/秒、仅视频 $0.20/秒；4K 视频 + 音频 $0.60/秒、仅视频 $0.40/秒。',
     sourceUrls: [
       { label: 'Vertex AI generative AI pricing', url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', publisher: 'Google Cloud' },
       { label: 'Gemini API deprecations', url: 'https://ai.google.dev/gemini-api/docs/deprecations', publisher: 'Google' },
@@ -365,6 +368,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     inputModalities: ['text', 'image'], outputModalities: ['video'],
     pricingConfidence: 'verified', lastVerified: '2026-11-03', verifiedAt: '2026-11-03',
     notes: 'Channel status: Vertex AI available (sold on the Vertex AI generative AI pricing page, checked 2026-11-03); Gemini API preview veo-3.1-fast-generate-preview was shut down on 2026-10-22 (replacement on the Gemini API: gemini-omni-1.1-flash). Vertex AI lists the price as "/ 1 count"; recorded per second of generated video, matching the per-second Gemini API listing. Video + audio and video-only (silent) tiers are separate rates.',
+    descriptionZh: 'Veo 3.1 Fast API 价格（Vertex AI）。\n渠道状态：Vertex AI 仍在售（2026-11-03 核对 Vertex AI 生成式 AI 价格页）；Gemini API 预览版 veo-3.1-fast-generate-preview 已于 2026-10-22 停用（Gemini API 上的替代模型：gemini-omni-1.1-flash）。Vertex AI 以「/ 1 count」标价，此处按生成视频的每秒计价，与 Gemini API 原先的按秒标价一致。视频 + 音频与仅视频（无声）为不同档位：720p 视频 + 音频 $0.10/秒、仅视频 $0.08/秒；1080p 视频 + 音频 $0.12/秒、仅视频 $0.10/秒；4K 视频 + 音频 $0.30/秒、仅视频 $0.25/秒。',
     sourceUrls: [
       { label: 'Vertex AI generative AI pricing', url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', publisher: 'Google Cloud' },
       { label: 'Gemini API deprecations', url: 'https://ai.google.dev/gemini-api/docs/deprecations', publisher: 'Google' },
@@ -385,6 +389,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     inputModalities: ['text', 'image'], outputModalities: ['video'],
     pricingConfidence: 'verified', lastVerified: '2026-11-03', verifiedAt: '2026-11-03',
     notes: 'Channel status: Vertex AI available (sold on the Vertex AI generative AI pricing page, checked 2026-11-03); Gemini API preview veo-3.1-lite-generate-preview was shut down on 2026-10-22 (replacement on the Gemini API: gemini-omni-1.1-flash). Vertex AI lists the price as "/ 1 count"; recorded per second of generated video, matching the per-second Gemini API listing. Video + audio and video-only (silent) tiers are separate rates.',
+    descriptionZh: 'Veo 3.1 Lite API 价格（Vertex AI）。\n渠道状态：Vertex AI 仍在售（2026-11-03 核对 Vertex AI 生成式 AI 价格页）；Gemini API 预览版 veo-3.1-lite-generate-preview 已于 2026-10-22 停用（Gemini API 上的替代模型：gemini-omni-1.1-flash）。Vertex AI 以「/ 1 count」标价，此处按生成视频的每秒计价，与 Gemini API 原先的按秒标价一致。视频 + 音频与仅视频（无声）为不同档位：720p 视频 + 音频 $0.05/秒、仅视频 $0.03/秒；1080p 视频 + 音频 $0.08/秒、仅视频 $0.05/秒。',
     sourceUrls: [
       { label: 'Vertex AI generative AI pricing', url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', publisher: 'Google Cloud' },
       { label: 'Gemini API deprecations', url: 'https://ai.google.dev/gemini-api/docs/deprecations', publisher: 'Google' },
@@ -547,6 +552,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
       { label: 'Vertex AI generative AI pricing', url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', publisher: 'Google Cloud' },
     ],
     lastVerified: '2026-11-03', verifiedAt: '2026-11-03',
+    descriptionZh: 'Google 生态的视频生成与 API 工作流。\n系列条目；各型号价格见 veo-3-1、veo-3-1-fast、veo-3-1-lite。渠道状态：Vertex AI 在售 Veo 3.1 / Fast / Lite（2026-11-03 核对）；这三款在 Gemini API 上的预览版已于 2026-10-22 停用（Gemini API 替代模型 gemini-omni-1.1-flash）。Vertex AI 价格区间 $0.03–$0.60/秒：Veo 3.1 $0.20–$0.60/秒，Fast $0.08–$0.30/秒，Lite $0.03–$0.08/秒（仅视频到视频 + 音频）。未单独列行的较早 Vertex AI 型号（按秒，Vertex AI 以「/ 1 count」标价）：Veo 3 视频 + 音频 $0.40（720p/1080p），仅视频 $0.20；Veo 3 Fast 视频 + 音频 $0.10（720p）/ $0.12（1080p），仅视频 $0.08 / $0.10；Veo 2 视频 $0.50（720p），Veo 2 高级控制（插帧、延长、镜头控制）$0.50。',
     notes: 'Family row; per-variant prices are on veo-3-1, veo-3-1-fast and veo-3-1-lite. Channel status: Vertex AI sells Veo 3.1 / Fast / Lite (checked 2026-11-03); the Gemini API previews of those three were shut down on 2026-10-22 (Gemini API replacement gemini-omni-1.1-flash). Older Vertex AI generations not listed as separate rows (per second, Vertex AI "/ 1 count"): Veo 3 video + audio $0.40 (720p/1080p), video only $0.20; Veo 3 Fast video + audio $0.10 (720p) / $0.12 (1080p), video only $0.08 / $0.10; Veo 2 video $0.50 (720p), Veo 2 advanced controls (interpolation, extend, camera control) $0.50.',
   },
   {
