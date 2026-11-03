@@ -13,6 +13,40 @@ export const KIMI_K2_SLUGS = new Set(['kimi-k2.6', 'kimi-k2.6-fast', 'kimi-k2.7-
   'moonshotai-kimi-k2', 'moonshotai-kimi-k2-thinking', 'moonshotai-kimi-k2-5']);
 const KIMI_SOURCE = 'https://platform.moonshot.cn/docs/pricing/chat';
 
+/**
+ * Gemini 2.5 Pro / Flash (Intel 2026-11-03). The 2026-11-02 changelog and the pricing-page
+ * callouts say both are deprecated, no longer selectable in AI Studio, and from 2026-12-01 every
+ * API request is auto-routed to the target model and billed at its rates. The endpoint is not
+ * shut down, so no shutdown_date is stored (that would make the sweep disable live channels).
+ * The deprecations table still read "No shutdown date announced" on 2026-11-03.
+ * Standard paid-tier USD rates per 1M tokens checked on the pricing page 2026-11-03.
+ */
+const GEMINI_25_SOURCE = 'https://ai.google.dev/gemini-api/docs/changelog';
+const GEMINI_25_PRICING = 'https://ai.google.dev/gemini-api/docs/pricing';
+const GEMINI_38_FLASH = {
+  to: 'gemini-3.8-flash',
+  zh: '输入 $0.75 / 输出 $3.75 / 缓存 $0.075（至 2026-12-31；2027-01-01 起 $1.50 / $7.50 / $0.15）',
+  en: 'input $0.75 / output $3.75 / cached $0.075 through 2026-12-31, then $1.50 / $7.50 / $0.15 from 2027-01-01',
+};
+const GEMINI_35_FLASH_LITE = { to: 'gemini-3.5-flash-lite', zh: '输入 $0.30 / 输出 $2.50 / 缓存 $0.03', en: 'input $0.30 / output $2.50 / cached $0.03' };
+export const GEMINI_25_ROUTES: Record<string, { from: string; batch: boolean } & typeof GEMINI_35_FLASH_LITE> = {
+  'gemini-2.5-pro': { from: 'gemini-2.5-pro', batch: false, ...GEMINI_38_FLASH },
+  'google-gemini-gemini-2-5-pro-batch': { from: 'gemini-2.5-pro', batch: true, ...GEMINI_38_FLASH },
+  'gemini-2.5-flash': { from: 'gemini-2.5-flash', batch: false, ...GEMINI_35_FLASH_LITE },
+  'google-gemini-gemini-2-5-flash-batch': { from: 'gemini-2.5-flash', batch: true, ...GEMINI_35_FLASH_LITE },
+};
+
+function gemini25Note(slug: string, locale: string): string | null {
+  const g = GEMINI_25_ROUTES[slug];
+  if (!g) return null;
+  if (locale === 'zh') {
+    const price = g.batch ? `Batch 请求按 ${g.to} 的 Batch 价计费（见定价页）` : `${g.to} 标准付费价（每百万 token）：${g.zh}`;
+    return `Google 于 2026-11-02 宣布弃用 ${g.from}，AI Studio 已不可选。自 2026-12-01 起，所有对 ${g.from} 的 API 请求会自动转发到 ${g.to}，并按 ${g.to} 的价格计费；${price}。官方建议在 12-01 前把模型名改为 ${g.to}，并注意破坏性变更：function calling 与 thought_signature 校验、thinking_level 取代 thinking_budget、移除部分采样参数和预填模型回合。本页价格仍为 ${g.from} 当前价。2026-11-03 核对。来源：${GEMINI_25_SOURCE} 与 ${GEMINI_25_PRICING}。`;
+  }
+  const price = g.batch ? `Batch requests bill at ${g.to} Batch rates (see the pricing page)` : `${g.to} standard paid-tier rates per 1M tokens: ${g.en}`;
+  return `Google deprecated ${g.from} on 2026-11-02; it can no longer be selected in Google AI Studio. From 2026-12-01, all API requests to ${g.from} are automatically routed to ${g.to} and billed at ${g.to} rates. ${price}. Google recommends switching the model string to ${g.to} before 2026-12-01; breaking changes include function calling and thought_signature validation, thinking_level replacing thinking_budget, and removed sampling parameters and prefilled model turns. Prices on this page are still the current ${g.from} rates. Checked 2026-11-03. Sources: ${GEMINI_25_SOURCE} and ${GEMINI_25_PRICING}.`;
+}
+
 const MIMO_SOURCES = 'https://mimo.mi.com/docs/en-US/updates/deprecate 与 https://mimo.mi.com/static/docs/price/pay-as-you-go.md';
 
 export function billingRedirectNote(slug: string, locale: string): string | null {
@@ -29,6 +63,8 @@ export function billingRedirectNote(slug: string, locale: string): string | null
       ? `Moonshot 官方通知：K2 系列模型自 2026-10-31 起停止向新注册用户开放（已注册用户不受影响），计划于 2026 年 12 月底下线全部 K2 系列模型，官方未给出具体日期；官方迁移指引指向 Kimi K3.1 Pro。2026-10-29 核对。来源：${KIMI_SOURCE}。`
       : `Moonshot notice: the K2 series is closed to new sign-ups from 2026-10-31 (existing accounts are not affected), and all K2 series models are planned to go offline at the end of December 2026; no exact date has been given. The official migration guide points to Kimi K3.1 Pro. Checked 2026-10-29. Source: ${KIMI_SOURCE}.`;
   }
+  const gemini = gemini25Note(slug, locale);
+  if (gemini) return gemini;
   if (slug !== 'grok-code-fast-1') return null;
   if (locale === 'zh') {
     return '计费跳转目标待核验。迁移页总则写：2026-05-15 退役的 slug 转到 grok-4.3，并按 grok-4.3 计费。同一页的 Code workloads 与推荐表写 grok-code-fast-1 路由到 grok-build-0.1。定价页 2026-10-19 核对到的价格（每百万 token）：grok-build-0.1 在 200k 上下文以内为输入 $1.00、缓存 $0.20、输出 $2.00，200k 及以上为 $2.00 / $0.40 / $4.00；grok-4.3 在 200k 以内为 $1.25 / $0.20 / $2.50，200k 及以上为 $2.50 / $0.40 / $5.00。本站不把退役前的 $1 / $2 改写成其中任一档。来源：https://docs.x.ai/developers/migration/may-15-retirement 与 https://docs.x.ai/developers/pricing。';
