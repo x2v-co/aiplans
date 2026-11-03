@@ -70,7 +70,7 @@ class GeminiScraper extends PlaywrightScraper {
           && /Output price/i.test(table.textContent ?? '')
       ),
       undefined,
-      { timeout: 15_000 }
+      { timeout: 45_000 }
     );
 
     const tables = await this.page!.locator('table').evaluateAll(elements => {

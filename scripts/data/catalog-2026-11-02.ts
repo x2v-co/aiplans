@@ -125,6 +125,14 @@ export async function seedCatalog20261102(tx: Sql, apply = false): Promise<Step[
     }, spec.slugs[0]);
     const values = kimiChannel(spec, kimi.id, saved.id);
     await save('api_channel_prices', channel, values, `moonshot-global/${spec.id}`);
+    // Cache-write tiers alone left the group without a headline (audit
+    // variants.no_headline, planprice run 2026-11-03). Add the standard
+    // headline variant equal to the channel price.
+    if (spec.id === 'kimi-k3.1-pro') await save('api_channel_price_variants', variants.find(v => v.variant_key === 'standard') ?? null, {
+      ...values, variant_key: 'standard', variant_name: 'Standard', variant_kind: 'tier', source_url: KIMI_SOURCE,
+      is_headline: true, headline_rank: 0, is_public: true, is_self_service: true, is_partner_only: false,
+      headline_reason: 'Official Kimi international list price (input/output/cache-hit).',
+    }, `moonshot-global/${spec.id}/standard`);
     if (spec.id === 'kimi-k3.1-pro') for (const [ttl, seconds, price] of [['5m', 300, 2], ['1h', 3600, 4]] as const) {
       await save('api_channel_price_variants', variants.find(v => v.variant_key === `cache-write-${ttl}`) ?? null, {
         ...values, variant_key: `cache-write-${ttl}`, variant_name: `Cache write (${ttl} TTL)`, variant_kind: 'other',

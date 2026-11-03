@@ -1,3 +1,4 @@
+import { sanitizeModelSlug } from '../utils/model-normalizer';
 /** Google Vertex AI standard token pricing from official pricing tables. */
 import type { ScraperResult } from '../utils/validator';
 import { PlaywrightScraper, type PriceData } from './lib/playwright-scraper';
@@ -9,14 +10,8 @@ function usd(text: string): number | undefined {
   return match ? Number(match[1]) : undefined;
 }
 
-function canonicalModel(raw: string): string | null {
-  const clean = raw
-    .replace(/\*.*$/g, '')
-    .replace(/starting January.*$/i, '')
-    .replace(/through December.*$/i, '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-');
+export function canonicalModel(raw: string): string | null {
+  const clean = sanitizeModelSlug(raw);
   if (!/^gemini-/.test(clean)) return null;
   if (/(image|live-api|embedding|deep-research|omni|computer-use)/.test(clean)) return null;
   return clean;
