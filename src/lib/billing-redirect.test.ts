@@ -45,3 +45,24 @@ test('Kimi K2 models carry the undated Moonshot deprecation notice; K3 does not'
   assert.equal(billingRedirectNote('kimi-k3', 'en'), null);
   assert.equal(billingRedirectNote('moonshotai-kimi-k3-1-pro', 'zh'), null);
 });
+
+test('Gemini 2.5 Pro / Flash explain the 2026-12-01 auto-route, target rates and breaking changes', () => {
+  for (const [slug, from, to, price] of [
+    ['gemini-2.5-pro', 'gemini-2.5-pro', 'gemini-3.8-flash', /\$0\.75/],
+    ['google-gemini-gemini-2-5-pro-batch', 'gemini-2.5-pro', 'gemini-3.8-flash', /Batch/],
+    ['gemini-2.5-flash', 'gemini-2.5-flash', 'gemini-3.5-flash-lite', /\$0\.30/],
+    ['google-gemini-gemini-2-5-flash-batch', 'gemini-2.5-flash', 'gemini-3.5-flash-lite', /Batch/],
+  ] as const) {
+    for (const locale of ['en', 'zh']) {
+      const note = billingRedirectNote(slug, locale)!;
+      assert.ok(note.includes(from) && note.includes(to), `${slug} ${locale}`);
+      assert.match(note, /2026-11-02/);
+      assert.match(note, /2026-12-01/);
+      assert.match(note, /thinking_level/);
+      assert.match(note, price);
+      assert.match(note, /ai\.google\.dev\/gemini-api\/docs\/changelog/);
+    }
+  }
+  assert.match(billingRedirectNote('gemini-2.5-pro', 'en')!, /\$1\.50 \/ \$7\.50 \/ \$0\.15 from 2027-01-01/);
+  for (const slug of ['gemini-2.5-flash-lite', 'gemini-2.5-flash-image', 'gemini-3.8-flash']) assert.equal(billingRedirectNote(slug, 'en'), null);
+});
