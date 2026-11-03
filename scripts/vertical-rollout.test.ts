@@ -6,6 +6,7 @@ import ts from 'typescript';
 import * as catalog from '../src/lib/ai-vertical-catalog';
 import * as logos from '../src/lib/vertical-provider-logos';
 import { PERPLEXITY_DECIDER_CATALOG } from '../src/lib/perplexity-decider-catalog';
+import { DECISION_MODELS_2026_11_03 } from '../src/lib/decision-models-2026-11-03';
 import * as auditVertical from './data/catalog-audit-vertical';
 import * as catalog20261029 from './data/catalog-2026-10-29';
 import * as seedDiff from './utils/seed-diff';
@@ -245,8 +246,12 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
   // Deciders belong to a separate deferred seed; the two applied groups must be clean.
   assert.deepEqual(
     seeded.output.split('\n').filter(line => /WARNING|CRITICAL/.test(line)),
-    PERPLEXITY_DECIDER_CATALOG.map(item =>
-      `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:glimpse-decider:apply`),
+    [
+      ...PERPLEXITY_DECIDER_CATALOG.map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:glimpse-decider:apply`),
+      ...DECISION_MODELS_2026_11_03.map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-03-p1:apply`),
+    ],
   );
   const writes = f.writeCount();
   assert.deepEqual(await f.seedNonLlmRows(), []);
@@ -261,6 +266,10 @@ test('deferred catalog rows point at their image, non-LLM or glimpse-decider see
   for (const item of PERPLEXITY_DECIDER_CATALOG) {
     assert.equal(item.deferredDbSeed, true, item.slug);
     assert.equal(item.deferredDbSeedScript, 'seed:glimpse-decider:apply', item.slug);
+  }
+  for (const item of DECISION_MODELS_2026_11_03) {
+    assert.equal(item.deferredDbSeed, true, item.slug);
+    assert.equal(item.deferredDbSeedScript, 'seed:catalog-2026-11-03-p1:apply', item.slug);
   }
 });
 
@@ -406,7 +415,7 @@ test('discontinued usage rows are marked unavailable by the pricing seed and the
   await f.seed();
   const retiredStatuses = new Set(['discontinued', 'retired']);
   const retired = catalog.AI_VERTICAL_CATALOG.filter(item => retiredStatuses.has(item.status) && !item.deferredDbSeed);
-  assert.deepEqual(retired.map(item => item.slug).sort(), ['gemini-omni-flash', 'minimax-audio', 'sora', 'veo-3-1', 'veo-3-1-fast', 'veo-3-1-lite']);
+  assert.deepEqual(retired.map(item => item.slug).sort(), ['gemini-omni-flash', 'minimax-audio', 'sora']);
   const flipped: (typeof f.data.usage_prices)[number][] = [];
   for (const item of retired) {
     const model = f.data.models.find(row => row.slug === item.slug)!;

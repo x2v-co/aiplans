@@ -78,19 +78,25 @@ test('legacy feature cleanup and Max canonicalization do not affect new Pro or u
 });
 
 test('only audited video/music values are numeric; range and approximation are explicit', () => {
-  const known = new Map([['veo-3-1', [0.4, undefined]], ['veo-3-1-fast', [0.1, 0.3]], ['veo-3-1-lite', [0.05, 0.08]], ['gemini-omni-flash', [0.1, undefined]], ['lyria-3-5', [0.08, undefined]]]);
+  const known = new Map([['veo-3-1', [0.2, 0.6]], ['veo-3-1-fast', [0.08, 0.3]], ['veo-3-1-lite', [0.03, 0.08]], ['gemini-omni-flash', [0.1, undefined]], ['lyria-3-5', [0.08, undefined]]]);
   for (const item of [...catalogForKind('video-model'), ...catalogForKind('music-model')]) {
     if (known.has(item.slug!)) {
       assert.deepEqual([item.pricePerUnit, item.pricePerUnitHigh], known.get(item.slug!));
-      const rechecked = ['veo-3-1', 'veo-3-1-fast', 'veo-3-1-lite', 'gemini-omni-flash'].includes(item.slug!);
-      assert.equal(item.verifiedAt, rechecked ? '2026-10-29' : '2026-10-15');
-      assert.equal(item.sourceUrls?.[0].url, rechecked
-        ? 'https://ai.google.dev/gemini-api/docs/deprecations'
+      // 2026-11-03: Veo 3.1 rows are re-verified against Vertex AI, where they are still sold.
+      const vertex = item.slug!.startsWith('veo-3-1');
+      const rechecked = vertex || item.slug === 'gemini-omni-flash';
+      assert.equal(item.verifiedAt, vertex ? '2026-11-03' : rechecked ? '2026-10-29' : '2026-10-15');
+      assert.equal(item.sourceUrls?.[0].url, vertex
+        ? 'https://cloud.google.com/vertex-ai/generative-ai/pricing'
+        : rechecked ? 'https://ai.google.dev/gemini-api/docs/deprecations'
         : 'https://ai.google.dev/gemini-api/docs/pricing');
-      if (rechecked) {
+      if (vertex) {
+        assert.equal(item.status, 'available');
+        assert.equal(item.shutdownDate, undefined);
+      } else if (rechecked) {
         assert.equal(item.shutdownDate, '2026-10-22');
-        assert.equal(item.needsVerification, undefined);
       }
+      if (rechecked) assert.equal(item.needsVerification, undefined);
     } else {
       if (item.priceStatus === 'needs-verification') {
         assert.equal(item.pricePerUnit, null, item.slug);
@@ -111,12 +117,12 @@ test('only audited video/music values are numeric; range and approximation are e
   assert.equal(omni.approximatePrice, true);
   assert.match(renderToStaticMarkup(createElement(AuditedPricingFacts, { item: omni, locale: 'en' })), /≈\$0.10/);
   const fast = catalogForKind('video-model').find(i => i.slug === 'veo-3-1-fast')!;
-  assert.match(renderToStaticMarkup(createElement(AuditedPricingFacts, { item: fast, locale: 'zh' })), /\$0.10–\$0.30/);
+  assert.match(renderToStaticMarkup(createElement(AuditedPricingFacts, { item: fast, locale: 'zh' })), /\$0.08–\$0.30/);
 });
 
 test('decision models distinguish free output from unknown task prices in en/zh', () => {
   const items = catalogForKind('decision-model');
-  assert.equal(items.length, 9);
+  assert.equal(items.length, 17); // 9 audited 2026-10-15 + 8 added from the 2026-11-03 intel audit
   assert.ok(!items.some(item => item.slug === 'decision-1'));
   for (const item of items) assert.equal(item.pricePer1MTasks, null);
   const snap = items.find(i => i.slug === 'subq-snap')!;
@@ -167,8 +173,13 @@ test('audited entries have factual modalities and the static audit passes withou
   const lyria = catalogForKind('music-model').find(item => item.slug === 'lyria-3-5')!;
   assert.deepEqual(lyria.inputModalities, ['text']);
   assert.deepEqual(lyria.outputModalities, ['audio']);
+  const multimodal: Record<string, string[]> = {
+    'cloudflare-clef': ['text', 'image'], 'cloudflare-clef-omni': ['text', 'image', 'audio', 'video'],
+    'cloudflare-clef-flash': ['text', 'image'], 'cloudflare-clairic': ['text', 'image'],
+    'liquid-d1': ['text', 'image'], 'liquid-d1-ultra': ['text', 'image'],
+  };
   for (const item of catalogForKind('decision-model')) {
-    assert.deepEqual(item.inputModalities, ['text'], item.slug);
+    assert.deepEqual(item.inputModalities, multimodal[item.slug!] ?? ['text'], item.slug);
     assert.deepEqual(item.outputModalities, ['text'], item.slug);
   }
   const result = await staticAudit();
@@ -179,9 +190,9 @@ test('audited entries have factual modalities and the static audit passes withou
 
 test('static audit still warns when verified prices lack numeric values or verification metadata', async () => {
   const invalid = [
-    ['veo-3-1', { pricePerUnit: null }],
+    ['veo-3-1', { pricePerUnit: null, usageRates: undefined }],
     ['veo-3-1-fast', { verifiedAt: undefined }],
-    ['veo-3-1-lite', { pricePerUnit: -1 }],
+    ['veo-3-1-lite', { pricePerUnit: -1, usageRates: undefined }],
     ['gemini-omni-flash', { priceStatus: 'needs-verification' }],
     ['lyria-3-5', { pricePerUnit: Number.NaN }],
     ['scaledown-extract', { outputPricePer1M: null }],

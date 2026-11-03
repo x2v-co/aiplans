@@ -1,6 +1,7 @@
 import { NON_LLM_CATALOG } from './non-llm-catalog';
 import { IMAGE_MODEL_CATALOG } from './image-model-catalog';
 import { PERPLEXITY_DECIDER_CATALOG } from './perplexity-decider-catalog';
+import { DECISION_MODELS_2026_11_03 } from './decision-models-2026-11-03';
 
 export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model' | 'voice-model' | 'image-model';
 
@@ -112,6 +113,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   ...NON_LLM_CATALOG,
   ...IMAGE_MODEL_CATALOG,
   ...PERPLEXITY_DECIDER_CATALOG,
+  ...DECISION_MODELS_2026_11_03,
   // Agent / coding-agent plans
   {
     kind: 'agent',
@@ -328,50 +330,65 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
 
   {
     kind: 'video-model', slug: 'veo-3-1', name: 'Veo 3.1', provider: 'Google', providerSlug: 'google',
-    status: 'discontinued', pricing: '$0.40 / second', unit: 'second', pricingUnit: 'per_second',
-    billingUnit: 'per_second', pricePerUnit: 0.4, currency: 'USD', priceStatus: 'priced',
-    shutdownDate: '2026-10-22', replacementModel: 'gemini-omni-1.1-flash',
-    deprecationSourceUrl: 'https://ai.google.dev/gemini-api/docs/deprecations',
-    capabilities: [], bestFor: 'Veo 3.1 API pricing.', modelCategory: 'video', access: ['api'],
+    status: 'available', pricing: 'Vertex AI: $0.20–$0.60 / second', unit: 'second', pricingUnit: 'per_second',
+    billingUnit: 'per_second', pricePerUnit: 0.2, pricePerUnitHigh: 0.6, currency: 'USD', priceStatus: 'priced',
+    pricingChannel: 'Vertex AI',
+    usageRates: [
+      { priceKind: 'veo-3.1 720p/1080p (video + audio)', unit: 'second', price: 0.4 },
+      { priceKind: 'veo-3.1 4K (video + audio)', unit: 'second', price: 0.6 },
+      { priceKind: 'veo-3.1 720p/1080p (video only)', unit: 'second', price: 0.2 },
+      { priceKind: 'veo-3.1 4K (video only)', unit: 'second', price: 0.4 },
+    ],
+    capabilities: [], bestFor: 'Veo 3.1 API pricing (Vertex AI).', modelCategory: 'video', access: ['api', 'cloud-api'],
     inputModalities: ['text', 'image'], outputModalities: ['video'],
-    pricingConfidence: 'verified', lastVerified: '2026-10-29', verifiedAt: '2026-10-29',
-    notes: 'Gemini API preview veo-3.1-generate-preview was shut down on 2026-10-22 and is no longer listed on the Gemini API pricing page (checked 2026-10-29); last listed price kept for reference. Replacement gemini-omni-1.1-flash. Vertex AI availability was not verified.',
+    pricingConfidence: 'verified', lastVerified: '2026-11-03', verifiedAt: '2026-11-03',
+    notes: 'Channel status: Vertex AI available (sold on the Vertex AI generative AI pricing page, checked 2026-11-03); Gemini API preview veo-3.1-generate-preview was shut down on 2026-10-22 (replacement on the Gemini API: gemini-omni-1.1-flash). Vertex AI lists the price as "/ 1 count"; recorded per second of generated video, matching the per-second Gemini API listing. Video + audio and video-only (silent) tiers are separate rates.',
     sourceUrls: [
+      { label: 'Vertex AI generative AI pricing', url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', publisher: 'Google Cloud' },
       { label: 'Gemini API deprecations', url: 'https://ai.google.dev/gemini-api/docs/deprecations', publisher: 'Google' },
-      { label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing', publisher: 'Google' },
-    ], url: 'https://ai.google.dev/gemini-api/docs/deprecations',
+    ], url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
   },
   {
     kind: 'video-model', slug: 'veo-3-1-fast', name: 'Veo 3.1 Fast', provider: 'Google', providerSlug: 'google',
-    status: 'discontinued', pricing: '$0.10–$0.30 / second', unit: 'second', pricingUnit: 'per_second',
-    billingUnit: 'per_second', pricePerUnit: 0.1, currency: 'USD', priceStatus: 'priced',
-    pricePerUnitHigh: 0.3,
-    shutdownDate: '2026-10-22', replacementModel: 'gemini-omni-1.1-flash',
-    deprecationSourceUrl: 'https://ai.google.dev/gemini-api/docs/deprecations',
-    capabilities: [], bestFor: 'Veo 3.1 Fast API pricing.', modelCategory: 'video', access: ['api'],
+    status: 'available', pricing: 'Vertex AI: $0.08–$0.30 / second', unit: 'second', pricingUnit: 'per_second',
+    billingUnit: 'per_second', pricePerUnit: 0.08, pricePerUnitHigh: 0.3, currency: 'USD', priceStatus: 'priced',
+    pricingChannel: 'Vertex AI',
+    usageRates: [
+      { priceKind: 'veo-3.1-fast 720p (video + audio)', unit: 'second', price: 0.1 },
+      { priceKind: 'veo-3.1-fast 1080p (video + audio)', unit: 'second', price: 0.12 },
+      { priceKind: 'veo-3.1-fast 4K (video + audio)', unit: 'second', price: 0.3 },
+      { priceKind: 'veo-3.1-fast 720p (video only)', unit: 'second', price: 0.08 },
+      { priceKind: 'veo-3.1-fast 1080p (video only)', unit: 'second', price: 0.1 },
+      { priceKind: 'veo-3.1-fast 4K (video only)', unit: 'second', price: 0.25 },
+    ],
+    capabilities: [], bestFor: 'Veo 3.1 Fast API pricing (Vertex AI).', modelCategory: 'video', access: ['api', 'cloud-api'],
     inputModalities: ['text', 'image'], outputModalities: ['video'],
-    pricingConfidence: 'verified', lastVerified: '2026-10-29', verifiedAt: '2026-10-29',
-    notes: 'Gemini API preview veo-3.1-fast-generate-preview was shut down on 2026-10-22 and is no longer listed on the Gemini API pricing page (checked 2026-10-29); last listed price kept for reference. Replacement gemini-omni-1.1-flash. Range depends on mode. Vertex AI availability was not verified.',
+    pricingConfidence: 'verified', lastVerified: '2026-11-03', verifiedAt: '2026-11-03',
+    notes: 'Channel status: Vertex AI available (sold on the Vertex AI generative AI pricing page, checked 2026-11-03); Gemini API preview veo-3.1-fast-generate-preview was shut down on 2026-10-22 (replacement on the Gemini API: gemini-omni-1.1-flash). Vertex AI lists the price as "/ 1 count"; recorded per second of generated video, matching the per-second Gemini API listing. Video + audio and video-only (silent) tiers are separate rates.',
     sourceUrls: [
+      { label: 'Vertex AI generative AI pricing', url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', publisher: 'Google Cloud' },
       { label: 'Gemini API deprecations', url: 'https://ai.google.dev/gemini-api/docs/deprecations', publisher: 'Google' },
-      { label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing', publisher: 'Google' },
-    ], url: 'https://ai.google.dev/gemini-api/docs/deprecations',
+    ], url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
   },
   {
     kind: 'video-model', slug: 'veo-3-1-lite', name: 'Veo 3.1 Lite', provider: 'Google', providerSlug: 'google',
-    status: 'discontinued', pricing: '$0.05–$0.08 / second', unit: 'second', pricingUnit: 'per_second',
-    billingUnit: 'per_second', pricePerUnit: 0.05, currency: 'USD', priceStatus: 'priced',
-    pricePerUnitHigh: 0.08,
-    shutdownDate: '2026-10-22', replacementModel: 'gemini-omni-1.1-flash',
-    deprecationSourceUrl: 'https://ai.google.dev/gemini-api/docs/deprecations',
-    capabilities: [], bestFor: 'Veo 3.1 Lite API pricing.', modelCategory: 'video', access: ['api'],
+    status: 'available', pricing: 'Vertex AI: $0.03–$0.08 / second', unit: 'second', pricingUnit: 'per_second',
+    billingUnit: 'per_second', pricePerUnit: 0.03, pricePerUnitHigh: 0.08, currency: 'USD', priceStatus: 'priced',
+    pricingChannel: 'Vertex AI',
+    usageRates: [
+      { priceKind: 'veo-3.1-lite 720p (video + audio)', unit: 'second', price: 0.05 },
+      { priceKind: 'veo-3.1-lite 1080p (video + audio)', unit: 'second', price: 0.08 },
+      { priceKind: 'veo-3.1-lite 720p (video only)', unit: 'second', price: 0.03 },
+      { priceKind: 'veo-3.1-lite 1080p (video only)', unit: 'second', price: 0.05 },
+    ],
+    capabilities: [], bestFor: 'Veo 3.1 Lite API pricing (Vertex AI).', modelCategory: 'video', access: ['api', 'cloud-api'],
     inputModalities: ['text', 'image'], outputModalities: ['video'],
-    pricingConfidence: 'verified', lastVerified: '2026-10-29', verifiedAt: '2026-10-29',
-    notes: 'Gemini API preview veo-3.1-lite-generate-preview was shut down on 2026-10-22 and is no longer listed on the Gemini API pricing page (checked 2026-10-29); last listed price kept for reference. Replacement gemini-omni-1.1-flash. Range depends on mode. Vertex AI availability was not verified.',
+    pricingConfidence: 'verified', lastVerified: '2026-11-03', verifiedAt: '2026-11-03',
+    notes: 'Channel status: Vertex AI available (sold on the Vertex AI generative AI pricing page, checked 2026-11-03); Gemini API preview veo-3.1-lite-generate-preview was shut down on 2026-10-22 (replacement on the Gemini API: gemini-omni-1.1-flash). Vertex AI lists the price as "/ 1 count"; recorded per second of generated video, matching the per-second Gemini API listing. Video + audio and video-only (silent) tiers are separate rates.',
     sourceUrls: [
+      { label: 'Vertex AI generative AI pricing', url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', publisher: 'Google Cloud' },
       { label: 'Gemini API deprecations', url: 'https://ai.google.dev/gemini-api/docs/deprecations', publisher: 'Google' },
-      { label: 'Gemini API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing', publisher: 'Google' },
-    ], url: 'https://ai.google.dev/gemini-api/docs/deprecations',
+    ], url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
   },
   {
     kind: 'video-model', slug: 'gemini-omni-flash', name: 'Gemini Omni Flash', provider: 'Google', providerSlug: 'google',
@@ -508,13 +525,13 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   },
   {
     kind: 'video-model',
-    priceStatus: 'priced', billingUnit: 'per_second', pricePerUnit: 0.05, pricePerUnitHigh: 0.6, currency: 'USD',
+    priceStatus: 'priced', billingUnit: 'per_second', pricePerUnit: 0.03, pricePerUnitHigh: 0.6, currency: 'USD',
     slug: 'veo',
     name: 'Veo',
     provider: 'Google',
     providerSlug: 'google',
     status: 'available',
-    pricing: 'Gemini API Veo 3.1: Standard $0.40/s (720p/1080p), $0.60/s 4K; Fast $0.10–$0.30/s; Lite $0.05–$0.08/s',
+    pricing: 'Vertex AI Veo 3.1: $0.20–$0.60/s; Fast $0.08–$0.30/s; Lite $0.03–$0.08/s (video-only to video + audio). Also Veo 3 $0.20–$0.40/s, Veo 3 Fast $0.08–$0.12/s, Veo 2 $0.50/s',
     unit: 'generations, seconds',
     capabilities: ['text-to-video', 'image-to-video', 'camera control'],
     bestFor: 'Google ecosystem video generation and API workflows.',
@@ -529,8 +546,8 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
       { label: 'Google DeepMind Veo', url: 'https://deepmind.google/models/veo/', publisher: 'Google DeepMind' },
       { label: 'Vertex AI generative AI pricing', url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', publisher: 'Google Cloud' },
     ],
-    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
-    notes: 'Family row; per-variant prices are on veo-3-1, veo-3-1-fast and veo-3-1-lite. Gemini API previews of those three were shut down on 2026-10-22 (replacement gemini-omni-1.1-flash; checked 2026-10-29). Vertex AI availability was not verified.',
+    lastVerified: '2026-11-03', verifiedAt: '2026-11-03',
+    notes: 'Family row; per-variant prices are on veo-3-1, veo-3-1-fast and veo-3-1-lite. Channel status: Vertex AI sells Veo 3.1 / Fast / Lite (checked 2026-11-03); the Gemini API previews of those three were shut down on 2026-10-22 (Gemini API replacement gemini-omni-1.1-flash). Older Vertex AI generations not listed as separate rows (per second, Vertex AI "/ 1 count"): Veo 3 video + audio $0.40 (720p/1080p), video only $0.20; Veo 3 Fast video + audio $0.10 (720p) / $0.12 (1080p), video only $0.08 / $0.10; Veo 2 video $0.50 (720p), Veo 2 advanced controls (interpolation, extend, camera control) $0.50.',
   },
   {
     kind: 'video-model',

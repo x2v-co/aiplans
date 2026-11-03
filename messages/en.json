@@ -623,6 +623,20 @@
     "skyreels-v4-fast 1080p (video input)": "SkyReels V4 Fast 1080p (video input)",
     "skyreels-v4-std 480p (video input)": "SkyReels V4 Std 480p (video input)",
     "skyreels-v4-std 720p (video input)": "SkyReels V4 Std 720p (video input)",
-    "skyreels-v4-std 1080p (video input)": "SkyReels V4 Std 1080p (video input)"
+    "skyreels-v4-std 1080p (video input)": "SkyReels V4 Std 1080p (video input)",
+    "veo-3.1 4K (video + audio)": "Veo 3.1 4K (video + audio)",
+    "veo-3.1 4K (video only)": "Veo 3.1 4K (video only)",
+    "veo-3.1 720p/1080p (video + audio)": "Veo 3.1 720p/1080p (video + audio)",
+    "veo-3.1 720p/1080p (video only)": "Veo 3.1 720p/1080p (video only)",
+    "veo-3.1-fast 1080p (video + audio)": "Veo 3.1 Fast 1080p (video + audio)",
+    "veo-3.1-fast 1080p (video only)": "Veo 3.1 Fast 1080p (video only)",
+    "veo-3.1-fast 4K (video + audio)": "Veo 3.1 Fast 4K (video + audio)",
+    "veo-3.1-fast 4K (video only)": "Veo 3.1 Fast 4K (video only)",
+    "veo-3.1-fast 720p (video + audio)": "Veo 3.1 Fast 720p (video + audio)",
+    "veo-3.1-fast 720p (video only)": "Veo 3.1 Fast 720p (video only)",
+    "veo-3.1-lite 1080p (video + audio)": "Veo 3.1 Lite 1080p (video + audio)",
+    "veo-3.1-lite 1080p (video only)": "Veo 3.1 Lite 1080p (video only)",
+    "veo-3.1-lite 720p (video + audio)": "Veo 3.1 Lite 720p (video + audio)",
+    "veo-3.1-lite 720p (video only)": "Veo 3.1 Lite 720p (video only)"
   }
 }
