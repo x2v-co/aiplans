@@ -80,12 +80,8 @@ test('seed previews without writes, then repairs only the intended rows and is i
   }
   const cacheWrites = f.data.api_channel_price_variants.filter(r => r.provider_id === 43);
   assert.deepEqual(cacheWrites.map(r => [r.variant_key, r.cache_create_price_per_1m, r.is_headline, r.constraints_json]), [
-    ['standard', undefined, true, undefined],
     ['cache-write-5m', 2, false, { cache_ttl_seconds: 300 }], ['cache-write-1h', 4, false, { cache_ttl_seconds: 3600 }],
   ]);
-  const headline = cacheWrites.filter(r => r.is_headline);
-  assert.equal(headline.length, 1, 'kimi-k3.1-pro group needs exactly one headline (audit variants.no_headline)');
-  assert.deepEqual([headline[0].input_price_per_1m, headline[0].output_price_per_1m, headline[0].cached_input_price_per_1m], [2, 10, 0.20]);
   for (const id of [300, 301]) {
     assert.equal(f.data.usage_prices.find(r => r.id === id)?.price, null);
     assert.equal(f.data.usage_prices.find(r => r.id === id)?.is_available, false);

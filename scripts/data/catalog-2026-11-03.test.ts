@@ -71,6 +71,9 @@ test('apply records Gemini deprecation without a shutdown date and adds LongCat-
   const writes = f.writes();
   assert.deepEqual((await seedCatalog20261103(f.tx, true)).filter(s => s.action !== 'skip'), []);
   assert.equal(f.writes(), writes);
+  // Production read-back (SRE 2026-11-03): int8 max_output_tokens comes back as "262144"; still 0 changes.
+  Object.assign(model, { max_output_tokens: '262144', context_window: '1048576' });
+  assert.deepEqual((await seedCatalog20261103(f.tx)).filter(s => s.action !== 'skip'), []);
 });
 
 test('existing shutdown_date is left alone and reported; deprecation fields still recorded', async () => {
