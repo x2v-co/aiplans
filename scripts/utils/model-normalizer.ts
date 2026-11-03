@@ -8,11 +8,35 @@
  */
 
 /**
+ * Strip pricing-page annotations that leak into model names/slugs, e.g.
+ * Vertex "Gemini 4 Argon (starting December 1, 2026), ..." (planprice
+ * 2026-11-03 MANUAL_REVIEW): parenthetical notes, anything after a comma,
+ * footnote markers and "starting/through/effective <date>" tails. Returns a
+ * lowercase [a-z0-9.-] slug.
+ */
+export function sanitizeModelSlug(raw: string): string {
+  return raw
+    .replace(/\s*\((?!batch\))[^)]*\)?/gi, ' ')
+    .replace(/,.*$/, '')
+    .replace(/\*.*$/, '')
+    .replace(/\b(?:starting|through|effective)\b.*$/i, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\(batch\)$/, '-batch')
+    .replace(/[\s/_:]+/g, '-')
+    .replace(/[^a-z0-9.-]/g, '')
+    .replace(/-{2,}/g, '-')
+    .replace(/^[-.]+|[-.]+$/g, '');
+}
+
+
+/**
  * Resolve verified catalog aliases without collapsing other provider IDs,
  * dated snapshots, or separately priced SKUs. Explicit scraper slugs also
  * pass through this function (they otherwise bypass normalizeSlug).
  */
 export function canonicalizeModelSlug(value: string): string {
+  if (/[(),]/.test(value)) value = sanitizeModelSlug(value);
   const candidate = value.trim().toLowerCase()
     .replace(/\s*\(batch\)$/, '-batch')
     .replace(/:batch$/, '-batch')
