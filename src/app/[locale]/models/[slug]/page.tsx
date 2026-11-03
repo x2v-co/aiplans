@@ -1,7 +1,8 @@
 import { getSeoIndexCatalog } from '@/lib/seo-index-data';
 import { modelShouldIndex } from '@/lib/seo-index-policy';
 import { localizeProvider, providerDisplayName } from '@/lib/provider-display-name';
-import { publicModelDescription, publicModelName } from '@/lib/public-catalog-copy';
+import { publicModelName } from '@/lib/public-catalog-copy';
+import { localizedModelDescription } from '@/lib/model-description-locale';
 import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
 import { CodexModelMeasurements } from '@/components/codex-model-measurements';
 import { isCodexQuotaModel } from '@/lib/codex-pro200';
@@ -67,7 +68,7 @@ import {
 import { buildModelPricingSeo, type PricingChannel } from '@/lib/model-pricing-seo';
 import ModelPricingSummary from '@/components/model-pricing-summary';
 import { ModelUsagePriceHeadline } from '@/components/model-usage-prices';
-import { availableUsagePrices, officialUsageFallback, usagePriceHeadline } from '@/lib/model-usage-prices';
+import { availableUsagePrices, officialUsageFallback, usagePriceHeadlineRange } from '@/lib/model-usage-prices';
 import { getModelUsagePrices } from '@/lib/model-usage-prices-query';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
@@ -368,8 +369,9 @@ export default async function ModelPage({
   const usagePrices = rawUsagePrices.map(row => ({ ...row, provider_name: providerDisplayName({ name: row.provider_name, slug: row.provider_slug }, locale) }));
   const priceHistory = rawHistory.map(row => ({ ...row,
     providerName: providerDisplayName({ name: row.providerName, slug: row.providerSlug }, locale) }));
-  const officialUsagePrices = officialUsageFallback(channelPrices, usagePrices);
-  const officialUsageHeadline = usagePriceHeadline(officialUsagePrices);
+  const officialUsagePrices = officialUsageFallback(channelPrices, usagePrices, rawProduct.slug);
+  const officialUsageRange = usagePriceHeadlineRange(officialUsagePrices);
+  const officialUsageHeadline = officialUsageRange?.low;
   // Agent-harness results (Claude Code, Codex, ...) on this host model. Renders
   // nothing for the vast majority of models that AA has not evaluated.
   const codingAgentRows = await getCodingAgentRowsForModel(product.id);
@@ -378,7 +380,7 @@ export default async function ModelPage({
   const apiT = await getTranslations({ locale, namespace: 'apiPricing' });
   const showTrust = isTrustModelSlug(slug);
   const productName = formatModelName(product.name);
-  const description = publicModelDescription(product.description);
+  const description = localizedModelDescription(product.slug, product.description, locale);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
   const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);
   const announcementMessages = await getTranslations({ locale, namespace: 'modelAnnouncement' });
@@ -439,9 +441,10 @@ export default async function ModelPage({
     return aUsd - bUsd;
   });
   const cheapestChannel = pricing.cheapest && sortedChannelPrices.find(cp => cp.id === pricing.cheapest!.id);
-  const cheapestUsageHeadline = cheapestChannel ? undefined : usagePriceHeadline([
+  const cheapestUsageRange = cheapestChannel ? undefined : usagePriceHeadlineRange([
     ...officialUsagePrices, ...usagePrices.filter(row => row.plan_id != null),
   ]);
+  const cheapestUsageHeadline = cheapestUsageRange?.low;
 
   const officialHistoryProviderSlugs: string[] = [...new Set(
     sortedChannelPrices
@@ -675,7 +678,7 @@ export default async function ModelPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{cheapestChannel?.providers?.name || cheapestUsageHeadline?.plan_name || cheapestUsageHeadline?.provider_name || 'N/A'}</div>
-              {cheapestUsageHeadline ? <ModelUsagePriceHeadline row={cheapestUsageHeadline} locale={locale} /> : <>
+              {cheapestUsageHeadline ? <ModelUsagePriceHeadline row={cheapestUsageHeadline} high={cheapestUsageRange?.high} locale={locale} /> : <>
                 <div className="text-3xl font-bold text-green-600 mt-1">
                   {formatPrice(cheapestChannel?.input_price_per_1m, channelCurrency(cheapestChannel), locale)}
                   <span className="text-sm font-normal text-zinc-500">/1M input</span>
@@ -719,7 +722,7 @@ export default async function ModelPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{officialChannel?.providers?.name || officialUsageHeadline?.provider_name || 'N/A'}</div>
-              {officialUsageHeadline && <ModelUsagePriceHeadline row={officialUsageHeadline} locale={locale} />}
+              {officialUsageHeadline && <ModelUsagePriceHeadline row={officialUsageHeadline} high={officialUsageRange?.high} locale={locale} />}
               {officialChannel && officialUsagePrices.length === 0 ? (
                 <>
                   <div className="text-3xl font-bold mt-1">

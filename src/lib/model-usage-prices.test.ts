@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createTranslator, NextIntlClientProvider } from 'next-intl';
 import en from '../../messages/en.json';
 import zh from '../../messages/zh.json';
-import { availableUsagePrices, officialUsageFallback, usagePriceHeadline, type ModelUsagePriceRow } from './model-usage-prices';
+import { availableUsagePrices, officialUsageFallback, usagePriceHeadline, usagePriceHeadlineRange, type ModelUsagePriceRow } from './model-usage-prices';
 import type { ModelPlanCardRow } from '@/components/model-plan-card';
 import type { PricingChannel } from './model-pricing-seo';
 import { catalogForKind } from './ai-vertical-catalog';
@@ -281,5 +281,69 @@ test('PM six-model bilingual walkthrough renders localized identities and struct
         if (providerSlug === 'zhipu-china') assert.ok(html.split('Zhipu AI / Z.ai').length > 4);
       }
     }
+  }
+});
+
+// SRE 2026-11-03: /models/veo-3-1 rendered only usage_prices#62 (plan-less Gemini API "USD 0.4/秒").
+const veoVertex = ([[599, 'veo-3.1 720p/1080p (video + audio)', 0.4], [600, 'veo-3.1 4K (video + audio)', 0.6],
+  [601, 'veo-3.1 720p/1080p (video only)', 0.2], [602, 'veo-3.1 4K (video only)', 0.4]] as const).map(([id, price_kind, price]) => ({
+  ...rows[0], id, model_id: 10, plan_id: 2053, price_kind, unit: 'second', price,
+  source_url: 'https://cloud.google.com/vertex-ai/generative-ai/pricing', constraints_json: { channel: 'Vertex AI' },
+  plan_name: 'Veo 3.1 official pricing', plan_slug: 'veo-3-1-official-pricing' })) as ModelUsagePriceRow[];
+const veoLegacy62 = { ...rows[0], id: 62, model_id: 10, price_kind: 'video_second', unit: 'second', price: 0.4 } as ModelUsagePriceRow;
+const veoFixture = {
+  slug: 'veo-3-1', producer: { id: 3, name: 'Google', slug: 'google' },
+  plans: [{ id: 2053, name: 'Veo 3.1 official pricing', slug: 'veo-3-1-official-pricing', price: null, annual_price: null,
+    tier: 'payg', currency: 'USD', plan_kind: 'api', features: [], providers: { id: 3, name: 'Google', slug: 'google', logo: null } }] as unknown as ModelPlanCardRow[],
+};
+
+test('a model\'s own -official-pricing plan rows are its official quote; other plans still are not', () => {
+  assert.deepEqual(officialUsageFallback([], veoVertex, 'veo-3-1').map(row => row.id), [599, 600, 601, 602]);
+  assert.deepEqual(officialUsageFallback([], veoVertex), [], 'without the model slug nothing is promoted');
+  assert.deepEqual(officialUsageFallback([], veoVertex, 'veo-3-1-fast'), [], 'another model\'s reference plan is not official');
+  assert.deepEqual(officialUsageFallback([], planRows, slug), []);
+  assert.deepEqual(officialUsageFallback([], veoVertex.map(row => ({ ...row, provider_type: 'aggregator' })), 'veo-3-1'), []);
+  assert.deepEqual(officialUsageFallback([channel], veoVertex, 'veo-3-1'), [], 'a token quote still wins');
+});
+
+test('non-token headlines span the tier range; token headlines stay a single input price', () => {
+  const range = usagePriceHeadlineRange(veoVertex)!;
+  assert.deepEqual([range.low.id, range.high.id], [601, 600]);
+  const tokens = usagePriceHeadlineRange(rows)!;
+  assert.deepEqual([tokens.low.id, tokens.high.id], [580, 580]);
+  const minutes = usagePriceHeadlineRange([...veoVertex, { ...veoVertex[0], id: 603, unit: 'minute', price: 0.01 }])!;
+  assert.deepEqual([minutes.low.id, minutes.high.id], [601, 600], 'other units stay out of the range');
+  assert.equal(usagePriceHeadlineRange([]), undefined);
+});
+
+test('veo-3-1 renders $0.20–$0.60 per second in both cards and a Chinese description on zh', async () => {
+  for (const locale of ['en', 'zh']) {
+    // After the 11-03 fix seed #62 is unavailable, so getModelUsagePrices no longer returns it.
+    const html = await modelHtml(veoVertex, [], locale, veoFixture);
+    const cards = summaryCards(html);
+    const unit = locale === 'zh' ? '秒' : 'second';
+    for (const card of [cards.cheapest, cards.official]) {
+      assert.ok(card.includes(`$0.20–$0.60<span class="text-sm font-normal text-zinc-500"> / ${unit}</span>`), card);
+      assert.doesNotMatch(card, /USD 0\.4/);
+    }
+    assert.doesNotMatch(cards.official, /暂无官方报价|No official quote recorded/);
+    if (locale === 'zh') {
+      assert.match(html, /Veo 3\.1 API 价格（Vertex AI）/);
+      assert.match(html, /2026-10-22 停用/);
+      assert.match(html, /来源：/);
+      assert.doesNotMatch(html, /Vertex AI pricing for Veo 3\.1/);
+    }
+  }
+  // Even before the seed runs, a same-unit legacy row cannot narrow the range below the Vertex tiers.
+  const before = summaryCards(await modelHtml([veoLegacy62, ...veoVertex], [], 'en', veoFixture));
+  assert.ok(before.official.includes('$0.20–$0.60<span'), before.official);
+});
+
+test('every Veo zh description quotes each Vertex rate of its catalog row', () => {
+  const items = catalogForKind('video-model').filter(item => item.slug?.startsWith('veo-3-1'));
+  assert.equal(items.length, 3);
+  for (const item of items) {
+    assert.match(item.descriptionZh ?? '', /[\u4e00-\u9fff]/, item.slug);
+    for (const rate of item.usageRates ?? []) assert.ok(item.descriptionZh!.includes(`$${rate.price.toFixed(2)}`), `${item.slug} ${rate.priceKind}`);
   }
 });

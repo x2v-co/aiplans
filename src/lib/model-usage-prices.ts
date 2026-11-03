@@ -36,12 +36,23 @@ export function availableUsagePrices(rows: ModelUsagePriceRow[], includeReferenc
   });
 }
 
-/** Plan-specific prices are never promoted to model-wide official quotes. */
-export function officialUsageFallback(channels: PricingChannel[], rows: ModelUsagePriceRow[]): ModelUsagePriceRow[] {
+/** The model's own official price-list reference plan (seed-vertical-pricing: `${slug}-official-pricing`). */
+export function officialReferencePlanSlug(modelSlug: string): string {
+  return `${modelSlug}-official-pricing`;
+}
+
+/**
+ * Plan-specific prices are never promoted to model-wide official quotes. The one exception is the
+ * model's own official price-list reference plan: it has no subscription price and only carries the
+ * vendor's published per-unit rates (e.g. Veo 3.1 on Vertex AI), so it is the official quote.
+ */
+export function officialUsageFallback(channels: PricingChannel[], rows: ModelUsagePriceRow[], modelSlug?: string): ModelUsagePriceRow[] {
   const hasOfficialQuote = channels.some(row => row.is_available !== false &&
     ['official', 'producer'].includes(row.providers?.type || '') &&
     [row.input_price_per_1m, row.output_price_per_1m, row.cached_input_price_per_1m].some(isRealPrice));
-  return hasOfficialQuote ? [] : availableUsagePrices(rows).filter(row => row.plan_id == null &&
+  const referencePlan = modelSlug ? officialReferencePlanSlug(modelSlug) : undefined;
+  return hasOfficialQuote ? [] : availableUsagePrices(rows).filter(row =>
+    (row.plan_id == null || (referencePlan != null && row.plan_slug === referencePlan)) &&
     ['official', 'producer'].includes(row.provider_type || ''));
 }
 
@@ -53,4 +64,20 @@ export function usagePriceHeadline(rows: ModelUsagePriceRow[]): ModelUsagePriceR
   return available.filter(row => row.price_kind === primary.price_kind && row.unit === primary.unit)
     .sort((a, b) => convertToUSD(a.price!, (a.currency || 'USD') as CurrencyCode) -
       convertToUSD(b.price!, (b.currency || 'USD') as CurrencyCode))[0];
+}
+
+export interface UsagePriceHeadlineRange { low: ModelUsagePriceRow; high: ModelUsagePriceRow }
+
+/**
+ * Token rates keep the single-row headline (input, cheapest). Other usage rates (per second,
+ * per generation...) are tiers of one product, e.g. Veo 3.1 720p/1080p/4K with or without audio,
+ * so the headline spans the cheapest to the dearest row with the headline's unit and currency.
+ */
+export function usagePriceHeadlineRange(rows: ModelUsagePriceRow[]): UsagePriceHeadlineRange | undefined {
+  const low = usagePriceHeadline(rows);
+  if (!low) return undefined;
+  if (low.unit === 'per_1m_tokens' || /tokens?$/.test(low.price_kind)) return { low, high: low };
+  const peers = availableUsagePrices(rows).filter(row => row.unit === low.unit && (row.currency || 'USD') === (low.currency || 'USD'));
+  const sorted = [...peers].sort((a, b) => a.price! - b.price! || a.id - b.id);
+  return { low: sorted[0] ?? low, high: sorted[sorted.length - 1] ?? low };
 }
