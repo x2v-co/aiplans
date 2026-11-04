@@ -23,6 +23,10 @@ export function fakeSeedTx(initial: Partial<Record<string, FakeRow[]>> = {}) {
       const slugs = frag(values[0]) as string[];
       return Promise.resolve(structuredClone(data.models.filter(r => slugs.includes(String(r.slug)))));
     }
+    if (q === 'SELECT * FROM plans WHERE slug IN ?') {
+      const slugs = frag(values[0]) as string[];
+      return Promise.resolve(structuredClone(data.plans.filter(r => slugs.includes(String(r.slug)))));
+    }
     if (q === 'SELECT * FROM plans WHERE provider_id = ? AND slug IN ?') {
       const slugs = frag(values[1]) as string[];
       return Promise.resolve(structuredClone((data.plans ?? []).filter(r => r.provider_id === values[0] && slugs.includes(String(r.slug)))));

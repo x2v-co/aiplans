@@ -89,7 +89,7 @@ export async function buildSitemap(applyIndexPolicy = true, catalogRows?: SeoInd
     console.error('sitemap: failed to query providers', err);
   }
 
-  for (const item of AI_VERTICAL_CATALOG.filter(i => ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model'].includes(i.kind) && i.slug
+  for (const item of AI_VERTICAL_CATALOG.filter(i => ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model', 'embedding-model'].includes(i.kind) && i.slug
     && modelLifecycleStatus(i.shutdownDate) !== 'retired')) {
     for (const locale of LOCALES) urls.push({ url: `${BASE_URL}/${locale}/${item.kind}s/${item.slug}`,
       lastModified: item.verifiedAt ? new Date(item.verifiedAt) : now, changeFrequency: 'weekly', priority: 0.68 });

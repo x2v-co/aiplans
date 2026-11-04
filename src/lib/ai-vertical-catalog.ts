@@ -1,15 +1,16 @@
+import { CATALOG_1104, MUREKA_1104 } from './catalog-2026-11-04';
 import { NON_LLM_CATALOG } from './non-llm-catalog';
 import { IMAGE_MODEL_CATALOG } from './image-model-catalog';
 import { PERPLEXITY_DECIDER_CATALOG } from './perplexity-decider-catalog';
 import { DECISION_MODELS_2026_11_03 } from './decision-models-2026-11-03';
 
-export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model' | 'voice-model' | 'image-model';
+export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model' | 'voice-model' | 'image-model' | 'embedding-model';
 
 export type AiCatalogStatus = 'available' | 'waitlist' | 'preview' | 'research' | 'announced' | 'discontinued' | 'needs-verification' | 'deprecated';
-export type AiCatalogModality = 'text' | 'image' | 'video' | 'audio' | 'music' | '3d' | 'simulation' | 'code' | 'robotics';
+export type AiCatalogModality = 'text' | 'image' | 'video' | 'audio' | 'music' | '3d' | 'simulation' | 'code' | 'robotics' | 'embedding';
 export type AiCatalogAccess = 'consumer-app' | 'api' | 'cloud-api' | 'open-weights' | 'research-preview' | 'enterprise' | 'waitlist';
 export type AiPricingConfidence = 'verified' | 'unit-only' | 'unknown' | 'not-commercial';
-export type AiModelCategory = 'video' | 'music' | 'world' | 'decision' | 'speech' | 'image';
+export type AiModelCategory = 'video' | 'music' | 'world' | 'decision' | 'speech' | 'image' | 'embedding';
 
 export interface AiCatalogSource {
   label: string;
@@ -52,7 +53,7 @@ export interface AiCatalogItem {
   deprecationSourceUrl?: string;
   pricingProviderSlug?: string;
   pricingChannel?: string;
-  usageRates?: { priceKind: string; unit: string; price: number; approximate?: boolean }[];
+  usageRates?: { priceKind: string; unit: string; price: number; approximate?: boolean; validFrom?: string; validThrough?: string }[];
 
   /** Model-category metadata; unknown world-model specifications remain unset. */
   modelCategory?: AiModelCategory;
@@ -113,6 +114,7 @@ const VERIFIED_AT = '2026-09-15';
  */
 export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   ...NON_LLM_CATALOG,
+  ...CATALOG_1104,
   ...IMAGE_MODEL_CATALOG,
   ...PERPLEXITY_DECIDER_CATALOG,
   ...DECISION_MODELS_2026_11_03,
@@ -1067,31 +1069,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
     lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
     notes: 'Family row; Lyria 3.5 is also listed separately (lyria-3-5). Checked 2026-10-15.',
   },
-  {
-    kind: 'music-model',
-    priceStatus: 'subscription_included', billingUnit: 'subscription_included', pricePerUnit: null, currency: 'USD',
-    planTiers: [{ name: 'Free', price: 0, currency: 'USD', note: '4 songs per day.' }, { name: 'Pro', price: 10, currency: 'USD', credits: 5000, note: 'Per month; $96 billed annually. 5,000 Gold ≈ 500 songs; commercial use.' }, { name: 'Premier', price: 30, currency: 'USD', credits: 20000, note: 'Per month; $288 billed annually. 20,000 Gold ≈ 2,000 songs; commercial use.' }],
-    slug: 'mureka',
-    name: 'Mureka',
-    provider: 'Mureka',
-    status: 'available',
-    pricing: 'Subscription: Free 4 songs/day; Pro $10/mo ($96/yr, 5,000 Gold ≈ 500 songs); Premier $30/mo ($288/yr, 20,000 Gold ≈ 2,000 songs)',
-    unit: 'credits, songs',
-    capabilities: ['music generation', 'vocals', 'lyrics', 'instrumentals'],
-    bestFor: 'Full song generation with vocals, lyrics and instrumentals from text prompts.',
-    modelCategory: 'music',
-    inputModalities: ['text', 'audio'],
-    outputModalities: ['music', 'audio'],
-    access: ['consumer-app'],
-    pricingUnit: 'credits / song',
-    pricingConfidence: 'verified',
-    sourceUrls: [
-      { label: 'Mureka subscription page', url: 'https://www.mureka.ai/subscribe', publisher: 'Mureka' },
-      { label: 'Mureka AI music generator', url: 'https://www.mureka.ai/create', publisher: 'Mureka' },
-    ],
-    lastVerified: '2026-10-15', verifiedAt: '2026-10-15',
-    notes: 'Official plan prices checked 2026-10-15. Paid plans include commercial-use rights.',
-  },
+  MUREKA_1104,
   {
     kind: 'music-model',
     priceStatus: 'not_applicable', billingUnit: 'open_source_self_host', pricePerUnit: null,
@@ -1293,7 +1271,7 @@ export const WORLD_MODEL_RESEARCH_NOTES = [
   },
 ];
 
-export const RIGOROUS_MODEL_KINDS: AiCatalogKind[] = ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model'];
+export const RIGOROUS_MODEL_KINDS: AiCatalogKind[] = ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model', 'embedding-model'];
 
 export function catalogForKind(kind: AiCatalogKind): AiCatalogItem[] {
   return AI_VERTICAL_CATALOG.filter((item) => item.kind === kind);

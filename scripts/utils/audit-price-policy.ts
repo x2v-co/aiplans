@@ -38,6 +38,8 @@ const INPUT_ONLY_1103 = new Map(DECISION_1103_SPECS.filter(spec => spec.inputOnl
   .map(spec => [spec.slug, new Set(decision1103ChannelProviders(spec))]));
 
 export function isVerifiedFreeOutput(modelSlug: string | undefined, providerSlug: string | undefined, input: number | null) {
+  // Official Sarvam pricing, verified 2026-11-04: ₹4/M input, free probability output.
+  if (modelSlug === 'sarvam-prism' && providerSlug === 'sarvam' && input === 4) return true;
   if (INPUT_ONLY_1103.get(modelSlug ?? '')?.has(providerSlug ?? '') && input != null && input > 0) return true;
   if (modelSlug === 'subq-snap' && providerSlug === 'subq' && input === 0.05) return true;
   // Vercel Decider announcement, verified 2026-10-17: input-only billing.

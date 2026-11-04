@@ -26,6 +26,7 @@ const STATIC_PAGE_DEFS: Array<{ slug: string; kind?: AiCatalogKind; title: strin
   { slug: 'compare/video-models', kind: 'video-model', title: 'Compare Video Models', zhTitle: '视频模型对比', baseKeywords: ['video compare', 'arena ai video', 'vbench'] },
   { slug: 'coding-agents', title: 'Coding Agent Leaderboard', zhTitle: '编程智能体排行榜', baseKeywords: ['coding agent', 'claude code', 'codex', 'devin', 'deepswe', 'terminal-bench', 'swe-atlas', 'cost per task'] },
   { slug: 'music-models', kind: 'music-model', title: 'AI Music Models', zhTitle: 'AI 音乐模型', baseKeywords: ['music', 'audio'] },
+  { slug: 'embedding-models', kind: 'embedding-model', title: 'Embedding Models', zhTitle: '嵌入模型', baseKeywords: ['embedding', 'text embedding', '嵌入'] },
   { slug: 'world-models', kind: 'world-model', title: 'AI World Models', zhTitle: 'AI 世界模型', baseKeywords: ['world model', 'simulation'] },
 ];
 

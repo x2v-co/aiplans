@@ -7,7 +7,7 @@ import { catalogBillingUnit } from '@/lib/catalog-billing-unit';
 export function auditedPrice(item: AiCatalogItem, locale: string): string {
   if (item.priceStatus === 'not-public') return locale === 'zh' ? '未公开价格' : 'Price not public';
   if (item.priceStatus !== 'priced') return locale === 'zh' ? '待核验' : 'Needs verification';
-  if (item.kind === 'decision-model') return item.pricing;
+  if (['decision-model', 'embedding-model'].includes(item.kind)) return item.pricing;
   if (item.pricePerUnit == null) return '—';
   const money = (value: number) => formatCurrencyAmount(value.toLocaleString('en-US', {
     useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 4,
@@ -67,7 +67,7 @@ export function DecisionModelCatalog({ items, locale }: { items: AiCatalogItem[]
   const zh = locale === 'zh';
   const money = (item: AiCatalogItem, price: number | null | undefined) => price == null ? '—' : formatCurrencyAmount(price, item.currency);
   return <div className="mt-8 overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm">
-    <thead><tr>{[zh ? '模型' : 'Model', zh ? '$/百万输入 token' : '$/M input tokens', zh ? '$/百万输出 token' : '$/M output tokens', zh ? '$/百万次任务' : '$/1M tasks', zh ? '状态 / 核验' : 'Status / verification', zh ? '来源' : 'Sources'].map(h => <th key={h} className="p-4">{h}</th>)}</tr></thead>
+    <thead><tr>{[zh ? '模型' : 'Model', zh ? '每百万输入 token（原币种）' : 'Per 1M input tokens (native currency)', zh ? '每百万输出 token（原币种）' : 'Per 1M output tokens (native currency)', zh ? '每百万次任务（原币种）' : 'Per 1M tasks (native currency)', zh ? '状态 / 核验' : 'Status / verification', zh ? '来源' : 'Sources'].map(h => <th key={h} className="p-4">{h}</th>)}</tr></thead>
     <tbody>{items.map(item => <tr key={item.slug} className="border-t align-top">
       <td className="p-4"><Link className="text-blue-600 underline" href={`/${locale}/decision-models/${item.slug}`}>{item.name}</Link><p>{item.provider}</p>{item.contextWindowLabel && <p>{item.contextWindowLabel}{item.status === 'preview' && ` · ${zh ? '公开预览' : 'Public preview'}`}</p>}</td>
       <td className="p-4">{money(item, item.inputPricePer1M)}</td><td className="p-4">{money(item, item.outputPricePer1M)}</td><td className="p-4">{money(item, item.pricePer1MTasks)}</td>
@@ -75,4 +75,18 @@ export function DecisionModelCatalog({ items, locale }: { items: AiCatalogItem[]
       <td className="p-4">{item.sourceUrls?.map(source => <a key={source.url} className="block text-blue-600 underline" href={source.url} target="_blank" rel="noreferrer">{source.label}</a>) ?? '—'}</td>
     </tr>)}</tbody>
   </table><p className="p-4 text-sm">{zh ? '— 表示未知；审计未提供每百万次任务的价格，不能从 token 价格推算。' : '— means unknown. The audit supplies no per-million-task prices; token prices cannot determine task prices.'}</p></div>;
+}
+
+/** Embeddings have modality-specific input rates; no output-token price is inferred. */
+export function EmbeddingModelCatalog({ items, locale }: { items: AiCatalogItem[]; locale: string }) {
+  const zh = locale === 'zh';
+  return <div className="mt-8 overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm">
+    <thead><tr>{[zh ? '模型' : 'Model', zh ? '价格' : 'Pricing', zh ? '状态 / 核验' : 'Status / verification', zh ? '来源' : 'Sources'].map(h => <th key={h} className="p-4">{h}</th>)}</tr></thead>
+    <tbody>{items.map(item => <tr key={item.slug} className="border-t align-top">
+      <td className="p-4"><Link className="text-blue-600 underline" href={`/${locale}/embedding-models/${item.slug}`}>{item.name}</Link><p>{item.provider}</p></td>
+      <td className="p-4">{item.pricing}<p>{item.notes}</p></td>
+      <td className="p-4">{item.shutdownDate ? (zh ? '已下线' : 'Shut down') : item.status}<p>{item.verifiedAt}</p></td>
+      <td className="p-4">{item.sourceUrls?.map(source => <a key={source.url} className="block text-blue-600 underline" href={source.url} target="_blank" rel="noreferrer">{source.label}</a>)}</td>
+    </tr>)}</tbody>
+  </table></div>;
 }
