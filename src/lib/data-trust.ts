@@ -1,4 +1,4 @@
-import { introductoryEndDate, isIntroductoryPriceActive, type PriceSchedule } from './effective-price';
+import { introductoryEndDate, isIntroductoryPriceActive, promoTimeZone, promoTimeZoneLabel, type PriceSchedule } from './effective-price';
 
 /**
  * Provenance for key prices and entitlements on a fixed set of high-traffic
@@ -307,15 +307,17 @@ export function channelListPriceTrust(channel: ChannelTrustRow, locale: string, 
   const replaced = promoEnded && finitePrice(channel.regular_input_price_per_1m) && finitePrice(channel.regular_output_price_per_1m);
   const headline = (channel.price_variants ?? []).find((variant) => variant.is_headline);
   const note = typeof channel.notes === 'string' && !channel.notes.startsWith('[') ? channel.notes.trim().slice(0, 180) : '';
+  const promoZone = promoTimeZone(channel as Parameters<typeof promoTimeZone>[0]);
+  const endDate = () => introductoryEndDate(channel.promo_ends_at!, locale, promoZone);
   const conditions = [
     unitCondition(channel.currency, channel.price_unit, locale),
     promoActive ? (zh(locale)
-      ? `限时优惠，截止 ${introductoryEndDate(channel.promo_ends_at!, locale)}（太平洋时间），其后按常规价`
-      : `Limited-time offer through ${introductoryEndDate(channel.promo_ends_at!, locale)} (Pacific time); regular price applies after that`)
+      ? `限时优惠，截止 ${endDate()}（${promoTimeZoneLabel(promoZone, locale)}），其后按常规价`
+      : `Limited-time offer through ${endDate()} (${promoTimeZoneLabel(promoZone, locale)}); regular price applies after that`)
       : null,
     replaced ? (zh(locale)
-      ? `介绍价已于 ${introductoryEndDate(channel.promo_ends_at!, locale)} 结束，当前数字是常规价`
-      : `Introductory price ended ${introductoryEndDate(channel.promo_ends_at!, locale)}; the figure shown is the regular price`)
+      ? `介绍价已于 ${endDate()} 结束，当前数字是常规价`
+      : `Introductory price ended ${endDate()}; the figure shown is the regular price`)
       : null,
     promoEnded && !replaced ? (zh(locale)
       ? '介绍价已结束，且没有可替换的常规价，不要把该数字当成现行标价'

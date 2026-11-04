@@ -5,6 +5,7 @@ import {
   promoFilterHref,
   type LimitedTimeOfferRow,
 } from '@/lib/limited-time-offer';
+import { promoTimeZoneLabel } from '@/lib/effective-price';
 
 const LINE_LABEL = {
   input: { zh: '输入', en: 'Input' },
@@ -48,7 +49,7 @@ export function LimitedTimeOfferMark({
       <p>
         {isZh ? '截止' : 'Ends'}{' '}
         <time dateTime={offer.endsAt}>{offer.endsOn}</time>
-        {isZh ? '（太平洋时间）' : ' (Pacific time)'}
+        {isZh ? `（${promoTimeZoneLabel(offer.timeZone, locale)}）` : ` (${promoTimeZoneLabel(offer.timeZone, locale)})`}
       </p>
     </div>
   );

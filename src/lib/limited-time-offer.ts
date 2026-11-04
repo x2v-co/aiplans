@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { introductoryEndDate, isIntroductoryPriceActive, type PriceSchedule } from './effective-price';
+import { introductoryEndDate, isIntroductoryPriceActive, promoTimeZone, type PriceSchedule, type PromoProviderRef, type PromoTimeZone } from './effective-price';
 import { SITE_URL } from './seo';
 
 /**
@@ -11,7 +11,7 @@ import { SITE_URL } from './seo';
  * subscription rows are not treated as offers and no migration is added here.
  * This module does not rewrite stored or effective prices.
  */
-export interface LimitedTimeOfferRow extends PriceSchedule {
+export interface LimitedTimeOfferRow extends PriceSchedule, PromoProviderRef {
   input_price_per_1m?: number | null;
   output_price_per_1m?: number | null;
   cached_input_price_per_1m?: number | null;
@@ -28,8 +28,10 @@ export interface LimitedTimeOffer {
   currency: string;
   /** Exclusive cutoff instant (`promo_ends_at`). */
   endsAt: string;
-  /** Inclusive last promotional calendar date, Pacific time, same rule as other price copy. */
+  /** Inclusive last promotional calendar date in `timeZone`. */
   endsOn: string;
+  /** Zone the source publishes the cutoff in (Beijing for China providers, else Pacific). */
+  timeZone: PromoTimeZone;
   lines: LimitedTimeOfferLine[];
 }
 
@@ -57,7 +59,8 @@ export function limitedTimeOffer(row: LimitedTimeOfferRow, now = new Date(), loc
   return {
     currency: row.currency || 'USD',
     endsAt: new Date(row.promo_ends_at).toISOString(),
-    endsOn: introductoryEndDate(row.promo_ends_at, locale),
+    endsOn: introductoryEndDate(row.promo_ends_at, locale, promoTimeZone(row)),
+    timeZone: promoTimeZone(row),
     lines,
   };
 }

@@ -16,7 +16,7 @@ export interface PricingChannel extends ScheduledChannelPrice {
   is_available?: boolean | null;
   updated_at?: Date | string | null;
   last_verified?: Date | string | null;
-  providers?: { name?: string | null; type?: string | null; website?: string | null } | null;
+  providers?: { name?: string | null; type?: string | null; website?: string | null; slug?: string | null; region?: string | null } | null;
 }
 
 export function isRealPrice(value: unknown): value is number {
