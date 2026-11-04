@@ -1,4 +1,4 @@
-import type { PricingChannel } from './model-pricing-seo';
+import type { PricingChannel, PricingSeoUsage } from './model-pricing-seo';
 import { isRealPrice } from './model-pricing-seo';
 import { convertToUSD } from './currency-conversion';
 import type { CurrencyCode } from './currency';
@@ -80,4 +80,21 @@ export function usagePriceHeadlineRange(rows: ModelUsagePriceRow[]): UsagePriceH
   const peers = availableUsagePrices(rows).filter(row => row.unit === low.unit && (row.currency || 'USD') === (low.currency || 'USD'));
   const sorted = [...peers].sort((a, b) => a.price! - b.price! || a.id - b.id);
   return { low: sorted[0] ?? low, high: sorted[sorted.length - 1] ?? low };
+}
+
+/**
+ * Usage-rate input for buildModelPricingSeo: the official price list when there is
+ * no official token quote, else the cheapest non-plan rows, in the headline's unit.
+ */
+export function pricingSeoUsage(channels: PricingChannel[], rows: ModelUsagePriceRow[], modelSlug: string): PricingSeoUsage | undefined {
+  const official = officialUsageFallback(channels, rows, modelSlug);
+  const pool = official.length ? official : availableUsagePrices(rows).filter(row => row.plan_id == null);
+  const range = usagePriceHeadlineRange(pool);
+  if (!range) return undefined;
+  const { low, high } = range;
+  const tokenRate = low.unit === 'per_1m_tokens' || /tokens?$/.test(low.price_kind);
+  const peers = availableUsagePrices(pool).filter(row => row.unit === low.unit && (row.currency || 'USD') === (low.currency || 'USD')
+    && (!tokenRate || row.price_kind === low.price_kind))
+    .sort((a, b) => a.price! - b.price! || a.id - b.id);
+  return { rows: peers, low, high, official: official.length > 0 };
 }

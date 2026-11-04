@@ -51,10 +51,22 @@ const CODE_ASSIST_EXCLUDE = [...GOOGLE_NOISE, '*-image'];
 // (ai.google.dev/gemini-api/docs/models/gemini-robotics-er-2-preview; cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing,
 // checked 2026-10-30). It is not in the Gemini app, Google AI plans or Code Assist.
 const GEMINI_ROBOTICS = ['gemini-er-*'];
+// Gemini API-only speech and embedding models (catalog 2026-11-04: gemini-3.8-flash-tts,
+// gemini-3.8-flash-lite-tts, gemini-3.5-transcribe, gemini-3.5-transcribe-live, gemini-embedding-2).
+// They are sold per token / per minute on the Gemini API (ai.google.dev/gemini-api/docs/pricing);
+// none is a model a Gemini app, Google AI plan or Code Assist subscriber selects. Without this the
+// gemini family glob made every 11-04 speech/embedding release a mapping_drift warning on 8 plans.
+const GEMINI_API_ONLY = ['*-tts', '*-transcribe*', 'gemini-embedding*'];
+const GOOGLE_APP_EXCLUDE = [...GOOGLE_NOISE, ...GEMINI_ROBOTICS, ...GEMINI_API_ONLY];
 // Le Chat/Vibe routes chat to Large/Medium/Small; Saba is retired (2025-09-30), Devstral 2 retired 2026-07-31
 // (docs.mistral.ai/models), and Voxtral is a speech model, not a selectable chat model.
 const LE_CHAT_EXCLUDE = ['mistral-mistral-saba*', 'mistral-devstral-2512', 'mistral-voxtral-*'];
 const MINIMAX_LEGACY = ['minimax-01', 'minimax-m1'];
+// Qoder Lite's closed list (qoder.com/en/blog/qoder-lite, published 2026-10-21), in catalog slugs.
+const QODER_LITE_MODELS = [
+  'qwen3.8-flash', 'deepseek-v4.1-flash', 'glm-5.3-flash', 'qwen3.8-max',
+  'deepseek-v4-pro', 'glm-5.3', 'kimi-k3', 'minimax-m3',
+];
 
 // Every GLM Coding Plan tier (CN and Z.AI global) supports exactly these two
 // models per docs.bigmodel.cn/cn/coding-plan/overview (verified 2026-09):
@@ -165,13 +177,13 @@ export const CLASSIFICATIONS: Classification[] = [
 
   // ─ Google — two genuinely separate product lines sold from one account.
   { providerSlug: 'google', planSlug: 'gemini-free', kind: 'chat', line: 'google-one', rank: 0,
-    selector: { families: ['gemini'], current_only: true, exclude: [...GOOGLE_NOISE, '*-pro*', 'gemini-4-argon', ...GEMINI_ROBOTICS] },
+    selector: { families: ['gemini'], current_only: true, exclude: [...GOOGLE_NOISE, '*-pro*', 'gemini-4-argon', ...GEMINI_ROBOTICS, ...GEMINI_API_ONLY] },
     reason: 'Free tier is Flash-class only; Pro-class models require a paid AI plan' },
   { providerSlug: 'google', planSlug: 'google-ai-plus', kind: 'chat', line: 'google-one', rank: 1,
-    selector: { families: ['gemini'], exclude: [...GOOGLE_NOISE, ...GEMINI_ROBOTICS] },
+    selector: { families: ['gemini'], exclude: GOOGLE_APP_EXCLUDE },
     reason: 'AI Plus is the entry paid tier with the full Gemini chat catalog at lower quota' },
   { providerSlug: 'google', planSlug: 'gemini-advanced', kind: 'chat', line: 'google-one', rank: 2,
-    selector: { families: ['gemini'], exclude: [...GOOGLE_NOISE, ...GEMINI_ROBOTICS] },
+    selector: { families: ['gemini'], exclude: GOOGLE_APP_EXCLUDE },
     reason: 'Google AI Pro (historical slug gemini-advanced; the live Google AI Pro row). Since 2026-10-17 includes Gemini 4 Argon in AI Studio Build and Playground; Gemini App access is unconfirmed. Source: https://x.com/GoogleAIStudio/status/2111240722426802258' },
   { providerSlug: 'google', planSlug: 'google-ai-pro', kind: 'chat', line: 'google-one', rank: 2,
     selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
@@ -180,20 +192,34 @@ export const CLASSIFICATIONS: Classification[] = [
     selector: { families: ['gemini'], exclude: GOOGLE_NOISE },
     reason: 'AI Ultra: same catalog, highest quota' },
   { providerSlug: 'google', planSlug: 'google-ai-ultra-5x', kind: 'chat', line: 'google-one', rank: 3,
-    selector: { families: ['gemini'], exclude: [...GOOGLE_NOISE, ...GEMINI_ROBOTICS] },
+    selector: { families: ['gemini'], exclude: GOOGLE_APP_EXCLUDE },
     reason: 'US AI Ultra 5x; preserves the existing Ultra catalog selector' },
   { providerSlug: 'google', planSlug: 'google-ai-ultra-20x', kind: 'chat', line: 'google-one', rank: 4,
-    selector: { families: ['gemini'], exclude: [...GOOGLE_NOISE, ...GEMINI_ROBOTICS] },
+    selector: { families: ['gemini'], exclude: GOOGLE_APP_EXCLUDE },
     reason: 'US AI Ultra 20x; preserves the existing Ultra catalog selector' },
   { providerSlug: 'google', planSlug: 'gemini-code-assist-individual', kind: 'coding', line: 'gemini-code-assist', rank: 0,
-    selector: { families: ['gemini'], current_only: true, exclude: [...CODE_ASSIST_EXCLUDE, ...GEMINI_ROBOTICS] },
+    selector: { families: ['gemini'], current_only: true, exclude: [...CODE_ASSIST_EXCLUDE, ...GEMINI_ROBOTICS, ...GEMINI_API_ONLY] },
     reason: 'Code Assist is an IDE/CLI product, not a chat subscription — separate line, not a tier of Google One' },
   { providerSlug: 'google', planSlug: 'gemini-code-assist-standard', kind: 'coding', line: 'gemini-code-assist', rank: 1,
-    selector: { families: ['gemini'], exclude: [...CODE_ASSIST_EXCLUDE, ...GEMINI_ROBOTICS] },
+    selector: { families: ['gemini'], exclude: [...CODE_ASSIST_EXCLUDE, ...GEMINI_ROBOTICS, ...GEMINI_API_ONLY] },
     reason: 'Standard: 1500 model requests/day shared across CLI and Agent' },
   { providerSlug: 'google', planSlug: 'gemini-code-assist-enterprise', kind: 'coding', line: 'gemini-code-assist', rank: 2,
-    selector: { families: ['gemini'], exclude: [...CODE_ASSIST_EXCLUDE, ...GEMINI_ROBOTICS] },
+    selector: { families: ['gemini'], exclude: [...CODE_ASSIST_EXCLUDE, ...GEMINI_ROBOTICS, ...GEMINI_API_ONLY] },
     reason: 'Enterprise: 2000 requests/day plus private-repo customization' },
+
+  // ─ Qoder (Alibaba's agentic coding IDE/CLI). Closed lists from Qoder's own pages:
+  //   Lite: qoder.com/en/blog/qoder-lite (published 2026-10-21, checked 2026-11-04) — Qwen3.8-Flash, DeepSeek-V4.1-Flash-1017,
+  //     GLM-5.3-Flash, Qwen3.8-Max, DeepSeek-V4-Pro, GLM-5.3, Kimi-K3, Kimi-K2.8-Preview, MiniMax-M3
+  //     (+ Auto/Efficient routing tiers, which are not models).
+  //   Pro: "all models"; the named models are the Lite list plus docs.qoder.com/user-guide/chat/model-tier-selector
+  //     (Kimi-K3.1-Pro, MiniMax-M3.1-Flash, DeepSeek-Flash = deepseek-v4.1-flash per src/lib/deepseek-pricing.ts).
+  // Kimi-K2.8-Preview has no catalog model (unknown) and is left out rather than invented.
+  { providerSlug: 'qoder', planSlug: 'qoder-lite', kind: 'coding', line: 'qoder', rank: 1,
+    selector: { only_extra: true, extra: QODER_LITE_MODELS },
+    reason: 'Qoder Lite ($10/mo, 1000 credits): closed model list from qoder.com/en/blog/qoder-lite (published 2026-10-21, checked 2026-11-04); Kimi-K2.8-Preview unknown in catalog' },
+  { providerSlug: 'qoder', planSlug: 'qoder-pro', kind: 'coding', line: 'qoder', rank: 2,
+    selector: { only_extra: true, extra: [...QODER_LITE_MODELS, 'moonshotai-kimi-k3-1-pro', 'minimax-m3.1-flash'] },
+    reason: 'Qoder Pro ($20/mo, 2000 credits): all models — Lite list plus docs.qoder.com/user-guide/chat/model-tier-selector (2026-11-04); Kimi-K2.8-Preview unknown in catalog' },
 
   // ─ Baidu.
   { providerSlug: 'baidu', planSlug: 'ernie-free', kind: 'chat', line: 'ernie', rank: 0,
