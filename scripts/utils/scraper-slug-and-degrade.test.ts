@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { canonicalizeModelSlug, sanitizeModelSlug } from './model-normalizer';
 import { canonicalModel } from '../scrapers/vertex-ai-dynamic';
-import { runWithTransientDegrade } from './scraper-degrade';
+import { isTransientFailure, runWithTransientDegrade } from './scraper-degrade';
 import type { ScraperResult } from './validator';
 
 const SLUG = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
@@ -53,4 +53,12 @@ test('retry success is processed; non-transient errors still fail', async () => 
   const parser = await runWithTransientDegrade('G', async () => ({ success: false, source: 'G', prices: [], errors: ['no Standard table'] } as unknown as ScraperResult),
     async () => ({ updated: 0, errors: 1, warnings: 0 }), silent);
   assert.equal(parser.errors, 1);
+});
+
+test('a loaded Google page that no longer matches the parser is a real error, not a transient timeout', () => {
+  // 2026-11-02→04: the AI Studio layout made the old tier wait time out, and that
+  // timeout was degraded silently. The structural error must count as an error.
+  assert.equal(isTransientFailure({ source: 'Google Gemini', success: false, prices: [], errors: [
+    'No standard text-token prices found in the official Google Gemini pricing tables (page structure changed? 35 tables, tiers: Standard, (none), url=https://aistudio.google.com/docs/pricing)',
+  ] }), false);
 });

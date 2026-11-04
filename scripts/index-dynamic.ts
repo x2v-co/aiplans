@@ -37,6 +37,7 @@ import { scrapeReplicateDynamic } from './scrapers/replicate-dynamic';
 import { scrapeStepFunDynamic } from './scrapers/stepfun-dynamic';
 import { scrapeGrokDynamic } from './scrapers/grok-dynamic';
 import { scrapeMoonshotDynamic } from './scrapers/moonshot-dynamic';
+import { scrapeMoonshotGlobalDynamic } from './scrapers/moonshot-global-dynamic';
 import { scrapeMiniMaxDynamic } from './scrapers/minimax-dynamic';
 import { scrapeZhipuDynamic } from './scrapers/zhipu-dynamic';
 import { scrapeXiuRouterDynamic } from './scrapers/xiurouter-dynamic';
@@ -105,6 +106,9 @@ const API_SCRAPERS: ScraperConfig[] = [
   { name: 'Replicate', fn: scrapeReplicateDynamic, priority: 2 },
   { name: 'StepFun', fn: scrapeStepFunDynamic, priority: 2, fullCatalog: true },
   { name: 'Moonshot', fn: scrapeMoonshotDynamic, priority: 2, fullCatalog: true },
+  // Kimi international (moonshot-global, USD). Refresh-only: never creates
+  // models or retires rows; existing rows were seeded 2026-11-02.
+  { name: 'Moonshot Global', fn: () => scrapeMoonshotGlobalDynamic(), priority: 2, createProducts: false },
   { name: 'Minimax', fn: scrapeMiniMaxDynamic, priority: 2 },
   { name: 'Zhipu AI', fn: scrapeZhipuDynamic, priority: 2, fullCatalog: true },
   { name: 'XiuRouter', fn: scrapeXiuRouterDynamic, priority: 2, fullCatalog: true, createProducts: false },
@@ -666,6 +670,7 @@ function getChannelProviderKey(source: string): string {
     'Grok': 'XAI',
     'Grok-API': 'XAI',
     'Moonshot': 'MOONSHOT_CHINA',
+    'Moonshot Global': 'MOONSHOT_GLOBAL',
     'Minimax': 'MINIMAX_CHINA',
     'Zhipu-AI': 'ZHIPU_CHINA',
   };

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { parseGooglePriceCell } from './lib/google-price-parser';
-import { parseGooglePricingTables, type GooglePricingTable } from './google-gemini-dynamic';
+import { canonicalModel, cleanGoogleHeading, parseGooglePricingTables, type GooglePricingTable } from './google-gemini-dynamic';
 import { normalizeModelName, normalizeSlug } from '../utils/model-normalizer';
 import { checkModelIdentity } from '../utils/model-identity-guard';
 
@@ -74,4 +74,37 @@ test('Pacific midnight uses daylight saving offset for summer introductory perio
   assert.equal(parseGooglePriceCell(cell, new Date('2026-07-01T06:59:59Z')).current, 1);
   assert.deepEqual(parseGooglePriceCell(cell, new Date('2026-07-01T07:00:00Z')),
     { current: 2, regular: 2, promoEndsAt: '2026-07-01T07:00:00.000Z' });
+});
+
+// AI Studio docs layout (ai.google.dev/gemini-api/docs/pricing → aistudio.google.com/docs/pricing,
+// 2026-11-02): h2 text carries the anchor icon ligature and the tier is the selected mat-tab label.
+test('AI Studio layout: "… link" headings and tab-label tiers still yield canonical model slugs', () => {
+  const rows = (input: string, output: string, cache: string) => [
+    ['Feature', 'Free Tier', 'Paid Tier, per 1M tokens in USD'],
+    ['Input price', 'Free of charge', input],
+    ['Output price (including thinking tokens)', 'Free of charge', output],
+    ['Context caching price', 'Free of charge', cache],
+  ];
+  const tables: GooglePricingTable[] = [
+    { model: 'Gemini 4 Argon link', tier: 'Standard', rows: rows(promo, '$10.00 through November 30, 2026. $20.00 starting December 1, 2026.', '$0.10') },
+    { model: 'Gemini 3.5 Transcribe Live link', tier: 'Standard', rows: rows('$3.50 or $0.005/min* (audio)', '$21.00', '') },
+    { model: 'Gemini 3.1 Pro Preview link', tier: 'Standard', rows: rows('$2.00, prompts <= 200k tokens $4.00, prompts > 200k tokens', '$12.00', '$0.20') },
+    { model: 'Gemini 3.1 Pro Preview link', tier: 'Batch', rows: rows('$1.00', '$6.00', '$0.10') },
+    { model: 'Gemini 2.5 Flash-Lite link', tier: 'Standard', rows: rows('$0.10 (text / image / video)', '$0.40', '$0.01') },
+  ];
+  const prices = parseGooglePricingTables(tables, new Date('2026-11-04'));
+  assert.deepEqual(prices.map(p => [p.modelSlug, p.inputPricePer1M, p.outputPricePer1M, p.cachedInputPricePer1M]), [
+    ['gemini-4-argon', 2, 10, 0.1],
+    ['gemini-3.1-pro-preview', 2, 12, 0.2],
+    ['gemini-2.5-flash-lite', 0.1, 0.4, 0.01],
+  ]);
+  assert.ok(prices.every(p => !/link/.test(p.modelSlug)));
+});
+
+test('heading cleanup strips only the trailing icon ligature', () => {
+  assert.equal(cleanGoogleHeading(' Gemini 3.5 Flash-Lite  link '), 'Gemini 3.5 Flash-Lite');
+  assert.equal(cleanGoogleHeading('Gemini 3 Flash Preview'), 'Gemini 3 Flash Preview');
+  assert.equal(canonicalModel('Gemini 3 Flash Preview link'), 'gemini-3-flash-preview');
+  assert.equal(canonicalModel('Gemini 3.5 Transcribe Live link'), null);
+  assert.equal(canonicalModel('Pricing for tools link'), null);
 });

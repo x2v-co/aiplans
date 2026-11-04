@@ -61,3 +61,24 @@ test('older evidence cannot roll back a later verification or explicit unknown-p
 test('redirected Business FAQ confirms the historical Team name',()=>{
   assert.ok(parseOpenAIReview({...fixture,rename:'ChatGPT Team was renamed to ChatGPT Business on August 29, 2025.'}).some(row=>row.slug==='chatgpt-team'));
 });
+
+// help.openai.com 9793128 as of 2026-11-04: the "Changes to existing Pro 200 subscriptions"
+// section was removed after the planned reduction was canceled.
+const canceledPro = 'Overview Pro tools. Pro plans Monthly price (USD) Ultrafast Pro 100 $100 Not included Pro 200 $200 Not included Pro 500 $500 Included '
+  + 'Can I subscribe to Pro 200 again? Yes. New Pro 200 subscriptions are available from the pricing page and include the increased Work and Codex allowance. The monthly price remains $200. '
+  + 'What happens to my existing Pro 200 subscription? The reduction announced in our September 29 email is canceled. If you already had the higher Work and Codex allowance, you keep it. If you had the lower allowance, it has doubled to match. Your subscription price stays at $200/month. '
+  + 'Does the updated Pro 200 allowance include Ultrafast? No.';
+test('canceled Pro 200 allowance reduction still yields all 11 rows and keeps the legacy marker',()=>{
+  const rows=parseOpenAIReview({...fixture,pro:canceledPro}), bySlug=Object.fromEntries(rows.map(r=>[r.slug,r]));
+  assert.equal(rows.length,11);
+  assert.equal(bySlug['chatgpt-pro-200'].price,200);
+  assert.equal(bySlug['chatgpt-pro'].price,200);
+  assert.equal(bySlug['chatgpt-pro'].verified,true);
+  assert.match(bySlug['chatgpt-pro'].notes,/^\[aiplans:legacy ends=2026-10-29\] Historical alias of ChatGPT Pro 200/);
+  assert.match(bySlug['chatgpt-pro'].notes,/reduction announced in our September 29 email is canceled/);
+});
+test('a Pro article with neither the legacy section nor the cancellation fails closed',()=>{
+  assert.throws(()=>parseOpenAIReview({...fixture,pro:canceledPro.replace('is canceled','is postponed')}),/existing Pro 200 allowance status/);
+  assert.throws(()=>parseOpenAIReview({...fixture,pro:canceledPro.replace('stays at $200/month','stays at $180/month')}),/differs from the Pro 200 table row/);
+  assert.throws(()=>parseOpenAIReview({...fixture,pro:fixture.pro.replace('October 29, 2026','November 29, 2026')}),/legacy Pro allowance deadline/);
+});

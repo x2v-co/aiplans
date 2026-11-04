@@ -46,34 +46,51 @@ export interface KimiPricingTable {
   contextText: string;
 }
 
+/** Header/currency conventions of the two official Kimi pricing pages. */
+export type KimiPricingLocale = 'cn' | 'global';
+const KIMI_LOCALES: Record<KimiPricingLocale, {
+  model: RegExp; input: RegExp; output: RegExp; cache: RegExp; context: RegExp; price: RegExp; currency: 'CNY' | 'USD';
+}> = {
+  // platform.kimi.com (China): CNY, Chinese headings.
+  cn: { model: /^(名称|模型)$/, input: /^输入$/, output: /^输出$/, cache: /^缓存命中$/,
+    context: /([\d,]+)\s*tokens?\s*上下文窗口/i, price: /^[¥￥]\s*(\d+(?:\.\d+)?)\s*\/\s*MTok$/i, currency: 'CNY' },
+  // platform.kimi.ai (international): USD, English headings ("Cached Input", "5m writes").
+  global: { model: /^model$/i, input: /^input$/i, output: /^output$/i, cache: /^(cached input|cache hit)$/i,
+    context: /([\d,]+)[- ]tokens?\s+context window/i, price: /^\$\s*(\d+(?:\.\d+)?)\s*\/\s*MTok$/i, currency: 'USD' },
+};
+
+/** Read one "<currency>N / MTok" cell; throws on any other currency/unit. */
+export function readKimiPrice(cell: string | undefined, locale: KimiPricingLocale, what: string): number {
+  const match = cell?.trim().match(KIMI_LOCALES[locale].price);
+  if (!match) throw new Error(`Invalid Kimi price for ${what}`);
+  return Number(match[1]);
+}
+
 /** Fail the full-catalog scrape on any incomplete table/row: a partial result
  * would otherwise retire valid Moonshot channels in index-dynamic. */
-export function parseKimiPricingTables(tables: KimiPricingTable[]): PriceData[] {
+export function parseKimiPricingTables(tables: KimiPricingTable[], locale: KimiPricingLocale = 'cn'): PriceData[] {
+  const conv = KIMI_LOCALES[locale];
   const prices: PriceData[] = [];
   const seen = new Set<string>();
   for (const table of tables) {
     const headers = table.headers.map(value => value.trim());
-    const modelIndex = headers.findIndex(value => /^(名称|模型)$/.test(value));
-    const inputIndex = headers.indexOf('输入');
-    const outputIndex = headers.indexOf('输出');
-    const cacheIndex = headers.indexOf('缓存命中');
+    const modelIndex = headers.findIndex(value => conv.model.test(value));
+    const inputIndex = headers.findIndex(value => conv.input.test(value));
+    const outputIndex = headers.findIndex(value => conv.output.test(value));
+    const cacheIndex = headers.findIndex(value => conv.cache.test(value));
     if ([modelIndex, inputIndex, outputIndex, cacheIndex].some(index => index < 0)) {
       throw new Error('Unrecognized Kimi pricing table headers');
     }
-    const contextMatch = table.contextText.match(/([\d,]+)\s*tokens?\s*上下文窗口/i);
+    const contextMatch = table.contextText.match(conv.context);
     const contextWindow = contextMatch ? Number(contextMatch[1].replace(/,/g, '')) : 0;
     if (!contextWindow || !table.rows.length) throw new Error('Incomplete Kimi pricing table');
     for (const cells of table.rows) {
       const modelIds = parseKimiModelIds(cells[modelIndex] ?? '');
       if (modelIds.length !== 1) throw new Error('Invalid Kimi pricing model cell');
       const modelName = normalizeModelName(modelIds[0]).toLowerCase();
-      const readPrice = (index: number): number => {
-        // Require CNY and per-million units; never reinterpret cache-write TTLs
-        // or a changed currency/unit as a token price.
-        const match = cells[index]?.trim().match(/^[¥￥]\s*(\d+(?:\.\d+)?)\s*\/\s*MTok$/i);
-        if (!match) throw new Error(`Invalid Kimi price for ${modelName}: ${headers[index]}`);
-        return Number(match[1]);
-      };
+      // Require the page currency and per-million units; never reinterpret
+      // cache-write TTLs or a changed currency/unit as a token price.
+      const readPrice = (index: number): number => readKimiPrice(cells[index], locale, `${modelName}: ${headers[index]}`);
       const input = readPrice(inputIndex);
       const output = readPrice(outputIndex);
       const cached = readPrice(cacheIndex);
@@ -81,7 +98,7 @@ export function parseKimiPricingTables(tables: KimiPricingTable[]): PriceData[] 
         throw new Error(`Inconsistent Kimi pricing row: ${modelName}`);
       }
       prices.push({ modelName, inputPricePer1M: input, outputPricePer1M: output,
-        cachedInputPricePer1M: cached, contextWindow, isAvailable: true, currency: 'CNY' });
+        cachedInputPricePer1M: cached, contextWindow, isAvailable: true, currency: conv.currency });
       seen.add(modelName);
     }
   }
@@ -214,6 +231,10 @@ export function extractKimiTablesFromMdx(source: string): KimiPricingTable[] {
 }
 
 export function parseKimiPricingHtml(html: string): PriceData[] {
+  return parseKimiPricingTables(extractKimiTablesFromHtml(html));
+}
+
+export function extractKimiTablesFromHtml(html: string): KimiPricingTable[] {
   let flight: string;
   try {
     flight = parseNextFlight(html);
@@ -222,7 +243,7 @@ export function parseKimiPricingHtml(html: string): PriceData[] {
   }
   const tables = extractKimiTablesFromMdx(flight);
   if (!tables.length) throw new Error('No DocTable found in Kimi pricing HTML');
-  return parseKimiPricingTables(tables);
+  return tables;
 }
 
 /**
@@ -259,11 +280,11 @@ export interface StaticFetchOptions {
   baseDelayMs?: number;
 }
 
-async function fetchKimiPricingPage(fetchImpl: typeof fetch, timeoutMs: number): Promise<string> {
+async function fetchKimiPricingPage(fetchImpl: typeof fetch, timeoutMs: number, url: string, language: string): Promise<string> {
   let response: Response;
   try {
-    response = await fetchImpl(PRICING_PAGE, {
-      headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html', 'Accept-Language': 'zh-CN,zh;q=0.9' },
+    response = await fetchImpl(url, {
+      headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html', 'Accept-Language': language },
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (error) {
@@ -291,6 +312,11 @@ async function fetchKimiPricingPage(fetchImpl: typeof fetch, timeoutMs: number):
  * timeouts, 429 and 5xx. Parsing is deterministic, so a parse failure is not retried.
  */
 export async function fetchKimiPricingHtml(options: StaticFetchOptions = {}): Promise<PriceData[]> {
+  return parseKimiPricingHtml(await fetchKimiHtml(PRICING_PAGE, 'zh-CN,zh;q=0.9', options));
+}
+
+/** Raw HTML of one official Kimi docs page, with the retry policy above. */
+export async function fetchKimiHtml(url: string, language: string, options: StaticFetchOptions = {}): Promise<string> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const sleep = options.sleep ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
   const timeoutMs = options.timeoutMs ?? resolveFetchTimeoutMs();
@@ -303,7 +329,7 @@ export async function fetchKimiPricingHtml(options: StaticFetchOptions = {}): Pr
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     let html: string;
     try {
-      html = await fetchKimiPricingPage(fetchImpl, timeoutMs);
+      html = await fetchKimiPricingPage(fetchImpl, timeoutMs, url, language);
     } catch (error) {
       if (!(error instanceof RetryableFetchError)) throw error;
       failures.push(`attempt ${attempt}: ${error.message}`);
@@ -313,7 +339,7 @@ export async function fetchKimiPricingHtml(options: StaticFetchOptions = {}): Pr
       await sleep(delay);
       continue;
     }
-    return parseKimiPricingHtml(html);
+    return html;
   }
   throw new Error(`Kimi pricing page fetch failed after ${attempts} attempts (timeout ${timeoutMs}ms each): ${failures.join('; ')}`);
 }

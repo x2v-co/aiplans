@@ -72,9 +72,21 @@ export function parseOpenAIReview(input: Record<OpenAIReviewSource, string>): Re
   add('enterprise','chatgpt-enterprise','ChatGPT Enterprise',null,['Enterprise security, administration and contracted support.'],'Contact sales for a quote. No public minimum price or seat commitment is asserted.',null,true);
   requireMatch(source.rename,/Team plan has been renamed to ChatGPT Business|renamed ChatGPT Team to ChatGPT Business|ChatGPT Team was renamed to ChatGPT Business on August 29, 2025/i,'Team rename');
   add('rename','chatgpt-team','ChatGPT Team (renamed to Business)',null,[], '[aiplans:legacy ends=2025-08-29] Historical name of ChatGPT Business, not a separate purchasable tier. See ChatGPT Business Standard and Premium.',null,false,true);
-  const legacy = excerpt(source.pro,'Changes to existing Pro 200 subscriptions','Keeping your allowance');
-  requireMatch(legacy,/October 29, 2026/,'legacy Pro allowance deadline');
-  add('pro','chatgpt-pro','ChatGPT Pro 200 (legacy allowance)',rows.find(r=>r.slug==='chatgpt-pro-200')!.price,[], `[aiplans:legacy ends=2026-10-29] ${legacy}`);
+  const pro200 = rows.find(r=>r.slug==='chatgpt-pro-200')!.price;
+  // The legacy row keeps its marker either way, so --apply keeps legacy_ends_on
+  // and the old chatgpt-pro row never resurfaces as a second current Pro 200.
+  if (source.pro.includes('Changes to existing Pro 200 subscriptions')) {
+    const legacy = excerpt(source.pro,'Changes to existing Pro 200 subscriptions','Keeping your allowance');
+    requireMatch(legacy,/October 29, 2026/,'legacy Pro allowance deadline');
+    add('pro','chatgpt-pro','ChatGPT Pro 200 (legacy allowance)',pro200,[], `[aiplans:legacy ends=2026-10-29] ${legacy}`);
+  } else {
+    // 2026-11: the article dropped that section because the planned reduction was
+    // canceled. Accept only that explicit statement; any other rewrite fails closed.
+    const canceled = requireMatch(source.pro,/What happens to my existing Pro 200 subscription\?\s*(The reduction announced in our September 29 email is canceled\..{0,600}?(?:stays|remains) at \$(\d+)\/month\.)/i,'existing Pro 200 allowance status (legacy section removed)');
+    if (money(canceled[2]) !== pro200) throw new Error('OpenAI source changed: existing Pro 200 price differs from the Pro 200 table row');
+    add('pro','chatgpt-pro','ChatGPT Pro 200 (legacy allowance)',pro200,[],
+      `[aiplans:legacy ends=2026-10-29] Historical alias of ChatGPT Pro 200, not a separate purchasable tier: the allowance reduction for existing Pro 200 subscriptions (planned for October 29, 2026) was canceled, so existing and new Pro 200 subscriptions now share the same allowance and price. Official: ${canceled[1]}`);
+  }
   return rows;
 }
 

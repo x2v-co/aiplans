@@ -79,3 +79,13 @@ the result. It depends on the local Codex host and production SSH access being
 available. It reports meaningful changes or failures and stays quiet otherwise.
 The first scheduled execution still needs observation; an installed schedule is
 not proof of a successful unattended renewal.
+
+## 2026-11-04: Pro article no longer has the legacy section
+
+help.openai.com article 9793128 dropped "Changes to existing Pro 200 subscriptions"
+after OpenAI canceled the allowance reduction announced on September 29. The review
+parser now accepts either that section (old text) or the explicit cancellation
+statement ("The reduction announced in our September 29 email is canceled … stays at
+$200/month"), and fails closed on anything else. `chatgpt-pro` stays a historical
+alias of Pro 200 with `[aiplans:legacy ends=2026-10-29]`, so `--apply` keeps
+`legacy_ends_on` and the row never shows as a second current Pro 200.
