@@ -19,6 +19,8 @@ const RESEARCH_PATHS = [
   '/zh/guides/cursor-x-subscription-pricing',
   '/en/guides/codex-pro-200-quota-benchmark',
   '/zh/guides/codex-pro-200-quota-benchmark',
+  '/en/guides/claude-pro-opus-5-5-quota',
+  '/zh/guides/claude-pro-opus-5-5-quota',
   '/en/reports/api-price-index',
   '/zh/reports/api-price-index',
   '/en/api-pricing',

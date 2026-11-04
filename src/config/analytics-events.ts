@@ -40,6 +40,7 @@ export const FUNNEL_GUIDE_SLUGS = [
   'openai-api-pricing',
   'cursor-x-subscription-pricing',
   'codex-pro-200-quota-benchmark',
+  'claude-pro-opus-5-5-quota',
 ] as const;
 
 export type FunnelGuideSlug = (typeof FUNNEL_GUIDE_SLUGS)[number];

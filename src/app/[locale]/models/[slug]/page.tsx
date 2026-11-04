@@ -6,6 +6,8 @@ import { localizedModelDescription } from '@/lib/model-description-locale';
 import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
 import { CodexModelMeasurements } from '@/components/codex-model-measurements';
 import { isCodexQuotaModel } from '@/lib/codex-pro200';
+import { ClaudeProQuota } from '@/components/claude-pro-quota';
+import { isClaudeProQuotaModel } from '@/lib/claude-pro-opus55';
 import { LimitedTimeOfferMark } from '@/components/limited-time-offer';
 import { effectivePrice } from '@/lib/effective-price';
 import { billingRedirectNote } from '@/lib/billing-redirect';
@@ -671,6 +673,7 @@ export default async function ModelPage({
         )}
 
         {isCodexQuotaModel(product.slug) && <CodexModelMeasurements locale={locale} modelSlug={product.slug} />}
+        {isClaudeProQuotaModel(product.slug) && <ClaudeProQuota locale={locale} />}
         <ModelBenchmarkPanel scores={benchmarkScores} locale={locale} />
 
         <CodingAgentModelSection rows={codingAgentRows} locale={locale} />

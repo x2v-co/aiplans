@@ -153,6 +153,7 @@ test('every guide has reviewed sources, at least three FAQs and complete bilingu
     const guide = PRICING_GUIDES[slug];
     assert.ok(guide.sources && guide.sources.length >= 1, `missing sources for ${slug}`);
     const reviewedAt = slug === 'codex-pro-200-quota-benchmark' ? '2026-10-30'
+      : slug === 'claude-pro-opus-5-5-quota' ? '2026-11-04'
       : slug === 'claude-anthropic-pricing' ? '2026-10-18' : '2026-10-13';
     assert.equal(guide.reviewedAt, reviewedAt);
     assert.ok(guide.reviewedAt && Number.isFinite(Date.parse(guide.reviewedAt)));

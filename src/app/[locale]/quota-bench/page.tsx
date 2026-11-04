@@ -2,6 +2,8 @@ import SiteHeader from '@/components/SiteHeader';
 import { QuotaBenchResults } from '@/components/quota-bench-results';
 import { codexQuotaFaq, CODEX_QUOTA_DATE } from '@/lib/codex-pro200';
 import { buildMetadata, faqPage } from '@/lib/seo';
+import { ClaudeProQuota } from '@/components/claude-pro-quota';
+import { claudeProQuotaFaq } from '@/lib/claude-pro-opus55';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -18,13 +20,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function QuotaBenchPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const faq = codexQuotaFaq(locale);
-  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage([faq]) }} /><SiteHeader locale={locale} /><main className="container mx-auto max-w-5xl px-4 py-10">
+  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage([faq, claudeProQuotaFaq(locale)]) }} /><SiteHeader locale={locale} /><main className="container mx-auto max-w-5xl px-4 py-10">
     <h1 className="mb-6 text-3xl font-bold">{locale === 'zh' ? '额度实测与测量依据' : 'Quota measurements and evidence'}</h1>
     <QuotaBenchResults locale={locale} />
     <section className="mt-6 space-y-2 rounded-lg border p-4">
       <h2 className="font-semibold">{faq.question}</h2>
       <p className="text-sm">{faq.answer}</p>
     </section>
+    <div className="mt-6 rounded-lg border p-4"><ClaudeProQuota locale={locale} /></div>
     <details className="mt-6 space-y-2 rounded-lg border p-4" aria-label={locale === 'zh' ? '默认评测规则' : 'Default measurement policy'}>
       <summary className="cursor-pointer text-sm underline">{locale === 'zh' ? '所有可用周期，同轮实测' : 'Measure all available windows in the same run'}</summary>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">{locale === 'zh'
