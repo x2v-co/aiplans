@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, BarChart3, BookOpen, Bot, Film, GitCompare, DollarSign, Globe, HelpCircle, Music, Palette, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, BookOpen, Bot, Film, GitCompare, DollarSign, Globe, HelpCircle, Music, Palette, Scale, Sparkles } from "lucide-react";
 import SiteHeader from '@/components/SiteHeader';
 
 export type HotModel = {
@@ -161,12 +161,12 @@ export default function HomeView({
               </h2>
               <p className="mt-2 max-w-3xl text-zinc-600 dark:text-zinc-400">
                 {locale === 'zh'
-                  ? 'Agent、Coding、Token、Creative 都是套餐类别；视频、音乐、世界模型是模型类别。两条主轴分开对比。'
-                  : 'Agent, coding, token and creative are plan categories. Video, music and world models are model categories. The two axes stay separate.'}
+                  ? 'Agent、Coding、Token、Creative 都是套餐类别；视频、音乐、世界、决策模型是模型类别。两条主轴分开对比。'
+                  : 'Agent, coding, token and creative are plan categories. Video, music, world and decision models are model categories. The two axes stay separate.'}
               </p>
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 href: `/${locale}/agents`,
@@ -197,6 +197,12 @@ export default function HomeView({
                 icon: Globe,
                 title: locale === 'zh' ? '世界模型' : 'World Models',
                 body: locale === 'zh' ? 'Genie、Cosmos、World Labs 等交互世界与仿真模型。' : 'Interactive world and simulation models such as Genie, Cosmos and World Labs.',
+              },
+              {
+                href: `/${locale}/decision-models`,
+                icon: Scale,
+                title: locale === 'zh' ? '决策模型' : 'Decision Models',
+                body: locale === 'zh' ? 'ScaleDown、SubQ Snap、Jev 等决策模型，对比每百万输入与每百万任务价格。' : 'Decision models such as ScaleDown, SubQ Snap and Jev, compared by $/M input and $/1M tasks.',
               },
             ].map((item) => {
               const Icon = item.icon;

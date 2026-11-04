@@ -28,6 +28,7 @@ const STATIC_PAGE_DEFS: Array<{ slug: string; kind?: AiCatalogKind; title: strin
   { slug: 'music-models', kind: 'music-model', title: 'AI Music Models', zhTitle: 'AI 音乐模型', baseKeywords: ['music', 'audio'] },
   { slug: 'embedding-models', kind: 'embedding-model', title: 'Embedding Models', zhTitle: '嵌入模型', baseKeywords: ['embedding', 'text embedding', '嵌入'] },
   { slug: 'world-models', kind: 'world-model', title: 'AI World Models', zhTitle: 'AI 世界模型', baseKeywords: ['world model', 'simulation'] },
+  { slug: 'decision-models', kind: 'decision-model', title: 'AI Decision Models', zhTitle: 'AI 决策模型', baseKeywords: ['decision model', '决策模型'] },
 ];
 
 const STATIC_PAGES = STATIC_PAGE_DEFS.map((page) => ({
