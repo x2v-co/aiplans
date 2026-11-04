@@ -154,7 +154,8 @@ test('every guide has reviewed sources, at least three FAQs and complete bilingu
     assert.ok(guide.sources && guide.sources.length >= 1, `missing sources for ${slug}`);
     const reviewedAt = slug === 'codex-pro-200-quota-benchmark' ? '2026-10-30'
       : slug === 'claude-pro-opus-5-5-quota' ? '2026-11-04'
-      : slug === 'claude-anthropic-pricing' ? '2026-10-18' : '2026-10-13';
+      : slug === 'claude-anthropic-pricing' ? '2026-10-18'
+      : slug === 'cursor-x-subscription-pricing' ? '2026-11-04' : '2026-10-13';
     assert.equal(guide.reviewedAt, reviewedAt);
     assert.ok(guide.reviewedAt && Number.isFinite(Date.parse(guide.reviewedAt)));
     assert.ok(guide.faqs && guide.faqs.length >= 3, `missing FAQs for ${slug}`);
@@ -307,4 +308,15 @@ test('Claude guide reflects subscriber API credits from the official doc', () =>
   assert.doesNotMatch(text, /订阅通常不包含通用 API 额度|does not normally include general-purpose API credits/);
   for (const needle of ['100 美元', '200 美元', '500 美元', '$100', '$200', '$500', 'Claude Code', '不滚存', 'no rollover']) assert.ok(text.includes(needle), needle);
   assert.ok(guide.sources?.some(s => s.url === 'https://platform.claude.com/docs/en/about-claude/api-credits-for-subscribers'));
+});
+
+test('cursor-x-subscription guide keeps legacy plans and shows annual prices and quota math', () => {
+  const g = PRICING_GUIDES['cursor-x-subscription-pricing'];
+  const plans = (g.planTable ?? []).map((r) => r.plan.en);
+  for (const n of ['Pro', 'Pro+', 'Ultra']) assert.ok(plans.includes(`Legacy Cursor ${n} (renewable)`));
+  const ultra = g.planTable?.find((r) => r.plan.en === 'X Subscription Ultra');
+  assert.equal(ultra?.monthlyPrice.en, '$200 ($2,000/yr ≈ $166.67/mo)');
+  const math = g.sections?.find((s) => s.heading.en.startsWith('Quota math'));
+  assert.ok(math?.body.en.includes('Ultra 50 ÷ $200 = 0.25'));
+  assert.ok(math?.body.zh.includes('未公布基准池的绝对大小'));
 });

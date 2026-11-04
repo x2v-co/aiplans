@@ -155,6 +155,8 @@
     "seed:mimo-2026-10-20:apply": "tsx scripts/seed-mimo-2026-10-20.ts --apply",
     "seed:vercel-mercury-3-2026-10-20": "tsx scripts/seed-vercel-mercury-3-2026-10-20.ts",
     "seed:vercel-mercury-3-2026-10-20:apply": "tsx scripts/seed-vercel-mercury-3-2026-10-20.ts --apply",
+    "seed:x-subscription-annual-2026-11-04": "tsx scripts/seed-x-subscription-annual-2026-11-04.ts",
+    "seed:x-subscription-annual-2026-11-04:apply": "tsx scripts/seed-x-subscription-annual-2026-11-04.ts --apply",
     "seed:deepseek-official-v41": "tsx scripts/seed-deepseek-official-v41-2026-10-22.ts",
     "seed:deepseek-official-v41:apply": "tsx scripts/seed-deepseek-official-v41-2026-10-22.ts --apply"
   },
