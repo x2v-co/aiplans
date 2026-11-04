@@ -186,3 +186,18 @@ test('ordinary locale-less pages still get the locale prefix next to report file
     assert.equal(response.headers.get('location'), `https://aiplans.dev/en${path}`, path);
   }
 });
+
+test('filtered catalog queries rewrite to the per-request route; plain URLs stay cached', async () => {
+  const filtered = await proxy(new NextRequest('https://aiplans.dev/en/models?promo=1', { headers: { 'x-forwarded-proto': 'https' } }));
+  assert.match(filtered.headers.get('x-middleware-rewrite') ?? '', /\/en\/filtered\/models\?promo=1$/);
+
+  const plain = await proxy(new NextRequest('https://aiplans.dev/en/models?utm_source=gsc', { headers: { 'x-forwarded-proto': 'https' } }));
+  assert.equal(plain.headers.get('x-middleware-rewrite'), null);
+  assert.equal(plain.status, 200);
+});
+
+test('direct requests to the internal filtered route 301 to the public URL', async () => {
+  const response = await proxy(new NextRequest('https://aiplans.dev/zh/filtered/plans?kind=coding', { headers: { 'x-forwarded-proto': 'https' } }));
+  assert.equal(response.status, 301);
+  assert.match(response.headers.get('location') ?? '', /\/zh\/plans\?kind=coding$/);
+});

@@ -1,6 +1,7 @@
 import { isInfrastructurePath } from '@/lib/route-locale';
 import { planRedirectRequest, resolvePlanRedirect, withPlanRedirectCatalogTimeout, type PlanRedirectRow } from '@/lib/provider-redirects';
 import { legacySlugRedirect } from '@/lib/legacy-slug-redirects';
+import { filteredCatalogPath, publicPathForFilteredRoute } from '@/lib/catalog-query-routes';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -83,6 +84,21 @@ export function createProxy(
     }
 
     if (pathnameHasLocale) {
+      // /[locale]/filtered/... is an internal rewrite target only; never let it
+      // become a second public URL for the same content.
+      const publicPath = publicPathForFilteredRoute(pathname);
+      if (publicPath) {
+        const url = request.nextUrl.clone();
+        url.pathname = publicPath;
+        return NextResponse.redirect(url, 301);
+      }
+      // Catalog pages are cached (ISR); filtered query variants render per request.
+      const filteredPath = filteredCatalogPath(pathname, request.nextUrl.searchParams);
+      if (filteredPath) {
+        const url = request.nextUrl.clone();
+        url.pathname = filteredPath;
+        return NextResponse.rewrite(url);
+      }
       return NextResponse.next();
     }
 

@@ -125,12 +125,18 @@ test('promo toggle href adds and removes only the promo parameter', () => {
   );
 });
 
-test('offer pages stay dynamic and filtered lists opt out of indexing', () => {
-  const modelPage = readFileSync(new URL('../app/[locale]/models/[slug]/page.tsx', import.meta.url), 'utf8');
-  const modelList = readFileSync(new URL('../app/[locale]/models/page.tsx', import.meta.url), 'utf8');
-  const apiPricing = readFileSync(new URL('../app/[locale]/api-pricing/page.tsx', import.meta.url), 'utf8');
-  for (const source of [modelPage, modelList, apiPricing]) {
-    assert.match(source, /export const dynamic = 'force-dynamic'/);
+test('offer pages revalidate within minutes and filtered lists opt out of indexing', () => {
+  const read = (path: string) => readFileSync(new URL(`../app/[locale]/${path}`, import.meta.url), 'utf8');
+  const modelPage = read('models/[slug]/page.tsx');
+  const modelList = read('models/catalog-page.tsx');
+  const apiPricing = read('api-pricing/catalog-page.tsx');
+  // Promo prices end at a timestamp: cached pages must regenerate within 5 minutes,
+  // and the filtered (?promo=) variants render per request.
+  for (const path of ['models/[slug]/page.tsx', 'models/page.tsx', 'api-pricing/page.tsx']) {
+    assert.match(read(path), /export const revalidate = 300;/);
+  }
+  for (const path of ['filtered/models/page.tsx', 'filtered/api-pricing/page.tsx']) {
+    assert.match(read(path), /export const dynamic = 'force-dynamic'/);
   }
   assert.match(modelPage, /LimitedTimeOfferMark/);
   assert.match(modelList, /applyPromoFilter/);

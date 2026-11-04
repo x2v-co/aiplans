@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { isSupportedLocale } from '@/lib/route-locale';
 import '../globals.css';
@@ -223,7 +224,11 @@ async function LocaleLayoutContent({
         />
       </head>
       <body className="font-sans antialiased">
-        <GoogleAnalytics />
+        {/* useSearchParams() needs a Suspense boundary, or a cached (ISR) page
+            would bail out to client rendering up to the nearest boundary. */}
+        <Suspense fallback={null}>
+          <GoogleAnalytics />
+        </Suspense>
         <LocaleClientWrapper locale={locale} messages={messages}>
           {children}
           <Footer locale={locale} />

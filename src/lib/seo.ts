@@ -152,8 +152,9 @@ interface OfferInput {
  *
  * Google's Product snippet report flags offers without it. We never know the
  * vendor's real expiry, so this is a short rolling window rather than a claim
- * about the vendor's terms: every page that emits offers is force-dynamic, so
- * the date is recomputed on each request and is always in the future. Do not
+ * about the vendor's terms: every page that emits offers is either rendered per
+ * request or ISR with a 5-minute revalidate, so the date is recomputed at
+ * least every few minutes and is always in the future. Do not
  * stretch it — a long window would assert the price holds for longer than we
  * can vouch for. Returns an ISO 8601 date (YYYY-MM-DD).
  */
