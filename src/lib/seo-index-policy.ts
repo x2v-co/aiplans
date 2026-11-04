@@ -45,9 +45,29 @@ export function selectSeoModels<T extends SeoIndexFacts>(rows: T[], applyPolicy 
     .filter(row => !isGluedModelSlug(row.slug) && (!applyPolicy || !isLowValueModel(row)));
 }
 
+/**
+ * Older series members that selectIndexablePlanComparisons collapses into the
+ * newest release, but that carried real Search demand on their own name: the
+ * 2026-10-05..10-29 GSC page export shows 12-44 impressions each while they
+ * were indexable, and each lists 6-8 priced plans from several vendors. Keep the
+ * list short and evidence-based; every entry still has to pass the same
+ * quality bar (active LLM, >= 2 plans, >= 2 priced subscriptions from >= 2
+ * vendors) as any other comparison page.
+ */
+export const SEO_COMPARISON_ALLOWLIST: ReadonlySet<string> = new Set([
+  'gemini-3-pro',
+  'gemini-2.5-pro',
+  'gemini-3.1-pro',
+  'gemini-nano-banana-2.1',
+]);
+
 export function selectSeoComparisons<T extends SeoIndexFacts>(rows: T[], applyPolicy = true): T[] {
   const candidates = rows.filter(row => row.active && row.is_llm);
-  return selectIndexablePlanComparisons(candidates)
+  const selected = selectIndexablePlanComparisons(candidates);
+  const seen = new Set(selected.map(row => row.slug));
+  const allowlisted = candidates.filter(row => SEO_COMPARISON_ALLOWLIST.has(row.slug)
+    && !seen.has(row.slug) && row.plan_count >= 2);
+  return [...selected, ...allowlisted]
     .filter(row => !isGluedModelSlug(row.slug) && (!applyPolicy || !isLowValuePlanComparison(row)));
 }
 

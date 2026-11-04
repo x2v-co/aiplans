@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { buildMetadata } from './seo';
 import {
   isLowValueModel, isLowValuePlanComparison, modelShouldIndex,
-  selectSeoModels, selectSeoComparisons, type SeoIndexFacts,
+  selectSeoModels, selectSeoComparisons, SEO_COMPARISON_ALLOWLIST, type SeoIndexFacts,
 } from './seo-index-policy';
 
 export const facts = (overrides: Partial<SeoIndexFacts> = {}): SeoIndexFacts => ({
@@ -63,6 +63,27 @@ test('retired, glued slugs and old/operational comparison variants stay excluded
   assert.deepEqual(selectSeoComparisons(rows).map(row => row.slug), ['claude-opus-4.8']);
   assert.equal(modelShouldIndex(rows[3]), false);
   assert.ok(selectSeoComparisons(rows).every(row => !isLowValuePlanComparison(row)));
+});
+
+test('allowlisted older comparisons with Search demand stay indexable, but only above the quality bar', () => {
+  const good = { plan_count: 6, priced_subscription_count: 6, priced_subscription_provider_count: 3 };
+  const rows = [
+    facts({ ...good, slug: 'gemini-3-pro', released_at: '2025-11-18' }),
+    facts({ ...good, slug: 'gemini-3.5-pro', released_at: '2026-06-01' }),
+    facts({ ...good, slug: 'claude-opus-4.5', released_at: '2025-11-01' }),
+    facts({ ...good, slug: 'claude-opus-4.8', released_at: '2026-08-01' }),
+  ];
+  assert.ok(SEO_COMPARISON_ALLOWLIST.has('gemini-3-pro'));
+  assert.deepEqual(selectSeoComparisons(rows).map(row => row.slug).sort(),
+    ['claude-opus-4.8', 'gemini-3-pro', 'gemini-3.5-pro']);
+  // Same allowlisted slug with one priced vendor, or no longer active, is excluded.
+  for (const row of [
+    facts({ ...good, slug: 'gemini-3-pro', priced_subscription_provider_count: 1 }),
+    facts({ ...good, slug: 'gemini-3-pro', active: false }),
+    facts({ ...good, slug: 'gemini-3-pro', plan_count: 1 }),
+  ]) assert.deepEqual(selectSeoComparisons([row, rows[1]]).map(r => r.slug), ['gemini-3.5-pro']);
+  // A report run without the policy keeps the old candidate set plus the allowlist.
+  assert.equal(selectSeoComparisons(rows, false).filter(r => r.slug === 'gemini-3-pro').length, 1);
 });
 
 test('metadata and sitemap use the shared query and policy, without a second SQL eligibility implementation', () => {

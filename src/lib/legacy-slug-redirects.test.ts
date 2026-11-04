@@ -17,18 +17,18 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/en/models/gpt-6-luna', '/en/models/openai-gpt-6-luna'],
   ['/en/models/gpt-6-astra', '/en/models/openai-gpt-6-astra'],
   ['/zh/models/step-3.7-flash', '/zh/models/stepfun-step-3-7-flash'],
-  ['/en/compare/plans/claude-sonnet-5', '/en/compare/plans/claude-sonnet-4.5'],
-  ['/en/compare/plans/claude-opus-4.6', '/en/compare/plans/claude-opus-4.5'],
+  ['/en/compare/plans/claude-sonnet-5', '/en/models/anthropic-claude-sonnet-5'],
+  ['/en/compare/plans/claude-opus-4.6', '/en/models/anthropic-claude-opus-4-6'],
   ['/zh/models/glm-4.5', '/zh/models/z-ai-glm-4-5'],
   ['/en/models/qwen3.8-27b', '/en/models/qwen-qwen3-8-27b'],
-  ['/en/compare/plans/claude-haiku-4-5', '/en/compare/plans/claude-haiku-5.5'],
+  ['/en/compare/plans/claude-haiku-4-5', '/en/models/anthropic-claude-haiku-4-5'],
   ['/en/compare/plans/qwen-2.5-72b', '/en/models/qwen-qwen-2-5-72b-instruct'],
   ['/en/models/claude-sonnet-4.6-batch', '/en/models/anthropic-claude-sonnet-4-6-batch'],
   ['/en/models/minimax-01', '/en/models/minimax-minimax-01'],
   ['/en/models/kimi-k2.5', '/en/models/moonshotai-kimi-k2-5'],
   ['/zh/models/claude-opus-4.6', '/zh/models/anthropic-claude-opus-4-6'],
-  ['/en/compare/plans/claude-opus-4.8', '/en/compare/plans/claude-opus-4.5'],
-  ['/en/compare/plans/claude-opus-5-batch', '/en/compare/plans/claude-opus-4.5'],
+  ['/en/compare/plans/claude-opus-4.8', '/en/models/anthropic-claude-opus-4-8'],
+  ['/en/compare/plans/claude-opus-5-batch', '/en/models/anthropic-claude-opus-5-batch'],
   ['/en/compare/plans/glm-4.6v', '/en/compare/plans/glm-5.3'],
   ['/en/compare/plans/glm-4.7-flash', '/en/compare/plans/glm-5.3-flash'],
   ['/en/compare/plans/minimax-m2-her', '/en/compare/plans/minimax-minimax-m2-her'],
@@ -37,7 +37,7 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/zh/compare/plans/qwen3-14b', '/zh/models/qwen-qwen3-14b'],
   ['/zh/models/claude-opus-4.7', '/zh/models/anthropic-claude-opus-4-7'],
   ['/en/compare/plans/claude-fable-5.1-batch', '/en/models/anthropic-claude-fable-5-1-batch'],
-  ['/en/compare/plans/seed-2.1-turbo', '/en/compare/plans/doubao-seed-2.1-turbo'],
+  ['/en/compare/plans/seed-2.1-turbo', '/en/models/doubao-seed-2.1-turbo'],
   ['/en/compare/plans/glm-5', '/en/compare/plans/glm-5.3'],
   // Backfilled 2026-10-29 from the Search Console page export. These are the
   // highest-impression rows that were still returning 404.
@@ -47,14 +47,14 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/en/models/gpt-4-turbo', '/en/models/openai-gpt-4-turbo'],
   ['/en/models/claude-opus-4.6-batch', '/en/models/anthropic-claude-opus-4-6-batch'],
   ['/en/models/claude-sonnet-4.6', '/en/models/anthropic-claude-sonnet-4-6'],
-  ['/en/compare/plans/claude-sonnet-4.6', '/en/compare/plans/claude-sonnet-4.5'],
+  ['/en/compare/plans/claude-sonnet-4.6', '/en/models/anthropic-claude-sonnet-4-6'],
   ['/en/models/glm-4.5-air', '/en/models/z-ai-glm-4-5-air'],
   ['/en/compare/plans/glm-4.5-air', '/en/compare/plans/glm-5.3'],
   ['/zh/models/glm-5.2-(free)', '/zh/models/z-ai-glm-5-2-free'],
   ['/en/models/o3', '/en/models/openai-o3'],
   ['/en/models/qwen3.6-27b', '/en/models/qwen-qwen3-6-27b'],
   ['/en/models/grok-4.20', '/en/models/x-ai-grok-4-20'],
-  ['/en/compare/plans/gpt-5.2-pro', '/en/compare/plans/gpt-5.4-pro'],
+  ['/en/compare/plans/gpt-5.2-pro', '/en/models/openai-gpt-5-2-pro'],
   // Bundle 2: matched against the full /api/products catalog, not the prefix.
   ['/en/models/gemma-3-27b', '/en/models/google-gemini-gemma-3-27b-it'],
   ['/en/models/gemma-4-26b-a4b-(free)', '/en/models/google-gemini-gemma-4-26b-a4b-it-free'],
@@ -134,14 +134,24 @@ test('the redirect table does not chain and every target is a different slug', (
   }
 });
 
-// /compare/plans pages in the live sitemap on 2026-10-29 (index, follow). The
+// /compare/plans pages in the live sitemap on 2026-11-04 (index, follow). The
 // old exact successors (moonshotai-kimi-k2, z-ai-glm-5, anthropic-claude-*)
 // are noindex because selectIndexablePlanComparisons keeps only the newest
-// member of a series; a 301 onto them dropped the old URL from Google.
+// member of a series; a 301 onto them dropped the old URL from Google. The
+// 10-29 targets claude-*-4.5/5.5, gpt-5.x, doubao-seed-2.1-turbo had become
+// noindex by 11-04 and were replaced by the /models successor.
 const INDEXABLE_COMPARE_TARGETS = new Set([
-  'claude-haiku-5.5', 'claude-opus-4.5', 'claude-sonnet-4.5', 'doubao-seed-2.1-turbo',
   'glm-5.3', 'glm-5.3-flash', 'kimi-k3', 'minimax-minimax-01', 'minimax-minimax-m2-her',
-  'openai-gpt-6-1-sol', 'gpt-5.3-codex', 'gpt-5.4-nano', 'gpt-5.4-pro', 'gpt-5.5', 'gpt-5.6-luna',
+  'openai-gpt-6-1-sol',
+]);
+// /models pages in the live sitemap on 2026-11-04 that compare URLs fall back to.
+const INDEXABLE_MODEL_FALLBACKS = new Set([
+  'anthropic-claude-opus-5-5', 'anthropic-claude-opus-5-batch', 'anthropic-claude-opus-4-8',
+  'anthropic-claude-opus-4-7', 'anthropic-claude-opus-4-6', 'anthropic-claude-sonnet-5',
+  'anthropic-claude-sonnet-4-6-batch', 'anthropic-claude-haiku-4-5', 'doubao-seed-2.1-turbo',
+  'openai-gpt-5-2-pro', 'openai-gpt-5-5-pro', 'openai-gpt-5-6-luna-pro',
+  'anthropic-claude-opus-4-8-batch', 'anthropic-claude-opus-5', 'anthropic-claude-sonnet-4-6',
+  'gpt-5.4-nano', 'gpt-5.3-codex',
 ]);
 
 test('every compare redirect lands on an indexable sitemap page or the list', () => {
@@ -150,16 +160,30 @@ test('every compare redirect lands on an indexable sitemap page or the list', ()
     assert.ok(INDEXABLE_COMPARE_TARGETS.has(target.compare), `${from} -> ${target.compare} is not indexable`);
   }
   for (const [from, target] of Object.entries(LEGACY_COMPARE_ONLY_SLUGS)) {
-    assert.ok(INDEXABLE_COMPARE_TARGETS.has(target), `${from} -> ${target} is not indexable`);
+    if (target.compare) assert.ok(INDEXABLE_COMPARE_TARGETS.has(target.compare), `${from} -> ${target.compare} is not indexable`);
+    else assert.ok(target.models && INDEXABLE_MODEL_FALLBACKS.has(target.models), `${from} -> ${target.models} is not indexable`);
+  }
+});
+
+test('compare URLs whose family lost its indexable comparison fall back to an indexable model page', () => {
+  const fallbacks = [
+    ...Object.entries(LEGACY_MODEL_SLUGS).filter(([, t]) => !t.compare && t.models && INDEXABLE_MODEL_FALLBACKS.has(t.models)),
+    ...Object.entries(LEGACY_COMPARE_ONLY_SLUGS).filter(([, t]) => !t.compare),
+  ];
+  assert.ok(fallbacks.length >= 17, String(fallbacks.length));
+  for (const [from, target] of fallbacks) {
+    assert.equal(legacySlugRedirect(`/en/compare/plans/${from}`), `/en/models/${target.models}`, from);
+    assert.equal(legacySlugRedirect(`/en/models/${target.models}`), null, `${target.models} must not redirect again`);
   }
 });
 
 test('compare-only backfills leave the live /models page untouched', () => {
   for (const [from, target] of Object.entries(LEGACY_COMPARE_ONLY_SLUGS)) {
     assert.equal(Object.hasOwn(LEGACY_MODEL_SLUGS, from), false, from);
-    assert.notEqual(target, from);
-    assert.equal(legacySlugRedirect(`/en/compare/plans/${from}`), `/en/compare/plans/${target}`, from);
-    assert.equal(legacySlugRedirect(`/zh/compare/plans/${from}`), `/zh/compare/plans/${target}`, from);
+    const to = target.compare ? `compare/plans/${target.compare}` : `models/${target.models}`;
+    assert.notEqual(target.compare ?? target.models, from);
+    assert.equal(legacySlugRedirect(`/en/compare/plans/${from}`), `/en/${to}`, from);
+    assert.equal(legacySlugRedirect(`/zh/compare/plans/${from}`), `/zh/${to}`, from);
     assert.equal(legacySlugRedirect(`/en/models/${from}`), null, `${from} /models must stay live`);
   }
 });
@@ -172,14 +196,14 @@ test('the 18 impressed compare URLs that hit noindex now 301 to indexable pages 
     ['/en/compare/plans/glm-5glm-5.1', '/en/compare/plans/glm-5.3'],
     ['/en/compare/plans/glm-5', '/en/compare/plans/glm-5.3'],
     ['/zh/compare/plans/kimi-k2', '/zh/compare/plans/kimi-k3'],
-    ['/en/compare/plans/claude-opus-4.6', '/en/compare/plans/claude-opus-4.5'],
-    ['/en/compare/plans/claude-sonnet-5', '/en/compare/plans/claude-sonnet-4.5'],
-    ['/en/compare/plans/claude-opus-4.8', '/en/compare/plans/claude-opus-4.5'],
+    ['/en/compare/plans/claude-opus-4.6', '/en/models/anthropic-claude-opus-4-6'],
+    ['/en/compare/plans/claude-sonnet-5', '/en/models/anthropic-claude-sonnet-5'],
+    ['/en/compare/plans/claude-opus-4.8', '/en/models/anthropic-claude-opus-4-8'],
     ['/en/compare/plans/glm-4.7-flash', '/en/compare/plans/glm-5.3-flash'],
     ['/en/compare/plans/glm-4.6v', '/en/compare/plans/glm-5.3'],
-    ['/en/compare/plans/claude-opus-5-batch', '/en/compare/plans/claude-opus-4.5'],
-    ['/en/compare/plans/claude-opus-4.7', '/en/compare/plans/claude-opus-4.5'],
-    ['/en/compare/plans/claude-haiku-4-5', '/en/compare/plans/claude-haiku-5.5'],
+    ['/en/compare/plans/claude-opus-5-batch', '/en/models/anthropic-claude-opus-5-batch'],
+    ['/en/compare/plans/claude-opus-4.7', '/en/models/anthropic-claude-opus-4-7'],
+    ['/en/compare/plans/claude-haiku-4-5', '/en/models/anthropic-claude-haiku-4-5'],
     ['/zh/compare/plans/qwen3-14b', '/zh/models/qwen-qwen3-14b'],
     ['/zh/compare/plans/kimi-k2.5', '/zh/compare/plans/kimi-k3'],
     ['/en/compare/plans/qwen3.5-35b-a3b', '/en/models/qwen-qwen3-5-35b-a3b'],
