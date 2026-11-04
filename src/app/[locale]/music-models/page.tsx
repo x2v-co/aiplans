@@ -3,6 +3,17 @@ import VerticalLandingPage from '@/components/vertical-landing-page';
 import { buildMetadata, breadcrumbList, SITE_URL, type Locale } from '@/lib/seo';
 import { getVerticalModelCatalog } from '@/lib/vertical-models';
 
+// ISR like the catalog pages in #307: without these exports the page sits
+// under the dynamic [locale] segment with no generateStaticParams, so Next
+// rendered it on every request and sent Cache-Control: private, no-store.
+// It reads no cookies, request headers or query string, so one cached copy per
+// locale is safe; it regenerates in the background at most every 5 minutes.
+export const revalidate = 300;
+// Empty list: nothing is prerendered at build (CI builds without a database).
+export function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   return buildMetadata({
