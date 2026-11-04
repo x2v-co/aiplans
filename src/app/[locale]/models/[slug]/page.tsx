@@ -733,7 +733,9 @@ export default async function ModelPage({
                     {formatPrice(officialChannel.output_price_per_1m, channelCurrency(officialChannel), locale)}
                     <span className="text-sm font-normal text-zinc-500">/1M output</span>
                   </div>
-                  {officialChannel.providers?.access_from_china ? (
+                  {officialChannel.providers?.access_from_china == null ? (
+                    <Badge variant="outline" className="mt-2">{isZh ? '中国可用性未知' : 'China availability unknown'}</Badge>
+                  ) : officialChannel.providers.access_from_china ? (
                     <Badge variant="outline" className="mt-2">🇨🇳 China Available</Badge>
                   ) : (
                     <Badge variant="outline" className="mt-2 bg-red-50 text-red-800">🚫 Not available in China</Badge>

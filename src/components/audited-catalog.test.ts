@@ -56,13 +56,13 @@ test('AuditedPricingFacts / NonLlm 渲染的 usageRates 与 token 价按币种�
   assert.match(html, /\$8<\/td>/);
 });
 
-test('静态目录里所有非 USD 条目（wan-video、seedance）显示 ¥', () => {
+test('static catalog preserves CNY and INR without currency conversion', () => {
   const nonUsd = AI_VERTICAL_CATALOG.filter(item => item.currency && item.currency !== 'USD');
-  assert.deepEqual(nonUsd.map(item => item.slug).sort(), ['seedance', 'wan-video']);
+  assert.deepEqual(nonUsd.map(item => item.slug).sort(), ['sarvam-prism', 'seedance', 'wan-video']);
   for (const item of nonUsd) {
     for (const locale of ['en', 'zh']) {
       const text = auditedPrice(item, locale);
-      assert.match(text, /^¥/, `${item.slug} ${locale}: ${text}`);
+      assert.match(text, item.currency === 'INR' ? /^₹/ : /^¥/, `${item.slug} ${locale}: ${text}`);
       assert.doesNotMatch(text, /\$/);
     }
   }

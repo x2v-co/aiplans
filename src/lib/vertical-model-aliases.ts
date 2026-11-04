@@ -54,7 +54,7 @@ export function benchmarkBaseSlug(slug: string): string | undefined {
 }
 
 /** Kinds whose detail route only serves audited catalog slugs (others 404). */
-export const CATALOG_ONLY_DETAIL_KINDS: AiCatalogKind[] = ['world-model', 'decision-model', 'voice-model', 'image-model'];
+export const CATALOG_ONLY_DETAIL_KINDS: AiCatalogKind[] = ['world-model', 'decision-model', 'voice-model', 'image-model', 'embedding-model'];
 
 /**
  * Whether a DB-only vertical slug gets its own 200 detail page. Mirrors the

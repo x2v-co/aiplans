@@ -114,6 +114,7 @@
     "videoModels": "视频模型",
     "musicModels": "音乐模型",
     "decisionModels": "决策模型",
+    "embeddingModels": "嵌入模型",
     "worldModels": "世界模型",
     "coupons": "优惠码",
     "calculator": "计算器",
@@ -459,6 +460,10 @@
   "modelPricing": {
     "introductoryPrice": "入门价截至 {date}（太平洋时间），之后 {input} / {output} 每百万 token"
   },
+  "embeddingModels": {
+    "title": "嵌入模型",
+    "description": "按输入模态比较官方嵌入 API 价格，标明核验日期与来源，并区分正式模型和已下线的预览模型。"
+  },
   "decisionModels": {
     "title": "决策模型",
     "description": "ScaleDown、SubQ Snap 和 Jev：按每百万输入 token 与每百万次任务比较价格，未知值保留为待核验。"
@@ -472,6 +477,38 @@
     "window": "高峰：UTC 周一至周五 01:00–04:00 和 06:00–10:00，中国法定节假日除外。其余时间为低谷，周末和中国法定节假日全天为低谷（调休上班的周末也按低谷）。"
   },
   "nonLlmModels": {
+    "per_1k_characters": "千字符",
+    "text input through 2026-12-31": "文本输入 （截至 2026-12-31）",
+    "text input through 2026-12-31 (batch)": "文本输入 （截至 2026-12-31） （批处理）",
+    "audio output through 2026-12-31": "音频输出 （截至 2026-12-31）",
+    "audio output through 2026-12-31 (batch)": "音频输出 （截至 2026-12-31） （批处理）",
+    "text input from 2027-01-01": "文本输入 （自 2027-01-01 起）",
+    "text input from 2027-01-01 (batch)": "文本输入 （自 2027-01-01 起） （批处理）",
+    "audio output from 2027-01-01": "音频输出 （自 2027-01-01 起）",
+    "audio output from 2027-01-01 (batch)": "音频输出 （自 2027-01-01 起） （批处理）",
+    "audio input": "音频输入",
+    "text output": "文本输出",
+    "live transcription": "实时转录",
+    "text input": "文本输入",
+    "text input (batch)": "文本输入 （批处理）",
+    "image input": "图像输入",
+    "image input (batch)": "图像输入 （批处理）",
+    "audio input (batch)": "音频输入 （批处理）",
+    "video input": "视频输入",
+    "video input (batch)": "视频输入 （批处理）",
+    "grok-imagine-video 1.0 720p": "grok-imagine-video 1.0 720p",
+    "grok-imagine-video-1.5 480p": "grok-imagine-video-1.5 480p",
+    "grok-imagine-video-1.5 720p": "grok-imagine-video-1.5 720p",
+    "grok-imagine-video-1.5 1080p": "grok-imagine-video-1.5 1080p",
+    "per_generation": "首 / 次",
+    "Lyrics-to-song V9 / O2 / V8": "歌词生成歌曲 V9 / O2 / V8",
+    "Lyrics-to-song V7.6": "歌词生成歌曲 V7.6",
+    "Lyrics-to-song V9.5": "歌词生成歌曲 V9.5",
+    "BGM V9 / O2 / V8": "背景音乐 V9 / O2 / V8",
+    "BGM V7.6": "背景音乐 V7.6",
+    "BGM V9.5": "背景音乐 V9.5",
+    "Prompt-to-song V7.6 / O2 / V8 / V9": "提示词生成歌曲 V7.6 / O2 / V8 / V9",
+    "Prompt-to-song V9.5": "提示词生成歌曲 V9.5",
     "voiceTitle": "语音模型",
     "voiceDescription": "比较语音到语音、文本转语音和语音识别的价格、别名与生命周期日期。",
     "imageTitle": "图像生成与视觉",

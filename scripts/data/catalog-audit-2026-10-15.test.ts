@@ -122,7 +122,7 @@ test('only audited video/music values are numeric; range and approximation are e
 
 test('decision models distinguish free output from unknown task prices in en/zh', () => {
   const items = catalogForKind('decision-model');
-  assert.equal(items.length, 17); // 9 audited 2026-10-15 + 8 added from the 2026-11-03 intel audit
+  assert.equal(items.length, 18); // 9 audited 2026-10-15 + 8 from 2026-11-03 + Sarvam Prism on 2026-11-04
   assert.ok(!items.some(item => item.slug === 'decision-1'));
   for (const item of items) assert.equal(item.pricePer1MTasks, null);
   const snap = items.find(i => i.slug === 'subq-snap')!;

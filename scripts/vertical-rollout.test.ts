@@ -247,10 +247,13 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
   assert.deepEqual(
     seeded.output.split('\n').filter(line => /WARNING|CRITICAL/.test(line)),
     [
+      ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-04:apply' && item.kind !== 'music-model').map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-04:apply`),
       ...PERPLEXITY_DECIDER_CATALOG.map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:glimpse-decider:apply`),
       ...DECISION_MODELS_2026_11_03.map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-03-p1:apply`),
+      'WARNING music-model:mureka: DB drift: missing models row; run npm run seed:catalog-2026-11-04:apply',
     ],
   );
   const writes = f.writeCount();
@@ -620,4 +623,35 @@ test('Gemini pricing slug limits plan and usage changes and writes the October 3
   for (const row of usage) assert.equal(new Date(String(row.last_verified)).toISOString(), '2026-10-30T00:00:00.000Z');
   assert.equal(JSON.stringify(unrelated), before);
   assert.equal(JSON.stringify(f.data.plans.filter(row => row.id !== plan.id)), otherPlans);
+});
+
+
+test('embedding vertical serves audited models through localized routes, navigation, search and sitemap', () => {
+  const items = catalog.catalogForKind('embedding-model');
+  assert.deepEqual(items.map(item => item.slug), ['gemini-embedding-2', 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002']);
+  for (const suffix of ['page.tsx', '[slug]/page.tsx']) {
+    const route = readFileSync(new URL(`../src/app/[locale]/embedding-models/${suffix}`, import.meta.url), 'utf8');
+    assert.match(route, /embedding-model/);
+    assert.match(route, /buildMetadata/);
+    assert.match(route, /breadcrumbList/);
+  }
+  for (const locale of ['en', 'zh']) {
+    const messages = JSON.parse(readFileSync(new URL(`../messages/${locale}.json`, import.meta.url), 'utf8'));
+    assert.ok(messages.nav.embeddingModels);
+    assert.ok(messages.embeddingModels.title && messages.embeddingModels.description);
+  }
+  const files: [string, RegExp][] = [
+    ['src/components/SiteHeader.tsx', /embedding-models/],
+    ['src/lib/sitemap-static-paths.ts', /path: '\/embedding-models'/],
+    ['src/lib/build-sitemap.ts', /'embedding-model'/],
+    ['src/lib/vertical-models.ts', /'embedding-model': 'embedding'/],
+    ['src/lib/vertical-model-detail.ts', /'embedding-model': 'embedding'/],
+    ['src/lib/vertical-model-aliases.ts', /CATALOG_ONLY_DETAIL_KINDS.*'embedding-model'/],
+    ['src/app/api/search-index/route.ts', /slug: 'embedding-models', kind: 'embedding-model'/],
+  ];
+  for (const [path, expected] of files) assert.match(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'), expected, path);
+  for (const item of items) {
+    assert.equal(item.deferredDbSeed, true);
+    assert.equal(item.deferredDbSeedScript, 'seed:catalog-2026-11-04:apply');
+  }
 });

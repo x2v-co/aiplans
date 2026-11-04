@@ -114,6 +114,7 @@
     "videoModels": "Video Models",
     "musicModels": "Music Models",
     "decisionModels": "Decision Models",
+    "embeddingModels": "Embedding Models",
     "worldModels": "World Models",
     "coupons": "Coupons",
     "calculator": "Calculator",
@@ -459,6 +460,10 @@
   "modelPricing": {
     "introductoryPrice": "Introductory price until {date} (Pacific time), then {input} / {output} per 1M"
   },
+  "embeddingModels": {
+    "title": "Embedding Models",
+    "description": "Compare official embedding API prices by input modality. Dated sources distinguish active models from retired previews."
+  },
   "decisionModels": {
     "title": "Decision Models",
     "description": "ScaleDown, SubQ Snap and Jev: compare $/M input and $/1M tasks. Unknown values remain unverified."
@@ -472,6 +477,38 @@
     "window": "Peak: 01:00–04:00 & 06:00–10:00 UTC Mon–Fri, excluding Chinese public holidays. All other times are off-peak, including weekends and Chinese public holidays all day (weekend make-up workdays stay off-peak)."
   },
   "nonLlmModels": {
+    "per_1k_characters": "1K characters",
+    "text input through 2026-12-31": "Text input through 2026-12-31",
+    "text input through 2026-12-31 (batch)": "Text input through 2026-12-31 (batch)",
+    "audio output through 2026-12-31": "Audio output through 2026-12-31",
+    "audio output through 2026-12-31 (batch)": "Audio output through 2026-12-31 (batch)",
+    "text input from 2027-01-01": "Text input from 2027-01-01",
+    "text input from 2027-01-01 (batch)": "Text input from 2027-01-01 (batch)",
+    "audio output from 2027-01-01": "Audio output from 2027-01-01",
+    "audio output from 2027-01-01 (batch)": "Audio output from 2027-01-01 (batch)",
+    "audio input": "Audio input",
+    "text output": "Text output",
+    "live transcription": "Live transcription",
+    "text input": "Text input",
+    "text input (batch)": "Text input (batch)",
+    "image input": "Image input",
+    "image input (batch)": "Image input (batch)",
+    "audio input (batch)": "Audio input (batch)",
+    "video input": "Video input",
+    "video input (batch)": "Video input (batch)",
+    "grok-imagine-video 1.0 720p": "Grok-imagine-video 1.0 720p",
+    "grok-imagine-video-1.5 480p": "Grok-imagine-video-1.5 480p",
+    "grok-imagine-video-1.5 720p": "Grok-imagine-video-1.5 720p",
+    "grok-imagine-video-1.5 1080p": "Grok-imagine-video-1.5 1080p",
+    "per_generation": "Song / generation",
+    "Lyrics-to-song V9 / O2 / V8": "Lyrics-to-song V9 / O2 / V8",
+    "Lyrics-to-song V7.6": "Lyrics-to-song V7.6",
+    "Lyrics-to-song V9.5": "Lyrics-to-song V9.5",
+    "BGM V9 / O2 / V8": "BGM V9 / O2 / V8",
+    "BGM V7.6": "BGM V7.6",
+    "BGM V9.5": "BGM V9.5",
+    "Prompt-to-song V7.6 / O2 / V8 / V9": "Prompt-to-song V7.6 / O2 / V8 / V9",
+    "Prompt-to-song V9.5": "Prompt-to-song V9.5",
     "voiceTitle": "Voice Models",
     "voiceDescription": "Compare speech-to-speech, text-to-speech and ASR pricing, aliases and lifecycle dates.",
     "imageTitle": "Image Generation and Vision",

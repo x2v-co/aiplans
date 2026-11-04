@@ -69,6 +69,8 @@
     "seed:catalog-2026-11-03:apply": "tsx scripts/seed-catalog-2026-11-03.ts --apply",
     "seed:catalog-2026-11-03-kimi-headline": "tsx scripts/seed-catalog-2026-11-03-kimi-headline.ts",
     "seed:catalog-2026-11-03-kimi-headline:apply": "tsx scripts/seed-catalog-2026-11-03-kimi-headline.ts --apply",
+    "seed:catalog-2026-11-04": "tsx scripts/seed-catalog-2026-11-04.ts",
+    "seed:catalog-2026-11-04:apply": "tsx scripts/seed-catalog-2026-11-04.ts --apply",
     "seed:catalog-2026-11-03-p1": "tsx scripts/seed-catalog-2026-11-03-p1.ts",
     "seed:catalog-2026-11-03-p1:apply": "tsx scripts/seed-catalog-2026-11-03-p1.ts --apply",
     "seed:catalog-2026-11-03-fix": "tsx scripts/seed-catalog-2026-11-03-fix.ts",
