@@ -40,6 +40,7 @@ import { decodeSlugParam } from "@/lib/route-params";
 import SiteHeader from '@/components/SiteHeader';
 import { CouponBadge } from '@/components/coupon-badge';
 import { getActiveCouponMap } from '@/lib/coupons';
+import { XUltraQuota } from '@/components/x-ultra-quota';
 import { guideForProviderSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import {
   featureLooksEstimated,
@@ -244,6 +245,8 @@ export default async function ProviderPage({
             {guideSlug && <Link href={`/${locale}/guides/${guideSlug}`} className="text-blue-600 hover:underline">{PRICING_GUIDES[guideSlug].title[isZh ? 'zh' : 'en']}</Link>}
           </nav>
         </section>
+
+        {providerSlug === 'xai' && <XUltraQuota locale={locale} />}
 
         {comparisons.length > 0 && (
           <section aria-labelledby="provider-subscriptions-heading" className="mb-10 rounded-xl border p-6">
