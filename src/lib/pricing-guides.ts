@@ -473,14 +473,14 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       zh: '对比 Cursor 新 X Subscription 与旧套餐的月费、第三方模型额度、API 标价收费和永久切换规则，并用明确假设演算月度预算。',
     },
     intro: {
-      en: 'This is a subscription comparison, not a token price table. The X Subscription shares an included usage pool across Cursor and Grok, refreshed weekly. Premium and above make third-party models such as Claude and GPT available, but none of their usage is included: API list prices apply from the first use, paid from prepaid credit. Existing Cursor plans retain their included third-party usage until you switch. The monthly prices below exclude tax and were reviewed on 2026-10-13.',
-      zh: '本页比较订阅套餐，不是 token 价目表。The X Subscription 的内含用量池由 Cursor 与 Grok 共享，每周刷新。Premium 及以上可使用 Claude、GPT 等第三方模型，但这些用量不包含在套餐额度中：从首次使用起按 API 标价计费，从预付余额扣款。现有 Cursor 旧套餐的第三方内含用量会持续保留，直到你切换。下表月费不含税，核对日期为 2026-10-13。',
+      en: 'This is a subscription comparison, not a token price table. The X Subscription shares an included usage pool across Cursor and Grok, refreshed weekly. Premium and above make third-party models such as Claude and GPT available, but none of their usage is included: API list prices apply from the first use, paid from prepaid credit. Existing Cursor plans retain their included third-party usage until you switch. The monthly prices below exclude tax and were reviewed on 2026-11-04. Legacy Cursor plans are kept below because existing subscribers can still renew them.',
+      zh: '本页比较订阅套餐，不是 token 价目表。The X Subscription 的内含用量池由 Cursor 与 Grok 共享，每周刷新。Premium 及以上可使用 Claude、GPT 等第三方模型，但这些用量不包含在套餐额度中：从首次使用起按 API 标价计费，从预付余额扣款。现有 Cursor 旧套餐的第三方内含用量会持续保留，直到你切换。下表月费不含税，核对日期为 2026-11-04。旧 Cursor 套餐仍保留在下表，现有订阅者可继续续费。',
     },
     priceTable: false,
     // Used for related model links and dateModified only (priceTable: false).
     queryPatterns: ['%grok%', 'claude-%', 'gpt-%'],
     providerSlugs: ['xai'],
-    reviewedAt: '2026-10-13',
+    reviewedAt: '2026-11-04',
     planTable: [
       {
         plan: { en: 'X Subscription Free', zh: '新套餐 Free' },
@@ -490,66 +490,73 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       },
       {
         plan: { en: 'X Subscription Plus', zh: '新套餐 Plus' },
-        monthlyPrice: { en: '$8', zh: '$8' },
+        monthlyPrice: { en: '$8 ($80/yr ≈ $6.67/mo)', zh: '$8（年付 $80 ≈ $6.67/月）' },
         includedUsage: { en: 'Basic usage; Grok models only', zh: '基础用量；仅 Grok 模型' },
         thirdPartyModels: { en: 'Unavailable', zh: '不可用' },
       },
       {
         plan: { en: 'X Subscription Premium', zh: '新套餐 Premium' },
-        monthlyPrice: { en: '$30', zh: '$30' },
+        monthlyPrice: { en: '$30 ($300/yr ≈ $25/mo)', zh: '$30（年付 $300 ≈ $25/月）' },
         includedUsage: { en: '4× Plus; shared Cursor/Grok pool', zh: 'Plus 的 4 倍；Cursor/Grok 共享池' },
         thirdPartyModels: { en: 'No allowance; API list price from first use', zh: '无内含额度；首次使用起按 API 标价另付' },
       },
       {
         plan: { en: 'X Subscription Super', zh: '新套餐 Super' },
-        monthlyPrice: { en: '$100', zh: '$100' },
+        monthlyPrice: { en: '$100 ($1,000/yr ≈ $83.33/mo)', zh: '$100（年付 $1,000 ≈ $83.33/月）' },
         includedUsage: { en: '15× Plus; shared Cursor/Grok pool', zh: 'Plus 的 15 倍；Cursor/Grok 共享池' },
         thirdPartyModels: { en: 'No allowance; API list price from first use', zh: '无内含额度；首次使用起按 API 标价另付' },
       },
       {
         plan: { en: 'X Subscription Ultra', zh: '新套餐 Ultra' },
-        monthlyPrice: { en: '$200', zh: '$200' },
+        monthlyPrice: { en: '$200 ($2,000/yr ≈ $166.67/mo)', zh: '$200（年付 $2,000 ≈ $166.67/月）' },
         includedUsage: { en: '50× Plus; shared Cursor/Grok pool', zh: 'Plus 的 50 倍；Cursor/Grok 共享池' },
         thirdPartyModels: { en: 'No allowance; API list price from first use', zh: '无内含额度；首次使用起按 API 标价另付' },
       },
       {
         plan: { en: 'X Subscription Teams', zh: '新套餐 Teams' },
-        monthlyPrice: { en: '$30+ / user', zh: '$30 起 / 用户' },
-        includedUsage: { en: 'Check the selected seat tier', zh: '核对所选席位档位' },
+        monthlyPrice: { en: '$30 / $100 / $200 per seat', zh: '每席位 $30 / $100 / $200' },
+        includedUsage: { en: 'Same as matching Premium/Super/Ultra; per-seat weekly pool, not shared', zh: '与对应 Premium/Super/Ultra 相同；每席位独立周池，不共享' },
         thirdPartyModels: { en: 'Billed separately at API list price', zh: '按 API 标价另付' },
       },
       {
-        plan: { en: 'Legacy Cursor Pro', zh: '旧套餐 Cursor Pro' },
+        plan: { en: 'Legacy Cursor Pro (renewable)', zh: '旧套餐 Cursor Pro（可续费）' },
         monthlyPrice: { en: '$20', zh: '$20' },
         includedUsage: { en: '$20 of Other Models usage', zh: '$20 第三方（Other Models）用量' },
         thirdPartyModels: { en: 'Included allowance, then metered overage', zh: '先使用内含额度，超出另计' },
       },
       {
-        plan: { en: 'Legacy Cursor Pro+', zh: '旧套餐 Cursor Pro+' },
+        plan: { en: 'Legacy Cursor Pro+ (renewable)', zh: '旧套餐 Cursor Pro+（可续费）' },
         monthlyPrice: { en: '$60', zh: '$60' },
         includedUsage: { en: '$70 of Other Models usage', zh: '$70 第三方（Other Models）用量' },
         thirdPartyModels: { en: 'Included allowance, then metered overage', zh: '先使用内含额度，超出另计' },
       },
       {
-        plan: { en: 'Legacy Cursor Ultra', zh: '旧套餐 Cursor Ultra' },
+        plan: { en: 'Legacy Cursor Ultra (renewable)', zh: '旧套餐 Cursor Ultra（可续费）' },
         monthlyPrice: { en: '$200', zh: '$200' },
         includedUsage: { en: '$400 of Other Models usage', zh: '$400 第三方（Other Models）用量' },
         thirdPartyModels: { en: 'Included allowance, then metered overage', zh: '先使用内含额度，超出另计' },
       },
       {
-        plan: { en: 'Legacy Cursor Teams Standard', zh: '旧套餐 Cursor Teams Standard' },
+        plan: { en: 'Legacy Cursor Teams Standard (renewable)', zh: '旧套餐 Cursor Teams Standard（可续费）' },
         monthlyPrice: { en: '$40 / user', zh: '$40 / 用户' },
         includedUsage: { en: 'Check the current plan allowance', zh: '核对当前套餐额度' },
         thirdPartyModels: { en: 'Check the team’s billing terms', zh: '核对团队计费条款' },
       },
       {
-        plan: { en: 'Legacy Cursor Teams Premium', zh: '旧套餐 Cursor Teams Premium' },
+        plan: { en: 'Legacy Cursor Teams Premium (renewable)', zh: '旧套餐 Cursor Teams Premium（可续费）' },
         monthlyPrice: { en: '$120 / user', zh: '$120 / 用户' },
         includedUsage: { en: 'Check the current plan allowance', zh: '核对当前套餐额度' },
         thirdPartyModels: { en: 'Check the team’s billing terms', zh: '核对团队计费条款' },
       },
     ],
     sections: [
+      {
+        heading: { en: 'Quota math: how much usage per dollar?', zh: '额度换算：每美元能买多少用量？' },
+        body: {
+          en: 'Official facts (docs.x.ai and cursor.com, checked 2026-11-04): Plus is the Base pool; Premium 4×, Super 15×, Ultra 50×; the pool is weekly and shared by Grok models across Grok, Grok Bot and Cursor. xAI does not publish the absolute size of the Base pool in tokens, requests or dollars, so an API-dollar value per tier cannot be derived from official numbers and is not shown here. Derived (relative): pool per dollar = multiple ÷ monthly price. Plus 1 ÷ $8 = 0.125, Premium 4 ÷ $30 ≈ 0.133, Super 15 ÷ $100 = 0.15, Ultra 50 ÷ $200 = 0.25 Plus-pools per dollar. So Ultra buys 2× the pool per dollar of Plus and ≈1.67× that of Super. On annual billing (multiple × 12 ÷ annual price) Ultra rises to 0.30 and Plus to 0.15. Per week, Ultra equals 50 Plus pools ≈ 12.5 Premium pools ≈ 3.33 Super pools. Third-party models (Claude, GPT) never draw from this pool.',
+          zh: '官方事实（docs.x.ai 与 cursor.com，2026-11-04 核对）：Plus 为基准用量池；Premium 4 倍、Super 15 倍、Ultra 50 倍；用量池按周刷新，由 Grok 模型在 Grok、Grok Bot 与 Cursor 间共享。xAI 未公布基准池的绝对大小（token、请求数或美元），因此无法用官方数字推出各档的 API 等值金额，本页不给出。推导（相对值）：每美元用量 = 倍数 ÷ 月费。Plus 1 ÷ $8 = 0.125，Premium 4 ÷ $30 ≈ 0.133，Super 15 ÷ $100 = 0.15，Ultra 50 ÷ $200 = 0.25（单位：Plus 周池/美元）。Ultra 每美元用量是 Plus 的 2 倍、Super 的约 1.67 倍。年付时（倍数 × 12 ÷ 年费）Ultra 升至 0.30，Plus 升至 0.15。按周计，Ultra = 50 个 Plus 池 ≈ 12.5 个 Premium 池 ≈ 3.33 个 Super 池。第三方模型（Claude、GPT）不占用此用量池。',
+        },
+      },
       {
         heading: { en: 'Who should consider staying on legacy plans?', zh: '哪些用户应考虑保留旧套餐？' },
         body: {
@@ -608,6 +615,8 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       { label: { en: 'Cursor official X Subscription pricing', zh: 'Cursor 官方 X Subscription 价格' }, url: 'https://cursor.com/pricing' },
       { label: { en: 'Cursor official legacy pricing and plans', zh: 'Cursor 官方旧套餐与价格' }, url: 'https://cursor.com/help/account-and-billing/pricing.md' },
       { label: { en: 'Cursor official X Subscription switching rules', zh: 'Cursor 官方 X Subscription 切换规则' }, url: 'https://cursor.com/help/the-x-subscription/overview' },
+      { label: { en: 'xAI docs: X Subscription prices (monthly and annual)', zh: 'xAI 文档：X Subscription 月付与年付价格' }, url: 'https://docs.x.ai/x-subscription/pricing' },
+      { label: { en: 'xAI docs: weekly usage limits', zh: 'xAI 文档：每周用量限制' }, url: 'https://docs.x.ai/x-subscription/usage-limits' },
       { label: { en: 'xAI official X Subscription announcement', zh: 'xAI 官方 X Subscription 公告' }, url: 'https://x.ai/news/x-subscription' },
     ],
   },
