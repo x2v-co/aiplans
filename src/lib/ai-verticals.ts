@@ -58,6 +58,11 @@ export const AI_VERTICALS = {
     label: { en: 'World Models', zh: '世界模型' },
     sitemapPriority: 0.78,
   },
+  decisionModels: {
+    href: '/decision-models',
+    label: { en: 'Decision Models', zh: '决策模型' },
+    sitemapPriority: 0.78,
+  },
 } as const;
 
 export function verticalPageCopy(kind: AiVerticalKind, locale: string): VerticalPageCopy {
