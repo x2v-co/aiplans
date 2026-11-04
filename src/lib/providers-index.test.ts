@@ -36,7 +36,7 @@ test('providers list route, sitemap and search index discover /providers', () =>
   const sitemap = readFileSync(new URL('./sitemap-static-paths.ts', import.meta.url), 'utf8');
   const search = readFileSync(new URL('../app/api/search-index/route.ts', import.meta.url), 'utf8');
   const page = readFileSync(new URL('../app/[locale]/providers/page.tsx', import.meta.url), 'utf8');
-  const detail = readFileSync(new URL('../app/[locale]/providers/[slug]/page.tsx', import.meta.url), 'utf8');
+  const detail = readFileSync(new URL('../app/[locale]/providers/[slug]/catalog-page.tsx', import.meta.url), 'utf8');
   assert.ok(sitemap.includes("path: '/providers'"));
   assert.ok(search.includes("slug: 'providers'"));
   assert.match(page, /generateMetadata/);

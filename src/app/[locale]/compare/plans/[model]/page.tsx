@@ -12,8 +12,19 @@ import { decodeSlugParam } from "@/lib/route-params";
 import { formatModelName } from '@/lib/model-names';
 import { getVerifiedQuotaEstimates } from '@/lib/quota/data';
 
-// Metadata prices and plan counts are read on each request.
-export const dynamic = 'force-dynamic';
+// Catalog pages are ISR (aiplans GSC 2026-11-04): rendered on first request,
+// then served from the Next.js cache and regenerated in the background at most
+// every 5 minutes (Cache-Control: s-maxage=300, stale-while-revalidate). Before
+// this every crawler hit re-rendered the page and 16 concurrent requests queued
+// for 8–28 s on the 1.5-CPU app container. Scheduled prices therefore switch
+// within one revalidate window instead of on the exact request.
+export const revalidate = 300;
+// Empty list: nothing is prerendered at build (CI builds without a database);
+// every locale/slug is rendered on demand and then cached.
+export function generateStaticParams() {
+  return [];
+}
+
 
 /**
  * Server component. This page used to be a client component that fetched
