@@ -65,7 +65,7 @@ test('retired, glued slugs and old/operational comparison variants stay excluded
   assert.ok(selectSeoComparisons(rows).every(row => !isLowValuePlanComparison(row)));
 });
 
-test('allowlisted older comparisons with Search demand stay indexable, but only above the quality bar', () => {
+test('allowlisted older comparisons with Search demand stay indexable, bypassing only the vendor-count bar', () => {
   const good = { plan_count: 6, priced_subscription_count: 6, priced_subscription_provider_count: 3 };
   const rows = [
     facts({ ...good, slug: 'gemini-3-pro', released_at: '2025-11-18' }),
@@ -76,9 +76,19 @@ test('allowlisted older comparisons with Search demand stay indexable, but only 
   assert.ok(SEO_COMPARISON_ALLOWLIST.has('gemini-3-pro'));
   assert.deepEqual(selectSeoComparisons(rows).map(row => row.slug).sort(),
     ['claude-opus-4.8', 'gemini-3-pro', 'gemini-3.5-pro']);
-  // Same allowlisted slug with one priced vendor, or no longer active, is excluded.
+  // Allowlisted slugs skip only the >= 2 vendors rule (production: Google-only tiers).
+  for (const slug of SEO_COMPARISON_ALLOWLIST) {
+    const single = facts({ ...good, slug, priced_subscription_provider_count: 1 });
+    assert.deepEqual(selectSeoComparisons([single, rows[1]]).map(r => r.slug).sort(),
+      [slug, 'gemini-3.5-pro'].sort());
+  }
+  // A non-allowlisted page with one priced vendor still fails the bar.
+  assert.deepEqual(selectSeoComparisons([
+    facts({ ...good, slug: 'claude-opus-4.8', released_at: '2026-08-01', priced_subscription_provider_count: 1 }),
+  ]), []);
+  // Allowlisted but < 2 priced subscriptions, no longer active, or < 2 plans is excluded.
   for (const row of [
-    facts({ ...good, slug: 'gemini-3-pro', priced_subscription_provider_count: 1 }),
+    facts({ ...good, slug: 'gemini-3-pro', priced_subscription_count: 1, priced_subscription_provider_count: 1 }),
     facts({ ...good, slug: 'gemini-3-pro', active: false }),
     facts({ ...good, slug: 'gemini-3-pro', plan_count: 1 }),
   ]) assert.deepEqual(selectSeoComparisons([row, rows[1]]).map(r => r.slug), ['gemini-3.5-pro']);
