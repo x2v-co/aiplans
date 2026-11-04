@@ -1,5 +1,5 @@
 import type { Sql } from 'postgres';
-import { CATALOG_1104, MUREKA_1104, SARVAM_PRISM_1104, SOURCES_1104 } from '../../src/lib/catalog-2026-11-04';
+import { CATALOG_1104, MUREKA_1104, SOURCES_1104 } from '../../src/lib/catalog-2026-11-04';
 import { verticalModelDescription } from './catalog-audit-vertical';
 import { seedChanges } from './gemini-4-argon';
 import { retainLockedUnavailable } from '../utils/manual-unavailable';
@@ -50,6 +50,13 @@ export function keepFresher(existing: Row | null, values: Record<string, unknown
   delete rest.notes;
   return rest;
 }
+/** Never regress an existing row: keep its capabilities and add any new ones (an empty catalog list adds nothing). */
+export function modelCapabilities(existing: Row | null, wanted: readonly string[] | undefined) {
+  const current = Array.isArray(existing?.capabilities) ? existing.capabilities as string[] : [];
+  const merged = [...new Set([...current, ...(wanted ?? [])])];
+  return existing && merged.length === current.length ? {} : { capabilities: merged };
+}
+const nonEmpty = (value: unknown) => typeof value === 'string' && value.trim() !== '';
 const evidence = (note: string, source: string) => `${note} Verified ${VERIFIED}. Source: ${source}`;
 function appendEvidence(existing: unknown, note: string) {
   const previous = String(existing ?? '');
@@ -125,12 +132,15 @@ export async function seedCatalog20261104(tx: Sql, apply = false): Promise<Step[
     const owner = owners.get(item.providerSlug!)!;
     const old = byModel.get(item.slug!) ?? null;
     const model = save('models', old, {
-      slug: item.slug, name: item.name, type: 'llm', model_category: item.modelCategory,
+      // Existing rows keep their legacy type (e.g. 'video', 'multimodal'); only new rows get 'llm'.
+      slug: item.slug, name: item.name, ...(old?.type ? {} : { type: 'llm' }), model_category: item.modelCategory,
       provider_ids: [...new Set([...((old?.provider_ids as number[] | undefined) ?? []), owner.id])],
       ...(item.inputModalities ? { input_type: item.inputModalities, input_modalities: item.inputModalities } : {}),
       ...(item.outputModalities ? { output_type: item.outputModalities, output_modalities: item.outputModalities } : {}),
-      capabilities: item.capabilities, pricing_unit: item.pricingUnit, offical_link: item.url,
-      description: verticalModelDescription(item),
+      ...modelCapabilities(old, item.capabilities), pricing_unit: item.pricingUnit,
+      ...(nonEmpty(old?.offical_link) ? {} : { offical_link: item.url }),
+      // Append to an existing description (e.g. Arena leaderboard evidence) instead of replacing it.
+      description: nonEmpty(old?.description) ? appendEvidence(old!.description, verticalModelDescription(item)) : verticalModelDescription(item),
       ...(item.releasedAt ? { released_at: new Date(`${item.releasedAt}T00:00:00Z`) } : {}),
       ...(item.shutdownDate ? { shutdown_date: item.shutdownDate, replacement_model: item.replacementModel, deprecation_source_url: item.deprecationSourceUrl } : {}),
     }, item.slug!);
@@ -148,15 +158,9 @@ export async function seedCatalog20261104(tx: Sql, apply = false): Promise<Step[
           ...(rate.validFrom ? { valid_from: rate.validFrom } : {}), ...(rate.validThrough ? { valid_through: rate.validThrough } : {}) },
       }, existing), `${item.slug}/${rate.priceKind}`);
     }
-    if (item.slug === SARVAM_PRISM_1104.slug) {
-      const channels = old && owner.id > 0 ? await tx<Row[]>`SELECT * FROM api_channel_prices WHERE model_id = ${old.id} AND provider_id = ${owner.id}` : [];
-      const channel = one(channels, 'sarvam-prism/sarvam');
-      save('api_channel_prices', channel, retainLockedUnavailable({
-        model_id: model.id, provider_id: owner.id, input_price_per_1m: 4, output_price_per_1m: 0,
-        cached_input_price_per_1m: null, currency: 'INR', price_unit: 'per_1m_tokens', is_available: true,
-        last_verified: VERIFIED_AT, notes: evidence(item.notes!, SOURCES_1104.sarvam),
-      }, channel), 'sarvam-prism/sarvam');
-    }
+    // Sarvam Prism's official ₹4/1M channel price is NOT written: api_channel_prices.currency is limited
+    // to USD/CNY/EUR/GBP/JPY/KRW/SGD (channel_prices_currency_check) and the app's CurrencyCode/FX has no INR.
+    // The native INR price stays in the static catalog and the model description until INR is supported end to end.
   }
 
   const terra = byModel.get('gpt-6.1-terra')!;

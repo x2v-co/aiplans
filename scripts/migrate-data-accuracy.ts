@@ -653,9 +653,9 @@ const MIGRATIONS: Migration[] = [
       ALTER TABLE models ADD COLUMN IF NOT EXISTS pricing_unit text DEFAULT 'per_1m_tokens';
       ALTER TABLE models DROP CONSTRAINT IF EXISTS models_pricing_unit_chk;
       ALTER TABLE models ADD CONSTRAINT models_pricing_unit_chk
-        -- Replayed on each deployment: must keep every unit 035/036 added, or rows
+        -- Replayed on each deployment: must keep every unit 035/036/038 added, or rows
         -- already using them make this re-ADD fail (deploy run 38708093154).
-        CHECK (pricing_unit IN ('per_1m_tokens','per_second','per_minute','per_generation','per_credit','per_compute_hour','subscription_only','unknown','per_hour','per_megapixel','per_image'));
+        CHECK (pricing_unit IN ('per_1m_tokens','per_second','per_minute','per_generation','per_credit','per_compute_hour','subscription_only','unknown','per_hour','per_megapixel','per_image','per_1k_characters'));
       CREATE INDEX IF NOT EXISTS models_model_category_idx ON models (model_category, slug);
 
       -- Broaden plan taxonomy. plan_kind remains the existing comparison axis;
@@ -938,6 +938,10 @@ const MIGRATIONS: Migration[] = [
   {
     name: '037_channel_availability_lock',
     sql: readFileSync(new URL('../drizzle/0014_channel_availability_lock.sql', import.meta.url), 'utf8'),
+  },
+  {
+    name: '038_allow_per_1k_characters_unit',
+    sql: readFileSync(new URL('../drizzle/0015_allow_per_1k_characters_unit.sql', import.meta.url), 'utf8'),
   },
 ];
 

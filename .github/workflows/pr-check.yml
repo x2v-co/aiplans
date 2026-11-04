@@ -14,6 +14,22 @@ jobs:
     name: Type-check, unit tests, build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Real Postgres for seed/migration checks: the in-memory seed fake does not enforce CHECK
+    # constraints (aiplans#303 apply failed in production on models_pricing_unit_chk).
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,6 +67,18 @@ jobs:
       - name: Unit tests
         if: steps.changes.outputs.relevant == 'true'
         run: npm test
+      - name: Postgres migrations and seed check
+        if: steps.changes.outputs.relevant == 'true'
+        env:
+          DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/ci
+          ARGON_TEST_DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/ci
+        run: |
+          set -euo pipefail
+          npx drizzle-kit push --force
+          npx tsx scripts/migrate-data-accuracy.ts
+          # Deploy replays every migration; a second run must stay green.
+          npx tsx scripts/migrate-data-accuracy.ts
+          npm run test:db
       - name: Build
         if: steps.changes.outputs.relevant == 'true'
         run: npm run build
