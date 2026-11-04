@@ -12,7 +12,7 @@ async function main() {
       const steps = await seedHy4(tx, apply);
       console.log(JSON.stringify(steps, null, 2));
       console.log(`${apply ? 'Applied' : 'Dry-run; no writes'}: ${steps.length} changes.`);
-      console.log(`Adds ${HY4_SLUG} (Tencent) and its OpenRouter channel at the 50%-off price $0.417/$1.251/cache $0.021 (list $0.834/$2.501/$0.042 in notes). Does not create providers or an official Tencent channel.`);
+      console.log(`Adds ${HY4_SLUG} (Tencent) and its OpenRouter channel at the 50%-off price $0.417/$1.251/cache $0.021 (list $0.834/$2.501/$0.042 in notes). Also upserts the official Tencent Cloud channel: $0.417/$1.2505/cache $0.021 until 2026-12-31 23:59:59 Beijing (regular $0.834/$2.501/$0.042). Does not create providers.`);
     });
   } finally { await sql.end(); }
 }

@@ -142,3 +142,12 @@ test('cost examples retain native currency and do not invent an unknown output c
   assert.equal(unknown.exampleLabel, null);
   assert.match(unknown.costAnswer, /No complete input\/output quote/);
 });
+
+test('cost example rounds float noise (Hy4 $0.417 + $1.251 × 0.25 is not 0.7297499999999999)', () => {
+  const rows = [quote({ input_price_per_1m: 0.417, output_price_per_1m: 1.251 })];
+  for (const locale of ['en', 'zh'] as const) {
+    const seo = buildModelPricingSeo({ name: 'Hy4', slug: 'tencent-hy4' }, rows, locale);
+    assert.equal(seo.exampleLabel, 'USD 0.72975');
+    assert.doesNotMatch(seo.costAnswer, /0\.72974999/);
+  }
+});

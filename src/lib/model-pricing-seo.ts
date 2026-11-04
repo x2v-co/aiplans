@@ -128,7 +128,7 @@ export function buildModelPricingSeo(
     : (isZh ? '暂无缓存读取报价；未记录价格不代表免费。' : 'No cache-read rate is recorded; missing prices do not imply free caching.');
   const freeChannels = channels.filter(row => row.input_price_per_1m === 0 && row.output_price_per_1m === 0);
   const exampleCost = cheapest && isRealPrice(cheapest.output_price_per_1m)
-    ? cheapest.input_price_per_1m! + cheapest.output_price_per_1m * 0.25 : null;
+    ? roundMoney(cheapest.input_price_per_1m! + cheapest.output_price_per_1m * 0.25) : null;
   const exampleLabel = exampleCost == null ? null : pricingLabel(exampleCost, cheapest?.currency);
   const costAnswer = isZh
     ? `按量 API 成本 = 输入 token ÷ 100 万 × 输入单价 + 输出 token ÷ 100 万 × 输出单价。${exampleLabel ? `以最低输入价渠道为例，100 万输入加 25 万输出 token 约为 ${exampleLabel}。` : '暂无完整的输入与输出报价，不能计算示例总额。'}此演算不含缓存、工具、重试或其他服务费；最低输入价不一定是总成本最低的渠道。`

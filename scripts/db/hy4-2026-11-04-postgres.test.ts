@@ -26,9 +26,9 @@ test('Hy4 seed applies on real Postgres constraints next to Hy4 Preview and re-r
         currency: 'USD', price_unit: 'per_1m_tokens', is_available: true });
 
       const plan = await seedHy4(tx, false);
-      assert.deepEqual(plan.map(s => [s.table, s.action]), [['models', 'insert'], ['api_channel_prices', 'insert']]);
+      assert.deepEqual(plan.map(s => [s.table, s.action]), [['models', 'insert'], ['api_channel_prices', 'insert'], ['api_channel_prices', 'insert']]);
       const applied = await seedHy4(tx, true); // throws on any CHECK / NOT NULL / FK violation
-      assert.equal(applied.length, 2);
+      assert.equal(applied.length, 3);
       assert.deepEqual(await seedHy4(tx, false), [], 'second dry-run after apply is empty');
 
       const [model] = await tx`SELECT * FROM models WHERE slug = ${HY4_SLUG}`;
@@ -39,8 +39,12 @@ test('Hy4 seed applies on real Postgres constraints next to Hy4 Preview and re-r
       assert.deepEqual(model.input_modalities, ['text', 'image']);
       assert.ok(model.capabilities.includes('tool-calling') && model.capabilities.includes('structured-outputs'));
       const channels = await tx`SELECT c.*, p.slug AS provider_slug FROM api_channel_prices c JOIN providers p ON p.id = c.provider_id WHERE c.model_id = ${model.id}`;
-      assert.equal(channels.length, 1, 'OpenRouter only; no official Tencent direct price');
-      const [ch] = channels;
+      assert.equal(channels.length, 2, 'OpenRouter + official Tencent Cloud');
+      const ch = channels.find(c => c.provider_slug === 'openrouter')!;
+      const off = channels.find(c => c.provider_slug === 'tencent')!;
+      assert.deepEqual([off.input_price_per_1m, off.output_price_per_1m, off.cached_input_price_per_1m], [0.417, 1.2505, 0.021]);
+      assert.deepEqual([off.regular_input_price_per_1m, off.regular_output_price_per_1m, off.regular_cached_input_price_per_1m], [0.834, 2.501, 0.042]);
+      assert.equal(new Date(off.promo_ends_at).toISOString(), '2026-12-31T15:59:59.000Z');
       assert.equal(ch.provider_slug, 'openrouter');
       assert.deepEqual([ch.input_price_per_1m, ch.output_price_per_1m, ch.cached_input_price_per_1m], [0.417, 1.251, 0.021]);
       assert.deepEqual([ch.promo_ends_at, ch.regular_input_price_per_1m, ch.regular_output_price_per_1m], [null, null, null]);
