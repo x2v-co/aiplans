@@ -675,5 +675,30 @@
     "veo-3.1-lite 1080p (video only)": "Veo 3.1 Lite 1080p (video only)",
     "veo-3.1-lite 720p (video + audio)": "Veo 3.1 Lite 720p (video + audio)",
     "veo-3.1-lite 720p (video only)": "Veo 3.1 Lite 720p (video only)"
+  },
+  "claudeProQuota": {
+    "heading": "Claude Pro · Opus 5.5 quota (x2v measurement)",
+    "label": "x2v first-party measurement (2026-11-04, Claude Code); not an official Anthropic quota.",
+    "verifiedAt": "Measured on",
+    "method": "147 controlled Opus 5.5 calls via headless `claude -p --model claude-opus-5-5 --effort medium`, no tools/MCP; list prices $4/M input, $20/M output, $8/M 1h cache writes, $0.20/M cache reads.",
+    "window": "Window",
+    "outputHeavy": "Output-heavy",
+    "agentic": "Agentic coding (99% cache reads, 0.2% output)",
+    "w5h": "5 hours",
+    "wWeek": "1 week (≈7.2 five-hour windows, 6.8–7.8)",
+    "wMonth": "1 month (weekly cap ×4.35)",
+    "r5hOut": "≈1.3M output tokens, $26–29",
+    "r5hAg": "≈160M total tokens, $44",
+    "rWeekOut": "9.3M output tokens, $185–205",
+    "rWeekAg": "1.15B tokens, $320",
+    "rMonthOut": "40M output tokens, $800–890",
+    "rMonthAg": "5.0B tokens, $1,390",
+    "value": "API-equivalent value is ≈40–70× the $20/mo Pro price.",
+    "meter": "Meter fit: cache writes ≈0.55×, cache reads ≈0.5× list; L ≈ $25.75 output-equivalent per 5h. Thinking tokens count as output. The weekly cap binds.",
+    "limits": "Limits: integer-percent meter (±0.5pt), single day/time, one account, batch B2 possibly throttled.",
+    "source": "Source artifact: Pro Plan Opus 5.5 Quota",
+    "report": "Report (Chinese)",
+    "ledger": "Data (JSON)",
+    "question": "How much Opus 5.5 does Claude Pro include?"
   }
 }

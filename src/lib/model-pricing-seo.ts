@@ -3,6 +3,7 @@ import { convertToUSD } from './currency-conversion';
 import { effectivePrice, type ScheduledChannelPrice } from './effective-price';
 import { modelAliases } from './model-aliases';
 import { codexQuotaFaq, isCodexQuotaModel } from './codex-pro200';
+import { claudeProQuotaFaq, isClaudeProQuotaModel } from './claude-pro-opus55';
 import { pickOfferCurrency, priceValidUntil, SITE_URL, type Locale } from './seo';
 import { labelNonLlmPriceKey } from './non-llm-price-labels';
 import { pricingUnitNoun, TOKEN_UNIT, type PricingUnitNoun } from './pricing-unit-noun';
@@ -153,6 +154,7 @@ export function buildModelPricingSeo(
     { question: isZh ? `${model.name} token 成本和每月费用怎么算？` : `How do I calculate ${model.name} token costs and monthly spend?`, answer: costAnswer },
   );
   if (isCodexQuotaModel(model.slug)) faqs.push(codexQuotaFaq(locale, model.slug));
+  if (isClaudeProQuotaModel(model.slug)) faqs.push(claudeProQuotaFaq(locale));
   return { title, description, freeChannels, exampleLabel, costAnswer, aliases: modelAliases(model.name, model.slug), channels, pricedChannels,
     cheapest, official, tableChannels, updatedOn, updateText, aggregateOffer, faqs, unit, mode: 'token' as const };
 }

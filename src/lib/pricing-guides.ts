@@ -12,7 +12,8 @@ export type PricingGuideSlug =
   | 'kimi-api-pricing'
   | 'openai-api-pricing'
   | 'cursor-x-subscription-pricing'
-  | 'codex-pro-200-quota-benchmark';
+  | 'codex-pro-200-quota-benchmark'
+  | 'claude-pro-opus-5-5-quota';
 
 type LocalizedText = Record<Locale, string>;
 
@@ -820,6 +821,126 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       {
         label: { en: 'Per-call ledger and quota readings (JSON)', zh: '逐次账本与额度窗口读数（JSON）' },
         url: { en: '/reports/codex-models-2026-10-30.json', zh: '/reports/codex-models-2026-10-30.json' },
+      },
+    ],
+  },
+  'claude-pro-opus-5-5-quota': {
+    slug: 'claude-pro-opus-5-5-quota',
+    title: { en: 'How Much Opus 5.5 Does Claude Pro Include? x2v Quota Measurement', zh: 'Claude Pro 到底能用多少 Opus 5.5？x2v 额度实测' },
+    description: {
+      en: 'x2v measured Claude Pro ($20/mo) with 147 Opus 5.5 calls: ~1.3M output tokens per 5h, ~7.2 five-hour windows per week, ~$800–1,390/month API-equivalent (≈40–70× the price).',
+      zh: 'x2v 用 147 次 Opus 5.5 调用实测 Claude Pro（$20/月）：每 5 小时约 1.3M 输出 token，每周约 7.2 个 5 小时窗口，每月 API 等值约 $800–1,390（约为月费 40–70×）。',
+    },
+    intro: {
+      en: 'This page is an x2v first-party measurement (2026-11-04, Claude Code) of one Claude Pro account, not a quota published by Anthropic. Bottom line: in API-equivalent terms, a month of Claude Pro on Opus 5.5 is worth about $800–1,390, roughly 40–70× the $20/month price. The weekly cap, not the 5-hour window, is what binds. The original artifact is linked in Sources.',
+      zh: '本页是 x2v 实测（2026-11-04，Claude Code），测的是一个 Claude Pro 账号，不是 Anthropic 公布的额度。结论：按 API 价折算，Claude Pro 跑 Opus 5.5 一个月约值 $800–1,390，约为 $20/月 月费的 40–70×。真正卡用量的是周上限，不是 5 小时窗口。原始 artifact 见来源区。',
+    },
+    queryPatterns: ['%claude-opus-5-5%'],
+    priceTable: false,
+    providerSlugs: ['anthropic'],
+    reviewedAt: '2026-11-04',
+    usageNotes: [
+      { en: 'Recalculate with your own output, cache-write and cache-read mix; agentic coding is mostly cache reads.', zh: '按自己的输出、缓存写、缓存读比例重新估算；agent 编程以缓存读为主。' },
+      { en: 'Budget against the weekly cap: about 7.2 full five-hour windows per week.', zh: '按周上限做预算：每周大约只够用满 7.2 个 5 小时窗口。' },
+      { en: 'Single-account, single-day measurement; check your own usage meter before relying on it.', zh: '单账号单日实测；依赖前请核对自己账号的用量表。' },
+    ],
+    sections: [
+      {
+        heading: { en: 'Estimated allowance (API-equivalent)', zh: '估算额度（API 等值）' },
+        body: {
+          en: '5-hour window: output-heavy ≈1.3M output tokens, $26–29; agentic coding mix (99% cache reads, 0.2% output) ≈160M total tokens, $44.\n\n1 week (≈7.2 five-hour windows, range 6.8–7.8): output-heavy 9.3M output tokens, $185–205; agentic 1.15B tokens, $320.\n\n1 month (weekly cap ×4.35): output-heavy 40M output tokens, $800–890; agentic 5.0B tokens, $1,390. That is ≈40–70× the $20/month Pro price.',
+          zh: '5 小时窗口：输出为主 ≈1.3M 输出 token，$26–29；agent 编程配比（99% 缓存读、0.2% 输出）≈160M 总 token，$44。\n\n1 周（≈7.2 个 5 小时窗口，范围 6.8–7.8）：输出为主 9.3M 输出 token，$185–205；agent 编程 1.15B token，$320。\n\n1 月（周上限 ×4.35）：输出为主 40M 输出 token，$800–890；agent 编程 5.0B token，$1,390。约为 $20/月 Pro 价格的 40–70×。',
+        },
+      },
+      {
+        heading: { en: 'Measurement method', zh: '测量方法' },
+        body: {
+          en: '147 controlled Opus 5.5 calls, headless `claude -p --model claude-opus-5-5 --effort medium`, no tools or MCP. List prices used: $4/M input, $20/M output, $8/M 1h cache writes, $0.20/M cache reads.\n\nBatches: A1 and A2 each wrote 20 essays (about 5,000 output tokens per call). B0–B2 were 86 calls with a fixed ~106k context and a one-sentence answer, to isolate cache reads.',
+          zh: '147 次受控 Opus 5.5 调用，headless `claude -p --model claude-opus-5-5 --effort medium`，无工具 / MCP。对照列表价：输入 $4/M、输出 $20/M、1h 缓存写 $8/M、缓存读 $0.20/M。\n\n批次：A1、A2 各写 20 篇 essay（约 5000 输出 token/次）；B0–B2 共 86 次，固定约 106k 上下文、一句话回答，用来单独测缓存读。',
+        },
+      },
+      {
+        heading: { en: 'Meter readings (cumulative, UTC)', zh: '用量表读数（累计，UTC）' },
+        body: {
+          en: 'Columns: output / cache write / cache read / API $ / 5h meter / weekly meter.\n\nStart 10:26: 714 / 23.6k / 112k / $0.23 / 0% / 4%\n\nA1 10:29: 108k / 99k / 732k / $3.11 / 11% / 5%\n\nA2 10:31: 214k / 121k / 1.11M / $5.48 / 19% / 6%\n\nB0+B1 10:32: 222k / 252k / 4.31M / $7.32 / 23% / 7%\n\nB2 10:54: 237k / 306k / 11.0M / $9.39 / 28% / 7%',
+          zh: '列：输出 / 缓存写 / 缓存读 / API $ / 5h 表 / 周表。\n\nStart 10:26：714 / 23.6k / 112k / $0.23 / 0% / 4%\n\nA1 10:29：108k / 99k / 732k / $3.11 / 11% / 5%\n\nA2 10:31：214k / 121k / 1.11M / $5.48 / 19% / 6%\n\nB0+B1 10:32：222k / 252k / 4.31M / $7.32 / 23% / 7%\n\nB2 10:54：237k / 306k / 11.0M / $9.39 / 28% / 7%',
+        },
+      },
+      {
+        heading: { en: 'Fit: cache counts at roughly half price', zh: '拟合：缓存约按半价计入' },
+        body: {
+          en: 'Model: meter % = (output $ + a·cache-write $ + b·cache-read $) / L × 100. Charging everything at list price (L = $31.75) overestimates. The fit a ≈ 0.55, b ≈ 0.5, L ≈ $25.75 output-equivalent per 5 hours cuts the error by about 10×. Thinking tokens count as output.',
+          zh: '模型：meter % = (output $ + a·cache-write $ + b·cache-read $) / L × 100。全部按列表价计（L = $31.75）会高估；拟合 a ≈ 0.55、b ≈ 0.5、L ≈ 每 5 小时 $25.75 输出等值，误差低约 10 倍。thinking token 计为输出。',
+        },
+      },
+      {
+        heading: { en: 'Weekly cap ratio', zh: '周上限比例' },
+        body: {
+          en: 'Across the run the weekly meter moved 3 points while the 5-hour meter moved 28 points, so one full 5-hour window is about 1/7.2 of the week (range 6.8–7.8). The weekly cap binds.',
+          zh: '整轮测试中周表动了 3 点，5h 表动了 28 点，所以一个满 5 小时窗口约占一周的 1/7.2（范围 6.8–7.8）。周上限是实际约束。',
+        },
+      },
+      {
+        heading: { en: 'Limitations', zh: '测量局限' },
+        body: {
+          en: 'The meter shows integer percentages (±0.5pt); the weekly ratio rests on a few points of movement. Single day and time of day, one account. Batch B2 may have been throttled. This is a measurement, not an Anthropic commitment.',
+          zh: '用量表只显示整数百分比（±0.5pt），周比例只靠表上走了几个点推出。单日单时段、单账号。B2 批次可能被限速。这是实测，不是 Anthropic 的承诺额度。',
+        },
+      },
+    ],
+    faqs: [
+      {
+        question: { en: 'How much Opus 5.5 does Claude Pro include?', zh: 'Claude Pro 能用多少 Opus 5.5？' },
+        answer: {
+          en: 'Per x2v measurement (2026-11-04): ≈1.3M output tokens per 5-hour window and ≈9.3M per week for output-heavy work; ≈160M total tokens per 5h for agentic coding.',
+          zh: '按 x2v 实测（2026-11-04）：输出为主每 5 小时 ≈1.3M 输出 token、每周 ≈9.3M；agent 编程每 5 小时 ≈160M 总 token。',
+        },
+      },
+      {
+        question: { en: 'Is Claude Pro worth it versus the API for Opus 5.5?', zh: '跑 Opus 5.5，Claude Pro 比 API 划算吗？' },
+        answer: {
+          en: 'A fully used month is worth about $800–1,390 at API list prices, ≈40–70× the $20 price, if you can use the weekly cap.',
+          zh: '用满一个月按 API 列表价约值 $800–1,390，约为 $20 月费的 40–70×，前提是能用满周上限。',
+        },
+      },
+      {
+        question: { en: 'Is this an official Anthropic quota?', zh: '这是 Anthropic 官方额度吗？' },
+        answer: {
+          en: 'No. It is an x2v first-party measurement with Claude Code on one account and one day; Anthropic does not publish token allowances for Pro.',
+          zh: '不是。这是 x2v 用 Claude Code 在单账号、单日的实测；Anthropic 不公布 Pro 的 token 额度。',
+        },
+      },
+    ],
+    sources: [
+      {
+        label: { en: 'x2v measurement (2026-11-04, Claude Code): Pro Plan Opus 5.5 Quota', zh: 'x2v 实测（2026-11-04，Claude Code）：Pro Plan Opus 5.5 Quota' },
+        url: 'https://claude.ai/artifact/DcK5UbxR1SmkgDn38QtBo2',
+      },
+      {
+        label: { en: 'aiplans report: Claude Pro · Opus 5.5 quota (Chinese)', zh: 'aiplans 报告：Claude Pro · Opus 5.5 额度实测' },
+        url: 'https://aiplans.dev/reports/claude-pro-opus55-2026-11-04.md',
+      },
+    ],
+    relatedLinks: [
+      {
+        label: { en: 'Claude Pro plan', zh: 'Claude Pro 套餐' },
+        url: { en: '/en/providers/anthropic#claude-pro', zh: '/zh/providers/anthropic#claude-pro' },
+      },
+      {
+        label: { en: 'Claude Opus 5.5 pricing', zh: 'Claude Opus 5.5 模型价格' },
+        url: { en: '/en/models/anthropic-claude-opus-5-5', zh: '/zh/models/anthropic-claude-opus-5-5' },
+      },
+      {
+        label: { en: 'Claude Opus 5.5 subscription comparison', zh: 'Claude Opus 5.5 订阅套餐对比' },
+        url: { en: '/en/compare/plans/anthropic-claude-opus-5-5', zh: '/zh/compare/plans/anthropic-claude-opus-5-5' },
+      },
+      {
+        label: { en: 'Quota measurements', zh: '额度实测数据' },
+        url: { en: '/en/quota-bench', zh: '/zh/quota-bench' },
+      },
+      {
+        label: { en: 'Claude & Anthropic pricing guide', zh: 'Claude 与 Anthropic 价格指南' },
+        url: { en: '/en/guides/claude-anthropic-pricing', zh: '/zh/guides/claude-anthropic-pricing' },
       },
     ],
   },

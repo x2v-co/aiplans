@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-04",
+  "planSlug": "claude-pro",
+  "planPriceUsdMonthly": 20,
+  "model": "claude-opus-5-5",
+  "modelSlugs": ["anthropic-claude-opus-5-5", "claude-opus-5-5"],
+  "source": {
+    "kind": "x2v-first-party",
+    "label": "x2v 实测（2026-11-04，Claude Code）",
+    "title": "Pro Plan Opus 5.5 Quota",
+    "url": "https://claude.ai/artifact/DcK5UbxR1SmkgDn38QtBo2",
+    "official": false
+  },
+  "method": {
+    "calls": 147,
+    "command": "claude -p --model claude-opus-5-5 --effort medium",
+    "tools": "none (no tools / MCP)",
+    "listPricesUsdPerM": { "input": 4, "output": 20, "cacheWrite1h": 8, "cacheRead": 0.2 },
+    "meterFit": { "cacheWriteWeight": 0.55, "cacheReadWeight": 0.5, "fiveHourOutputEquivalentUsd": 25.75, "thinkingCountsAsOutput": true, "bindingLimit": "weekly" }
+  },
+  "windows": [
+    { "window": "5h", "outputHeavy": { "outputTokens": 1300000, "apiUsd": [26, 29] }, "agentic": { "totalTokens": 160000000, "apiUsd": [44, 44] } },
+    { "window": "week", "fiveHourWindows": { "point": 7.2, "low": 6.8, "high": 7.8 }, "outputHeavy": { "outputTokens": 9300000, "apiUsd": [185, 205] }, "agentic": { "totalTokens": 1150000000, "apiUsd": [320, 320] } },
+    { "window": "month", "weeklyMultiplier": 4.35, "outputHeavy": { "outputTokens": 40000000, "apiUsd": [800, 890] }, "agentic": { "totalTokens": 5000000000, "apiUsd": [1390, 1390] }, "multipleOfPlanPrice": [40, 70] }
+  ],
+  "agenticMix": "99% cache reads, 0.2% output",
+  "limitations": ["integer-percent meter (±0.5pt)", "single day / time of day", "one account", "batch B2 possibly throttled"]
+}
