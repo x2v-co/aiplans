@@ -68,7 +68,7 @@ import {
 import { buildModelPricingSeo, type PricingChannel } from '@/lib/model-pricing-seo';
 import ModelPricingSummary from '@/components/model-pricing-summary';
 import { ModelUsagePriceHeadline } from '@/components/model-usage-prices';
-import { availableUsagePrices, officialUsageFallback, usagePriceHeadlineRange } from '@/lib/model-usage-prices';
+import { availableUsagePrices, officialUsageFallback, pricingSeoUsage, usagePriceHeadlineRange } from '@/lib/model-usage-prices';
 import { getModelUsagePrices } from '@/lib/model-usage-prices-query';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
@@ -84,8 +84,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   // status — crawlers get a 200 with an empty skeleton (a soft 404). Verified:
   // with `[locale]/loading.tsx` present every unknown slug returned 200; with
   // it removed and this check here they return 404 + the not-found UI.
-  const [product] = await sql<Array<{ id: number; name: string; updated_at: Date | null }>>`
-    SELECT id, name, updated_at FROM models WHERE slug = ${slug} LIMIT 1
+  const [product] = await sql<Array<{ id: number; name: string; updated_at: Date | null; pricing_unit: string | null }>>`
+    SELECT id, name, updated_at, pricing_unit FROM models WHERE slug = ${slug} LIMIT 1
   `;
   if (!product) {
     const target = await findModelSlugRedirect(slug);
@@ -102,8 +102,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       AND EXISTS (SELECT 1 FROM models m WHERE m.id = cp.model_id
         AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date))
   `;
+  const metaUsagePrices = availableUsagePrices(await getModelUsagePrices(slug));
   const pricing = buildModelPricingSeo({ ...product, name: productName, slug }, statsRows,
-    locale === 'zh' ? 'zh' : 'en');
+    locale === 'zh' ? 'zh' : 'en', new Date(),
+    { pricingUnit: product.pricing_unit, usage: pricingSeoUsage(statsRows, metaUsagePrices, slug) });
   return {
     ...buildMetadata({
       locale: locale === 'zh' ? 'zh' : 'en',
@@ -141,7 +143,7 @@ function channelCurrency(cp: { currency?: string | null } | null | undefined): C
 async function getProductWithChannels(slug: string, now = new Date()) {
   // Get model with provider info
   const [model] = await sql<any[]>`
-    SELECT id, name, slug, type, description, context_window, max_output_tokens,
+    SELECT id, name, slug, type, pricing_unit, description, context_window, max_output_tokens,
            open_source, license, license_url, parameters, "active parameters" AS active_parameters,
            provider_ids, offical_link, released_at, created_at, updated_at, shutdown_date::text,
            replacement_model, deprecation_source_url
@@ -388,7 +390,8 @@ export default async function ModelPage({
   const billingNote = billingRedirectNote(product.slug, locale);
   const guideSlug = guideForModelSlug(product.slug);
   const pricing = buildModelPricingSeo({ ...product, name: productName }, channelPrices,
-    isZh ? 'zh' : 'en', now);
+    isZh ? 'zh' : 'en', now,
+    { pricingUnit: product.pricing_unit, usage: pricingSeoUsage(channelPrices, usagePrices, rawProduct.slug) });
 
   // Plans can come from several providers (a bundled plan may include
   // third-party models), so normalize to USD before ordering — otherwise a
@@ -484,7 +487,7 @@ export default async function ModelPage({
     serviceType: 'AI Model API',
     name: productName,
     alternateName: pricing.aliases,
-    description: description || `${productName} — ${product.context_window?.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US') ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`,
+    description: description || (pricing.mode === 'usage' ? pricing.description : `${productName} — ${product.context_window?.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US') ?? 'N/A'} token context window. API pricing compared across ${channelPrices.length} channels.`),
     image: `${SITE_URL}/${locale}/models/${product.slug}/opengraph-image`,
     url: `${SITE_URL}/${locale}/models/${product.slug}`,
     ...(product.providers?.name

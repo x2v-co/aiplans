@@ -155,3 +155,41 @@ test('Le Chat excludes retired/speech models; Code Assist excludes image models 
     assert.deepEqual(pick(plan, google, 'google'), ['gemini-3.1-pro']);
   assert.ok(pick('google-ai-plus', google, 'google').includes('gemini-3-pro-image'));
 });
+
+test('Google app and Code Assist plans exclude Gemini API-only TTS, transcription and embedding models (11-04 drift)', () => {
+  const googleCatalog: SelectableModel[] = [
+    'gemini-3.8-flash', 'gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts', 'gemini-3.5-transcribe',
+    'gemini-3.5-transcribe-live', 'gemini-embedding-2',
+  ].map((slug, index) => ({ id: index + 1, slug, providerSlugs: ['google'], elo: null }));
+  for (const planSlug of [
+    'gemini-free', 'google-ai-plus', 'gemini-advanced', 'google-ai-ultra-5x', 'google-ai-ultra-20x',
+    'gemini-code-assist-individual', 'gemini-code-assist-standard', 'gemini-code-assist-enterprise',
+  ]) {
+    const classification = CLASSIFICATIONS.find(entry => entry.providerSlug === 'google' && entry.planSlug === planSlug);
+    assert.ok(classification, planSlug);
+    const resolved = resolveSelector(classification.selector, googleCatalog, ['google']);
+    assert.deepEqual(resolved.models.map(model => model.slug), ['gemini-3.8-flash'], planSlug);
+    for (const pattern of ['*-tts', '*-transcribe*', 'gemini-embedding*'])
+      assert.ok(!resolved.unusedExclude?.includes(pattern), `${planSlug} ${pattern} must match`);
+  }
+});
+
+test('Qoder Lite and Pro are coding plans with closed official model lists; unknown Kimi-K2.8-Preview is omitted', () => {
+  const lite = CLASSIFICATIONS.find(p => p.providerSlug === 'qoder' && p.planSlug === 'qoder-lite');
+  const pro = CLASSIFICATIONS.find(p => p.providerSlug === 'qoder' && p.planSlug === 'qoder-pro');
+  assert.ok(lite && pro);
+  assert.deepEqual([lite.kind, lite.line, lite.rank, pro.kind, pro.line, pro.rank], ['coding', 'qoder', 1, 'coding', 'qoder', 2]);
+  assert.equal(lite.selector.only_extra, true);
+  assert.equal(pro.selector.only_extra, true);
+  assert.deepEqual(lite.selector.extra, ['qwen3.8-flash', 'deepseek-v4.1-flash', 'glm-5.3-flash', 'qwen3.8-max',
+    'deepseek-v4-pro', 'glm-5.3', 'kimi-k3', 'minimax-m3']);
+  assert.ok(lite.selector.extra!.every(slug => pro.selector.extra!.includes(slug)), 'Pro has all models, including Lite');
+  assert.deepEqual(pro.selector.extra!.filter(slug => !lite.selector.extra!.includes(slug)), ['moonshotai-kimi-k3-1-pro', 'minimax-m3.1-flash']);
+  assert.ok(![...lite.selector.extra!, ...pro.selector.extra!].some(slug => /k2\.8/.test(slug)));
+  const catalog: SelectableModel[] = [...new Set([...pro.selector.extra!, 'qwen3-coder-plus'])]
+    .map((slug, index) => ({ id: index + 1, slug, providerSlugs: ['alibaba'], elo: null }));
+  const resolvedLite = resolveSelector(lite.selector, catalog, ['qoder']);
+  assert.equal(resolvedLite.models.length, 8);
+  assert.deepEqual(resolvedLite.unknownExtra ?? [], []);
+  assert.equal(resolveSelector(pro.selector, catalog, ['qoder']).models.length, 10);
+});

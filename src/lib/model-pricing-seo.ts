@@ -4,6 +4,9 @@ import { effectivePrice, type ScheduledChannelPrice } from './effective-price';
 import { modelAliases } from './model-aliases';
 import { codexQuotaFaq, isCodexQuotaModel } from './codex-pro200';
 import { pickOfferCurrency, priceValidUntil, SITE_URL, type Locale } from './seo';
+import { labelNonLlmPriceKey } from './non-llm-price-labels';
+import { pricingUnitNoun, TOKEN_UNIT, type PricingUnitNoun } from './pricing-unit-noun';
+import type { ModelUsagePriceRow } from './model-usage-prices';
 
 export interface PricingChannel extends ScheduledChannelPrice {
   id?: number;
@@ -30,11 +33,30 @@ export function pricingLabel(value: unknown, currency: string | null | undefined
   return isRealPrice(value) ? `${currency || 'USD'} ${value}` : '—';
 }
 
+/** Non-token usage rates (usage_prices) that headline a page with no token channel quote. */
+export interface PricingSeoUsage {
+  /** Rows sharing the headline's billing dimension unit and currency, cheapest first. */
+  rows: ModelUsagePriceRow[];
+  low: ModelUsagePriceRow;
+  high: ModelUsagePriceRow;
+  /** Rows are the vendor's own published rates. */
+  official: boolean;
+}
+
+export interface PricingSeoOptions {
+  /** models.pricing_unit — states the unit even when no price is recorded. */
+  pricingUnit?: string | null;
+  usage?: PricingSeoUsage;
+}
+
+const roundMoney = (value: number) => Number(value.toFixed(6));
+
 export function buildModelPricingSeo(
   model: { name: string; slug: string; updated_at?: Date | string | null },
   rows: PricingChannel[],
   locale: Locale,
   now = new Date(),
+  options: PricingSeoOptions = {},
 ) {
   const isZh = locale === 'zh';
   const channels = rows.map(row => effectivePrice(row, now)).filter(row =>
@@ -52,6 +74,19 @@ export function buildModelPricingSeo(
   const updateText = updatedOn
     ? (isZh ? `更新于 ${updatedOn}` : `Updated on ${updatedOn}`)
     : (isZh ? '更新日期暂无记录' : 'Update date not recorded');
+  // Token copy (input/output/cache per 1M tokens) only fits token-metered
+  // pages. A page whose only quotes are usage rates, or whose model is billed in
+  // another unit, states that unit everywhere the head of the page names one.
+  const usage = pricedChannels.length === 0 ? options.usage : undefined;
+  const modelUnit = pricingUnitNoun(options.pricingUnit);
+  const unit: PricingUnitNoun = (usage ? pricingUnitNoun(usage.low.unit) : null)
+    ?? (pricedChannels.length === 0 && modelUnit ? modelUnit : TOKEN_UNIT);
+  if (usage || (pricedChannels.length === 0 && !unit.isToken)) {
+    return { ...buildUsagePricingSeo(model, channels, locale, unit, usage, updateText, updatedOnFromUsage(usage, updatedOn), isZh),
+      aliases: modelAliases(model.name, model.slug), channels, pricedChannels, cheapest: undefined, official,
+      tableChannels, unit, mode: 'usage' as const };
+  }
+
   // One template for every Chinese model page. Search queries put 价格
   // directly after the model name ("glm 5.3 flash 价格", "deepseek v4.1 flash价格").
   const title = isZh ? `${model.name} 价格与 API 费用`
@@ -119,5 +154,87 @@ export function buildModelPricingSeo(
   );
   if (isCodexQuotaModel(model.slug)) faqs.push(codexQuotaFaq(locale, model.slug));
   return { title, description, freeChannels, exampleLabel, costAnswer, aliases: modelAliases(model.name, model.slug), channels, pricedChannels,
-    cheapest, official, tableChannels, updatedOn, updateText, aggregateOffer, faqs };
+    cheapest, official, tableChannels, updatedOn, updateText, aggregateOffer, faqs, unit, mode: 'token' as const };
+}
+
+function updatedOnFromUsage(usage: PricingSeoUsage | undefined, fallback: string | null): string | null {
+  const dates = (usage?.rows ?? []).map(row => pricingDate({ last_verified: row.last_verified }))
+    .filter((date): date is string => date != null);
+  return dates.sort().at(-1) ?? fallback;
+}
+
+function buildUsagePricingSeo(
+  model: { name: string; slug: string },
+  channels: PricingChannel[],
+  locale: Locale,
+  unit: PricingUnitNoun,
+  usage: PricingSeoUsage | undefined,
+  tokenUpdateText: string,
+  updatedOn: string | null,
+  isZh: boolean,
+) {
+  const updateText = updatedOn
+    ? (isZh ? `更新于 ${updatedOn}` : `Updated on ${updatedOn}`)
+    : tokenUpdateText;
+  const noun = isZh ? unit.zh : unit.en;
+  const per = isZh ? `/${noun}` : ` per ${noun}`;
+  const title = isZh ? `${model.name} 价格与 API 费用（每${unit.zh}）` : `${model.name} API Pricing / Price per ${unit.en}`;
+  const low = usage?.low;
+  const high = usage?.high;
+  const lowLabel = low ? pricingLabel(low.price, low.currency) : null;
+  const rangeLabel = low && high && high.price !== low.price && isRealPrice(high.price)
+    ? `${lowLabel}–${high.price}` : lowLabel;
+  const kind = low ? labelNonLlmPriceKey(low.price_kind, locale) : '';
+  const highKind = high && high.price_kind !== low?.price_kind ? labelNonLlmPriceKey(high.price_kind, locale) : '';
+  const kindText = highKind ? `${kind} – ${highKind}` : kind;
+  const source = usage?.official ? (isZh ? '官方报价' : 'official rate') : (isZh ? '最低报价' : 'lowest listed rate');
+  const description = isZh
+    ? `${model.name} API 定价：${rangeLabel ? `${source} ${rangeLabel}${per}（${kindText}）。` : `按${noun}计费，暂无可用报价。`}对比官方与渠道价格。${updateText}。`
+    : `${model.name} API pricing: ${rangeLabel ? `${source} ${rangeLabel}${per} (${kindText}).` : `billed per ${noun}; no price available.`} Compare official and channel rates. ${updateText}.`;
+
+  const offerRows = (usage?.rows ?? []).filter(row => isRealPrice(row.price));
+  const offerCurrency = offerRows[0]?.currency || (offerRows.length ? 'USD' : null);
+  const offerValidUntil = priceValidUntil();
+  const unitText = `per ${unit.en}`;
+  const aggregateOffer = offerCurrency == null || !Object.hasOwn(CURRENCY_INFO, offerCurrency) ? undefined : {
+    '@type': 'AggregateOffer', priceCurrency: offerCurrency,
+    lowPrice: String(Math.min(...offerRows.map(row => row.price!))), highPrice: String(Math.max(...offerRows.map(row => row.price!))),
+    offerCount: offerRows.length,
+    priceSpecification: { '@type': 'UnitPriceSpecification', priceCurrency: offerCurrency, unitText },
+    offers: offerRows.map(row => ({
+      '@type': 'Offer', priceCurrency: offerCurrency, price: String(row.price),
+      priceSpecification: { '@type': 'UnitPriceSpecification', priceCurrency: offerCurrency, price: String(row.price), unitText },
+      availability: 'https://schema.org/InStock',
+      url: `${SITE_URL}/${locale}/models/${encodeURIComponent(model.slug)}`,
+      priceValidUntil: offerValidUntil,
+      ...(row.provider_name ? { seller: { '@type': 'Organization', name: row.provider_name } } : {}),
+      category: row.provider_type ?? undefined,
+    })),
+  };
+
+  const example = low && isRealPrice(low.price) ? pricingLabel(roundMoney(low.price * 100), low.currency) : null;
+  const costAnswer = isZh
+    ? `按量 API 成本 = 用量（以${noun}为计费单位）× 单价。${example ? `按 ${lowLabel}${per}（${kind}）计算，100 个计费单位（100 × ${noun}）约为 ${example}。` : '暂无报价，不能计算示例总额。'}不含工具、重试或其他服务费；不同档位（如分辨率、音质）单价不同。`
+    : `Metered API cost = usage in ${noun} units × the per-${noun} rate. ${example ? `At ${lowLabel}${per} (${kind}), 100 billed units (100 × ${noun}) cost approximately ${example}.` : 'No rate is recorded for a cost example.'} This excludes tools, retries and other service fees; tiers such as resolution or voice quality are priced separately.`;
+  const freeRows = offerRows.filter(row => row.price === 0);
+  const faqs = [
+    { question: isZh ? `${model.name} API 多少钱？` : `How much does the ${model.name} API cost?`,
+      answer: rangeLabel ? (isZh ? `${source}为 ${rangeLabel}${per}（${kindText}）。` : `The ${source} is ${rangeLabel}${per} (${kindText}).`)
+        : (isZh ? `该模型按${noun}计费，暂无可用报价。` : `This model is billed per ${noun}; no rate is available.`) },
+    { question: isZh ? `${model.name} 哪个渠道最便宜？` : `Which channel has the cheapest ${model.name} API?`,
+      answer: low ? (isZh ? `${low.provider_name || '渠道'} 报价最低：${lowLabel}${per}（${kind}）。只比较同一计费单位与币种的报价。`
+        : `${low.provider_name || 'The channel'} lists the lowest rate: ${lowLabel}${per} (${kind}). Only quotes in the same billing unit and currency are compared.`)
+        : (isZh ? '暂无可用于比较的报价。' : 'No rates are available to compare.') },
+    { question: isZh ? `${model.name} 价格最后何时更新？` : `When was ${model.name} pricing last updated?`,
+      answer: `${updateText}${isZh ? '。日期取已记录的最新价格更新或核验时间；各渠道时间见价格表。' : '. This is the latest recorded price update or verification; see the table for individual channel dates.'}` },
+    { question: isZh ? `${model.name} 有免费 API 吗？` : `Is there a free ${model.name} API?`,
+      answer: freeRows.length
+        ? (isZh ? `当前已收录报价中，${freeRows.map(row => row.provider_name || '渠道').join('、')} 的单价为零。仍需核对限速、可用性和资格条件。`
+          : `Among recorded quotes, ${freeRows.map(row => row.provider_name || 'a channel').join(', ')} lists a zero rate. Check limits, availability and eligibility.`)
+        : (isZh ? '当前报价中没有标为零价的渠道。未记录价格或消费端免费档都不能证明 API 免费；试用额度请以渠道条款为准。'
+          : 'No recorded rate is zero. Missing prices or a free consumer tier do not establish a free API; check provider terms for trial credits.') },
+    { question: isZh ? `${model.name} 的费用怎么算？` : `How do I calculate ${model.name} costs?`, answer: costAnswer },
+  ];
+  return { title, description, freeChannels: [] as PricingChannel[], exampleLabel: example, costAnswer,
+    updatedOn, updateText, aggregateOffer, faqs };
 }
