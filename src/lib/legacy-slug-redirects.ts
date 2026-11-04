@@ -12,9 +12,11 @@ import { splitGluedModelSlug } from './glued-model-slug';
  * marks older members of a series noindex, so a 301 onto e.g.
  * moonshotai-kimi-k2 handed Google a noindex page and the old URL dropped out
  * of the index. Compare targets therefore point at the newest page in the same
- * family that is in the sitemap (checked 2026-10-29); a family with no
- * indexable comparison falls back to the list page. /models targets are
- * always indexable and keep the exact successor.
+ * family that is in the sitemap; a family with no indexable comparison falls
+ * back to the /models successor. Re-checked against the live sitemap on
+ * 2026-11-04: the Claude, GPT-5.x Pro/Luna and Seed 2.1 Turbo compare pages had
+ * dropped out (noindex), so those entries now hand compare URLs to the model
+ * page, which is indexable and renders the same plan table.
  *
  * The table is the only redirect layer for these slugs: `model_slug_redirects`
  * in the database covers renames the crawler inserted, and the seeds do not
@@ -32,14 +34,14 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'gpt-6.1-sol': { models: 'openai-gpt-6-1-sol', compare: 'openai-gpt-6-1-sol' },
   'gpt-6-astra': { models: 'openai-gpt-6-astra' },
   'gpt-6-luna': { models: 'openai-gpt-6-luna' },
-  'claude-opus-5.5': { models: 'anthropic-claude-opus-5-5', compare: 'claude-opus-4.5' },
-  'claude-opus-5-batch': { models: 'anthropic-claude-opus-5-batch', compare: 'claude-opus-4.5' },
-  'claude-opus-4.8': { models: 'anthropic-claude-opus-4-8', compare: 'claude-opus-4.5' },
-  'claude-opus-4.7': { models: 'anthropic-claude-opus-4-7', compare: 'claude-opus-4.5' },
-  'claude-opus-4.6': { models: 'anthropic-claude-opus-4-6', compare: 'claude-opus-4.5' },
-  'claude-sonnet-5': { models: 'anthropic-claude-sonnet-5', compare: 'claude-sonnet-4.5' },
-  'claude-sonnet-4.6-batch': { models: 'anthropic-claude-sonnet-4-6-batch', compare: 'claude-sonnet-4.5' },
-  'claude-haiku-4-5': { models: 'anthropic-claude-haiku-4-5', compare: 'claude-haiku-5.5' },
+  'claude-opus-5.5': { models: 'anthropic-claude-opus-5-5' },
+  'claude-opus-5-batch': { models: 'anthropic-claude-opus-5-batch' },
+  'claude-opus-4.8': { models: 'anthropic-claude-opus-4-8' },
+  'claude-opus-4.7': { models: 'anthropic-claude-opus-4-7' },
+  'claude-opus-4.6': { models: 'anthropic-claude-opus-4-6' },
+  'claude-sonnet-5': { models: 'anthropic-claude-sonnet-5' },
+  'claude-sonnet-4.6-batch': { models: 'anthropic-claude-sonnet-4-6-batch' },
+  'claude-haiku-4-5': { models: 'anthropic-claude-haiku-4-5' },
   'claude-fable-5.1-batch': { models: 'anthropic-claude-fable-5-1-batch' },
   'kimi-k2': { models: 'moonshotai-kimi-k2', compare: 'kimi-k3' },
   'kimi-k2-thinking': { models: 'moonshotai-kimi-k2-thinking', compare: 'kimi-k3' },
@@ -53,7 +55,7 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'qwen3-14b': { models: 'qwen-qwen3-14b' },
   'qwen-2.5-72b': { models: 'qwen-qwen-2-5-72b-instruct' },
   'step-3.7-flash': { models: 'stepfun-step-3-7-flash' },
-  'seed-2.1-turbo': { models: 'doubao-seed-2.1-turbo', compare: 'doubao-seed-2.1-turbo' },
+  'seed-2.1-turbo': { models: 'doubao-seed-2.1-turbo' },
   'minimax-01': { models: 'minimax-minimax-01', compare: 'minimax-minimax-01' },
   'minimax-m2-her': { models: 'minimax-minimax-m2-her', compare: 'minimax-minimax-m2-her' },
   // Brand-level slugs point at the catalog's floating "latest" page; the guard
@@ -77,9 +79,9 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'gpt-3.5-turbo': { models: 'openai-gpt-3-5-turbo' },
   'gpt-4': { models: 'openai-gpt-4' },
   'gpt-4-turbo': { models: 'openai-gpt-4-turbo' },
-  'gpt-5.2-pro': { models: 'openai-gpt-5-2-pro', compare: 'gpt-5.4-pro' },
-  'gpt-5.5-pro': { models: 'openai-gpt-5-5-pro', compare: 'gpt-5.5' },
-  'gpt-5.6-luna-pro': { models: 'openai-gpt-5-6-luna-pro', compare: 'gpt-5.6-luna' },
+  'gpt-5.2-pro': { models: 'openai-gpt-5-2-pro' },
+  'gpt-5.5-pro': { models: 'openai-gpt-5-5-pro' },
+  'gpt-5.6-luna-pro': { models: 'openai-gpt-5-6-luna-pro' },
   'gpt-5.6-sol-pro': { models: 'openai-gpt-5-6-sol-pro' },
   'gpt-5.6-terra-pro': { models: 'openai-gpt-5-6-terra-pro' },
   'gpt-oss-20b': { models: 'openai-gpt-oss-20b' },
@@ -92,9 +94,9 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'claude-fable-5': { models: 'anthropic-claude-fable-5' },
   'claude-fable-5-batch': { models: 'anthropic-claude-fable-5-batch' },
   'claude-opus-4.6-batch': { models: 'anthropic-claude-opus-4-6-batch' },
-  'claude-opus-4.8-batch': { models: 'anthropic-claude-opus-4-8-batch', compare: 'claude-opus-4.5' },
-  'claude-opus-5': { models: 'anthropic-claude-opus-5', compare: 'claude-opus-4.5' },
-  'claude-sonnet-4.6': { models: 'anthropic-claude-sonnet-4-6', compare: 'claude-sonnet-4.5' },
+  'claude-opus-4.8-batch': { models: 'anthropic-claude-opus-4-8-batch' },
+  'claude-opus-5': { models: 'anthropic-claude-opus-5' },
+  'claude-sonnet-4.6': { models: 'anthropic-claude-sonnet-4-6' },
   'glm-4.5-air': { models: 'z-ai-glm-4-5-air', compare: 'glm-5.3' },
   'glm-4.5v': { models: 'z-ai-glm-4-5v' },
   'glm-4.6': { models: 'z-ai-glm-4-6', compare: 'glm-5.3' },
@@ -154,11 +156,12 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
  * with a `compare` target but no `models` target also redirects `/models` to
  * the section list, which would drop a page that currently serves traffic.
  */
-export const LEGACY_COMPARE_ONLY_SLUGS: Record<string, string> = {
-  // Same 2026-10-29 export; the /models page returns 200 + index, follow.
-  'gpt-4.1-nano': 'gpt-5.4-nano',
-  'gpt-5.1-codex-max': 'gpt-5.3-codex',
-  'gpt-5.2-codex': 'gpt-5.3-codex',
+export const LEGACY_COMPARE_ONLY_SLUGS: Record<string, LegacySlugTarget> = {
+  // Same 2026-10-29 export. On 2026-11-04 the successor compare pages were
+  // noindex, so the compare URL goes to the successor's indexable model page.
+  'gpt-4.1-nano': { models: 'gpt-5.4-nano' },
+  'gpt-5.1-codex-max': { models: 'gpt-5.3-codex' },
+  'gpt-5.2-codex': { models: 'gpt-5.3-codex' },
 };
 
 const ROUTE = /^\/(en|zh)\/(models|compare\/plans)\/([^/]+)\/?$/;
@@ -180,8 +183,11 @@ export function legacySlugRedirect(pathname: string): string | null {
     // An unresolvable glued id (one price cell stored as a slug) still lands on
     // the section list, as it always has.
     if (parts) return `/${locale}/${section}`;
-    const compareOnly = sectionKey === 'compare' ? LEGACY_COMPARE_ONLY_SLUGS[lookup] : undefined;
-    return compareOnly ? `/${locale}/${section}/${compareOnly}` : null;
+    const compareOnly = sectionKey === 'compare' && Object.hasOwn(LEGACY_COMPARE_ONLY_SLUGS, lookup)
+      ? LEGACY_COMPARE_ONLY_SLUGS[lookup] : undefined;
+    if (compareOnly?.compare) return `/${locale}/${section}/${compareOnly.compare}`;
+    if (compareOnly?.models) return `/${locale}/models/${compareOnly.models}`;
+    return null;
   }
   const entry = LEGACY_MODEL_SLUGS[lookup];
   const targetSlug = entry[sectionKey];

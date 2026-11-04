@@ -1,6 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { providerRedirects } from './src/lib/provider-redirects';
+import { seoAssetHeaders } from './src/lib/seo-headers';
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
 
@@ -33,6 +34,11 @@ const nextConfig: NextConfig = {
   // Only data-independent aliases run here; provider/plan resolution is in proxy.
   async redirects() {
     return providerRedirects();
+  },
+
+  // Keep generated og:image PNGs out of the index (see src/lib/seo-headers.ts).
+  async headers() {
+    return seoAssetHeaders();
   },
 
   // Next.js per-package imports tree-shaking. Without this, importing
