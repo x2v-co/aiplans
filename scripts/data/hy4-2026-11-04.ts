@@ -28,11 +28,40 @@ export const HY4_VERIFIED_AT = new Date('2026-11-04T00:00:00Z');
 export const HY4_LIST = { input: 0.834, output: 2.501, cache: 0.042 } as const;
 export const HY4_CURRENT = { input: 0.417, output: 1.251, cache: 0.021 } as const;
 
+/**
+ * Official Tencent Cloud channel (added 2026-11-04 evening). Verified 2026-11-04 on
+ * https://www.tencentcloud.com/document/product/1300/78937?lang=en (last updated 2026-11-04 12:10:59):
+ * the Hy4 row lists $0.834 / $2.501 / cache $0.042 per 1M tokens (USD, all three regional tables),
+ * and the page notice says Hy4 inference is "settled at 50% of the list price" until
+ * 2026-12-31 23:59:59 Beijing time — so the table shows the LIST price; buyers pay half now.
+ * Convention (as gemini-4-argon): current price in input/output/cache, list in regular_*,
+ * promo_ends_at set, so the UI marks it limited-time and reverts after the cutoff.
+ * Output 2.501 × 0.5 = 1.2505 is kept exact (OpenRouter displays it rounded to 1.251).
+ */
+export const HY4_TENCENT_CLOUD_PRICES_EN = 'https://www.tencentcloud.com/document/product/1300/78937?lang=en';
+export const HY4_OFFICIAL_PROMO_ENDS_AT = new Date('2026-12-31T15:59:59Z'); // 23:59:59 Beijing (UTC+8)
+export const HY4_OFFICIAL_CURRENT = { input: 0.417, output: 1.2505, cache: 0.021 } as const;
+export const HY4_OFFICIAL_NOTES = [
+  'Tencent Cloud (official) Hy4, international site.',
+  `List price $${HY4_LIST.input} / $${HY4_LIST.output} / cache $${HY4_LIST.cache} per 1M tokens; limited-time 50% off settles at $${HY4_OFFICIAL_CURRENT.input} / $${HY4_OFFICIAL_CURRENT.output} / $${HY4_OFFICIAL_CURRENT.cache} until 2026-12-31 23:59:59 Beijing time, then list price.`,
+  `Source: ${HY4_TENCENT_CLOUD_PRICES_EN} (verified 2026-11-04).`,
+].join('\n');
+
+export function hy4OfficialChannelRow(modelId: number, tencentId: number) {
+  return {
+    model_id: modelId, provider_id: tencentId, currency: 'USD', price_unit: 'per_1m_tokens', is_available: true,
+    input_price_per_1m: HY4_OFFICIAL_CURRENT.input, output_price_per_1m: HY4_OFFICIAL_CURRENT.output,
+    cached_input_price_per_1m: HY4_OFFICIAL_CURRENT.cache, promo_ends_at: HY4_OFFICIAL_PROMO_ENDS_AT,
+    regular_input_price_per_1m: HY4_LIST.input, regular_output_price_per_1m: HY4_LIST.output,
+    regular_cached_input_price_per_1m: HY4_LIST.cache, last_verified: HY4_VERIFIED_AT, notes: HY4_OFFICIAL_NOTES,
+  };
+}
+
 export const HY4_CHANNEL_NOTES = [
   `OpenRouter ${HY4_OPENROUTER_ID}, one upstream provider (Tencent Cloud).`,
   `Current price 50% off: input $${HY4_CURRENT.input} / output $${HY4_CURRENT.output} / cache read $${HY4_CURRENT.cache} per 1M tokens.`,
   `List price $${HY4_LIST.input} / $${HY4_LIST.output} / $${HY4_LIST.cache} per 1M. No end date published; promo_ends_at left empty.`,
-  `Tencent Cloud international pricing lists only Hy4 Preview (${HY4_TENCENT_CLOUD_PRICES}); no official direct price recorded.`,
+  `Official Tencent Cloud price is recorded on the tencent channel (${HY4_TENCENT_CLOUD_PRICES_EN}, promo to 2026-12-31).`,
   `Source: ${HY4_SOURCE} (verified 2026-11-04).`,
 ].join('\n');
 
@@ -72,6 +101,7 @@ export async function seedHy4(tx: Sql, apply = false): Promise<Hy4Step[]> {
   };
   const tencent = one(await tx<Row[]>`SELECT * FROM providers WHERE slug = 'tencent'`, 'providers/tencent');
   if (!tencent) throw new Error('Missing provider tencent; nothing written.');
+  if (tencent.type != null && !['official', 'producer'].includes(String(tencent.type))) throw new Error('Expected official/producer provider tencent; nothing written.');
   const openrouter = one(await tx<Row[]>`SELECT * FROM providers WHERE slug = 'openrouter'`, 'providers/openrouter');
   if (!openrouter) throw new Error('Missing provider openrouter; nothing written.');
   if (openrouter.type != null && openrouter.type !== 'aggregator') throw new Error('Expected OpenRouter aggregator provider; nothing written.');
@@ -79,6 +109,8 @@ export async function seedHy4(tx: Sql, apply = false): Promise<Hy4Step[]> {
   const models = await tx<Row[]>`SELECT * FROM models WHERE lower(slug) IN ${tx([HY4_SLUG, 'hy4', 'tencent-hy-4', 'hunyuan-hy4'])}`;
   if (models.length > 1 || (models[0] && models[0].slug !== HY4_SLUG)) throw new Error('Ambiguous/noncanonical Hy4 model slug; nothing written.');
   const existingModel = models[0] ?? null;
+  const existingOfficial = existingModel ? one(await tx<Row[]>`
+    SELECT * FROM api_channel_prices WHERE model_id = ${existingModel.id} AND provider_id = ${tencent.id}`, 'api_channel_prices/hy4/tencent') : null;
   const existingChannel = existingModel ? one(await tx<Row[]>`
     SELECT * FROM api_channel_prices WHERE model_id = ${existingModel.id} AND provider_id = ${openrouter.id}`, 'api_channel_prices/hy4/openrouter') : null;
 
@@ -101,6 +133,7 @@ export async function seedHy4(tx: Sql, apply = false): Promise<Hy4Step[]> {
     promo_ends_at: null, regular_input_price_per_1m: null, regular_output_price_per_1m: null, regular_cached_input_price_per_1m: null,
     last_verified: HY4_VERIFIED_AT, notes: HY4_CHANNEL_NOTES,
   }, `openrouter/${HY4_SLUG}`);
+  save('api_channel_prices', existingOfficial, hy4OfficialChannelRow(existingModel?.id ?? -1, tencent.id), `tencent/${HY4_SLUG}`);
 
   if (apply) {
     let modelId = existingModel?.id ?? null;
