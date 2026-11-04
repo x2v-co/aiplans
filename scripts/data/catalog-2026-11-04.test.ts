@@ -181,14 +181,15 @@ test('1104 music and video prices map to the verified API model and native units
   assert.doesNotMatch(auditedPrice(GROK_VIDEO_1104[1], 'en'), /Price not public/);
 });
 
-test('1104 native INR decision channel, Terra context tiers, source/date evidence and LongCat access', async () => {
+test('1104 keeps INR decision price static (no INR channel row), Terra context tiers, source/date evidence and LongCat access', async () => {
   const f = fakeSeedTx(catalog1104Fixture());
   await seedCatalog20261104(f.tx, true);
   const prism = f.data.models.find(r => r.slug === 'sarvam-prism')!;
-  const channel = f.data.api_channel_prices.find(r => r.model_id === prism.id)!;
-  assert.deepEqual([channel.input_price_per_1m, channel.output_price_per_1m, channel.currency], [4, 0, 'INR']);
+  // channel_prices_currency_check has no INR (production rejected it), so no channel row is written.
+  assert.equal(f.data.api_channel_prices.some(r => r.model_id === prism.id), false);
+  assert.equal(f.data.api_channel_prices.some(r => r.currency === 'INR'), false);
   assert.match(auditedPrice(SARVAM_PRISM_1104, 'en'), /₹4/);
-  assert.match(String(channel.notes), /state counted once per request/);
+  assert.match(String(prism.description), /state counted once per request/);
   assert.equal(isVerifiedFreeOutput('sarvam-prism', 'sarvam', 4), true);
   assert.equal(isVerifiedFreeOutput('sarvam-prism', 'openrouter', 4), false);
   assert.equal(isVerifiedFreeOutput('sarvam-prism', 'sarvam', 0), false);
@@ -235,10 +236,25 @@ test('1104 freshness and availability locks survive updates, including numeric D
   assert.deepEqual(keepFresher({ id: 1, last_verified: '2026-11-04T03:00:00+08:00', notes: 'new' }, { notes: 'old', last_verified: VERIFIED_AT, price: 4 }), { price: 4 });
   const f = fakeSeedTx(catalog1104Fixture());
   await seedCatalog20261104(f.tx, true);
-  const prism = f.data.models.find(r => r.slug === 'sarvam-prism')!;
-  const channel = f.data.api_channel_prices.find(r => r.model_id === prism.id)!;
-  Object.assign(channel, { input_price_per_1m: '4.0', output_price_per_1m: '0', is_available: false, availability_locked: true, last_verified: '2026-11-05T00:00:00Z', notes: 'newer scraper evidence' });
+  const variant = f.data.api_channel_price_variants.find(r => r.variant_key === 'long-context')!;
+  Object.assign(variant, { input_price_per_1m: '2.0', output_price_per_1m: '7.50', cached_input_price_per_1m: '0.10', is_available: false, availability_locked: true, last_verified: '2026-11-05T00:00:00Z', notes: 'newer scraper evidence' });
   assert.deepEqual(await seedCatalog20261104(f.tx, true), []);
-  assert.equal(channel.is_available, false);
-  assert.equal(channel.notes, 'newer scraper evidence');
+  assert.equal(variant.is_available, false);
+  assert.equal(variant.notes, 'newer scraper evidence');
+});
+
+test('1104 keeps existing model type, capabilities, official link and description (no field regression)', async () => {
+  const fixture = catalog1104Fixture();
+  const grok = fixture.models!.find(r => r.slug === 'grok-imagine-video-720p')!;
+  Object.assign(grok, { type: 'video', capabilities: ['leaderboard-version', 'text-to-video'], offical_link: 'https://docs.x.ai/docs/guides/video-generations', description: 'Arena AI rank #17.' });
+  const f = fakeSeedTx(fixture);
+  const steps = await seedCatalog20261104(f.tx, true);
+  const change = steps.find(s => s.target === 'grok-imagine-video-720p')!.changes;
+  for (const field of ['type', 'capabilities', 'offical_link']) assert.ok(!(field in change), field);
+  const row = f.data.models.find(r => r.slug === 'grok-imagine-video-720p')!;
+  assert.equal(row.type, 'video');
+  assert.deepEqual(row.capabilities, ['leaderboard-version', 'text-to-video']);
+  assert.match(String(row.description), /^Arena AI rank #17\.\n/);
+  assert.equal(f.data.models.find(r => r.slug === 'eleven-v4')!.type, 'llm');
+  assert.deepEqual(await seedCatalog20261104(f.tx, true), []);
 });
