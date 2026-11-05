@@ -107,10 +107,6 @@ function providerRegion(slug: string): 'china' | 'global' {
   return ['qwen', 'minimax-china', 'volcengine'].includes(slug) ? 'china' : 'global';
 }
 
-function providerAccessFromChina(slug: string): boolean {
-  return providerRegion(slug) === 'china';
-}
-
 async function loadProviders(): Promise<Map<string, ProviderRow>> {
   const { data, error } = await db.from('providers').select('id, slug, name');
   if (error) throw error;
@@ -134,7 +130,7 @@ async function ensureProvider(
     description: `${item.provider} provider record created from audited ${item.kind} catalog.`,
     region: providerRegion(slug),
     type: 'official',
-    access_from_china: providerAccessFromChina(slug),
+    access_from_china: null,
     notes: `Seeded by seed-vertical-models from ${item.slug}; verify before attaching scraped prices.`,
   };
 

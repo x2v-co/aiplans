@@ -1,4 +1,5 @@
 'use client';
+import { deriveProviderRegions, shouldShowChinaBadge } from '@/lib/supported-regions';
 
 import { useDeferredValue, useRef, useState } from 'react';
 import { ProviderLogo } from '@/components/provider-logo';
@@ -39,8 +40,7 @@ export default function ComparePlansIndexView({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'elo' | 'plans' | 'name' | 'context'>('elo');
-  // "国内可用" capability card: narrow the grid to China-region producers,
-  // whose subscription plans are buyable without a VPN.
+  // Country support requires a sourced list; provider home region is insufficient.
   const [chinaOnly, setChinaOnly] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const resultsRef = useRef<HTMLElement>(null);
@@ -72,7 +72,7 @@ export default function ComparePlansIndexView({
     .map((item: any) => {
       const filteredModels = item.models
         .filter((model: any) => {
-          if (chinaOnly && model.providers?.region !== 'china') return false;
+          if (chinaOnly && !shouldShowChinaBadge(deriveProviderRegions(model.providers), locale)) return false;
           if (!normalizedSearchQuery) return true;
 
           // Shared fuzzy matcher: punctuation-insensitive plus brand aliases,
@@ -415,13 +415,13 @@ export default function ComparePlansIndexView({
               description={t('bestValue')}
               onClick={() => applyCapability({ target: 'featured' })}
             />
-            <CapabilityCard
+            {locale === 'zh' && modelsByProvider.some(group => group.models.some(model => shouldShowChinaBadge(deriveProviderRegions(model.providers), locale))) && <CapabilityCard
               icon="🇨🇳"
               title={t('chinaAccessible')}
-              description={t('noVPN')}
+              description="依据官方支持地区筛选"
               active={chinaOnly}
               onClick={() => applyCapability({ sort: 'elo', china: true, target: 'results' })}
-            />
+            />}
           </div>
         </section>
       </main>

@@ -1,3 +1,4 @@
+import { deriveProviderRegions, sourcedChinaAccess, type RegionFields } from './supported-regions';
 import { publicModelName } from './public-catalog-copy';
 import { sql, INT4_ARRAY } from '@/lib/db';
 
@@ -8,7 +9,7 @@ type ModelWithProviderIds = {
   name?: string | null;
 };
 
-type Provider = {
+type Provider = RegionFields & {
   id: number;
   name: string;
   name_en?: string | null;
@@ -38,12 +39,14 @@ export async function getProvidersByIds(providerIds: number[]): Promise<Map<numb
 
   const data = await sql<Provider[]>`
     SELECT id, name, to_jsonb(providers)->>'name_en' AS name_en, slug, logo, logo_url, website, invite_url, pricing_url,
-           api_docs_url, region, type, access_from_china
+           api_docs_url, region, type, access_from_china, supported_regions, regions_source_url, regions_verified_at, notes
     FROM providers
     WHERE id = ANY(${sql.array(providerIds, INT4_ARRAY)})
   `;
 
-  return new Map(data.map((provider) => [provider.id, provider]));
+  return new Map(data.map((provider) => [provider.id, { ...provider,
+    access_from_china: sourcedChinaAccess(deriveProviderRegions(provider)),
+  }]));
 }
 
 export async function getPrimaryProvidersForModels<T extends ModelWithProviderIds>(

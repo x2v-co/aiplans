@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { cleanPlanDisplayText, planCardCopy, uniquePlanSentences } from './plan-card-display';
+import { structuredPlanHighlights, cleanPlanDisplayText, planCardCopy, uniquePlanSentences } from './plan-card-display';
 
 test('strips machine markers anywhere, detects unverified and preserves ordinary brackets', () => {
   assert.deepEqual(cleanPlanDisplayText('  Pro [NEEDS-VERIFICATION]\n [aiplans:review-source] [internal-only]  [100K context] '), {
@@ -116,4 +116,14 @@ test('annual billing line shows the yearly total with the monthly equivalent (Ki
   assert.match(en, /Billed annually ¥1,908(\.00)? \(¥159(\.00)?\/month\)/);
   const noYm = structuredPlanHighlights({ ...plan, price_yearly_monthly: null }, 'zh').join('\n');
   assert.match(noYm, /年付 ¥1,908(\.00)?$/m);
+});
+
+test('China highlights require sourced CN support and zh; provider fallback respects plan priority', () => {
+  const source = { supported_regions: ['CN'], regions_source_url: 'https://example.com/countries' };
+  const copy = (structured: Parameters<typeof structuredPlanHighlights>[0], locale = 'zh') => structuredPlanHighlights(structured, locale);
+  assert.deepEqual(copy({ access_from_china: true }), []);
+  assert.deepEqual(copy(source), ['支持中国大陆访问']);
+  assert.deepEqual(copy(source, 'en'), []);
+  assert.deepEqual(copy({ providers: source }), ['支持中国大陆访问']);
+  assert.deepEqual(copy({ supported_regions: [], providers: source }), []);
 });

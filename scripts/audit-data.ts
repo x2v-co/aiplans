@@ -9,7 +9,7 @@
  *   npx tsx scripts/audit-data.ts --stale-days 14 # override staleness threshold
  *
  * Exit code 0 if clean or warnings only; 1 if any `critical` findings.
- * With --strict, warnings-only returns 2.
+ * With --strict, non-advisory warnings-only returns 2.
  *
  * Check categories:
  *   C1 prices.zero_or_null        — price_per_1m <= 0 or null (critical); OpenRouter explicit 0/0
@@ -43,9 +43,12 @@
  *                                   the Artificial Analysis model leaderboard list price
  *                                   (warn; DB snapshot from ingest:benchmarks, skipped with
  *                                   a notice when the snapshot is missing or stale)
+ *   C23 regions.missing_source — valued regions / legacy China values without region sources (advisory)
  *   C22 variants.*              — channel price variant integrity (one headline,
  *                                   no inverted prices, no stale active rows)
  */
+import { regionSourceWarning, isRegionAdvisory } from './utils/audit-regions-policy';
+import type { RegionFields } from '../src/lib/supported-regions';
 import { isSupersededPlan } from '../src/lib/plan-lifecycle';
 import { isExplicitlyUnverifiedPrice, isOpenRouterPublishedFree, isVerifiedFreeOutput, isVerifiedFreePrice as isVerifiedFreeChannel } from './utils/audit-price-policy';
 import { db } from './db/queries';
@@ -828,6 +831,26 @@ async function main() {
     }
   }
 
+  // Advisory country-source audit. to_jsonb tolerates pre-0016 databases.
+  const regionRows = await databaseSql<Array<RegionFields & { entity: string; id: number; slug: string }>>`
+    SELECT 'providers' AS entity, id, slug, access_from_china, notes, NULL::text AS last_verified,
+      to_jsonb(providers)->'supported_regions' AS supported_regions,
+      to_jsonb(providers)->>'regions_source_url' AS regions_source_url,
+      to_jsonb(providers)->>'regions_verified_at' AS regions_verified_at
+    FROM providers
+    UNION ALL
+    SELECT 'plans' AS entity, id, slug, access_from_china, notes, last_verified::text,
+      to_jsonb(plans)->'supported_regions' AS supported_regions,
+      to_jsonb(plans)->>'regions_source_url' AS regions_source_url,
+      to_jsonb(plans)->>'regions_verified_at' AS regions_verified_at
+    FROM plans
+  `;
+  for (const row of regionRows) {
+    const message = regionSourceWarning(row);
+    if (message) add('regions.missing_source', 'warning', message,
+      { entity: row.entity, id: row.id, slug: row.slug });
+  }
+
   // ---------- report ----------
   if (JSON_OUT) {
     console.log(JSON.stringify({
@@ -887,6 +910,7 @@ async function main() {
       'models.unknown_provider_id',
       'plans.stale',
       'plans.missing_verified',
+      'regions.missing_source',
       'plans.missing_kind',
       'plans.no_model_mapping',
     ];
@@ -912,7 +936,7 @@ async function main() {
   const hasCritical = findings.some(f => f.severity === 'critical');
   // Let Node flush large JSON reports before exiting. Calling process.exit()
   // here truncated stdout once the report exceeded the pipe buffer.
-  process.exitCode = auditExitCode(hasCritical, findings.length, STRICT);
+  process.exitCode = auditExitCode(hasCritical, findings.filter(f => !isRegionAdvisory(f)).length, STRICT);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

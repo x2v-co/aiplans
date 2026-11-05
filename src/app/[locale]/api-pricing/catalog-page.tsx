@@ -62,7 +62,7 @@ export default async function ApiPricingPage({
       ? { sortBy: sort as "price" | "name" | "elo" | "latest" | "context" }
       : {}),
     ...(order && ["asc", "desc"].includes(order) ? { sortOrder: order as "asc" | "desc" } : {}),
-    ...(china === "1" ? { chinaAccessOnly: true } : {}),
+    ...(locale === "zh" && china === "1" ? { chinaAccessOnly: true } : {}),
     ...(region && ["global", "china"].includes(region)
       ? { regionFilter: region as "global" | "china" }
       : {}),

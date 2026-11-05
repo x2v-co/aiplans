@@ -116,3 +116,14 @@ test('the static card uses its explicit locale even without or inside a differen
   assert.match(html, /更多额度/);
   assert.doesNotMatch(html, /More quota/);
 });
+
+test('China availability is absent for bare legacy true, shown only for sourced CN in zh', () => {
+  const legacy = { ...plan, access_from_china: true };
+  for (const locale of ['zh', 'en'] as const) {
+    assert.doesNotMatch(render(locale, legacy), /国内可用|支持中国大陆访问|China Available|Accessible from mainland China/i);
+  }
+  const sourced = { ...legacy, supported_regions: ['CN'], regions_source_url: 'https://example.com/countries' };
+  assert.match(render('zh', sourced), /国内可用|支持中国大陆访问/);
+  assert.doesNotMatch(render('en', sourced), /国内可用|支持中国大陆访问|China Available|Accessible from mainland China/i);
+  assert.doesNotMatch(render('zh', { ...sourced, supported_regions: [] }), /国内可用|支持中国大陆访问/);
+});

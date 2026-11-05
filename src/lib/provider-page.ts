@@ -1,3 +1,4 @@
+import type { RegionFields } from './supported-regions';
 import type { ChannelTermsFields } from './channel-terms';
 import { jsonLd, SITE_URL } from './seo';
 import { getProviderLogoSrc } from './provider-branding';
@@ -5,7 +6,7 @@ import type { EconomicPlan } from './plan-economics';
 import type { ThirdPartyCoverage } from './third-party-coverage';
 import { PRICE_UNIT_INFO, type CurrencyCode, type PriceUnit } from './currency';
 
-export type ProviderRecord = {
+export type ProviderRecord = RegionFields & {
   id: number;
   name: string;
   slug: string;
@@ -22,7 +23,7 @@ export type ProviderRecord = {
   access_from_china: boolean | null;
 };
 
-export type ProviderPlanRecord = EconomicPlan & ChannelTermsFields & {
+export type ProviderPlanRecord = EconomicPlan & ChannelTermsFields & RegionFields & {
   id: number;
   name: string;
   plan_kind: string | null;

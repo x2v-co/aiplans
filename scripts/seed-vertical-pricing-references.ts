@@ -124,7 +124,7 @@ async function upsertPlan(item: AiCatalogItem, provider: ProviderRow): Promise<P
     tier: item.pricingConfidence === undefined ? undefined : item.pricingConfidence === 'not-commercial' ? 'research' : 'official',
     is_official: true,
     is_contact_sales: item.access?.includes('enterprise'),
-    access_from_china: ['qwen', 'minimax-china', 'volcengine'].includes(provider.slug),
+    access_from_china: null,
     region: ['qwen', 'minimax-china', 'volcengine'].includes(provider.slug) ? 'china' : 'global',
     source: 'manual',
     plan_kind: 'creative',

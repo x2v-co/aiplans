@@ -1,4 +1,6 @@
 "use client";
+import { shouldShowChinaBadge, type RegionEvidence } from '@/lib/supported-regions';
+import { useLocale } from 'next-intl';
 
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 import { Badge } from "@/components/ui/badge";
@@ -200,7 +202,8 @@ interface PlanComparison {
     website: string | null;
     inviteUrl: string | null;
     region: string;
-    accessFromChina: boolean;
+    accessFromChina: boolean | null;
+    regionEvidence?: RegionEvidence;
     paymentMethods: string[];
   };
   pricing: {
@@ -320,6 +323,7 @@ function PlanRow({ plan, isBaseline, currency: _currency, showYearly }: {
   currency: string;
   showYearly: boolean;
 }) {
+  const locale = useLocale();
   const structuredFeatures = plan.plan.features ? parseFeatures(plan.plan.features) : {};
   // Get the plan's original currency (not the display currency)
   const planCurrency = plan.pricing.currency || 'USD';
@@ -370,8 +374,8 @@ function PlanRow({ plan, isBaseline, currency: _currency, showYearly }: {
         </div>
 
         <div className="flex flex-wrap gap-1 justify-end items-center">
-          {plan.channel.accessFromChina && (
-            <Badge variant="outline" className="text-xs">🇨🇳 China OK</Badge>
+          {plan.channel.regionEvidence && shouldShowChinaBadge(plan.channel.regionEvidence, locale) && (
+            <Badge variant="outline" className="text-xs">国内可用</Badge>
           )}
           {plan.channel.region === "global" && (
             <Badge variant="outline" className="text-xs">🌍 Global</Badge>

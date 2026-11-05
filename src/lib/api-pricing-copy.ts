@@ -7,6 +7,7 @@
  * Every figure is computed from real rows; the cross-currency "cheapest"
  * uses the same USD-normalisation as the table itself (getCheapestChannel).
  */
+import { deriveProviderRegions, sourcedChinaAccess } from './supported-regions';
 import type { Locale } from './seo';
 import { formatPrice, type CurrencyCode } from './currency';
 import { convertToUSD } from './currency-conversion';
@@ -57,7 +58,7 @@ export function computeApiPricingStats(
       providerIds.add(cp.provider_id);
       const norm = normalizeChannelType(cp.providers?.type);
       typeCounts[norm]++;
-      if (cp.providers?.access_from_china) hasChina = true;
+      if (sourcedChinaAccess(deriveProviderRegions(cp.providers)) === true) hasChina = true;
     }
 
     // Cheapest channel of this model, then compare its USD value across models.
@@ -126,10 +127,9 @@ export function buildApiPricingFaqs(
       answer:
         '官方渠道是模型生产方自己的 API（如 OpenAI、Anthropic、DeepSeek）；云厂商指 Azure、AWS Bedrock、Google Vertex 等托管的同一模型；聚合渠道（如 OpenRouter、硅基流动）把多家模型统一到一个账号和计费下；分销商则转售额度。四类的价格、速率、合规与发票主体不同，可按需求选择。',
     });
-    faqs.push({
-      question: '在中国大陆能直接调用这些 API 吗？',
-      answer:
-        `本站标注了每个渠道是否支持中国大陆直连。共有约 ${stats.chinaModelCount} 个模型至少有一个可直连渠道（含国内厂商与部分聚合渠道）；国际官方渠道通常需要代理或 VPN。可使用页面上的“中国直连”筛选。`,
+    if (stats.chinaModelCount > 0) faqs.push({
+      question: '哪些渠道支持中国大陆？',
+      answer: `共有 ${stats.chinaModelCount} 个模型至少有一个渠道的官方支持地区包含中国大陆。可使用“仅显示国内可用”筛选，具体以官方说明为准。`,
     });
     faqs.push({
       question: '除了按 token 付费的 API，还有订阅套餐吗？',
@@ -151,11 +151,6 @@ export function buildApiPricingFaqs(
       question: 'What is the difference between official, cloud, aggregator and reseller channels?',
       answer:
         'Official channels are the model producer\'s own API (OpenAI, Anthropic, DeepSeek); cloud channels host the same model on Azure, AWS Bedrock or Google Vertex; aggregators (OpenRouter, SiliconFlow) unify many models under one account and bill; resellers resell capacity. They differ in price, rate limits, compliance and who invoices you.',
-    });
-    faqs.push({
-      question: 'Can I call these APIs directly from mainland China?',
-      answer:
-        `Each channel is flagged for direct mainland-China access. About ${stats.chinaModelCount} models have at least one directly reachable channel (including domestic producers and some aggregators); international official channels normally require a proxy or VPN. Use the "China access only" filter on the page.`,
     });
     faqs.push({
       question: 'Besides token-priced APIs, are there subscription plans?',

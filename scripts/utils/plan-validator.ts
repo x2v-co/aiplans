@@ -26,7 +26,7 @@ export interface ScrapedPlan {
 
   // Other
   region: string;
-  accessFromChina: boolean;
+  accessFromChina: boolean | null;
   paymentMethods: string[];
   isOfficial: boolean;
 }

@@ -1,3 +1,4 @@
+import { derivePlanRegions, deriveProviderRegions, sourcedChinaAccess, type RegionFields } from './supported-regions';
 import { currentPlanCondition } from './plan-lifecycle-query';
 import { isSupersededPlan } from './plan-lifecycle';
 import { publicModelName } from './public-catalog-copy';
@@ -20,7 +21,7 @@ export type PlanQuery = {
   includeModels?: boolean;
 };
 
-interface PlanProvider {
+interface PlanProvider extends RegionFields {
   id: number;
   name: string;
   slug: string;
@@ -39,7 +40,7 @@ interface PlanModel {
   context_window: number | null;
 }
 
-export interface ListedPlan extends EconomicPlan, PlanCoverageFields, ChannelTermsFields {
+export interface ListedPlan extends EconomicPlan, PlanCoverageFields, ChannelTermsFields, RegionFields {
   id: number;
   name: string;
   tier: string | null;
@@ -130,9 +131,13 @@ export async function getPlans(query: PlanQuery = {}): Promise<ListedPlan[]> {
     }));
   }
 
-  // Transform data to include provider info
-  return plans.map((plan) => ({
-    ...plan,
-    provider: plan.provider_id ? providerMap.get(plan.provider_id) ?? null : null,
-  }));
+  // Keep compatibility booleans derived from the same winning evidence layer.
+  return plans.map((plan) => {
+    const provider = plan.provider_id ? providerMap.get(plan.provider_id) : null;
+    return {
+      ...plan,
+      provider: provider ? { ...provider, access_from_china: sourcedChinaAccess(deriveProviderRegions(provider)) } : null,
+      access_from_china: sourcedChinaAccess(derivePlanRegions(plan, provider)),
+    };
+  });
 }

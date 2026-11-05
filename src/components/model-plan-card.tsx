@@ -1,3 +1,4 @@
+import { derivePlanRegions, shouldShowChinaBadge, type RegionFields } from '@/lib/supported-regions';
 import { createTranslator } from 'next-intl';
 import enMessages from '../../messages/en.json';
 import zhMessages from '../../messages/zh.json';
@@ -25,7 +26,7 @@ export interface ModelPlanCardRow extends PlanTrustRow, ChannelTermsFields, Part
   features: unknown;
   access_from_china: boolean | null;
   plan_kind: string | null;
-  providers: { id: number; name: string; name_en?: string | null; slug: string; logo: string | null;
+  providers: RegionFields & { id: number; name: string; name_en?: string | null; slug: string; logo: string | null;
     pricing_url?: string | null; website?: string | null } | null;
 }
 
@@ -57,7 +58,7 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
     conditions: [
       ...priceTrust.conditions, ...entitlementTrust.conditions,
       `${quota('coverage')}: ${quota(`coverageValues.${normalizeThirdPartyCoverage(plan.third_party_coverage)}`)}`,
-      plan.access_from_china ? t('chinaAvailable') : null,
+      shouldShowChinaBadge(derivePlanRegions(plan, plan.providers), locale) ? t('chinaAvailable') : null,
       plan.data_for_discount ? terms('training') : null,
     ],
   });

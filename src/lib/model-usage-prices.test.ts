@@ -73,7 +73,7 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
 function summaryCards(html: string) {
   return {
     cheapest: html.split(/Cheapest Option|最低价选项/)[1].split(/Official Price|官方价格/)[0],
-    official: html.split(/Official Price|官方价格/)[1].split(/Best in China|国内优选/)[0],
+    official: html.split(/Official Price|官方价格/)[1].split(/data-slot="separator"|Best in China|国内优选/)[0],
   };
 }
 
@@ -346,4 +346,24 @@ test('every Veo zh description quotes each Vertex rate of its catalog row', () =
     assert.match(item.descriptionZh ?? '', /[\u4e00-\u9fff]/, item.slug);
     for (const rate of item.usageRates ?? []) assert.ok(item.descriptionZh!.includes(`$${rate.price.toFixed(2)}`), `${item.slug} ${rate.priceKind}`);
   }
+});
+
+test('regional claims and China recommendation disappear without sourced support; English stays quiet', async () => {
+  const legacy = { ...channel, providers: { ...channel.providers, access_from_china: true } };
+  for (const locale of ['zh', 'en'] as const) {
+    const html = await modelHtml([], [legacy], locale);
+    assert.doesNotMatch(html, /国内可用|国内优选|China Available|Best in China|China availability unknown|中国可用性未知/);
+    assert.doesNotMatch(html, /✗/);
+    assert.ok(!html.includes(zh.modelDetail.bestInChina));
+  }
+  const sourced = { ...legacy, providers: { ...legacy.providers,
+    supported_regions: ['CN'], regions_source_url: 'https://example.com/countries' } };
+  const zhHtml = await modelHtml([], [sourced], 'zh');
+  assert.match(zhHtml, /国内可用/);
+  assert.ok(zhHtml.includes(zh.modelDetail.bestInChina));
+  assert.doesNotMatch(await modelHtml([], [sourced], 'en'), /国内可用|China Available|Best in China/);
+  const excluded = { ...sourced, providers: { ...sourced.providers, supported_regions: ['US'] } };
+  const html = await modelHtml([], [excluded], 'zh');
+  assert.doesNotMatch(html, /国内可用|国内优选/);
+  assert.match(html, /✗/);
 });

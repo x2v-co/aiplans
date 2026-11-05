@@ -123,7 +123,7 @@ async function seedCatalogItems(tx: Sql, apply: boolean, items: AiCatalogItem[],
       slug, name: `${item.name} pricing reference`, provider_id: channel.id, product_id: channel.id,
       price: null, annual_price: null, currency: 'USD', pricing_model: 'official_reference',
       price_unit: item.pricingUnit, source: 'manual', plan_kind: 'creative', plan_category: 'creative',
-      included_usage_unit: unit, included_usage_amount: null, is_official: true,
+      access_from_china: null, included_usage_unit: unit, included_usage_amount: null, is_official: true,
       notes: `${item.pricingChannel ?? item.provider} pricing reference. Source: ${source}`,
       last_verified: '2026-10-15T00:00:00.000Z',
     }, slug);

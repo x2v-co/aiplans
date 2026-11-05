@@ -13,6 +13,7 @@
  * invented capabilities, no "best model ever" marketing. If a fact is absent
  * from the data, the sentence that needs it is omitted rather than guessed.
  */
+import { deriveProviderRegions, sourcedChinaAccess, type RegionFields } from './supported-regions';
 import { convertToUSD } from './currency-conversion';
 import { formatPrice, type CurrencyCode } from './currency';
 import type { Locale } from './seo';
@@ -21,7 +22,7 @@ export interface ModelCopyChannel {
   input_price_per_1m: number | null;
   output_price_per_1m: number | null;
   currency: string | null;
-  providers?: {
+  providers?: RegionFields & {
     name?: string | null;
     type?: string | null;
     region?: string | null;
@@ -92,7 +93,7 @@ function channelLabel(c: ModelCopyChannel): string {
 }
 
 function chinaChannels(channels: ModelCopyChannel[]): ModelCopyChannel[] {
-  return channels.filter((c) => c.providers?.access_from_china);
+  return channels.filter((c) => sourcedChinaAccess(deriveProviderRegions(c.providers)) === true);
 }
 
 function planNames(plans: ModelCopyPlan[]): string[] {
@@ -171,10 +172,8 @@ export function buildModelCopy(ctx: ModelCopyContext, locale: Locale): ModelCopy
     if (cnChannels.length > 0) {
       const names = cnChannels.slice(0, 3).map(channelLabel).join('、');
       summaryParts.push(
-        `在中国大陆可直连的渠道包括 ${names}${cnChannels.length > 3 ? ' 等' : ''}。`,
+        `官方支持地区包含中国大陆的渠道包括 ${names}${cnChannels.length > 3 ? ' 等' : ''}。`,
       );
-    } else if (channels.length > 0) {
-      summaryParts.push('该模型的追踪渠道在中国大陆通常需要代理或 VPN 才能访问。');
     }
 
     if (plansList.length > 0) {
@@ -220,17 +219,6 @@ export function buildModelCopy(ctx: ModelCopyContext, locale: Locale): ModelCopy
           locale,
         )} per 1M output tokens.`,
       );
-    }
-
-    if (cnChannels.length > 0) {
-      const names = cnChannels.slice(0, 3).map(channelLabel).join(', ');
-      summaryParts.push(
-        `Channels reachable from mainland China without a VPN include ${names}${
-          cnChannels.length > 3 ? ', among others' : ''
-        }.`,
-      );
-    } else if (channels.length > 0) {
-      summaryParts.push('None of the tracked channels are directly reachable from mainland China without a proxy or VPN.');
     }
 
     if (plansList.length > 0) {
@@ -290,34 +278,12 @@ export function buildModelCopy(ctx: ModelCopyContext, locale: Locale): ModelCopy
     }
   }
 
-  // 3. China access
-  if (channels.length > 0) {
-    if (cnChannels.length > 0) {
-      const names = cnChannels.slice(0, 4).map(channelLabel).join(isZh ? '、' : ', ');
-      if (isZh) {
-        faqs.push({
-          question: `${name} 在中国大陆能用吗？`,
-          answer: `可以。以下渠道支持中国大陆直连：${names}。国内厂商渠道通常支持支付宝/微信付款。`,
-        });
-      } else {
-        faqs.push({
-          question: `Can I use ${name} from mainland China?`,
-          answer: `Yes — these channels are directly reachable from mainland China without a VPN: ${names}. Domestic channels generally support Alipay/WeChat Pay.`,
-        });
-      }
-    } else {
-      if (isZh) {
-        faqs.push({
-          question: `${name} 在中国大陆能用吗？`,
-          answer: '本站追踪的渠道均无法从中国大陆直连，访问官方或国际渠道通常需要代理或 VPN。',
-        });
-      } else {
-        faqs.push({
-          question: `Can I use ${name} from mainland China?`,
-          answer: 'None of the tracked channels are directly reachable from mainland China; reaching the official or international channels normally requires a proxy or VPN.',
-        });
-      }
-    }
+  if (isZh && cnChannels.length > 0) {
+    const names = cnChannels.slice(0, 4).map(channelLabel).join('、');
+    faqs.push({
+      question: `${name} 支持中国大陆吗？`,
+      answer: `以下渠道的官方支持地区包含中国大陆：${names}。`,
+    });
   }
 
   // 4. Context window

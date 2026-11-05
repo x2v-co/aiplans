@@ -592,7 +592,7 @@ export async function upsertPlan(data: {
   requests_per_minute?: number;
   features?: string[];
   region?: string;
-  access_from_china?: boolean;
+  access_from_china?: boolean | null;
   payment_methods?: string[];
   is_official: boolean;
   last_verified: Date | null;
@@ -613,7 +613,7 @@ export async function upsertPlan(data: {
     requests_per_minute: data.requests_per_minute,
     features: data.features,
     region: data.region,
-    access_from_china: data.access_from_china,
+    access_from_china: data.access_from_china ?? null,
     payment_methods: data.payment_methods,
     is_official: data.is_official,
     last_verified: data.last_verified,
@@ -674,7 +674,7 @@ export async function upsertProvider(data: {
   priority?: number;
   notes?: string;
   type?: string;
-  access_from_china?: boolean;
+  access_from_china?: boolean | null;
 }) {
   // Create metadata object to store in description field
   const metadata: Record<string, unknown> = {
@@ -741,7 +741,7 @@ export async function upsertProvider(data: {
   // Create new
   const { data: newProvider, error } = await db
     .from('providers')
-    .insert(dbData)
+    .insert({ ...dbData, access_from_china: data.access_from_china === false ? false : null })
     .select()
     .single();
 
@@ -824,7 +824,7 @@ export async function updatePlan(planId: number, data: Partial<{
   yearly_discount_percent?: number;
   features?: string[];
   region?: string;
-  access_from_china?: boolean;
+  access_from_china?: boolean | null;
   payment_methods?: string[];
   is_official?: boolean;
   last_verified?: Date;

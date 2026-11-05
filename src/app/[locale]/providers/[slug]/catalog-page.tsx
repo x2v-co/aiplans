@@ -1,3 +1,4 @@
+import { derivePlanRegions, chinaAccessMark, formatAvailableIn } from '@/lib/supported-regions';
 import { getPlansByProvider } from '@/lib/provider-plans-query';
 import { publicModelName } from '@/lib/public-catalog-copy';
 import { providerSearchProfile } from '@/lib/provider-search';
@@ -171,6 +172,10 @@ export default async function ProviderPage({
       type: provider.type,
       region: provider.region,
       access_from_china: provider.access_from_china,
+      supported_regions: provider.supported_regions,
+      regions_source_url: provider.regions_source_url,
+      regions_verified_at: provider.regions_verified_at,
+      notes: provider.notes,
       description: provider.description,
       modelCount: models.length,
       // `plans` is the untyped SQL result; annotate the return shape only.
@@ -185,6 +190,10 @@ export default async function ProviderPage({
         monthly_message_limit: p.monthly_message_limit ?? null,
         context_window: p.context_window ?? null,
         access_from_china: p.access_from_china ?? null,
+        supported_regions: p.supported_regions,
+        regions_source_url: p.regions_source_url,
+        regions_verified_at: p.regions_verified_at,
+        notes: p.notes, last_verified: p.last_verified,
         is_contact_sales: p.is_contact_sales ?? null,
         currency: p.currency ?? null,
       })),
@@ -422,10 +431,13 @@ export default async function ProviderPage({
                           <span>{plan.rate_limit}/min</span>
                         </div>
                       )}
-                      <div className="flex justify-between">
-                        <span className="text-zinc-500">{isZh ? '中国直连' : 'China Access'}</span>
-                        <span>{plan.access_from_china == null ? (isZh ? '未知' : 'Unknown') : plan.access_from_china ? (isZh ? '✓ 可用' : '✓ Available') : (isZh ? '✗ 不可用' : '✗ Not available')}</span>
-                      </div>
+                      {isZh && <div className="flex justify-between">
+                        <span className="text-zinc-500">中国大陆支持</span>
+                        <span>{chinaAccessMark(derivePlanRegions(plan, provider))}</span>
+                      </div>}
+                      {!isZh && formatAvailableIn(derivePlanRegions(plan, provider), { locale }) && (
+                        <div className="text-xs text-zinc-500">Available in: <a href={derivePlanRegions(plan, provider).sourceUrl!} target="_blank" rel="noopener noreferrer" className="underline">{formatAvailableIn(derivePlanRegions(plan, provider), { locale })}</a></div>
+                      )}
                       {showTrust && (
                         <DataTrustLabel fact={planEntitlementTrust(plan, planSource, locale, now)} locale={locale} />
                       )}

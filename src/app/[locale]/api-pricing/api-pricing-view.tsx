@@ -1,4 +1,5 @@
 "use client";
+import { deriveProviderRegions, shouldShowChinaBadge } from '@/lib/supported-regions';
 
 import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
 
@@ -154,7 +155,7 @@ export default function ApiPricingView({
   const [channelTypeFilter, setChannelTypeFilter] = useState<"all" | "official" | "cloud" | "aggregator" | "reseller">(
     initialFilters?.channelTypeFilter ?? "all",
   );
-  const [chinaAccessOnly, setChinaAccessOnly] = useState(initialFilters?.chinaAccessOnly ?? false);
+  const [chinaAccessOnly, setChinaAccessOnly] = useState(locale === 'zh' && (initialFilters?.chinaAccessOnly ?? false));
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_MODELS);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
@@ -200,14 +201,11 @@ export default function ApiPricingView({
         if (!hasType) return false;
       }
 
-      // China-access-only toggle: the product is CN-usable if either its
-      // primary producer is China-accessible (e.g. Zhipu, Moonshot, Qwen)
-      // or at least one tracked channel is. Producer-side check handles
-      // the data gap where official CN platform prices aren't in DB yet.
-      if (chinaAccessOnly) {
+      // Only sourced country support qualifies for the zh filter.
+      if (locale === 'zh' && chinaAccessOnly) {
         const producerAccess =
-          p.providers?.access_from_china === true || p.providers?.region === 'china';
-        const channelAccess = p.versions.some((cp) => cp.providers?.access_from_china === true);
+          shouldShowChinaBadge(deriveProviderRegions(p.providers), locale);
+        const channelAccess = p.versions.some((cp) => shouldShowChinaBadge(deriveProviderRegions(cp.providers), locale));
         if (!producerAccess && !channelAccess) return false;
       }
 
@@ -243,7 +241,7 @@ export default function ApiPricingView({
     });
 
     return filtered;
-  }, [products, deferredSearchQuery, sortBy, sortOrder, regionFilter, channelTypeFilter, chinaAccessOnly]);
+  }, [products, deferredSearchQuery, sortBy, sortOrder, regionFilter, channelTypeFilter, chinaAccessOnly, locale]);
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -421,7 +419,7 @@ export default function ApiPricingView({
                     channel: initialFilters?.channelTypeFilter && initialFilters.channelTypeFilter !== 'all' ? initialFilters.channelTypeFilter : undefined,
                   }}
                 />
-                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                {locale === 'zh' && <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={chinaAccessOnly}
@@ -433,7 +431,7 @@ export default function ApiPricingView({
                   />
                   <MapPin className="w-4 h-4 text-zinc-400" />
                   {t('chinaAccessOnly')}
-                </label>
+                </label>}
               </div>
             </div>
             <div className="mt-4 text-sm text-zinc-500">
@@ -593,7 +591,7 @@ export default function ApiPricingView({
                                           <span className="text-sm font-medium">
                                             {channelName} {tChina()}
                                           </span>
-                                          {chinaVersion.providers.access_from_china && (
+                                          {shouldShowChinaBadge(deriveProviderRegions(chinaVersion.providers), locale) && (
                                             <Check className="w-3 h-3 text-green-600" />
                                           )}
                                         </div>
@@ -732,10 +730,10 @@ export default function ApiPricingView({
                                           </Badge>
                                         );
                                       })}
-                                      {cp.providers.access_from_china && (
+                                      {shouldShowChinaBadge(deriveProviderRegions(cp.providers), locale) && (
                                         <Check className="w-3 h-3 text-green-600" />
                                       )}
-                                      {cp.providers.region === 'china' && (
+                                      {shouldShowChinaBadge(deriveProviderRegions(cp.providers), locale) && (
                                         <Badge className="ml-2 text-xs" variant="outline">
                                           🇨🇳
                                         </Badge>
