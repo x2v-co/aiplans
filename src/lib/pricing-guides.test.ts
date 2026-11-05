@@ -384,6 +384,7 @@ test('plan-quota guides state API-equivalent value(s) with basis, using numbers 
   assert.match(grok.rows[0].value.en, /\$1,500\/week/);
   assert.match(grok.rows[0].value.en, /\$6,525\/month/);
   assert.match(grok.rows[0].basis.en, /4\.35/);
+  assert.match(grok.rows[0].basis.en, /365\.25÷12÷7/);
   assert.match(grok.rows[0].basis.en, /grok-4\.7-medium/);
   assert.match(grok.rows[1].value.zh, /无此池|未测/);
   assert.match(models.rows[0].value.en, /\$3,022/);

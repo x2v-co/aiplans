@@ -50,8 +50,9 @@ export type PricingGuide = {
 /**
  * Approximate weeks-per-month factor for converting a measured weekly pool into
  * a same-period monthly headline next to legacy monthly pools.
- * Matches quota-bench (#326) and the published Claude Pro guide (×4.35).
- * Not an official vendor month; subject to boss confirmation.
+ * Boss-confirmed: mean month 365.25/12 ≈ 30.44 days ÷ 7 ≈ 4.35.
+ * Matches quota-bench (#326) and the published Claude Pro guide.
+ * Not an official vendor monthly pool.
  */
 export const GUIDE_WEEKLY_TO_MONTHLY = 4.35;
 
@@ -571,12 +572,12 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       apiValueGroups: [
         {
           title: { en: 'A. Grok / Cursor·Grok shared weekly pool', zh: 'A. Grok / Cursor·Grok 共享周池' },
-          period: { en: 'Weekly measured; monthly ≈ week × 4.35 (not an official monthly pool)', zh: '按周实测；月约值 = 周 × 4.35（非官方月池）' },
+          period: { en: 'Weekly measured; monthly ≈ week × 4.35 (≈365.25÷12÷7), not an official monthly pool', zh: '按周实测；月约值 = 周 × 4.35（≈365.25÷12÷7），非官方月池' },
           rows: [
             {
               pool: { en: 'New Ultra', zh: '新 Ultra' },
               value: { en: '≈ $1,500/week · ≈ $6,525/month', zh: '约 $1,500/周 · 约 $6,525/月' },
-              basis: { en: 'Model: grok-4.7-medium (Cursor CLI). x2v measurement 2026-11-04–05, ±25%, valued at API list price. Monthly = week × 4.35 approximate month, not an official monthly pool. Plus / Premium / Super not converted.', zh: '所用模型：grok-4.7-medium（Cursor CLI）。x2v 实测 2026-11-04–05，±25%，按 API 标价折算。月约值 = 周 × 4.35 近似月，非官方月池。Plus / Premium / Super 不折算。' },
+              basis: { en: 'Model: grok-4.7-medium (Cursor CLI). x2v measurement 2026-11-04–05, ±25%, valued at API list price. Monthly = week × 4.35 approximate month (≈365.25÷12÷7), not an official monthly pool. Plus / Premium / Super not converted.', zh: '所用模型：grok-4.7-medium（Cursor CLI）。x2v 实测 2026-11-04–05，±25%，按 API 标价折算。月约值 = 周 × 4.35 近似月（≈365.25÷12÷7），非官方月池。Plus / Premium / Super 不折算。' },
             },
             {
               pool: { en: 'Legacy plans', zh: '旧套餐' },
@@ -698,8 +699,8 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       {
         heading: { en: 'x2v measurement: Ultra weekly pool ≈ $1,500 at API list price (estimate)', zh: 'x2v 实测：Ultra 周额度约值 $1,500（按 API 标价折算，估算）' },
         body: {
-          en: 'x2v measured roughly $1,500/week (Ultra), about ±25%, valued at API list price. For same-period comparison with legacy monthly pools, week × 4.35 ≈ $6,525/month — an approximate month, not an official monthly pool (same 4.35 factor as quota-bench / Claude Pro guide; pending boss confirmation). This is an x2v estimate, not an official figure. Method: 58 Cursor CLI calls to grok-4.7-medium on 2026-11-04 to 11-05; cost self-computed at Cursor’s published list price (input $2/M, cache read $0.5/M, output $6/M) came to about $5.4 and was fitted against changes in the weekly usage percentage, giving 1% ≈ $15 (about $12.6–19.2). The pool is shared by Grok, Grok Bot and Cursor; Grok Bot has no separate allowance. The true value may be higher because cost is not taken from a bill and timed-out calls are not counted. Plus, Premium and Super are not converted because x2v has not verified the official tier multiples.',
-          zh: 'x2v 实测约 $1,500/周（Ultra），误差约 ±25%，按 API 标价折算。为与旧套餐月池同级对比，周 × 4.35 ≈ $6,525/月——周×4.35 近似月，非官方月池（与 quota-bench / Claude Pro 指南同一 4.35 系数；待老板确认）。这是 x2v 的估算，不是官方数字。方法：2026-11-04 至 11-05 用 Cursor CLI 调用 grok-4.7-medium 共 58 次，按 Cursor 公布标价（输入 $2/M、缓存读 $0.5/M、输出 $6/M）自算成本约 $5.4，对照周额度百分比变化拟合，得 1% ≈ $15（约 $12.6–19.2）。周额度由 Grok、Grok Bot 与 Cursor 共享，Grok Bot 没有单独额度。真实值可能偏高：成本非账单，超时调用未计入。Plus、Premium、Super 不给折算值，因官方倍率尚未经 x2v 核实。',
+          en: 'x2v measured roughly $1,500/week (Ultra), about ±25%, valued at API list price. For same-period comparison with legacy monthly pools, week × 4.35 ≈ $6,525/month — week × 4.35 approximate month (≈365.25÷12÷7), not an official monthly pool (same 4.35 factor as quota-bench / Claude Pro guide; boss-confirmed). This is an x2v estimate, not an official figure. Method: 58 Cursor CLI calls to grok-4.7-medium on 2026-11-04 to 11-05; cost self-computed at Cursor’s published list price (input $2/M, cache read $0.5/M, output $6/M) came to about $5.4 and was fitted against changes in the weekly usage percentage, giving 1% ≈ $15 (about $12.6–19.2). The pool is shared by Grok, Grok Bot and Cursor; Grok Bot has no separate allowance. The true value may be higher because cost is not taken from a bill and timed-out calls are not counted. Plus, Premium and Super are not converted because x2v has not verified the official tier multiples.',
+          zh: 'x2v 实测约 $1,500/周（Ultra），误差约 ±25%，按 API 标价折算。为与旧套餐月池同级对比，周 × 4.35 ≈ $6,525/月——周×4.35 近似月（≈365.25÷12÷7），非官方月池（与 quota-bench / Claude Pro 指南同一 4.35 系数；老板已确认）。这是 x2v 的估算，不是官方数字。方法：2026-11-04 至 11-05 用 Cursor CLI 调用 grok-4.7-medium 共 58 次，按 Cursor 公布标价（输入 $2/M、缓存读 $0.5/M、输出 $6/M）自算成本约 $5.4，对照周额度百分比变化拟合，得 1% ≈ $15（约 $12.6–19.2）。周额度由 Grok、Grok Bot 与 Cursor 共享，Grok Bot 没有单独额度。真实值可能偏高：成本非账单，超时调用未计入。Plus、Premium、Super 不给折算值，因官方倍率尚未经 x2v 核实。',
         },
       },
       {
