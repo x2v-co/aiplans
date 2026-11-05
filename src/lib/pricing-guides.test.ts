@@ -320,3 +320,44 @@ test('cursor-x-subscription guide keeps legacy plans and shows annual prices and
   assert.ok(math?.body.en.includes('Ultra 50 ÷ $200 = 0.25'));
   assert.ok(math?.body.zh.includes('未公布基准池的绝对大小'));
 });
+
+test('every guide has publishedAt/updatedAt dates and a TL;DR summary', () => {
+  const iso = /^\d{4}-\d{2}-\d{2}$/;
+  for (const slug of PRICING_GUIDE_SLUGS) {
+    const g = PRICING_GUIDES[slug];
+    assert.match(g.publishedAt ?? '', iso, `${slug} publishedAt`);
+    assert.match(g.updatedAt ?? '', iso, `${slug} updatedAt`);
+    assert.ok(Number.isFinite(new Date(g.publishedAt).getTime()), `${slug} publishedAt valid`);
+    assert.ok(g.publishedAt <= g.updatedAt, `${slug} publishedAt <= updatedAt`);
+    if (g.reviewedAt) assert.ok(g.reviewedAt <= g.updatedAt, `${slug} reviewedAt <= updatedAt`);
+    for (const locale of ['en', 'zh'] as const) {
+      assert.ok(g.summary?.conclusion?.[locale]?.trim(), `${slug} summary.conclusion.${locale}`);
+      for (const fact of g.summary.keyFacts ?? []) assert.ok(fact[locale]?.trim(), `${slug} keyFact.${locale}`);
+      if (g.summary.apiValue) {
+        assert.ok(g.summary.apiValue.value[locale].trim(), `${slug} apiValue.value.${locale}`);
+        assert.ok(g.summary.apiValue.basis[locale].trim(), `${slug} apiValue.basis.${locale}`);
+      }
+    }
+  }
+});
+
+test('plan-quota guides state the API-equivalent value with its basis, using numbers from the article', () => {
+  const quotaGuides = ['cursor-x-subscription-pricing', 'codex-pro-200-quota-benchmark', 'claude-pro-opus-5-5-quota'] as const;
+  for (const slug of quotaGuides) {
+    const g = PRICING_GUIDES[slug];
+    const api = g.summary.apiValue;
+    assert.ok(api, `${slug} apiValue`);
+    assert.match(api.value.zh, /约等于 \$[\d,]+.*API 用量\/(周|月)/, `${slug} zh value`);
+    assert.match(api.basis.zh, /按 .*API 标价折算/, `${slug} zh basis`);
+    const body = JSON.stringify({ sections: g.sections, faqs: g.faqs, intro: g.intro, description: g.description });
+    for (const n of api.value.en.match(/\$[\d,]+/g) ?? []) assert.ok(body.includes(n), `${slug}: ${n} must already appear in the article`);
+  }
+});
+
+test('guide page renders dates, TL;DR card and JSON-LD datePublished', () => {
+  const page = readFileSync(new URL('../app/[locale]/guides/[slug]/page.tsx', import.meta.url), 'utf8');
+  assert.match(page, /<GuideDates /);
+  assert.match(page, /<GuideSummaryCard /);
+  assert.match(page, /datePublished: guide\.publishedAt/);
+  assert.match(page, /dateModified: latestGuideDate\(guide\.updatedAt/);
+});

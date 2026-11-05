@@ -39,6 +39,25 @@ export type PricingGuide = {
   relatedModelsDescription?: LocalizedText;
   usageNotes?: LocalizedText[];
   reviewedAt?: string;
+  /** First publication date (YYYY-MM-DD). Required for every guide. */
+  publishedAt: string;
+  /** Last editorial update date (YYYY-MM-DD). Required for every guide. */
+  updatedAt: string;
+  /** First-screen TL;DR card. Required for every guide. */
+  summary: GuideSummary;
+};
+
+export type GuideSummary = {
+  /** One or two sentences: the conclusion a reader needs at a glance. */
+  conclusion: LocalizedText;
+  /** Key numbers already stated in the article body. */
+  keyFacts?: LocalizedText[];
+  /**
+   * Plan-quota guides: API-equivalent value of the allowance, with its basis
+   * (valued at API list price, error range, measurement source). Only numbers
+   * already in the article; never invented.
+   */
+  apiValue?: { value: LocalizedText; basis: LocalizedText };
 };
 
 /**
@@ -73,6 +92,11 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     queryPatterns: OPENAI_MODEL_SLUG_PREFIXES.map((prefix) => `${prefix}%`),
     providerSlugs: ['openai'],
     reviewedAt: '2026-10-13',
+    publishedAt: '2026-10-13',
+    updatedAt: '2026-10-13',
+    summary: {
+      conclusion: { en: 'OpenAI API keys are metered per token; ChatGPT and Codex subscriptions are billed separately and do not offset API charges. Pick the model in the live table, then price your own input/output mix.', zh: 'OpenAI API Key 按 token 计费；ChatGPT / Codex 订阅单独计费，不能抵扣 API 账单。先在下方实时表选模型，再按自己的输入/输出比例算账。' },
+    },
     sections: [
       {
         heading: { en: 'Does ChatGPT Plus include API usage?', zh: 'ChatGPT Plus 包含 API 用量吗？' },
@@ -176,6 +200,11 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     queryPatterns: ['%glm%', '%chatglm%'],
     providerSlugs: ['zhipu-china', 'zhipu-global'],
     reviewedAt: '2026-10-13',
+    publishedAt: '2026-09-03',
+    updatedAt: '2026-10-13',
+    summary: {
+      conclusion: { en: 'GLM is sold via Zhipu AI, Z.AI and aggregators; the lowest listed rate is not the lowest bill, and “free” variants have their own limits. Compare channels with the same workload example below.', zh: 'GLM 可经智谱、Z.AI 和聚合渠道购买；标价最低不等于账单最低，“免费”版本另有限制。用下方统一示例用量比较各渠道。' },
+    },
     sections: [
       {
         heading: { en: 'Official versus free endpoints', zh: '官方接口与免费渠道' },
@@ -250,6 +279,11 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     queryPatterns: ['%claude%'],
     providerSlugs: ['anthropic'],
     reviewedAt: '2026-10-18',
+    publishedAt: '2026-09-03',
+    updatedAt: '2026-10-18',
+    summary: {
+      conclusion: { en: 'Claude API is metered by input/output tokens; Pro, Max, Team and Enterprise cover the Claude app. Use the live table for API cost and the plan pages for subscription entitlements.', zh: 'Claude API 按输入/输出 token 计费；Pro、Max、Team、Enterprise 覆盖 Claude 应用。API 成本看下方实时表，订阅权益看套餐页。' },
+    },
     sections: [
       {
         heading: { en: 'API cost versus subscription price, and included API credits', zh: 'API 成本、订阅价格与附赠 API 额度' },
@@ -328,6 +362,11 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     queryPatterns: ['%grok%'],
     providerSlugs: ['grok'],
     reviewedAt: '2026-10-13',
+    publishedAt: '2026-09-03',
+    updatedAt: '2026-10-13',
+    summary: {
+      conclusion: { en: '“Grok pricing” is either metered xAI API usage or a consumer subscription. This page lists tracked API variants with a reproducible workload estimate.', zh: '“Grok 价格”分 xAI API 按量计费和消费者订阅两种。本页列出已追踪的 API 版本和可复现的示例成本。' },
+    },
     sections: [
       {
         heading: { en: 'Choose the right billing product', zh: '先区分计费产品' },
@@ -403,6 +442,11 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     queryPatterns: ['%kimi%', '%moonshot%'],
     providerSlugs: ['moonshot', 'moonshot-china', 'moonshot-global'],
     reviewedAt: '2026-10-13',
+    publishedAt: '2026-09-03',
+    updatedAt: '2026-10-13',
+    summary: {
+      conclusion: { en: 'Kimi is sold via Moonshot China, Moonshot global and third-party channels; API token pricing and Kimi app subscriptions are separate products. API costs come first below.', zh: 'Kimi 经月之暗面国内站、国际站和第三方渠道提供；API token 价格与 Kimi 应用订阅是两种产品。下方先列 API 成本。' },
+    },
     sections: [
       {
         heading: { en: 'China and global services', zh: '国内与国际服务' },
@@ -481,6 +525,19 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     queryPatterns: ['%grok%', 'claude-%', 'gpt-%'],
     providerSlugs: ['xai'],
     reviewedAt: '2026-11-05',
+    publishedAt: '2026-10-13',
+    updatedAt: '2026-11-05',
+    summary: {
+      conclusion: { en: 'The X Subscription pool is shared by Cursor and Grok and resets weekly; third-party models (Claude, GPT) are never included and bill at API list price. Heavy Claude/GPT users should compare legacy plans first, because switching is permanent.', zh: 'The X Subscription 用量池由 Cursor 与 Grok 共享、每周刷新；Claude、GPT 等第三方模型不含在额度内，按 API 标价另付。重度用第三方模型的先对比旧套餐再切，切换不可撤销。' },
+      keyFacts: [
+        { en: 'Plus $8 / Premium $30 / Super $100 / Ultra $200 per month; pool multiples 1× / 4× / 15× / 50×', zh: '月费 Plus $8 / Premium $30 / Super $100 / Ultra $200；用量池倍数 1× / 4× / 15× / 50×' },
+        { en: 'Legacy Pro / Pro+ / Ultra include $20 / $70 / $400 of third-party usage', zh: '旧 Pro / Pro+ / Ultra 内含 $20 / $70 / $400 第三方用量' },
+      ],
+      apiValue: {
+        value: { en: 'Ultra weekly pool ≈ $1,500 of API usage per week', zh: 'Ultra 周额度约等于 $1,500 API 用量/周' },
+        basis: { en: 'x2v measurement, valued at API list price, about ±25%; estimate, not an official figure (2026-11-04–05, 58 grok-4.7-medium calls via Cursor CLI). Plus, Premium and Super are not converted.', zh: 'x2v 实测，按 API 标价折算，误差约 ±25%；估算，非官方数字（2026-11-04–05，Cursor CLI 调 grok-4.7-medium 58 次）。Plus、Premium、Super 不折算。' },
+      },
+    },
     planTable: [
       {
         plan: { en: 'X Subscription Free', zh: '新套餐 Free' },
@@ -646,6 +703,18 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     priceTable: false,
     providerSlugs: ['openai'],
     reviewedAt: '2026-10-30',
+    publishedAt: '2026-10-30',
+    updatedAt: '2026-10-30',
+    summary: {
+      conclusion: { en: 'On ChatGPT Pro 200 ($200/month), the Codex weekly allowance measured ~139.5M GPT-6 Astra tokens (111.6M–186.0M) and at least ~274.2M GPT-6.1 Sol tokens. A subscription does not offset API-key billing.', zh: 'ChatGPT Pro 200（$200/月）的 Codex 周额度实测：GPT-6 Astra 约 1.395 亿 tokens（1.116–1.860 亿），GPT-6.1 Sol 至少约 2.742 亿。订阅不能抵扣 API Key 账单。' },
+      keyFacts: [
+        { en: 'Astra ~139.5M tokens/week; Sol ≥ ~274.2M tokens/week (lower bound only)', zh: 'Astra 约 1.395 亿 tokens/周；Sol ≥ 约 2.742 亿 tokens/周（仅下界）' },
+      ],
+      apiValue: {
+        value: { en: 'Astra weekly allowance ≈ $1,222 of API usage per week (range $978–$1,630)', zh: 'Astra 周额度约等于 $1,222 API 用量/周（范围 $978–$1,630）' },
+        basis: { en: 'aiplans measurement 2026-10-30, valued at gpt-6-astra API list price (input $10 / cache read $1 / output $50 per 1M, snapshot 2026-10-29); range is reading rounding only. Not a spendable balance. No USD figure for Sol.', zh: 'aiplans 实测（2026-10-30），按 gpt-6-astra API 标价折算（每百万 输入 $10 / 缓存读 $1 / 输出 $50，2026-10-29 快照）；范围仅为读数舍入。不是可用余额。Sol 不给美元折算。' },
+      },
+    },
     relatedModelsDescription: {
       en: 'Compare API prices on each model page. These prices are separate from Codex subscription metering and do not determine the included token allowance.',
       zh: '可在模型页对比各渠道 API 价格。API 计费与 Codex 订阅扣量分开，不能据此推算订阅包含的 token 额度。',
@@ -859,6 +928,19 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     priceTable: false,
     providerSlugs: ['anthropic'],
     reviewedAt: '2026-11-04',
+    publishedAt: '2026-11-04',
+    updatedAt: '2026-11-04',
+    summary: {
+      conclusion: { en: 'Claude Pro ($20/month) running Opus 5.5 is worth about 40–70× its price at API rates if you use the full weekly cap; the weekly cap, not the 5-hour window, is the real limit.', zh: 'Claude Pro（$20/月）跑 Opus 5.5，用满周上限按 API 价折算约为月费的 40–70×；真正卡用量的是周上限，不是 5 小时窗口。' },
+      keyFacts: [
+        { en: '5-hour window ≈ 1.3M output tokens ($26–29); ≈ 7.2 windows per week', zh: '5 小时窗口 ≈ 1.3M 输出 token（$26–29）；每周约 7.2 个窗口' },
+        { en: 'Per week: $185–205 output-heavy, $320 agent-coding mix', zh: '每周：输出为主 $185–205，agent 编程配比 $320' },
+      ],
+      apiValue: {
+        value: { en: 'Claude Pro quota ≈ $800–1,390 of API usage per month', zh: 'Claude Pro 额度约等于 $800–1,390 API 用量/月' },
+        basis: { en: 'x2v measurement (2026-11-04, 147 Opus 5.5 calls via Claude Code, one account), valued at API list price (input $4 / output $20 per 1M); low end output-heavy, high end agent-coding mix. Not an Anthropic-published figure.', zh: 'x2v 实测（2026-11-04，Claude Code 调 Opus 5.5 147 次，单账号），按 API 标价折算（每百万 输入 $4 / 输出 $20）；低端为输出为主，高端为 agent 编程配比。非 Anthropic 公布数字。' },
+      },
+    },
     usageNotes: [
       { en: 'Recalculate with your own output, cache-write and cache-read mix; agentic coding is mostly cache reads.', zh: '按自己的输出、缓存写、缓存读比例重新估算；agent 编程以缓存读为主。' },
       { en: 'Budget against the weekly cap: about 7.2 full five-hour windows per week.', zh: '按周上限做预算：每周大约只够用满 7.2 个 5 小时窗口。' },

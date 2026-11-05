@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, CheckCircle2, Clock3 } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
+import { GuideDates, GuideSummaryCard } from '@/components/guide-summary-card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatPrice, type CurrencyCode } from '@/lib/currency';
@@ -75,7 +76,8 @@ export default async function PricingGuidePage({
     headline: guide.title[locale],
     description: guide.description[locale],
     mainEntityOfPage: `${SITE_URL}/${locale}/guides/${slug}`,
-    dateModified: latestGuideDate(guide.reviewedAt, latestVerified),
+    datePublished: guide.publishedAt,
+    dateModified: latestGuideDate(guide.updatedAt, guide.reviewedAt),
     inLanguage: locale === 'zh' ? 'zh-CN' : 'en',
     citation: guide.sources?.map((source) => source.url),
     author: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
@@ -111,6 +113,8 @@ export default async function PricingGuidePage({
             )}
           </div>
           <h1 className="mt-4 text-3xl font-bold md:text-4xl">{guide.title[locale]}</h1>
+          <GuideDates publishedAt={guide.publishedAt} updatedAt={guide.updatedAt} locale={locale} />
+          <GuideSummaryCard summary={guide.summary} locale={locale} />
           <p className="mt-4 text-base leading-7 text-zinc-600 dark:text-zinc-400">{guide.intro[locale]}</p>
         </header>
 
