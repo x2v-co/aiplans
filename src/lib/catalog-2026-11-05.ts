@@ -47,9 +47,10 @@ export const OPENAI_VOICE_1105: AiCatalogItem[] = [
   }),
   voice('gpt-live-transcribe', 'gpt-live-transcribe', 'OpenAI', 'openai', true, { ...perMinute(0.017, 'transcription_streaming'), capabilities: ['ASR', 'streaming'] }),
   voice('gpt-realtime-whisper', 'gpt-realtime-whisper', 'OpenAI', 'openai', true, { ...perMinute(0.017, 'transcription_streaming'), capabilities: ['ASR', 'streaming'] }),
-  ...([['tts-1', 'TTS-1', 15], ['tts-1-hd', 'TTS-1 HD', 30]] as const).map(([slug, name, price]) => voice(slug, name, 'OpenAI', 'openai', false, {
-    pricing: `$${price.toFixed(2)}/1M characters`, unit: '1M characters', pricingUnit: 'per_1m_characters',
-    usageRates: [rate('text_to_speech', price, 'per_1m_characters')],
+  ...([['tts-1', 'TTS-1', 0.015], ['tts-1-hd', 'TTS-1 HD', 0.03]] as const).map(([slug, name, price]) => voice(slug, name, 'OpenAI', 'openai', false, {
+    // models_pricing_unit_chk has no per_1m_characters; official $15/$30 per 1M chars = $0.015/$0.03 per 1K.
+    pricing: `$${price.toFixed(3)}/1K characters ($${(price * 1000).toFixed(2)}/1M)`, unit: '1K characters', pricingUnit: 'per_1k_characters',
+    usageRates: [rate('text_to_speech', price, 'per_1k_characters')],
   })),
 ];
 

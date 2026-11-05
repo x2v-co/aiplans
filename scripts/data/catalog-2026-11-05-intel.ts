@@ -22,7 +22,7 @@ const NAMES: Record<string, string> = { elevenlabs: 'ElevenLabs', deepgram: 'Dee
 
 export function catalog20261105SeedOptions(args: string[]) {
   if (args.some(arg => !['--apply', '--dry-run'].includes(arg)) || (args.includes('--apply') && args.includes('--dry-run'))) {
-    throw new Error('Usage: seed-catalog-2026-11-05-intel.ts [--dry-run (default, read-only) | --apply]');
+    throw new Error('Usage: seed-catalog-2026-11-05-intel.ts [--dry-run (default, writes then ROLLBACK) | --apply]');
   }
   return { apply: args.includes('--apply') };
 }

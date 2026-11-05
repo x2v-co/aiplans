@@ -21,7 +21,7 @@ function fixture(): Partial<Record<string, FakeRow[]>> {
       { id: 11, slug: 'gemini-advanced', provider_id: 2, price: null, currency: null, region: 'needs-verification', notes: '[needs-verification] Plus/Pro US price not identified' },
     ],
     models: [{ id: 30, slug: 'tts-1', type: 'audio', provider_ids: [1], capabilities: ['voices'], description: 'Keep me.' }],
-    usage_prices: [{ id: 40, model_id: 30, provider_id: 1, price_kind: 'text_to_speech', unit: 'per_1m_characters', price: '15', plan_id: 7 }],
+    usage_prices: [{ id: 40, model_id: 30, provider_id: 1, price_kind: 'text_to_speech', unit: 'per_1k_characters', price: '0.015', plan_id: 7 }],
   };
 }
 const price = (slug: string, kind?: string) => CATALOG_1105.find(i => i.slug === slug)!.usageRates!.find(r => !kind || r.priceKind === kind)!;
@@ -41,7 +41,7 @@ test('1105 catalog carries the officially verified voice prices and is listed un
   assert.deepEqual(OPENAI_VOICE_1105.find(i => i.slug === 'gpt-4o-transcribe')!.usageRates!.map(r => r.price), [2.5, 10, 0.006]);
   assert.equal(price('gpt-4o-mini-transcribe', 'transcription_estimate').approximate, true);
   assert.equal(price('gpt-realtime-whisper').price, 0.017);
-  assert.deepEqual([price('tts-1').price, price('tts-1-hd').price, price('tts-1').unit], [15, 30, 'per_1m_characters']);
+  assert.deepEqual([price('tts-1').price, price('tts-1-hd').price, price('tts-1').unit], [0.015, 0.03, 'per_1k_characters']);
   assert.deepEqual([price('elevenlabs-scribe-v2').price, price('elevenlabs-scribe-v2-realtime').price, price('elevenlabs-scribe-v2').unit], [0.22, 0.39, 'hour']);
   assert.deepEqual([price('deepgram-nova-3').price, price('deepgram-aura-2').price, price('deepgram-aura-2').unit], [0.0077, 0.03, 'per_1k_characters']);
   assert.deepEqual([price('assemblyai-universal-3-5-pro').price, price('assemblyai-universal-2').price], [0.21, 0.15]);
