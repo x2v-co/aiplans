@@ -676,7 +676,8 @@
     "veo-3.1-lite 1080p (video + audio)": "Veo 3.1 Lite 1080p（视频 + 音频）",
     "veo-3.1-lite 1080p (video only)": "Veo 3.1 Lite 1080p（仅视频，无声）",
     "veo-3.1-lite 720p (video + audio)": "Veo 3.1 Lite 720p（视频 + 音频）",
-    "veo-3.1-lite 720p (video only)": "Veo 3.1 Lite 720p（仅视频，无声）"
+    "veo-3.1-lite 720p (video only)": "Veo 3.1 Lite 720p（仅视频，无声）",
+    "transcription estimate": "转录（按分钟估算）"
   },
   "claudeProQuota": {
     "heading": "Claude Pro · Opus 5.5 额度（x2v 实测）",

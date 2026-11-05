@@ -249,6 +249,8 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
     [
       ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-04:apply' && item.kind !== 'music-model').map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-04:apply`),
+      ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-05-intel:apply').map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-05-intel:apply`),
       ...PERPLEXITY_DECIDER_CATALOG.map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:glimpse-decider:apply`),
       ...DECISION_MODELS_2026_11_03.map(item =>
