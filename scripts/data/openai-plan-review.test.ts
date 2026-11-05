@@ -82,3 +82,14 @@ test('a Pro article with neither the legacy section nor the cancellation fails c
   assert.throws(()=>parseOpenAIReview({...fixture,pro:canceledPro.replace('stays at $200/month','stays at $180/month')}),/differs from the Pro 200 table row/);
   assert.throws(()=>parseOpenAIReview({...fixture,pro:fixture.pro.replace('October 29, 2026','November 29, 2026')}),/legacy Pro allowance deadline/);
 });
+
+import {keepExistingPlanPrice} from './openai-plan-review';
+test('Go note no longer calls $8 historical, and an unverified Go review never clears a stored price',()=>{
+  const go=parseOpenAIReview(fixture).find(r=>r.slug==='chatgpt-go')!;
+  assert.doesNotMatch(go.notes,/historical/i);
+  assert.match(go.notes,/\$8/);
+  assert.equal(keepExistingPlanPrice(go,{price:8}),true);
+  assert.equal(keepExistingPlanPrice(go,{price:null}),false);
+  const plus=parseOpenAIReview(fixture).find(r=>r.slug==='chatgpt-plus')!;
+  assert.equal(keepExistingPlanPrice(plus,{price:20}),false);
+});

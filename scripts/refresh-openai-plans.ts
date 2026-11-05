@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 import { resolveSelector } from '../src/lib/plan-selector';
 import { createHash } from 'node:crypto';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
-import { OPENAI_REVIEW_SOURCES, parseOpenAIReview, assertOpenAIReviewFreshness, type OpenAIReviewSource } from './data/openai-plan-review';
+import { OPENAI_REVIEW_SOURCES, parseOpenAIReview, assertOpenAIReviewFreshness, keepExistingPlanPrice, type OpenAIReviewSource } from './data/openai-plan-review';
 
 async function main() {
   const args = process.argv.slice(2);
@@ -114,6 +114,10 @@ async function main() {
           }
         } else {
           const old=matches[0];
+          if (keepExistingPlanPrice(review, old)) {
+            console.log(JSON.stringify({slug:review.slug,action:'skip',reason:'unverified review keeps existing price',price:old.price}));
+            continue;
+          }
           console.log(JSON.stringify({slug:review.slug,action:'update',before:{price:old.price,annualPrice:old.annual_price,lastVerified:old.last_verified,dailyMessageLimit:old.daily_message_limit},after:review}));
         }
         if(apply) {
@@ -130,7 +134,7 @@ async function main() {
         }
       }
     });
-    console.log(`${apply?'Applied':'Dry-run; no writes'}: ${reviews.length} OpenAI reviews. Go current USD price remains unverified.`);
+    console.log(`${apply?'Applied':'Dry-run; no writes'}: ${reviews.length} OpenAI reviews. Go price is never cleared by an unverified review.`);
   } finally { await sql.end(); }
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

@@ -45,7 +45,25 @@ function appendEvidence(existing: unknown, note: string) {
   const previous = String(existing ?? '');
   return previous.includes(note) ? previous : [previous, note].filter(Boolean).join('\n');
 }
+/** Stale plan-note lines that contradict the 11-05 price (data-trust/audit flag notes starting with [needs-verification]). */
+export const STALE_PLAN_NOTE_PATTERNS: Record<(typeof PLAN_SLUGS)[number], RegExp[]> = {
+  'gemini-advanced': [/^\s*\[needs-verification\]/i, /US price not identified|prices withheld/i],
+  'chatgpt-go': [/^\s*\[needs-verification\]/i, /No current USD amount could be verified/i, /\$8\b.*\bhistorical\b|\bhistorical\b.*\$8\b/i],
+};
+/** Drop stale lines, keep every other line, append the new evidence once. Never leaves a [needs-verification] prefix. */
+export function replaceStalePlanNotes(existing: unknown, patterns: RegExp[], note: string) {
+  const kept = String(existing ?? '').split('\n')
+    .filter(line => line.trim() !== '' && line !== note && !patterns.some(p => p.test(line)));
+  return [...kept, note].join('\n');
+}
 const nonEmpty = (value: unknown) => typeof value === 'string' && value.trim() !== '';
+
+/** Voice rows follow the non-LLM seed convention (models.type 'multimodal'). A pre-existing non-llm type is kept;
+ * an 'llm' left by an earlier preview/apply of this seed is corrected. */
+export const VOICE_MODEL_TYPE = 'multimodal';
+export function voiceModelType(existing: unknown) {
+  return typeof existing === 'string' && existing.trim() !== '' && existing !== 'llm' ? existing : VOICE_MODEL_TYPE;
+}
 
 export async function seedCatalog20261105(tx: Sql, apply = false): Promise<Step[]> {
   const one = (rows: Row[], target: string, required = false): Row | null => {
@@ -84,16 +102,16 @@ export async function seedCatalog20261105(tx: Sql, apply = false): Promise<Step[
 
   const pro = byPlan.get('gemini-advanced')!;
   save('plans', pro, { price: 19.99, currency: 'USD', price_unit: 'per_month', region: 'US', last_verified: VERIFIED_AT,
-    notes: appendEvidence(pro.notes, evidence('Google AI Pro US monthly price $19.99.', GOOGLE_PRO_SOURCE)) }, 'gemini-advanced');
+    notes: replaceStalePlanNotes(pro.notes, STALE_PLAN_NOTE_PATTERNS['gemini-advanced'], evidence('Google AI Pro US monthly price $19.99.', GOOGLE_PRO_SOURCE)) }, 'gemini-advanced');
   const go = byPlan.get('chatgpt-go')!;
   save('plans', go, { price: 8, currency: 'USD', price_unit: 'per_month', region: 'US', last_verified: VERIFIED_AT,
-    notes: appendEvidence(go.notes, evidence(`US monthly price $8 (official OpenAI announcement: "ChatGPT Go at $8 USD/month", US price displayed; localized in some markets). chatgpt.com/pricing renders the amount client-side by geography and did not show a USD figure to the audit fetch on ${VERIFIED}; Intel confirmed $8 there on 2026-11-03. Pricing page: ${GO_PRICING_SOURCE}`, GO_ANNOUNCEMENT_SOURCE)) }, 'chatgpt-go');
+    notes: replaceStalePlanNotes(go.notes, STALE_PLAN_NOTE_PATTERNS['chatgpt-go'], evidence(`US monthly price $8 (official OpenAI announcement: "ChatGPT Go at $8 USD/month", US price displayed; localized in some markets). chatgpt.com/pricing renders the amount client-side by geography and did not show a USD figure to the audit fetch on ${VERIFIED}; Intel confirmed $8 there on 2026-11-03. Pricing page: ${GO_PRICING_SOURCE}`, GO_ANNOUNCEMENT_SOURCE)) }, 'chatgpt-go');
 
   for (const item of CATALOG_1105) {
     const owner = owners.get(item.providerSlug!)!;
     const old = byModel.get(item.slug!) ?? null;
     const model = save('models', old, {
-      slug: item.slug, name: item.name, ...(old?.type ? {} : { type: 'llm' }), model_category: item.modelCategory,
+      slug: item.slug, name: item.name, type: voiceModelType(old?.type), model_category: item.modelCategory,
       provider_ids: [...new Set([...((old?.provider_ids as number[] | undefined) ?? []), owner.id])],
       input_type: item.inputModalities, input_modalities: item.inputModalities,
       output_type: item.outputModalities, output_modalities: item.outputModalities,

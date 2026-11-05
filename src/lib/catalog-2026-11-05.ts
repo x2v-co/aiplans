@@ -39,14 +39,14 @@ export const OPENAI_VOICE_1105: AiCatalogItem[] = [
   voice('gpt-transcribe', 'gpt-transcribe', 'OpenAI', 'openai', true, perMinute(0.0045, 'transcription_batch')),
   voice('gpt-4o-transcribe', 'gpt-4o-transcribe', 'OpenAI', 'openai', true, {
     pricing: '$2.50/M audio input tokens; $10.00/M output tokens; ≈$0.006/minute', unit: 'per_1m_tokens', pricingUnit: 'per_1m_tokens',
-    inputPricePer1M: 2.5, outputPricePer1M: 10, usageRates: [rate('audio input', 2.5, 'per_1m_tokens'), rate('text output', 10, 'per_1m_tokens'), rate('transcription estimate', 0.006, 'minute', true)],
+    inputPricePer1M: 2.5, outputPricePer1M: 10, usageRates: [rate('audio_input', 2.5, 'per_1m_tokens'), rate('text_output', 10, 'per_1m_tokens'), rate('transcription_estimate', 0.006, 'minute', true)],
   }),
   voice('gpt-4o-mini-transcribe', 'gpt-4o-mini-transcribe', 'OpenAI', 'openai', true, {
     pricing: '$1.25/M audio input tokens; $5.00/M output tokens; ≈$0.003/minute', unit: 'per_1m_tokens', pricingUnit: 'per_1m_tokens',
-    inputPricePer1M: 1.25, outputPricePer1M: 5, usageRates: [rate('audio input', 1.25, 'per_1m_tokens'), rate('text output', 5, 'per_1m_tokens'), rate('transcription estimate', 0.003, 'minute', true)],
+    inputPricePer1M: 1.25, outputPricePer1M: 5, usageRates: [rate('audio_input', 1.25, 'per_1m_tokens'), rate('text_output', 5, 'per_1m_tokens'), rate('transcription_estimate', 0.003, 'minute', true)],
   }),
-  voice('gpt-live-transcribe', 'gpt-live-transcribe', 'OpenAI', 'openai', true, { ...perMinute(0.017, 'live transcription'), capabilities: ['ASR', 'streaming'] }),
-  voice('gpt-realtime-whisper', 'gpt-realtime-whisper', 'OpenAI', 'openai', true, { ...perMinute(0.017, 'live transcription'), capabilities: ['ASR', 'streaming'] }),
+  voice('gpt-live-transcribe', 'gpt-live-transcribe', 'OpenAI', 'openai', true, { ...perMinute(0.017, 'transcription_streaming'), capabilities: ['ASR', 'streaming'] }),
+  voice('gpt-realtime-whisper', 'gpt-realtime-whisper', 'OpenAI', 'openai', true, { ...perMinute(0.017, 'transcription_streaming'), capabilities: ['ASR', 'streaming'] }),
   ...([['tts-1', 'TTS-1', 15], ['tts-1-hd', 'TTS-1 HD', 30]] as const).map(([slug, name, price]) => voice(slug, name, 'OpenAI', 'openai', false, {
     pricing: `$${price.toFixed(2)}/1M characters`, unit: '1M characters', pricingUnit: 'per_1m_characters',
     usageRates: [rate('text_to_speech', price, 'per_1m_characters')],

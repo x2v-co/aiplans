@@ -54,11 +54,12 @@ export function parseOpenAIReview(input: Record<OpenAIReviewSource, string>): Re
     features.push(`Ultrafast: ${ultra.toLowerCase()}.`);
     add('pro',`chatgpt-pro-${tier}`,`ChatGPT Pro ${tier}`,price,features,'Monthly billing. Included allowances vary by model and tier; API billing is separate.');
   }
-  // The current Go Help page delegates prices to localized checkout. A historic
-  // launch announcement is not evidence of today's price; publish unknown.
+  // The current Go Help page delegates prices to localized checkout, so this review
+  // cannot quote one. The US $8 price is maintained by the 11-05 Intel seed from the
+  // official announcement; keepExistingPlanPrice() stops this row from clearing it.
   if (source.go) requireMatch(source.go,/What is ChatGPT Go\?/i,'Go article identity');
   if (source.go) requireMatch(source.go,/Subscription prices can be found in the ChatGPT pricing page/i,'Go price delegation');
-  add('go','chatgpt-go','ChatGPT Go',null,source.go ? [excerpt(source.go,"What's included",'Availability')] : [], 'No current USD amount could be verified from the official Help Center; localized checkout could not be verified. Previous $8 US launch price is historical, not a newly verified quote.',null,false,false);
+  add('go','chatgpt-go','ChatGPT Go',null,source.go ? [excerpt(source.go,"What's included",'Availability')] : [], 'The Help Center delegates prices to localized checkout, so this review does not quote a price. The US $8/month price comes from the official OpenAI announcement (re-verified 2026-11-05, seed:catalog-2026-11-05-intel); an existing verified price is kept, never cleared.',null,false,false);
   requireMatch(source.business,/pricing \(USD\)|Prices[^.]{0,120}USD/i,'Business seat pricing');
   for (const [heading,slug,name] of [['Standard seat','chatgpt-business','ChatGPT Business Standard'],['Premium seat','chatgpt-business-premium','ChatGPT Business Premium']]) {
     const start = source.business.search(new RegExp(`${heading}\\b\\s+Monthly plan:`, 'i'));
@@ -91,6 +92,10 @@ export function parseOpenAIReview(input: Record<OpenAIReviewSource, string>): Re
 }
 
 /** Reject replay that would roll a newer verified/reviewed row backwards. */
+/** An unverified review with no price must not clear a price already stored on the plan. */
+export function keepExistingPlanPrice(review: Pick<ReviewedOpenAIPlan, 'price' | 'verified'>, existing: { price?: unknown } | null | undefined): boolean {
+  return !review.verified && review.price === null && existing?.price != null;
+}
 export function assertOpenAIReviewFreshness(row: {last_verified?: Date | string | null; updated_at?: Date | string | null; notes?: string | null}, capturedAt: Date): void {
   const dates = [row.last_verified, row.notes?.includes('[aiplans:review-source]') ? row.updated_at : null];
   if (dates.some(value => value && new Date(value).getTime() > capturedAt.getTime())) {
