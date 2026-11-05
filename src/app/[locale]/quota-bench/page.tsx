@@ -9,8 +9,8 @@ import { QuotaLeaderboard } from '@/components/quota-leaderboard';
 import { QUOTA_LEADERBOARD_PUBLISHED_AT, QUOTA_LEADERBOARD_UPDATED_AT } from '@/lib/quota-leaderboard';
 
 const CONCLUSION = {
-  zh: '结论：按月费倍数（API 折合 ÷ 月费），Claude Pro（$20）约 42–70×（≈ $800–1,390/月，按负载配比分开）；X Ultra（$200）约 33×（≈ $6,500/月）；Codex Pro 200（$200）约 27×（≈ $5,300/月，实测 ≈ $1,222/周）。火山方舟 Pro（¥200）约 22×（≈ $640/月，月窗口独立测量，粗估）。前三者都只有周额度实测，月额度 = 周额度 × 4.35（52.14 周 ÷ 12 月）推算，属粗估。均为 x2v 有条件实测，按公开 API 标价折算，不是官方额度。',
-  en: 'TL;DR: by fee multiple (API value ÷ monthly fee), Claude Pro ($20) is about 42–70× (≈ $800–1,390/month, split by workload mix); X Ultra ($200) about 33× (≈ $6,500/month); Codex Pro 200 ($200) about 27× (≈ $5,300/month; measured ≈ $1,222/week). Volcengine Pro (CNY 200) is about 22× (≈ $640/month, a native rough monthly estimate). The first three are measured weekly only; monthly = weekly × 4.35 (52.14 weeks ÷ 12), a rough estimate. All are x2v conditional measurements at public API list price, not official allowances.',
+  zh: '结论：按月费倍数（API 折合 ÷ 月费）全表排名，Claude Pro（$20）约 42–70×（≈ $800–1,390/月，输出与 Agent 各一行）；X Ultra（$200）约 33×（≈ $6,500/月）；Codex Pro 200（$200）约 27×（≈ $5,300/月，实测 ≈ $1,222/周）。火山方舟 Pro（¥200）约 22×（≈ $640/月，月窗口独立测量，粗估）。前三者都只有周额度实测，月额度 = 周额度 × 4.35（52.14 周 ÷ 12 月）推算，属粗估。均为 x2v 有条件实测，按公开 API 标价折算，不是官方额度。',
+  en: 'TL;DR: one list ranked by fee multiple (API value ÷ monthly fee). Claude Pro ($20) is about 42–70× (≈ $800–1,390/month; output and agentic are separate rows); X Ultra ($200) about 33× (≈ $6,500/month); Codex Pro 200 ($200) about 27× (≈ $5,300/month; measured ≈ $1,222/week). Volcengine Pro (CNY 200) is about 22× (≈ $640/month, a native rough monthly estimate). The first three are measured weekly only; monthly = weekly × 4.35 (52.14 weeks ÷ 12), a rough estimate. All are x2v conditional measurements at public API list price, not official allowances.',
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
