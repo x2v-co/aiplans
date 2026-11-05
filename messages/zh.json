@@ -589,6 +589,8 @@
     "video_output_tokens": "视频输出 token",
     "image_input_tokens": "图像输入 token",
     "image_output_tokens": "图像输出 token",
+    "cached_text_input_tokens": "缓存文本输入 token",
+    "cached_image_input_tokens": "缓存图像输入 token",
     "image_0.5k": "0.5K 图像",
     "image_768": "768px 图像",
     "image_1k": "1K 图像",
