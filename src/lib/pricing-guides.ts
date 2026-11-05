@@ -480,7 +480,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     // Used for related model links and dateModified only (priceTable: false).
     queryPatterns: ['%grok%', 'claude-%', 'gpt-%'],
     providerSlugs: ['xai'],
-    reviewedAt: '2026-11-04',
+    reviewedAt: '2026-11-05',
     planTable: [
       {
         plan: { en: 'X Subscription Free', zh: '新套餐 Free' },
@@ -553,8 +553,15 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       {
         heading: { en: 'Quota math: how much usage per dollar?', zh: '额度换算：每美元能买多少用量？' },
         body: {
-          en: 'Official facts (docs.x.ai and cursor.com, checked 2026-11-04): Plus is the Base pool; Premium 4×, Super 15×, Ultra 50×; the pool is weekly and shared by Grok models across Grok, Grok Bot and Cursor. xAI does not publish the absolute size of the Base pool in tokens, requests or dollars, so an API-dollar value per tier cannot be derived from official numbers and is not shown here. Derived (relative): pool per dollar = multiple ÷ monthly price. Plus 1 ÷ $8 = 0.125, Premium 4 ÷ $30 ≈ 0.133, Super 15 ÷ $100 = 0.15, Ultra 50 ÷ $200 = 0.25 Plus-pools per dollar. So Ultra buys 2× the pool per dollar of Plus and ≈1.67× that of Super. On annual billing (multiple × 12 ÷ annual price) Ultra rises to 0.30 and Plus to 0.15. Per week, Ultra equals 50 Plus pools ≈ 12.5 Premium pools ≈ 3.33 Super pools. Third-party models (Claude, GPT) never draw from this pool.',
-          zh: '官方事实（docs.x.ai 与 cursor.com，2026-11-04 核对）：Plus 为基准用量池；Premium 4 倍、Super 15 倍、Ultra 50 倍；用量池按周刷新，由 Grok 模型在 Grok、Grok Bot 与 Cursor 间共享。xAI 未公布基准池的绝对大小（token、请求数或美元），因此无法用官方数字推出各档的 API 等值金额，本页不给出。推导（相对值）：每美元用量 = 倍数 ÷ 月费。Plus 1 ÷ $8 = 0.125，Premium 4 ÷ $30 ≈ 0.133，Super 15 ÷ $100 = 0.15，Ultra 50 ÷ $200 = 0.25（单位：Plus 周池/美元）。Ultra 每美元用量是 Plus 的 2 倍、Super 的约 1.67 倍。年付时（倍数 × 12 ÷ 年费）Ultra 升至 0.30，Plus 升至 0.15。按周计，Ultra = 50 个 Plus 池 ≈ 12.5 个 Premium 池 ≈ 3.33 个 Super 池。第三方模型（Claude、GPT）不占用此用量池。',
+          en: 'Official facts (docs.x.ai and cursor.com, checked 2026-11-04): Plus is the Base pool; Premium 4×, Super 15×, Ultra 50×; the pool is weekly and shared by Grok models across Grok, Grok Bot and Cursor. xAI does not publish the absolute size of the Base pool in tokens, requests or dollars, so an API-dollar value per tier cannot be derived from official numbers; see the x2v Ultra estimate below. Derived (relative): pool per dollar = multiple ÷ monthly price. Plus 1 ÷ $8 = 0.125, Premium 4 ÷ $30 ≈ 0.133, Super 15 ÷ $100 = 0.15, Ultra 50 ÷ $200 = 0.25 Plus-pools per dollar. So Ultra buys 2× the pool per dollar of Plus and ≈1.67× that of Super. On annual billing (multiple × 12 ÷ annual price) Ultra rises to 0.30 and Plus to 0.15. Per week, Ultra equals 50 Plus pools ≈ 12.5 Premium pools ≈ 3.33 Super pools. Third-party models (Claude, GPT) never draw from this pool.',
+          zh: '官方事实（docs.x.ai 与 cursor.com，2026-11-04 核对）：Plus 为基准用量池；Premium 4 倍、Super 15 倍、Ultra 50 倍；用量池按周刷新，由 Grok 模型在 Grok、Grok Bot 与 Cursor 间共享。xAI 未公布基准池的绝对大小（token、请求数或美元），因此无法用官方数字推出各档的 API 等值金额；x2v 对 Ultra 的实测估算见下文。推导（相对值）：每美元用量 = 倍数 ÷ 月费。Plus 1 ÷ $8 = 0.125，Premium 4 ÷ $30 ≈ 0.133，Super 15 ÷ $100 = 0.15，Ultra 50 ÷ $200 = 0.25（单位：Plus 周池/美元）。Ultra 每美元用量是 Plus 的 2 倍、Super 的约 1.67 倍。年付时（倍数 × 12 ÷ 年费）Ultra 升至 0.30，Plus 升至 0.15。按周计，Ultra = 50 个 Plus 池 ≈ 12.5 个 Premium 池 ≈ 3.33 个 Super 池。第三方模型（Claude、GPT）不占用此用量池。',
+        },
+      },
+      {
+        heading: { en: 'x2v measurement: Ultra weekly pool ≈ $1,500 at API list price (estimate)', zh: 'x2v 实测：Ultra 周额度约值 $1,500（按 API 标价折算，估算）' },
+        body: {
+          en: 'x2v measured roughly $1,500/week (Ultra), about ±25%, valued at API list price. This is an x2v estimate, not an official figure. Method: 58 Cursor CLI calls to grok-4.7-medium on 2026-11-04 to 11-05; cost self-computed at Cursor’s published list price (input $2/M, cache read $0.5/M, output $6/M) came to about $5.4 and was fitted against changes in the weekly usage percentage, giving 1% ≈ $15 (about $12.6–19.2). The pool is shared by Grok, Grok Bot and Cursor; Grok Bot has no separate allowance. The true value may be higher because cost is not taken from a bill and timed-out calls are not counted. Plus, Premium and Super are not converted because x2v has not verified the official tier multiples.',
+          zh: 'x2v 实测约 $1,500/周（Ultra），误差约 ±25%，按 API 标价折算。这是 x2v 的估算，不是官方数字。方法：2026-11-04 至 11-05 用 Cursor CLI 调用 grok-4.7-medium 共 58 次，按 Cursor 公布标价（输入 $2/M、缓存读 $0.5/M、输出 $6/M）自算成本约 $5.4，对照周额度百分比变化拟合，得 1% ≈ $15（约 $12.6–19.2）。周额度由 Grok、Grok Bot 与 Cursor 共享，Grok Bot 没有单独额度。真实值可能偏高：成本非账单，超时调用未计入。Plus、Premium、Super 不给折算值，因官方倍率尚未经 x2v 核实。',
         },
       },
       {
@@ -594,6 +601,10 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       },
     ],
     faqs: [
+      {
+        question: { en: 'How much is the Ultra weekly pool worth at API prices?', zh: 'Ultra 周额度按 API 价格约值多少？' },
+        answer: { en: 'x2v measured roughly $1,500/week (Ultra), about ±25%, valued at API list price (estimate, 2026-11-05; grok-4.7-medium via Cursor CLI). xAI does not publish an absolute figure, and x2v does not convert the other tiers.', zh: 'x2v 实测约 $1,500/周（Ultra），误差约 ±25%，按 API 标价折算（估算，2026-11-05；Cursor CLI 调 grok-4.7-medium）。xAI 未公布绝对数值，x2v 不折算其他档位。' },
+      },
       {
         question: { en: 'Must I switch, and can Support undo the switch?', zh: '必须切换吗？Support 能撤销切换吗？' },
         answer: { en: 'Switching is optional, but permanent once completed. It cannot be undone, and Support cannot restore the legacy plan. Included third-party usage on your existing Cursor plan continues until you switch.', zh: '切换是自愿的，但完成后永久生效，无法撤销，Support 也不能恢复旧套餐。现有 Cursor 套餐的第三方内含用量会持续保留至切换时。' },

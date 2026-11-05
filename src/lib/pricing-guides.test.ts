@@ -155,7 +155,7 @@ test('every guide has reviewed sources, at least three FAQs and complete bilingu
     const reviewedAt = slug === 'codex-pro-200-quota-benchmark' ? '2026-10-30'
       : slug === 'claude-pro-opus-5-5-quota' ? '2026-11-04'
       : slug === 'claude-anthropic-pricing' ? '2026-10-18'
-      : slug === 'cursor-x-subscription-pricing' ? '2026-11-04' : '2026-10-13';
+      : slug === 'cursor-x-subscription-pricing' ? '2026-11-05' : '2026-10-13';
     assert.equal(guide.reviewedAt, reviewedAt);
     assert.ok(guide.reviewedAt && Number.isFinite(Date.parse(guide.reviewedAt)));
     assert.ok(guide.faqs && guide.faqs.length >= 3, `missing FAQs for ${slug}`);
@@ -170,7 +170,7 @@ test('Cursor is a static subscription guide with related-model patterns; empty p
   assert.deepEqual(guide.queryPatterns, ['%grok%', 'claude-%', 'gpt-%']);
   assert.deepEqual(guide.providerSlugs, ['xai']);
   assert.ok(guide.planTable && guide.planTable.length > 0);
-  assert.equal(guide.faqs?.length, 4);
+  assert.equal(guide.faqs?.length, 5);
   assert.deepEqual(await getPricingGuideModels({ ...PRICING_GUIDES['openai-api-pricing'], queryPatterns: [] }), []);
 });
 
