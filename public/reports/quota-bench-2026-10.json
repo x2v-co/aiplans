@@ -12,6 +12,11 @@
     {
       "date": "2026-10-30",
       "note": "Pro 200 post-upgrade retest: current Astra sample updated; API equivalent recomputed using the existing 2026-10-29 verified pricing snapshot. Sol lower-bound-only evidence published separately."
+    },
+    {
+      "date": "2026-11-05",
+      "zh": "账号持有人确认该 Cursor 实测量的是旧套餐 Ultra。名称改为 Cursor Ultra (legacy)，撤回“档位未核验”。额度、窗口与混合分组不变；本行不记录月费，不计算月费倍数，也不挂到套餐卡片。",
+      "en": "The account owner confirmed this Cursor measurement is legacy Ultra. Relabel to Cursor Ultra (legacy) and drop the unverified-tier note. Quota, window and mixed workload group are unchanged; this row records no monthly fee, so it publishes no fee multiple and stays off catalog plan cards."
     }
   ],
   "records": [
@@ -150,17 +155,18 @@
     },
     {
       "id": "cursor-ultra",
-      "plan": "Cursor legacy plan (tier unverified)",
+      "plan": "Cursor Ultra (legacy)",
       "model": "composer-2.5",
       "modelIdentity": "requested",
       "date": "2026-10-28",
       "window": "monthly",
       "status": "conditional",
-      "tierVerified": false,
+      "tierVerified": true,
       "planSlug": null,
       "tierVerification": {
-        "source": "unverified",
-        "note": "The earlier record labelled this account Cursor Ultra (legacy), but neither the report nor the ledger contains tier evidence. Only the legacy two-pool layout (Cursor Models + Other Models, on-demand usage) is observed; the specific legacy tier is not verified."
+        "source": "account_owner_confirmation",
+        "confirmedAt": "2026-11-05",
+        "note": "Account owner confirmed on 2026-11-05 that this measurement is the legacy Cursor Ultra subscription. This is not independent billing verification. Quota figures are unchanged. No monthly fee is recorded on this row, so no fee multiple is published, and the row is not attached to a catalog plan card."
       },
       "calls": 16,
       "tokens": {
@@ -226,8 +232,8 @@
         }
       },
       "caveats": {
-        "zh": "有条件实测，非官方承诺：仅前 12 轮（801,760 tokens）对应额度 34.7423% → 34.7570%；第 4 批未计入，CSV 未对账。窗口按旧套餐月度 Cursor Models 池处理，重置点未核验，套餐档位未核验。USD 为标准公开价估值，不是余额；假设线性扣量且无其他流量，区间仅覆盖仪表读数舍入。",
-        "en": "Conditional measurement, not an official allowance: only the first 12 calls (801,760 tokens) match 34.7423% → 34.7570%; batch 4 excluded, CSV not reconciled. Treated as the legacy monthly Cursor Models pool; reset point not verified, plan tier unverified. USD is a standard list-price valuation, not a credit balance; assumes linear consumption and no other traffic, with bounds covering meter rounding only."
+        "zh": "有条件实测，非官方承诺：仅前 12 轮（801,760 tokens）对应额度 34.7423% → 34.7570%；第 4 批未计入，CSV 未对账。窗口按旧套餐 Ultra 的月度 Cursor Models 池处理，重置点未核验。账号持有人于 2026-11-05 确认套餐为旧套餐 Ultra。USD 为标准公开价估值，不是余额；假设线性扣量且无其他流量，区间仅覆盖仪表读数舍入。本行不记录月费，不计算月费倍数。",
+        "en": "Conditional measurement, not an official allowance: only the first 12 calls (801,760 tokens) match 34.7423% → 34.7570%; batch 4 excluded, CSV not reconciled. Treated as the legacy Ultra monthly Cursor Models pool; reset point not verified. The account owner confirmed on 2026-11-05 that the plan is legacy Cursor Ultra. USD is a standard list-price valuation, not a credit balance; assumes linear consumption and no other traffic, with bounds covering meter rounding only. This row records no monthly fee and publishes no fee multiple."
       },
       "windowMeasurements": null,
       "measurementReport": "/reports/quota-bench-2026-10.md",
@@ -239,5 +245,5 @@
     "https://cursor.com/docs/models/cursor-composer-2-5",
     "https://cursor.com/docs/account/pricing/legacy-cursor-plans"
   ],
-  "publicationPolicy": "Observations and conditional estimates only; no official allowance, automatic monthly extrapolation, or authoritative plan-tier assignment. USD equivalents are valuations at public standard API list prices, not credit balances."
+  "publicationPolicy": "Observations and conditional estimates only; no official allowance or automatic monthly extrapolation. Plan names follow account-owner confirmation, not billing verification. USD equivalents are valuations at public standard API list prices, not credit balances. Rows without a recorded fee publish no fee multiple."
 }

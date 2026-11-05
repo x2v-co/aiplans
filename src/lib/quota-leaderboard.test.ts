@@ -28,12 +28,18 @@ test('fee multiple: month = value / fee, week = value / (fee / 4.35), 5h none', 
   for (const r of QUOTA_LEADER_ROWS.filter(r => r.window === '5h')) assert.equal(feeMultiple(r), null);
 });
 
-test('unverified tier gets no multiple and sorts last', () => {
+test('legacy Cursor Ultra stays in the mixed group with no fee multiple', () => {
   const cursor = QUOTA_LEADER_ROWS.find(r => r.id === 'cursor-legacy-month')!;
-  assert.equal(cursor.tierVerified, false);
+  assert.equal(cursor.plan, 'Cursor Ultra (legacy)');
+  assert.equal(cursor.mix, 'mixed');
+  assert.equal(cursor.window, 'month');
+  assert.equal(cursor.tierVerified, true);
+  assert.equal(cursor.feeUsdMonthly, null);
+  assert.equal(cursor.usd.mid, 3021.76);
   assert.equal(feeMultiple(cursor), null);
   const mixed = leaderboard('month', 'mixed');
-  assert.equal(mixed.at(-1)!.id, 'cursor-legacy-month');
+  assert.deepEqual(mixed.map(r => r.id), ['x-ultra-month', 'cursor-legacy-month']);
+  assert.equal(leaderboard('month', 'mixed', 'usd').at(-1)!.id, 'cursor-legacy-month');
 });
 
 test('boards never mix workload mixes and sort by multiple by default', () => {

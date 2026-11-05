@@ -15,6 +15,11 @@ test('both locales expose the active sort and explain identical monthly rankings
     const volcengineRow = html.match(/<tr[^>]*data-row="volcengine-pro-month"[\s\S]*?<\/tr>/)![0];
     assert.ok(volcengineRow.includes(locale === 'zh' ? '粗估' : 'rough'));
     assert.ok(!volcengineRow.includes('4.35'), 'native monthly estimate must not be labeled as weekly extrapolation');
+    const cursorRow = html.match(/<tr[^>]*data-row="cursor-legacy-month"[\s\S]*?<\/tr>/)![0];
+    assert.ok(cursorRow.includes('Cursor Ultra (legacy)'));
+    assert.ok(cursorRow.includes('—'));
+    assert.ok(!cursorRow.includes(locale === 'zh' ? '档位未核验' : 'tier unverified'));
+    assert.ok(html.includes(locale === 'zh' ? '旧套餐 Cursor Ultra 已由账号持有人确认为 Ultra' : 'Legacy Cursor Ultra is account-owner confirmed as Ultra'));
     assert.ok(html.includes('6.90'));
     assert.ok(html.includes(locale === 'zh' ? '有条件实测 · 非官方额度' : 'Conditional measurement · not an official allowance'));
   }

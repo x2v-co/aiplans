@@ -98,13 +98,18 @@ test('upgrade retest preserves prior snapshots and unrelated provider values', (
   assert.equal(data.schemaVersion, 2);
   assert.equal(data.publishedAt, '2026-10-30');
   assert.equal(data.supersedes, '/reports/quota-bench-2026-10.v2.json');
+  const cursorIdentity = new Set(['plan', 'tierVerified', 'tierVerification', 'caveats']);
   for (const id of ['cursor-ultra', 'volcengine-pro']) {
     const previous = v2.records.find(record => record.id === id)!;
     const current = data.records.find(record => record.id === id)!;
     for (const [key, value] of Object.entries(previous)) {
+      if (id === 'cursor-ultra' && cursorIdentity.has(key)) continue;
       assert.deepEqual(current[key as keyof typeof current], value, `${id}.${key}`);
     }
   }
+  assert.equal(cursor.plan, 'Cursor Ultra (legacy)');
+  assert.equal(cursor.tierVerified, true);
+  assert.equal(cursor.apiEquivalentUsd!.mid, v2.records.find(record => record.id === 'cursor-ultra')!.apiEquivalentUsd!.mid);
   for (const source of v1.sources) assert.ok(data.sources.includes(source));
   assert.equal(benchmarkForPlan('cursor-ultra'), undefined);
 });
@@ -128,8 +133,9 @@ test('USD headlines render localized windows, rounding ranges and data-driven qu
     const cursorHtml = renderToStaticMarkup(createElement(QuotaBenchUsdHeadline, { record: cursor, locale }));
     const codexHtml = renderToStaticMarkup(createElement(QuotaBenchUsdHeadline, { record: codex, locale, compact: true }));
     for (const phrase of locale === 'zh'
-      ? ['≈ $3,022', '/ 月池', '区间 $3,001–$3,042（读数舍入误差）', 'token 折合（按公开 API 标准价）', '有条件实测，不是官方额度或余额', '套餐档位未核验', '可能按 Fast 版计费']
-      : ['≈ $3,022', '/ monthly pool', 'Range $3,001–$3,042 (meter rounding)', 'Token value at public API list price', 'Conditional measurement, not an official allowance or credit', 'plan tier unverified', 'may be billed as the Fast variant']) assert.ok(cursorHtml.includes(phrase), phrase);
+      ? ['≈ $3,022', '/ 月池', '区间 $3,001–$3,042（读数舍入误差）', 'token 折合（按公开 API 标准价）', '有条件实测，不是官方额度或余额', '可能按 Fast 版计费']
+      : ['≈ $3,022', '/ monthly pool', 'Range $3,001–$3,042 (meter rounding)', 'Token value at public API list price', 'Conditional measurement, not an official allowance or credit', 'may be billed as the Fast variant']) assert.ok(cursorHtml.includes(phrase), phrase);
+    assert.ok(!cursorHtml.includes(locale === 'zh' ? '套餐档位未核验' : 'plan tier unverified'));
     for (const phrase of ['≈ $1,222', '$978–$1,630', 'text-2xl', locale === 'zh' ? '/ 周' : '/ week']) assert.ok(codexHtml.includes(phrase), phrase);
     assert.ok(cursorHtml.includes('text-3xl'));
     assert.doesNotMatch(codexHtml, /Fast|tier unverified|套餐档位未核验/);
@@ -147,8 +153,9 @@ test('benchmark results lead with both USD summaries before folded methods', () 
   for (const locale of ['zh', 'en']) {
     const html = renderToStaticMarkup(createElement(QuotaBenchResults, { locale }));
     for (const phrase of locale === 'zh'
-      ? ['≈ $3,022', '≈ $1,222', '/ 月池', '/ 周', '套餐档位未核验', '可能按 Fast 版计费', '查看详情 ↓', '方法说明与完整口径']
-      : ['≈ $3,022', '≈ $1,222', '/ monthly pool', '/ week', 'plan tier unverified', 'may be billed as the Fast variant', 'Details ↓', 'Method, full scope and reconciliation']) assert.ok(html.includes(phrase), phrase);
+      ? ['≈ $3,022', '≈ $1,222', '/ 月池', '/ 周', 'Cursor Ultra (legacy)', '可能按 Fast 版计费', '查看详情 ↓', '方法说明与完整口径']
+      : ['≈ $3,022', '≈ $1,222', '/ monthly pool', '/ week', 'Cursor Ultra (legacy)', 'may be billed as the Fast variant', 'Details ↓', 'Method, full scope and reconciliation']) assert.ok(html.includes(phrase), phrase);
+    assert.ok(!html.includes(locale === 'zh' ? '套餐档位未核验' : 'plan tier unverified'));
     assert.ok(html.includes('<details'));
     assert.ok(html.includes('<summary'));
     assert.ok(html.indexOf('$3,022') < html.indexOf('<details'));
@@ -157,7 +164,8 @@ test('benchmark results lead with both USD summaries before folded methods', () 
     assert.ok(codexTile.includes('≈ $1,222'));
     assert.doesNotMatch(codexTile, /Fast|tier unverified|套餐档位未核验/);
     const cursorTile = html.slice(html.indexOf(cursor.plan), html.indexOf('href="#cursor-ultra"'));
-    assert.ok(cursorTile.includes(locale === 'zh' ? '套餐档位未核验；可能按 Fast 版计费' : 'plan tier unverified; may be billed as the Fast variant'));
+    assert.ok(cursorTile.includes(locale === 'zh' ? '有条件实测，不是官方额度或余额；可能按 Fast 版计费' : 'Conditional measurement, not an official allowance or credit; may be billed as the Fast variant'));
+    assert.ok(!cursorTile.includes(locale === 'zh' ? '套餐档位未核验' : 'plan tier unverified'));
   }
 });
 

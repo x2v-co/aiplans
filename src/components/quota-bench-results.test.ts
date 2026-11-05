@@ -16,12 +16,15 @@ test('published measurements preserve native windows and scope conditional capac
   assert.equal(codex.controlTokens, null);
   assert.equal(codex.estimate!.mid, Math.round(5580339 / .04));
   const cursor = data.records.find(r => r.id === 'cursor-ultra')!;
+  assert.equal(cursor.plan, 'Cursor Ultra (legacy)');
   assert.equal(cursor.status, 'conditional');
   assert.equal(cursor.estimate!.mid, 5454149660);
   assert.equal(cursor.estimateBasis!.calls, 12);
-  assert.equal(cursor.tierVerified, false);
+  assert.equal(cursor.tierVerified, true);
   assert.equal(cursor.planSlug, null);
-  assert.equal(cursor.tierVerification!.source, 'unverified');
+  assert.equal(cursor.tierVerification!.source, 'account_owner_confirmation');
+  assert.equal(cursor.tierVerification!.confirmedAt, '2026-11-05');
+  assert.equal(cursor.tierVerification!.priceUsdPerMonth, undefined);
   assert.equal(cursor.measurementReport, '/reports/quota-bench-2026-10.md');
   assert.equal(cursor.measurementData, '/reports/quota-bench-2026-10-ledger.json');
   assert.equal(data.records.find(r => r.id === 'volcengine-pro')!.window, '5h');
@@ -33,9 +36,11 @@ test('both locales show caveats, controller accounting and downloadable evidence
     for (const value of ['111,606,780', '186,011,300', '8,729,647', '5,417,297,297–5,491,506,849', '$3,022', '$3,001–$3,042', '$0.444198', '$1,222', '$978–$1,630', '$48.89511', '2026-10-29', 'https://cursor.com/docs/models/cursor-composer-2-5', '/reports/quota-bench-2026-10.json', '/reports/quota-bench-2026-10.md', '/reports/quota-bench-2026-10-ledger.json']) assert.ok(html.includes(value), value);
     assert.ok(html.includes(locale === 'zh' ? '仅适用于 ChatGPT Pro 200' : 'Applies only to ChatGPT Pro 200'));
     const phrases = locale === 'zh'
-      ? ['有条件实测 · 非官方承诺 · 低置信度', '套餐档位：未核验', '有条件实测，非官方承诺', '第 4 批未计入', 'CSV 未对账', '重置点未核验', '套餐档位未核验']
-      : ['Conditional measurement · not an official allowance · low confidence', 'Plan tier: unverified', 'Conditional measurement, not an official allowance', 'batch 4 excluded', 'CSV not reconciled', 'reset point not verified', 'plan tier unverified'];
+      ? ['Cursor Ultra (legacy)', '有条件实测 · 非官方承诺 · 低置信度', '有条件实测，非官方承诺', '第 4 批未计入', 'CSV 未对账', '重置点未核验', '旧套餐 Ultra', '不计算月费倍数']
+      : ['Cursor Ultra (legacy)', 'Conditional measurement · not an official allowance · low confidence', 'Conditional measurement, not an official allowance', 'batch 4 excluded', 'CSV not reconciled', 'reset point not verified', 'legacy Cursor Ultra', 'publishes no fee multiple'];
     for (const phrase of phrases) assert.ok(html.includes(phrase), phrase);
+    assert.ok(!html.includes(locale === 'zh' ? '套餐档位未核验' : 'plan tier unverified'));
+    assert.ok(!html.includes(locale === 'zh' ? '套餐档位：未核验' : 'Plan tier: unverified'));
     assert.doesNotMatch(html, /\/Users\/|account_id|AUTH_TOKEN|COOKIE/);
   }
 });

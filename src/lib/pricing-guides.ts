@@ -591,9 +591,9 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
           period: { en: 'Monthly pool (legacy); do not multiply', zh: '月池（旧套餐）；不乘系数' },
           rows: [
             {
-              pool: { en: 'Legacy Ultra (tier unverified)', zh: '旧 Ultra（档位未核验）' },
+              pool: { en: 'Legacy Cursor Ultra', zh: '旧套餐 Ultra' },
               value: { en: '≈ $3,022/month · conditional estimate / sample incomplete', zh: '约 $3,022/月 · 条件估算 / 样本未完成' },
-              basis: { en: 'Model: composer-2.5. Conditional estimate / sample not complete (quota-bench-2026-10: 12 of 16 calls used; CSV not reconciled; reset and plan tier unverified). Monthly pool figure — not multiplied. Not an official capacity promise.', zh: '所用模型：composer-2.5。条件估算 / 样本未完成（quota-bench-2026-10：16 轮中仅前 12 轮入算；CSV 未对账；重置点与套餐档位未核验）。本身是月池数字，不乘系数。不是官方容量承诺。' },
+              basis: { en: 'Model: composer-2.5. Account owner confirmed on 2026-11-05 that this quota-bench-2026-10 measurement is legacy Cursor Ultra. Conditional estimate / sample not complete (12 of 16 calls used; CSV not reconciled; reset point not verified). Monthly pool figure — not multiplied, and no fee multiple is published. Not an official capacity promise.', zh: '所用模型：composer-2.5。账号持有人于 2026-11-05 确认 quota-bench-2026-10 的这次实测是旧套餐 Ultra。条件估算 / 样本未完成（16 轮中仅前 12 轮入算；CSV 未对账；重置点未核验）。本身是月池数字，不乘系数，也不发布月费倍数。不是官方容量承诺。' },
             },
             {
               pool: { en: 'New X Subscription', zh: '新 X Subscription' },
@@ -706,8 +706,8 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       {
         heading: { en: 'Legacy Cursor Models pool: ≈ $3,022 conditional estimate (sample incomplete)', zh: '旧套餐 Cursor Models 池：约 $3,022 条件估算（样本未完成）' },
         body: {
-          en: 'Separately from the official Other Models dollar allowances ($20 / $70 / $400), the legacy monthly Cursor Models pool was measured conditionally in quota-bench-2026-10. Using composer-2.5 for the first 12 of 16 calls (801,760 tokens; meter 34.7423% → 34.7570%) and valuing tokens at Cursor’s published composer-2.5 list price yields about $3,022 for the pool (rounding band about $3,001–$3,042). Label: conditional estimate / sample not complete — batch 4 excluded, CSV not reconciled, reset point and plan tier unverified; the earlier “Ultra” card association was withdrawn. This is not an official capacity promise and must not be mixed with the Grok weekly pool or the official Other Models allowances.',
-          zh: '与官方 Other Models 美元额度（$20 / $70 / $400）分开：旧套餐月度 Cursor Models 池在 quota-bench-2026-10 中有条件实测。用 composer-2.5，16 轮中仅前 12 轮（801,760 tokens；仪表 34.7423% → 34.7570%）入算，按 Cursor 公布的 composer-2.5 标价折合约 $3,022（舍入约 $3,001–$3,042）。口径：条件估算 / 样本未完成——第 4 批未计入、CSV 未对账、重置点与套餐档位未核验；此前与「Ultra」套餐卡的关联已撤回。这不是官方容量承诺，也不能与 Grok 周池或官方 Other Models 额度混成同一种东西。',
+          en: 'Separately from the official Other Models dollar allowances ($20 / $70 / $400), the legacy monthly Cursor Models pool was measured conditionally in quota-bench-2026-10. Using composer-2.5 for the first 12 of 16 calls (801,760 tokens; meter 34.7423% → 34.7570%) and valuing tokens at Cursor’s published composer-2.5 list price yields about $3,022 for the pool (rounding band about $3,001–$3,042). Label: conditional estimate / sample not complete — batch 4 excluded, CSV not reconciled, reset point not verified. The account owner confirmed on 2026-11-05 that the measured subscription is legacy Cursor Ultra; the quota figures are unchanged, and this row is not given a fee multiple or attached to a plan card. This is not an official capacity promise and must not be mixed with the Grok weekly pool or the official Other Models allowances.',
+          zh: '与官方 Other Models 美元额度（$20 / $70 / $400）分开：旧套餐月度 Cursor Models 池在 quota-bench-2026-10 中有条件实测。用 composer-2.5，16 轮中仅前 12 轮（801,760 tokens；仪表 34.7423% → 34.7570%）入算，按 Cursor 公布的 composer-2.5 标价折合约 $3,022（舍入约 $3,001–$3,042）。口径：条件估算 / 样本未完成——第 4 批未计入、CSV 未对账、重置点未核验。账号持有人于 2026-11-05 确认该订阅是旧套餐 Ultra；额度数字未改，本行不计算月费倍数，也不挂到套餐卡片。这不是官方容量承诺，也不能与 Grok 周池或官方 Other Models 额度混成同一种东西。',
         },
       },
       {

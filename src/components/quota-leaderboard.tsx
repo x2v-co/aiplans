@@ -18,7 +18,7 @@ const T = {
     details: '方法',
     volcengine: '火山方舟 Pro：¥200/月，按固定展示汇率 ¥6.90/$ 折合约 $29/月；kimi-k3 按 Kimi 国际 API 标准价（输入 $3/M、输出 $15/M）估值。三个窗口分别实测，月窗口为粗估；区间仅含读数舍入误差，非账单或余额。',
     valuation: '火山估值口径与来源',
-    basis: `口径：月费倍数 = 该窗口 API 折合金额 ÷ 该窗口对应费用。月榜按月费；周榜按「月费 ÷ ${WEEKS_PER_MONTH}」（一年 52.14 周 ÷ 12 个月）。月榜中 X Ultra、Codex Pro 200、Claude Pro 都只有周额度实测，月额度 = 周额度 × ${WEEKS_PER_MONTH} 推算，标「粗估」，未实测月度重置；因此月费倍数 = 周费倍数。档位未核验的套餐不算倍数。`,
+    basis: `口径：月费倍数 = 该窗口 API 折合金额 ÷ 该窗口对应费用。月榜按月费；周榜按「月费 ÷ ${WEEKS_PER_MONTH}」（一年 52.14 周 ÷ 12 个月）。月榜中 X Ultra、Codex Pro 200、Claude Pro 都只有周额度实测，月额度 = 周额度 × ${WEEKS_PER_MONTH} 推算，标「粗估」，未实测月度重置；因此月费倍数 = 周费倍数。档位未核验的套餐不算倍数。旧套餐 Cursor Ultra 已由账号持有人确认为 Ultra，但本实测不记录月费，因此不算倍数，留在混合组、不参与倍数排名。`,
     disclaimer: '有条件实测 · 非官方额度 · 样本少；金额按公开 API 标价折算，不是账单或余额。不同负载配比分开排名，不混排。',
   },
   en: {
@@ -33,7 +33,7 @@ const T = {
     details: 'Method',
     volcengine: 'Volcengine Pro: CNY 200/month, about $29/month at the fixed display assumption of CNY 6.90/USD; kimi-k3 valued at Kimi international standard API prices ($3/M input, $15/M output). All three windows measured separately; month is rough. Bounds cover meter rounding only; not a bill or balance.',
     valuation: 'Volcengine valuation and sources',
-    basis: `Basis: fee multiple = API value for the window ÷ the fee for that window. Monthly board uses the monthly fee; weekly board uses monthly fee ÷ ${WEEKS_PER_MONTH} (52.14 weeks ÷ 12 months). X Ultra, Codex Pro 200 and Claude Pro are measured weekly only; their monthly value = weekly × ${WEEKS_PER_MONTH}, marked "rough" (no monthly reset was measured), so the monthly multiple equals the weekly multiple. Unverified tiers get no multiple.`,
+    basis: `Basis: fee multiple = API value for the window ÷ the fee for that window. Monthly board uses the monthly fee; weekly board uses monthly fee ÷ ${WEEKS_PER_MONTH} (52.14 weeks ÷ 12 months). X Ultra, Codex Pro 200 and Claude Pro are measured weekly only; their monthly value = weekly × ${WEEKS_PER_MONTH}, marked "rough" (no monthly reset was measured), so the monthly multiple equals the weekly multiple. Unverified tiers get no multiple. Legacy Cursor Ultra is account-owner confirmed as Ultra, but this measurement records no monthly fee, so it has no multiple and stays in the mixed group, outside the multiple ranking.`,
     disclaimer: 'Conditional measurement · not an official allowance · small sample. Values use public API list prices, not bills or credits. Workload mixes are ranked separately, never mixed.',
   },
 };

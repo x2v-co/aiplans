@@ -26,8 +26,8 @@ export type BenchRecord = Omit<(typeof dataset.records)[number], 'controlTokens'
 
 // The account owner confirmed Pro 200. The legacy chatgpt-pro slug is the
 // historical $200 SKU; never attach this measurement to Pro 100 or Pro 500.
-// Cursor's legacy plan tier is unverified; never attach its measurement to
-// Ultra or any other specific tier's plan card.
+// Legacy Cursor Ultra is account-owner confirmed, but planSlug stays null:
+// do not attach that measurement to a catalog plan card (including X Ultra).
 export function benchmarkForPlan(planSlug: string): BenchRecord | undefined {
   const id = ['chatgpt-pro', 'chatgpt-pro-200'].includes(planSlug)
     ? 'codex-pro'

@@ -8,7 +8,7 @@ import volcengineValuation from '../../public/reports/volcengine-api-valuation-2
  * No new measurements: every number comes from an existing report or guide.
  */
 export const QUOTA_LEADERBOARD_PUBLISHED_AT = '2026-11-05';
-export const QUOTA_LEADERBOARD_UPDATED_AT = '2026-11-05'; // Includes Volcengine's sourced valuation.
+export const QUOTA_LEADERBOARD_UPDATED_AT = '2026-11-05'; // Volcengine valuation; legacy Cursor row confirmed as Ultra (no new multiple).
 
 /** Average weeks per month (52.14 / 12). Same factor as the Claude Pro report's weeklyMultiplier. */
 export const WEEKS_PER_MONTH = 4.35;
@@ -73,6 +73,8 @@ export const QUOTA_LEADER_ROWS: LeaderRow[] = [
     ];
   }),
   ...volcengineRows,
+  // Owner-confirmed legacy Ultra (2026-11-05). Stay in the mixed monthly group.
+  // No fee is recorded on the measurement, so this row stays unranked (no multiple).
   { id: 'cursor-legacy-month', plan: cursor.plan, model: cursor.model, window: 'month', mix: 'mixed', feeUsdMonthly: null, usd: cursor.apiEquivalentUsd!, rough: false, tierVerified: cursor.tierVerified, date: cursor.date, confidence: 'low', anchor: '#cursor-ultra' },
 ];
 
