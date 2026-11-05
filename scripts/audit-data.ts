@@ -12,7 +12,8 @@
  * With --strict, warnings-only returns 2.
  *
  * Check categories:
- *   C1 prices.zero_or_null        — price_per_1m <= 0 or null (critical)
+ *   C1 prices.zero_or_null        — price_per_1m <= 0 or null (critical); OpenRouter explicit 0/0
+ *                                   becomes prices.free_published / variants.free_published (warning)
  *   C2 prices.output_lt_input     — output_price < input_price (critical; physically wrong)
  *   C3 prices.input_eq_output     — input == output (warn; almost always parser bug)
  *   C4 prices.stale               — last_verified older than threshold (warn)
@@ -46,7 +47,7 @@
  *                                   no inverted prices, no stale active rows)
  */
 import { isSupersededPlan } from '../src/lib/plan-lifecycle';
-import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice as isVerifiedFreeChannel } from './utils/audit-price-policy';
+import { isExplicitlyUnverifiedPrice, isOpenRouterPublishedFree, isVerifiedFreeOutput, isVerifiedFreePrice as isVerifiedFreeChannel } from './utils/audit-price-policy';
 import { db } from './db/queries';
 import { auditExitCode, missingPlanFields, planVerificationFinding } from './utils/audit-plan-policy';
 import { databaseSql } from './db/postgres-admin';
@@ -276,7 +277,11 @@ async function main() {
       continue;
     }
     const freeOutput = isVerifiedFreeOutput(modelById.get(p.model_id)?.slug, providerById.get(p.provider_id)?.slug, p.input_price_per_1m);
-    if (!freeTier && !nonToken) {
+    const publishedFree = !freeTier && !nonToken
+      && isOpenRouterPublishedFree(providerById.get(p.provider_id)?.slug, p.input_price_per_1m, p.output_price_per_1m);
+    if (publishedFree) {
+      add('prices.free_published', 'warning', 'OpenRouter publishes pricing "0"/"0" (free/stealth model)', ctx);
+    } else if (!freeTier && !nonToken) {
       if (p.input_price_per_1m == null || p.input_price_per_1m <= 0) {
         add('prices.zero_or_null', 'critical', `input_price_per_1m=${p.input_price_per_1m}`, ctx);
       }
@@ -555,7 +560,11 @@ async function main() {
       if (v.provider_id != null && !providerById.has(v.provider_id)) {
         add('variants.orphan_provider', 'critical', `api_channel_price_variants.provider_id=${v.provider_id} not in providers`, ctx);
       }
-      const freeVariant = isFreeTier(v.model_id) || isVerifiedFreePrice(v.model_id, v.provider_id);
+      const variantPublishedFree = isOpenRouterPublishedFree(providerById.get(v.provider_id)?.slug, v.input_price_per_1m, v.output_price_per_1m);
+      if (variantPublishedFree && !(isFreeTier(v.model_id) || isVerifiedFreePrice(v.model_id, v.provider_id))) {
+        add('variants.free_published', 'warning', 'OpenRouter publishes pricing "0"/"0" (free/stealth model)', ctx);
+      }
+      const freeVariant = isFreeTier(v.model_id) || isVerifiedFreePrice(v.model_id, v.provider_id) || variantPublishedFree;
       if (!freeVariant && (v.input_price_per_1m == null || v.input_price_per_1m <= 0)) {
         add('variants.zero_or_null', 'critical', `input_price_per_1m=${v.input_price_per_1m}`, ctx);
       }
@@ -864,6 +873,8 @@ async function main() {
       'variants.no_headline_channel_price',
       'variants.headline_drift',
       'prices.input_eq_output',
+      'prices.free_published',
+      'variants.free_published',
       'prices.cross_channel_outlier',
       'prices.modelsdev_divergence',
       'prices.aa_official_divergence',

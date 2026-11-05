@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput } from './audit-price-policy';
+import { isExplicitlyUnverifiedPrice, isOpenRouterPublishedFree, isVerifiedFreeOutput } from './audit-price-policy';
 
 test('only deliberately withheld prices become verification warnings', () => {
   const row = {input_price_per_1m:null,output_price_per_1m:null,last_verified:null,notes:'[needs-verification] base unknown'};
@@ -18,4 +18,15 @@ test('SubQ free output exception cannot hide zero input or another channel error
   assert.equal(isVerifiedFreeOutput('scaledown-summarize','openrouter',0.04), true);
   assert.equal(isVerifiedFreeOutput('scaledown-extract','openrouter',0), false);
   assert.equal(isVerifiedFreeOutput('scaledown-extract','scaledown',0.04), false);
+});
+
+test('OpenRouter explicit 0/0 is published free; null or one-sided zero is not', () => {
+  assert.equal(isOpenRouterPublishedFree('openrouter', 0, 0), true);
+  assert.equal(isOpenRouterPublishedFree('openrouter', null, null), false);
+  assert.equal(isOpenRouterPublishedFree('openrouter', 0, null), false);
+  assert.equal(isOpenRouterPublishedFree('openrouter', null, 0), false);
+  assert.equal(isOpenRouterPublishedFree('openrouter', 0, 1.2), false);
+  assert.equal(isOpenRouterPublishedFree('openrouter', 0.5, 0), false);
+  assert.equal(isOpenRouterPublishedFree('together-ai', 0, 0), false);
+  assert.equal(isOpenRouterPublishedFree(undefined, 0, 0), false);
 });
