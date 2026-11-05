@@ -5,6 +5,8 @@ import volcengineValuation from '../../public/reports/volcengine-api-valuation-2
 
 /**
  * Leaderboard of x2v conditional quota measurements, valued at public API list price.
+ * One ranked list per window, metric, and direction. Workload mix stays on the row.
+ * Unverified tiers, and rows with no fee multiple, stay off the multiple ranking.
  * No new measurements: every number comes from an existing report or guide.
  */
 export const QUOTA_LEADERBOARD_PUBLISHED_AT = '2026-11-05';
@@ -73,8 +75,9 @@ export const QUOTA_LEADER_ROWS: LeaderRow[] = [
     ];
   }),
   ...volcengineRows,
-  // Owner-confirmed legacy Ultra (2026-11-05). Stay in the mixed monthly group.
-  // No fee is recorded on the measurement, so this row stays unranked (no multiple).
+  // Owner-confirmed legacy Ultra (2026-11-05). No monthly fee is recorded,
+  // so this row is left out of fee-multiple ranks and gets no invented multiple.
+  // Absolute-value ranks still use the measured API value.
   { id: 'cursor-legacy-month', plan: cursor.plan, model: cursor.model, window: 'month', mix: 'mixed', feeUsdMonthly: null, usd: cursor.apiEquivalentUsd!, rough: false, tierVerified: cursor.tierVerified, date: cursor.date, confidence: 'low', anchor: '#cursor-ultra' },
 ];
 
@@ -92,11 +95,57 @@ export function feeMultiple(row: LeaderRow): { low: number; mid: number; high: n
 }
 
 export type LeaderSort = 'multiple' | 'usd';
+export type LeaderDirection = 'desc' | 'asc';
 
-export function leaderboard(window: LeaderWindow, mix: LeaderMix, sort: LeaderSort = 'multiple', rows: readonly LeaderRow[] = QUOTA_LEADER_ROWS): LeaderRow[] {
-  const key = (r: LeaderRow) => sort === 'usd' || window === '5h' ? r.usd.mid : (feeMultiple(r)?.mid ?? -1);
-  return rows.filter(r => r.window === window && r.mix === mix)
-    .sort((a, b) => key(b) - key(a) || b.usd.mid - a.usd.mid);
+export type LeaderboardRanking = {
+  /** Rows scored on this metric. Index 0 is rank 1 for the selected direction. */
+  ranked: LeaderRow[];
+  /** Below the divider: unverified tiers, or no fee multiple when ranking by multiple. */
+  unverified: LeaderRow[];
+};
+
+function rankValue(row: LeaderRow, sort: LeaderSort, window: LeaderWindow): number | null {
+  if (sort === 'multiple' && window !== '5h') return feeMultiple(row)?.mid ?? null;
+  return row.usd.mid;
 }
 
-export const LEADER_MIXES: LeaderMix[] = ['output', 'agentic', 'input', 'mixed'];
+function scored(row: LeaderRow, window: LeaderWindow, sort: LeaderSort): boolean {
+  if (!row.tierVerified) return false;
+  if (window !== '5h' && sort === 'multiple') return feeMultiple(row) !== null;
+  return Number.isFinite(row.usd.mid);
+}
+
+function compareRows(window: LeaderWindow, sort: LeaderSort, direction: LeaderDirection) {
+  const effective: LeaderSort = window === '5h' ? 'usd' : sort;
+  const tieBreak: LeaderSort = effective === 'usd' ? 'multiple' : 'usd';
+  const sign = direction === 'desc' ? 1 : -1;
+  const value = (row: LeaderRow, metric: LeaderSort) => rankValue(row, metric, window) ?? Number.NEGATIVE_INFINITY;
+  return (a: LeaderRow, b: LeaderRow) => {
+    const primary = (value(b, effective) - value(a, effective)) * sign;
+    if (primary) return primary;
+    const secondary = (value(b, tieBreak) - value(a, tieBreak)) * sign;
+    if (secondary) return secondary;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  };
+}
+
+/** Single global ranking for one window. Mix does not split the list. Default direction is high to low. */
+export function rankLeaderboard(window: LeaderWindow, sort: LeaderSort = 'multiple', rows: readonly LeaderRow[] = QUOTA_LEADER_ROWS, direction: LeaderDirection = 'desc'): LeaderboardRanking {
+  const inWindow = rows.filter(row => row.window === window);
+  return {
+    ranked: inWindow.filter(row => scored(row, window, sort)).slice().sort(compareRows(window, sort, direction)),
+    unverified: inWindow.filter(row => !scored(row, window, sort)).slice().sort((a, b) => b.usd.mid - a.usd.mid || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
+  };
+}
+
+/**
+ * True when fee-multiple order and absolute-value order are the same list
+ * in the given direction. Five-hour windows have no fee multiple, so this is false there.
+ */
+export function leaderboardOrdersMatch(window: LeaderWindow, rows: readonly LeaderRow[] = QUOTA_LEADER_ROWS, direction: LeaderDirection = 'desc'): boolean {
+  if (window === '5h') return false;
+  const ids = (sort: LeaderSort) => rankLeaderboard(window, sort, rows, direction).ranked.map(row => row.id);
+  const byMultiple = ids('multiple');
+  const byUsd = ids('usd');
+  return byMultiple.length > 0 && byMultiple.length === byUsd.length && byMultiple.every((id, index) => id === byUsd[index]);
+}
