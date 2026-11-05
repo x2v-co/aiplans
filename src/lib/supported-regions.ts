@@ -2,14 +2,14 @@
  * NULL means unresearched; [] means researched support for zero countries.
  * Country lists contain uppercase ISO 3166-1 alpha-2 codes, with no sentinels.
  */
-export interface RegionFields {
+export type RegionFields = {
   supported_regions?: string[] | null;
   regions_source_url?: string | null;
   regions_verified_at?: Date | string | null;
   access_from_china?: boolean | null;
   notes?: string | null;
   last_verified?: Date | string | null;
-}
+};
 
 export type RegionEvidence = {
   regions: string[] | null;
