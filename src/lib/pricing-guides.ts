@@ -47,17 +47,51 @@ export type PricingGuide = {
   summary: GuideSummary;
 };
 
+/**
+ * Approximate weeks-per-month factor for converting a measured weekly pool into
+ * a same-period monthly headline next to legacy monthly pools.
+ * Matches quota-bench (#326) and the published Claude Pro guide (×4.35).
+ * Not an official vendor month; subject to boss confirmation.
+ */
+export const GUIDE_WEEKLY_TO_MONTHLY = 4.35;
+
+/** One API-value / quota row for the TL;DR card. Numbers must already appear in the article. */
+export type GuideApiValue = {
+  /** Short plan / side label (e.g. New Ultra, Legacy Ultra). */
+  pool?: LocalizedText;
+  value: LocalizedText;
+  basis: LocalizedText;
+};
+
+/**
+ * Same-pool, same-period comparison group. Do not mix Grok weekly dollars,
+ * Cursor Models monthly dollars, and Other Models allowances in one group.
+ */
+export type GuideApiValueGroup = {
+  title: LocalizedText;
+  /** Optional period / pool-kind subtitle (e.g. weekly → approx monthly). */
+  period?: LocalizedText;
+  rows: GuideApiValue[];
+};
+
 export type GuideSummary = {
   /** One or two sentences: the conclusion a reader needs at a glance. */
   conclusion: LocalizedText;
   /** Key numbers already stated in the article body. */
   keyFacts?: LocalizedText[];
   /**
-   * Plan-quota guides: API-equivalent value of the allowance, with its basis
-   * (valued at API list price, error range, measurement source). Only numbers
-   * already in the article; never invented.
+   * Plan-quota guides: a single API-equivalent value (kept for guides that
+   * only need one number). Prefer `apiValueGroups` for same-pool old/new
+   * side-by-side. Only numbers already in the article; never invented.
    */
-  apiValue?: { value: LocalizedText; basis: LocalizedText };
+  apiValue?: GuideApiValue;
+  /** Flat multi-row list (legacy shape). Prefer `apiValueGroups` for comparisons. */
+  apiValues?: GuideApiValue[];
+  /**
+   * Grouped same-pool comparisons. When present, the card renders these and
+   * ignores flat `apiValues` / single `apiValue` for display.
+   */
+  apiValueGroups?: GuideApiValueGroup[];
 };
 
 /**
@@ -530,13 +564,60 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     summary: {
       conclusion: { en: 'The X Subscription pool is shared by Cursor and Grok and resets weekly; third-party models (Claude, GPT) are never included and bill at API list price. Heavy Claude/GPT users should compare legacy plans first, because switching is permanent.', zh: 'The X Subscription 用量池由 Cursor 与 Grok 共享、每周刷新；Claude、GPT 等第三方模型不含在额度内，按 API 标价另付。重度用第三方模型的先对比旧套餐再切，切换不可撤销。' },
       keyFacts: [
-        { en: 'Plus $8 / Premium $30 / Super $100 / Ultra $200 per month; pool multiples 1× / 4× / 15× / 50×', zh: '月费 Plus $8 / Premium $30 / Super $100 / Ultra $200；用量池倍数 1× / 4× / 15× / 50×' },
-        { en: 'Legacy Pro / Pro+ / Ultra include $20 / $70 / $400 of third-party usage', zh: '旧 Pro / Pro+ / Ultra 内含 $20 / $70 / $400 第三方用量' },
+        { en: 'X Subscription monthly: Plus $8 / Premium $30 / Super $100 / Ultra $200; pool multiples 1× / 4× / 15× / 50×', zh: '新套餐月费 Plus $8 / Premium $30 / Super $100 / Ultra $200；用量池倍数 1× / 4× / 15× / 50×' },
+        { en: 'Switching to The X Subscription is permanent; Support cannot restore a legacy plan', zh: '切到 The X Subscription 后不可撤销，Support 也不能恢复旧套餐' },
       ],
-      apiValue: {
-        value: { en: 'Ultra weekly pool ≈ $1,500 of API usage per week', zh: 'Ultra 周额度约等于 $1,500 API 用量/周' },
-        basis: { en: 'x2v measurement, valued at API list price, about ±25%; estimate, not an official figure (2026-11-04–05, 58 grok-4.7-medium calls via Cursor CLI). Plus, Premium and Super are not converted.', zh: 'x2v 实测，按 API 标价折算，误差约 ±25%；估算，非官方数字（2026-11-04–05，Cursor CLI 调 grok-4.7-medium 58 次）。Plus、Premium、Super 不折算。' },
-      },
+      // Same-pool groups only. Weekly→monthly uses GUIDE_WEEKLY_TO_MONTHLY (4.35).
+      apiValueGroups: [
+        {
+          title: { en: 'A. Grok / Cursor·Grok shared weekly pool', zh: 'A. Grok / Cursor·Grok 共享周池' },
+          period: { en: 'Weekly measured; monthly ≈ week × 4.35 (not an official monthly pool)', zh: '按周实测；月约值 = 周 × 4.35（非官方月池）' },
+          rows: [
+            {
+              pool: { en: 'New Ultra', zh: '新 Ultra' },
+              value: { en: '≈ $1,500/week · ≈ $6,525/month', zh: '约 $1,500/周 · 约 $6,525/月' },
+              basis: { en: 'Model: grok-4.7-medium (Cursor CLI). x2v measurement 2026-11-04–05, ±25%, valued at API list price. Monthly = week × 4.35 approximate month, not an official monthly pool. Plus / Premium / Super not converted.', zh: '所用模型：grok-4.7-medium（Cursor CLI）。x2v 实测 2026-11-04–05，±25%，按 API 标价折算。月约值 = 周 × 4.35 近似月，非官方月池。Plus / Premium / Super 不折算。' },
+            },
+            {
+              pool: { en: 'Legacy plans', zh: '旧套餐' },
+              value: { en: 'No same pool / not measured', zh: '旧套餐无此池 / 未测' },
+              basis: { en: 'Legacy Cursor plans have no Grok / Cursor·Grok shared weekly pool comparable to The X Subscription; no same-pool same-period measurement.', zh: '旧 Cursor 套餐没有与 The X Subscription 同池同周期的 Grok / Cursor·Grok 共享周池；无同口径实测。' },
+            },
+          ],
+        },
+        {
+          title: { en: 'B. Cursor Models pool', zh: 'B. Cursor Models 池' },
+          period: { en: 'Monthly pool (legacy); do not multiply', zh: '月池（旧套餐）；不乘系数' },
+          rows: [
+            {
+              pool: { en: 'Legacy Ultra (tier unverified)', zh: '旧 Ultra（档位未核验）' },
+              value: { en: '≈ $3,022/month · conditional estimate / sample incomplete', zh: '约 $3,022/月 · 条件估算 / 样本未完成' },
+              basis: { en: 'Model: composer-2.5. quota-bench-2026-10: 12 of 16 calls used; CSV not reconciled; reset and plan tier unverified. Monthly pool figure — not multiplied. Not an official capacity promise.', zh: '所用模型：composer-2.5。quota-bench-2026-10：16 轮中仅前 12 轮入算；CSV 未对账；重置点与套餐档位未核验。本身是月池数字，不乘系数。不是官方容量承诺。' },
+            },
+            {
+              pool: { en: 'New X Subscription', zh: '新 X Subscription' },
+              value: { en: 'No included Cursor Models pool / not measured', zh: '无此内含池 / 未测' },
+              basis: { en: 'The X Subscription does not publish a separate included Cursor Models pool like legacy plans; no same-pool measurement on new plans.', zh: 'The X Subscription 没有旧套餐那种单独内含的 Cursor Models 池；新套餐无同池实测。' },
+            },
+          ],
+        },
+        {
+          title: { en: 'C. Third-party Other Models', zh: 'C. 第三方 Other Models' },
+          period: { en: 'Official monthly included allowance (not a model run)', zh: '官方月度内含额度（非模型实测）' },
+          rows: [
+            {
+              pool: { en: 'Legacy Pro / Pro+ / Ultra', zh: '旧 Pro / Pro+ / Ultra' },
+              value: { en: 'Included $20 / $70 / $400 per month', zh: '内含 $20 / $70 / $400 /月' },
+              basis: { en: 'Official Other Models included allowance (not a measured model). Source: Cursor legacy pricing already recorded in this guide’s plan table and body.', zh: '官方 Other Models 内含额度（非实测模型）。来源：本指南套餐表与正文已记录的 Cursor 旧套餐口径。' },
+            },
+            {
+              pool: { en: 'New X Subscription (Premium+)', zh: '新 X Subscription（Premium 及以上）' },
+              value: { en: 'No included allowance; billed at API list price', zh: '无内含、按 API 标价另付' },
+              basis: { en: 'Verified against this guide’s existing official-sourced copy (intro, plan table, FAQ): Premium+ make Claude/GPT available but include no third-party allowance; API list price from first use, prepaid. Not an x2v measurement.', zh: '已用本指南既有官方来源文案核实（导语、套餐表、FAQ）：Premium 及以上可用 Claude/GPT，但不含第三方额度；首次使用起按 API 标价从预付扣款。不是 x2v 实测。' },
+            },
+          ],
+        },
+      ],
     },
     planTable: [
       {
@@ -617,8 +698,15 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       {
         heading: { en: 'x2v measurement: Ultra weekly pool ≈ $1,500 at API list price (estimate)', zh: 'x2v 实测：Ultra 周额度约值 $1,500（按 API 标价折算，估算）' },
         body: {
-          en: 'x2v measured roughly $1,500/week (Ultra), about ±25%, valued at API list price. This is an x2v estimate, not an official figure. Method: 58 Cursor CLI calls to grok-4.7-medium on 2026-11-04 to 11-05; cost self-computed at Cursor’s published list price (input $2/M, cache read $0.5/M, output $6/M) came to about $5.4 and was fitted against changes in the weekly usage percentage, giving 1% ≈ $15 (about $12.6–19.2). The pool is shared by Grok, Grok Bot and Cursor; Grok Bot has no separate allowance. The true value may be higher because cost is not taken from a bill and timed-out calls are not counted. Plus, Premium and Super are not converted because x2v has not verified the official tier multiples.',
-          zh: 'x2v 实测约 $1,500/周（Ultra），误差约 ±25%，按 API 标价折算。这是 x2v 的估算，不是官方数字。方法：2026-11-04 至 11-05 用 Cursor CLI 调用 grok-4.7-medium 共 58 次，按 Cursor 公布标价（输入 $2/M、缓存读 $0.5/M、输出 $6/M）自算成本约 $5.4，对照周额度百分比变化拟合，得 1% ≈ $15（约 $12.6–19.2）。周额度由 Grok、Grok Bot 与 Cursor 共享，Grok Bot 没有单独额度。真实值可能偏高：成本非账单，超时调用未计入。Plus、Premium、Super 不给折算值，因官方倍率尚未经 x2v 核实。',
+          en: 'x2v measured roughly $1,500/week (Ultra), about ±25%, valued at API list price. For same-period comparison with legacy monthly pools, week × 4.35 ≈ $6,525/month — an approximate month, not an official monthly pool (same 4.35 factor as quota-bench / Claude Pro guide; pending boss confirmation). This is an x2v estimate, not an official figure. Method: 58 Cursor CLI calls to grok-4.7-medium on 2026-11-04 to 11-05; cost self-computed at Cursor’s published list price (input $2/M, cache read $0.5/M, output $6/M) came to about $5.4 and was fitted against changes in the weekly usage percentage, giving 1% ≈ $15 (about $12.6–19.2). The pool is shared by Grok, Grok Bot and Cursor; Grok Bot has no separate allowance. The true value may be higher because cost is not taken from a bill and timed-out calls are not counted. Plus, Premium and Super are not converted because x2v has not verified the official tier multiples.',
+          zh: 'x2v 实测约 $1,500/周（Ultra），误差约 ±25%，按 API 标价折算。为与旧套餐月池同级对比，周 × 4.35 ≈ $6,525/月——周×4.35 近似月，非官方月池（与 quota-bench / Claude Pro 指南同一 4.35 系数；待老板确认）。这是 x2v 的估算，不是官方数字。方法：2026-11-04 至 11-05 用 Cursor CLI 调用 grok-4.7-medium 共 58 次，按 Cursor 公布标价（输入 $2/M、缓存读 $0.5/M、输出 $6/M）自算成本约 $5.4，对照周额度百分比变化拟合，得 1% ≈ $15（约 $12.6–19.2）。周额度由 Grok、Grok Bot 与 Cursor 共享，Grok Bot 没有单独额度。真实值可能偏高：成本非账单，超时调用未计入。Plus、Premium、Super 不给折算值，因官方倍率尚未经 x2v 核实。',
+        },
+      },
+      {
+        heading: { en: 'Legacy Cursor Models pool: ≈ $3,022 conditional estimate (sample incomplete)', zh: '旧套餐 Cursor Models 池：约 $3,022 条件估算（样本未完成）' },
+        body: {
+          en: 'Separately from the official Other Models dollar allowances ($20 / $70 / $400), the legacy monthly Cursor Models pool was measured conditionally in quota-bench-2026-10. Using composer-2.5 for the first 12 of 16 calls (801,760 tokens; meter 34.7423% → 34.7570%) and valuing tokens at Cursor’s published composer-2.5 list price yields about $3,022 for the pool (rounding band about $3,001–$3,042). Label: conditional estimate / sample not complete — batch 4 excluded, CSV not reconciled, reset point and plan tier unverified; the earlier “Ultra” card association was withdrawn. This is not an official capacity promise and must not be mixed with the Grok weekly pool or the official Other Models allowances.',
+          zh: '与官方 Other Models 美元额度（$20 / $70 / $400）分开：旧套餐月度 Cursor Models 池在 quota-bench-2026-10 中有条件实测。用 composer-2.5，16 轮中仅前 12 轮（801,760 tokens；仪表 34.7423% → 34.7570%）入算，按 Cursor 公布的 composer-2.5 标价折合约 $3,022（舍入约 $3,001–$3,042）。口径：条件估算 / 样本未完成——第 4 批未计入、CSV 未对账、重置点与套餐档位未核验；此前与「Ultra」套餐卡的关联已撤回。这不是官方容量承诺，也不能与 Grok 周池或官方 Other Models 额度混成同一种东西。',
         },
       },
       {
@@ -686,6 +774,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
       { label: { en: 'xAI docs: X Subscription prices (monthly and annual)', zh: 'xAI 文档：X Subscription 月付与年付价格' }, url: 'https://docs.x.ai/x-subscription/pricing' },
       { label: { en: 'xAI docs: weekly usage limits', zh: 'xAI 文档：每周用量限制' }, url: 'https://docs.x.ai/x-subscription/usage-limits' },
       { label: { en: 'xAI official X Subscription announcement', zh: 'xAI 官方 X Subscription 公告' }, url: 'https://x.ai/news/x-subscription' },
+      { label: { en: 'aiplans quota-bench-2026-10 (Cursor Models conditional estimate)', zh: 'aiplans quota-bench-2026-10（Cursor Models 条件估算）' }, url: 'https://aiplans.dev/reports/quota-bench-2026-10.md' },
     ],
   },
   'codex-pro-200-quota-benchmark': {
