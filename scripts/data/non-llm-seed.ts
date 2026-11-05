@@ -1,6 +1,6 @@
 import type { Sql } from 'postgres';
 import { NON_LLM_CATALOG, MOONDREAM_SHUTDOWN } from '../../src/lib/non-llm-catalog';
-import { IMAGE_MODEL_CATALOG } from '../../src/lib/image-model-catalog';
+import { IMAGE26_SLUGS, IMAGE_MODEL_CATALOG } from '../../src/lib/image-model-catalog';
 import type { AiCatalogItem } from '../../src/lib/ai-vertical-catalog';
 
 type Row = Record<string, unknown> & { id: number };
@@ -45,6 +45,12 @@ export async function seedNonLlm(tx: Sql, apply = false): Promise<NonLlmStep[]> 
  */
 export async function seedImageModels(tx: Sql, apply = false): Promise<NonLlmStep[]> {
   return seedCatalogItems(tx, apply, IMAGE_MODEL_CATALOG, { moondream: false, preserveExisting: true });
+}
+
+/** 2026-11-05: only gpt-image-2.6-sunburst / -flare (manual seed:catalog-2026-11-05-image26). */
+export const IMAGE26_CATALOG = IMAGE_MODEL_CATALOG.filter(item => (IMAGE26_SLUGS as readonly string[]).includes(item.slug!));
+export async function seedImage26Models(tx: Sql, apply = false): Promise<NonLlmStep[]> {
+  return seedCatalogItems(tx, apply, IMAGE26_CATALOG, { moondream: false, preserveExisting: true });
 }
 
 async function seedCatalogItems(tx: Sql, apply: boolean, items: AiCatalogItem[],
