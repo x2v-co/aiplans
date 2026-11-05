@@ -593,7 +593,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
             {
               pool: { en: 'Legacy Ultra (tier unverified)', zh: '旧 Ultra（档位未核验）' },
               value: { en: '≈ $3,022/month · conditional estimate / sample incomplete', zh: '约 $3,022/月 · 条件估算 / 样本未完成' },
-              basis: { en: 'Model: composer-2.5. quota-bench-2026-10: 12 of 16 calls used; CSV not reconciled; reset and plan tier unverified. Monthly pool figure — not multiplied. Not an official capacity promise.', zh: '所用模型：composer-2.5。quota-bench-2026-10：16 轮中仅前 12 轮入算；CSV 未对账；重置点与套餐档位未核验。本身是月池数字，不乘系数。不是官方容量承诺。' },
+              basis: { en: 'Model: composer-2.5. Conditional estimate / sample not complete (quota-bench-2026-10: 12 of 16 calls used; CSV not reconciled; reset and plan tier unverified). Monthly pool figure — not multiplied. Not an official capacity promise.', zh: '所用模型：composer-2.5。条件估算 / 样本未完成（quota-bench-2026-10：16 轮中仅前 12 轮入算；CSV 未对账；重置点与套餐档位未核验）。本身是月池数字，不乘系数。不是官方容量承诺。' },
             },
             {
               pool: { en: 'New X Subscription', zh: '新 X Subscription' },
