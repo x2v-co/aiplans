@@ -240,8 +240,8 @@ test('shared usage query scopes by model and availability, reads plan ownership 
 test('model overview headings and channel badges follow the requested locale', async () => {
   const channels = [channel, { ...channel, id: 8, providers: { name: 'OpenRouter', type: 'aggregator' } }];
   const zhHtml = await modelHtml([], channels, 'zh');
-  // bestInChina only renders with sourced supported_regions (covered by the regional-claims test).
-  for (const label of Object.values(zh.modelDetail).slice(0, 6).filter(label => label !== zh.modelDetail.bestInChina)) assert.ok(zhHtml.includes(label), label);
+  // China-specific labels only renders with sourced supported_regions (covered by the regional-claims test).
+  for (const label of Object.values(zh.modelDetail).slice(0, 6).filter(label => label !== zh.modelDetail.bestInChina && !/国内/.test(label))) assert.ok(zhHtml.includes(label), label);
   for (const label of Object.values(en.modelDetail).slice(0, 6)) assert.ok(!zhHtml.includes(label), label);
   assert.match(zhHtml, /聚合平台/);
   const enHtml = await modelHtml([], channels, 'en');
@@ -269,14 +269,15 @@ test('PM six-model bilingual walkthrough renders localized identities and struct
         features: [], payment_methods: ['Credit Card', 'Debit Card'], context_window: 32000,
         access_from_china: true, supported_regions: ['CN', 'US'], regions_source_url: 'https://example.com/supported-countries', plan_kind: 'chat', last_verified: '2026-10-29 00:15:00', providers: provider,
       };
-      const sampleChannel = { ...channel, providers: { ...provider, type: 'producer', access_from_china: true } };
+      const sampleChannel = { ...channel, providers: { ...provider, type: 'producer', access_from_china: true, supported_regions: ['CN', 'US'], regions_source_url: 'https://example.com/supported-countries' } };
       const html = await modelHtml([], [sampleChannel], locale, { slug: modelSlug, producer: provider, plans: [samplePlan] });
       const card = html.split('data-plan-card="100"')[1].split('</details>')[0];
       const highlights = card.split('<details')[0];
       // The sourced China highlight is zh-only; English stays quiet about regions.
       assert.equal((highlights.match(/<li\b/g) ?? []).length, locale === 'zh' ? 4 : 3, `${modelSlug}/${locale}`);
       assert.match(highlights, /32000/);
-      assert.match(html, locale === 'zh' ? /支付宝\/微信可用/ : /Alipay\/WeChat Pay accepted/);
+      // The China-payment card is zh-only and needs sourced supported_regions.
+      if (locale === 'zh') assert.match(html, /支付宝\/微信可用/); else assert.doesNotMatch(html, /Alipay\/WeChat Pay accepted/);
       if (locale === 'en') {
         assert.doesNotMatch(html, /月之暗面|智谱|支付宝\/微信可用/);
         if (providerSlug === 'moonshot') assert.ok(html.split('Moonshot AI / Kimi').length > 4, 'header, prose, card and table use English provider');
