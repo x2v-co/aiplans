@@ -387,9 +387,14 @@ test('plan-quota guides state API-equivalent value(s) with basis, using numbers 
   assert.match(grok.rows[0].basis.en, /365\.25÷12÷7/);
   assert.match(grok.rows[0].basis.en, /grok-4\.7-medium/);
   assert.match(grok.rows[1].value.zh, /无此池|未测/);
+  assert.equal(models.rows[0].pool?.en, 'Legacy Cursor Ultra');
+  assert.equal(models.rows[0].pool?.zh, '旧套餐 Ultra');
   assert.match(models.rows[0].value.en, /\$3,022/);
   assert.match(models.rows[0].basis.en, /composer-2\.5/);
+  assert.match(models.rows[0].basis.en, /legacy Cursor Ultra/);
+  assert.match(models.rows[0].basis.zh, /旧套餐 Ultra/);
   assert.match(models.rows[0].basis.en, /sample not complete|incomplete/i);
+  assert.doesNotMatch(`${models.rows[0].pool?.en} ${models.rows[0].pool?.zh} ${models.rows[0].basis.en} ${models.rows[0].basis.zh}`, /tier unverified|档位未核验|套餐档位未核验/);
   assert.doesNotMatch(models.rows[0].basis.en, /week ×|× ?4\.35/);
   assert.match(other.rows[0].value.en, /\$20 \/ \$70 \/ \$400/);
   assert.match(other.rows[1].value.zh, /无内含|API 标价/);
