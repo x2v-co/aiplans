@@ -53,7 +53,7 @@ async function auditFindings(tables: Record<string, FakeRow[]>) {
     return builder;
   } };
   const databaseSql = async (parts: TemplateStringsArray) => {
-    assert.match(parts.join('?'), /information_schema.columns|FROM model_benchmark_scores AS score/);
+    assert.match(parts.join('?'), /information_schema.columns|FROM model_benchmark_scores AS score|AS regions_source_url/);
     return [];
   };
   const dependencies: Record<string, unknown> = {
