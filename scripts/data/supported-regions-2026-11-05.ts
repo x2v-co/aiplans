@@ -3,7 +3,7 @@
  * Writes ONLY supported_regions / regions_source_url / regions_verified_at on providers.
  * access_from_china is intentionally left untouched: the #327 display logic derives China
  * from supported_regions, so the default-era boolean no longer drives anything.
- * Rows without an official country page stay NULL (not researched), never guessed.
+ * Chinese vendors: CN from their China-facing site/console. Rows without evidence stay NULL (not researched), never guessed.
  */
 import type { Sql } from 'postgres';
 
@@ -54,6 +54,18 @@ export const SUPPORTED_REGIONS_2026_11_05: RegionSpec[] = [
     TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI
     VN VU WF WS XK YE ZA ZM ZW
   `) },
+  // Chinese vendors (boss 11-05): the China-facing official site/console (mainland signup, RMB billing) is the CN source.
+  // Global twins (moonshot-global, minimax-global, zhipu-global) stay NULL on purpose.
+  { table: 'providers', slug: 'deepseek', sourceUrl: 'https://api-docs.deepseek.com/zh-cn/quick_start/pricing', regions: ['CN'] },
+  { table: 'providers', slug: 'qwen', sourceUrl: 'https://bailian.console.aliyun.com/', regions: ['CN'] },
+  { table: 'providers', slug: 'moonshot-china', sourceUrl: 'https://platform.kimi.com/docs/pricing/chat', regions: ['CN'] },
+  { table: 'providers', slug: 'minimax-china', sourceUrl: 'https://platform.minimax.cn/docs/pricing/overview', regions: ['CN'] },
+  { table: 'providers', slug: 'zhipu-china', sourceUrl: 'https://docs.bigmodel.cn/cn/guide/start/quick-start', regions: ['CN'] },
+  { table: 'providers', slug: 'stepfun', sourceUrl: 'https://platform.stepfun.com/', regions: ['CN'] },
+  { table: 'providers', slug: 'seed', sourceUrl: 'https://console.volcengine.com/ark/region:cn-beijing/overview', regions: ['CN'] },
+  { table: 'providers', slug: 'hunyuan', sourceUrl: 'https://console.cloud.tencent.com/hunyuan', regions: ['CN'] },
+  { table: 'providers', slug: 'baidu', sourceUrl: 'https://cloud.baidu.com/doc/qianfan/index.html', regions: ['CN'] },
+  { table: 'providers', slug: 'siliconflow', sourceUrl: 'https://cloud.siliconflow.cn/', regions: ['CN'] },
 ];
 
 export function validateRegionSpec(spec: RegionSpec): void {
