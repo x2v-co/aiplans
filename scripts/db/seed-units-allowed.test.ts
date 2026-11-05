@@ -6,6 +6,7 @@ import { IMAGE_MODEL_CATALOG } from '../../src/lib/image-model-catalog';
 import { AI_VERTICAL_CATALOG } from '../../src/lib/ai-vertical-catalog';
 import { auditVerticalModelFields, isAuditOwnedVertical } from '../data/catalog-audit-vertical';
 import { CATALOG_ITEMS as CATALOG_1104_ITEMS } from '../data/catalog-2026-11-04';
+import { CATALOG_1105 } from '../../src/lib/catalog-2026-11-05';
 
 // migrate-data-accuracy replays every migration on each deploy, so 023 re-creates
 // models_pricing_unit_chk before 035/036 run. Its list alone must cover every seed unit
@@ -42,6 +43,8 @@ test('every models.pricing_unit used by image, non-llm, catalog-audit and 2026-1
   for (const item of AI_VERTICAL_CATALOG.filter(isAuditOwnedVertical)) used.set(auditVerticalModelFields(item).pricing_unit, item.slug ?? item.name);
   // Dated seeds that write item.pricingUnit straight into models.pricing_unit (#303 failed on per_1k_characters).
   for (const item of CATALOG_1104_ITEMS) if (item.pricingUnit) used.set(item.pricingUnit, item.slug ?? item.name);
+  // Intel 11-05 seed (prod apply failed 23514 on tts-1 per_1m_characters).
+  for (const item of CATALOG_1105) { assert.ok(item.pricingUnit, `${item.slug} has pricingUnit`); used.set(item.pricingUnit!, item.slug ?? item.name); }
   const rejected = [...used].filter(([unit]) => !allowed.has(unit)).map(([unit, eg]) => `${unit} (e.g. ${eg})`);
   assert.deepEqual(rejected, [], `seed units missing from unit migrations: ${rejected.join(', ')}`);
   assert.ok(used.has('per_image'));

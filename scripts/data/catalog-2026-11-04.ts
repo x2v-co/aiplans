@@ -105,7 +105,7 @@ export async function seedCatalog20261104(tx: Sql, apply = false): Promise<Step[
   const go = byPlan.get('chatgpt-go')!;
   save('plans', go, {
     access_from_china: false, last_verified: VERIFIED_AT,
-    notes: appendEvidence(go.notes, evidence(`China is not listed; Go is available in all countries ChatGPT supports. Price not verified in this audit. ${GO_AVAILABILITY_SOURCE}`, GO_SOURCE)),
+    notes: appendEvidence(go.notes, evidence(`China is not listed; Go is available in all countries ChatGPT supports. ${GO_AVAILABILITY_SOURCE}`, GO_SOURCE)),
   }, 'chatgpt-go');
   for (const [slug, credit] of PLAN_CREDITS) {
     const plan = byPlan.get(slug)!;

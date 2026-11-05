@@ -22,7 +22,7 @@ const NAMES: Record<string, string> = { elevenlabs: 'ElevenLabs', deepgram: 'Dee
 
 export function catalog20261105SeedOptions(args: string[]) {
   if (args.some(arg => !['--apply', '--dry-run'].includes(arg)) || (args.includes('--apply') && args.includes('--dry-run'))) {
-    throw new Error('Usage: seed-catalog-2026-11-05-intel.ts [--dry-run (default, read-only) | --apply]');
+    throw new Error('Usage: seed-catalog-2026-11-05-intel.ts [--dry-run (default, writes then ROLLBACK) | --apply]');
   }
   return { apply: args.includes('--apply') };
 }
@@ -48,7 +48,7 @@ function appendEvidence(existing: unknown, note: string) {
 /** Stale plan-note lines that contradict the 11-05 price (data-trust/audit flag notes starting with [needs-verification]). */
 export const STALE_PLAN_NOTE_PATTERNS: Record<(typeof PLAN_SLUGS)[number], RegExp[]> = {
   'gemini-advanced': [/^\s*\[needs-verification\]/i, /US price not identified|prices withheld/i],
-  'chatgpt-go': [/^\s*\[needs-verification\]/i, /No current USD amount could be verified/i, /\$8\b.*\bhistorical\b|\bhistorical\b.*\$8\b/i],
+  'chatgpt-go': [/^\s*\[needs-verification\]/i, /No current USD amount could be verified/i, /\$8\b.*\bhistorical\b|\bhistorical\b.*\$8\b/i, /price not verified in this audit/i],
 };
 /** Drop stale lines, keep every other line, append the new evidence once. Never leaves a [needs-verification] prefix. */
 export function replaceStalePlanNotes(existing: unknown, patterns: RegExp[], note: string) {
