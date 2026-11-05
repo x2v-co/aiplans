@@ -49,3 +49,14 @@ export function isVerifiedFreeOutput(modelSlug: string | undefined, providerSlug
   }
   return OPENROUTER_INPUT_ONLY.has(modelSlug ?? '') && providerSlug === 'openrouter' && input != null && input > 0;
 }
+
+/**
+ * OpenRouter /api/v1/models publishes free / stealth / `:free` models with pricing
+ * { prompt: "0", completion: "0" } (checked 2026-11-05: stealth/crouton-alpha and 15 others).
+ * The scraper (classifyOpenRouterPricing) rejects missing/empty pricing as invalid, so a stored
+ * openrouter row with input === 0 AND output === 0 is an explicit published free price, not missing
+ * data. null, negative, or one-sided zero stays critical.
+ */
+export function isOpenRouterPublishedFree(providerSlug: string | undefined, input: number | null | undefined, output: number | null | undefined) {
+  return providerSlug === 'openrouter' && input === 0 && output === 0;
+}

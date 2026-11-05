@@ -7,7 +7,7 @@ import { getTableConfig } from 'drizzle-orm/pg-core';
 import ts from 'typescript';
 import { providers, models, apiChannelPrices } from '../../src/db/schema';
 import { channelTermBadges } from '../../src/lib/channel-terms';
-import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice } from '../utils/audit-price-policy';
+import { isExplicitlyUnverifiedPrice, isOpenRouterPublishedFree, isVerifiedFreeOutput, isVerifiedFreePrice } from '../utils/audit-price-policy';
 import { NEMOTRON_SLUG, NEMOTRON_SOURCE, NEMOTRON_ENDPOINT, NEMOTRON_DATA_NOTE, nemotronSeedOptions, seedNemotronLightning } from './nemotron-lightning-2026-10-15';
 import { auditExitCode, missingPlanFields } from '../utils/audit-plan-policy';
 import { isSupersededPlan } from '../../src/lib/plan-lifecycle';
@@ -231,7 +231,7 @@ test('real audit accepts the free channel while another zero-priced channel rema
       return [];
     };
     const dependencies: Record<string, unknown> = {
-      './utils/audit-price-policy': { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice },
+      './utils/audit-price-policy': { isExplicitlyUnverifiedPrice, isOpenRouterPublishedFree, isVerifiedFreeOutput, isVerifiedFreePrice },
       './utils/audit-plan-policy': { auditExitCode, missingPlanFields },
       './db/queries': { db }, './db/postgres-admin': { databaseSql },
       '../src/lib/plan-lifecycle': { isSupersededPlan },

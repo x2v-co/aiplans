@@ -35,6 +35,7 @@ import {
 } from '../src/lib/plan-selector';
 import { CLASSIFICATIONS } from './config/plan-classifications';
 import { canonicalJson } from './config/canonical-json';
+import { isIntentionallyEmptySelector } from './config/empty-selector';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -170,7 +171,8 @@ async function main() {
 
     // A selector that resolves to nothing is worse than the old hand-written
     // list: it looks configured but publishes an empty plan. Refuse it.
-    if (resolution.models.length === 0) {
+    // Superseded history rows use the explicit empty selector on purpose.
+    if (resolution.models.length === 0 && !isIntentionallyEmptySelector(entry.selector)) {
       log(`  ❌ ${key}: selector resolves to 0 models — fix the rule before applying`);
       skipped.push(`CLASSIFY ${key}: selector resolves to 0 models`);
       continue;

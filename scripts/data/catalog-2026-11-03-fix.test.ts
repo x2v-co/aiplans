@@ -4,7 +4,7 @@ import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { DECISION_1103_SPECS, DECISION_MODELS_2026_11_03 } from '../../src/lib/decision-models-2026-11-03';
-import { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice } from '../utils/audit-price-policy';
+import { isExplicitlyUnverifiedPrice, isOpenRouterPublishedFree, isVerifiedFreeOutput, isVerifiedFreePrice } from '../utils/audit-price-policy';
 import { auditExitCode, missingPlanFields } from '../utils/audit-plan-policy';
 import { isSupersededPlan } from '../../src/lib/plan-lifecycle';
 import { GEMINI_API_CHANNEL, catalog20261103FixSeedOptions, isLegacyVeoUsageRow, seedCatalog20261103Fix } from './catalog-2026-11-03-fix';
@@ -56,7 +56,7 @@ async function auditFindings(tables: Record<string, FakeRow[]>) {
     return [];
   };
   const dependencies: Record<string, unknown> = {
-    './utils/audit-price-policy': { isExplicitlyUnverifiedPrice, isVerifiedFreeOutput, isVerifiedFreePrice },
+    './utils/audit-price-policy': { isExplicitlyUnverifiedPrice, isOpenRouterPublishedFree, isVerifiedFreeOutput, isVerifiedFreePrice },
     './utils/audit-plan-policy': { auditExitCode, missingPlanFields },
     './db/queries': { db }, './db/postgres-admin': { databaseSql },
     '../src/lib/plan-lifecycle': { isSupersededPlan },
@@ -165,4 +165,19 @@ test('ambiguous identities abort before any write', async () => {
   const noGoogle = fakeSeedTx({ ...prodLike(), providers: baseProviders().filter(p => p.slug !== 'google') });
   await assert.rejects(seedCatalog20261103Fix(noGoogle.tx as never, true), /providers\/google/);
   assert.equal(dup.writes() + noGoogle.writes(), 0);
+});
+
+test('real DB audit: OpenRouter published 0/0 (stealth/free) is a warning; null or other-channel zero stays critical', async () => {
+  const providers = [...baseProviders(), { id: 11, slug: 'together-ai', type: 'aggregator', name: 'Together' }];
+  const models = [{ id: 60, slug: 'stealth-crouton-alpha', name: 'Crouton Alpha' }, { id: 61, slug: 'paid-llm', name: 'Paid' }];
+  const row = (id: number, model_id: number, provider_id: number, input: number | null, output: number | null) => ({
+    id, model_id, provider_id, input_price_per_1m: input, output_price_per_1m: output, is_available: true, last_verified: '2026-11-05', currency: 'USD',
+  });
+  const findings = await auditFindings({ providers, models, api_channel_prices: [
+    row(15785, 60, 10, 0, 0), row(15786, 61, 10, null, null), row(15787, 61, 10, 0, null), row(15788, 61, 11, 0, 0),
+  ] });
+  const critical = findings.filter(x => x.check === 'prices.zero_or_null' && x.severity === 'critical').map(x => x.ref?.price_id);
+  assert.ok(!critical.includes(15785), JSON.stringify(findings));
+  assert.deepEqual([...new Set(critical)].sort(), [15786, 15787, 15788]);
+  assert.ok(findings.some(x => x.check === 'prices.free_published' && x.severity === 'warning' && x.ref?.price_id === 15785));
 });
