@@ -9,8 +9,8 @@ import { QuotaLeaderboard } from '@/components/quota-leaderboard';
 import { QUOTA_LEADERBOARD_PUBLISHED_AT, QUOTA_LEADERBOARD_UPDATED_AT } from '@/lib/quota-leaderboard';
 
 const CONCLUSION = {
-  zh: '结论：按月费倍数（API 折合 ÷ 月费），Claude Pro（$20）约 42–70×（≈ $800–1,390/月，按负载配比分开）；X Ultra（$200）约 33×（≈ $6,500/月）；Codex Pro 200（$200）约 27×（≈ $5,300/月，实测 ≈ $1,222/周）。三者都只有周额度实测，月额度 = 周额度 × 4.35（52.14 周 ÷ 12 月）推算，属粗估。均为 x2v 有条件实测，按公开 API 标价折算，不是官方额度。',
-  en: 'TL;DR: by fee multiple (API value ÷ monthly fee), Claude Pro ($20) is about 42–70× (≈ $800–1,390/month, split by workload mix); X Ultra ($200) about 33× (≈ $6,500/month); Codex Pro 200 ($200) about 27× (≈ $5,300/month; measured ≈ $1,222/week). All three are measured weekly only; monthly = weekly × 4.35 (52.14 weeks ÷ 12), a rough estimate. All are x2v conditional measurements at public API list price, not official allowances.',
+  zh: '结论：按月费倍数（API 折合 ÷ 月费），Claude Pro（$20）约 42–70×（≈ $800–1,390/月，按负载配比分开）；X Ultra（$200）约 33×（≈ $6,500/月）；Codex Pro 200（$200）约 27×（≈ $5,300/月，实测 ≈ $1,222/周）。火山方舟 Pro（¥200）约 22×（≈ $640/月，月窗口独立测量，粗估）。前三者都只有周额度实测，月额度 = 周额度 × 4.35（52.14 周 ÷ 12 月）推算，属粗估。均为 x2v 有条件实测，按公开 API 标价折算，不是官方额度。',
+  en: 'TL;DR: by fee multiple (API value ÷ monthly fee), Claude Pro ($20) is about 42–70× (≈ $800–1,390/month, split by workload mix); X Ultra ($200) about 33× (≈ $6,500/month); Codex Pro 200 ($200) about 27× (≈ $5,300/month; measured ≈ $1,222/week). Volcengine Pro (CNY 200) is about 22× (≈ $640/month, a native rough monthly estimate). The first three are measured weekly only; monthly = weekly × 4.35 (52.14 weeks ÷ 12), a rough estimate. All are x2v conditional measurements at public API list price, not official allowances.',
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     locale: locale === 'zh' ? 'zh' : 'en', path: '/quota-bench',
     title: { zh: '订阅额度排行（月费倍数）与实测报告 | aiplans', en: 'Subscription quota leaderboard (fee multiple) and measurements | aiplans' },
     description: {
-      zh: `订阅额度月费倍数排行（Claude Pro、X Ultra、Codex Pro 200）。Codex Pro 200 周额度复测（${CODEX_QUOTA_DATE}）：Astra 区间与点估计、Sol 条件下界、限制说明及历史报告。`,
-      en: `Quota leaderboard by fee multiple (Claude Pro, X Ultra, Codex Pro 200). Codex Pro 200 weekly retest (${CODEX_QUOTA_DATE}): Astra range and point estimate, Sol conditional lower bound, caveats and historical reports.`,
+      zh: `订阅额度月费倍数排行（Claude Pro、X Ultra、Codex Pro 200、火山方舟 Pro）。Codex Pro 200 周额度复测（${CODEX_QUOTA_DATE}）：Astra 区间与点估计、Sol 条件下界、限制说明及历史报告。`,
+      en: `Quota leaderboard by fee multiple (Claude Pro, X Ultra, Codex Pro 200, Volcengine Pro). Codex Pro 200 weekly retest (${CODEX_QUOTA_DATE}): Astra range and point estimate, Sol conditional lower bound, caveats and historical reports.`,
     },
   });
 }

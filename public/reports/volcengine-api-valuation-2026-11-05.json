@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-05",
+  "measurementDate": "2026-10-28",
+  "model": "kimi-k3",
+  "measurementReport": "/reports/volcengine-three-windows-2026-10-28.md",
+  "measurementData": "/reports/volcengine-three-windows-2026-10-28.json",
+  "pricing": {
+    "currency": "USD",
+    "inputPerMillion": 3,
+    "outputPerMillion": 15,
+    "source": "https://platform.kimi.ai/",
+    "pricingDocs": "https://platform.kimi.ai/docs/pricing/chat",
+    "verifiedAt": "2026-11-05",
+    "basis": "Kimi international standard API list price for the observed kimi-k3 model; not an Ark invoice or Coding Plan balance. No cache reads or writes in this sample."
+  },
+  "planPrice": {
+    "amount": 200,
+    "currency": "CNY",
+    "period": "month",
+    "source": "https://docs.volcengine.com/docs/ark/coding-plan-personal-new-user-promotion?lang=zh",
+    "verifiedAt": "2026-11-05",
+    "catalogProviderSlug": "seed",
+    "catalogPlanSlug": "seed-pro",
+    "catalogEvidence": "scripts/fix-plans-audit.ts",
+    "cnyPerUsd": 6.9,
+    "fxBasis": "Fixed display assumption matching src/lib/currency.ts convertCurrency; not a live exchange rate. USD fee = CNY 200 / 6.90."
+  },
+  "methodology": {
+    "sampleUsd": "(1237470 * 3 + 21228 * 15) / 1000000 = 4.03083",
+    "windowValue": "sampleUsd * 100 / native window deltaPp; bounds use published roundingLow/roundingHigh * sampleUsd / totalTokens",
+    "monthly": "Native monthly delta 0.63pp; rough estimate, not weekly extrapolation.",
+    "confidence": "low; rounding bounds only, not statistical confidence intervals",
+    "scope": "30 calls, 98.31% fresh input, no cache. Model-specific conditional capacity; shared windows and model capacities cannot be added. No new requests or measurements."
+  }
+}
