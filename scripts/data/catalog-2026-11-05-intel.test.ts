@@ -133,6 +133,17 @@ test('1105 replaceStalePlanNotes is idempotent and keeps unrelated lines', () =>
   assert.equal(replaceStalePlanNotes(null, STALE_PLAN_NOTE_PATTERNS['gemini-advanced'], 'NEW'), 'NEW');
 });
 
+const GO_1104_LINE = 'China is not listed; Go is available in all countries ChatGPT supports. Price not verified in this audit. https://help.openai.com/en/articles/11989085 Verified 2026-11-04. Source: https://platform.openai.com/docs/supported-countries';
+
+test('1105 cleanup drops the 11-04 "Price not verified in this audit" line (any case), keeps other notes, idempotent', () => {
+  const other = '[aiplans:review-source] https://help.openai.com/en/articles/11989085-what-is-chatgpt-go';
+  const input = [other, GO_1104_LINE, GO_1104_LINE.replace('Price not verified in this audit', 'PRICE NOT VERIFIED IN THIS AUDIT'), 'Keep me.'].join('\n');
+  const once = replaceStalePlanNotes(input, STALE_PLAN_NOTE_PATTERNS['chatgpt-go'], 'NEW');
+  assert.equal(once, [other, 'Keep me.', 'NEW'].join('\n'));
+  assert.doesNotMatch(once, /price not verified in this audit/i);
+  assert.equal(replaceStalePlanNotes(once, STALE_PLAN_NOTE_PATTERNS['chatgpt-go'], 'NEW'), once);
+});
+
 test('1105 voice models are typed like existing voice rows (multimodal), never llm', async () => {
   assert.equal(voiceModelType(undefined), 'multimodal');
   assert.equal(voiceModelType('llm'), 'multimodal');

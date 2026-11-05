@@ -48,7 +48,7 @@ function appendEvidence(existing: unknown, note: string) {
 /** Stale plan-note lines that contradict the 11-05 price (data-trust/audit flag notes starting with [needs-verification]). */
 export const STALE_PLAN_NOTE_PATTERNS: Record<(typeof PLAN_SLUGS)[number], RegExp[]> = {
   'gemini-advanced': [/^\s*\[needs-verification\]/i, /US price not identified|prices withheld/i],
-  'chatgpt-go': [/^\s*\[needs-verification\]/i, /No current USD amount could be verified/i, /\$8\b.*\bhistorical\b|\bhistorical\b.*\$8\b/i],
+  'chatgpt-go': [/^\s*\[needs-verification\]/i, /No current USD amount could be verified/i, /\$8\b.*\bhistorical\b|\bhistorical\b.*\$8\b/i, /price not verified in this audit/i],
 };
 /** Drop stale lines, keep every other line, append the new evidence once. Never leaves a [needs-verification] prefix. */
 export function replaceStalePlanNotes(existing: unknown, patterns: RegExp[], note: string) {
