@@ -45,18 +45,27 @@ const REVIEWED_API_SOURCES: Record<string, { zh: string; en: string; url: string
 };
 
 /**
- * 2026-10-18 source check. These notes stay on the price fact until a data fix
- * lands. They do not overwrite the stored price and they do not count as a
- * confirmed entitlement.
- * Claude Team Standard / Premium were removed on 2026-10-20: the stored rows
- * ($25/$125 monthly, $20/$100 annual, last_verified 2026-10-19) match
- * https://claude.com/pricing, rechecked 2026-10-20.
+ * 2026-10-18 source check notes. They do not overwrite the stored price and do
+ * not count as a confirmed entitlement. Once a later verified list price lands
+ * (`price` finite and `last_verified` strictly after `reviewedOn`), the rule
+ * expires and the card follows assessTrust. Keeps Google AI Plus/Pro from
+ * staying "待核验" after catalog-2026-11-04 / 11-05-intel seeds.
+ * Claude Team Standard / Premium notes were removed on 2026-10-20: the stored
+ * rows match https://claude.com/pricing, rechecked 2026-10-20.
  */
-const PRICE_REVIEW_NOTES: Array<{ providerSlug: string; name: RegExp; withheld: boolean; zh: string; en: string }> = [
+const PRICE_REVIEW_NOTES: Array<{
+  providerSlug: string;
+  name: RegExp;
+  withheld: boolean;
+  reviewedOn: string;
+  zh: string;
+  en: string;
+}> = [
   {
     providerSlug: 'google',
     name: /ai plus/i,
     withheld: true,
+    reviewedOn: '2026-10-18',
     zh: '2026-10-18 官方订阅页公开 HTML 写 Google AI Plus 为 $4.99/月。该数字尚未写入本站价格，不能当成已确认标价',
     en: 'On 2026-10-18 the public Gemini subscriptions HTML listed Google AI Plus at $4.99/month. That figure is not stored here and is not a confirmed list price',
   },
@@ -64,6 +73,7 @@ const PRICE_REVIEW_NOTES: Array<{ providerSlug: string; name: RegExp; withheld: 
     providerSlug: 'google',
     name: /ai pro(?!.*ultra)/i,
     withheld: true,
+    reviewedOn: '2026-10-18',
     zh: '2026-10-18 官方订阅页公开 HTML 中，$19.99/月与约 4 倍免费档用量相邻，对应 Plus 之上的 Pro 档。本站该档仍是价格未知',
     en: 'On 2026-10-18 the public Gemini subscriptions HTML listed $19.99/month next to about 4x Free usage, the tier above Plus. This row is still an unknown price',
   },
@@ -73,10 +83,17 @@ export function priceReviewNote(
   providerSlug: string | null | undefined,
   planName: string | null | undefined,
   locale: string,
+  plan?: { price?: number | null; last_verified?: Date | string | null },
 ): { withheld: boolean; note: string } | null {
   if (!providerSlug || !planName) return null;
   const hit = PRICE_REVIEW_NOTES.find((row) => row.providerSlug === providerSlug && row.name.test(planName));
   if (!hit) return null;
+  const verified = verifiedInstant(plan?.last_verified);
+  const reviewDay = Date.parse(`${hit.reviewedOn}T00:00:00Z`);
+  const storedPrice = typeof plan?.price === 'number' && Number.isFinite(plan.price);
+  if (storedPrice && verified != null && Number.isFinite(reviewDay) && verified > reviewDay) {
+    return null;
+  }
   return { withheld: hit.withheld, note: zh(locale) ? hit.zh : hit.en };
 }
 
@@ -414,7 +431,7 @@ export function planPriceTrust(
   providerSlug?: string | null,
 ): TrustAssessment {
   source = planReviewSource(plan, source, locale);
-  const review = priceReviewNote(providerSlug, plan.name, locale);
+  const review = priceReviewNote(providerSlug, plan.name, locale, plan);
   return assessTrust({
     locale,
     kind: 'list_price',

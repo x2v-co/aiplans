@@ -132,11 +132,30 @@ test('plan price, entitlement and unknown credit do not promote guesses', () => 
   assert.equal(planPriceTrust({
     name: 'Claude Pro', currency: 'USD', price: 20, last_verified: '2026-10-18T00:00:00Z',
   }, source, 'zh', NOW, 'anthropic').flags.unverified, false);
-  const plus = planPriceTrust({
+  const plusUnknown = planPriceTrust({
     name: 'Google AI Plus', price: null, last_verified: '2026-10-18T00:00:00Z',
   }, source, 'zh', NOW, 'google');
-  assert.equal(plus.flags.unverified, true);
-  assert.match(plus.conditions.join(''), /\$4\.99/);
+  assert.equal(plusUnknown.flags.unverified, true);
+  assert.match(plusUnknown.conditions.join(''), /\$4\.99/);
+  // Stored + verified after the 2026-10-18 review day: the hardcoded withheld note expires.
+  const geminiSource = { label: 'Gemini 订阅页', url: 'https://gemini.google/subscriptions/' };
+  const plusVerified = planPriceTrust({
+    name: 'Google AI Plus', price: 4.99, currency: 'USD', price_unit: 'per_month',
+    last_verified: '2026-11-04T00:00:00Z',
+  }, geminiSource, 'zh', new Date('2026-11-05T06:00:00Z'), 'google');
+  assert.equal(plusVerified.flags.unverified, false);
+  assert.doesNotMatch(plusVerified.conditions.join(''), /尚未写入本站价格|not stored here/);
+  const proVerified = planPriceTrust({
+    name: 'Google AI Pro', price: 19.99, currency: 'USD', price_unit: 'per_month',
+    last_verified: '2026-11-05T00:00:00Z',
+  }, geminiSource, 'zh', new Date('2026-11-05T06:00:00Z'), 'google');
+  assert.equal(proVerified.flags.unverified, false);
+  assert.doesNotMatch(proVerified.conditions.join(''), /本站该档仍是价格未知|still an unknown price/);
+  const proStillWithheld = planPriceTrust({
+    name: 'Google AI Pro', price: null, last_verified: '2026-10-18T00:00:00Z',
+  }, geminiSource, 'zh', NOW, 'google');
+  assert.equal(proStillWithheld.flags.unverified, true);
+  assert.match(proStillWithheld.conditions.join(''), /本站该档仍是价格未知/);
   assert.equal(planPriceTrust({
     name: 'Google AI Ultra (5x)', price: 99.99, last_verified: '2026-10-18T00:00:00Z',
   }, source, 'zh', NOW, 'google').flags.unverified, false);
