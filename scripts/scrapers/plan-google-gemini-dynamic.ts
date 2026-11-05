@@ -5,6 +5,11 @@ import type { PlanScraperResult, ScrapedPlan } from '../utils/plan-validator';
 const URL = 'https://gemini.google/subscriptions/';
 export const GOOGLE_UNVERIFIED_NOTE = '[needs-verification] Plus/Pro US price not identified on the page; prices withheld. Source: ' + URL;
 
+/** A tier whose price was not identified carries no evidence; saving it would clear a verified stored price. */
+export function isWithheldGooglePlan(plan: Pick<ScrapedPlan, 'priceMonthly' | 'region'>): boolean {
+  return plan.priceMonthly == null && plan.region === 'needs-verification';
+}
+
 export async function scrapeGoogleGeminiPlans(): Promise<PlanScraperResult> {
   const browser = await chromium.launch({ headless: true });
   try {

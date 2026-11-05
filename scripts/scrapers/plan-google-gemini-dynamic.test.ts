@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseGooglePlansBody } from './plan-google-gemini-dynamic';
+import { isWithheldGooglePlan, parseGooglePlansBody } from './plan-google-gemini-dynamic';
 
 test('US page: Plus/Pro/Ultra prices come from each plan section', () => {
   const result = parseGooglePlansBody('Google AI Pro & Ultra — get access United States Free $0 / month Google AI Plus 1 Get more $4.99 / month Google AI Plus is available Google AI Pro 1 Get higher $19.99 / month Google AI Pro is available Google AI Ultra Starting at: $99.99 / month $99.99 / month: 5x higher $199.99 / month: 20x higher');
@@ -32,4 +32,13 @@ test('an empty or changed page fails without fabricated rows', () => {
   const result = parseGooglePlansBody('');
   assert.equal(result.success, false);
   assert.deepEqual(result.plans, []);
+});
+
+test('an unidentified Google tier is withheld from saving so it cannot clear a stored price', () => {
+  const result = parseGooglePlansBody('Google AI Plus Google AI Pro Google AI Ultra');
+  const pro = result.plans.find(p => p.planSlug === 'gemini-advanced')!;
+  assert.equal(pro.priceMonthly, null);
+  assert.equal(isWithheldGooglePlan(pro), true);
+  assert.equal(isWithheldGooglePlan({ priceMonthly: 19.99, region: 'US' }), false);
+  assert.equal(isWithheldGooglePlan({ priceMonthly: null, region: 'US' }), false);
 });

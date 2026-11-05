@@ -2,7 +2,15 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { catalogForKind } from '../../src/lib/ai-vertical-catalog';
 import { CATALOG_1105, OPENAI_VOICE_1105, ASR_TTS_1105 } from '../../src/lib/catalog-2026-11-05';
-import { FRESH_CUTOFF, MODEL_SLUGS, VERIFIED_AT, catalog20261105SeedOptions, keepFresher, seedCatalog20261105 } from './catalog-2026-11-05-intel';
+import { FRESH_CUTOFF, MODEL_SLUGS, STALE_PLAN_NOTE_PATTERNS, VERIFIED_AT, catalog20261105SeedOptions, keepFresher, replaceStalePlanNotes, seedCatalog20261105, voiceModelType } from './catalog-2026-11-05-intel';
+import en from '../../messages/en.json';
+import zh from '../../messages/zh.json';
+import { assessTrust } from '../../src/lib/data-trust';
+
+/** The page trust badge reads notes/last_verified/source; this is what plan pages render. */
+const pageSaysUnverified = (row: FakeRow) => assessTrust({ locale: 'en', kind: 'list_price', sourceLabel: 'Official',
+  sourceUrl: 'https://gemini.google/us/subscriptions/', verifiedAt: row.last_verified as Date, notes: row.notes as string,
+  now: new Date('2026-11-06T00:00:00Z') }).flags.unverified;
 import { fakeSeedTx, type FakeRow } from './fake-seed-tx';
 
 function fixture(): Partial<Record<string, FakeRow[]>> {
@@ -31,7 +39,7 @@ test('1105 catalog carries the officially verified voice prices and is listed un
   assert.equal(price('gpt-live-1').price, 0.05);
   assert.equal(price('gpt-transcribe').price, 0.0045);
   assert.deepEqual(OPENAI_VOICE_1105.find(i => i.slug === 'gpt-4o-transcribe')!.usageRates!.map(r => r.price), [2.5, 10, 0.006]);
-  assert.equal(price('gpt-4o-mini-transcribe', 'transcription estimate').approximate, true);
+  assert.equal(price('gpt-4o-mini-transcribe', 'transcription_estimate').approximate, true);
   assert.equal(price('gpt-realtime-whisper').price, 0.017);
   assert.deepEqual([price('tts-1').price, price('tts-1-hd').price, price('tts-1').unit], [15, 30, 'per_1m_characters']);
   assert.deepEqual([price('elevenlabs-scribe-v2').price, price('elevenlabs-scribe-v2-realtime').price, price('elevenlabs-scribe-v2').unit], [0.22, 0.39, 'hour']);
@@ -57,6 +65,7 @@ test('1105 preview writes nothing; apply sets plan prices, creates missing provi
   assert.deepEqual([plan('gemini-advanced').price, plan('gemini-advanced').currency, plan('gemini-advanced').region], [19.99, 'USD', 'US']);
   assert.deepEqual([plan('chatgpt-go').price, plan('chatgpt-go').currency], [8, 'USD']);
   assert.match(String(plan('chatgpt-go').notes), /^Old note\.\n.*\$8.*2026-11-03/s);
+  assert.doesNotMatch(String(plan('gemini-advanced').notes), /needs-verification|withheld/);
   const tts = f.data.models.find(r => r.slug === 'tts-1')!;
   assert.equal(tts.type, 'audio');
   assert.deepEqual(tts.capabilities, ['voices', 'TTS']);
@@ -87,4 +96,65 @@ test('1105 keepFresher preserves same-day verification and notes', () => {
   const fresh = { id: 1, last_verified: new Date(FRESH_CUTOFF.getTime() + 1000).toISOString() };
   assert.deepEqual(keepFresher(fresh, { price: 1, notes: 'x', last_verified: VERIFIED_AT }), { price: 1 });
   assert.deepEqual(keepFresher({ id: 1, last_verified: '2026-11-03' }, { price: 1, notes: 'x' }), { price: 1, notes: 'x' });
+});
+
+test('1105 fixture old notes would have been flagged (guards the test above)', () => {
+  assert.equal(pageSaysUnverified({ id: 1, notes: GEMINI_OLD_NOTES, last_verified: VERIFIED_AT }), true);
+});
+const GO_OLD_NOTES = '[needs-verification] No current USD amount could be verified from the official Help Center; localized checkout could not be verified. Previous $8 US launch price is historical, not a newly verified quote.\n[aiplans:review-source] https://help.openai.com/en/articles/11989085-what-is-chatgpt-go\nSource: https://help.openai.com/en/articles/11989085-what-is-chatgpt-go';
+const GEMINI_OLD_NOTES = '[needs-verification] Plus/Pro US price not identified on the page; prices withheld. Source: https://gemini.google/subscriptions/\nKeep this unrelated line.';
+
+test('1105 apply replaces stale needs-verification / historical $8 notes so plans no longer read as unverified', async () => {
+  const fx = fixture();
+  fx.plans![0].notes = GO_OLD_NOTES;
+  fx.plans![1].notes = GEMINI_OLD_NOTES;
+  const f = fakeSeedTx(fx);
+  await seedCatalog20261105(f.tx, true);
+  for (const slug of ['chatgpt-go', 'gemini-advanced']) {
+    const row = f.data.plans.find(r => r.slug === slug)!;
+    const notes = String(row.notes);
+    assert.equal(pageSaysUnverified(row), false, `${slug} still flagged: ${notes}`);
+    assert.ok(!notes.startsWith('[needs-verification]'), slug);
+    assert.doesNotMatch(notes, /historical|prices withheld|No current USD amount/, slug);
+    assert.ok(row.last_verified, slug);
+    assert.notEqual(row.region, 'needs-verification');
+  }
+  const go = String(f.data.plans.find(r => r.slug === 'chatgpt-go')!.notes);
+  assert.match(go, /\[aiplans:review-source\]/);
+  assert.match(go, /US monthly price \$8/);
+  assert.match(String(f.data.plans.find(r => r.slug === 'gemini-advanced')!.notes), /^Keep this unrelated line\.\nGoogle AI Pro US monthly price \$19\.99/);
+  assert.equal((await seedCatalog20261105(fakeSeedTx(f.data).tx, false)).length, 0);
+});
+
+test('1105 replaceStalePlanNotes is idempotent and keeps unrelated lines', () => {
+  const once = replaceStalePlanNotes(GO_OLD_NOTES, STALE_PLAN_NOTE_PATTERNS['chatgpt-go'], 'NEW');
+  assert.equal(replaceStalePlanNotes(once, STALE_PLAN_NOTE_PATTERNS['chatgpt-go'], 'NEW'), once);
+  assert.equal(once.split('\n').at(-1), 'NEW');
+  assert.equal(replaceStalePlanNotes(null, STALE_PLAN_NOTE_PATTERNS['gemini-advanced'], 'NEW'), 'NEW');
+});
+
+test('1105 voice models are typed like existing voice rows (multimodal), never llm', async () => {
+  assert.equal(voiceModelType(undefined), 'multimodal');
+  assert.equal(voiceModelType('llm'), 'multimodal');
+  assert.equal(voiceModelType('audio'), 'audio');
+  const f = fakeSeedTx(fixture());
+  await seedCatalog20261105(f.tx, true);
+  for (const slug of MODEL_SLUGS) {
+    const row = f.data.models.find(r => r.slug === slug)!;
+    assert.notEqual(row.type, 'llm', slug);
+  }
+  assert.equal(f.data.models.find(r => r.slug === 'deepgram-nova-3')!.type, 'multimodal');
+  const fx = fixture();
+  fx.models!.push({ id: 31, slug: 'gpt-transcribe', type: 'llm', provider_ids: [1] });
+  const g = fakeSeedTx(fx);
+  await seedCatalog20261105(g.tx, true);
+  assert.equal(g.data.models.find(r => r.slug === 'gpt-transcribe')!.type, 'multimodal');
+});
+
+test('1105 price kinds use the snake_case voice convention and have zh/en labels', () => {
+  const zhCopy = zh.nonLlmModels as Record<string, string>, enCopy = en.nonLlmModels as Record<string, string>;
+  for (const item of CATALOG_1105) for (const r of item.usageRates ?? []) {
+    assert.match(r.priceKind, /^[a-z0-9]+(?:_[a-z0-9]+)*$/, `${item.slug}: ${r.priceKind}`);
+    assert.ok(zhCopy[r.priceKind]?.trim() && enCopy[r.priceKind]?.trim(), `missing label ${r.priceKind}`);
+  }
 });

@@ -6,7 +6,7 @@ import {
   closeBrowser as closeAnthropicBrowser,
 } from './scrapers/plan-anthropic-dynamic';
 import { closeBrowser as closeSharedBrowser } from './scrapers/base-fetcher';
-import { scrapeGoogleGeminiPlans } from './scrapers/plan-google-gemini-dynamic';
+import { isWithheldGooglePlan, scrapeGoogleGeminiPlans } from './scrapers/plan-google-gemini-dynamic';
 import { scrapeMistralPlans } from './scrapers/plan-mistral-dynamic';
 import { scrapeMinimaxPlans } from './scrapers/plan-minimax-dynamic';
 import { scrapeMinimaxGlobalPlans } from './scrapers/plan-minimax-global-dynamic';
@@ -244,6 +244,12 @@ async function savePlansToDatabase(
 
   // Save each plan
   for (const plan of scrapedPlans) {
+    if (providerKey === 'google' && isWithheldGooglePlan(plan)) {
+      // Price not identified on the page: keep the stored row (e.g. seeded $19.99) untouched.
+      console.warn(`⚠️ ${plan.planSlug}: price not identified; existing row left unchanged.`);
+      currentSlugs.push(plan.planSlug);
+      continue;
+    }
     try {
       await upsertPlan({
         provider_id: provider.id,
