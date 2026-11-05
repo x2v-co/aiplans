@@ -7,6 +7,7 @@ import './pricing-seo.test';
 import {
   PRICING_GUIDES,
   PRICING_GUIDE_SLUGS,
+  GUIDE_WEEKLY_TO_MONTHLY,
   guideForModelSlug,
   guideForProviderSlug,
   getPricingGuideModels,
@@ -333,25 +334,75 @@ test('every guide has publishedAt/updatedAt dates and a TL;DR summary', () => {
     for (const locale of ['en', 'zh'] as const) {
       assert.ok(g.summary?.conclusion?.[locale]?.trim(), `${slug} summary.conclusion.${locale}`);
       for (const fact of g.summary.keyFacts ?? []) assert.ok(fact[locale]?.trim(), `${slug} keyFact.${locale}`);
-      if (g.summary.apiValue) {
-        assert.ok(g.summary.apiValue.value[locale].trim(), `${slug} apiValue.value.${locale}`);
-        assert.ok(g.summary.apiValue.basis[locale].trim(), `${slug} apiValue.basis.${locale}`);
+      const checkRow = (row: { pool?: { en: string; zh: string }; value: { en: string; zh: string }; basis: { en: string; zh: string } }, label: string) => {
+        if (row.pool) assert.ok(row.pool[locale]?.trim(), `${label}.pool.${locale}`);
+        assert.ok(row.value[locale].trim(), `${label}.value.${locale}`);
+        assert.ok(row.basis[locale].trim(), `${label}.basis.${locale}`);
+      };
+      if (g.summary.apiValue) checkRow(g.summary.apiValue, `${slug} apiValue`);
+      for (const [i, row] of (g.summary.apiValues ?? []).entries()) checkRow(row, `${slug} apiValues[${i}]`);
+      for (const [gi, group] of (g.summary.apiValueGroups ?? []).entries()) {
+        assert.ok(group.title[locale]?.trim(), `${slug} apiValueGroups[${gi}].title.${locale}`);
+        assert.ok(group.rows.length >= 1, `${slug} apiValueGroups[${gi}] rows`);
+        for (const [ri, row] of group.rows.entries()) checkRow(row, `${slug} apiValueGroups[${gi}].rows[${ri}]`);
       }
     }
   }
 });
 
-test('plan-quota guides state the API-equivalent value with its basis, using numbers from the article', () => {
+test('plan-quota guides state API-equivalent value(s) with basis, using numbers from the article', () => {
   const quotaGuides = ['cursor-x-subscription-pricing', 'codex-pro-200-quota-benchmark', 'claude-pro-opus-5-5-quota'] as const;
   for (const slug of quotaGuides) {
     const g = PRICING_GUIDES[slug];
-    const api = g.summary.apiValue;
-    assert.ok(api, `${slug} apiValue`);
-    assert.match(api.value.zh, /约等于 \$[\d,]+.*API 用量\/(周|月)/, `${slug} zh value`);
-    assert.match(api.basis.zh, /按 .*API 标价折算/, `${slug} zh basis`);
+    const rows = [
+      ...(g.summary.apiValue ? [g.summary.apiValue] : []),
+      ...(g.summary.apiValues ?? []),
+      ...(g.summary.apiValueGroups ?? []).flatMap((group) => group.rows),
+    ];
+    assert.ok(rows.length > 0, `${slug} has api value rows`);
     const body = JSON.stringify({ sections: g.sections, faqs: g.faqs, intro: g.intro, description: g.description });
-    for (const n of api.value.en.match(/\$[\d,]+/g) ?? []) assert.ok(body.includes(n), `${slug}: ${n} must already appear in the article`);
+    for (const row of rows) {
+      const absence = /未测|无此|无内含|not measured|No (?:same|included)|no included/i.test(`${row.value.en} ${row.value.zh}`);
+      if (absence) continue;
+      for (const n of row.value.en.match(/\$[\d,]+/g) ?? []) {
+        assert.ok(body.includes(n), `${slug}: ${n} must already appear in the article`);
+      }
+    }
   }
+
+  for (const slug of ['codex-pro-200-quota-benchmark', 'claude-pro-opus-5-5-quota'] as const) {
+    const api = PRICING_GUIDES[slug].summary.apiValue;
+    assert.ok(api, `${slug} apiValue`);
+    assert.match(api!.value.zh, /约等于 \$[\d,]+.*API 用量\/(周|月)/, `${slug} zh value`);
+    assert.match(api!.basis.zh, /按 .*API 标价折算/, `${slug} zh basis`);
+  }
+
+  assert.equal(GUIDE_WEEKLY_TO_MONTHLY, 4.35);
+  const cursor = PRICING_GUIDES['cursor-x-subscription-pricing'];
+  assert.ok(cursor.summary.apiValueGroups && cursor.summary.apiValueGroups.length === 3, 'cursor has 3 pool groups');
+  const [grok, models, other] = cursor.summary.apiValueGroups!;
+  assert.match(grok.rows[0].value.en, /\$1,500\/week/);
+  assert.match(grok.rows[0].value.en, /\$6,525\/month/);
+  assert.match(grok.rows[0].basis.en, /4\.35/);
+  assert.match(grok.rows[0].basis.en, /365\.25÷12÷7/);
+  assert.match(grok.rows[0].basis.en, /grok-4\.7-medium/);
+  assert.match(grok.rows[1].value.zh, /无此池|未测/);
+  assert.match(models.rows[0].value.en, /\$3,022/);
+  assert.match(models.rows[0].basis.en, /composer-2\.5/);
+  assert.match(models.rows[0].basis.en, /sample not complete|incomplete/i);
+  assert.doesNotMatch(models.rows[0].basis.en, /week ×|× ?4\.35/);
+  assert.match(other.rows[0].value.en, /\$20 \/ \$70 \/ \$400/);
+  assert.match(other.rows[1].value.zh, /无内含|API 标价/);
+  const claude = PRICING_GUIDES['claude-pro-opus-5-5-quota'].summary.apiValue!;
+  assert.match(claude.value.en, /\$800/);
+  assert.doesNotMatch(JSON.stringify(claude), /4\.35|×4/);
+});
+
+test('guide summary card renders groups, flat rows and single apiValue', () => {
+  const card = readFileSync(new URL('../components/guide-summary-card.tsx', import.meta.url), 'utf8');
+  assert.match(card, /apiValueGroups/);
+  assert.match(card, /resolveGuideApiPresentation/);
+  assert.match(card, /guide-api-value-group/);
 });
 
 test('guide page renders dates, TL;DR card and JSON-LD datePublished', () => {
