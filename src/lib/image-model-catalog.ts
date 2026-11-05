@@ -48,14 +48,19 @@ function gemini(slug: string, name: string, input: number, textOut: number, imag
   });
 }
 
-function gptImage(slug: string, textIn: number, imageIn: number, imageOut: number, textOut?: number, extra: Partial<Spec> = {}): AiCatalogItem {
-  return image({
+function gptImage(slug: string, textIn: number, imageIn: number, imageOut: number, textOut?: number, extra: Partial<Spec> = {}, seed: Partial<AiCatalogItem> = {}): AiCatalogItem {
+  return { ...image({
     slug, name: slug, provider: 'OpenAI', providerSlug: 'openai', pricingUnit: 'per_1m_tokens', headline: imageOut,
     pricing: `Text in $${textIn}/1M; image in $${imageIn}/1M; image out $${imageOut}/1M${textOut ? `; text out $${textOut}/1M` : ''}`,
     rates: [tok('text_input_tokens', textIn), tok('image_input_tokens', imageIn), tok('image_output_tokens', imageOut), ...(textOut ? [tok('text_output_tokens', textOut)] : [])],
     source: [OPENAI], notes: 'Standard tier; Batch is 50% off. Per-image cost depends on size/quality (see OpenAI image generation calculator).', ...extra,
-  });
+  }), ...seed };
 }
+
+/** Added 2026-11-05; seeded by its own manual script (dry-run by default), not the 10-15 image seed. */
+export const IMAGE26_SEED_SCRIPT = 'seed:catalog-2026-11-05-image26';
+export const IMAGE26_SLUGS = ['gpt-image-2.6-sunburst', 'gpt-image-2.6-flare'] as const;
+const IMAGE26_SEED: Partial<AiCatalogItem> = { lastVerified: '2026-11-05', verifiedAt: '2026-11-05', deferredDbSeedScript: `${IMAGE26_SEED_SCRIPT} -- --apply` };
 
 export const IMAGE_MODEL_CATALOG_GOOGLE_OPENAI: AiCatalogItem[] = [
   gemini('gemini-nano-banana-2.1', 'Nano Banana 2.1 (gemini-nano-banana-2.1)', 1.5, 7.5, 30,
@@ -82,6 +87,14 @@ export const IMAGE_MODEL_CATALOG_GOOGLE_OPENAI: AiCatalogItem[] = [
     capabilities: ['text-to-image'], source: [VERTEX],
     notes: 'Priced on Vertex AI (Agent Platform). Imagen is no longer listed on the Gemini Developer API pricing page (checked 2026-10-15).',
   })),
+  ...(['gpt-image-2.6-sunburst', 'gpt-image-2.6-flare'] as const).map(slug => gptImage(slug, 5, 8, 30, undefined, {
+    // Verified 2026-11-05 on the OpenAI pricing page (Standard image-generation table): image in $8 / out $30 /
+    // cached $2, text in $5 / cached $1.25 per 1M tokens. 2.6 is NOT in the Batch table yet, so no batch claim.
+    rates: [tok('text_input_tokens', 5), tok('cached_text_input_tokens', 1.25), tok('image_input_tokens', 8),
+      tok('cached_image_input_tokens', 2), tok('image_output_tokens', 30)],
+    pricing: 'Text in $5/1M (cached $1.25); image in $8/1M (cached $2); image out $30/1M',
+    notes: 'Standard tier, verified 2026-11-05. Not listed in the OpenAI Batch pricing table yet (2.5 and earlier are 50% off there). Per-image cost depends on size/quality (see OpenAI image generation calculator).',
+  }, IMAGE26_SEED)),
   gptImage('gpt-image-2.5-sunburst', 5, 8, 30),
   gptImage('gpt-image-2.5-flare', 5, 8, 30),
   gptImage('gpt-image-2', 5, 8, 30),

@@ -320,7 +320,7 @@ async function auditDatabaseDrift() {
     }
 
     // The image seed reuses pre-existing rows and keeps their scraped display name by design.
-    const keepsExistingName = item.deferredDbSeedScript === 'seed:image-models-2026-10-15:apply';
+    const keepsExistingName = item.kind === 'image-model' && /^seed:(image-models-2026-10-15:apply|catalog-2026-11-05-image26\b)/.test(item.deferredDbSeedScript ?? '');
     if (!keepsExistingName && model.name !== item.name) report(item, `DB drift: name ${model.name} != ${item.name}`);
     if (model.model_category !== item.modelCategory) report(item, `DB drift: model_category ${model.model_category} != ${item.modelCategory}`);
     if (!sameStringArray(model.input_modalities, item.inputModalities)) report(item, 'DB drift: input_modalities mismatch');
