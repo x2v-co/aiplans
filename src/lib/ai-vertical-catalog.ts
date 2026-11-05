@@ -1,4 +1,5 @@
 import { CATALOG_1104, MUREKA_1104 } from './catalog-2026-11-04';
+import { CATALOG_1105 } from './catalog-2026-11-05';
 import { NON_LLM_CATALOG } from './non-llm-catalog';
 import { IMAGE_MODEL_CATALOG } from './image-model-catalog';
 import { PERPLEXITY_DECIDER_CATALOG } from './perplexity-decider-catalog';
@@ -115,6 +116,7 @@ const VERIFIED_AT = '2026-09-15';
 export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   ...NON_LLM_CATALOG,
   ...CATALOG_1104,
+  ...CATALOG_1105,
   ...IMAGE_MODEL_CATALOG,
   ...PERPLEXITY_DECIDER_CATALOG,
   ...DECISION_MODELS_2026_11_03,
