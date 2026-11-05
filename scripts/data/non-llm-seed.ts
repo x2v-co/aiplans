@@ -49,12 +49,16 @@ export async function seedImageModels(tx: Sql, apply = false): Promise<NonLlmSte
 
 /** 2026-11-05: only gpt-image-2.6-sunburst / -flare (manual seed:catalog-2026-11-05-image26). */
 export const IMAGE26_CATALOG = IMAGE_MODEL_CATALOG.filter(item => (IMAGE26_SLUGS as readonly string[]).includes(item.slug!));
+/** plans/usage_prices.last_verified for the 2.6 rows; matches their catalog "verified 2026-11-05". */
+export const IMAGE26_LAST_VERIFIED = '2026-11-05T00:00:00.000Z';
 export async function seedImage26Models(tx: Sql, apply = false): Promise<NonLlmStep[]> {
-  return seedCatalogItems(tx, apply, IMAGE26_CATALOG, { moondream: false, preserveExisting: true });
+  return seedCatalogItems(tx, apply, IMAGE26_CATALOG, { moondream: false, preserveExisting: true, lastVerified: IMAGE26_LAST_VERIFIED });
 }
 
 async function seedCatalogItems(tx: Sql, apply: boolean, items: AiCatalogItem[],
-  options: { moondream: boolean; preserveExisting?: boolean }): Promise<NonLlmStep[]> {
+  options: { moondream: boolean; preserveExisting?: boolean; lastVerified?: string }): Promise<NonLlmStep[]> {
+  // Default keeps the original 2026-10-15 catalog seeds unchanged.
+  const lastVerified = options.lastVerified ?? '2026-10-15T00:00:00.000Z';
   const tables: Table[] = ['providers', 'models', 'plans', 'model_plan_mapping', 'usage_prices'];
   const rows = {} as Record<Table, Row[]>;
   for (const table of tables) rows[table] = await tx<Row[]>`SELECT * FROM ${tx(table)}`;
@@ -125,7 +129,7 @@ async function seedCatalogItems(tx: Sql, apply: boolean, items: AiCatalogItem[],
       price_unit: item.pricingUnit, source: 'manual', plan_kind: 'creative', plan_category: 'creative',
       included_usage_unit: unit, included_usage_amount: null, is_official: true,
       notes: `${item.pricingChannel ?? item.provider} pricing reference. Source: ${source}`,
-      last_verified: '2026-10-15T00:00:00.000Z',
+      last_verified: lastVerified,
     }, slug);
     await save('model_plan_mapping', rows.model_plan_mapping.filter(row => row.model_id === model.id && row.plan_id === plan.id), {
       model_id: model.id, plan_id: plan.id, priority: 50, source: 'manual',
@@ -142,7 +146,7 @@ async function seedCatalogItems(tx: Sql, apply: boolean, items: AiCatalogItem[],
     for (const rate of rates) {
       await save('usage_prices', rows.usage_prices.filter(row => row.model_id === model.id && row.provider_id === channel.id && row.price_kind === rate.priceKind && row.unit === rate.unit), {
         model_id: model.id, provider_id: channel.id, plan_id: plan.id, price_kind: rate.priceKind, unit: rate.unit,
-        price: rate.price, currency: 'USD', source_url: source, last_verified: '2026-10-15T00:00:00.000Z',
+        price: rate.price, currency: 'USD', source_url: source, last_verified: lastVerified,
         is_available: item.status !== 'discontinued',
         constraints_json: { price_status: rate.price == null ? 'needs-verification' : item.priceStatus,
           ...('approximate' in rate && rate.approximate ? { approximate: true } : {}),

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Sql } from 'postgres';
 import { spawnSync } from 'node:child_process';
-import { seedImageModels } from './non-llm-seed';
+import { seedImage26Models, seedImageModels } from './non-llm-seed';
 import { IMAGE_MODEL_CATALOG } from '../../src/lib/image-model-catalog';
 
 type Row = Record<string, unknown> & { id: number };
@@ -101,4 +101,16 @@ test('image seed CLI preview never connects', () => {
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /DRY-RUN \(offline; no database connection\)/);
   assert.match(run.stdout, /gpt-image-2/);
+});
+
+test('image26 seed: plans/usage_prices last_verified is 2026-11-05; 10-15 image seed keeps 2026-10-15', async () => {
+  const providers = [{ id: 2, slug: 'openai' }];
+  const f26 = fixture({ providers });
+  await seedImage26Models(f26.tx, true);
+  assert.equal(f26.data.plans.length, 2);
+  assert.ok(f26.data.usage_prices.length > 0);
+  for (const row of [...f26.data.plans, ...f26.data.usage_prices]) assert.equal(row.last_verified, '2026-11-05T00:00:00.000Z');
+  const f = fixture({ providers });
+  await seedImageModels(f.tx, true);
+  for (const row of [...f.data.plans, ...f.data.usage_prices]) assert.equal(row.last_verified, '2026-10-15T00:00:00.000Z');
 });
