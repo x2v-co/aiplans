@@ -161,7 +161,9 @@
     "seed:x-subscription-annual-2026-11-04": "tsx scripts/seed-x-subscription-annual-2026-11-04.ts",
     "seed:x-subscription-annual-2026-11-04:apply": "tsx scripts/seed-x-subscription-annual-2026-11-04.ts --apply",
     "seed:deepseek-official-v41": "tsx scripts/seed-deepseek-official-v41-2026-10-22.ts",
-    "seed:deepseek-official-v41:apply": "tsx scripts/seed-deepseek-official-v41-2026-10-22.ts --apply"
+    "seed:deepseek-official-v41:apply": "tsx scripts/seed-deepseek-official-v41-2026-10-22.ts --apply",
+    "seed:supported-regions-2026-11-05": "tsx scripts/seed-supported-regions-2026-11-05.ts",
+    "seed:supported-regions-2026-11-05:apply": "tsx scripts/seed-supported-regions-2026-11-05.ts --apply"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
