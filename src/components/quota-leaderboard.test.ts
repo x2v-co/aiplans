@@ -44,8 +44,9 @@ test('default board is one ranked list with visible ranks and no same-order cue'
     assert.ok(cursorRow.includes(locale === 'zh' ? '粗估' : 'rough'));
     assert.ok(!cursorRow.includes('4.35'));
     assert.ok(!cursorRow.includes(locale === 'zh' ? '档位未核验' : 'tier unverified'));
-    assert.ok(html.includes(locale === 'zh' ? '只有两个月池' : 'two monthly pools only'));
-    assert.ok(html.includes(locale === 'zh' ? '没有写第三方等于 API 的 2 倍' : 'does not say third-party usage is 2× API price'));
+    assert.ok(html.includes(locale === 'zh' ? '三池分列' : 'three pools'));
+    assert.ok(html.includes(locale === 'zh' ? '约 10 亿 token/周' : '1 billion tokens/week'));
+    assert.ok(html.includes('$400'));
     assert.ok(html.includes('https://cursor.com/docs/account/pricing/legacy-cursor-plans'));
     assert.match(cursorRow, /data-rank="6"/);
     assert.ok(!cursorRow.includes('data-unranked'));

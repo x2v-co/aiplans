@@ -20,8 +20,8 @@
     },
     {
       "date": "2026-11-06",
-      "zh": "按 https://cursor.com/docs/account/pricing/legacy-cursor-plans 核对：旧 Ultra 月费 $200，只有 Cursor Models 与 Other Models 两个月池。≈$3,022 标为 Cursor Models 池的 composer-2.5 条件估算，不含 Other Models。月费倍数改为该池 ÷ $200。该页没有写第三方等于 API 的 2 倍；Grok Bot 不属于旧套餐。仍不挂到套餐卡片。",
-      "en": "Checked against https://cursor.com/docs/account/pricing/legacy-cursor-plans: legacy Ultra is $200/month and has two monthly pools, Cursor Models and Other Models. The about $3,022 figure is labeled a composer-2.5 conditional estimate of the Cursor Models pool only. The fee multiple is that pool ÷ $200. The page does not say third-party usage is 2× API price, and Grok Bot is not part of the legacy plan. The row stays off catalog plan cards."
+      "zh": "旧 Ultra 按三池分列，月费 $200。≈$3,022 标为池① Cursor Models 的 composer-2.5 条件估算，倍数 = 该池 ÷ $200。池② Other Models 官方曾公开 ≈$400（=月费×2，论坛工作人员）。池③ Grok Bot 切换前估算约 10 亿 token/周，未折美元，不计倍数。仍不挂到套餐卡片。",
+      "en": "Legacy Ultra is kept as three pools at $200/month. The about $3,022 figure is pool 1, a composer-2.5 conditional estimate of Cursor Models; the multiple is that pool ÷ $200. Pool 2, Other Models, was publicly listed at about $400 (2× the fee, forum staff). Pool 3, Grok Bot, was estimated at about 1 billion tokens/week before the switch, with no USD conversion and no multiple. The row stays off catalog plan cards."
     }
   ],
   "records": [
@@ -171,7 +171,7 @@
       "tierVerification": {
         "source": "account_owner_confirmation",
         "confirmedAt": "2026-11-05",
-        "note": "Account owner confirmed on 2026-11-05 that this measurement is the legacy Cursor Ultra subscription. This is not independent billing verification. The figure is the Cursor Models pool only (composer-2.5, conditional estimate) and does not include Other Models. The fee multiple uses the official legacy Ultra price of $200/month from https://cursor.com/docs/account/pricing/legacy-cursor-plans (checked 2026-11-06), not a charge read from this run. The row is not attached to a catalog plan card."
+        "note": "Account owner confirmed on 2026-11-05 that this measurement is the legacy Cursor Ultra subscription. This is not independent billing verification. The figure is pool 1 only, Cursor Models (composer-2.5, conditional estimate). It does not include pool 2 Other Models (publicly listed at about $400, 2× the fee) or pool 3 Grok Bot (pre-switch estimate about 1 billion tokens/week, no USD). The fee multiple uses the $200/month Ultra price for pool 1 only, not a charge read from this run. The row is not attached to a catalog plan card."
       },
       "calls": 16,
       "tokens": {
@@ -237,8 +237,8 @@
         }
       },
       "caveats": {
-        "zh": "有条件实测，非官方承诺：仅前 12 轮（801,760 tokens）对应额度 34.7423% → 34.7570%；第 4 批未计入，CSV 未对账。这是旧套餐 Ultra 的月度 Cursor Models 池（composer-2.5）条件估算，不含 Other Models；重置点未核验。账号持有人于 2026-11-05 确认套餐为旧套餐 Ultra。USD 为标准公开价估值，不是余额；假设线性扣量且无其他流量，区间仅覆盖仪表读数舍入。旧套餐只有 Cursor Models 与 Other Models 两个月池（https://cursor.com/docs/account/pricing/legacy-cursor-plans）；该页没有写第三方等于 API 的 2 倍。月费倍数 = 本池折合 ÷ 官方 Ultra 月费 $200。",
-        "en": "Conditional measurement, not an official allowance: only the first 12 calls (801,760 tokens) match 34.7423% → 34.7570%; batch 4 excluded, CSV not reconciled. This is a composer-2.5 conditional estimate of the legacy Ultra monthly Cursor Models pool and does not include Other Models; reset point not verified. The account owner confirmed on 2026-11-05 that the plan is legacy Cursor Ultra. USD is a standard list-price valuation, not a credit balance; assumes linear consumption and no other traffic, with bounds covering meter rounding only. Legacy plans have two monthly pools, Cursor Models and Other Models (https://cursor.com/docs/account/pricing/legacy-cursor-plans); that page does not say third-party usage is 2× API price. Fee multiple = this pool ÷ the official $200 Ultra monthly fee."
+        "zh": "有条件实测，非官方承诺：仅前 12 轮（801,760 tokens）对应额度 34.7423% → 34.7570%；第 4 批未计入，CSV 未对账。这是旧套餐 Ultra 池① Cursor Models（composer-2.5）的条件估算，不含 Other Models，也不含 Grok Bot；重置点未核验。账号持有人于 2026-11-05 确认套餐为旧套餐 Ultra。USD 为标准公开价估值，不是余额；假设线性扣量且无其他流量，区间仅覆盖仪表读数舍入。三池分列、不相加：池② Other Models 官方曾公开 ≈ $400（=月费×2）；池③ Grok Bot 切换前估算约 10 亿 token/周，未折美元。月费倍数只算池① ÷ Ultra 月费 $200。",
+        "en": "Conditional measurement, not an official allowance: only the first 12 calls (801,760 tokens) match 34.7423% → 34.7570%; batch 4 excluded, CSV not reconciled. This is pool 1, a composer-2.5 conditional estimate of the legacy Ultra Cursor Models pool, and it does not include Other Models or Grok Bot; reset point not verified. The account owner confirmed on 2026-11-05 that the plan is legacy Cursor Ultra. USD is a standard list-price valuation, not a credit balance; assumes linear consumption and no other traffic, with bounds covering meter rounding only. The three pools are not added: pool 2, Other Models, was publicly listed at about $400 (2× the monthly fee); pool 3, Grok Bot, was estimated at about 1 billion tokens/week before the switch and is not converted to USD. The fee multiple is pool 1 ÷ the $200 Ultra monthly fee."
       },
       "windowMeasurements": null,
       "measurementReport": "/reports/quota-bench-2026-10.md",

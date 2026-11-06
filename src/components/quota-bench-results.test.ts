@@ -36,8 +36,8 @@ test('both locales show caveats, controller accounting and downloadable evidence
     for (const value of ['111,606,780', '186,011,300', '8,729,647', '5,417,297,297–5,491,506,849', '$3,022', '$3,001–$3,042', '$0.444198', '$1,222', '$978–$1,630', '$48.89511', '2026-10-29', 'https://cursor.com/docs/models/cursor-composer-2-5', '/reports/quota-bench-2026-10.json', '/reports/quota-bench-2026-10.md', '/reports/quota-bench-2026-10-ledger.json']) assert.ok(html.includes(value), value);
     assert.ok(html.includes(locale === 'zh' ? '仅适用于 ChatGPT Pro 200' : 'Applies only to ChatGPT Pro 200'));
     const phrases = locale === 'zh'
-      ? ['Cursor Ultra (legacy)', '有条件实测 · 非官方承诺 · 低置信度', '有条件实测，非官方承诺', '第 4 批未计入', 'CSV 未对账', '重置点未核验', '旧套餐 Ultra', 'Cursor Models', 'composer-2.5', '不含 Other Models', '$200']
-      : ['Cursor Ultra (legacy)', 'Conditional measurement · not an official allowance · low confidence', 'Conditional measurement, not an official allowance', 'batch 4 excluded', 'CSV not reconciled', 'reset point not verified', 'legacy Cursor Ultra', 'Cursor Models', 'composer-2.5', 'does not include Other Models', '$200'];
+      ? ['Cursor Ultra (legacy)', '有条件实测 · 非官方承诺 · 低置信度', '有条件实测，非官方承诺', '第 4 批未计入', 'CSV 未对账', '重置点未核验', '旧套餐 Ultra', 'Cursor Models', 'composer-2.5', '不含 Other Models', '$200', '10 亿 token', '$400']
+      : ['Cursor Ultra (legacy)', 'Conditional measurement · not an official allowance · low confidence', 'Conditional measurement, not an official allowance', 'batch 4 excluded', 'CSV not reconciled', 'reset point not verified', 'legacy Cursor Ultra', 'Cursor Models', 'composer-2.5', 'does not include Other Models', '$200', '1 billion tokens', '$400'];
     for (const phrase of phrases) assert.ok(html.includes(phrase), phrase);
     assert.ok(!html.includes(locale === 'zh' ? '套餐档位未核验' : 'plan tier unverified'));
     assert.ok(!html.includes(locale === 'zh' ? '套餐档位：未核验' : 'Plan tier: unverified'));
