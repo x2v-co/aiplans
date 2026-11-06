@@ -1,3 +1,5 @@
+import type { RegionFields } from './supported-regions';
+import { deriveProviderRegions, sourcedChinaAccess } from './supported-regions';
 import type { ChannelTermsFields } from '@/lib/channel-terms';
 import { effectivePrice, type PriceSchedule } from '@/lib/effective-price';
 import { sql } from '@/lib/db';
@@ -50,7 +52,7 @@ export interface ChannelPrice extends PriceSchedule, ChannelTermsFields {
   /** Variant tags relative to the parent model, e.g. ['mini'], ['mini', 'batch']. */
   variant?: string[];
   price_variants?: ChannelPriceVariant[];
-  providers: {
+  providers: RegionFields & {
     id: number;
     name: string;
     slug: string;
@@ -58,7 +60,7 @@ export interface ChannelPrice extends PriceSchedule, ChannelTermsFields {
     logo_url?: string | null;
     type: string;
     region: string;
-    access_from_china: boolean;
+    access_from_china: boolean | null;
     website?: string | null;
     pricing_url?: string | null;
     invite_url?: string | null;
@@ -75,14 +77,14 @@ export interface GroupedProduct {
   benchmarks: ModelBenchmarkScore[];
   released_at: string | null;
   created_at: string | null;
-  providers?: {
+  providers?: RegionFields & {
     id: number;
     name: string;
     slug: string;
     logo: string;
     logo_url?: string;
     region?: string;
-    access_from_china?: boolean;
+    access_from_china?: boolean | null;
   };
   modelCategory?: string | null;
   shutdown_date?: string | null;
@@ -228,6 +230,10 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
           'type', p.type,
           'region', p.region,
           'access_from_china', p.access_from_china,
+          'supported_regions', p.supported_regions,
+          'regions_source_url', p.regions_source_url,
+          'regions_verified_at', p.regions_verified_at,
+          'notes', p.notes,
           'website', p.website,
           'pricing_url', p.pricing_url,
           'invite_url', p.invite_url
@@ -259,7 +265,9 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
     `,
   ]);
 
-  const effectiveChannelPrices = channelPrices.map(cp => effectivePrice(cp, now));
+  const effectiveChannelPrices = channelPrices.map(cp => ({ ...effectivePrice(cp, now),
+    providers: { ...cp.providers, access_from_china: sourcedChinaAccess(deriveProviderRegions(cp.providers)) },
+  }));
   const products = await attachPrimaryProvidersToModels(modelsData as any[]);
 
   // Create benchmark map: model_id -> highest value (for arena elo)

@@ -1,3 +1,4 @@
+import { deriveProviderRegions, sourcedChinaAccess } from '@/lib/supported-regions';
 import { effectivePrice } from '@/lib/effective-price';
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
@@ -46,6 +47,10 @@ export async function GET(
           'type', p.type,
           'region', p.region,
           'access_from_china', p.access_from_china,
+          'supported_regions', p.supported_regions,
+          'regions_source_url', p.regions_source_url,
+          'regions_verified_at', p.regions_verified_at,
+          'notes', p.notes,
           'logo', p.logo
         ) AS providers,
         jsonb_build_object(
@@ -65,7 +70,9 @@ export async function GET(
     `;
 
     const now = new Date();
-    const data = rawPrices.map(cp => effectivePrice(cp, now))
+    const data = rawPrices.map(cp => ({ ...effectivePrice(cp, now),
+      providers: { ...cp.providers, access_from_china: sourcedChinaAccess(deriveProviderRegions(cp.providers)) },
+    }))
       .sort((a, b) => (a.input_price_per_1m ?? Infinity) - (b.input_price_per_1m ?? Infinity));
 
     // If we have data, fetch the model's official providers separately

@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { DECISION_1103_SPECS, DECISION_MODELS_2026_11_03 } from '../../src/lib/decision-models-2026-11-03';
 import { isExplicitlyUnverifiedPrice, isOpenRouterPublishedFree, isVerifiedFreeOutput, isVerifiedFreePrice } from '../utils/audit-price-policy';
 import { auditExitCode, missingPlanFields } from '../utils/audit-plan-policy';
+import { isRegionAdvisory, regionSourceWarning } from '../utils/audit-regions-policy';
 import { isSupersededPlan } from '../../src/lib/plan-lifecycle';
 import { GEMINI_API_CHANNEL, catalog20261103FixSeedOptions, isLegacyVeoUsageRow, seedCatalog20261103Fix } from './catalog-2026-11-03-fix';
 import { seedCatalog20261103P1 } from './catalog-2026-11-03-p1';
@@ -52,12 +53,13 @@ async function auditFindings(tables: Record<string, FakeRow[]>) {
     return builder;
   } };
   const databaseSql = async (parts: TemplateStringsArray) => {
-    assert.match(parts.join('?'), /information_schema.columns|FROM model_benchmark_scores AS score/);
+    assert.match(parts.join('?'), /information_schema.columns|FROM model_benchmark_scores AS score|AS regions_source_url/);
     return [];
   };
   const dependencies: Record<string, unknown> = {
     './utils/audit-price-policy': { isExplicitlyUnverifiedPrice, isOpenRouterPublishedFree, isVerifiedFreeOutput, isVerifiedFreePrice },
     './utils/audit-plan-policy': { auditExitCode, missingPlanFields },
+    './utils/audit-regions-policy': { regionSourceWarning, isRegionAdvisory },
     './db/queries': { db }, './db/postgres-admin': { databaseSql },
     '../src/lib/plan-lifecycle': { isSupersededPlan },
     '../src/lib/plan-selector': { resolveSelector() { throw new Error('Unexpected selector resolution'); } },

@@ -1,3 +1,4 @@
+import { derivePlanRegions, sourcedChinaAccess } from './supported-regions';
 import { currentPlanCondition } from './plan-lifecycle-query';
 import { sql, INT4_ARRAY, TEXT_ARRAY } from '@/lib/db';
 import type { CurrencyCode } from '@/lib/currency';
@@ -61,7 +62,7 @@ export async function getPlanComparison(
         sql<any[]>`
           SELECT id, name, slug, tier, pricing_model, price, annual_price,
             price_unit, currency, daily_message_limit, requests_per_minute,
-            qps, tokens_per_minute, features, region, access_from_china,
+            qps, tokens_per_minute, features, region, access_from_china, supported_regions, regions_source_url, regions_verified_at,
             payment_methods, is_official, last_verified, provider_id, notes,
             plan_kind, plan_line, tier_rank,
             quotas, is_contact_sales, pack_validity_days,
@@ -75,7 +76,7 @@ export async function getPlanComparison(
           ORDER BY plan_kind, plan_line NULLS LAST, tier_rank NULLS LAST, price ASC NULLS LAST
         `,
         sql<any[]>`
-          SELECT id, name, slug, logo, logo_url, website, invite_url, pricing_url, type
+          SELECT id, name, slug, logo, logo_url, website, invite_url, pricing_url, type, supported_regions, regions_source_url, regions_verified_at, access_from_china, notes
           FROM providers
         `,
       ])
@@ -128,6 +129,7 @@ export async function getPlanComparison(
       : product.provider_ids?.includes(plan.provider_id);
     const provider = providerMap[plan.provider_id];
     const yearlyMonthly = getPlanYearlyMonthly(plan);
+    const regionEvidence = derivePlanRegions(plan, provider);
 
     const planData = {
       plan: {
@@ -172,7 +174,10 @@ export async function getPlanComparison(
         inviteUrl: provider?.invite_url || null,
         type: provider?.type || null,
         region: plan.region,
-        accessFromChina: plan.access_from_china,
+        accessFromChina: sourcedChinaAccess(regionEvidence),
+        regionEvidence,
+        supportedRegions: regionEvidence.regions,
+        regionsSourceUrl: regionEvidence.sourceUrl,
         paymentMethods: plan.payment_methods || getPaymentMethods(plan.region),
       },
       pricing: {

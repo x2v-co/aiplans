@@ -86,6 +86,7 @@ test('apply is idempotent, scopes channel prices and updates every Moondream ent
   const moondreamRates = f.data.usage_prices.filter(row => row.model_id === bySlug('moondream-cloud').id);
   assert.equal(moondreamRates.find(row => row.price_kind === 'moondream-3.1_realtime_output')?.price, 1);
   assert.equal(moondreamRates.find(row => row.price_kind === 'moondream-3-preview_batch_output')?.price, 1.25);
+  assert.ok(f.data.plans.every(row => row.access_from_china === null));
   assert.ok(f.data.plans.every(row => row.price === null && row.annual_price === null && row.source === 'manual'));
   assert.ok(f.data.model_plan_mapping.every(row => row.source === 'manual'));
   const transcribe = bySlug('grok-voice-transcribe-1.0');

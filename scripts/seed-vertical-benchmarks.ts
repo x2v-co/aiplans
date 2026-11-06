@@ -180,7 +180,7 @@ async function ensureProvider(slug: string, name: string, website?: string): Pro
   if (data) return data.id as number;
   console.log(`  ➕ provider ${slug}`);
   if (!APPLY) return -Math.floor(Math.random() * 1_000_000);
-  const res = await db.from('providers').insert({ slug, name, website, type: 'official', region: 'global', access_from_china: true }).select('id').single();
+  const res = await db.from('providers').insert({ slug, name, website, type: 'official', region: 'global', access_from_china: null }).select('id').single();
   if (res.error) throw res.error;
   return res.data.id as number;
 }

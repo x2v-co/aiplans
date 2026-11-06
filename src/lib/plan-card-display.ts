@@ -1,3 +1,5 @@
+import { derivePlanRegions, shouldShowChinaBadge, type RegionFields } from './supported-regions';
+
 // Machine annotations are display metadata, not customer-facing copy. Keep
 // ordinary bracketed text such as [100K context] intact.
 const INTERNAL_MARKER = /\[(?:(?:aiplans|internal|todo|fixme)(?::[^\]\r\n]*)?|[a-z][a-z0-9]*(?:[-_:][a-z0-9]+)+|unverified|needs verification)\]/gi;
@@ -12,7 +14,8 @@ export function stripDisplayUrls(text: string): string {
     .replace(/\s+/g, ' ').trim();
 }
 
-export interface PlanHighlightFields {
+export interface PlanHighlightFields extends RegionFields {
+  providers?: RegionFields | null;
   features?: unknown;
   features_zh?: unknown;
   features_en?: unknown;
@@ -166,7 +169,7 @@ export function structuredPlanHighlights(plan: PlanHighlightFields, locale: stri
   const payments = Array.isArray(plan.payment_methods) ? plan.payment_methods.flatMap(key =>
     typeof key === 'string' && paymentLabels[key] ? [paymentLabels[key][i]] : []) : [];
   if (payments.length) points.push(`${i === 0 ? '付款方式：' : 'Payment methods: '}${payments.join(' / ')}`);
-  if (plan.access_from_china === true) points.push(i === 0 ? '支持中国大陆访问' : 'Accessible from mainland China');
+  if (shouldShowChinaBadge(derivePlanRegions(plan, plan.providers), locale)) points.push('支持中国大陆访问');
   return uniquePlanSentences(points);
 }
 

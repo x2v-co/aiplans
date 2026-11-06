@@ -58,7 +58,7 @@ export async function scrapeZhipuGlobalPlans(): Promise<PlanScraperResult> {
       tier: item.tier,
       features: [],
       region: 'global',
-      accessFromChina: true,
+      accessFromChina: null,
       paymentMethods: ['Credit Card', 'PayPal'],
       isOfficial: true,
       currency: 'USD',

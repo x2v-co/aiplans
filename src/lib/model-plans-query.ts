@@ -58,6 +58,7 @@ export async function getModelPlans(
       pl.third_party_coverage,
       pl.third_party_coverage_note,
       pl.access_from_china,
+      pl.supported_regions, pl.regions_source_url, pl.regions_verified_at,
       pl.provider_id,
       pl.plan_kind,
       pl.plan_line,
@@ -74,7 +75,12 @@ export async function getModelPlans(
         'slug', p.slug,
         'logo', p.logo,
         'pricing_url', p.pricing_url,
-        'website', p.website
+        'website', p.website,
+        'supported_regions', p.supported_regions,
+        'regions_source_url', p.regions_source_url,
+        'regions_verified_at', p.regions_verified_at,
+        'access_from_china', p.access_from_china,
+        'notes', p.notes
       ) END AS providers
     FROM plans pl
     LEFT JOIN providers p ON p.id = pl.provider_id

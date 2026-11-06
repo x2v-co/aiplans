@@ -102,12 +102,12 @@ export default function HomeView({
             <CardContent className="p-6 text-center">
               <Globe className="w-12 h-12 mx-auto mb-4 text-purple-600" />
               <h3 className="text-lg font-bold mb-2">
-                {locale === 'zh' ? '国内可用' : 'China Accessible'}
+                {locale === 'zh' ? '支持地区' : 'Supported regions'}
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 {locale === 'zh'
-                  ? '标注国内可直连的渠道，支持支付宝/微信支付'
-                  : 'Mark channels accessible from China with Alipay/WeChat support'}
+                  ? '依据官方来源展示已核实的支持地区'
+                  : 'See verified regional support from official sources'}
               </p>
             </CardContent>
           </Card>

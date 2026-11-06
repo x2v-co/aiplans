@@ -1,3 +1,4 @@
+import { deriveProviderRegions, sourcedChinaAccess } from '@/lib/supported-regions';
 import { effectivePrice } from '@/lib/effective-price';
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
@@ -61,6 +62,10 @@ export async function GET(
           'website', p.website,
           'region', p.region,
           'access_from_china', p.access_from_china,
+          'supported_regions', p.supported_regions,
+          'regions_source_url', p.regions_source_url,
+          'regions_verified_at', p.regions_verified_at,
+          'notes', p.notes,
           'description', p.description
         ) AS providers
       FROM api_channel_prices cp
@@ -73,7 +78,9 @@ export async function GET(
     `;
 
     const now = new Date();
-    const channelPrices = rawPrices.map(cp => effectivePrice(cp, now))
+    const channelPrices = rawPrices.map(cp => ({ ...effectivePrice(cp, now),
+      providers: { ...cp.providers, access_from_china: sourcedChinaAccess(deriveProviderRegions(cp.providers)) },
+    }))
       .sort((a, b) => (a.input_price_per_1m ?? Infinity) - (b.input_price_per_1m ?? Infinity));
 
     // 计算价格对比数据

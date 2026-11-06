@@ -1,4 +1,5 @@
 "use client";
+import { chinaAccessMark, formatAvailableIn } from '@/lib/supported-regions';
 
 import { subscriptionSearchCopy } from '@/lib/subscription-search';
 
@@ -470,12 +471,13 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                                     <span className="text-zinc-500">QPS</span>
                                     <span className="font-medium">{plan.performance?.qps_display || "-"}</span>
                                   </div>
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="text-zinc-500">{locale === "zh" ? "国内访问" : "China"}</span>
-                                    <span className={plan.channel?.accessFromChina ? "text-green-600" : "text-red-400"}>
-                                      {plan.channel?.accessFromChina ? "✓" : "✗"}
-                                    </span>
-                                  </div>
+                                  {locale === 'zh' && <div className="flex items-center justify-between text-xs">
+                                    <span className="text-zinc-500">国内访问</span>
+                                    <span className="text-zinc-500">{chinaAccessMark(plan.channel?.regionEvidence)}</span>
+                                  </div>}
+                                  {locale === 'en' && formatAvailableIn(plan.channel.regionEvidence, { locale }) && (
+                                    <div className="text-xs text-zinc-500">Available in: <a href={plan.channel.regionEvidence.sourceUrl!} target="_blank" rel="noopener noreferrer" className="underline">{formatAvailableIn(plan.channel.regionEvidence, { locale })}</a></div>
+                                  )}
                                   <div className="flex items-center justify-between text-xs">
                                     <span className="text-zinc-500">{locale === "zh" ? "最大输出" : "Max Output"}</span>
                                     <span className="font-medium">{plan.limits?.maxTokensPerRequest?.toLocaleString() || "-"}</span>

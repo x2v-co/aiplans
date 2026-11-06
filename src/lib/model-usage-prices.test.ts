@@ -73,7 +73,7 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
 function summaryCards(html: string) {
   return {
     cheapest: html.split(/Cheapest Option|最低价选项/)[1].split(/Official Price|官方价格/)[0],
-    official: html.split(/Official Price|官方价格/)[1].split(/Best in China|国内优选/)[0],
+    official: html.split(/Official Price|官方价格/)[1].split(/data-slot="separator"|Best in China|国内优选/)[0],
   };
 }
 
@@ -240,11 +240,12 @@ test('shared usage query scopes by model and availability, reads plan ownership 
 test('model overview headings and channel badges follow the requested locale', async () => {
   const channels = [channel, { ...channel, id: 8, providers: { name: 'OpenRouter', type: 'aggregator' } }];
   const zhHtml = await modelHtml([], channels, 'zh');
-  for (const label of Object.values(zh.modelDetail).slice(0, 6)) assert.ok(zhHtml.includes(label), label);
+  // China-specific labels only renders with sourced supported_regions (covered by the regional-claims test).
+  for (const label of Object.values(zh.modelDetail).slice(0, 6).filter(label => label !== zh.modelDetail.bestInChina && !/国内/.test(label))) assert.ok(zhHtml.includes(label), label);
   for (const label of Object.values(en.modelDetail).slice(0, 6)) assert.ok(!zhHtml.includes(label), label);
   assert.match(zhHtml, /聚合平台/);
   const enHtml = await modelHtml([], channels, 'en');
-  for (const label of Object.values(en.modelDetail).slice(0, 6)) assert.ok(enHtml.includes(label), label);
+  for (const label of Object.values(en.modelDetail).slice(0, 6).filter(label => label !== en.modelDetail.bestInChina && !/China/.test(label))) assert.ok(enHtml.includes(label), label);
   assert.match(enHtml, /Aggregator/);
   assert.match(enHtml, /Official/);
   assert.doesNotMatch(enHtml, /聚合平台|官方/);
@@ -266,15 +267,18 @@ test('PM six-model bilingual walkthrough renders localized identities and struct
         id: 100, name: planName, slug: 'sample-plan', tier: price ? 'pro' : 'free', price,
         annual_price: annual, currency: providerSlug === 'zhipu-china' || providerSlug === 'moonshot' ? 'CNY' : 'USD',
         features: [], payment_methods: ['Credit Card', 'Debit Card'], context_window: 32000,
-        access_from_china: true, plan_kind: 'chat', last_verified: '2026-10-29 00:15:00', providers: provider,
+        access_from_china: true, supported_regions: ['CN', 'US'], regions_source_url: 'https://example.com/supported-countries', plan_kind: 'chat', last_verified: '2026-10-29 00:15:00', providers: provider,
       };
-      const sampleChannel = { ...channel, providers: { ...provider, type: 'producer', access_from_china: true } };
+      const sampleChannel = { ...channel, providers: { ...provider, type: 'producer', access_from_china: true, supported_regions: ['CN', 'US'], regions_source_url: 'https://example.com/supported-countries' } };
       const html = await modelHtml([], [sampleChannel], locale, { slug: modelSlug, producer: provider, plans: [samplePlan] });
       const card = html.split('data-plan-card="100"')[1].split('</details>')[0];
       const highlights = card.split('<details')[0];
-      assert.equal((highlights.match(/<li\b/g) ?? []).length, 4, `${modelSlug}/${locale}`);
+      const count = (highlights.match(/<li\b/g) ?? []).length;
+      // Highlights cap at 4; without the zh China line English may fall to 3.
+      assert.ok(locale === 'zh' ? count === 4 : count === 3 || count === 4, `${modelSlug}/${locale}: ${count}`);
       assert.match(highlights, /32000/);
-      assert.match(html, locale === 'zh' ? /支付宝\/微信可用/ : /Alipay\/WeChat Pay accepted/);
+      // The China-payment card is zh-only and needs sourced supported_regions.
+      if (locale === 'zh') assert.match(html, /支付宝\/微信可用/); else assert.doesNotMatch(html, /Alipay\/WeChat Pay accepted/);
       if (locale === 'en') {
         assert.doesNotMatch(html, /月之暗面|智谱|支付宝\/微信可用/);
         if (providerSlug === 'moonshot') assert.ok(html.split('Moonshot AI / Kimi').length > 4, 'header, prose, card and table use English provider');
@@ -346,4 +350,24 @@ test('every Veo zh description quotes each Vertex rate of its catalog row', () =
     assert.match(item.descriptionZh ?? '', /[\u4e00-\u9fff]/, item.slug);
     for (const rate of item.usageRates ?? []) assert.ok(item.descriptionZh!.includes(`$${rate.price.toFixed(2)}`), `${item.slug} ${rate.priceKind}`);
   }
+});
+
+test('regional claims and China recommendation disappear without sourced support; English stays quiet', async () => {
+  const legacy = { ...channel, providers: { ...channel.providers, access_from_china: true } };
+  for (const locale of ['zh', 'en'] as const) {
+    const html = await modelHtml([], [legacy], locale);
+    assert.doesNotMatch(html, /国内可用|国内优选|China Available|Best in China|China availability unknown|中国可用性未知/);
+    assert.doesNotMatch(html, /✗/);
+    assert.ok(!html.includes(zh.modelDetail.bestInChina));
+  }
+  const sourced = { ...legacy, providers: { ...legacy.providers,
+    supported_regions: ['CN'], regions_source_url: 'https://example.com/countries' } };
+  const zhHtml = await modelHtml([], [sourced], 'zh');
+  assert.match(zhHtml, /国内可用/);
+  assert.ok(zhHtml.includes(zh.modelDetail.bestInChina));
+  assert.doesNotMatch(await modelHtml([], [sourced], 'en'), /国内可用|China Available|Best in China/);
+  const excluded = { ...sourced, providers: { ...sourced.providers, supported_regions: ['US'] } };
+  const html = await modelHtml([], [excluded], 'zh');
+  assert.doesNotMatch(html, /国内可用|国内优选/);
+  assert.match(html, /✗/);
 });

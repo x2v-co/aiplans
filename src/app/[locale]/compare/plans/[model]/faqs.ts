@@ -1,3 +1,4 @@
+import { sourcedChinaAccess } from '@/lib/supported-regions';
 import { subscriptionSearchCopy } from '@/lib/subscription-search';
 import { codexQuotaFaq, isCodexQuotaModel } from '@/lib/codex-pro200';
 import { claudeProQuotaFaq, isClaudeProQuotaModel } from '@/lib/claude-pro-opus55';
@@ -50,7 +51,7 @@ export function buildCompareFaqs(
   const cheapest = summary.cheapestPlan;
   const free = hasFree(rows);
   const discount = maxDiscount(rows);
-  const chinaRows = rows.filter((r) => r.channel.accessFromChina);
+  const chinaRows = rows.filter((r) => r.channel.regionEvidence && sourcedChinaAccess(r.channel.regionEvidence) === true);
   const searchCopy = subscriptionSearchCopy(model.slug, modelName, locale);
   const faqs: FaqItem[] = [{ question: searchCopy.question, answer: searchCopy.answer }];
   if (isCodexQuotaModel(model.slug)) faqs.push(codexQuotaFaq(locale, model.slug));
@@ -129,22 +130,10 @@ export function buildCompareFaqs(
     }
   }
 
-  // 5. China access
-  if (isZh) {
+  if (isZh && chinaRows.length > 0) {
     faqs.push({
-      question: `这些套餐在中国大陆能用吗？`,
-      answer:
-        chinaRows.length > 0
-          ? `以下套餐支持中国大陆直连：${chinaRows.slice(0, 4).map((r) => r.channel.name).join('、')}。国内渠道通常支持支付宝/微信付款。`
-          : '多数国际官方套餐在中国大陆需要代理或 VPN 才能访问；第三方聚合渠道可能提供国内直连。请以各渠道说明为准。',
-    });
-  } else {
-    faqs.push({
-      question: `Can I use these plans from mainland China?`,
-      answer:
-        chinaRows.length > 0
-          ? `These plans are directly reachable from mainland China: ${chinaRows.slice(0, 4).map((r) => r.channel.name).join(', ')}. Domestic channels generally support Alipay/WeChat Pay.`
-          : 'Most international official plans require a proxy or VPN from mainland China; some third-party aggregators offer direct domestic access. Check each channel for details.',
+      question: '这些套餐支持中国大陆吗？',
+      answer: `以下套餐的官方支持地区包含中国大陆：${chinaRows.slice(0, 4).map((r) => r.channel.name).join('、')}。`,
     });
   }
 

@@ -13,11 +13,12 @@
  * If a fact is absent, the sentence that needs it is omitted rather than
  * guessed.
  */
+import { derivePlanRegions, deriveProviderRegions, sourcedChinaAccess, type RegionFields } from './supported-regions';
 import { convertToUSD } from './currency-conversion';
 import { formatPrice, type CurrencyCode } from './currency';
 import type { Locale } from './seo';
 
-export interface ProviderCopyPlan {
+export interface ProviderCopyPlan extends RegionFields {
   name: string;
   price: number | null;
   price_unit: string | null;
@@ -32,7 +33,7 @@ export interface ProviderCopyPlan {
   currency: string | null;
 }
 
-export interface ProviderCopyContext {
+export interface ProviderCopyContext extends RegionFields {
   name: string;
   type?: string | null;
   region?: string | null;
@@ -116,8 +117,8 @@ export function buildProviderCopy(
   const cheapest = cheapestPaid(plans);
   const discount = maxAnnualDiscount(plans);
   const kinds = new Set(plans.map((p) => p.plan_kind).filter(Boolean));
-  const chinaPaid = paid.filter((p) => p.access_from_china);
-  const providerInChina = ctx.region === 'china' || ctx.access_from_china;
+  const chinaPaid = paid.filter((p) => sourcedChinaAccess(derivePlanRegions(p, ctx)) === true);
+  const providerInChina = sourcedChinaAccess(deriveProviderRegions(ctx)) === true;
 
   // ── Summary ──────────────────────────────────────────────────────────
   const parts: string[] = [];
@@ -155,9 +156,9 @@ export function buildProviderCopy(
       parts.push(`提供${tiers.join('与')}档位${contactCount ? '，企业版按需报价' : ''}。`);
     }
     if (chinaPaid.length > 0) {
-      parts.push(`其中 ${chinaPaid.length} 个付费套餐支持中国大陆直连。`);
+      parts.push(`其中 ${chinaPaid.length} 个付费套餐官方支持地区包含中国大陆。`);
     } else if (providerInChina) {
-      parts.push('该厂商渠道通常支持中国大陆直连与本土支付方式。');
+      parts.push('该厂商官方支持地区包含中国大陆。');
     }
     if (modelCount > 0) {
       parts.push(`这些套餐合计覆盖 ${modelCount} 个模型。`);
@@ -196,13 +197,6 @@ export function buildProviderCopy(
       parts.push(
         `${tiers[0]!.charAt(0).toUpperCase()}${tiers[0]!.slice(1)}${tiers[1] ? ` and ${tiers[1]}` : ''} tiers are available${contactCount ? ', with enterprise pricing on request' : ''}.`,
       );
-    }
-    if (chinaPaid.length > 0) {
-      parts.push(
-        `${chinaPaid.length} paid plan${chinaPaid.length === 1 ? '' : 's'} can be reached directly from mainland China.`,
-      );
-    } else if (providerInChina) {
-      parts.push('This provider generally supports direct access from mainland China and local payment methods.');
     }
     if (modelCount > 0) {
       parts.push(`Together these plans cover ${modelCount} model${modelCount === 1 ? '' : 's'}.`);
@@ -268,26 +262,13 @@ export function buildProviderCopy(
     }
   }
 
-  // 4. China access
-  if (isZh) {
+  // Omit China copy when support is unresearched; English keeps regional details quiet.
+  if (isZh && (chinaPaid.length > 0 || providerInChina)) {
     faqs.push({
-      question: `${name} 套餐在中国大陆能用吗？`,
-      answer:
-        chinaPaid.length > 0
-          ? `可以。以下付费套餐支持中国大陆直连：${chinaPaid.slice(0, 4).map((p) => p.name).join('、')}。`
-          : providerInChina
-            ? '该厂商为国内厂商，其套餐通常支持中国大陆直连，并支持支付宝/微信等本土支付方式。'
-            : '本站收录的付费套餐多数不支持中国大陆直连，访问国际版服务通常需要代理或 VPN；具体以官方说明为准。',
-    });
-  } else {
-    faqs.push({
-      question: `Can I use ${name} plans from mainland China?`,
-      answer:
-        chinaPaid.length > 0
-          ? `Yes — these paid plans are directly reachable from mainland China: ${chinaPaid.slice(0, 4).map((p) => p.name).join(', ')}.`
-          : providerInChina
-            ? 'This is a China-based provider, so its plans generally support direct mainland access and local payment methods such as Alipay/WeChat Pay.'
-            : 'Most paid plans tracked here are not directly reachable from mainland China; accessing the international service normally requires a proxy or VPN. Check the official terms for details.',
+      question: `${name} 套餐支持中国大陆吗？`,
+      answer: chinaPaid.length > 0
+        ? `以下付费套餐的官方支持地区包含中国大陆：${chinaPaid.slice(0, 4).map((p) => p.name).join('、')}。`
+        : '该厂商官方支持地区包含中国大陆，具体套餐请以官方说明为准。',
     });
   }
 

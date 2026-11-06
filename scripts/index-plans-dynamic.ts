@@ -33,7 +33,7 @@ interface ProviderConfig {
   invite_link?: string | null;
   type: string;
   region: string;
-  access_from_china: boolean;
+  access_from_china: boolean | null;
 }
 
 // Provider configuration with invite links and metadata
@@ -87,7 +87,7 @@ const PROVIDER_CONFIG: Record<string, ProviderConfig> = {
     invite_link: 'https://platform.minimaxi.com/subscribe/coding-plan?code=GOCSHm96x2&source=link',
     type: 'official',
     region: 'china',
-    access_from_china: true,
+    access_from_china: null,
   },
   'minimax-global': {
     name: 'Minimax Global',
@@ -97,7 +97,7 @@ const PROVIDER_CONFIG: Record<string, ProviderConfig> = {
     invite_link: undefined,
     type: 'official',
     region: 'global',
-    access_from_china: true,
+    access_from_china: null,
   },
   zhipu: {
     name: 'Zhipu AI',
@@ -107,7 +107,7 @@ const PROVIDER_CONFIG: Record<string, ProviderConfig> = {
     invite_link: 'https://www.bigmodel.cn/glm-coding?ic=U2SFC0L765',
     type: 'official',
     region: 'china',
-    access_from_china: true,
+    access_from_china: null,
   },
   'zhipu-global': {
     name: 'Zhipu AI Global (Z.AI)',
@@ -117,7 +117,7 @@ const PROVIDER_CONFIG: Record<string, ProviderConfig> = {
     invite_link: 'https://z.ai/subscribe?ic=HFGTURQAPY',
     type: 'official',
     region: 'global',
-    access_from_china: true,
+    access_from_china: null,
   },
   moonshot: {
     name: 'Moonshot',
@@ -127,7 +127,7 @@ const PROVIDER_CONFIG: Record<string, ProviderConfig> = {
     invite_link: undefined,
     type: 'official',
     region: 'china',
-    access_from_china: true,
+    access_from_china: null,
   },
   baidu: {
     name: 'Baidu',
@@ -137,7 +137,7 @@ const PROVIDER_CONFIG: Record<string, ProviderConfig> = {
     invite_link: undefined,
     type: 'official',
     region: 'china',
-    access_from_china: true,
+    access_from_china: null,
   },
   volcengine: {
     name: 'Volcengine (字节跳动)',
@@ -147,7 +147,7 @@ const PROVIDER_CONFIG: Record<string, ProviderConfig> = {
     invite_link: 'https://volcengine.com/L/_uDpCXoFKP0/',
     type: 'official',
     region: 'both',
-    access_from_china: true,
+    access_from_china: null,
   },
   qwen: {
     name: 'Alibaba Qwen',
@@ -157,7 +157,7 @@ const PROVIDER_CONFIG: Record<string, ProviderConfig> = {
     invite_link: 'https://www.aliyun.com/benefit/ai/aistar?clubBiz=subTask..12401178..10263..',
     type: 'official',
     region: 'both',
-    access_from_china: true,
+    access_from_china: null,
   },
 } as const;
 
@@ -265,7 +265,7 @@ async function savePlansToDatabase(
         tokens_per_minute: plan.tokensPerMinute,
         features: plan.features,
         region: plan.region,
-        access_from_china: plan.accessFromChina,
+        access_from_china: plan.accessFromChina === true ? null : plan.accessFromChina,
         payment_methods: plan.paymentMethods,
         is_official: plan.isOfficial,
         last_verified: plan.priceMonthly == null ? null : new Date(),

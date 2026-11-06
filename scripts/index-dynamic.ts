@@ -683,7 +683,7 @@ interface DynamicProviderMetadata {
   website_url: string;
   region: 'china' | 'global';
   type: 'official' | 'producer' | 'cloud' | 'aggregator' | 'reseller';
-  access_from_china: boolean;
+  access_from_china: boolean | null;
   pricing_url?: string;
   api_docs_url?: string;
   logo_url?: string;
@@ -697,7 +697,7 @@ const DYNAMIC_CHANNEL_PROVIDERS: Record<string, DynamicProviderMetadata> = {
     website_url: 'https://www.xyc.ai',
     region: 'china',
     type: 'reseller',
-    access_from_china: true,
+    access_from_china: null,
     pricing_url: 'https://www.xyc.ai/api/provider/pricing',
     api_docs_url: 'https://docs.xyc.ai/',
     logo_url: 'https://www.xyc.ai/logo.png',
@@ -873,17 +873,6 @@ function inferRegion(source: string): string {
   if (chinaChannels.some(ch => slug.includes(ch))) return 'china';
 
   return 'global';
-}
-
-function isAccessibleFromChina(source: string): boolean {
-  const accessibleChannels = ['siliconflow', 'dmxapi', 'deepseek', 'moonshot', 'minimax', 'zhipu', 'stepfun', 'qwen', 'seed', 'hunyuan', 'baidu', 'aliyun', 'bailian', 'volcengine', 'qianfan'];
-  const slug = source.toLowerCase();
-
-  if (slug.includes('global') || slug.includes('国际版')) {
-    return false;
-  }
-
-  return accessibleChannels.some(ch => slug.includes(ch));
 }
 
 function getChannelWebsite(source: string): string {

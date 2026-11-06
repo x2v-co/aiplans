@@ -1,4 +1,6 @@
 "use client";
+import { shouldShowChinaBadge, type RegionEvidence } from '@/lib/supported-regions';
+import { useLocale } from 'next-intl';
 
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +17,8 @@ interface PlanComparison {
     name: string;
     website: string | null;
     inviteUrl: string | null;
-    accessFromChina: boolean;
+    accessFromChina: boolean | null;
+    regionEvidence?: RegionEvidence;
     region: string;
   };
   pricing: {
@@ -37,6 +40,7 @@ interface SmartRecommendationProps {
 }
 
 export function SmartRecommendation({ plans, region }: SmartRecommendationProps) {
+  const locale = useLocale();
   if (plans.length === 0) return null;
 
   // Find best plans
@@ -48,7 +52,7 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
 
   const officialPlan = plans.find(p => p.plan.isOfficial);
 
-  const chinaPlans = plans.filter(p => p.channel.accessFromChina);
+  const chinaPlans = plans.filter(p => p.channel.regionEvidence && shouldShowChinaBadge(p.channel.regionEvidence, locale));
   const bestChinaPlan = chinaPlans.length > 0
     ? chinaPlans.reduce((min, p) => {
         const price = p.estimatedCost?.monthlyCost || p.pricing.monthly || p.pricing.inputPer1m || Infinity;
@@ -119,8 +123,8 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
                   Est. <span className="font-bold text-green-600">${cheapestPlan.estimatedCost.monthlyCost.toFixed(2)}/mo</span>
                 </p>
               )}
-              {cheapestPlan.channel.accessFromChina && (
-                <Badge variant="outline" className="text-xs">🇨🇳 China OK</Badge>
+              {cheapestPlan.channel.regionEvidence && shouldShowChinaBadge(cheapestPlan.channel.regionEvidence, locale) && (
+                <Badge variant="outline" className="text-xs">国内可用</Badge>
               )}
             </div>
           </div>
@@ -171,13 +175,13 @@ export function SmartRecommendation({ plans, region }: SmartRecommendationProps)
             </div>
           )}
 
-          {/* Best for China */}
+          {/* 国内最佳 */}
           {bestChinaPlan && (
             <div className="bg-white dark:bg-zinc-900 rounded-lg p-5 border-2 border-red-200 dark:border-red-800">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-2xl">🇨🇳</span>
                 <div>
-                  <h4 className="font-bold">Best for China</h4>
+                  <h4 className="font-bold">国内最佳</h4>
                   <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
                     No VPN Needed
                   </Badge>

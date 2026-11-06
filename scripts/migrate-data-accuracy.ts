@@ -943,6 +943,10 @@ const MIGRATIONS: Migration[] = [
     name: '038_allow_per_1k_characters_unit',
     sql: readFileSync(new URL('../drizzle/0015_allow_per_1k_characters_unit.sql', import.meta.url), 'utf8'),
   },
+  {
+    name: '039_supported_regions',
+    sql: readFileSync(new URL('../drizzle/0016_supported_regions.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 async function main() {

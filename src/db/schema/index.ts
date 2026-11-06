@@ -22,7 +22,12 @@ export const providers = pgTable('providers', {
   paymentMethods: jsonb('payment_methods').default([]),
   priority: integer('priority').default(2),
   type: text('type').default('official'), // 'official', 'cloud', 'aggregator', 'reseller'
-  accessFromChina: boolean('access_from_china').default(true),
+  // No default-era boolean is evidence of official regional support.
+  accessFromChina: boolean('access_from_china').default(sql`NULL`),
+  // NULL = unresearched; [] = researched, supports zero countries; otherwise ISO alpha-2.
+  supportedRegions: text('supported_regions').array(),
+  regionsSourceUrl: text('regions_source_url'),
+  regionsVerifiedAt: timestamp('regions_verified_at', { withTimezone: true }),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
@@ -116,7 +121,12 @@ export const plans = pgTable('plans', {
 
   // Regional & payment
   region: text('region').default('global'),
-  accessFromChina: boolean('access_from_china').default(true),
+  // No default-era boolean is evidence of official regional support.
+  accessFromChina: boolean('access_from_china').default(sql`NULL`),
+  // NULL = unresearched; [] = researched, supports zero countries; otherwise ISO alpha-2.
+  supportedRegions: text('supported_regions').array(),
+  regionsSourceUrl: text('regions_source_url'),
+  regionsVerifiedAt: timestamp('regions_verified_at', { withTimezone: true }),
   paymentMethods: jsonb('payment_methods'),
   features: jsonb('features'),
   notes: text('notes'),

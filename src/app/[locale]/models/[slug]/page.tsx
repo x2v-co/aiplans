@@ -1,3 +1,4 @@
+import { deriveProviderRegions, shouldShowChinaBadge, chinaAccessMark } from '@/lib/supported-regions';
 import { getSeoIndexCatalog } from '@/lib/seo-index-data';
 import { modelShouldIndex } from '@/lib/seo-index-policy';
 import { localizeProvider, providerDisplayName } from '@/lib/provider-display-name';
@@ -26,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CalendarDays, Check, ExternalLink, TrendingDown, Zap, Globe } from "lucide-react";
+import { ArrowLeft, CalendarDays, ExternalLink, TrendingDown, Zap, Globe } from "lucide-react";
 import { sql, INT4_ARRAY } from "@/lib/db";
 import { Fragment, use } from "react";
 import { getPrimaryProvidersForModels } from "@/lib/schema-adapters";
@@ -213,6 +214,10 @@ async function getProductWithChannels(slug: string, now = new Date()) {
         'api_docs_url', p.api_docs_url,
         'region', p.region,
         'access_from_china', p.access_from_china,
+        'supported_regions', p.supported_regions,
+        'regions_source_url', p.regions_source_url,
+        'regions_verified_at', p.regions_verified_at,
+        'notes', p.notes,
         'description', p.description
       ) AS providers
     FROM api_channel_prices cp
@@ -712,8 +717,8 @@ export default async function ModelPage({
                   💸 Save {cheapestSavings}% vs official
                 </div>
               )}
-              {cheapestChannel?.providers?.access_from_china && (
-                <Badge className="mt-2 bg-green-100 text-green-800">🇨🇳 China Available</Badge>
+              {shouldShowChinaBadge(deriveProviderRegions(cheapestChannel?.providers), locale) && (
+                <Badge className="mt-2 bg-green-100 text-green-800">国内可用</Badge>
               )}
               {showTrust && cheapestChannel && (
                 <DataTrustLabel fact={channelListPriceTrust(cheapestChannel, locale, now)} locale={locale} />
@@ -752,12 +757,8 @@ export default async function ModelPage({
                     {formatPrice(officialChannel.output_price_per_1m, channelCurrency(officialChannel), locale)}
                     <span className="text-sm font-normal text-zinc-500">/1M output</span>
                   </div>
-                  {officialChannel.providers?.access_from_china == null ? (
-                    <Badge variant="outline" className="mt-2">{isZh ? '中国可用性未知' : 'China availability unknown'}</Badge>
-                  ) : officialChannel.providers.access_from_china ? (
-                    <Badge variant="outline" className="mt-2">🇨🇳 China Available</Badge>
-                  ) : (
-                    <Badge variant="outline" className="mt-2 bg-red-50 text-red-800">🚫 Not available in China</Badge>
+                  {shouldShowChinaBadge(deriveProviderRegions(officialChannel.providers), locale) && (
+                    <Badge variant="outline" className="mt-2">国内可用</Badge>
                   )}
                   {showTrust && (
                     <DataTrustLabel fact={channelListPriceTrust(officialChannel, locale, now)} locale={locale} />
@@ -780,8 +781,8 @@ export default async function ModelPage({
             </CardContent>
           </Card>
 
-          {/* China-Friendly Option */}
-          <Card>
+          {/* China support is shown only with sourced country evidence. */}
+          {isZh && channelPrices.some((cp: any) => shouldShowChinaBadge(deriveProviderRegions(cp.providers), locale)) && <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 🇨🇳 {t('bestInChina')}
@@ -790,7 +791,7 @@ export default async function ModelPage({
             <CardContent>
               {(() => {
                 const chinaOptions = (channelPrices as any[])
-                  .filter((cp) => cp.providers?.access_from_china)
+                  .filter((cp) => shouldShowChinaBadge(deriveProviderRegions(cp.providers), locale))
                   .sort((a, b) => {
                     const aUsd = a.input_price_per_1m == null ? Infinity : convertToUSD(Number(a.input_price_per_1m), channelCurrency(a));
                     const bUsd = b.input_price_per_1m == null ? Infinity : convertToUSD(Number(b.input_price_per_1m), channelCurrency(b));
@@ -831,7 +832,7 @@ export default async function ModelPage({
                 );
               })()}
             </CardContent>
-          </Card>
+          </Card>}
         </div>}
 
         <Separator className="my-8" />
@@ -920,7 +921,7 @@ export default async function ModelPage({
                     <TableHead className="text-right">Input / 1M</TableHead>
                     <TableHead className="text-right">Output / 1M</TableHead>
                     <TableHead className="text-center">Rate Limit</TableHead>
-                    <TableHead className="text-center">China</TableHead>
+                    {isZh && <TableHead className="text-center">中国大陆支持</TableHead>}
                     <TableHead className="text-right">vs Official</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -970,13 +971,9 @@ export default async function ModelPage({
                         <TableCell className="text-center text-sm">
                           {cp.rate_limit || '-'}
                         </TableCell>
-                        <TableCell className="text-center">
-                          {cp.providers.access_from_china ? (
-                            <Check className="w-4 h-4 text-green-600 mx-auto" />
-                          ) : (
-                            <span className="text-zinc-400">-</span>
-                          )}
-                        </TableCell>
+                        {isZh && <TableCell className="text-center">
+                          <span className="text-zinc-400">{chinaAccessMark(deriveProviderRegions(cp.providers))}</span>
+                        </TableCell>}
                         <TableCell className="text-right">
                           {savings ? (
                             <span className={Number(savings) > 0 ? "text-green-600 font-medium" : "text-zinc-400"}>
