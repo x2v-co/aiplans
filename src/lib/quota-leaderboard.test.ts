@@ -28,19 +28,23 @@ test('fee multiple: month = value / fee, week = value / (fee / 4.35), 5h none', 
   for (const r of QUOTA_LEADER_ROWS.filter(r => r.window === '5h')) assert.equal(feeMultiple(r), null);
 });
 
-test('legacy Cursor Ultra has no fee multiple and ranks only by absolute value', () => {
+test('legacy Cursor Ultra multiple uses the official $200 fee for the Cursor Models pool only', () => {
   const cursor = QUOTA_LEADER_ROWS.find(r => r.id === 'cursor-legacy-month')!;
   assert.equal(cursor.plan, 'Cursor Ultra (legacy)');
+  assert.equal(cursor.model, 'composer-2.5');
   assert.equal(cursor.mix, 'mixed');
   assert.equal(cursor.window, 'month');
   assert.equal(cursor.tierVerified, true);
-  assert.equal(cursor.feeUsdMonthly, null);
+  assert.equal(cursor.rough, true);
+  assert.equal(cursor.derivedFromWeek, undefined);
+  assert.equal(cursor.feeUsdMonthly, 200);
   assert.equal(cursor.usd.mid, 3021.76);
-  assert.equal(feeMultiple(cursor), null);
+  assert.ok(Math.abs(feeMultiple(cursor)!.mid - 3021.76 / 200) < 1e-9);
+  assert.equal(Math.round(feeMultiple(cursor)!.mid), 15);
   const byMultiple = rankLeaderboard('month', 'multiple');
-  assert.ok(byMultiple.ranked.every(row => row.id !== 'cursor-legacy-month'));
-  assert.deepEqual(byMultiple.unverified.map(row => row.id), ['cursor-legacy-month']);
-  assert.equal(rankLeaderboard('month', 'multiple', QUOTA_LEADER_ROWS, 'asc').unverified[0].id, 'cursor-legacy-month');
+  assert.equal(byMultiple.ranked.at(-1)?.id, 'cursor-legacy-month');
+  assert.deepEqual(byMultiple.unverified, []);
+  assert.equal(rankLeaderboard('month', 'multiple', QUOTA_LEADER_ROWS, 'asc').ranked[0].id, 'cursor-legacy-month');
   const byUsd = rankLeaderboard('month', 'usd').ranked.map(row => row.id);
   assert.equal(byUsd[2], 'cursor-legacy-month');
   assert.equal(rankLeaderboard('month', 'usd', QUOTA_LEADER_ROWS, 'asc').ranked[3].id, 'cursor-legacy-month');
@@ -54,6 +58,7 @@ test('one window is a single ranked list across workload mixes', () => {
     'x-ultra-month',
     'codex-pro-month',
     'volcengine-pro-month',
+    'cursor-legacy-month',
   ]);
   assert.deepEqual([...new Set(month.ranked.map(row => row.mix))].sort(), ['agentic', 'input', 'mixed', 'output']);
   assert.equal(rankLeaderboard('week').ranked[0].id, 'claude-pro-week-agentic');
@@ -108,7 +113,7 @@ test('default direction is high to low and low to high reverses verified ranks',
   const asc = rankLeaderboard('month', 'multiple', QUOTA_LEADER_ROWS, 'asc').ranked.map(row => row.id);
   assert.equal(desc[0], 'claude-pro-month-agentic');
   assert.deepEqual(asc, [...desc].reverse());
-  assert.equal(asc[0], 'volcengine-pro-month');
+  assert.equal(asc[0], 'cursor-legacy-month');
   const weekUsdDesc = rankLeaderboard('week', 'usd').ranked.map(row => row.id);
   assert.deepEqual(rankLeaderboard('week', 'usd', QUOTA_LEADER_ROWS, 'asc').ranked.map(row => row.id), [...weekUsdDesc].reverse());
   const fiveDesc = rankLeaderboard('5h').ranked.map(row => row.id);

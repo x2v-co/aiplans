@@ -10,7 +10,7 @@ import volcengineValuation from '../../public/reports/volcengine-api-valuation-2
  * No new measurements: every number comes from an existing report or guide.
  */
 export const QUOTA_LEADERBOARD_PUBLISHED_AT = '2026-11-05';
-export const QUOTA_LEADERBOARD_UPDATED_AT = '2026-11-05'; // Volcengine valuation; legacy Cursor row confirmed as Ultra (no new multiple).
+export const QUOTA_LEADERBOARD_UPDATED_AT = '2026-11-06'; // Legacy Ultra multiple uses the official $200 fee for the Cursor Models pool only.
 
 /** Average weeks per month (52.14 / 12). Same factor as the Claude Pro report's weeklyMultiplier. */
 export const WEEKS_PER_MONTH = 4.35;
@@ -75,10 +75,10 @@ export const QUOTA_LEADER_ROWS: LeaderRow[] = [
     ];
   }),
   ...volcengineRows,
-  // Owner-confirmed legacy Ultra (2026-11-05). No monthly fee is recorded,
-  // so this row is left out of fee-multiple ranks and gets no invented multiple.
-  // Absolute-value ranks still use the measured API value.
-  { id: 'cursor-legacy-month', plan: cursor.plan, model: cursor.model, window: 'month', mix: 'mixed', feeUsdMonthly: null, usd: cursor.apiEquivalentUsd!, rough: false, tierVerified: cursor.tierVerified, date: cursor.date, confidence: 'low', anchor: '#cursor-ultra' },
+  // Official legacy Ultra price is $200/mo (cursor.com/docs/account/pricing/legacy-cursor-plans, 2026-11-06).
+  // Numerator is only the measured Cursor Models pool (composer-2.5). Other Models are not in this figure.
+  // rough marks the incomplete sample, not a week×4.35 projection. Stays off catalog plan cards.
+  { id: 'cursor-legacy-month', plan: cursor.plan, model: cursor.model, window: 'month', mix: 'mixed', feeUsdMonthly: 200, usd: cursor.apiEquivalentUsd!, rough: true, tierVerified: cursor.tierVerified, date: cursor.date, confidence: 'low', anchor: '#cursor-ultra' },
 ];
 
 /** Fee for one window: month = fee, week = fee ÷ 4.35. 5h has no fee basis (null). */

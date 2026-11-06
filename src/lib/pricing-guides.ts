@@ -559,9 +559,9 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     // Used for related model links and dateModified only (priceTable: false).
     queryPatterns: ['%grok%', 'claude-%', 'gpt-%'],
     providerSlugs: ['xai'],
-    reviewedAt: '2026-11-05',
+    reviewedAt: '2026-11-06',
     publishedAt: '2026-10-13',
-    updatedAt: '2026-11-05',
+    updatedAt: '2026-11-06',
     summary: {
       conclusion: { en: 'The X Subscription pool is shared by Cursor and Grok and resets weekly; third-party models (Claude, GPT) are never included and bill at API list price. Heavy Claude/GPT users should compare legacy plans first, because switching is permanent.', zh: 'The X Subscription 用量池由 Cursor 与 Grok 共享、每周刷新；Claude、GPT 等第三方模型不含在额度内，按 API 标价另付。重度用第三方模型的先对比旧套餐再切，切换不可撤销。' },
       keyFacts: [
@@ -582,18 +582,18 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
             {
               pool: { en: 'Legacy plans', zh: '旧套餐' },
               value: { en: 'No same pool / not measured', zh: '旧套餐无此池 / 未测' },
-              basis: { en: 'Legacy Cursor plans have no Grok / Cursor·Grok shared weekly pool comparable to The X Subscription; no same-pool same-period measurement.', zh: '旧 Cursor 套餐没有与 The X Subscription 同池同周期的 Grok / Cursor·Grok 共享周池；无同口径实测。' },
+              basis: { en: 'No same shared weekly pool as The X Subscription (new Ultra ≈ $1,500/week, which includes Grok Bot). Separately, legacy Ultra’s Grok Bot weekly allowance before the switch was estimated at about 1 billion tokens/week (range 600 million–1.8 billion): self-reported, noisy, not converted to USD, and not given a fee multiple. Source: projects/aiplans/research/2026-10-19-grokbot-old-ultra-baseline.md (Intel, finalized 2026-10-20). Public docs still do not fully map Grok Bot onto legacy Ultra.', zh: '没有与 The X Subscription 同池的共享周池（新 Ultra 约 $1,500/周，含 Grok Bot）。另计：切换前旧 Ultra 的 Grok Bot 周额度估算约 10 亿 token/周（区间 6–18 亿），自报、噪声大，未折美元，不计月费倍数。来源：projects/aiplans/research/2026-10-19-grokbot-old-ultra-baseline.md（Intel，2026-10-20 定稿）。公开文档对 Grok Bot 与 legacy Ultra 的对应仍不完整。' },
             },
           ],
         },
         {
           title: { en: 'B. Cursor Models pool', zh: 'B. Cursor Models 池' },
-          period: { en: 'Monthly pool (legacy); do not multiply', zh: '月池（旧套餐）；不乘系数' },
+          period: { en: 'Monthly Cursor Models pool (legacy). Not scaled from a weekly measurement.', zh: '月度 Cursor Models 池（旧套餐）。不是由周额度推算。' },
           rows: [
             {
               pool: { en: 'Legacy Cursor Ultra', zh: '旧套餐 Ultra' },
               value: { en: '≈ $3,022/month · conditional estimate / sample incomplete', zh: '约 $3,022/月 · 条件估算 / 样本未完成' },
-              basis: { en: 'Model: composer-2.5. Account owner confirmed on 2026-11-05 that this quota-bench-2026-10 measurement is legacy Cursor Ultra. Conditional estimate / sample not complete (12 of 16 calls used; CSV not reconciled; reset point not verified). Monthly pool figure — not multiplied, and no fee multiple is published. Not an official capacity promise.', zh: '所用模型：composer-2.5。账号持有人于 2026-11-05 确认 quota-bench-2026-10 的这次实测是旧套餐 Ultra。条件估算 / 样本未完成（16 轮中仅前 12 轮入算；CSV 未对账；重置点未核验）。本身是月池数字，不乘系数，也不发布月费倍数。不是官方容量承诺。' },
+              basis: { en: 'Pool 1 only: Cursor Models, model composer-2.5; does not include Other Models or Grok Bot. Account owner confirmed on 2026-11-05 that this quota-bench-2026-10 measurement is legacy Cursor Ultra. Conditional rough estimate / sample not complete (12 of 16 calls used; CSV not reconciled; reset point not verified). Fee multiple = this pool ÷ the Ultra price of $200/month. The other two pools are not added: Other Models was publicly listed at about $400 (2× the fee), and the pre-switch Grok Bot estimate is about 1 billion tokens/week with no USD conversion. Not an official capacity promise.', zh: '只计池① Cursor Models，模型 composer-2.5，不含 Other Models，也不含 Grok Bot。账号持有人于 2026-11-05 确认 quota-bench-2026-10 的这次实测是旧套餐 Ultra。条件估算、标粗估 / 样本未完成（16 轮中仅前 12 轮入算；CSV 未对账；重置点未核验）。月费倍数 = 该池 ÷ Ultra 月费 $200。另两池不相加：Other Models 官方曾公开约 $400（=月费×2）；切换前 Grok Bot 估算约 10 亿 token/周，未折美元。不是官方容量承诺。' },
             },
             {
               pool: { en: 'New X Subscription', zh: '新 X Subscription' },
@@ -609,7 +609,7 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
             {
               pool: { en: 'Legacy Pro / Pro+ / Ultra', zh: '旧 Pro / Pro+ / Ultra' },
               value: { en: 'Included $20 / $70 / $400 per month', zh: '内含 $20 / $70 / $400 /月' },
-              basis: { en: 'Official Other Models included allowance (not a measured model). Source: Cursor legacy pricing already recorded in this guide’s plan table and body.', zh: '官方 Other Models 内含额度（非实测模型）。来源：本指南套餐表与正文已记录的 Cursor 旧套餐口径。' },
+              basis: { en: 'Included Other Models allowance at API list price, not an x2v measurement. A Cursor forum staff post said the pricing page listed Ultra at $400, 20× Pro’s $20, which is 2× the $200 fee. The current legacy-plans doc lists pools but no dollar amounts, and forum reports say the allowance later fell toward about $100. Published figure: about $400 (2× the fee); the account dashboard controls. https://forum.cursor.com/t/usage-limits-in-teams-vs-individual/167937', zh: 'Other Models 内含额度，按 API 标价，不是 x2v 实测。Cursor 论坛工作人员写定价页列出 Ultra 为 $400，是 Pro $20 的 20×，即月费 $200 的 2×。当前旧套餐文档只列池、未写美元数；论坛有人说后来降到约 $100。发布口径：官方曾公开 ≈ $400（=月费×2），以账号仪表盘为准。https://forum.cursor.com/t/usage-limits-in-teams-vs-individual/167937' },
             },
             {
               pool: { en: 'New X Subscription (Premium+)', zh: '新 X Subscription（Premium 及以上）' },
@@ -704,10 +704,10 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
         },
       },
       {
-        heading: { en: 'Legacy Cursor Models pool: ≈ $3,022 conditional estimate (sample incomplete)', zh: '旧套餐 Cursor Models 池：约 $3,022 条件估算（样本未完成）' },
+        heading: { en: 'Legacy Cursor Models pool: ≈ $3,022 conditional estimate (composer-2.5, sample incomplete)', zh: '旧套餐 Cursor Models 池：约 $3,022 条件估算（composer-2.5，样本未完成）' },
         body: {
-          en: 'Separately from the official Other Models dollar allowances ($20 / $70 / $400), the legacy monthly Cursor Models pool was measured conditionally in quota-bench-2026-10. Using composer-2.5 for the first 12 of 16 calls (801,760 tokens; meter 34.7423% → 34.7570%) and valuing tokens at Cursor’s published composer-2.5 list price yields about $3,022 for the pool (rounding band about $3,001–$3,042). Label: conditional estimate / sample not complete — batch 4 excluded, CSV not reconciled, reset point not verified. The account owner confirmed on 2026-11-05 that the measured subscription is legacy Cursor Ultra; the quota figures are unchanged, and this row is not given a fee multiple or attached to a plan card. This is not an official capacity promise and must not be mixed with the Grok weekly pool or the official Other Models allowances.',
-          zh: '与官方 Other Models 美元额度（$20 / $70 / $400）分开：旧套餐月度 Cursor Models 池在 quota-bench-2026-10 中有条件实测。用 composer-2.5，16 轮中仅前 12 轮（801,760 tokens；仪表 34.7423% → 34.7570%）入算，按 Cursor 公布的 composer-2.5 标价折合约 $3,022（舍入约 $3,001–$3,042）。口径：条件估算 / 样本未完成——第 4 批未计入、CSV 未对账、重置点未核验。账号持有人于 2026-11-05 确认该订阅是旧套餐 Ultra；额度数字未改，本行不计算月费倍数，也不挂到套餐卡片。这不是官方容量承诺，也不能与 Grok 周池或官方 Other Models 额度混成同一种东西。',
+          en: 'Legacy Ultra ($200/month) is described as three pools, matching the three groups above. Do not add their values. Pool 1, Cursor Models: the about $3,022 figure is a composer-2.5 conditional rough estimate of that monthly pool only (first 12 of 16 calls, 801,760 tokens, meter 34.7423% → 34.7570%; rounding band about $3,001–$3,042; batch 4 excluded, CSV not reconciled, reset point not verified). The account owner confirmed on 2026-11-05 that the subscription is legacy Cursor Ultra. Fee multiple = this pool ÷ $200. It is not an official capacity promise and is not attached to a catalog plan card. Pool 2, Other Models: a Cursor forum staff post said the pricing page listed Ultra at $400 of included third-party usage at API price, 20× Pro’s $20, which is 2× the $200 fee. The current legacy-plans page lists two pools and no dollar amounts; forum reports say the allowance later fell toward about $100. Published line: officially listed at about $400 (2× the fee); the account dashboard controls. Pool 3, Grok Bot: the owner confirms a separate pool. The public legacy page says Grok and X are not included, and The X Subscription’s shared weekly pool (new Ultra about $1,500/week) is a different pool. Before the switch, legacy Ultra’s Grok Bot week was estimated at about 1 billion tokens (range 600 million–1.8 billion), about 28% per day and exhausted in about 3.5 days, last read 96% on 2026-10-20 at 11:00, then the account switched. Self-reported and noisy; not converted to USD and given no fee multiple. Source: projects/aiplans/research/2026-10-19-grokbot-old-ultra-baseline.md (Intel, finalized 2026-10-20). Public docs still do not fully map Grok Bot onto legacy Ultra.',
+          zh: '旧 Ultra（月费 $200）按上面三组同池分列，三池数字不相加。池① Cursor Models：约 $3,022 只是这一月池的 composer-2.5 条件估算（16 轮中仅前 12 轮，801,760 tokens，仪表 34.7423% → 34.7570%；舍入约 $3,001–$3,042；第 4 批未计入、CSV 未对账、重置点未核验），标粗估。账号持有人于 2026-11-05 确认该订阅是旧套餐 Ultra。月费倍数 = 该池 ÷ $200。不是官方容量承诺，也不挂到套餐卡片。池② Other Models：Cursor 论坛工作人员写定价页列出 Ultra 内含 $400 第三方用量（按 API 标价），是 Pro $20 的 20×，即月费的 2×。当前旧套餐文档只列两池、未写美元数；论坛有人说后来降到约 $100。发布口径：官方曾公开 ≈ $400（=月费×2），以账号仪表盘为准。池③ Grok Bot：老板确认旧 Ultra 有独立池。公开 legacy 页写 Grok / X 不在旧套餐；X Subscription 的共享周池（新 Ultra 约 $1,500/周）是另一池。切换前旧 Ultra 的 Grok Bot 周额度估算约 10 亿 token（区间 6–18 亿），约 28%/天，约 3.5 天用完，2026-10-20 11:00 读到 96% 后切到 X Subscription。自报、噪声大；未折美元，不计月费倍数。来源：projects/aiplans/research/2026-10-19-grokbot-old-ultra-baseline.md（Intel，2026-10-20 定稿）。公开文档对 Grok Bot 与 legacy Ultra 的对应仍不完整。',
         },
       },
       {
@@ -770,6 +770,9 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     ],
     sources: [
       { label: { en: 'Cursor official X Subscription pricing', zh: 'Cursor 官方 X Subscription 价格' }, url: 'https://cursor.com/pricing' },
+      { label: { en: 'Cursor docs: legacy plans (two named pools; no dollar amounts)', zh: 'Cursor 文档：旧套餐（只列两池，未写美元数）' }, url: 'https://cursor.com/docs/account/pricing/legacy-cursor-plans' },
+      { label: { en: 'Cursor forum staff: Ultra Other Models listed at $400 (20× Pro)', zh: 'Cursor 论坛工作人员：Ultra Other Models 曾列 $400（Pro 的 20×）' }, url: 'https://forum.cursor.com/t/usage-limits-in-teams-vs-individual/167937' },
+      { label: { en: 'Cursor forum: usage on the $200 subscription', zh: 'Cursor 论坛：$200 订阅的用量' }, url: 'https://forum.cursor.com/t/how-much-usage-is-available-on-the-200-subscription/163309' },
       { label: { en: 'Cursor official legacy pricing and plans', zh: 'Cursor 官方旧套餐与价格' }, url: 'https://cursor.com/help/account-and-billing/pricing.md' },
       { label: { en: 'Cursor official X Subscription switching rules', zh: 'Cursor 官方 X Subscription 切换规则' }, url: 'https://cursor.com/help/the-x-subscription/overview' },
       { label: { en: 'xAI docs: X Subscription prices (monthly and annual)', zh: 'xAI 文档：X Subscription 月付与年付价格' }, url: 'https://docs.x.ai/x-subscription/pricing' },
