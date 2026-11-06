@@ -4,12 +4,14 @@
  * Scheduled daily via deploy/production/aiplans-quota-monitor.{service,timer}:
  *   npm run quota:monitor -- --apply
  * Per-source fetch/extraction failures are warnings; exit is non-zero only when every
- * enabled source fails or the database/credentials fail.
+ * enabled source fails or the database fails. --test-alert only tests delivery.
  */
 import { config } from 'dotenv';
 import { dirname, resolve } from 'node:path';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 import type { Sql } from 'postgres';
 import { QUOTA_TEXT_SOURCES, type QuotaTextSource } from './config/quota-text-sources';
 import {
@@ -26,6 +28,45 @@ function state(row?: SnapshotRow): SnapshotState | undefined {
   return row && { contentHash: row.content_hash, extractedText: row.extracted_text, changed: row.changed, alertedAt: row.alerted_at };
 }
 
+/** Native requests with a private direct connection bypass proxy env/global fetch agents. */
+const directFetch: typeof fetch = async (input, init) => {
+  const url = new URL(String(input));
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error('Unsupported protocol');
+  return new Promise<Response>((resolve, reject) => {
+    const request = (url.protocol === 'https:' ? httpsRequest : httpRequest)(url, {
+      method: 'POST', agent: false, headers: { 'content-type': 'application/json' },
+      signal: init?.signal ?? undefined,
+    }, (response) => {
+      const chunks: Buffer[] = [];
+      response.on('data', (chunk: Buffer) => chunks.push(chunk));
+      response.on('error', reject);
+      response.on('end', () => {
+        try {
+          const status = response.statusCode ?? 500;
+          resolve(new Response([204, 205, 304].includes(status) ? null : Buffer.concat(chunks).toString('utf8'), { status }));
+        } catch (error) { reject(error); }
+      });
+    });
+    request.on('error', reject);
+    request.end(init?.body);
+  });
+};
+
+/** Do not expose request errors or API response bodies: either may contain credentials. */
+export async function sendFeishu(webhookUrl: string, message: string, fetcher: typeof fetch = directFetch): Promise<void> {
+  try {
+    const response = await fetcher(webhookUrl, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ msg_type: 'text', content: { text: message } }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const body: unknown = response.ok ? await response.json() : undefined;
+    if (!body || typeof body !== 'object' || !('code' in body) || body.code !== 0) throw new Error();
+  } catch {
+    throw new Error('Feishu send failed (request, HTTP or API error)');
+  }
+}
+
 /** Injected fetch makes delivery behavior testable without network. Never log token-bearing URLs. */
 export async function sendTelegram(token: string, chatId: string, message: string, fetcher: typeof fetch = fetch): Promise<void> {
   let response: Response;
@@ -38,12 +79,44 @@ export async function sendTelegram(token: string, chatId: string, message: strin
   } catch {
     throw new Error('Telegram request failed');
   }
-  if (!response.ok || (await response.json() as { ok?: boolean }).ok !== true) {
+  let accepted = false;
+  try { accepted = response.ok && (await response.json() as { ok?: boolean } | null)?.ok === true; } catch { /* invalid JSON */ }
+  if (!accepted) {
     throw new Error(`Telegram send failed (http=${response.status})`);
   }
 }
 
-export async function observeSnapshot(sql: Sql | undefined, source: QuotaTextSource, text: string, dryRun: boolean, token: string | undefined, chatId = telegramCredentials().chatId) {
+export type AlertChannels = { feishuWebhookUrl?: string; telegramToken?: string; telegramChatId?: string };
+
+/** Compatibility for the separate quota collector; the text monitor uses alertChannels. */
+export function telegramCredentials(env: NodeJS.ProcessEnv = process.env): { token?: string; chatId: string; tokenEnv?: string } {
+  const token = env.AIPLANS_TG_BOT_TOKEN || env.BRAIN_TG_TOKEN || undefined;
+  const tokenEnv = env.AIPLANS_TG_BOT_TOKEN ? 'AIPLANS_TG_BOT_TOKEN' : env.BRAIN_TG_TOKEN ? 'BRAIN_TG_TOKEN' : undefined;
+  return { token, tokenEnv, chatId: env.AIPLANS_TG_CHAT_ID || env.BRAIN_TG_CHAT_ID || '6217573976' };
+}
+
+export function alertChannels(env: NodeJS.ProcessEnv = process.env): AlertChannels {
+  return {
+    feishuWebhookUrl: env.FEISHU_ALERT_WEBHOOK_URL || undefined,
+    telegramToken: env.AIPLANS_TG_BOT_TOKEN || env.BRAIN_TG_TOKEN || undefined,
+    telegramChatId: env.AIPLANS_TG_CHAT_ID || env.BRAIN_TG_CHAT_ID || undefined,
+  };
+}
+
+/** Telegram is used only when Feishu is absent or fails. Success on either completes delivery. */
+export async function sendAlert(channels: AlertChannels, message: string, fetcher?: typeof fetch): Promise<void> {
+  if (channels.feishuWebhookUrl) {
+    try { await sendFeishu(channels.feishuWebhookUrl, message, fetcher); return; }
+    catch { console.warn('quota-text-monitor: WARN Feishu delivery failed; trying Telegram fallback if configured'); }
+  }
+  if (channels.telegramToken && channels.telegramChatId) {
+    await sendTelegram(channels.telegramToken, channels.telegramChatId, message, fetcher);
+    return;
+  }
+  throw new Error(channels.feishuWebhookUrl ? 'Feishu delivery failed; no Telegram fallback configured' : 'No alert channel configured');
+}
+
+export async function observeSnapshot(sql: Sql | undefined, source: QuotaTextSource, text: string, dryRun: boolean, channels: AlertChannels = alertChannels(), fetcher?: typeof fetch) {
   const hash = contentHash(text);
   const inspect = async (connection: Sql) => {
     const [latest] = await connection<SnapshotRow[]>`
@@ -69,7 +142,7 @@ export async function observeSnapshot(sql: Sql | undefined, source: QuotaTextSou
     preview(rows?.latest, rows?.known);
     return;
   }
-  if (!sql || !token) throw new Error('Apply requires database and Telegram credentials');
+  if (!sql) throw new Error('Apply requires database');
 
   await sql.begin(async (rawTransaction) => {
     // postgres@3's TransactionSql Omit type drops callable signatures (same as audit ingestion).
@@ -98,21 +171,14 @@ export async function observeSnapshot(sql: Sql | undefined, source: QuotaTextSou
     }
     if (decision.alert) {
       try {
-        await sendTelegram(token, chatId, `[aiplans] Quota text changed: ${source.name} (${source.id})\n${source.url}\n${diff || '(retrying pending alert)'}`);
+        await sendAlert(channels, `[aiplans] Quota text changed: ${source.name} (${source.id})\n${source.url}\n${diff || '(retrying pending alert)'}`, fetcher);
         await transaction`UPDATE quota_text_snapshots SET alerted_at = clock_timestamp() WHERE id = ${id!}`;
-      } catch (error) {
+      } catch {
         // Commit snapshot/evidence; an unchanged retry can deliver this pending alert.
-        console.error(`[${source.id}] ${error instanceof Error ? error.message : 'Telegram failed'}; alert remains pending`);
+        console.warn(`[${source.id}] WARN alert delivery failed or no channel configured; alert remains pending`);
       }
     }
   });
-}
-
-/** AIPLANS_TG_* wins; otherwise reuse the x2v alerts env (BRAIN_TG_*), as notify-audit-alert.sh does. */
-export function telegramCredentials(env: NodeJS.ProcessEnv = process.env): { token?: string; chatId: string; tokenEnv?: string } {
-  const token = env.AIPLANS_TG_BOT_TOKEN || env.BRAIN_TG_TOKEN || undefined;
-  const tokenEnv = env.AIPLANS_TG_BOT_TOKEN ? 'AIPLANS_TG_BOT_TOKEN' : env.BRAIN_TG_TOKEN ? 'BRAIN_TG_TOKEN' : undefined;
-  return { token, tokenEnv, chatId: env.AIPLANS_TG_CHAT_ID || env.BRAIN_TG_CHAT_ID || '6217573976' };
 }
 
 const BROWSER_HEADERS = {
@@ -153,7 +219,7 @@ export function updateFailureState(state: FailureState, results: SourceStatus[],
   return reached;
 }
 
-/** Exit policy: DB/credential errors are thrown elsewhere; here only "everything failed" is fatal. */
+/** Exit policy: DB errors are thrown elsewhere; here only "everything failed" is fatal. */
 export function runExitCode(results: SourceStatus[]): number {
   const attempted = results.filter((result) => result.status !== 'disabled');
   return attempted.length > 0 && attempted.every((result) => result.status === 'failed') ? 1 : 0;
@@ -168,19 +234,23 @@ async function writeState(path: string, state: FailureState) {
   await rename(`${path}.tmp`, path);
 }
 
-export async function main(args = process.argv.slice(2), loadEnv = () => { config({ path: resolve(process.cwd(), '.env.local') }); }) {
+export async function main(args = process.argv.slice(2), loadEnv = () => { config({ path: resolve(process.cwd(), '.env.local'), quiet: true }); }, dependencies: { env?: NodeJS.ProcessEnv; sql?: Sql; fetcher?: typeof fetch } = {}) {
   loadEnv();
-  const { dryRun, sourceId } = monitorOptions(args);
-  const sources = QUOTA_TEXT_SOURCES.filter((source) => !sourceId || source.id === sourceId);
-  if (!sources.length) throw new Error(`Unknown source: ${sourceId}`);
-  const { token, chatId, tokenEnv } = telegramCredentials();
-  if (!dryRun && !token) {
-    console.log('quota-text-monitor: no Telegram token (AIPLANS_TG_BOT_TOKEN or BRAIN_TG_TOKEN); skipping (no writes or alerts)');
+  const env = dependencies.env ?? process.env;
+  const { dryRun, sourceId, testAlert } = monitorOptions(args);
+  const channels = alertChannels(env);
+  if (testAlert) {
+    await sendAlert(channels, '【x2v 告警·测试】aiplans quota monitor alert delivery test', dependencies.fetcher);
+    console.log('quota-text-monitor: test alert delivered');
     return;
   }
-  if (!dryRun) console.log(`quota-text-monitor: Telegram token from ${tokenEnv}`);
+  const sources = QUOTA_TEXT_SOURCES.filter((source) => !sourceId || source.id === sourceId);
+  if (!sources.length) throw new Error(`Unknown source: ${sourceId}`);
+  if (!dryRun && !channels.feishuWebhookUrl && !(channels.telegramToken && channels.telegramChatId)) {
+    console.warn('quota-text-monitor: WARN no alert channel configured; snapshots will still be written');
+  }
   // Reuse the audit DB client, but do not initialize it for credential-free previews.
-  const sql = process.env.DATABASE_URL ? (await import('./db/postgres-admin')).databaseSql : undefined;
+  const sql = dependencies.sql ?? (env.DATABASE_URL ? (await import('./db/postgres-admin')).databaseSql : undefined);
   if (!dryRun && !sql) throw new Error('DATABASE_URL is required for --apply');
   const results: SourceStatus[] = [];
   try {
@@ -192,7 +262,7 @@ export async function main(args = process.argv.slice(2), loadEnv = () => { confi
       }
       let text: string;
       try {
-        text = await fetchSourceText(source);
+        text = await fetchSourceText(source, dependencies.fetcher);
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
         results.push({ id: source.id, status: 'failed', detail });
@@ -200,7 +270,7 @@ export async function main(args = process.argv.slice(2), loadEnv = () => { confi
         continue;
       }
       // DB errors are fatal (thrown out of the loop).
-      await observeSnapshot(sql, source, text, dryRun, token, chatId);
+      await observeSnapshot(sql, source, text, dryRun, channels, dependencies.fetcher);
       results.push({ id: source.id, status: 'ok' });
     }
   } finally {
@@ -209,18 +279,18 @@ export async function main(args = process.argv.slice(2), loadEnv = () => { confi
   const failed = results.filter((result) => result.status === 'failed');
   console.log(`quota-text-monitor: ${results.filter((r) => r.status === 'ok').length} ok, ${failed.length} failed, ${results.filter((r) => r.status === 'disabled').length} disabled`
     + (failed.length ? ` (failed: ${failed.map((r) => `${r.id}=${r.detail}`).join('; ')})` : ''));
-  const statePath = process.env.QUOTA_MONITOR_STATE_FILE;
+  const statePath = env.QUOTA_MONITOR_STATE_FILE;
   if (!dryRun && statePath && !sourceId) {
-    const threshold = Math.max(1, Number(process.env.QUOTA_MONITOR_FAIL_ALERT_DAYS) || 3);
+    const threshold = Math.max(1, Number(env.QUOTA_MONITOR_FAIL_ALERT_DAYS) || 3);
     const state = await readState(statePath);
     const reached = updateFailureState(state, results, threshold);
-    if (reached.length && token) {
+    if (reached.length) {
       const lines = reached.map((id) => `${id}: ${state[id].lastError}`).join('\n');
       try {
-        await sendTelegram(token, chatId, `[aiplans] Quota monitor: source failing ${threshold}+ consecutive runs\n${lines}\nFix the URL/extraction or set enabled:false in scripts/config/quota-text-sources.ts`);
-      } catch (error) {
+        await sendAlert(channels, `[aiplans] Quota monitor: source failing ${threshold}+ consecutive runs\n${lines}\nFix the URL/extraction or set enabled:false in scripts/config/quota-text-sources.ts`, dependencies.fetcher);
+      } catch {
         for (const id of reached) delete state[id].alertedAt; // retry next run
-        console.error(`quota-text-monitor: failure alert not sent (${error instanceof Error ? error.message : 'Telegram failed'})`);
+        console.warn('quota-text-monitor: WARN failure alert not sent; alert remains pending');
       }
     }
     await writeState(statePath, state);

@@ -77,12 +77,14 @@ export function snapshotDecision(latest: SnapshotState | undefined, known: Snaps
   };
 }
 
-export function monitorOptions(args: string[]): { dryRun: boolean; sourceId?: string } {
+export function monitorOptions(args: string[]): { dryRun: boolean; sourceId?: string; testAlert: boolean } {
   for (const arg of args) {
-    if (arg !== '--apply' && arg !== '--dry-run' && !/^--source=.+$/.test(arg)) throw new Error(`Unknown argument: ${arg}`);
+    if (arg !== '--test-alert' && arg !== '--apply' && arg !== '--dry-run' && !/^--source=.+$/.test(arg)) throw new Error(`Unknown argument: ${arg}`);
   }
   if (args.includes('--apply') && args.includes('--dry-run')) throw new Error('Choose --apply or --dry-run');
   const sources = args.filter((arg) => arg.startsWith('--source='));
   if (sources.length > 1) throw new Error('Specify --source only once');
-  return { dryRun: !args.includes('--apply'), sourceId: sources[0]?.slice('--source='.length) };
+  const testAlert = args.includes('--test-alert');
+  if (testAlert && args.length !== 1) throw new Error('Use --test-alert on its own');
+  return { dryRun: !args.includes('--apply'), sourceId: sources[0]?.slice('--source='.length), testAlert };
 }
