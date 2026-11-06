@@ -41,6 +41,13 @@ test('legacy Cursor Ultra multiple uses the official $200 fee for the Cursor Mod
   assert.equal(cursor.usd.mid, 3021.76);
   assert.ok(Math.abs(feeMultiple(cursor)!.mid - 3021.76 / 200) < 1e-9);
   assert.equal(Math.round(feeMultiple(cursor)!.mid), 15);
+  const week = QUOTA_LEADER_ROWS.find(r => r.id === 'cursor-legacy-week')!;
+  assert.equal(week.rough, true);
+  assert.equal(week.derivedFromWeek, undefined);
+  assert.equal(week.feeUsdMonthly, 200);
+  assert.ok(Math.abs(week.usd.mid - cursor.usd.mid / WEEKS_PER_MONTH) < 1e-9);
+  assert.ok(Math.abs(feeMultiple(week)!.mid - feeMultiple(cursor)!.mid) < 1e-6);
+  assert.equal(rankLeaderboard('week', 'multiple').ranked.at(-1)?.id, 'cursor-legacy-week');
   const byMultiple = rankLeaderboard('month', 'multiple');
   assert.equal(byMultiple.ranked.at(-1)?.id, 'cursor-legacy-month');
   assert.deepEqual(byMultiple.unverified, []);
@@ -96,10 +103,12 @@ test('published windows change order between fee multiple and absolute value', (
     'claude-pro-week-output',
     'x-ultra-week',
     'codex-pro-week',
+    'cursor-legacy-week',
   ]);
   assert.deepEqual(rankLeaderboard('week', 'usd').ranked.map(r => r.id), [
     'x-ultra-week',
     'codex-pro-week',
+    'cursor-legacy-week',
     'claude-pro-week-agentic',
     'volcengine-pro-week',
     'claude-pro-week-output',

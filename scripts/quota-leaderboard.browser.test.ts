@@ -28,10 +28,12 @@ const WEEK_BY_MULTIPLE = [
   'claude-pro-week-output',
   'x-ultra-week',
   'codex-pro-week',
+  'cursor-legacy-week',
 ];
 const WEEK_BY_USD = [
   'x-ultra-week',
   'codex-pro-week',
+  'cursor-legacy-week',
   'claude-pro-week-agentic',
   'volcengine-pro-week',
   'claude-pro-week-output',
