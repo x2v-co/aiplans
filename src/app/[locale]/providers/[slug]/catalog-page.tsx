@@ -32,6 +32,7 @@ import { buildProviderCopy, type ProviderCopyPlan } from "@/lib/provider-copy";
 import { getTranslations } from 'next-intl/server';
 import { getGroupedProducts } from '@/lib/grouped-products';
 import { ProviderApiModels } from '@/components/provider-api-models';
+import { ModelLifecycleBadge } from '@/components/model-lifecycle-badge';
 import { ProviderOutboundLink } from '@/components/provider-outbound-link';
 import { outboundChannelDataset } from '@/lib/funnel-analytics';
 import { providerOrganization, providerModelPath } from '@/lib/provider-page';
@@ -556,6 +557,11 @@ export default async function ProviderPage({
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="py-4">
                       <h3 className="font-medium">{publicModelName(model.name)}</h3>
+                      {model.shutdown_date && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <ModelLifecycleBadge shutdownDate={model.shutdown_date} replacement={model.replacement_model} />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </Link>

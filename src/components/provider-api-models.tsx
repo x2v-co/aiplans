@@ -1,4 +1,5 @@
 import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
+import { ModelLifecycleBadge } from '@/components/model-lifecycle-badge';
 import Link from 'next/link';
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { getTranslations } from 'next-intl/server';
@@ -28,6 +29,11 @@ export async function ProviderApiModels({ products, locale, now }: { products: G
                 <Link href={`/${locale}${providerModelPath(row.model_slug || product.slug, product.modelCategory)}`} className="text-blue-600 hover:underline">
                   {formatModelName(product.name)}{row.variant?.length ? ` (${row.variant.join(', ')})` : ''}
                 </Link>
+                {(row.member_shutdown_date ?? product.shutdown_date) && (
+                  <div className="mt-1 flex flex-wrap items-center gap-2 font-normal">
+                    <ModelLifecycleBadge shutdownDate={row.member_shutdown_date ?? product.shutdown_date} replacement={product.replacement_model} />
+                  </div>
+                )}
                 <ChannelTermsBadges terms={row} />
                           <DeepSeekWindowPrices variants={row.price_variants} />
                 <LimitedTimeOfferMark row={row} locale={locale} now={now} />

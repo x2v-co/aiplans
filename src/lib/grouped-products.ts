@@ -86,6 +86,7 @@ export interface GroupedProduct {
   };
   modelCategory?: string | null;
   shutdown_date?: string | null;
+  replacement_model?: string | null;
   baseName: string;
   versions: ChannelPrice[];
   hasChinaVersion: boolean;
@@ -165,7 +166,7 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
   // Provider pages include every available model category sold by that channel.
   const [modelsData, channelPrices, benchmarkScores] = await Promise.all([
     sql<any[]>`
-      SELECT id, name, slug, provider_ids, model_category, context_window, released_at, created_at, shutdown_date::text
+      SELECT id, name, slug, provider_ids, model_category, context_window, released_at, created_at, shutdown_date::text, replacement_model
       FROM models
       WHERE (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date) AND (
         (${providerId ?? null}::int IS NULL AND type = ${type || 'llm'})
@@ -350,6 +351,7 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
         providers: displayProvider,
         modelCategory: product.model_category,
         shutdown_date: product.shutdown_date ?? null,
+        replacement_model: product.replacement_model ?? null,
         baseName,
         versions: productPrices as ChannelPrice[],
         hasChinaVersion,
@@ -373,6 +375,7 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
       // a dated snapshot or variant that created the group first yields to it.
       if (!variant && isCanonicalSlug(product.slug)) {
         group.shutdown_date = product.shutdown_date ?? null;
+        group.replacement_model = product.replacement_model ?? null;
         group.id = product.id;
         group.name = product.name;
         group.slug = product.slug;
