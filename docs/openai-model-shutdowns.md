@@ -37,6 +37,18 @@ Replacements: `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`,
 `openai-gpt-4-1-mini` and `openai-gpt-4-1-mini-batch` follow the 2026-10-14
 batch (2027-01-14, `gpt-6-luna`).
 
+2026-11-06 (Intel P0): re-checked <https://platform.openai.com/docs/deprecations>.
+`tts-1` and `tts-1-hd` were announced deprecated on 2026-10-01 and leave the API
+on 2027-01-06 (replacement `gpt-realtime-2.1-mini`). `gpt-4o-transcribe` and
+`gpt-4o-mini-transcribe` were notified on 2026-08-26 and leave the API on
+2027-02-26 (replacement `gpt-live-transcribe or gpt-transcribe`). List prices
+are not part of this update. Voice catalog rows carry the same dates. Narrow a
+dry-run with `--slug`:
+
+```bash
+npm run seed:openai-shutdowns -- --dry-run --slug tts-1,tts-1-hd,gpt-4o-transcribe,gpt-4o-mini-transcribe
+```
+
 The seed defaults to a serializable READ ONLY transaction and prints model field
 diffs plus channel/variant rows to disable. `--apply` writes all changes in one
 transaction. It disables every channel and variant whose model's shutdown day

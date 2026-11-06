@@ -46,10 +46,27 @@ test('1105 catalog carries the officially verified voice prices and is listed un
   assert.deepEqual([price('deepgram-nova-3').price, price('deepgram-aura-2').price, price('deepgram-aura-2').unit], [0.0077, 0.03, 'per_1k_characters']);
   assert.deepEqual([price('assemblyai-universal-3-5-pro').price, price('assemblyai-universal-2').price], [0.21, 0.15]);
   const voice = new Set(catalogForKind('voice-model').map(i => i.slug));
+  const deprecated: Record<string, [string, string, string]> = {
+    'tts-1': ['2026-10-01', '2027-01-06', 'gpt-realtime-2.1-mini'],
+    'tts-1-hd': ['2026-10-01', '2027-01-06', 'gpt-realtime-2.1-mini'],
+    'gpt-4o-transcribe': ['2026-08-26', '2027-02-26', 'gpt-live-transcribe or gpt-transcribe'],
+    'gpt-4o-mini-transcribe': ['2026-08-26', '2027-02-26', 'gpt-live-transcribe or gpt-transcribe'],
+  };
   for (const item of CATALOG_1105) {
     assert.ok(voice.has(item.slug), item.slug);
-    assert.equal(item.lastVerified, '2026-11-05');
     assert.match(item.sourceUrls![0].url, /^https:\/\/(platform\.openai\.com|elevenlabs\.io|deepgram\.com|www\.assemblyai\.com)\//);
+    const notice = item.slug ? deprecated[item.slug] : undefined;
+    if (!notice) {
+      assert.equal(item.status, 'available', item.slug);
+      assert.equal(item.shutdownDate, undefined, item.slug);
+      assert.equal(item.lastVerified, '2026-11-05', item.slug);
+      continue;
+    }
+    assert.equal(item.status, 'deprecated', item.slug);
+    assert.deepEqual([item.deprecatedAt, item.shutdownDate, item.replacementModel], notice, item.slug);
+    assert.equal(item.deprecationSourceUrl, 'https://platform.openai.com/docs/deprecations', item.slug);
+    assert.equal(item.lastVerified, '2026-11-06', item.slug);
+    assert.equal(item.verifiedAt, '2026-11-06', item.slug);
   }
   assert.equal(new Set(MODEL_SLUGS).size, MODEL_SLUGS.length);
 });

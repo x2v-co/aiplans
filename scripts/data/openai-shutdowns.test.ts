@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { OPENAI_SHUTDOWNS, planOpenAIShutdowns, shutdownSeedMode, type ShutdownModelRow } from './openai-shutdowns';
+import { OPENAI_SHUTDOWNS, planOpenAIShutdowns, selectShutdowns, shutdownSeedMode, type ShutdownModelRow } from './openai-shutdowns';
 
 const rowsFor = (slugs: string[]): ShutdownModelRow[] => slugs.map((slug, i) => ({ id: i + 1, slug,
   shutdown_date: null, deprecated_at: null, replacement_model: null, deprecation_source_url: null }));
@@ -15,6 +15,7 @@ test('all audit batches match exact production slugs without conflating snapshot
     '2027-01-14': ['gpt-4o','gpt-4o-mini','gpt-4.1','gpt-4.1-mini','openai-gpt-4o-mini-batch','openai-gpt-4-1-mini','openai-gpt-4-1-mini-batch'],
     '2027-04-01': ['gpt-5.1','gpt-5.3-codex','gpt-5.4-nano'],
     '2027-01-06': ['tts-1','tts-1-hd'],
+    '2027-02-26': ['gpt-4o-transcribe','gpt-4o-mini-transcribe'],
   };
   for (const [date, slugs] of Object.entries(batches)) {
     const plan = planOpenAIShutdowns(rowsFor(slugs));
@@ -77,6 +78,19 @@ test('idempotent and preserves unknown announcements/replacements instead of mak
   assert.deepEqual(planOpenAIShutdowns(seeded).updates, []);
   assert.equal(plan.updates.find(update => update.slug === 'gpt-5.1')?.to.deprecated_at, null);
   assert.equal(plan.updates.find(update => update.slug === 'gpt-5.1')?.to.replacement_model, null);
+  for (const slug of ['tts-1', 'tts-1-hd']) {
+    const to = plan.updates.find(update => update.slug === slug)?.to;
+    assert.equal(to?.shutdown_date, '2027-01-06', slug);
+    assert.equal(to?.deprecated_at, '2026-10-01', slug);
+    assert.equal(to?.replacement_model, 'gpt-realtime-2.1-mini', slug);
+    assert.equal(to?.deprecation_source_url, 'https://platform.openai.com/docs/deprecations', slug);
+  }
+  for (const slug of ['gpt-4o-transcribe', 'gpt-4o-mini-transcribe']) {
+    const to = plan.updates.find(update => update.slug === slug)?.to;
+    assert.equal(to?.shutdown_date, '2027-02-26', slug);
+    assert.equal(to?.deprecated_at, '2026-08-26', slug);
+    assert.equal(to?.replacement_model, 'gpt-live-transcribe or gpt-transcribe', slug);
+  }
 });
 
 test('channel disable SQL only covers slugs this script manages', () => {
@@ -88,12 +102,19 @@ test('channel disable SQL only covers slugs this script manages', () => {
   assert.doesNotMatch(apply, /WHERE shutdown_date <= \(now\(\) AT TIME ZONE 'UTC'\)::date\)/);
 });
 
-test('writes require an explicit, unambiguous apply flag', () => {
-  assert.equal(shutdownSeedMode([]), 'dry-run');
-  assert.equal(shutdownSeedMode(['--dry-run']), 'dry-run');
-  assert.equal(shutdownSeedMode(['--apply']), 'apply');
+test('writes require an explicit, unambiguous apply flag; --slug narrows exact ids', () => {
+  assert.equal(shutdownSeedMode([]).mode, 'dry-run');
+  assert.equal(shutdownSeedMode([]).slugs, null);
+  assert.equal(shutdownSeedMode(['--dry-run']).mode, 'dry-run');
+  assert.equal(shutdownSeedMode(['--apply']).mode, 'apply');
+  assert.deepEqual([...shutdownSeedMode(['--slug', 'tts-1,tts-1-hd', '--slug=gpt-4o-transcribe']).slugs!].sort(), ['gpt-4o-transcribe', 'tts-1', 'tts-1-hd']);
+  const onlyTts = selectShutdowns(OPENAI_SHUTDOWNS, new Set(['tts-1']));
+  assert.deepEqual(onlyTts.filter(item => item.ids.includes('tts-1')).flatMap(item => [...item.ids]), ['tts-1']);
+  assert.equal(onlyTts.some(item => item.ids.includes('tts-1-hd')), false);
+  assert.throws(() => selectShutdowns(OPENAI_SHUTDOWNS, new Set(['not-a-model'])), /Unknown or non-seedable --slug: not-a-model/);
   assert.throws(() => shutdownSeedMode(['--apply','--dry-run']), /Usage/);
   assert.throws(() => shutdownSeedMode(['--aply']), /Usage/);
+  assert.throws(() => shutdownSeedMode(['--slug']), /Usage/);
 });
 
 test('conflicting notices fail even if one of the dates already matches the DB', () => {
