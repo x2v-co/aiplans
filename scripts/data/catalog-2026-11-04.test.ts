@@ -163,7 +163,7 @@ test('1104 embedding category has exact multimodal and OpenAI rates without fabr
   assert.match(google.notes!, /2028-05-14/);
   assert.deepEqual(EMBEDDING_MODELS_1104.slice(1).map(r => r.inputPricePer1M), [0.02, 0.13, 0.1]);
   for (const item of EMBEDDING_MODELS_1104) assert.equal(item.outputPricePer1M, undefined);
-  assert.deepEqual(catalogForKind('embedding-model'), EMBEDDING_MODELS_1104);
+  assert.deepEqual(catalogForKind('embedding-model').slice(0, EMBEDDING_MODELS_1104.length), EMBEDDING_MODELS_1104);
   for (const locale of ['en', 'zh']) {
     const html = renderToStaticMarkup(createElement(EmbeddingModelCatalog, { items: EMBEDDING_MODELS_1104, locale }));
     for (const item of EMBEDDING_MODELS_1104) assert.ok(html.includes(`/${locale}/embedding-models/${item.slug}`));

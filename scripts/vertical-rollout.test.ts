@@ -250,6 +250,8 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
     [
       ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-04:apply' && item.kind !== 'music-model').map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-04:apply`),
+      ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-06-embeddings:apply').map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-06-embeddings:apply`),
       ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-05-intel:apply').map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-05-intel:apply`),
       ...PERPLEXITY_DECIDER_CATALOG.map(item =>
@@ -706,7 +708,11 @@ test('pricing seed updates every duplicate usage row and prints each id', async 
 
 test('embedding vertical serves audited models through localized routes, navigation, search and sitemap', () => {
   const items = catalog.catalogForKind('embedding-model');
-  assert.deepEqual(items.map(item => item.slug), ['gemini-embedding-2', 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002']);
+  assert.deepEqual(items.map(item => item.slug), [
+    'gemini-embedding-2', 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002',
+    'voyage-4-large', 'voyage-4', 'voyage-4-lite', 'voyage-context-4', 'voyage-code-4',
+    'embed-v5.0-pro', 'embed-v5.0-fast', 'text-embedding-v4',
+  ]);
   for (const suffix of ['page.tsx', '[slug]/page.tsx']) {
     const route = readFileSync(new URL(`../src/app/[locale]/embedding-models/${suffix}`, import.meta.url), 'utf8');
     assert.match(route, /embedding-model/);
@@ -730,6 +736,7 @@ test('embedding vertical serves audited models through localized routes, navigat
   for (const [path, expected] of files) assert.match(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'), expected, path);
   for (const item of items) {
     assert.equal(item.deferredDbSeed, true);
-    assert.equal(item.deferredDbSeedScript, 'seed:catalog-2026-11-04:apply');
+    const added1106 = ['voyage-4-large', 'voyage-4', 'voyage-4-lite', 'voyage-context-4', 'voyage-code-4', 'embed-v5.0-pro', 'embed-v5.0-fast', 'text-embedding-v4'];
+    assert.equal(item.deferredDbSeedScript, added1106.includes(item.slug!) ? 'seed:catalog-2026-11-06-embeddings:apply' : 'seed:catalog-2026-11-04:apply');
   }
 });
