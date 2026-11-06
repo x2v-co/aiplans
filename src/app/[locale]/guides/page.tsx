@@ -56,21 +56,21 @@ export default async function GuidesPage({
         <Link
           href={`/${locale}/quota-bench`}
           data-testid="quota-bench-entry"
-          className="mt-8 flex items-center justify-between gap-4 rounded-md border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-950 transition-colors hover:border-emerald-300 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-50 dark:hover:bg-emerald-950/60"
+          className="mt-8 flex flex-col gap-4 rounded-lg border-2 border-emerald-700 bg-emerald-600 px-5 py-5 text-white shadow-md transition-colors hover:bg-emerald-700 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-6 dark:border-emerald-300 dark:bg-emerald-700 dark:hover:bg-emerald-600"
         >
           <span>
-            <span className="block font-semibold">
+            <span className="block text-2xl font-bold tracking-tight">
               {locale === 'zh' ? '套餐额度实测榜' : 'Plan quota leaderboard'}
             </span>
-            <span className="mt-1 block text-sm font-normal text-emerald-900/80 dark:text-emerald-100/80">
+            <span className="mt-2 block text-base leading-6 text-emerald-50">
               {locale === 'zh'
                 ? '按月费倍数看各套餐的实测额度。'
                 : 'Measured allowances ranked by fee multiple.'}
             </span>
           </span>
-          <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium">
+          <span className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-md bg-white px-5 py-3 text-base font-semibold text-emerald-800 shadow-sm sm:w-auto">
             {locale === 'zh' ? '查看榜单' : 'Open leaderboard'}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-5 w-5" />
           </span>
         </Link>
 

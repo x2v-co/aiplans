@@ -34,6 +34,9 @@ test('guides index links to the quota leaderboard; header and footer do not', ()
   assert.ok(page.includes('`/${locale}/quota-bench`'));
   assert.match(page, /套餐额度实测榜/);
   assert.match(page, /Plan quota leaderboard/);
+  assert.match(page, /text-2xl font-bold/);
+  assert.match(page, /bg-emerald-600/);
+  assert.match(page, /bg-white px-5 py-3/);
   assert.match(page, /PRICING_GUIDE_SLUGS\.map/);
   for (const file of ['src/components/SiteHeader.tsx', 'src/components/Footer.tsx']) {
     assert.doesNotMatch(readFileSync(file, 'utf8'), /quota-bench/, file);
