@@ -50,7 +50,7 @@ export const STATIC_PATHS: StaticSitemapPath[] = [
   { path: '/voice-models', priority: 0.78, changefreq: 'weekly', lastmod: catalog(['voice-model'], '2026-10-15') },
   { path: '/image-models', priority: 0.78, changefreq: 'weekly', lastmod: catalog(['image-model'], '2026-10-15') },
   { path: '/decision-models', priority: 0.78, changefreq: 'weekly', lastmod: catalog(['decision-model'], '2026-10-15') },
-  { path: '/embedding-models', priority: 0.78, changefreq: 'weekly', lastmod: catalog(['embedding-model'], '2026-11-04') },
+  { path: '/embedding-models', priority: 0.78, changefreq: 'weekly', lastmod: catalog(['embedding-model'], '2026-11-06') },
   { path: '/world-models', priority: 0.78, changefreq: 'weekly', lastmod: catalog(['world-model'], '2026-10-15') },
   { path: '/coupons', priority: 0.7, changefreq: 'weekly', lastmod: DATA },
   { path: '/about', priority: 0.4, changefreq: 'monthly', lastmod: INFO_PAGES },
