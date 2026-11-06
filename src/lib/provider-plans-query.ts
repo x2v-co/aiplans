@@ -28,7 +28,7 @@ export async function getPlansByProvider(providerSlug: string) {
   const modelIds = await getAllModelIdsForProvider(provider.id, planIds);
   const uniqueModels: ProviderModelRecord[] = modelIds.length > 0
     ? [...await sql<ProviderModelRecord[]>`
-        SELECT id, name, slug, model_category
+        SELECT id, name, slug, model_category, shutdown_date::text, replacement_model
         FROM models
         WHERE id = ANY(${sql.array(modelIds, INT4_ARRAY)})
           AND (shutdown_date IS NULL OR shutdown_date > (now() AT TIME ZONE 'UTC')::date)

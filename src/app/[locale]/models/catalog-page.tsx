@@ -182,7 +182,7 @@ export default async function ModelsCatalogPage({
                           {logo && <img src={logo} alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-lg object-contain" />}
                           <div className="min-w-0">
                             <h3 className="truncate text-lg font-semibold group-hover:text-blue-600">{formatModelName(model.name)}</h3>
-                            <ModelLifecycleBadge shutdownDate={model.shutdown_date} />
+                            <ModelLifecycleBadge shutdownDate={model.shutdown_date} replacement={model.replacement_model} />
                             <p className="truncate text-sm text-zinc-500">{model.providers?.name ?? (isZh ? '未知供应商' : 'Unknown provider')}</p>
                           </div>
                         </div>

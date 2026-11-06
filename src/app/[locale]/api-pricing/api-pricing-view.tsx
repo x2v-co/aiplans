@@ -499,7 +499,7 @@ export default function ApiPricingView({
                             >
                               {formatModelName(product.name)}
                             </Link>
-                            <ModelLifecycleBadge shutdownDate={product.shutdown_date} />
+                            <ModelLifecycleBadge shutdownDate={product.shutdown_date} replacement={product.replacement_model} />
                             {product.benchmark_arena_elo && (
                               <Badge variant="outline" className="ml-2" title="Agent Arena net improvement">
                                 Agent {product.benchmark_arena_elo}%

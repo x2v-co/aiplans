@@ -43,7 +43,10 @@ export type ProviderPlanRecord = EconomicPlan & ChannelTermsFields & {
   third_party_coverage_note: string | null;
 };
 
-export type ProviderModelRecord = { id: number; name: string; slug: string; model_category?: string | null };
+export type ProviderModelRecord = {
+  id: number; name: string; slug: string; model_category?: string | null;
+  shutdown_date?: string | null; replacement_model?: string | null;
+};
 
 export function providerModelPath(slug: string, category?: string | null): string {
   const route = category === 'video' ? 'video-models'
