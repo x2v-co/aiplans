@@ -12,6 +12,9 @@ export function isExplicitlyUnverifiedPrice(row: {
 /** Verified free channels. A free gateway must never exempt other model channels. */
 export function isVerifiedFreePrice(modelSlug: string | undefined, providerSlug: string | undefined) {
   if (providerSlug === 'zhipu-china' && (modelSlug === 'glm-4.7-flash' || modelSlug === 'glm-4.6v-flash')) return true;
+  // Ant Ling pricing page, verified 2026-11-06: Ling-3.2-flash is free for the first two weeks
+  // after the 2026-11-05 launch. No post-promo price. Only this official channel is exempt.
+  if (providerSlug === 'inclusionai' && modelSlug === 'inclusionai-ling-3-2-flash') return true;
   // https://opencode.ai/docs/zen/ Free models (2026-10-15): limited-time free endpoint deepseek-v4.1-flash-free.
   if (providerSlug === 'opencode-zen' && modelSlug === 'deepseek-v4.1-flash') return true;
   // Vercel endpoints + changelog verified 2026-10-17: only the Reflection-hosted
