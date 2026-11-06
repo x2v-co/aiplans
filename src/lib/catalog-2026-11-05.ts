@@ -30,6 +30,19 @@ const perHour = (price: number, kind: string): Partial<AiCatalogItem> => ({
   pricing: `$${price.toFixed(2)}/hour`, unit: 'hour', pricingUnit: 'per_hour', pricePerUnit: price,
   usageRates: [rate(kind, price, 'hour')],
 });
+/** Checked 2026-11-06 on https://platform.openai.com/docs/deprecations. Prices stay on the 11-05 pricing page. */
+export const OPENAI_DEPRECATIONS_1106 = 'https://platform.openai.com/docs/deprecations';
+function openaiVoiceDeprecation(announced: string, shutdown: string, replacement: string): Partial<AiCatalogItem> {
+  return {
+    status: 'deprecated', deprecatedAt: announced, shutdownDate: shutdown, replacementModel: replacement,
+    deprecationSourceUrl: OPENAI_DEPRECATIONS_1106, lastVerified: '2026-11-06', verifiedAt: '2026-11-06',
+    notes: `Deprecated ${announced}; removed from the API on ${shutdown}. Replacement: ${replacement}. List prices are unchanged.`,
+    sourceUrls: [
+      { label: 'OpenAI official pricing', url: SOURCES_1105.openai, publisher: 'OpenAI' },
+      { label: 'OpenAI deprecations', url: OPENAI_DEPRECATIONS_1106, publisher: 'OpenAI' },
+    ],
+  };
+}
 
 export const OPENAI_VOICE_1105: AiCatalogItem[] = [
   voice('gpt-live-1', 'gpt-live-1', 'OpenAI', 'openai', false, {
@@ -40,10 +53,12 @@ export const OPENAI_VOICE_1105: AiCatalogItem[] = [
   voice('gpt-4o-transcribe', 'gpt-4o-transcribe', 'OpenAI', 'openai', true, {
     pricing: '$2.50/M audio input tokens; $10.00/M output tokens; ≈$0.006/minute', unit: 'per_1m_tokens', pricingUnit: 'per_1m_tokens',
     inputPricePer1M: 2.5, outputPricePer1M: 10, usageRates: [rate('audio_input', 2.5, 'per_1m_tokens'), rate('text_output', 10, 'per_1m_tokens'), rate('transcription_estimate', 0.006, 'minute', true)],
+    ...openaiVoiceDeprecation('2026-08-26', '2027-02-26', 'gpt-live-transcribe or gpt-transcribe'),
   }),
   voice('gpt-4o-mini-transcribe', 'gpt-4o-mini-transcribe', 'OpenAI', 'openai', true, {
     pricing: '$1.25/M audio input tokens; $5.00/M output tokens; ≈$0.003/minute', unit: 'per_1m_tokens', pricingUnit: 'per_1m_tokens',
     inputPricePer1M: 1.25, outputPricePer1M: 5, usageRates: [rate('audio_input', 1.25, 'per_1m_tokens'), rate('text_output', 5, 'per_1m_tokens'), rate('transcription_estimate', 0.003, 'minute', true)],
+    ...openaiVoiceDeprecation('2026-08-26', '2027-02-26', 'gpt-live-transcribe or gpt-transcribe'),
   }),
   voice('gpt-live-transcribe', 'gpt-live-transcribe', 'OpenAI', 'openai', true, { ...perMinute(0.017, 'transcription_streaming'), capabilities: ['ASR', 'streaming'] }),
   voice('gpt-realtime-whisper', 'gpt-realtime-whisper', 'OpenAI', 'openai', true, { ...perMinute(0.017, 'transcription_streaming'), capabilities: ['ASR', 'streaming'] }),
@@ -51,6 +66,7 @@ export const OPENAI_VOICE_1105: AiCatalogItem[] = [
     // models_pricing_unit_chk has no per_1m_characters; official $15/$30 per 1M chars = $0.015/$0.03 per 1K.
     pricing: `$${price.toFixed(3)}/1K characters ($${(price * 1000).toFixed(2)}/1M)`, unit: '1K characters', pricingUnit: 'per_1k_characters',
     usageRates: [rate('text_to_speech', price, 'per_1k_characters')],
+    ...openaiVoiceDeprecation('2026-10-01', '2027-01-06', 'gpt-realtime-2.1-mini'),
   })),
 ];
 

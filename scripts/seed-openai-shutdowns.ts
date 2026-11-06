@@ -1,8 +1,9 @@
 #!/usr/bin/env tsx
 /** Default: read-only dry run. Only --apply writes; never creates model rows. */
-import { OPENAI_SHUTDOWNS, planOpenAIShutdowns, shutdownSeedMode, type Shutdown, type ShutdownModelRow } from './data/openai-shutdowns';
+import { OPENAI_SHUTDOWNS, planOpenAIShutdowns, selectShutdowns, shutdownSeedMode, type Shutdown, type ShutdownModelRow } from './data/openai-shutdowns';
 
-export async function runShutdownSeed(shutdowns: readonly Shutdown[], mode: 'apply' | 'dry-run') {
+export async function runShutdownSeed(shutdowns: readonly Shutdown[], mode: 'apply' | 'dry-run', slugs: Set<string> | null = null) {
+  shutdowns = selectShutdowns(shutdowns, slugs);
   const { databaseSql: sql } = await import('./db/postgres-admin');
   try {
     console.log(`seed-openai-shutdowns [${mode.toUpperCase()}]`);
@@ -61,6 +62,6 @@ export async function runShutdownSeed(shutdowns: readonly Shutdown[], mode: 'app
 }
 
 if (require.main === module) {
-  const mode = shutdownSeedMode(process.argv.slice(2));
-  runShutdownSeed(OPENAI_SHUTDOWNS, mode).catch(error => { console.error(error); process.exitCode = 1; });
+  const options = shutdownSeedMode(process.argv.slice(2));
+  runShutdownSeed(OPENAI_SHUTDOWNS, options.mode, options.slugs).catch(error => { console.error(error); process.exitCode = 1; });
 }

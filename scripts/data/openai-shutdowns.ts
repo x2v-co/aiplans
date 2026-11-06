@@ -1,6 +1,6 @@
 /**
  * Exact-slug shutdown catalog, extended from audit A2 #1 (2026-10-15).
- * Verified 2026-10-14, re-checked 2026-10-29: https://platform.openai.com/docs/deprecations
+ * Verified 2026-10-14, re-checked 2026-10-29 and 2026-11-06: https://platform.openai.com/docs/deprecations
  * Fine-tunes follow their base; we do not invent fine-tune catalog rows.
  */
 export const OPENAI_DEPRECATION_SOURCE = 'https://platform.openai.com/docs/deprecations';
@@ -52,7 +52,10 @@ export const OPENAI_SHUTDOWNS: readonly Shutdown[] = [
   { shutdownDate: '2026-12-01', ids: ['gpt-image-1-mini'], replacementModel: 'gpt-image-2.5-sunburst or gpt-image-2.5-flare' },
   { ...batchA, ids: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini'] },
   { shutdownDate: '2027-04-01', ids: ['gpt-5.1', 'gpt-5.3-codex', 'gpt-5.4-nano'] },
-  { shutdownDate: '2027-01-06', ids: ['tts-1', 'tts-1-hd'] },
+  // 2026-11-06 (Intel P0-1): announced 2026-10-01, removed 2027-01-06. Prices unchanged.
+  { announcedOn: '2026-10-01', shutdownDate: '2027-01-06', ids: ['tts-1', 'tts-1-hd'], replacementModel: 'gpt-realtime-2.1-mini' },
+  // 2026-11-06 (Intel P0-2): notified 2026-08-26, removed 2027-02-26. Prices unchanged.
+  { announcedOn: '2026-08-26', shutdownDate: '2027-02-26', ids: ['gpt-4o-transcribe', 'gpt-4o-mini-transcribe'], replacementModel: 'gpt-live-transcribe or gpt-transcribe' },
   // 2026-10-29 (Intel P0-1): the 2026-06-11 table lists each row as
   // "alias | snapshot", e.g. "gpt-5 | gpt-5-2025-08-07", so the undated aliases
   // are covered too (the 2026-10-19 note that only snapshots were listed was a
@@ -119,9 +122,40 @@ export function planOpenAIShutdowns(rows: readonly ShutdownModelRow[], shutdowns
   return { matches, updates: [...updates.values()] };
 }
 
-export function shutdownSeedMode(args: readonly string[]) {
-  if (args.some(arg => !['--apply', '--dry-run'].includes(arg)) || (args.includes('--apply') && args.includes('--dry-run'))) {
-    throw new Error('Usage: seed-openai-shutdowns.ts [--dry-run | --apply]');
+export interface ShutdownSeedOptions {
+  mode: 'apply' | 'dry-run';
+  /** Null means the whole catalog. An unknown slug throws before any write. */
+  slugs: Set<string> | null;
+}
+
+/** Keep only the requested exact slugs. A multi-id row is narrowed, not applied to its siblings. */
+export function selectShutdowns(shutdowns: readonly Shutdown[], slugs: Set<string> | null): Shutdown[] {
+  if (!slugs) return shutdowns.map(item => ({ ...item, ids: [...item.ids] }));
+  const known = new Set(shutdowns.flatMap(item => item.ids));
+  const unknown = [...slugs].filter(slug => !known.has(slug));
+  if (unknown.length) throw new Error(`Unknown or non-seedable --slug: ${unknown.join(', ')}`);
+  return shutdowns.flatMap(item => {
+    const ids = item.ids.filter(id => slugs.has(id));
+    return ids.length ? [{ ...item, ids }] : [];
+  });
+}
+
+export function shutdownSeedMode(args: readonly string[]): ShutdownSeedOptions {
+  const slugs: string[] = [];
+  const flags: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--slug') {
+      const value = args[i + 1];
+      if (!value || value.startsWith('--')) throw new Error('Usage: seed-openai-shutdowns.ts [--dry-run | --apply] [--slug a,b]');
+      slugs.push(...value.split(','));
+      i++;
+    } else if (arg.startsWith('--slug=')) slugs.push(...arg.slice('--slug='.length).split(','));
+    else flags.push(arg);
   }
-  return args.includes('--apply') ? 'apply' : 'dry-run';
+  if (flags.some(arg => !['--apply', '--dry-run'].includes(arg)) || (flags.includes('--apply') && flags.includes('--dry-run'))) {
+    throw new Error('Usage: seed-openai-shutdowns.ts [--dry-run | --apply] [--slug a,b]');
+  }
+  const cleaned = [...new Set(slugs.map(slug => slug.trim()).filter(Boolean))];
+  return { mode: flags.includes('--apply') ? 'apply' : 'dry-run', slugs: cleaned.length ? new Set(cleaned) : null };
 }
