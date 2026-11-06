@@ -559,9 +559,9 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
     // Used for related model links and dateModified only (priceTable: false).
     queryPatterns: ['%grok%', 'claude-%', 'gpt-%'],
     providerSlugs: ['xai'],
-    reviewedAt: '2026-11-05',
+    reviewedAt: '2026-11-06',
     publishedAt: '2026-10-13',
-    updatedAt: '2026-11-05',
+    updatedAt: '2026-11-06',
     summary: {
       conclusion: { en: 'The X Subscription pool is shared by Cursor and Grok and resets weekly; third-party models (Claude, GPT) are never included and bill at API list price. Heavy Claude/GPT users should compare legacy plans first, because switching is permanent.', zh: 'The X Subscription 用量池由 Cursor 与 Grok 共享、每周刷新；Claude、GPT 等第三方模型不含在额度内，按 API 标价另付。重度用第三方模型的先对比旧套餐再切，切换不可撤销。' },
       keyFacts: [
@@ -588,12 +588,12 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
         },
         {
           title: { en: 'B. Cursor Models pool', zh: 'B. Cursor Models 池' },
-          period: { en: 'Monthly pool (legacy); do not multiply', zh: '月池（旧套餐）；不乘系数' },
+          period: { en: 'Monthly Cursor Models pool (legacy). Not scaled from a weekly measurement.', zh: '月度 Cursor Models 池（旧套餐）。不是由周额度推算。' },
           rows: [
             {
               pool: { en: 'Legacy Cursor Ultra', zh: '旧套餐 Ultra' },
               value: { en: '≈ $3,022/month · conditional estimate / sample incomplete', zh: '约 $3,022/月 · 条件估算 / 样本未完成' },
-              basis: { en: 'Model: composer-2.5. Account owner confirmed on 2026-11-05 that this quota-bench-2026-10 measurement is legacy Cursor Ultra. Conditional estimate / sample not complete (12 of 16 calls used; CSV not reconciled; reset point not verified). Monthly pool figure — not multiplied, and no fee multiple is published. Not an official capacity promise.', zh: '所用模型：composer-2.5。账号持有人于 2026-11-05 确认 quota-bench-2026-10 的这次实测是旧套餐 Ultra。条件估算 / 样本未完成（16 轮中仅前 12 轮入算；CSV 未对账；重置点未核验）。本身是月池数字，不乘系数，也不发布月费倍数。不是官方容量承诺。' },
+              basis: { en: 'Cursor Models pool only, model composer-2.5; does not include Other Models. Account owner confirmed on 2026-11-05 that this quota-bench-2026-10 measurement is legacy Cursor Ultra. Conditional rough estimate / sample not complete (12 of 16 calls used; CSV not reconciled; reset point not verified). Fee multiple = this pool ÷ the official Ultra price of $200/month (https://cursor.com/docs/account/pricing/legacy-cursor-plans). Legacy plans have two monthly pools; that page does not say third-party usage is 2× API price. Not an official capacity promise.', zh: '只计 Cursor Models 池，模型 composer-2.5，不含 Other Models。账号持有人于 2026-11-05 确认 quota-bench-2026-10 的这次实测是旧套餐 Ultra。条件估算、标粗估 / 样本未完成（16 轮中仅前 12 轮入算；CSV 未对账；重置点未核验）。月费倍数 = 该池 ÷ 官方 Ultra 月费 $200（https://cursor.com/docs/account/pricing/legacy-cursor-plans）。旧套餐只有两个月池；该页没有写第三方等于 API 的 2 倍。不是官方容量承诺。' },
             },
             {
               pool: { en: 'New X Subscription', zh: '新 X Subscription' },
@@ -704,10 +704,10 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
         },
       },
       {
-        heading: { en: 'Legacy Cursor Models pool: ≈ $3,022 conditional estimate (sample incomplete)', zh: '旧套餐 Cursor Models 池：约 $3,022 条件估算（样本未完成）' },
+        heading: { en: 'Legacy Cursor Models pool: ≈ $3,022 conditional estimate (composer-2.5, sample incomplete)', zh: '旧套餐 Cursor Models 池：约 $3,022 条件估算（composer-2.5，样本未完成）' },
         body: {
-          en: 'Separately from the official Other Models dollar allowances ($20 / $70 / $400), the legacy monthly Cursor Models pool was measured conditionally in quota-bench-2026-10. Using composer-2.5 for the first 12 of 16 calls (801,760 tokens; meter 34.7423% → 34.7570%) and valuing tokens at Cursor’s published composer-2.5 list price yields about $3,022 for the pool (rounding band about $3,001–$3,042). Label: conditional estimate / sample not complete — batch 4 excluded, CSV not reconciled, reset point not verified. The account owner confirmed on 2026-11-05 that the measured subscription is legacy Cursor Ultra; the quota figures are unchanged, and this row is not given a fee multiple or attached to a plan card. This is not an official capacity promise and must not be mixed with the Grok weekly pool or the official Other Models allowances.',
-          zh: '与官方 Other Models 美元额度（$20 / $70 / $400）分开：旧套餐月度 Cursor Models 池在 quota-bench-2026-10 中有条件实测。用 composer-2.5，16 轮中仅前 12 轮（801,760 tokens；仪表 34.7423% → 34.7570%）入算，按 Cursor 公布的 composer-2.5 标价折合约 $3,022（舍入约 $3,001–$3,042）。口径：条件估算 / 样本未完成——第 4 批未计入、CSV 未对账、重置点未核验。账号持有人于 2026-11-05 确认该订阅是旧套餐 Ultra；额度数字未改，本行不计算月费倍数，也不挂到套餐卡片。这不是官方容量承诺，也不能与 Grok 周池或官方 Other Models 额度混成同一种东西。',
+          en: 'The about $3,022 figure is a conditional estimate of the legacy monthly Cursor Models pool only, measured with composer-2.5. It does not include Other Models. Official legacy plans (https://cursor.com/docs/account/pricing/legacy-cursor-plans, checked 2026-11-06) have two monthly pools: Cursor Models (Grok 4.7, Grok 4.6, Grok 4.5, and Composer 2.5) and Other Models (third-party models, drawn down at each model’s API price). Ultra costs $200/month. The page says Pro+ and Ultra include more of each pool than Pro. It does not say third-party usage is 2× the API price. “At least twice as much coding usage with Cursor models” describes The X Subscription versus the legacy plan it replaces, not a third-party multiplier. Legacy plans do not include Grok or X benefits. A Grok Bot allowance belongs to The X Subscription, not legacy Ultra. Measurement: the first 12 of 16 calls (801,760 tokens; meter 34.7423% → 34.7570%), valued at Cursor’s published composer-2.5 list price, about $3,022 (rounding band about $3,001–$3,042). Label: conditional rough estimate / sample not complete — batch 4 excluded, CSV not reconciled, reset point not verified. The account owner confirmed on 2026-11-05 that the subscription is legacy Cursor Ultra. Fee multiple = this Cursor Models estimate ÷ the $200 Ultra monthly fee. This is not an official capacity promise and is not attached to a catalog plan card.',
+          zh: '约 $3,022 只是旧套餐月度 Cursor Models 池的条件估算，所用模型是 composer-2.5，不含 Other Models。官方旧套餐说明（https://cursor.com/docs/account/pricing/legacy-cursor-plans，2026-11-06 核对）只有两个月池：Cursor Models（Grok 4.7、Grok 4.6、Grok 4.5 与 Composer 2.5）和 Other Models（第三方，按各模型 API 标价扣减）。Ultra 月费 $200。该页写 Pro+ 与 Ultra 比 Pro「more of each pool」，没有写第三方等于 API 的 2 倍。「至少两倍 Cursor 模型用量」说的是 The X Subscription 相对它所替换的旧套餐，不是第三方倍数。旧套餐不含 Grok / X 权益。Grok Bot 额度属于 The X Subscription，不属于旧 Ultra。实测：16 轮中仅前 12 轮（801,760 tokens；仪表 34.7423% → 34.7570%）入算，按 Cursor 公布的 composer-2.5 标价折合约 $3,022（舍入约 $3,001–$3,042）。口径：条件估算、标粗估 / 样本未完成——第 4 批未计入、CSV 未对账、重置点未核验。账号持有人于 2026-11-05 确认该订阅是旧套餐 Ultra。月费倍数 = 这一 Cursor Models 估算 ÷ Ultra 月费 $200。这不是官方容量承诺，也不挂到套餐卡片。',
         },
       },
       {

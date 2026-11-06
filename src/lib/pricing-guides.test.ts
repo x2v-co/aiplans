@@ -156,7 +156,7 @@ test('every guide has reviewed sources, at least three FAQs and complete bilingu
     const reviewedAt = slug === 'codex-pro-200-quota-benchmark' ? '2026-10-30'
       : slug === 'claude-pro-opus-5-5-quota' ? '2026-11-04'
       : slug === 'claude-anthropic-pricing' ? '2026-10-18'
-      : slug === 'cursor-x-subscription-pricing' ? '2026-11-05' : '2026-10-13';
+      : slug === 'cursor-x-subscription-pricing' ? '2026-11-06' : '2026-10-13';
     assert.equal(guide.reviewedAt, reviewedAt);
     assert.ok(guide.reviewedAt && Number.isFinite(Date.parse(guide.reviewedAt)));
     assert.ok(guide.faqs && guide.faqs.length >= 3, `missing FAQs for ${slug}`);
@@ -394,6 +394,12 @@ test('plan-quota guides state API-equivalent value(s) with basis, using numbers 
   assert.match(models.rows[0].basis.en, /legacy Cursor Ultra/);
   assert.match(models.rows[0].basis.zh, /旧套餐 Ultra/);
   assert.match(models.rows[0].basis.en, /sample not complete|incomplete/i);
+  assert.match(models.rows[0].basis.en, /Cursor Models pool only/);
+  assert.match(models.rows[0].basis.zh, /不含 Other Models/);
+  assert.match(models.rows[0].basis.en, /\$200\/month/);
+  assert.match(models.rows[0].basis.zh, /没有写第三方等于 API 的 2 倍/);
+  assert.match(models.rows[0].basis.zh, /composer-2\.5/);
+  assert.doesNotMatch(`${models.rows[0].basis.en} ${models.rows[0].basis.zh}`, /三池|three pools/i);
   assert.doesNotMatch(`${models.rows[0].pool?.en} ${models.rows[0].pool?.zh} ${models.rows[0].basis.en} ${models.rows[0].basis.zh}`, /tier unverified|档位未核验|套餐档位未核验/);
   assert.doesNotMatch(models.rows[0].basis.en, /week ×|× ?4\.35/);
   assert.match(other.rows[0].value.en, /\$20 \/ \$70 \/ \$400/);

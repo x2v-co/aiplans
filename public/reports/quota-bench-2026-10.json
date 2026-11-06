@@ -17,6 +17,11 @@
       "date": "2026-11-05",
       "zh": "账号持有人确认该 Cursor 实测量的是旧套餐 Ultra。名称改为 Cursor Ultra (legacy)，撤回“档位未核验”。额度、窗口与混合分组不变；本行不记录月费，不计算月费倍数，也不挂到套餐卡片。",
       "en": "The account owner confirmed this Cursor measurement is legacy Ultra. Relabel to Cursor Ultra (legacy) and drop the unverified-tier note. Quota, window and mixed workload group are unchanged; this row records no monthly fee, so it publishes no fee multiple and stays off catalog plan cards."
+    },
+    {
+      "date": "2026-11-06",
+      "zh": "按 https://cursor.com/docs/account/pricing/legacy-cursor-plans 核对：旧 Ultra 月费 $200，只有 Cursor Models 与 Other Models 两个月池。≈$3,022 标为 Cursor Models 池的 composer-2.5 条件估算，不含 Other Models。月费倍数改为该池 ÷ $200。该页没有写第三方等于 API 的 2 倍；Grok Bot 不属于旧套餐。仍不挂到套餐卡片。",
+      "en": "Checked against https://cursor.com/docs/account/pricing/legacy-cursor-plans: legacy Ultra is $200/month and has two monthly pools, Cursor Models and Other Models. The about $3,022 figure is labeled a composer-2.5 conditional estimate of the Cursor Models pool only. The fee multiple is that pool ÷ $200. The page does not say third-party usage is 2× API price, and Grok Bot is not part of the legacy plan. The row stays off catalog plan cards."
     }
   ],
   "records": [
@@ -166,7 +171,7 @@
       "tierVerification": {
         "source": "account_owner_confirmation",
         "confirmedAt": "2026-11-05",
-        "note": "Account owner confirmed on 2026-11-05 that this measurement is the legacy Cursor Ultra subscription. This is not independent billing verification. Quota figures are unchanged. No monthly fee is recorded on this row, so no fee multiple is published, and the row is not attached to a catalog plan card."
+        "note": "Account owner confirmed on 2026-11-05 that this measurement is the legacy Cursor Ultra subscription. This is not independent billing verification. The figure is the Cursor Models pool only (composer-2.5, conditional estimate) and does not include Other Models. The fee multiple uses the official legacy Ultra price of $200/month from https://cursor.com/docs/account/pricing/legacy-cursor-plans (checked 2026-11-06), not a charge read from this run. The row is not attached to a catalog plan card."
       },
       "calls": 16,
       "tokens": {
@@ -232,8 +237,8 @@
         }
       },
       "caveats": {
-        "zh": "有条件实测，非官方承诺：仅前 12 轮（801,760 tokens）对应额度 34.7423% → 34.7570%；第 4 批未计入，CSV 未对账。窗口按旧套餐 Ultra 的月度 Cursor Models 池处理，重置点未核验。账号持有人于 2026-11-05 确认套餐为旧套餐 Ultra。USD 为标准公开价估值，不是余额；假设线性扣量且无其他流量，区间仅覆盖仪表读数舍入。本行不记录月费，不计算月费倍数。",
-        "en": "Conditional measurement, not an official allowance: only the first 12 calls (801,760 tokens) match 34.7423% → 34.7570%; batch 4 excluded, CSV not reconciled. Treated as the legacy Ultra monthly Cursor Models pool; reset point not verified. The account owner confirmed on 2026-11-05 that the plan is legacy Cursor Ultra. USD is a standard list-price valuation, not a credit balance; assumes linear consumption and no other traffic, with bounds covering meter rounding only. This row records no monthly fee and publishes no fee multiple."
+        "zh": "有条件实测，非官方承诺：仅前 12 轮（801,760 tokens）对应额度 34.7423% → 34.7570%；第 4 批未计入，CSV 未对账。这是旧套餐 Ultra 的月度 Cursor Models 池（composer-2.5）条件估算，不含 Other Models；重置点未核验。账号持有人于 2026-11-05 确认套餐为旧套餐 Ultra。USD 为标准公开价估值，不是余额；假设线性扣量且无其他流量，区间仅覆盖仪表读数舍入。旧套餐只有 Cursor Models 与 Other Models 两个月池（https://cursor.com/docs/account/pricing/legacy-cursor-plans）；该页没有写第三方等于 API 的 2 倍。月费倍数 = 本池折合 ÷ 官方 Ultra 月费 $200。",
+        "en": "Conditional measurement, not an official allowance: only the first 12 calls (801,760 tokens) match 34.7423% → 34.7570%; batch 4 excluded, CSV not reconciled. This is a composer-2.5 conditional estimate of the legacy Ultra monthly Cursor Models pool and does not include Other Models; reset point not verified. The account owner confirmed on 2026-11-05 that the plan is legacy Cursor Ultra. USD is a standard list-price valuation, not a credit balance; assumes linear consumption and no other traffic, with bounds covering meter rounding only. Legacy plans have two monthly pools, Cursor Models and Other Models (https://cursor.com/docs/account/pricing/legacy-cursor-plans); that page does not say third-party usage is 2× API price. Fee multiple = this pool ÷ the official $200 Ultra monthly fee."
       },
       "windowMeasurements": null,
       "measurementReport": "/reports/quota-bench-2026-10.md",

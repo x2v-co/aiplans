@@ -1,3 +1,5 @@
+> 更新（2026-11-06）：按 [Legacy Cursor plans](https://cursor.com/docs/account/pricing/legacy-cursor-plans) 核对。旧 Ultra 月费 $200。旧套餐只有两个月池：Cursor Models（Grok 4.7 / 4.6 / 4.5 与 Composer 2.5）和 Other Models（第三方，按各模型 API 标价扣减）。该页写 Pro+ / Ultra 比 Pro「more of each pool」，没有写第三方 = API×2。「至少两倍 Cursor 模型用量」是 The X Subscription 相对旧套餐，不是第三方倍数。旧套餐不含 Grok / X；Grok Bot 属于 The X Subscription。约 $3,022（$3,001–$3,042）仍是 Cursor Models 池的 composer-2.5 条件估算，样本未完成，标粗估，不含 Other Models。月费倍数 = 该池 ÷ $200。不挂到套餐卡片。下方 2026-11-05 更新里「不计算月费倍数」一句自本更新起不再作为发布口径。
+
 > 更新（2026-11-05）：账号持有人确认本报告的 Cursor 订阅是旧套餐 Ultra。网站名称改为 Cursor Ultra (legacy)，并撤回“套餐档位未核验”。前 12 轮条件估算仍约 $3,022（$3,001–$3,042）。第 4 批未计入、CSV 未对账、重置点未核验、Fast 计费版本未核验，这些限制不变。本行不记录月费，不计算月费倍数，也不挂到套餐卡片。下方 2026-10-29 更新保留为当时记录。
 
 > 10月30日更新：Codex 当前结果见 [升级后复测](./codex-models-2026-10-30.md)。此前记录保留为历史证据。

@@ -12,6 +12,7 @@ const MONTH_BY_MULTIPLE = [
   'x-ultra-month',
   'codex-pro-month',
   'volcengine-pro-month',
+  'cursor-legacy-month',
 ];
 const MONTH_BY_USD = [
   'x-ultra-month',
@@ -70,18 +71,19 @@ test('quota sort is one global ranking and reorders when the metric or window ch
         const cursor = board.locator('[data-row="cursor-legacy-month"]');
         assert.equal(await high.getAttribute('aria-pressed'), 'true');
         assert.equal(await low.getAttribute('aria-pressed'), 'false');
-        assert.equal(await cursor.getAttribute('data-unranked'), 'true');
-        assert.equal(await cursor.getAttribute('data-rank'), null);
+        assert.equal(await cursor.getAttribute('data-unranked'), null);
+        assert.equal(await cursor.getAttribute('data-rank'), '6');
         assert.match(await cursor.innerText(), /Cursor Ultra \(legacy\)/);
-        assert.match(await board.getByTestId('quota-unranked').innerText(), locale === 'zh' ? /不参与当前名次/ : /Not ranked on this metric/);
+        assert.match(await cursor.innerText(), /composer-2\.5/);
+        assert.equal(await board.getByTestId('quota-unranked').count(), 0);
         assert.doesNotMatch(await board.innerText(), /组内排序|Within each workload|两种指标名次相同|Both metrics give the same ranks/);
         await low.click();
         await status.getByText(locale === 'zh' ? '月费倍数 ↑' : 'Fee multiple ↑', { exact: true }).waitFor();
         assert.equal(await low.getAttribute('aria-pressed'), 'true');
         assert.equal(await board.locator('th[aria-sort="ascending"]').count(), 1);
         await expectRanks([...MONTH_BY_MULTIPLE].reverse());
-        assert.equal(await cursor.getAttribute('data-unranked'), 'true');
-        assert.equal(await cursor.getAttribute('data-rank'), null);
+        assert.equal(await cursor.getAttribute('data-unranked'), null);
+        assert.equal(await cursor.getAttribute('data-rank'), '1');
         await high.click();
         await status.getByText(locale === 'zh' ? '月费倍数 ↓' : 'Fee multiple ↓', { exact: true }).waitFor();
         await expectRanks(MONTH_BY_MULTIPLE);
