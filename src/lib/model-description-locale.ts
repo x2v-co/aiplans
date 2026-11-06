@@ -16,3 +16,9 @@ export function localizedModelDescription(slug: string, dbDescription: string | 
   }
   return publicModelDescription(dbDescription);
 }
+
+/** Vertical pages render catalog notes. zh uses descriptionZh when the row has one. */
+export function localizedCatalogNotes(item: { notes?: string; descriptionZh?: string }, locale: string): string | undefined {
+  if (locale === 'zh' && item.descriptionZh) return item.descriptionZh;
+  return item.notes;
+}

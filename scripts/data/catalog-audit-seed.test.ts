@@ -107,7 +107,7 @@ test('slug scope previews and applies only selected models, usage and channels, 
   assert.deepEqual(f.data.usage_prices.find(r => r.id === 40), before.usage_prices[0]);
   const geminiUsage = f.data.usage_prices.filter(r => r.model_id === 10);
   assert.deepEqual(geminiUsage.map(r => r.price), [1.5, 9, 17.5]);
-  for (const row of geminiUsage) assert.deepEqual(row.last_verified, new Date('2026-10-30T00:00:00Z'));
+  for (const row of geminiUsage) assert.deepEqual(row.last_verified, new Date('2026-11-06T00:00:00Z'));
   assert.deepEqual(await seedCatalogAudit(f.tx, true, slugs), []);
 });
 

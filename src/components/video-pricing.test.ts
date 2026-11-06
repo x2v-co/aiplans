@@ -49,6 +49,11 @@ test('video list and detail show token headline and a resolution-specific estima
       assert.match(html, locale === 'zh' ? /≈\$0\.10 \/ 秒 \(推算, 720p, 5,792 tokens\/s\)/ : /≈\$0\.10 \/ second \(estimated, 720p, 5,792 tokens\/s\)/);
       assert.doesNotMatch(html, /\$17\.50 \/ (?:second|秒)/);
     }
+    const detail = renderToStaticMarkup(createElement(Detail, { locale, kind: 'video-model', detail: {
+      item, plans: [], usagePrices: [], benchmarks: [], source: 'catalog',
+    } }));
+    assert.match(detail, locale === 'zh' ? /2026-12-03 起自动路由到 1\.2/ : /automatically route to gemini-omni-1\.2-flash/);
+    assert.match(detail, /\$17\.50/);
     const facts = auditedPrice(seedance, locale);
     assert.match(facts, /^¥46\.00–¥51\.00 \/ /);
     assert.match(facts, /tokens/);
@@ -72,7 +77,7 @@ test('estimates require a known positive token rate and resolution, and honor pr
 
 test('all token-priced video headlines and audit units use per_1m_tokens', () => {
   const tokenRows = video.filter(item => /token|\/1M/i.test(`${item.pricing} ${item.pricingUnit} ${item.unit}`));
-  assert.deepEqual(tokenRows.map(item => item.slug).sort(), ['gemini-omni-1-1-flash', 'seedance']);
+  assert.deepEqual(tokenRows.map(item => item.slug).sort(), ['gemini-omni-1-1-flash', 'gemini-omni-1-2-flash', 'seedance']);
   for (const item of tokenRows) {
     assert.equal(item.billingUnit, 'per_1m_tokens', item.slug);
     assert.equal(item.pricingUnit, 'per_1m_tokens', item.slug);
