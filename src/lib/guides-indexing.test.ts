@@ -29,6 +29,17 @@ test('zh/guides is indexable, self-canonical and has matching en/zh hreflang pat
   assert.equal(typeof metadata.robots === 'object' && metadata.robots?.index, true);
 });
 
+test('guides index links to the quota leaderboard; header and footer do not', () => {
+  const page = readFileSync('src/app/[locale]/guides/page.tsx', 'utf8');
+  assert.ok(page.includes('`/${locale}/quota-bench`'));
+  assert.match(page, /套餐额度实测榜/);
+  assert.match(page, /Plan quota leaderboard/);
+  assert.match(page, /PRICING_GUIDE_SLUGS\.map/);
+  for (const file of ['src/components/SiteHeader.tsx', 'src/components/Footer.tsx']) {
+    assert.doesNotMatch(readFileSync(file, 'utf8'), /quota-bench/, file);
+  }
+});
+
 test('header shares guides entry with desktop and mobile; footer and detail pages link back', () => {
   for (const file of ['src/components/SiteHeader.tsx', 'src/components/Footer.tsx', 'src/app/[locale]/guides/[slug]/page.tsx']) {
     assert.ok(readFileSync(file, 'utf8').includes('/${locale}/guides'), file);
