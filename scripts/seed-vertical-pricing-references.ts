@@ -9,6 +9,16 @@
  * Usage:
  *   npm run seed:vertical-pricing -- --slug omnihuman-2-0            # dry-run, field diff
  *   npm run seed:vertical-pricing -- --slug omnihuman-2-0 --apply    # write changed rows only
+ *
+ * Dry-run previews price inserts for a catalog model that is not in the database
+ * yet. seed-catalog.sh runs seed:vertical-models first in the same invocation, so
+ * that preview is the apply those inserts would get. Apply still refuses a missing
+ * model row (exit 1) and writes nothing for it.
+ *
+ * Duplicate usage rows (same model, provider, price kind, and unit) are all updated.
+ * Dry-run prints every id. plan_id is left as stored, so a plan-less twin is not
+ * reattached and is not deleted. A single maybeSingle() used to update only one
+ * row and abort with PGRST116 when two rows shared the official plan.
  */
 import { db } from './db/queries';
 import { AI_VERTICAL_CATALOG, RIGOROUS_MODEL_KINDS, type AiCatalogItem } from '../src/lib/ai-vertical-catalog';
@@ -217,42 +227,43 @@ function usageReferences(item: AiCatalogItem): UsageReference[] {
   return references;
 }
 
+function byId(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+  return [...rows].sort((a, b) => Number(a.id) - Number(b.id));
+}
+
+/** Rows already stored for this price. A model that only exists in the dry-run preview has no rows. */
+async function storedUsageRows(model: ModelRow, provider: ProviderRow, priceKind: string, unit: string): Promise<Record<string, unknown>[]> {
+  if (model.id < 0) return [];
+  const found = await db.from('usage_prices').select('*')
+    .eq('model_id', model.id).eq('provider_id', provider.id).eq('price_kind', priceKind).eq('unit', unit);
+  if (found.error) throw found.error;
+  return byId((found.data ?? []) as Record<string, unknown>[]);
+}
+
+async function legacyUsageRows(item: AiCatalogItem, model: ModelRow, provider: ProviderRow): Promise<Record<string, unknown>[]> {
+  if (model.id < 0) return [];
+  const legacy = legacyVideoUsageKeys(item);
+  if (!legacy.length) return [];
+  const previous = await db.from('usage_prices').select('*').eq('model_id', model.id).eq('provider_id', provider.id);
+  if (previous.error) throw previous.error;
+  return byId(((previous.data ?? []) as Record<string, unknown>[]).filter((row) =>
+    legacy.some(([kind, oldUnit]) => row.price_kind === kind && row.unit === oldUnit)));
+}
+
 async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: ProviderRow, plan: PlanRow | null, reference: UsageReference) {
   const { unit, priceKind, price } = reference;
   const src = sourceUrl(item);
-  // Match only this script's own row (same plan link). The 2026-10-15 catalog audit owns a
-  // separate plan-less row with the same model/provider/kind/unit; matching it made
-  // maybeSingle() fail with PGRST116 and aborted every deploy after the audit apply.
-  const planId = plan && plan.id > 0 ? plan.id : null;
-  let existing = await db
-    .from('usage_prices')
-    .select('*')
-    .eq('model_id', model.id)
-    .eq('provider_id', provider.id)
-    .eq('price_kind', priceKind)
-    .eq('unit', unit)
-    .eq('plan_id', planId) // null renders IS NULL
-    .maybeSingle();
-  if (existing.error) throw existing.error;
+  const officialPlanId = plan && plan.id > 0 ? plan.id : null;
+  // Same model + provider + kind + unit, whatever plan_id they carry. Updating
+  // every match keeps a twin from staying on an old last_verified. plan_id is
+  // copied from the stored row so a plan-less twin is not reattached or deleted.
+  let matches = await storedUsageRows(model, provider, priceKind, unit);
+  if (!matches.length && priceKind === 'video_output_tokens') matches = await legacyUsageRows(item, model, provider);
 
-  // Keep the row ID when replacing an old availability/per-second placeholder.
-  if (!existing.data && priceKind === 'video_output_tokens') {
-    const legacy = legacyVideoUsageKeys(item);
-    if (legacy.length) {
-      const previous = await db.from('usage_prices').select('*')
-        .eq('model_id', model.id).eq('provider_id', provider.id).eq('plan_id', planId);
-      if (previous.error) throw previous.error;
-      const matches = (previous.data ?? []).filter((row: Record<string, unknown>) =>
-        legacy.some(([kind, oldUnit]) => row.price_kind === kind && row.unit === oldUnit));
-      if (matches.length > 1) throw new Error(`Ambiguous legacy video price for ${model.slug}; review rows before reseeding.`);
-      if (matches.length) existing = { ...existing, data: matches[0] };
-    }
-  }
-
-  const row = prepareSeedRow(existing.data, {
+  const desiredFor = (existing: Record<string, unknown> | null) => prepareSeedRow(existing, {
     model_id: model.id,
     provider_id: provider.id,
-    plan_id: planId,
+    plan_id: existing ? existing.plan_id ?? null : officialPlanId,
     price_kind: priceKind,
     unit,
     price,
@@ -271,22 +282,24 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
     updated_at: NOW,
   }, { currency: 'USD', price: null, source_url: null, last_verified: NOW });
 
-  if (existing.data) {
-    const current = existing.data as Record<string, unknown>;
-    const { changes, patch } = diffRow(current, row, {
-      syncAvailability: ARGS.syncAvailability,
-      retireAvailability: usageOff(item, model),
-    });
-    if (changes.length === 0) {
-      console.log(`    ✓ usage ${model.slug}/${priceKind}/${unit}: unchanged`);
-      stats.unchanged++;
-      return;
-    }
-    console.log(`    ↻ usage ${model.slug}/${priceKind}/${unit} (id ${current.id})\n${formatChanges(changes, '        ')}`);
-    stats.updated++;
-    if (APPLY) {
-      const { error } = await db.from('usage_prices').update({ ...patch, updated_at: NOW }).eq('id', current.id);
-      if (error) throw error;
+  if (matches.length) {
+    for (const current of matches) {
+      const row = desiredFor(current);
+      const { changes, patch } = diffRow(current, row, {
+        syncAvailability: ARGS.syncAvailability,
+        retireAvailability: usageOff(item, model),
+      });
+      if (changes.length === 0) {
+        console.log(`    ✓ usage ${model.slug}/${priceKind}/${unit} (id ${current.id}): unchanged`);
+        stats.unchanged++;
+        continue;
+      }
+      console.log(`    ↻ usage ${model.slug}/${priceKind}/${unit} (id ${current.id})\n${formatChanges(changes, '        ')}`);
+      stats.updated++;
+      if (APPLY) {
+        const { error } = await db.from('usage_prices').update({ ...patch, updated_at: NOW }).eq('id', current.id);
+        if (error) throw error;
+      }
     }
     return;
   }
@@ -294,7 +307,7 @@ async function upsertUsagePrice(item: AiCatalogItem, model: ModelRow, provider: 
   console.log(`    ➕ usage ${model.slug}/${priceKind}/${unit}`);
   stats.inserted++;
   if (APPLY) {
-    const { error } = await db.from('usage_prices').insert(row);
+    const { error } = await db.from('usage_prices').insert(desiredFor(null));
     if (error) throw error;
   }
 }
@@ -322,10 +335,29 @@ async function main() {
   console.log(`\n💵 seed-vertical-pricing-references ${APPLY ? '[APPLY]' : '[DRY-RUN]'} (${items.length} rows)\n`);
 
   for (const item of items) {
-    const provider = providers.get(normalizeProviderSlug(item));
-    const model = models.get(item.slug!);
+    let provider = providers.get(normalizeProviderSlug(item));
+    let model = models.get(item.slug!);
+    // seed-catalog.sh dry-runs models before pricing, without writing. A missing
+    // row here is one that seed would create in the same run, so preview its prices
+    // and exit 0. Apply still requires the row: models --apply has already run.
+    if (!APPLY && !provider) {
+      const slug = normalizeProviderSlug(item);
+      provider = { id: -1, slug, name: item.provider.replace(/\s*\/.*$/, '') };
+      console.log(`  ⏳ ${item.slug}: provider ${slug} is not in the database; preview assumes seed:vertical-models creates it`);
+    }
+    if (!APPLY && provider && !model) {
+      model = {
+        id: -1,
+        slug: item.slug!,
+        name: item.name,
+        provider_ids: provider.id > 0 ? [provider.id] : [],
+        shutdown_date: item.shutdownDate ?? null,
+      };
+      console.log(`  ⏳ ${item.slug}: model row is not in the database; previewing price inserts seed:vertical-models would create in this run`);
+    }
     if (!provider || !model) {
-      console.log(`  ⚠ ${item.slug}: missing ${provider ? '' : 'provider'} ${model ? '' : 'model'}; run seed:vertical-models first`);
+      const missing = [provider ? '' : 'provider', model ? '' : 'model'].filter(Boolean).join(' and ');
+      console.log(`  ⚠ ${item.slug}: missing ${missing}; run seed:vertical-models --apply first`);
       skipped++;
       continue;
     }

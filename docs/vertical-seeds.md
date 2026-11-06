@@ -4,6 +4,8 @@
 
 - `--slug a,b`（或多次 `--slug x`）：只处理指定目录条目；未知 slug 直接报错退出。
 - dry-run 逐字段输出 `字段: 旧值 → 新值`；没变的行显示 `unchanged`，`--apply` 时不写。
+- 同一次 `seed-catalog.sh` 里，models dry-run 还没写库时，pricing dry-run 仍预览这个模型将插入的 plan / usage（日志里 `⏳` + `➕`），干净预览退出码 0。`--apply` 时模型行必须已经存在，否则跳过并退出 1。
+- 同一模型、同一供应商、同一 `price_kind` + `unit` 的重复 `usage_prices` 全部更新，dry-run 逐条打出 id。不删除、不改 `plan_id`（plan-less 的那条保持不挂套餐）。选择更新全部而不是只改 `maybeSingle()` 碰到的第一条，避免孪生行的 `last_verified` 停在旧日期，也避免两行同挂官方套餐时 PGRST116 中断。
 - `last_verified` 只往前走：库里日期更新就保留。
 - `is_available`：只在新建行时写入；已有行要双向同步需显式加 `--sync-availability`（#221：seed 不改已有记录的可用状态）。例外只朝停用方向：目录状态为 `discontinued` 或 `retired`，或模型 `shutdown_date`（UTC，当天起）已到时，已有用量行可以把 `is_available` 写成 `false`，不会改回 `true`；`audit:verticals:db` 按同一规则判定。手动写入默认不带 `--sync-availability`。
 - 应用发布（`deploy/production/rollout.sh` 和 Deploy Planprice Production）**不跑**这些 seed。写入走下面的手动流程。

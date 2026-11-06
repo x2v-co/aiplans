@@ -628,6 +628,75 @@ test('Gemini pricing slug limits plan and usage changes and writes the November 
 });
 
 
+test('pricing dry-run previews token inserts for a model the same run would create', async () => {
+  const slug = 'gemini-omni-1-2-flash';
+  const f = fixture({ providers: [{ id: 3, slug: 'google', name: 'Google' }] });
+  const dry = await f.run('seed-vertical-pricing-references', ['--slug', `${slug},gemini-omni-1-1-flash`]);
+  assert.equal(dry.code, 0, dry.output);
+  assert.equal(f.writeCount(), 0);
+  assert.equal(f.data.models.length, 0);
+  assert.equal(f.data.usage_prices.length, 0);
+  assert.match(dry.output, /Skipped: 0/);
+  for (const kind of ['input_tokens', 'text_output_tokens', 'video_output_tokens']) {
+    assert.match(dry.output, new RegExp(`➕ usage ${slug}/${kind}/per_1m_tokens`));
+  }
+  assert.match(dry.output, /➕ plan google\/gemini-omni-1-2-flash-official-pricing/);
+  const apply = await f.run('seed-vertical-pricing-references', ['--apply', '--slug', slug]);
+  assert.equal(apply.code, 1, apply.output);
+  assert.match(apply.output, /missing model/);
+  assert.equal(f.writeCount(), 0);
+  assert.equal((await f.run('seed-vertical-models', ['--apply', '--slug', slug])).code, 0);
+  const priced = await f.run('seed-vertical-pricing-references', ['--apply', '--slug', slug]);
+  assert.equal(priced.code, 0, priced.output);
+  const model = f.data.models.find(row => row.slug === slug)!;
+  assert.deepEqual(
+    f.data.usage_prices.filter(row => row.model_id === model.id).map(row => [row.price_kind, row.price]).sort(),
+    [['input_tokens', 1.5], ['text_output_tokens', 9], ['video_output_tokens', 12]],
+  );
+});
+
+test('pricing seed updates every duplicate usage row and prints each id', async () => {
+  const slug = 'gemini-omni-1-1-flash';
+  const f = fixture({
+    providers: [{ id: 3, slug: 'google', name: 'Google' }],
+    models: [{ id: 3232, slug, name: 'Gemini Omni Flash (gemini-omni-1.1-flash)', provider_ids: [3], model_category: 'video' }],
+    plans: [{ id: 2256, provider_id: 3, slug: `${slug}-official-pricing`, name: 'Gemini Omni Flash (gemini-omni-1.1-flash) official pricing' }],
+    model_plan_mapping: [{ id: 1, model_id: 3232, plan_id: 2256, source: 'manual' }],
+    usage_prices: [
+      // Same official plan: the old maybeSingle() lookup aborted or updated only one.
+      { id: 584, model_id: 3232, provider_id: 3, plan_id: 2256, price_kind: 'input_tokens', unit: 'per_1m_tokens', price: 1.5, currency: 'USD', last_verified: '2026-10-30', source_url: 'https://ai.google.dev/gemini-api/docs/pricing' },
+      { id: 586, model_id: 3232, provider_id: 3, plan_id: 2256, price_kind: 'input_tokens', unit: 'per_1m_tokens', price: 1.5, currency: 'USD', last_verified: '2026-10-30', source_url: 'https://ai.google.dev/gemini-api/docs/pricing' },
+      { id: 585, model_id: 3232, provider_id: 3, plan_id: 2256, price_kind: 'text_output_tokens', unit: 'per_1m_tokens', price: 9, currency: 'USD', last_verified: '2026-10-30', source_url: 'https://ai.google.dev/gemini-api/docs/pricing' },
+      { id: 587, model_id: 3232, provider_id: 3, plan_id: null, price_kind: 'text_output_tokens', unit: 'per_1m_tokens', price: 9, currency: 'USD', last_verified: '2026-10-30', source_url: 'https://ai.google.dev/gemini-api/docs/pricing' },
+      { id: 583, model_id: 3232, provider_id: 3, plan_id: 2256, price_kind: 'video_output_tokens', unit: 'per_1m_tokens', price: 17.5, currency: 'USD', last_verified: '2026-10-30', source_url: 'https://ai.google.dev/gemini-api/docs/pricing' },
+      { id: 588, model_id: 3232, provider_id: 3, plan_id: null, price_kind: 'video_output_tokens', unit: 'per_1m_tokens', price: 17.5, currency: 'USD', last_verified: '2026-10-30', source_url: 'https://ai.google.dev/gemini-api/docs/pricing' },
+      { id: 999, model_id: 1, provider_id: 9, plan_id: null, price_kind: 'input_tokens', unit: 'per_1m_tokens', price: 4, currency: 'USD', last_verified: '2026-10-30' },
+    ],
+  });
+  const dry = await f.run('seed-vertical-pricing-references', ['--slug', slug]);
+  assert.equal(dry.code, 0, dry.output);
+  assert.equal(f.writeCount(), 0);
+  for (const id of [583, 584, 585, 586, 587, 588]) assert.match(dry.output, new RegExp(`\\(id ${id}\\)`));
+  assert.doesNotMatch(dry.output, /id 999/);
+  assert.doesNotMatch(dry.output, /plan_id:/);
+  const applied = await f.run('seed-vertical-pricing-references', ['--apply', '--slug', slug]);
+  assert.equal(applied.code, 0, applied.output);
+  for (const id of [583, 584, 585, 586, 587, 588]) {
+    const row = f.data.usage_prices.find(entry => entry.id === id)!;
+    assert.equal(new Date(String(row.last_verified)).toISOString(), '2026-11-06T00:00:00.000Z', String(id));
+    assert.equal(row.price, id === 583 || id === 588 ? 17.5 : id === 585 || id === 587 ? 9 : 1.5);
+  }
+  assert.equal(f.data.usage_prices.find(row => row.id === 586)!.plan_id, 2256);
+  assert.equal(f.data.usage_prices.find(row => row.id === 587)!.plan_id, null);
+  assert.equal(f.data.usage_prices.find(row => row.id === 588)!.plan_id, null);
+  assert.equal(f.data.usage_prices.find(row => row.id === 999)!.price, 4);
+  assert.equal(f.data.usage_prices.length, 7);
+  const writes = f.writeCount();
+  const again = await f.run('seed-vertical-pricing-references', ['--apply', '--slug', slug]);
+  assert.equal(again.code, 0, again.output);
+  assert.equal(f.writeCount(), writes);
+});
+
 test('embedding vertical serves audited models through localized routes, navigation, search and sitemap', () => {
   const items = catalog.catalogForKind('embedding-model');
   assert.deepEqual(items.map(item => item.slug), ['gemini-embedding-2', 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002']);
