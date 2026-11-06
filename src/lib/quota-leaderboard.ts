@@ -75,10 +75,12 @@ export const QUOTA_LEADER_ROWS: LeaderRow[] = [
     ];
   }),
   ...volcengineRows,
-  // Official legacy Ultra price is $200/mo (cursor.com/docs/account/pricing/legacy-cursor-plans, 2026-11-06).
-  // Numerator is only the measured Cursor Models pool (composer-2.5). Other Models are not in this figure.
-  // rough marks the incomplete sample, not a week×4.35 projection. Stays off catalog plan cards.
+  // Official Ultra price is $200/mo on https://cursor.com/pricing (checked 2026-11-06).
+  // Monthly multiple = measured Cursor Models pool ÷ $200. Weekly row uses the same pool ÷ 4.35
+  // and weekly fee = $200 ÷ 4.35, so the multiple matches; it is not a measured week.
+  // composer-2.5 is not a flagship model and may have been billed as Fast. Stays off plan cards.
   { id: 'cursor-legacy-month', plan: cursor.plan, model: cursor.model, window: 'month', mix: 'mixed', feeUsdMonthly: 200, usd: cursor.apiEquivalentUsd!, rough: true, tierVerified: cursor.tierVerified, date: cursor.date, confidence: 'low', anchor: '#cursor-ultra' },
+  { id: 'cursor-legacy-week', plan: cursor.plan, model: cursor.model, window: 'week', mix: 'mixed', feeUsdMonthly: 200, usd: scale(cursor.apiEquivalentUsd!, 1 / WEEKS_PER_MONTH), rough: true, tierVerified: cursor.tierVerified, date: cursor.date, confidence: 'low', anchor: '#cursor-ultra' },
 ];
 
 /** Fee for one window: month = fee, week = fee ÷ 4.35. 5h has no fee basis (null). */
