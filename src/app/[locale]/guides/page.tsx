@@ -53,6 +53,27 @@ export default async function GuidesPage({
           </p>
         </header>
 
+        <Link
+          href={`/${locale}/quota-bench`}
+          data-testid="quota-bench-entry"
+          className="mt-8 flex flex-col gap-4 rounded-lg border-2 border-blue-700 bg-blue-600 px-5 py-5 text-white shadow-md transition-colors hover:bg-blue-700 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-6 dark:border-blue-300 dark:bg-blue-700 dark:hover:bg-blue-600"
+        >
+          <span>
+            <span className="block text-2xl font-bold tracking-tight">
+              {locale === 'zh' ? '套餐额度实测榜' : 'Plan quota leaderboard'}
+            </span>
+            <span className="mt-2 block text-base leading-6 text-blue-50">
+              {locale === 'zh'
+                ? '按月费倍数看各套餐的实测额度。'
+                : 'Measured allowances ranked by fee multiple.'}
+            </span>
+          </span>
+          <span className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-md bg-white px-5 py-3 text-base font-semibold text-blue-700 shadow-sm sm:w-auto">
+            {locale === 'zh' ? '查看榜单' : 'Open leaderboard'}
+            <ArrowRight className="h-5 w-5" />
+          </span>
+        </Link>
+
         <section className="grid gap-4 py-9 md:grid-cols-2">
           {PRICING_GUIDE_SLUGS.map((slug) => {
             const guide = PRICING_GUIDES[slug];
