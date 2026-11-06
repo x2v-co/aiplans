@@ -2,11 +2,11 @@
  * Workers AI planned deprecations, announced 2026-11-05, removed 2026-11-15.
  * Source (re-read live): https://developers.cloudflare.com/changelog/post/2026-11-05-planned-model-deprecations/
  *
- * Exact Workers AI identities only. Upstream catalog rows that share a short
- * name (kimi-k2.6, glm-5.2, deepseek-v4-pro, …) are not candidates. A matching
- * slug is updated only when every linked provider is `cloudflare`, because
- * shutdown_date retires the model on every channel. Missing rows are skipped;
- * this seed never inserts a model.
+ * Catalog Workers AI rows use a cloudflare- slug (cloudflare-clef) and keep the
+ * @cf/ id in the name and description. Bare ids such as kimi-k2.6 already belong
+ * to Moonshot, Zhipu or DeepSeek, so they are never updated. A missing exclusive
+ * Cloudflare row is inserted as cloudflare-<model id> and marked deprecated.
+ * shutdown_date retires every channel of that row, so a shared row is left alone.
  */
 export const CF_DEPRECATION_SOURCE = 'https://developers.cloudflare.com/changelog/post/2026-11-05-planned-model-deprecations/';
 export const CF_ANNOUNCED_ON = '2026-11-05';
@@ -48,12 +48,79 @@ export const CF_DEPRECATIONS: readonly CfDeprecation[] = [
   { endpoint: '@cf/google/embeddinggemma-300m', replacement: '@cf/google/embeddinggemma-2 (available soon)' },
 ];
 
-/** Exact slugs that can represent this Workers AI id. Not an upstream alias. */
+const WORKERS_AI_ID = /^@cf\/[^/]+\/[^/]+$/;
+
+export function workersAiModelId(endpoint: string): string {
+  if (!WORKERS_AI_ID.test(endpoint)) throw new Error(`Bad Workers AI id: ${endpoint}`);
+  return endpoint.slice(endpoint.lastIndexOf('/') + 1);
+}
+
+/** Catalog slug for a Workers AI row. Distinct from an upstream model of the same id. */
+export function workersAiCatalogSlug(endpoint: string): string {
+  return `cloudflare-${workersAiModelId(endpoint)}`;
+}
+
+/** Exact slugs that can already represent this Workers AI id. Not an upstream alias. */
 export function workersAiSlugCandidates(endpoint: string): string[] {
-  if (!/^@cf\/[^/]+\/[^/]+$/.test(endpoint)) throw new Error(`Bad Workers AI id: ${endpoint}`);
+  const modelId = workersAiModelId(endpoint);
   const path = endpoint.slice('@cf/'.length);
-  const modelId = path.slice(path.lastIndexOf('/') + 1);
-  return [...new Set([modelId, `cloudflare-${modelId}`, path.replaceAll('/', '-'), endpoint])];
+  return [...new Set([workersAiCatalogSlug(endpoint), modelId, path.replaceAll('/', '-'), endpoint])];
+}
+
+const IMAGE_ENDPOINTS = new Set([
+  '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+  '@cf/runwayml/stable-diffusion-v1-5-inpainting',
+  '@cf/bytedance/stable-diffusion-xl-lightning',
+  '@cf/lykon/dreamshaper-8-lcm',
+]);
+const SPEECH_ENDPOINTS = new Set(['@cf/myshell-ai/melotts', '@cf/openai/whisper-tiny-en']);
+
+/** Category for a row this seed creates. Prices are not in the deprecation notice. */
+export function workersAiKind(endpoint: string): { type: string; model_category: string; pricing_unit: string } {
+  if (IMAGE_ENDPOINTS.has(endpoint)) return { type: 'multimodal', model_category: 'image', pricing_unit: 'unknown' };
+  if (SPEECH_ENDPOINTS.has(endpoint)) return { type: 'multimodal', model_category: 'speech', pricing_unit: 'unknown' };
+  if (endpoint === '@cf/llava-hf/llava-1.5-7b-hf') return { type: 'multimodal', model_category: 'text', pricing_unit: 'per_1m_tokens' };
+  if (endpoint === '@cf/google/embeddinggemma-300m') return { type: 'llm', model_category: 'embedding', pricing_unit: 'per_1m_tokens' };
+  return { type: 'llm', model_category: 'text', pricing_unit: 'per_1m_tokens' };
+}
+
+export interface WorkersAiInsert {
+  endpoint: string;
+  slug: string;
+  values: {
+    slug: string;
+    name: string;
+    type: string;
+    model_category: string;
+    pricing_unit: string;
+    offical_link: string;
+    description: string;
+    shutdown_date: string;
+    deprecated_at: string;
+    replacement_model: string;
+    deprecation_source_url: string;
+  };
+}
+
+export function workersAiModelInsert(item: CfDeprecation): WorkersAiInsert {
+  const modelId = workersAiModelId(item.endpoint);
+  const slug = workersAiCatalogSlug(item.endpoint);
+  const kind = workersAiKind(item.endpoint);
+  return {
+    endpoint: item.endpoint,
+    slug,
+    values: {
+      slug,
+      name: item.endpoint,
+      ...kind,
+      offical_link: `https://developers.cloudflare.com/workers-ai/models/${modelId}/`,
+      description: `Workers AI id ${item.endpoint}. Removed from the Workers AI catalog on ${CF_SHUTDOWN_DATE} (announced ${CF_ANNOUNCED_ON}). Recommended replacement: ${item.replacement}. The deprecation notice does not publish a price, so this row has no channel price. Source: ${CF_DEPRECATION_SOURCE}`,
+      shutdown_date: CF_SHUTDOWN_DATE,
+      deprecated_at: CF_ANNOUNCED_ON,
+      replacement_model: item.replacement,
+      deprecation_source_url: CF_DEPRECATION_SOURCE,
+    },
+  };
 }
 
 const slugOwner = new Map<string, string>();
@@ -112,8 +179,9 @@ const same = (from: WorkersAiUpdate['from'], to: WorkersAiUpdate['to']) =>
 
 /**
  * Pure plan. Throws before any caller writes when a slug is ambiguous or already
- * carries a different shutdown day. Rows that are not exclusive to Cloudflare
- * are reported and left unchanged.
+ * carries a different shutdown day. Non-Cloudflare rows are reported and left
+ * unchanged. An endpoint with no exclusive Cloudflare row is inserted as
+ * cloudflare-<model id>, unless that slug is already taken.
  */
 export function planWorkersAiDeprecations(rows: readonly WorkersAiModelRow[]) {
   const bySlug = new Map<string, WorkersAiModelRow>();
@@ -158,15 +226,21 @@ export function planWorkersAiDeprecations(rows: readonly WorkersAiModelRow[]) {
     if (!same(from, to)) updates.push({ id: row.id, slug: row.slug, endpoint, from, to });
   }
 
-  const skipped: SkippedEndpoint[] = CF_DEPRECATIONS.flatMap(item => {
+  const inserts: WorkersAiInsert[] = [];
+  const skipped: SkippedEndpoint[] = [];
+  for (const item of CF_DEPRECATIONS) {
     const bucket = matched.get(item.endpoint);
-    if (bucket?.exclusive.length) return [];
-    if (!bucket) return [{ endpoint: item.endpoint, status: 'not-in-catalog' as const, slugs: [] }];
-    const status: SkipStatus = bucket.shared.length ? 'shared-channel' : 'not-workers-ai';
-    return [{ endpoint: item.endpoint, status, slugs: [...bucket.shared, ...bucket.other] }];
-  });
+    if (bucket?.exclusive.length) continue;
+    const slug = workersAiCatalogSlug(item.endpoint);
+    if (bySlug.has(slug)) {
+      const status: SkipStatus = bucket?.shared.length ? 'shared-channel' : 'not-workers-ai';
+      skipped.push({ endpoint: item.endpoint, status, slugs: [...(bucket?.shared ?? []), ...(bucket?.other ?? []), slug] });
+      continue;
+    }
+    inserts.push(workersAiModelInsert(item));
+  }
 
-  return { updates, skipped, untouched };
+  return { updates, inserts, skipped, untouched };
 }
 
 export function workersAiSeedOptions(args: readonly string[]) {
