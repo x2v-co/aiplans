@@ -18,6 +18,7 @@ import { PlanCoverage } from '@/components/plan-coverage';
 import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from '@/lib/affiliate-links';
 import { outboundChannelDataset } from '@/lib/funnel-analytics';
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
+import { localizedCatalogNotes } from '@/lib/model-description-locale';
 
 function formatMoney(value: number | null, currency: string | null): string {
   if (value == null) return '—';
@@ -39,6 +40,7 @@ export default function VerticalModelDetailPage({
 }) {
   const isZh = locale === 'zh';
   const { item, plans, usagePrices, benchmarks } = detail;
+  const catalogNote = localizedCatalogNotes(item, locale);
   const parentPath = verticalKindPath(kind);
   const providerSlug = item.providerSlug ?? item.provider.toLowerCase().replace(/\/.*$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const providerLogo = item.providerLogoUrl ?? getVerticalProviderLogo(providerSlug);
@@ -183,7 +185,7 @@ export default function VerticalModelDetailPage({
                   <Badge key={capability} variant="outline">{capability}</Badge>
                 ))}
               </div>
-              {item.notes && <p className="mt-5 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{item.notes}</p>}
+              {catalogNote && <p className="mt-5 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{catalogNote}</p>}
             </CardContent>
           </Card>
 

@@ -604,7 +604,7 @@ test('pricing updates preserve unspecified currency and constraints; inserts sti
   }
 });
 
-test('Gemini pricing slug limits plan and usage changes and writes the October 30 verification date', async () => {
+test('Gemini pricing slug limits plan and usage changes and writes the November 6 verification date', async () => {
   const slug = 'gemini-omni-1-1-flash';
   const f = fixture();
   await f.seed();
@@ -619,10 +619,10 @@ test('Gemini pricing slug limits plan and usage changes and writes the October 3
   const preview = await f.run('seed-vertical-pricing-references', ['--slug', slug]);
   assert.equal(preview.code, 0, preview.output);
   assert.doesNotMatch(preview.output, /wan-video|seedance|mistral/i);
-  assert.match(preview.output, /2026-10-30/);
+  assert.match(preview.output, /2026-11-06/);
   const applied = await f.run('seed-vertical-pricing-references', ['--apply', '--slug', slug]);
   assert.equal(applied.code, 0, applied.output);
-  for (const row of usage) assert.equal(new Date(String(row.last_verified)).toISOString(), '2026-10-30T00:00:00.000Z');
+  for (const row of usage) assert.equal(new Date(String(row.last_verified)).toISOString(), '2026-11-06T00:00:00.000Z');
   assert.equal(JSON.stringify(unrelated), before);
   assert.equal(JSON.stringify(f.data.plans.filter(row => row.id !== plan.id)), otherPlans);
 });

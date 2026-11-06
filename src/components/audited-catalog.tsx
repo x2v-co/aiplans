@@ -3,6 +3,7 @@ import type { AiCatalogItem } from '@/lib/ai-vertical-catalog';
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 import { formatCurrencyAmount } from '@/lib/currency';
 import { catalogBillingUnit } from '@/lib/catalog-billing-unit';
+import { localizedCatalogNotes } from '@/lib/model-description-locale';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { CatalogProviderLogo } from '@/components/catalog-provider-logo';
@@ -40,6 +41,7 @@ export function auditedPrice(item: AiCatalogItem, locale: string): string {
 
 export function AuditedPricingFacts({ item, locale }: { item: AiCatalogItem; locale: string }) {
   const zh = locale === 'zh';
+  const note = localizedCatalogNotes(item, locale);
   const money = (value: number | null | undefined) => value == null ? '—' : formatCurrencyAmount(value, item.currency);
   const priced = item.priceStatus === 'priced';
   return <section className="mt-8 rounded-xl border p-6">
@@ -61,7 +63,7 @@ export function AuditedPricingFacts({ item, locale }: { item: AiCatalogItem; loc
       <div><dt>{zh ? '价格状态' : 'Price status'}</dt><dd>{item.priceStatus === 'needs-verification' ? (zh ? '待核验' : 'Needs verification') : item.priceStatus === 'priced' ? (zh ? '已标价' : 'Priced') : item.priceStatus === 'not-public' ? (zh ? '未公开价格' : 'Price not public') : item.priceStatus ?? '—'}</dd></div>
       <div><dt>{zh ? '核验日期' : 'Verified'}</dt><dd>{item.verifiedAt ?? '—'}</dd></div>
     </dl>
-    {item.notes && <p className="mt-3 text-sm">{item.notes}</p>}
+    {note && <p className="mt-3 text-sm">{note}</p>}
     {item.needsVerification?.map(note => <p className="mt-2 text-sm" key={note}>{zh ? '待核验' : 'Needs verification'}: {note}</p>)}
   </section>;
 }
