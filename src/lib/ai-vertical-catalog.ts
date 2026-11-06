@@ -4,6 +4,7 @@ import { NON_LLM_CATALOG } from './non-llm-catalog';
 import { IMAGE_MODEL_CATALOG } from './image-model-catalog';
 import { PERPLEXITY_DECIDER_CATALOG } from './perplexity-decider-catalog';
 import { DECISION_MODELS_2026_11_03 } from './decision-models-2026-11-03';
+import { DECISION_MODELS_2026_11_05 } from './decision-models-2026-11-05';
 
 export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model' | 'voice-model' | 'image-model' | 'embedding-model';
 
@@ -120,6 +121,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   ...IMAGE_MODEL_CATALOG,
   ...PERPLEXITY_DECIDER_CATALOG,
   ...DECISION_MODELS_2026_11_03,
+  ...DECISION_MODELS_2026_11_05,
   // Agent / coding-agent plans
   {
     kind: 'agent',

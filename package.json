@@ -74,6 +74,8 @@
     "seed:catalog-2026-11-04:apply": "tsx scripts/seed-catalog-2026-11-04.ts --apply",
     "seed:catalog-2026-11-05-intel": "tsx scripts/seed-catalog-2026-11-05-intel.ts",
     "seed:catalog-2026-11-05-intel:apply": "tsx scripts/seed-catalog-2026-11-05-intel.ts --apply",
+    "seed:catalog-2026-11-05-1800": "tsx scripts/seed-catalog-2026-11-05-1800.ts",
+    "seed:catalog-2026-11-05-1800:apply": "tsx scripts/seed-catalog-2026-11-05-1800.ts --apply",
     "seed:google-ai-plus-2026-11-05": "tsx scripts/seed-google-ai-plus-2026-11-05.ts",
     "seed:google-ai-plus-2026-11-05:apply": "tsx scripts/seed-google-ai-plus-2026-11-05.ts --apply",
     "seed:catalog-2026-11-05-image26": "tsx scripts/seed-catalog-2026-11-05-image26.ts",

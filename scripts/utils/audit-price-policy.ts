@@ -1,4 +1,5 @@
 import { DECISION_1103_SPECS, decision1103ChannelProviders } from '../../src/lib/decision-models-2026-11-03';
+import { MORPH_REFLEX_SPEC } from '../../src/lib/decision-models-2026-11-05';
 /** Intentional unknowns stay visible as warnings, not fabricated zero prices. */
 export function isExplicitlyUnverifiedPrice(row: {
   input_price_per_1m: number | null; output_price_per_1m: number | null;
@@ -38,6 +39,8 @@ const INPUT_ONLY_1103 = new Map(DECISION_1103_SPECS.filter(spec => spec.inputOnl
   .map(spec => [spec.slug, new Set(decision1103ChannelProviders(spec))]));
 
 export function isVerifiedFreeOutput(modelSlug: string | undefined, providerSlug: string | undefined, input: number | null) {
+  // https://openrouter.ai/morph/reflex, verified 2026-11-05: decisions bill input only.
+  if (modelSlug === MORPH_REFLEX_SPEC.slug && providerSlug === MORPH_REFLEX_SPEC.channel && input != null && input > 0) return true;
   // Official Sarvam pricing, verified 2026-11-04: ₹4/M input, free probability output.
   if (modelSlug === 'sarvam-prism' && providerSlug === 'sarvam' && input === 4) return true;
   if (INPUT_ONLY_1103.get(modelSlug ?? '')?.has(providerSlug ?? '') && input != null && input > 0) return true;

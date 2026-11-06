@@ -7,6 +7,7 @@ import * as catalog from '../src/lib/ai-vertical-catalog';
 import * as logos from '../src/lib/vertical-provider-logos';
 import { PERPLEXITY_DECIDER_CATALOG } from '../src/lib/perplexity-decider-catalog';
 import { DECISION_MODELS_2026_11_03 } from '../src/lib/decision-models-2026-11-03';
+import { DECISION_MODELS_2026_11_05 } from '../src/lib/decision-models-2026-11-05';
 import * as auditVertical from './data/catalog-audit-vertical';
 import * as catalog20261029 from './data/catalog-2026-10-29';
 import * as seedDiff from './utils/seed-diff';
@@ -255,6 +256,8 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:glimpse-decider:apply`),
       ...DECISION_MODELS_2026_11_03.map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-03-p1:apply`),
+      ...DECISION_MODELS_2026_11_05.map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-05-1800:apply`),
       'WARNING music-model:mureka: DB drift: missing models row; run npm run seed:catalog-2026-11-04:apply',
     ],
   );
@@ -275,6 +278,10 @@ test('deferred catalog rows point at their image, non-LLM or glimpse-decider see
   for (const item of DECISION_MODELS_2026_11_03) {
     assert.equal(item.deferredDbSeed, true, item.slug);
     assert.equal(item.deferredDbSeedScript, 'seed:catalog-2026-11-03-p1:apply', item.slug);
+  }
+  for (const item of DECISION_MODELS_2026_11_05) {
+    assert.equal(item.deferredDbSeed, true, item.slug);
+    assert.equal(item.deferredDbSeedScript, 'seed:catalog-2026-11-05-1800:apply', item.slug);
   }
 });
 
