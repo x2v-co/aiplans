@@ -8,6 +8,7 @@ import { AUDIT_TIMESTAMP, OPENROUTER_ADDITIONS, auditedModelSlug, auditedPrices,
   LEGACY_PRO_NOTE, cleanLegacyFeatures } from './catalog-audit-2026-10-15';
 import { claudeCreditValues } from './claude-api-credits-2026-10-18';
 import { prepareSeedRow } from '../utils/seed-diff';
+import { assertCacheWriteHeadlines } from '../utils/variant-headlines';
 
 type Row = Record<string, unknown> & { id: number };
 type Table = 'providers' | 'models' | 'api_channel_prices' | 'usage_prices' | 'plans' | 'api_channel_price_variants';
@@ -33,6 +34,12 @@ export async function seedCatalogAudit(tx: Sql, apply: boolean, slugs: Set<strin
   const save = async (table: Table, existing: Row | null, desired: Record<string, unknown>, target: string,
     insertDefaults: Record<string, unknown> = {}) => {
     const values = prepareSeedRow(existing, desired, insertDefaults);
+    if (table === 'api_channel_price_variants') {
+      const candidate = { ...existing, ...values };
+      const group = rows.api_channel_price_variants.filter(r => r.id !== existing?.id &&
+        r.model_id === candidate.model_id && r.provider_id === candidate.provider_id);
+      assertCacheWriteHeadlines([...group, candidate], rows.api_channel_prices);
+    }
     const changes = seedChanges(existing, values);
     if (!Object.keys(changes).length) return existing!;
     steps.push({ table, target, action: existing ? 'update' : 'insert', changes });

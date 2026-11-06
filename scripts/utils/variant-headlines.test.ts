@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addStandardHeadlines, keepsLastKnownPrice } from './variant-headlines';
+import { addStandardHeadlines, assertCacheWriteHeadlines, keepsLastKnownPrice } from './variant-headlines';
 import { parseAnthropicFastMode } from '../scrapers/anthropic-dynamic';
 import type { ScrapedPrice, ScrapedPriceVariant } from './validator';
 
@@ -32,4 +32,35 @@ test('unverified scrape keeps a priced channel row, but fills an empty one', () 
   assert.equal(keepsLastKnownPrice({ input_price_per_1m: 0.1, output_price_per_1m: 0.5 }), true);
   assert.equal(keepsLastKnownPrice({ input_price_per_1m: null, output_price_per_1m: null }), false);
   assert.equal(keepsLastKnownPrice(null), false);
+});
+
+const channel = { model_id: 10, provider_id: 43, input_price_per_1m: 2, output_price_per_1m: 10, is_available: true };
+const cacheWrite = { ...channel, variant_key: 'cache-write-5m', cache_create_price_per_1m: 2, is_headline: true };
+
+test('cache-write guard requires one headline per active model/provider group, including new keys and cache creation rates', () => {
+  const secondary = { ...cacheWrite, variant_key: 'cache-write-1h', cache_create_price_per_1m: 4, is_headline: false };
+  assert.doesNotThrow(() => assertCacheWriteHeadlines([cacheWrite, secondary], [channel]));
+  for (const variant of [secondary, { ...secondary, variant_key: 'cache-write-24h' }, { ...secondary, variant_key: 'custom-cache-tier' }]) {
+    assert.throws(() => assertCacheWriteHeadlines([variant], [channel]), /exactly one active headline/);
+  }
+  assert.throws(() => assertCacheWriteHeadlines([cacheWrite, { ...secondary, is_headline: true }], [channel]), /found 2/);
+  assert.throws(() => assertCacheWriteHeadlines([cacheWrite, { ...secondary, provider_id: 99 }], [channel]), /99.*exactly one active headline/);
+  assert.throws(() => assertCacheWriteHeadlines([cacheWrite, { ...secondary, model_id: 11 }], [channel]), /11:43.*exactly one active headline/);
+  assert.throws(() => assertCacheWriteHeadlines([{ ...cacheWrite, is_available: false }, secondary], [channel]), /found 0/);
+  assert.doesNotThrow(() => assertCacheWriteHeadlines([{ ...secondary, is_available: false }], []));
+  const standard = { ...channel, variant_key: 'standard', is_headline: true };
+  assert.doesNotThrow(() => assertCacheWriteHeadlines([standard, secondary], [channel]));
+});
+
+test('cache-write headline must match a unique active channel and finite non-null input/output prices', () => {
+  for (const channels of [[], [{ ...channel, is_available: false }], [channel, channel]]) {
+    assert.throws(() => assertCacheWriteHeadlines([cacheWrite], channels), /exactly one active channel/);
+  }
+  assert.doesNotThrow(() => assertCacheWriteHeadlines([{ ...cacheWrite, input_price_per_1m: '2.000000', output_price_per_1m: '10.00' }], [channel]));
+  for (const field of ['input_price_per_1m', 'output_price_per_1m']) {
+    for (const value of [null, undefined, NaN, Infinity, 99]) {
+      assert.throws(() => assertCacheWriteHeadlines([{ ...cacheWrite, [field]: value }], [channel]), /headline must match channel/);
+      assert.throws(() => assertCacheWriteHeadlines([cacheWrite], [{ ...channel, [field]: value }]), /headline must match channel/);
+    }
+  }
 });

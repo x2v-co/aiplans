@@ -1,6 +1,7 @@
 import type { Sql } from 'postgres';
 import { catalogForKind } from '../../src/lib/ai-vertical-catalog';
 import { seedChanges } from './gemini-4-argon';
+import { assertCacheWriteHeadlines } from '../utils/variant-headlines';
 
 /**
  * DO NOT RE-RUN (2026-11-03). This seed was applied on 2026-11-02. Since then the scheduled
@@ -48,6 +49,23 @@ export function openRouterChannel(providerId: number, modelId: number) {
   };
 }
 
+export const KIMI_CACHE_WRITES = [
+  { key: 'cache-write-5m', ttl: '5m', seconds: 300, price: 2, headline: true },
+  { key: 'cache-write-1h', ttl: '1h', seconds: 3600, price: 4, headline: false },
+] as const;
+
+export function kimiCacheWriteVariants(providerId: number, modelId: number) {
+  const values = kimiChannel(KIMI_CHANNELS[0], providerId, modelId);
+  const variants = KIMI_CACHE_WRITES.map(spec => ({
+    ...values, variant_key: spec.key, variant_name: `Cache write (${spec.ttl} TTL)`, variant_kind: 'other',
+    source_url: KIMI_SOURCE, cache_create_price_per_1m: spec.price,
+    is_headline: spec.headline, is_public: true, is_self_service: true, is_partner_only: false,
+    constraints_json: { cache_ttl_seconds: spec.seconds },
+  }));
+  assertCacheWriteHeadlines(variants, [values]);
+  return variants;
+}
+
 export function catalog20261102SeedOptions(args: string[]) {
   if (args.some(arg => !['--apply', '--dry-run'].includes(arg)) || args.length > 1) {
     throw new Error('Usage: seed-catalog-2026-11-02.ts [--dry-run (offline) | --apply]');
@@ -88,6 +106,12 @@ export async function seedCatalog20261102(tx: Sql, apply = false): Promise<Step[
     const variants = match.model ? await tx<Row[]>`SELECT * FROM api_channel_price_variants WHERE model_id = ${match.model.id} AND provider_id = ${kimi.id}` : [];
     const channel = one(channels, `Moonshot channel/${match.spec.id}`);
     for (const ttl of ['5m', '1h']) one(variants.filter(v => v.variant_key === `cache-write-${ttl}`), `Moonshot cache-write-${ttl}/${match.spec.id}`);
+    if (match.spec.id === 'kimi-k3.1-pro') {
+      const modelId = match.model?.id ?? -1;
+      const generated = kimiCacheWriteVariants(kimi.id, modelId);
+      const projected = [...variants.filter(v => !generated.some(g => g.variant_key === v.variant_key)), ...generated];
+      assertCacheWriteHeadlines(projected, [kimiChannel(match.spec, kimi.id, modelId)]);
+    }
     kimiRows.push({ ...match, channel, variants });
   }
   const usage = await tx<Row[]>`SELECT * FROM usage_prices WHERE model_id = ${hailuo.id} AND provider_id = ${minimax.id}`;
@@ -133,13 +157,9 @@ export async function seedCatalog20261102(tx: Sql, apply = false): Promise<Step[
     }, spec.slugs[0]);
     const values = kimiChannel(spec, kimi.id, saved.id);
     await save('api_channel_prices', channel, values, `moonshot-global/${spec.id}`);
-    if (spec.id === 'kimi-k3.1-pro') for (const [ttl, seconds, price] of [['5m', 300, 2], ['1h', 3600, 4]] as const) {
-      await save('api_channel_price_variants', variants.find(v => v.variant_key === `cache-write-${ttl}`) ?? null, {
-        ...values, variant_key: `cache-write-${ttl}`, variant_name: `Cache write (${ttl} TTL)`, variant_kind: 'other',
-        source_url: KIMI_SOURCE, cache_create_price_per_1m: price,
-        is_headline: false, is_public: true, is_self_service: true, is_partner_only: false,
-        constraints_json: { cache_ttl_seconds: seconds },
-      }, `moonshot-global/${spec.id}/cache-write-${ttl}`);
+    if (spec.id === 'kimi-k3.1-pro') for (const variant of kimiCacheWriteVariants(kimi.id, saved.id)) {
+      await save('api_channel_price_variants', variants.find(v => v.variant_key === variant.variant_key) ?? null,
+        variant, `moonshot-global/${spec.id}/${variant.variant_key}`);
     }
   }
   if (world) await save('models', world, { pricing_unit: 'per_1m_tokens' }, WORLD_SLUG);
