@@ -1,16 +1,24 @@
 /**
- * Workers AI planned deprecations, announced 2026-11-05, removed 2026-11-15.
- * Source (re-read live): https://developers.cloudflare.com/changelog/post/2026-11-05-planned-model-deprecations/
+ * Workers AI planned deprecations, announced 2026-11-05.
+ * The changelog first said November 15, 2026, then moved removal to November 20, 2026.
+ * From that day, requests fail HTTP 410 Gone / error 5028.
+ * Source (re-read live 2026-11-07): https://developers.cloudflare.com/changelog/post/2026-11-05-planned-model-deprecations/
  *
  * Catalog Workers AI rows use a cloudflare- slug (cloudflare-clef) and keep the
  * @cf/ id in the name and description. Bare ids such as kimi-k2.6 already belong
  * to Moonshot, Zhipu or DeepSeek, so they are never updated. A missing exclusive
  * Cloudflare row is inserted as cloudflare-<model id> and marked deprecated.
  * shutdown_date retires every channel of that row, so a shared row is left alone.
+ *
+ * Rows already stamped CF_SHUTDOWN_DATE_PREVIOUS are corrected forward to
+ * CF_SHUTDOWN_DATE. Description text that still names the old day is rewritten by
+ * seed:catalog-2026-11-07-workers-ai-deprecation-date, not by this insert seed.
  */
 export const CF_DEPRECATION_SOURCE = 'https://developers.cloudflare.com/changelog/post/2026-11-05-planned-model-deprecations/';
 export const CF_ANNOUNCED_ON = '2026-11-05';
-export const CF_SHUTDOWN_DATE = '2026-11-15';
+/** First published removal day. Superseded; not a conflicting foreign date. */
+export const CF_SHUTDOWN_DATE_PREVIOUS = '2026-11-15';
+export const CF_SHUTDOWN_DATE = '2026-11-20';
 
 /** Frontier and smaller replacements named in the changelog for the LLM list. */
 export const CF_LLM_REPLACEMENT = '@cf/deepseek-ai/deepseek-v4.1-flash-1017 or @cf/zai-org/glm-5.3; smaller: @cf/google/gemma-4-26b-a4b-it or @cf/qwen/qwen3.8-27b';
@@ -179,9 +187,10 @@ const same = (from: WorkersAiUpdate['from'], to: WorkersAiUpdate['to']) =>
 
 /**
  * Pure plan. Throws before any caller writes when a slug is ambiguous or already
- * carries a different shutdown day. Non-Cloudflare rows are reported and left
- * unchanged. An endpoint with no exclusive Cloudflare row is inserted as
- * cloudflare-<model id>, unless that slug is already taken.
+ * carries a shutdown day other than CF_SHUTDOWN_DATE or CF_SHUTDOWN_DATE_PREVIOUS.
+ * The superseded November 15 stamp is updated to November 20. Non-Cloudflare rows
+ * are reported and left unchanged. An endpoint with no exclusive Cloudflare row
+ * is inserted as cloudflare-<model id>, unless that slug is already taken.
  */
 export function planWorkersAiDeprecations(rows: readonly WorkersAiModelRow[]) {
   const bySlug = new Map<string, WorkersAiModelRow>();
@@ -208,7 +217,7 @@ export function planWorkersAiDeprecations(rows: readonly WorkersAiModelRow[]) {
       continue;
     }
     bucket.exclusive.push(row.slug);
-    if (row.shutdown_date && row.shutdown_date !== CF_SHUTDOWN_DATE) {
+    if (row.shutdown_date && row.shutdown_date !== CF_SHUTDOWN_DATE && row.shutdown_date !== CF_SHUTDOWN_DATE_PREVIOUS) {
       throw new Error(`Conflicting shutdown date for ${row.slug} (${row.shutdown_date}); nothing written.`);
     }
     const from = {
