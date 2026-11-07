@@ -80,6 +80,8 @@
     "seed:catalog-2026-11-06-workers-ai-deprecations:apply": "tsx scripts/seed-catalog-2026-11-06-workers-ai-deprecations.ts --apply",
     "seed:catalog-2026-11-06-ling-inkling": "tsx scripts/seed-catalog-2026-11-06-ling-inkling.ts",
     "seed:catalog-2026-11-06-ling-inkling:apply": "tsx scripts/seed-catalog-2026-11-06-ling-inkling.ts --apply",
+    "seed:catalog-2026-11-07-new-models": "tsx scripts/seed-catalog-2026-11-07-new-models.ts",
+    "seed:catalog-2026-11-07-new-models:apply": "tsx scripts/seed-catalog-2026-11-07-new-models.ts --apply",
     "seed:catalog-2026-11-05-intel": "tsx scripts/seed-catalog-2026-11-05-intel.ts",
     "seed:catalog-2026-11-05-intel:apply": "tsx scripts/seed-catalog-2026-11-05-intel.ts --apply",
     "seed:catalog-2026-11-05-1800": "tsx scripts/seed-catalog-2026-11-05-1800.ts",
