@@ -80,3 +80,20 @@ test('scraper reads the server-rendered international DocTables (fixture of the 
   assert.deepEqual(result.prices, parseKimiGlobalPricingTables(tables).prices);
   assert.equal(result.variants?.length, 9);
 });
+
+test('2026-11-07 manifest (no Next.js flight payload) still yields the six USD prices', async () => {
+  const html = readFileSync(join(__dirname, 'fixtures', 'kimi-pricing-chat-global-2026-11-07.html'), 'utf8');
+  assert.equal(html.includes('__next_f'), false);
+  assert.match(html, /data-mint="manifest"/);
+  const extracted = extractKimiTablesFromHtml(html);
+  assert.deepEqual(extracted.map(t => t.headers), tables.map(t => t.headers));
+  assert.deepEqual(extracted.map(t => t.rows), tables.map(t => t.rows));
+  const parsed = parseKimiGlobalPricingTables(extracted);
+  assert.deepEqual(parsed.prices, parseKimiGlobalPricingTables(tables).prices);
+  assert.equal(parsed.variants.length, 9);
+  const fetchImpl = (async () => new Response(html, { status: 200 })) as typeof fetch;
+  const result = await scrapeMoonshotGlobalDynamic({ fetchImpl, attempts: 1 });
+  assert.equal(result.success, true);
+  assert.deepEqual(result.prices, parsed.prices);
+  assert.equal(result.variants?.length, 9);
+});

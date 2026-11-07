@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseNextFlight } from '../utils/artificial-analysis';
 import {
-  DEFAULT_FETCH_TIMEOUT_MS, MoonshotScraper, extractKimiTablesFromMdx, fetchKimiPricingHtml,
+  DEFAULT_FETCH_TIMEOUT_MS, MoonshotScraper, extractKimiTablesFromHtml, extractKimiTablesFromMdx, fetchKimiPricingHtml,
   parseKimiPricingHtml, parseKimiPricingTables, resolveFetchTimeoutMs, scrapeMoonshotDynamic, type KimiPricingTable,
 } from './moonshot-dynamic';
 
@@ -97,6 +97,24 @@ test('static HTML fails loud on a props-stripped page, conflicting copies or int
   assert.throws(() => extractKimiTablesFromMdx(table('¥20.00 / MTok') + table('¥21.00 / MTok')), /conflicting DocTable copies/);
   assert.throws(() => extractKimiTablesFromMdx(table('¥${p} / MTok')), /Unsupported template interpolation/);
   assert.throws(() => parseKimiPricingHtml('<html><body><table></table></body></html>'), /No Next.js flight payload/);
+  assert.throws(() => parseKimiPricingHtml('<html><body><template data-mint="manifest">{"page":{"description":{"compiledSource":"no table"}}}</template></body></html>'), /No Next.js flight payload/);
+});
+
+test('mint manifest supplies DocTables when the Next.js flight payload is absent', () => {
+  const manifest = readFileSync(join(__dirname, 'fixtures', 'kimi-pricing-chat-global-2026-11-07.html'), 'utf8');
+  assert.equal(manifest.includes('__next_f'), false);
+  const tables = extractKimiTablesFromHtml(manifest);
+  assert.deepEqual(tables.map(table => table.headers[0]), ['Model', 'Model']);
+  assert.equal(tables.flatMap(table => table.rows.map(row => row[0])).length, 6);
+  const price = (value: string) => `const DocTable=1;_jsx(Heading,{level:\`3\`,children:\`K3 系列模型均支持 1,048,576 tokens 上下文窗口。\`}),_jsx(DocTable,{columns:[{title:\`模型\`},{title:\`输入\`},{title:\`输出\`},{title:\`缓存命中\`}],rows:[[\`kimi-k3\`,\`${value}\`,\`¥100.00 / MTok\`,\`¥2.00 / MTok\`]]})`;
+  const page = (sources: string[]) => `<template data-mint="manifest">${JSON.stringify({ page: Object.fromEntries(sources.map((compiledSource, index) => [`copy${index}`, { compiledSource }])) })}</template>`;
+  assert.equal(extractKimiTablesFromHtml(page([price('¥20.00 / MTok')]))[0].rows[0][1], '¥20.00 / MTok');
+  // Description-style copies without a DocTable are ignored. A props-stripped
+  // `_jsx(DocTable,{…})` is not a price, and disagreeing table copies still fail closed.
+  assert.equal(extractKimiTablesFromHtml(page(['const DocTable=()=>null;', price('¥20.00 / MTok')]))[0].rows[0][1], '¥20.00 / MTok');
+  assert.throws(() => extractKimiTablesFromHtml(page(['_jsx(DocTable,{className:`x`})'])), /No complete Kimi DocTable set/);
+  assert.equal(extractKimiTablesFromHtml(page(['_jsx(DocTable,{className:`x`})', price('¥20.00 / MTok')]))[0].rows[0][1], '¥20.00 / MTok');
+  assert.throws(() => extractKimiTablesFromHtml(page([price('¥20.00 / MTok'), price('¥21.00 / MTok')])), /conflicting DocTable copies/);
 });
 
 test('fetch timeout defaults to 90s and MOONSHOT_FETCH_TIMEOUT_MS overrides it', () => {

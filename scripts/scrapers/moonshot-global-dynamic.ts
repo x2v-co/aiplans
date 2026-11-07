@@ -5,6 +5,11 @@
  * only ever written by the 2026-11-02 catalog seed, so their last_verified could
  * never move and SRE's daily check flagged them as stale. Same Mintlify DocTable
  * payload as the China page (moonshot-dynamic), but USD and English headings.
+ *
+ * 2026-11-07 the page stopped shipping `self.__next_f`. The compiled MDX is in
+ * `<template data-mint="manifest">`, and the static HTML has no `<table>`.
+ * This scraper stays on that payload: a Playwright wait for `table tbody tr`
+ * cannot see prices that only exist in the manifest.
  */
 import type { ScrapedPrice, ScrapedPriceVariant, ScraperResult } from '../utils/validator';
 import { runScraperCli } from './lib/cli-exit';
