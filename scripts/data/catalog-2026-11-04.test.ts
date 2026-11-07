@@ -159,7 +159,10 @@ test('1104 embedding category has exact multimodal and OpenAI rates without fabr
   assert.equal(google.releasedAt, '2026-04-22');
   assert.deepEqual(google.usageRates!.map(r => r.price), [0.2, 0.1, 0.45, 0.225, 6.5, 3.25, 12, 6]);
   assert.match(google.notes!, /DEPRECATED|deprecated/);
-  assert.match(google.notes!, /2026-08-10/);
+  assert.match(google.notes!, /2026-11-06/);
+  assert.match(google.notes!, /gemini-embedding-2-preview route to gemini-embedding-2/);
+  assert.match(google.notes!, /embedding space/);
+  assert.doesNotMatch(google.notes!, /2026-08-10/);
   assert.match(google.notes!, /2028-05-14/);
   assert.deepEqual(EMBEDDING_MODELS_1104.slice(1).map(r => r.inputPricePer1M), [0.02, 0.13, 0.1]);
   for (const item of EMBEDDING_MODELS_1104) assert.equal(item.outputPricePer1M, undefined);
@@ -197,7 +200,10 @@ test('1104 keeps INR decision price static (no INR channel row), Terra context t
   assert.deepEqual(tiers.map(r => [r.input_price_per_1m, r.output_price_per_1m, r.cached_input_price_per_1m, r.is_headline]), [[1, 5, 0.05, true], [2, 7.5, 0.1, false]]);
   assert.deepEqual(tiers[1].constraints_json, { min_input_tokens_exclusive: 272000 });
   assert.equal(f.data.providers.find(r => r.slug === 'meituan')!.access_from_china, true);
-  assert.equal(f.data.models.find(r => r.id === 32)!.shutdown_date, '2026-08-10');
+  const preview = f.data.models.find(r => r.id === 32)!;
+  assert.equal(preview.shutdown_date, '2026-11-06');
+  assert.match(String(preview.description), /route to gemini-embedding-2/);
+  assert.doesNotMatch(String(preview.description), /2026-08-10/);
   assert.equal(f.data.models.find(r => r.id === 33)!.shutdown_date, '2028-05-14');
   for (const row of f.data.usage_prices.filter(r => r.id !== 42)) {
     assert.match(String(row.source_url), /^https:\/\//);

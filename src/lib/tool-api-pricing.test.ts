@@ -5,7 +5,7 @@ import { TOOL_API_PRICES, formatToolPrice } from './tool-api-pricing';
 test('every tool price is official, sourced and verified', () => {
   for (const row of TOOL_API_PRICES) {
     assert.equal(new URL(row.sourceUrl).protocol, 'https:');
-    assert.ok(/(claude\.com|openai\.com|ai\.google\.dev|x\.ai|deepseek\.com|baidu\.com)$/.test(new URL(row.sourceUrl).hostname), row.sourceUrl);
+    assert.ok(/(claude\.com|openai\.com|ai\.google\.dev|x\.ai|deepseek\.com|baidu\.com|vercel\.com)$/.test(new URL(row.sourceUrl).hostname), row.sourceUrl);
     assert.ok(row.pricePer1k >= 0 && Number.isFinite(row.pricePer1k));
     assert.match(row.verifiedAt, /^\d{4}-\d{2}-\d{2}$/);
   }
@@ -48,6 +48,31 @@ test('known official prices', () => {
   assert.equal(get('google', 'Grounding with Google Search (Gemini 3+)').pricePer1k, 14);
   assert.equal(get('xai', 'Web search').pricePer1k, 5);
   assert.equal(get('deepseek', 'Search').currency, 'CNY');
+  assert.equal(get('deepseek', 'Search').pricePer1k, 5);
   assert.equal(formatToolPrice(get('deepseek', 'Fetch'), 'zh'), '¥5 / 每千次成功请求');
   assert.equal(formatToolPrice(get('anthropic', 'Web fetch'), 'en'), 'No per-call fee');
+});
+
+test('Vercel AI Gateway DeepSeek Search and Fetch use the published $0.75 billable rate', () => {
+  const rows = TOOL_API_PRICES.filter(row => row.providerSlug === 'vercel-ai-gateway');
+  assert.deepEqual(rows.map(row => [row.tool, row.kind, row.pricePer1k, row.currency]), [
+    ['DeepSeek Search', 'web_search', 0.75, 'USD'],
+    ['DeepSeek Fetch', 'web_fetch', 0.75, 'USD'],
+  ]);
+  for (const row of rows) {
+    assert.equal(row.provider, 'Vercel AI Gateway');
+    assert.equal(row.verifiedAt, '2026-11-07');
+    assert.equal(row.sourceUrl, 'https://vercel.com/docs/ai-gateway/models-and-providers/web-search');
+    assert.deepEqual(row.unit, { en: '1,000 billable requests', zh: '每千次可计费请求' });
+    for (const locale of ['en', 'zh'] as const) {
+      assert.ok(row.note);
+      assert.ok(row.note[locale].includes('0.75'));
+      assert.ok(row.note[locale].includes('https://vercel.com/changelog/ai-gateway-adds-deepseek-search-and-fetch-tools'));
+    }
+  }
+  assert.match(rows[0].note!.en, /nonempty results array/);
+  assert.match(rows[0].note!.zh, /非空结果数组/);
+  assert.match(rows[1].note!.en, /nonempty page content/);
+  assert.match(rows[1].note!.zh, /非空页面内容/);
+  assert.equal(formatToolPrice(rows[0], 'en'), '$0.75 / 1,000 billable requests');
 });

@@ -20,6 +20,9 @@ export interface ToolApiPrice {
 }
 
 const V = '2026-10-18';
+const GATEWAY_VERIFIED_AT = '2026-11-07';
+const VERCEL_SEARCH = 'https://vercel.com/docs/ai-gateway/models-and-providers/web-search';
+const VERCEL_SEARCH_CHANGELOG = 'https://vercel.com/changelog/ai-gateway-adds-deepseek-search-and-fetch-tools';
 const BAIDU_VERIFIED_AT = '2026-10-31';
 const BAIDU = 'https://cloud.baidu.com/doc/qianfan/s/1mh4sv6c4';
 const BAIDU_CAMPAIGN = 'https://cloud.baidu.com/product/AI-SEARCH/campaign.html';
@@ -67,6 +70,22 @@ export const TOOL_API_PRICES: ToolApiPrice[] = [
     unit: { en: '1,000 successful requests', zh: '每千次成功请求' }, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
     note: { en: `US$0.75 on the English page (${DEEPSEEK_EN}). Same free period as Search.`, zh: '英文页为 0.75 美元。免费期同 Search。' },
     sourceUrl: DEEPSEEK_CN, verifiedAt: V },
+  { provider: 'Vercel AI Gateway', providerSlug: 'vercel-ai-gateway', tool: 'DeepSeek Search', kind: 'web_search', pricePer1k: 0.75, currency: 'USD',
+    unit: { en: '1,000 billable requests', zh: '每千次可计费请求' },
+    tokens: { en: 'Host model tokens billed separately', zh: '宿主模型 token 另计' },
+    note: {
+      en: `Gateway channel, not a new DeepSeek list price. Docs table: $0.75 per 1,000 billable requests, the same figure as the DeepSeek English page. Billable when a successful request returns a nonempty results array, including results filtered before they reach the model. Failed requests, timeouts, and empty results are not billed. Result count does not change the price. Changelog: ${VERCEL_SEARCH_CHANGELOG}`,
+      zh: `Vercel AI Gateway 渠道，不是另一套 DeepSeek 刊例价。文档表为每千次可计费请求 0.75 美元，与 DeepSeek 英文页相同。成功且返回非空结果数组才计费，含在送达模型前被滤掉的结果。失败、超时、空结果不计工具费。结果条数不改变价格。更新日志：${VERCEL_SEARCH_CHANGELOG}`,
+    },
+    sourceUrl: VERCEL_SEARCH, verifiedAt: GATEWAY_VERIFIED_AT },
+  { provider: 'Vercel AI Gateway', providerSlug: 'vercel-ai-gateway', tool: 'DeepSeek Fetch', kind: 'web_fetch', pricePer1k: 0.75, currency: 'USD',
+    unit: { en: '1,000 billable requests', zh: '每千次可计费请求' },
+    tokens: { en: 'Host model tokens billed separately', zh: '宿主模型 token 另计' },
+    note: {
+      en: `Gateway channel. Docs table: $0.75 per 1,000 billable requests. Billable when a successful request returns nonempty page content. Failed requests, timeouts, and empty results are not billed. Changelog: ${VERCEL_SEARCH_CHANGELOG}`,
+      zh: `Vercel AI Gateway 渠道。文档表为每千次可计费请求 0.75 美元。成功且返回非空页面内容才计费。失败、超时、空结果不计工具费。更新日志：${VERCEL_SEARCH_CHANGELOG}`,
+    },
+    sourceUrl: VERCEL_SEARCH, verifiedAt: GATEWAY_VERIFIED_AT },
   { provider: 'Baidu AI Cloud', providerSlug: 'baidu', tool: 'Baidu Search API (Enhanced / 增强版)', kind: 'web_search', pricePer1k: 40, currency: 'CNY',
     unit: PER_CALL, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
     note: { en: `Domestic content list price: ¥0.04/call. Limited-time campaign 2026-10-30 to 2026-12-31: ¥4.9 per 1,000 calls (prepaid pack, up to 1M calls cumulative; overage billed at list price). 1,500 free calls/month; default 3 QPS. Overseas content: ¥0.072/call. Campaign: ${BAIDU_CAMPAIGN}`,
