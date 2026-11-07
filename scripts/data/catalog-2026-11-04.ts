@@ -195,8 +195,8 @@ export async function seedCatalog20261104(tx: Sql, apply = false): Promise<Step[
   if (!((longcat.provider_ids as number[] | undefined) ?? []).includes(meituan.id)) throw new Error('LongCat is not owned by Meituan; nothing written.');
   save('models', longcat, { description: appendEvidence(longcat.description, evidence('Official Meituan China platform; access from China available.', LONGCAT_SOURCE)) }, 'meituan-longcat-2-5');
   const preview = byModel.get('gemini-embedding-2-preview') ?? byModel.get('embedding-2-preview');
-  if (preview) save('models', preview, { shutdown_date: '2026-08-10', replacement_model: 'gemini-embedding-2', deprecation_source_url: SOURCES_1104.deprecations,
-    description: appendEvidence(preview.description, evidence('DEPRECATED gemini-embedding-2-preview (formerly embedding-2-preview); shut down 2026-08-10; replacement gemini-embedding-2.', SOURCES_1104.deprecations)) }, String(preview.slug));
+  if (preview) save('models', preview, { shutdown_date: '2026-11-06', replacement_model: 'gemini-embedding-2', deprecation_source_url: SOURCES_1104.deprecations,
+    description: appendEvidence(preview.description, 'DEPRECATED gemini-embedding-2-preview (formerly embedding-2-preview). Deprecations table lists shutdown date 2026-11-06; effective that day API requests route to gemini-embedding-2 at Embedding 2 pricing, same schema and embedding space. Checked 2026-11-07. Source: ' + SOURCES_1104.deprecations) }, String(preview.slug));
   const embedding001 = byModel.get('gemini-embedding-001');
   if (embedding001) save('models', embedding001, { shutdown_date: '2028-05-14', deprecation_source_url: SOURCES_1104.deprecations,
     description: appendEvidence(embedding001.description, evidence('Shutdown 2028-05-14.', SOURCES_1104.deprecations)) }, 'gemini-embedding-001');
