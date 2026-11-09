@@ -193,6 +193,17 @@ export async function seedCatalog20261107NewModels(tx: Sql, apply = false): Prom
   const pending: { table: Table; existing: Row | null; values: Record<string, unknown>; id: number }[] = [];
   let previewId = -1;
   const save = (table: Table, existing: Row | null, desired: Record<string, unknown>, target: string): Row => {
+    // A dated seed must not roll back a newer live scrape's prices or evidence.
+    if (table === 'api_channel_prices' && existing?.last_verified &&
+        new Date(String(existing.last_verified)).getTime() > VERIFIED_AT.getTime()) {
+      desired = { ...desired };
+      for (const key of ['last_verified', 'notes', 'currency', 'price_unit', 'is_available',
+        'input_price_per_1m', 'output_price_per_1m', 'cached_input_price_per_1m',
+        'promo_ends_at', 'regular_input_price_per_1m', 'regular_output_price_per_1m',
+        'regular_cached_input_price_per_1m']) {
+        delete desired[key];
+      }
+    }
     const changes = seedChanges(existing, desired);
     if (!Object.keys(changes).length) return existing!;
     const id = existing?.id ?? previewId--;
