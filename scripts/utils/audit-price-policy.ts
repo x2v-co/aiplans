@@ -22,6 +22,10 @@ export function isVerifiedFreePrice(modelSlug: string | undefined, providerSlug:
   if ((providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway') && [
     'reflection-beam-1-0-501b-a23b', 'reflection-beam-1-0', 'reflection-beam', 'reflection/beam',
   ].includes(modelSlug ?? '')) return true;
+  // Vercel changelog 2026-11-06 and GET /v1/models/humansand/ampersand-v0.1 (checked 2026-11-07):
+  // humansand/ampersand-v0.1 is free through 2026-11-13. No post-promo price was published.
+  // Only this Gateway channel is exempt. Remove the exemption once a post-window rate is verified.
+  if ((providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway') && modelSlug === 'humansand-ampersand-v0-1') return true;
   // /workspace/aiplans-gaps-facts.md, Nemotron 3.5 Lightning section (2026-10-15).
   return modelSlug === 'nemotron-3.5-lightning'
     && (providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway');
