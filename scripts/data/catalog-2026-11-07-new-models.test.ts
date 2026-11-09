@@ -233,3 +233,17 @@ test('missing gateway providers, the wrong type, duplicates or a non-canonical s
     assert.equal(f.writes(), 0);
   }
 });
+
+
+test('replaying the dated seed preserves newer live pricing and verification evidence', async () => {
+  const f = shaped();
+  await seedCatalog20261107NewModels(f.tx, true);
+  const row = f.data.api_channel_prices.find(r => r.provider_id === liquid.id)!;
+  Object.assign(row, {
+    input_price_per_1m: 0.04, output_price_per_1m: 0.10, cached_input_price_per_1m: 0.01,
+    last_verified: new Date('2026-11-09T10:35:00Z'), notes: 'Newer official source evidence',
+  });
+  const before = structuredClone(row);
+  await seedCatalog20261107NewModels(f.tx, true);
+  assert.deepEqual(row, before);
+});
