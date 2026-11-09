@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack",
+    "build": "NODE_OPTIONS=--max-old-space-size=1024 next build --webpack",
     "start": "next start",
     "docker:up": "deploy/production/rollout.sh",
     "docker:down": "docker compose -p planprice-production -f deploy/production/compose.yml --env-file deploy/production/.env.production down",
