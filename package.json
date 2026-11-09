@@ -78,6 +78,8 @@
     "seed:catalog-2026-11-06-embeddings:apply": "tsx scripts/seed-catalog-2026-11-06-embeddings.ts --apply",
     "seed:catalog-2026-11-06-workers-ai-deprecations": "tsx scripts/seed-catalog-2026-11-06-workers-ai-deprecations.ts",
     "seed:catalog-2026-11-06-workers-ai-deprecations:apply": "tsx scripts/seed-catalog-2026-11-06-workers-ai-deprecations.ts --apply",
+    "seed:catalog-2026-11-07-workers-ai-deprecation-date": "tsx scripts/seed-catalog-2026-11-07-workers-ai-deprecation-date.ts",
+    "seed:catalog-2026-11-07-workers-ai-deprecation-date:apply": "tsx scripts/seed-catalog-2026-11-07-workers-ai-deprecation-date.ts --apply",
     "seed:catalog-2026-11-06-ling-inkling": "tsx scripts/seed-catalog-2026-11-06-ling-inkling.ts",
     "seed:catalog-2026-11-06-ling-inkling:apply": "tsx scripts/seed-catalog-2026-11-06-ling-inkling.ts --apply",
     "seed:catalog-2026-11-05-intel": "tsx scripts/seed-catalog-2026-11-05-intel.ts",

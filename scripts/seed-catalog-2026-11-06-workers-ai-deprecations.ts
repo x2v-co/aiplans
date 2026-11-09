@@ -1,6 +1,8 @@
 #!/usr/bin/env tsx
 /** Optional SRE seed. Not part of deploy or seed-catalog.sh. Default dry-run; --apply writes one transaction.
- * Inserts missing Workers AI rows as cloudflare-<model id>. Never updates a non-Cloudflare provider's row. */
+ * Inserts missing Workers AI rows as cloudflare-<model id>. Never updates a non-Cloudflare provider's row.
+ * Removal day is 2026-11-20 (the changelog moved it from 2026-11-15). Description
+ * rewrites for rows already applied at the old day are seed:catalog-2026-11-07-workers-ai-deprecation-date. */
 import { CF_DEPRECATION_SOURCE, CF_SHUTDOWN_DATE, planWorkersAiDeprecations, workersAiSeedOptions, WORKERS_AI_CANDIDATE_SLUGS, type WorkersAiModelRow } from './data/catalog-2026-11-06-workers-ai-deprecations';
 
 interface DbRow {

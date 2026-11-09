@@ -43,7 +43,7 @@ test('changelog list is the live 2026-11-05 post, with the published replacement
   assert.deepEqual(CF_DEPRECATIONS.map(item => item.endpoint), ENDPOINTS);
   assert.equal(new Set(ENDPOINTS).size, ENDPOINTS.length);
   assert.equal(CF_ANNOUNCED_ON, '2026-11-05');
-  assert.equal(CF_SHUTDOWN_DATE, '2026-11-15');
+  assert.equal(CF_SHUTDOWN_DATE, '2026-11-20');
   assert.equal(CF_DEPRECATION_SOURCE, 'https://developers.cloudflare.com/changelog/post/2026-11-05-planned-model-deprecations/');
   assert.match(CF_LLM_REPLACEMENT, /@cf\/deepseek-ai\/deepseek-v4\.1-flash-1017/);
   assert.match(CF_LLM_REPLACEMENT, /@cf\/zai-org\/glm-5\.3(?!-flash)/);
@@ -87,6 +87,8 @@ test('missing Workers AI rows are inserted as cloudflare-<id>; Clef rows are not
   assert.equal(kimi.values.replacement_model, CF_LLM_REPLACEMENT);
   assert.equal(kimi.values.model_category, 'text');
   assert.match(kimi.values.description, /@cf\/moonshotai\/kimi-k2\.6/);
+  assert.match(kimi.values.description, /2026-11-20/);
+  assert.doesNotMatch(kimi.values.description, /2026-11-15/);
   assert.equal(workersAiKind('@cf/openai/whisper-tiny-en').model_category, 'speech');
   assert.equal(workersAiKind('@cf/stabilityai/stable-diffusion-xl-base-1.0').model_category, 'image');
   assert.equal(workersAiKind('@cf/google/embeddinggemma-300m').model_category, 'embedding');
@@ -116,7 +118,7 @@ test('upstream lookalikes stay untouched; an existing exclusive Cloudflare row i
   assert.equal(plan.inserts.length, ENDPOINTS.length - 1);
   const marked = plan.updates[0];
   assert.equal(marked.endpoint, '@cf/openai/whisper-tiny-en');
-  assert.equal(marked.to.shutdown_date, '2026-11-15');
+  assert.equal(marked.to.shutdown_date, '2026-11-20');
   assert.equal(marked.to.deprecated_at, '2026-11-05');
   assert.equal(marked.to.replacement_model, '@cf/deepgram/nova-3');
   assert.equal(marked.to.deprecation_source_url, CF_DEPRECATION_SOURCE);
@@ -133,6 +135,9 @@ test('duplicate slugs and a different shutdown day abort before a write', () => 
   const row = blank(1, 'whisper-tiny-en', ['cloudflare']);
   assert.throws(() => planWorkersAiDeprecations([row, { ...row, id: 2 }]), /Ambiguous model slug: whisper-tiny-en/);
   assert.throws(() => planWorkersAiDeprecations([{ ...row, shutdown_date: '2026-12-01' }]), /Conflicting shutdown date/);
+  const superseded = planWorkersAiDeprecations([{ ...row, shutdown_date: '2026-11-15', slug: 'cloudflare-whisper-tiny-en' }]);
+  assert.equal(superseded.updates[0]?.to.shutdown_date, '2026-11-20');
+  assert.equal(superseded.updates[0]?.slug, 'cloudflare-whisper-tiny-en');
 });
 
 test('seed is dry-run by default and is not on the deploy path', () => {
