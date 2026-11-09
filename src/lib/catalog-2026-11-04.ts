@@ -66,8 +66,12 @@ export const EMBEDDING_MODELS_1104: AiCatalogItem[] = [
     pricing: 'Text $0.20/M; image $0.45/M; audio $6.50/M; video $12.00/M tokens; batch half',
     inputPricePer1M: 0.2, inputModalities: ['text', 'image', 'audio', 'video'],
     usageRates: batch([rate('text input', 0.2), rate('image input', 0.45), rate('audio input', 6.5), rate('video input', 12)]),
-    notes: 'GA, released 2026-04-22. Image $0.00012/image; audio $0.00016/s; video $0.00079/frame. Batch is half. Replaces deprecated gemini-embedding-2-preview (formerly embedding-2-preview), shut down 2026-08-10. gemini-embedding-001 shuts down 2028-05-14.',
-    sourceUrls: [{ label: 'Google pricing', url: SOURCES_1104.google, publisher: 'Google' }, { label: 'Google deprecations', url: SOURCES_1104.deprecations, publisher: 'Google' }],
+    notes: 'GA, released 2026-04-22. Image $0.00012/image; audio $0.00016/s; video $0.00079/frame. Batch is half. Replaces deprecated gemini-embedding-2-preview (formerly embedding-2-preview). Effective 2026-11-06, API requests to gemini-embedding-2-preview route to gemini-embedding-2 at Embedding 2 pricing; same API schema and embedding space, so stored vectors do not need re-indexing. The deprecations table lists the preview shutdown date as 2026-11-06 with that same routing note. gemini-embedding-001 shuts down 2028-05-14. Routing note checked 2026-11-07.',
+    sourceUrls: [
+      { label: 'Google pricing', url: SOURCES_1104.google, publisher: 'Google' },
+      { label: 'Google deprecations', url: SOURCES_1104.deprecations, publisher: 'Google' },
+      { label: 'Gemini API changelog (2026-11-06)', url: 'https://ai.google.dev/gemini-api/docs/changelog', publisher: 'Google' },
+    ],
   }),
   ...([['text-embedding-3-small', 0.02], ['text-embedding-3-large', 0.13], ['text-embedding-ada-002', 0.1]] as const).map(([slug, input]) =>
     item(slug, slug, 'OpenAI', 'openai', SOURCES_1104.openai, {
