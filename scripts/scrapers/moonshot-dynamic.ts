@@ -170,11 +170,11 @@ function cellText(cell: string): string {
 
 /**
  * Read the pricing tables straight from the server-rendered HTML. Mintlify
- * ships the page as compiled MDX inside the Next.js flight payload; the
- * DocTable props carry `columns:[{title:…}]` and `rows:[[…]]` with the same
- * strings the browser later renders. This needs no browser, so a slow
- * client-side hydration (the 2026-10-21→29 production timeouts on
- * `table tbody tr`) cannot fail the scrape.
+ * ships the page as compiled MDX; the DocTable props carry `columns:[{title:…}]`
+ * and `rows:[[…]]` with the same strings the browser later renders. This needs
+ * no browser, so a slow client-side hydration (the 2026-10-21→29 production
+ * timeouts on `table tbody tr`) cannot fail the scrape. The static document
+ * also has no `<table>` once the payload moves out of the flight scripts.
  */
 function tablesInModule(source: string): KimiPricingTable[] | null {
   const tables: KimiPricingTable[] = [];
@@ -234,16 +234,77 @@ export function parseKimiPricingHtml(html: string): PriceData[] {
   return parseKimiPricingTables(extractKimiTablesFromHtml(html));
 }
 
-export function extractKimiTablesFromHtml(html: string): KimiPricingTable[] {
-  let flight: string;
-  try {
-    flight = parseNextFlight(html);
-  } catch {
-    throw new Error('No Next.js flight payload in Kimi pricing HTML');
+/** `<template data-mint="manifest">{…}</template>` — Mintlify's replacement for `self.__next_f`. */
+const MINT_MANIFEST = /<template\b[^>]*\bdata-mint=(["'])manifest\1[^>]*>/gi;
+
+function collectCompiledSources(value: unknown, out: string[]): void {
+  if (Array.isArray(value)) {
+    for (const item of value) collectCompiledSources(item, out);
+    return;
   }
-  const tables = extractKimiTablesFromMdx(flight);
-  if (!tables.length) throw new Error('No DocTable found in Kimi pricing HTML');
-  return tables;
+  if (value === null || typeof value !== 'object') return;
+  for (const [key, child] of Object.entries(value)) {
+    if (key === 'compiledSource' && typeof child === 'string') out.push(child);
+    else collectCompiledSources(child, out);
+  }
+}
+
+/** Compiled MDX strings embedded in Mintlify's page manifest (zero or more). */
+function mintCompiledSources(html: string): string[] {
+  const compiled: string[] = [];
+  for (const match of html.matchAll(MINT_MANIFEST)) {
+    const start = (match.index ?? 0) + match[0].length;
+    const end = html.indexOf('</template>', start);
+    if (end < 0) continue;
+    try {
+      collectCompiledSources(JSON.parse(html.slice(start, end).trim()), compiled);
+    } catch {
+      // A truncated or non-JSON template is not a pricing payload.
+    }
+  }
+  return compiled;
+}
+
+/**
+ * Every compiled copy of the pricing page. Older docs embed that MDX in the
+ * Next.js flight payload (`self.__next_f.push`). On 2026-11-07 platform.kimi.ai
+ * and platform.kimi.com dropped the flight scripts; the same MDX now lives in
+ * the manifest's `compiledSource`, including the page description (no DocTable)
+ * beside the real table. Copies that contain a DocTable must agree.
+ */
+function kimiPricingMdxSources(html: string): string[] {
+  const sources: string[] = [];
+  try {
+    sources.push(parseNextFlight(html));
+  } catch {
+    // No flight chunks. The manifest path below is the current page.
+  }
+  for (const compiled of mintCompiledSources(html)) {
+    if (compiled.includes('_jsx(DocTable,{')) sources.push(compiled);
+  }
+  return sources;
+}
+
+export function extractKimiTablesFromHtml(html: string): KimiPricingTable[] {
+  const sources = kimiPricingMdxSources(html);
+  if (!sources.length) throw new Error('No Next.js flight payload in Kimi pricing HTML');
+  const sets: KimiPricingTable[][] = [];
+  for (const source of sources) {
+    try {
+      sets.push(extractKimiTablesFromMdx(source));
+    } catch (error) {
+      // A props-stripped copy (`DocTable=()=>null`) is not the page. A real
+      // syntax/price-shape error still fails the scrape.
+      if (error instanceof Error && error.message.startsWith('No complete Kimi DocTable set')) continue;
+      throw error;
+    }
+  }
+  if (!sets.length) throw new Error('No complete Kimi DocTable set (columns/rows) in pricing HTML');
+  const first = JSON.stringify(sets[0]);
+  if (sets.some(tables => JSON.stringify(tables) !== first)) {
+    throw new Error('Kimi pricing HTML carries conflicting DocTable copies');
+  }
+  return sets[0];
 }
 
 /**
