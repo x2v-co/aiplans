@@ -18,22 +18,29 @@ test('existing LLM descriptions default to available; only explicit metadata opt
     assert.equal(modelAvailabilityStatus(description), 'available');
     assert.equal(modelAnnouncementLabel(description, en.modelAnnouncement), null);
   }
-  const description = carbonModelRow(7).description;
+  const description = 'Status: announced.\nDeveloper API not yet available.';
   assert.equal(modelAvailabilityStatus(description), 'announced');
   assert.equal(modelAvailabilityStatus(`Model details.\n${description}`), 'announced');
   assert.equal(new RegExp(ANNOUNCED_DESCRIPTION_PATTERN).test(description), true);
+  assert.equal(modelAvailabilityStatus(carbonModelRow(7).description), 'available');
+  assert.equal(new RegExp(ANNOUNCED_DESCRIPTION_PATTERN).test(carbonModelRow(7).description), false);
 });
 
 test('announced badge helper uses the en and zh message catalogs', () => {
-  const description = carbonModelRow(7).description;
+  const description = 'Status: announced.\nDeveloper API not yet available.';
   assert.equal(modelAnnouncementLabel(description, en.modelAnnouncement), 'Announced · API not yet available');
   assert.equal(modelAnnouncementLabel(description, zh.modelAnnouncement), '已公布 · API 未开放');
+  assert.equal(modelAnnouncementLabel(carbonModelRow(7).description, en.modelAnnouncement), null);
 });
 
 test('announced reference prices cannot become cheapest rates, cache FAQs, or structured offers', () => {
-  const reference = { ...carbonChannelRow(7, 10), id: 30, providers: { name: 'Google', type: 'producer' } };
+  const announcedModel = { ...carbonModelRow(7), description: 'Status: announced.\nDeveloper API not yet available.' };
+  const reference = {
+    ...carbonChannelRow(7, 10), id: 30, is_available: false, availability_locked: true,
+    providers: { name: 'Google', type: 'producer' },
+  };
   for (const locale of ['en', 'zh'] as const) {
-    const pricing = buildModelPricingSeo(carbonModelRow(7), [reference], locale);
+    const pricing = buildModelPricingSeo(announcedModel, [reference], locale);
     assert.deepEqual(pricing.channels, []);
     assert.deepEqual(pricing.pricedChannels, []);
     assert.deepEqual(pricing.tableChannels, []);
@@ -45,14 +52,20 @@ test('announced reference prices cannot become cheapest rates, cache FAQs, or st
   assert.deepEqual(payAsYouGoEstimate({ ...reference, provider_slug: 'google', model_slug: 'gemini-4-carbon', pricing_url: null },
     PAYG_MIXES[0], { asOf: new Date('2026-10-29') }), { status: 'skipped', reason: 'channel unavailable' });
   assert.equal(retainManualUnavailable({ ...reference, is_available: true }, reference).is_available, false);
+  const live = { ...carbonChannelRow(7, 10), id: 31, providers: { name: 'Google', type: 'producer' } };
+  const priced = buildModelPricingSeo(carbonModelRow(7), [live], 'en');
+  assert.equal(priced.channels.length, 1);
+  assert.equal(priced.cheapest?.input_price_per_1m, 2);
 });
 
 test('wildcard and explicit subscription selectors exclude announced models, preserving normal defaults', () => {
   const catalog: SelectableModel[] = [
     { id: 1, slug: 'gemini-4-argon', providerSlugs: ['google'], elo: 100 },
-    { id: 2, slug: 'gemini-4-carbon', providerSlugs: ['google'], elo: 200, description: carbonModelRow(7).description },
+    { id: 2, slug: 'gemini-4-carbon', providerSlugs: ['google'], elo: 200, description: 'Status: announced.\nDeveloper API not yet available.' },
   ];
   assert.deepEqual(resolveSelector({ families: ['gemini'] }, catalog, ['google']).models.map(row => row.slug), ['gemini-4-argon']);
+  const openCarbon = catalog.map(row => row.slug === 'gemini-4-carbon' ? { ...row, description: carbonModelRow(7).description } : row);
+  assert.deepEqual(resolveSelector({ families: ['gemini'] }, openCarbon, ['google']).models.map(row => row.slug), ['gemini-4-carbon', 'gemini-4-argon']);
   const explicit = resolveSelector({ extra: ['gemini-4-carbon'], only_extra: true }, catalog);
   assert.deepEqual(explicit.models, []);
   assert.deepEqual(explicit.unknownExtra, []); // Known but unavailable is not a config typo.

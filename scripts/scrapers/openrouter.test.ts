@@ -11,6 +11,8 @@ test('OpenRouter slug generation uses canonical Argon base and batch identities'
   assert.equal(generateOpenRouterSlug('google-gemini-gemini-4-argon-batch'), 'gemini-4-argon-batch');
   assert.equal(generateOpenRouterSlug('openai/gpt-oss-120b'), 'gpt-oss-120b');
   assert.equal(generateOpenRouterSlug('google/gemini-4-argon:free'), 'google-gemini-gemini-4-argon-free');
+  assert.equal(generateOpenRouterSlug('google/gemini-4-carbon'), 'gemini-4-carbon');
+  assert.equal(generateOpenRouterSlug('google/gemini-4-carbon:batch'), 'gemini-4-carbon-batch');
 });
 
 test('OpenRouter prefix ids resolve to the pre-prefix catalog rows that hold the official quote', () => {

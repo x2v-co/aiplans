@@ -47,8 +47,10 @@ export function canonicalizeModelSlug(value: string): string {
   // dated snapshots, or other separately priced variants into Pro.
   if (/^(?:moonshotai-)?kimi-k3[.-]1-pro$/.test(candidate)) return 'moonshotai-kimi-k3-1-pro';
   if (['minimax-m3.1', 'minimax-minimax-m3-1-flash', 'minimax-minimax-m3.1-flash', 'minimax-m3.1-flash'].includes(candidate)) return 'minimax-m3.1-flash';
-  const argon = candidate.match(/^(?:google(?:-ai|-gemini)?-)?(gemini-4-argon(?:-batch)?)$/);
-  return argon?.[1] ?? value;
+  // Argon and Carbon official rows already exist. Collapse only the standard
+  // and :batch ids onto them. Flex, free and dated snapshots stay distinct.
+  const gemini4 = candidate.match(/^(?:google(?:-ai|-gemini)?-)?(gemini-4-(?:argon|carbon)(?:-batch)?)$/);
+  return gemini4?.[1] ?? value;
 }
 
 // 基础模型名称映射表 - 将各种变体统一为标准名称
