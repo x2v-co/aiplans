@@ -77,6 +77,7 @@ test('image seed: dry-run is read-only, reuses existing LLM rows/providers and i
   assert.equal(nano[0].description, 'LLM scraper row');
   assert.equal(nano[0].model_category, 'image');
   assert.equal(f.data.providers.length, 9);
+  assert.ok(!f.data.models.some(row => /^minimax-h3-image/.test(String(row.slug))), 'H3 is owned by its regional manual seed, never the legacy USD image seed');
   const flux = f.data.models.find(row => row.slug === 'flux-2-pro')!;
   assert.ok(f.data.usage_prices.filter(row => row.model_id === flux.id).every(row => row.provider_id === 4 && row.unit === 'megapixel'));
   const seed = f.data.models.find(row => row.slug === 'seedream-4-5')!;
