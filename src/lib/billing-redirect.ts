@@ -29,7 +29,28 @@ const GEMINI_38_FLASH = {
   en: 'input $0.75 / output $3.75 / cached $0.075 through 2026-12-31, then $1.50 / $7.50 / $0.15 from 2027-01-01',
 };
 const GEMINI_35_FLASH_LITE = { to: 'gemini-3.5-flash-lite', zh: '输入 $0.30 / 输出 $2.50 / 缓存 $0.03', en: 'input $0.30 / output $2.50 / cached $0.03' };
-export const GEMINI_25_ROUTES: Record<string, { from: string; batch: boolean } & typeof GEMINI_35_FLASH_LITE> = {
+export /**
+ * Gemini 3.5 Flash / 3.7 Flash (deprecations table, checked 2026-11-11). Shutdown column is
+ * "N/A": the endpoint is not shutting down, AI Studio can no longer select the model, and API
+ * requests auto-route to the next Flash. No announcement date is published (the other column is
+ * the release date), so deprecated_at is not invented. Same no-shutdown_date rule as Gemini 2.5.
+ */
+const GEMINI_FLASH_ROUTE_SOURCE = 'https://ai.google.dev/gemini-api/docs/deprecations';
+const GEMINI_35_TO_36 = {
+  from: 'gemini-3.5-flash', to: 'gemini-3.6-flash',
+  zh: '输入 $0.75 / 输出 $3.75 / 缓存 $0.075（至 2026-12-31；2027-01-01 起 $1.50 / $7.50 / $0.15）',
+  en: 'input $0.75 / output $3.75 / cached $0.075 through 2026-12-31, then $1.50 / $7.50 / $0.15 from 2027-01-01',
+};
+const GEMINI_37_TO_38 = {
+  from: 'gemini-3.7-flash', to: 'gemini-3.8-flash',
+  zh: GEMINI_35_TO_36.zh, en: GEMINI_35_TO_36.en,
+};
+export const GEMINI_FLASH_ROUTES: Record<string, { from: string; to: string; zh: string; en: string }> = {
+  'gemini-3.5-flash': GEMINI_35_TO_36,
+  'gemini-3.7-flash': GEMINI_37_TO_38,
+};
+
+const GEMINI_25_ROUTES: Record<string, { from: string; batch: boolean } & typeof GEMINI_35_FLASH_LITE> = {
   'gemini-2.5-pro': { from: 'gemini-2.5-pro', batch: false, ...GEMINI_38_FLASH },
   'google-gemini-gemini-2-5-pro-batch': { from: 'gemini-2.5-pro', batch: true, ...GEMINI_38_FLASH },
   'gemini-2.5-flash': { from: 'gemini-2.5-flash', batch: false, ...GEMINI_35_FLASH_LITE },
@@ -63,8 +84,22 @@ export function billingRedirectNote(slug: string, locale: string): string | null
       ? `Moonshot 官方通知：K2 系列模型自 2026-10-31 起停止向新注册用户开放（已注册用户不受影响），计划于 2026 年 12 月底下线全部 K2 系列模型，官方未给出具体日期；官方迁移指引指向 Kimi K3.1 Pro。2026-10-29 核对。来源：${KIMI_SOURCE}。`
       : `Moonshot notice: the K2 series is closed to new sign-ups from 2026-10-31 (existing accounts are not affected), and all K2 series models are planned to go offline at the end of December 2026; no exact date has been given. The official migration guide points to Kimi K3.1 Pro. Checked 2026-10-29. Source: ${KIMI_SOURCE}.`;
   }
+  const routed = GEMINI_FLASH_ROUTES[slug];
+  if (routed) {
+    if (locale === 'zh') {
+      return `Google 弃用表：${routed.from} 在 AI Studio 已不可选，端点不关停（Shutdown 列为 N/A），API 请求自动路由到 ${routed.to}，并按 ${routed.to} 的标准付费价计费（每百万 token）：${routed.zh}。表中的发布日不是弃用公告日，官方没有另给 deprecated 日期。2026-11-11 核对。来源：${GEMINI_FLASH_ROUTE_SOURCE} 与 ${GEMINI_25_PRICING}。`;
+    }
+    return `Google's deprecations table: ${routed.from} can no longer be selected in Google AI Studio. The shutdown column is N/A — the endpoint is not shutting down — and API requests automatically route to ${routed.to}, billed at ${routed.to} standard paid-tier rates per 1M tokens: ${routed.en}. The other date in that row is the release date, not a deprecation announcement. Checked 2026-11-11. Sources: ${GEMINI_FLASH_ROUTE_SOURCE} and ${GEMINI_25_PRICING}.`;
+  }
   const gemini = gemini25Note(slug, locale);
   if (gemini) return gemini;
+  if (slug === 'deepseek-v4-flash' || slug === 'deepseek-v4-flash-vision-exp' || slug === 'deepseek-deepseek-v4-flash-vision-exp') {
+    const from = slug === 'deepseek-v4-flash' ? 'deepseek-v4-flash' : 'deepseek-v4-flash-vision-exp';
+    if (locale === 'zh') {
+      return `DeepSeek 2026-09-10 更新：V4 Flash 与 V4 Flash Vision Exp 已退役。旧名称 ${from} 仍暂时接受，请求路由到 V4.1 Flash（API id deepseek-flash），并按当前 Flash 价计费。定价页脚注写明这两个旧名称对应的模型已退役、请求由 DeepSeek-V4.1-Flash-1017 提供。2026-11-11 核对。来源：https://api-docs.deepseek.com/updates 与 https://api-docs.deepseek.com/quick_start/pricing。`;
+    }
+    return `DeepSeek's 2026-09-10 changelog: V4 Flash and V4 Flash Vision Exp are retired. The old name ${from} is still accepted temporarily; requests route to V4.1 Flash (API id deepseek-flash) and are billed at the current Flash price. The pricing-page footnote says those legacy names are still accepted and the retired models' requests are served by DeepSeek-V4.1-Flash-1017. Checked 2026-11-11. Sources: https://api-docs.deepseek.com/updates and https://api-docs.deepseek.com/quick_start/pricing.`;
+  }
   if (slug !== 'grok-code-fast-1') return null;
   if (locale === 'zh') {
     return '计费跳转目标待核验。迁移页总则写：2026-05-15 退役的 slug 转到 grok-4.3，并按 grok-4.3 计费。同一页的 Code workloads 与推荐表写 grok-code-fast-1 路由到 grok-build-0.1。定价页 2026-10-19 核对到的价格（每百万 token）：grok-build-0.1 在 200k 上下文以内为输入 $1.00、缓存 $0.20、输出 $2.00，200k 及以上为 $2.00 / $0.40 / $4.00；grok-4.3 在 200k 以内为 $1.25 / $0.20 / $2.50，200k 及以上为 $2.50 / $0.40 / $5.00。本站不把退役前的 $1 / $2 改写成其中任一档。来源：https://docs.x.ai/developers/migration/may-15-retirement 与 https://docs.x.ai/developers/pricing。';

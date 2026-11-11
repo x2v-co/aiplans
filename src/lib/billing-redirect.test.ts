@@ -65,4 +65,15 @@ test('Gemini 2.5 Pro / Flash explain the 2026-12-01 auto-route, target rates and
   }
   assert.match(billingRedirectNote('gemini-2.5-pro', 'en')!, /\$1\.50 \/ \$7\.50 \/ \$0\.15 from 2027-01-01/);
   for (const slug of ['gemini-2.5-flash-lite', 'gemini-2.5-flash-image', 'gemini-3.8-flash']) assert.equal(billingRedirectNote(slug, 'en'), null);
+  const flash35 = billingRedirectNote('gemini-3.5-flash', 'en')!;
+  assert.match(flash35, /gemini-3\.6-flash/);
+  assert.match(flash35, /N\/A/);
+  assert.match(flash35, /\$0\.75/);
+  const flash37 = billingRedirectNote('gemini-3.7-flash', 'zh')!;
+  assert.match(flash37, /gemini-3\.8-flash/);
+  assert.match(flash37, /不关停/);
+  const flash = billingRedirectNote('deepseek-v4-flash', 'en')!;
+  assert.match(flash, /deepseek-v4-flash-vision-exp|V4 Flash Vision Exp/);
+  assert.match(flash, /deepseek-flash/);
+  assert.match(billingRedirectNote('deepseek-v4-flash-vision-exp', 'zh')!, /V4\.1 Flash/);
 });

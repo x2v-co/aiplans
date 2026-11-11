@@ -28,6 +28,7 @@ import { scrapeMistralDynamic } from './scrapers/mistral-dynamic';
 import { scrapeQwenDynamic } from './scrapers/qwen-dynamic';
 import { scrapeSeedDynamic } from './scrapers/seed-dynamic';
 import { keepsLastKnownPrice } from './utils/variant-headlines';
+import { hasScrapeAbsenceNote, stripScrapeAbsenceNote } from './utils/manual-unavailable';
 import { isTencentModelName, scrapeHunyuanDynamic } from './scrapers/hunyuan-dynamic';
 import { scrapeBaiduDynamic } from './scrapers/baidu-dynamic';
 
@@ -457,6 +458,14 @@ async function processAPIScraper(
       // Use currency from scraper if specified, otherwise infer from channel region
       const priceCurrency = price.currency || currency;
 
+      // A successful sight clears a previous "absent from scrape" marker. That
+      // marker is an extractor miss, not a vendor retirement (Qwen 2026-08-20).
+      const notes = price.notes !== undefined
+        ? stripScrapeAbsenceNote(price.notes)
+        : hasScrapeAbsenceNote(existingPrice?.notes)
+          ? stripScrapeAbsenceNote(existingPrice?.notes)
+          : undefined;
+
       // Upsert channel price - using channel's provider_id
       const newPrice = await upsertChannelPrice({
         model_id: product.id,
@@ -473,7 +482,7 @@ async function processAPIScraper(
         last_verified: new Date(),
         currency: priceCurrency,
         price_unit: 'per_1m_tokens',
-        notes: price.notes,
+        notes,
       });
       seenModelIds.add(product.id);
 
@@ -612,6 +621,20 @@ async function processAPIScraper(
 
   // A model skipped for a malformed price is absent from seenModelIds; retiring
   // it would turn one bad listing into a soft-deleted price. Wait for a clean run.
+  if (result.mentionedModelSlugs?.length) {
+    const slugs = [...new Set(result.mentionedModelSlugs.map(slug => canonicalizeModelSlug(slug)))];
+    const missing = slugs.filter(slug => !modelIdBySlug.has(slug));
+    if (missing.length) {
+      const { data: rows, error: mentionError } = await db.from('models').select('id, slug').in('slug', missing);
+      if (mentionError) throw mentionError;
+      for (const row of rows ?? []) if (row.slug && row.id != null) modelIdBySlug.set(row.slug, row.id);
+    }
+    for (const slug of slugs) {
+      const id = modelIdBySlug.get(slug);
+      if (id != null) seenModelIds.add(id);
+    }
+  }
+
   if (fullCatalog && warningCount > 0) {
     console.warn(`⚠️ ${result.source}: not retiring unseen prices this run (${warningCount} skipped item(s))`);
   }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { VARIABLE_ROUTER_SENTINEL, retainManualUnavailable } from './manual-unavailable';
+import { VARIABLE_ROUTER_SENTINEL, hasScrapeAbsenceNote, keepUnavailableForSeed as keepSeed, retainManualUnavailable, stripScrapeAbsenceNote } from './manual-unavailable';
 
 const locked = { is_available: false, notes: `${VARIABLE_ROUTER_SENTINEL}; OpenRouter -1 sentinel is not a price. Source: https://openrouter.ai/nvidia/switchyard` };
 
@@ -19,8 +19,6 @@ test('普通行不受影响', () => {
   assert.equal(out.is_available, true);
   assert.equal(retainManualUnavailable({ is_available: true, input_price_per_1m: null, output_price_per_1m: null }, null).is_available, true);
 });
-
-import { keepUnavailableForSeed as keepSeed } from './manual-unavailable';
 
 test('seed does not resurrect scrape-retired rows (3405/59, 2646/59 in 10-16 dry-run)', () => {
   const existing = { is_available: false, notes: 'Old Mistral Large: $2/$6 | retired 2026-10-15T13:16:01.582Z: absent from successful full-catalog OpenRouter scrape' };
@@ -51,4 +49,12 @@ test('availability_locked 的人工下架行：抓价带真实价格也不改回
   assert.equal(retainManualUnavailable(priced, { is_available: true, availability_locked: true, notes: null }).is_available, true);
   // The lock never turns anything on.
   assert.equal(retainLockedUnavailable({ is_available: false }, { is_available: true, availability_locked: true }).is_available, false);
+});
+
+test('a Qwen absence marker is not a vendor retirement and can be stripped', () => {
+  const notes = 'qwen-max ¥2.4/¥9.6 | retired 2026-08-20T03:21:00.000Z: absent from successful full-catalog Qwen scrape';
+  assert.equal(hasScrapeAbsenceNote(notes), true);
+  assert.equal(stripScrapeAbsenceNote(notes), 'qwen-max ¥2.4/¥9.6');
+  assert.equal(stripScrapeAbsenceNote('retired 2026-08-20T03:21:00.000Z: absent from successful full-catalog Qwen scrape'), null);
+  assert.equal(hasScrapeAbsenceNote('retired: vendor shutdown'), false);
 });

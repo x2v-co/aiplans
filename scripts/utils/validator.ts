@@ -72,6 +72,11 @@ export interface ScraperResult {
   unverifiedPrices?: Array<{ modelName: string; modelSlug: string; notes: string }>;
   errors?: string[];
   /**
+   * Known-model names whose header is on the page. A missed price window must
+   * not soft-retire that channel as "absent from scrape".
+   */
+  mentionedModelSlugs?: string[];
+  /**
    * Item-level problems (e.g. one model with a malformed price) that did not
    * invalidate the rest of the result. Logged and recorded in scrape_logs, and
    * they suppress full-catalog retirement, but do not fail the run.

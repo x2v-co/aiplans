@@ -65,6 +65,14 @@ export const NUMBER_REGEX = {
   cny: /[¥￥]?(\d+\.?\d*)\s*元?/g,
 } as const;
 
+/** Headers present on the page, whether or not a price window matched. */
+export function mentionedKnownModels(models: readonly KnownModel[], lines: readonly string[]): string[] {
+  return models.filter(model => lines.some(line => {
+    model.pattern.lastIndex = 0;
+    return model.pattern.test(line);
+  })).map(model => model.name);
+}
+
 export abstract class KnownModelsExtractor extends PlaywrightScraper {
   /** List of models to look for. Subclass MUST override. */
   abstract models(): KnownModel[];
@@ -135,6 +143,7 @@ export abstract class KnownModelsExtractor extends PlaywrightScraper {
     const lines = bodyText.split('\n').map(l => l.trim()).filter(Boolean);
     const { prices: extracted, warnings } = this.collectPrices(lines);
     prices.push(...extracted);
+    const mentionedModelSlugs = mentionedKnownModels(this.models(), lines);
 
     if (prices.length === 0) {
       errors.push(`No prices extracted from ${this.getSourceUrl()}; page structure may have changed.`);
@@ -146,6 +155,7 @@ export abstract class KnownModelsExtractor extends PlaywrightScraper {
       prices,
       errors: errors.length > 0 ? errors : undefined,
       warnings: warnings.length > 0 ? warnings : undefined,
+      mentionedModelSlugs,
     };
   }
 
