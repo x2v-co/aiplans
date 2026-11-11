@@ -254,6 +254,8 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-06-embeddings:apply`),
       ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-05-intel:apply').map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-05-intel:apply`),
+      ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-11-token-plan-h3-image:apply').map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-11-token-plan-h3-image:apply`),
       ...PERPLEXITY_DECIDER_CATALOG.map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:glimpse-decider:apply`),
       ...DECISION_MODELS_2026_11_03.map(item =>
@@ -271,7 +273,14 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
 test('deferred catalog rows point at their image, non-LLM or glimpse-decider seed', async () => {
   const { IMAGE_MODEL_CATALOG } = await import('../src/lib/image-model-catalog');
   const { NON_LLM_CATALOG } = await import('../src/lib/non-llm-catalog');
-  for (const item of IMAGE_MODEL_CATALOG) assert.equal(item.deferredDbSeedScript, item.slug!.startsWith('gpt-image-2.6-') ? 'seed:catalog-2026-11-05-image26 -- --apply' : 'seed:image-models-2026-10-15:apply', item.slug);
+  for (const item of IMAGE_MODEL_CATALOG) {
+    const expected = item.slug!.startsWith('gpt-image-2.6-')
+      ? 'seed:catalog-2026-11-05-image26 -- --apply'
+      : item.slug!.startsWith('minimax-h3-image')
+        ? 'seed:catalog-2026-11-11-token-plan-h3-image:apply'
+        : 'seed:image-models-2026-10-15:apply';
+    assert.equal(item.deferredDbSeedScript, expected, item.slug);
+  }
   for (const item of NON_LLM_CATALOG) assert.equal(item.deferredDbSeedScript, undefined, item.slug);
   for (const item of PERPLEXITY_DECIDER_CATALOG) {
     assert.equal(item.deferredDbSeed, true, item.slug);

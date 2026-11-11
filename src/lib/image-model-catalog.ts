@@ -12,7 +12,7 @@ type Rate = { priceKind: string; unit: string; price: number; approximate?: bool
 interface Spec {
   slug: string; name: string; provider: string; providerSlug: string; pricingProviderSlug?: string; pricingChannel?: string;
   status?: AiCatalogItem['status']; pricing: string; pricingUnit: 'per_image' | 'per_1m_tokens' | 'per_megapixel';
-  headline: number; rates: Rate[]; source: { label: string; url: string; publisher: string }[];
+  currency?: 'USD' | 'CNY'; headline: number; rates: Rate[]; source: { label: string; url: string; publisher: string }[];
   input?: AiCatalogModality[]; capabilities?: string[]; access?: AiCatalogItem['access']; notes?: string; needsVerification?: string[];
   shutdownDate?: string; deprecatedAt?: string; replacementModel?: string; deprecationSourceUrl?: string; resolutionTier?: string;
 }
@@ -145,7 +145,45 @@ const grok = (slug: string, name: string, price: number, extra: Partial<Spec> = 
 const ideogram = (slug: string, name: string, rates: Rate[], extra: Partial<Spec> = {}) => perImage('Ideogram', 'ideogram', IDEOGRAM, slug, name, rates, extra);
 const tiers = (prefix: string, prices: [string, number][]) => prices.map(([tier, price]) => img(`${prefix}_${tier}`, price));
 
+/** 2026-11-11 manual seed. Catalog cards use CN prices; the seed also writes official USD usage rows. */
+export const H3_IMAGE_SEED_SCRIPT = 'seed:catalog-2026-11-11-token-plan-h3-image';
+export const H3_IMAGE_SLUGS = ['minimax-h3-image', 'minimax-h3-image-highspeed'] as const;
+export const H3_IMAGE_PROMO_ENDS_AT = '2026-11-17T16:00:00.000Z';
+export const H3_IMAGE_PROMO = {
+  discount_percent: 50, scope: 'entire_request', minimum_final_image_pixels: 16_600_000,
+  ends_at: H3_IMAGE_PROMO_ENDS_AT, end_exclusive: true,
+} as const;
+export const H3_IMAGE_LICENSE_NOTE = 'H3-Image weights are published under a territory-restricted community license excluding the EU, UK, South Korea and US. Highspeed is an API SKU / mode; no separate weights repository is claimed.';
+export const H3_IMAGE_NOTES = `Standard token rates. Conditional offer: 50% off the ENTIRE request only when final delivered image width × height ≥ 16,600,000 pixels, until 2026-11-18 00:00 Beijing / ${H3_IMAGE_PROMO_ENDS_AT} (end exclusive). Does not apply to every 1K/2K generation. 4K text-to-image costs are approximate references (仅供参考), not fixed per-image prices; actual cost varies with text input, including prompt enhancement. ${H3_IMAGE_LICENSE_NOTE}`;
+
+export function h3ImageCatalog(currency: 'CNY' | 'USD'): AiCatalogItem[] {
+  const cn = currency === 'CNY';
+  const source = { label: 'MiniMax official image pricing', url: cn ? 'https://platform.minimax.cn/docs/pricing/overview' : 'https://platform.minimax.io/docs/pricing/overview', publisher: 'MiniMax' };
+  return H3_IMAGE_SLUGS.map((slug, i) => {
+    const [textIn, imageIn, imageOut, reference] = cn
+      ? (i === 0 ? [15, 10, 25, 0.4522] : [15, 20, 50, 0.8550])
+      : (i === 0 ? [2.30, 1.50, 3.80, 0.06879] : [2.30, 3.00, 7.60, 0.13001]);
+    const symbol = cn ? '¥' : '$';
+    return {
+      ...image({
+        slug, name: i === 0 ? 'MiniMax-H3-Image' : 'MiniMax-H3-Image-Highspeed',
+        provider: 'MiniMax', providerSlug: cn ? 'minimax-china' : 'minimax-global', currency,
+        pricingUnit: 'per_1m_tokens', headline: imageOut,
+        pricing: `Text in ${symbol}${textIn}/1M; image in ${symbol}${imageIn}/1M; image out ${symbol}${imageOut}/1M; 4K text-to-image ≈ ${symbol}${reference} (reference only)`,
+        rates: [tok('text_input_tokens', textIn), tok('image_input_tokens', imageIn), tok('image_output_tokens', imageOut), img('image_4k_text_to_image_reference', reference, true)],
+        source: [source, { label: 'H3-Image open weights announcement', url: 'https://www.minimax.io/blog/minimax-h3-image', publisher: 'MiniMax' },
+          ...(i === 0 ? [{ label: 'H3-Image weights and license', url: 'https://huggingface.co/MiniMaxAI/MiniMax-H3-Image', publisher: 'MiniMaxAI' }] : [])],
+        access: i === 0 ? ['api', 'open-weights'] : ['api'], notes: H3_IMAGE_NOTES,
+      }),
+      lastVerified: '2026-11-11', verifiedAt: '2026-11-11',
+      deferredDbSeedScript: `${H3_IMAGE_SEED_SCRIPT}:apply`,
+    };
+  });
+}
+export const H3_IMAGE_CN_CATALOG = h3ImageCatalog('CNY');
+
 export const IMAGE_MODEL_CATALOG_OTHERS: AiCatalogItem[] = [
+  ...H3_IMAGE_CN_CATALOG,
   bfl('flux-3-image', 'FLUX 3 Image', [img('image_768', 0.041), img('image_1k', 0.048), img('image_1.5k', 0.07), img('image_2k', 0.1), img('image_4k', 0.607)]),
   flux2('flux-2-max', 'FLUX.2 [max]', 0.07, 0.03, 0.03),
   flux2('flux-2-pro', 'FLUX.2 [pro]', 0.03, 0.015, 0.015),

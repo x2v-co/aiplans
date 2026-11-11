@@ -193,3 +193,20 @@ test('Qoder Lite and Pro are coding plans with closed official model lists; unkn
   assert.deepEqual(resolvedLite.unknownExtra ?? [], []);
   assert.equal(resolveSelector(pro.selector, catalog, ['qoder']).models.length, 10);
 });
+
+test('Qwen Token Plan regional tiers are Credits-metered agent subscriptions with their own lines and preview mapping', () => {
+  const preview = { id: 1, slug: 'qwen4-max-preview', providerSlugs: ['qwen'], elo: null };
+  const catalog = [preview, { ...preview, id: 2, slug: 'qwen3-coder-plus' }, { ...preview, id: 3, slug: 'qwen4-max-preview-batch' }];
+  for (const suffix of ['', '-intl']) {
+    for (const [i, tier] of ['lite', 'essential', 'standard', 'pro'].entries()) {
+      const c = CLASSIFICATIONS.find(c => c.providerSlug === 'qwen' && c.planSlug === `qwen-token-plan-${tier}${suffix}`)!;
+      assert.ok(c);
+      assert.equal(c.kind, 'agent'); assert.equal(c.rank, i + 1);
+      assert.equal(c.line, `qwen-token-plan${suffix}`);
+      assert.deepEqual(resolveSelector(c.selector, catalog, ['qwen']).models.map(m => m.slug), ['qwen4-max-preview']);
+    }
+  }
+  const coding = CLASSIFICATIONS.find(c => c.planSlug === 'aliyun-bailian-coding-pro')!;
+  assert.equal(coding.kind, 'coding'); assert.equal(coding.line, 'bailian-coding');
+  assert.ok(!resolveSelector(coding.selector, catalog, ['qwen']).models.some(m => m.slug === preview.slug));
+});

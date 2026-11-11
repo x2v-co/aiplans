@@ -58,7 +58,7 @@ test('AuditedPricingFacts / NonLlm 渲染的 usageRates 与 token 价按币种�
 
 test('static catalog preserves CNY and INR without currency conversion', () => {
   const nonUsd = AI_VERTICAL_CATALOG.filter(item => item.currency && item.currency !== 'USD');
-  assert.deepEqual(nonUsd.map(item => item.slug).sort(), ['sarvam-prism', 'seedance', 'text-embedding-v4', 'wan-video']);
+  assert.deepEqual(nonUsd.map(item => item.slug).sort(), ['minimax-h3-image', 'minimax-h3-image-highspeed', 'sarvam-prism', 'seedance', 'text-embedding-v4', 'wan-video']);
   for (const item of nonUsd) {
     for (const locale of ['en', 'zh']) {
       const text = auditedPrice(item, locale);

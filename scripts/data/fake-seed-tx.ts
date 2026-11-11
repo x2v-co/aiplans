@@ -3,12 +3,13 @@ import type { Sql } from 'postgres';
 /** In-memory stand-in for postgres.js used by DB-free seed tests and local dry-run simulations. */
 export type FakeRow = Record<string, unknown> & { id: number };
 export function fakeSeedTx(initial: Partial<Record<string, FakeRow[]>> = {}) {
-  const data: Record<string, FakeRow[]> = { providers: [], models: [], plans: [], usage_prices: [], api_channel_prices: [], api_channel_price_variants: [], ...structuredClone(initial) } as Record<string, FakeRow[]>;
+  const data: Record<string, FakeRow[]> = { providers: [], models: [], plans: [], model_plan_mapping: [], usage_prices: [], api_channel_prices: [], api_channel_price_variants: [], ...structuredClone(initial) } as Record<string, FakeRow[]>;
   let id = 1000; let writes = 0;
   const frag = (v: unknown) => (v as { fragment: unknown }).fragment;
   const tx = ((parts: TemplateStringsArray | unknown, ...values: unknown[]) => {
     if (!Array.isArray(parts) || !('raw' in parts)) return { fragment: parts };
     const q = parts.join('?').replace(/\s+/g, ' ').trim();
+    if (q === 'SELECT * FROM ?') return Promise.resolve(structuredClone(data[String(frag(values[0]))]));
     if (q.startsWith('SELECT id, slug, shutdown_date::text AS shutdown_date')) {
       const slugs = frag(values[0]) as string[];
       return Promise.resolve(structuredClone(data.models.filter(r => slugs.includes(String(r.slug)))));

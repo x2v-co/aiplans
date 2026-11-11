@@ -600,6 +600,7 @@
     "image_1.5k": "1.5K image",
     "image_2k": "2K image",
     "image_4k": "4K image",
+    "image_4k_text_to_image_reference": "4K text-to-image (approximate reference)",
     "image_1k_2k": "1K–2K image",
     "image_up_to_1.5k": "Image up to 1.5K",
     "image_above_1.5k": "Image above 1.5K",

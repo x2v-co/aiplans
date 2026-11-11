@@ -600,6 +600,7 @@
     "image_1.5k": "1.5K 图像",
     "image_2k": "2K 图像",
     "image_4k": "4K 图像",
+    "image_4k_text_to_image_reference": "4K 文生图参考价（仅供参考）",
     "image_1k_2k": "1K–2K 图像",
     "image_up_to_1.5k": "≤1.5K 图像",
     "image_above_1.5k": ">1.5K 图像",

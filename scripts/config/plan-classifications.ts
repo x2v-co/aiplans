@@ -92,7 +92,20 @@ const GPT_6_1_SOL = ['openai-gpt-6-1-sol'];
 // ────────────────────────────────────────────────────────────────────────────
 // The classification table
 // ────────────────────────────────────────────────────────────────────────────
+/** Token Plan is Credits-metered interactive agent access. `coding` means prompt-metered;
+ * `token_pack` has no monthly commitment. Only the preview entitlement added by this seed
+ * is materialized here; no inference of the rest of the Token Plan model allowlist. */
+export const QWEN_TOKEN_PLAN_CLASSIFICATIONS: Classification[] = ['cn', 'intl'].flatMap(region =>
+  ['lite', 'essential', 'standard', 'pro'].map((tier, i) => ({
+    providerSlug: 'qwen', planSlug: `qwen-token-plan-${tier}${region === 'intl' ? '-intl' : ''}`,
+    kind: 'agent', line: region === 'intl' ? 'qwen-token-plan-intl' : 'qwen-token-plan', rank: i + 1,
+    selector: { only_extra: true, extra: ['qwen4-max-preview'] },
+    reason: 'Token Plan Personal: monthly Credits for interactive coding/agent tools, not prompt-metered Coding Plan or unrestricted backend API usage. Preview entitlement verified 2026-11-11; other model entitlements outside this seed scope.',
+  })),
+);
+
 export const CLASSIFICATIONS: Classification[] = [
+  ...QWEN_TOKEN_PLAN_CLASSIFICATIONS,
   // ─ OpenAI — one chat line. Codex ships with the paid tiers, hence the
   //   'coding' secondary kind: a Coding-plan comparison that omits ChatGPT Plus
   //   is missing one of the main contenders.
