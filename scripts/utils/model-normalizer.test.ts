@@ -23,6 +23,16 @@ test('Argon names, provider IDs and legacy explicit slugs resolve to canonical p
   }
 });
 
+test('Carbon standard and batch ids join the official row; flex and dated ids do not', () => {
+  for (const input of ['gemini-4-carbon', 'google/gemini-4-carbon', 'google-gemini-gemini-4-carbon']) {
+    assert.equal(canonicalizeModelSlug(input), 'gemini-4-carbon', input);
+    assert.equal(canonicalizeModelSlug(`${input}:batch`), 'gemini-4-carbon-batch', input);
+  }
+  for (const value of ['google/gemini-4-carbon:flex', 'google-gemini-gemini-4-carbon-free', 'gemini-4-carbon-20261110']) {
+    assert.equal(canonicalizeModelSlug(value), value);
+  }
+});
+
 test('explicit slug canonicalization preserves unverified IDs and distinct pricing variants', () => {
   for (const value of [
     'google-gemini-gemini-4-argon-free', 'google/gemini-4-argon:flex',

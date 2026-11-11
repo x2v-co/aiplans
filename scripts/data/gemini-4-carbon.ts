@@ -1,33 +1,59 @@
 import type { Sql } from 'postgres';
-import { seedChanges } from './gemini-4-argon';
+import { ARGON_PROMO_ENDS_AT, seedChanges } from './gemini-4-argon';
 
 export const CARBON_SLUG = 'gemini-4-carbon';
-export const CARBON_SOURCE = 'https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/';
-export const CARBON_ACCESS_NOTE = 'Announced; developer API not yet available. Access is limited to cyber defenders and trusted partners through the Fairwind Program.';
+/** Same instant as Gemini 4 Argon: Pacific midnight at the start of 2026-12-01 (PST, UTC-8). */
+export const CARBON_PROMO_ENDS_AT = ARGON_PROMO_ENDS_AT;
+export const CARBON_SOURCE = 'https://ai.google.dev/gemini-api/docs/pricing#gemini-4-carbon';
+export const CARBON_BLOG = 'https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-carbon-now-available/';
+export const CARBON_ANNOUNCEMENT = 'https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/';
+export const CARBON_VERTEX = 'https://cloud.google.com/model-garden/pricing';
+export const CARBON_VERCEL = 'https://vercel.com/changelog/gemini-4-carbon-now-available-on-ai-gateway';
+export const CARBON_INTRO = { input: 2, output: 10, cache: 0.1 } as const;
+export const CARBON_STANDARD = { input: 4, output: 20, cache: 0.2 } as const;
+const CARBON_VERIFIED = new Date('2026-11-11T00:00:00Z');
 
 export function carbonModelRow(googleId: number) {
   return {
     name: 'Gemini 4 Carbon', slug: CARBON_SLUG, type: 'llm', model_category: 'text',
     provider_ids: [googleId], offical_link: CARBON_SOURCE,
-    description: `Status: announced.\n${CARBON_ACCESS_NOTE}\nSource: ${CARBON_SOURCE} (page dated 2026-10-28; verified 2026-10-29).`,
-    context_window: null, max_output_tokens: null, released_at: null,
+    description: [
+      'Status: available.',
+      'Paid Gemini API model id gemini-4-carbon is generally available to paying developers and enterprises in Google AI Studio and Gemini for business. Introductory Standard prices are live offers through 2026-11-30, not reference-only. Fairwind remains the cyber-access program and is not the only access path.',
+      'Not available on the free tier. Implicit caching only; explicit caching is not supported. Thinking tokens are billed as output.',
+      `Standard per 1M tokens: through 2026-11-30, input $2 / output $10 / cache $0.10; from 2026-12-01, input $4 / output $20 / cache $0.20. Google publishes no timezone. promo_ends_at follows the Gemini 4 Argon convention, Pacific midnight ${CARBON_PROMO_ENDS_AT}.`,
+      'Context length is not stored. The Vercel changelog says "1M-token context window" and does not print an integer. OpenRouter context_length is 1048576. Model Garden says completions can be up to 1 million tokens. 1000000 and 1048576 are not written.',
+      'Input types on the Model Garden price row are text, image, video and audio. Text output includes response and reasoning.',
+      `Verified 2026-11-11. Catalog 2026-11-11. Source: ${CARBON_SOURCE} ; ${CARBON_BLOG} ; ${CARBON_VERTEX} ; ${CARBON_VERCEL} ; ${CARBON_ANNOUNCEMENT}`,
+    ].join('\n'),
+    context_window: null, max_output_tokens: null, released_at: new Date('2026-11-10T00:00:00Z'),
     parameters: null, 'active parameters': null, open_source: null,
-    input_type: null, output_type: null, input_modalities: null, output_modalities: null,
-    capabilities: null, features: null, license: null, license_url: null,
+    input_type: ['text', 'image', 'audio', 'video'], output_type: ['text'],
+    input_modalities: ['text', 'image', 'audio', 'video'], output_modalities: ['text'],
+    capabilities: ['reasoning'], features: null, license: null, license_url: null,
   };
 }
 
 export function carbonChannelRow(googleId: number, modelId: number | null) {
   return {
     model_id: modelId, provider_id: googleId,
-    input_price_per_1m: 2, output_price_per_1m: 10, cached_input_price_per_1m: 0.1,
+    input_price_per_1m: CARBON_INTRO.input, output_price_per_1m: CARBON_INTRO.output,
+    cached_input_price_per_1m: CARBON_INTRO.cache,
     currency: 'USD', price_unit: 'per_1m_tokens',
-    is_available: false, availability_locked: true,
-    // No published cutoff: do not borrow Argon's promotion schedule.
-    promo_ends_at: null, regular_input_price_per_1m: null,
-    regular_output_price_per_1m: null, regular_cached_input_price_per_1m: null,
-    last_verified: new Date('2026-10-29T00:00:00Z'),
-    notes: `${CARBON_ACCESS_NOTE} Announced introductory list prices, reference only: $2 input / $10 output / $0.10 cached input per 1M tokens (cached input 95% off). The announcement lists $4/$20 after the introductory period, with no cutoff date. Source: ${CARBON_SOURCE}`,
+    is_available: true, availability_locked: false,
+    promo_ends_at: CARBON_PROMO_ENDS_AT,
+    regular_input_price_per_1m: CARBON_STANDARD.input,
+    regular_output_price_per_1m: CARBON_STANDARD.output,
+    regular_cached_input_price_per_1m: CARBON_STANDARD.cache,
+    last_verified: CARBON_VERIFIED,
+    notes: [
+      'Paid Gemini API Standard tier for gemini-4-carbon. Not on the free tier. Implicit caching only; explicit caching is not supported. Thinking tokens are billed as output. Every token is billed, including internal tool system instructions and function declarations when using grounding.',
+      `Introductory Standard prices are a live offer, not reference-only: input $2 / output $10 / cached input $0.10 per 1M tokens through 2026-11-30; regular $4 / $20 / $0.20 from 2026-12-01. Cached input stays 5% of input. Google publishes no timezone; promo_ends_at uses the Gemini 4 Argon convention, Pacific midnight, ${CARBON_PROMO_ENDS_AT}.`,
+      'Batch and Flex $1 / $5 / cache $0.05, then $2 / $10 / cache $0.10. Priority $3.60 / $18 / cache $0.18, then $7.20 / $36 / cache $0.36. Those tiers are recorded in this note: Google does not currently use api_channel_price_variants for them.',
+      'Grounding with Google Search: 5,000 free requests/month shared across Gemini 3 and newer, then $14 / 1,000 requests, daily cap 1,500/day. No other tool price is stored.',
+      'Fairwind remains the cyber-access program and is not the only API path. The 2026-10-29 availability lock (API not yet available) is cleared.',
+      `Verified 2026-11-11. Source: ${CARBON_SOURCE} ; ${CARBON_BLOG}`,
+    ].join(' '),
   };
 }
 

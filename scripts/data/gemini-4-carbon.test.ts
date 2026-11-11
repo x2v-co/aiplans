@@ -4,7 +4,9 @@ import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 import type { Sql } from 'postgres';
 import ts from 'typescript';
-import { CARBON_SLUG, CARBON_SOURCE, carbonModelRow, carbonChannelRow, carbonSeedOptions, seedCarbon } from './gemini-4-carbon';
+import { ARGON_PROMO_ENDS_AT } from './gemini-4-argon';
+import { ANNOUNCED_DESCRIPTION_PATTERN } from '../../src/lib/model-announcement';
+import { CARBON_PROMO_ENDS_AT, CARBON_SLUG, CARBON_SOURCE, carbonModelRow, carbonChannelRow, carbonSeedOptions, seedCarbon } from './gemini-4-carbon';
 
 type Row = Record<string, unknown> & { id: number };
 type Tables = { providers: Row[]; models: Row[]; api_channel_prices: Row[] };
@@ -60,26 +62,41 @@ function fixture(overrides: Partial<Tables> = {}) {
   return { data, sql, queries, writes: () => writes, begins: () => begins, ended: () => ended };
 }
 
-test('Carbon identity and reference prices match the announcement; unknown specs remain null', () => {
+test('Carbon is a paid API with Argon introductory cutoff; unknown specs stay null', () => {
   const model = carbonModelRow(7);
   assert.equal(model.slug, CARBON_SLUG);
   assert.equal(model.name, 'Gemini 4 Carbon');
   assert.equal(model.type, 'llm');
   assert.deepEqual(model.provider_ids, [7]);
   assert.equal(model.offical_link, CARBON_SOURCE);
-  assert.match(model.description, /^Status: announced\./);
-  assert.match(model.description, /trusted partners through the Fairwind Program/);
-  for (const key of ['context_window', 'max_output_tokens', 'released_at', 'parameters', 'active parameters',
-    'input_modalities', 'output_modalities', 'capabilities', 'open_source'] as const) assert.equal(model[key], null);
+  assert.match(model.description, /^Status: available\./);
+  assert.equal(new RegExp(ANNOUNCED_DESCRIPTION_PATTERN).test(model.description), false);
+  assert.match(model.description, /Fairwind remains the cyber-access program/);
+  assert.match(model.description, /Implicit caching only/);
+  assert.match(model.description, /Not available on the free tier/);
+  assert.match(model.description, /Thinking tokens are billed as output/);
+  assert.match(model.description, /1000000 and 1048576 are not written/);
+  assert.equal(model.context_window, null);
+  assert.equal(model.max_output_tokens, null);
+  assert.equal(model.parameters, null);
+  assert.equal(model['active parameters'], null);
+  assert.equal(model.open_source, null);
+  assert.deepEqual(model.input_modalities, ['text', 'image', 'audio', 'video']);
+  assert.deepEqual(model.output_modalities, ['text']);
+  assert.deepEqual(model.capabilities, ['reasoning']);
   const channel = carbonChannelRow(7, null);
   assert.deepEqual([channel.input_price_per_1m, channel.output_price_per_1m, channel.cached_input_price_per_1m], [2, 10, 0.1]);
+  assert.deepEqual([channel.regular_input_price_per_1m, channel.regular_output_price_per_1m, channel.regular_cached_input_price_per_1m], [4, 20, 0.2]);
   assert.equal(channel.cached_input_price_per_1m / channel.input_price_per_1m, 0.05);
-  assert.equal(channel.is_available, false);
-  assert.equal(channel.availability_locked, true);
-  assert.equal(channel.promo_ends_at, null);
-  assert.equal(channel.regular_input_price_per_1m, null);
-  assert.match(channel.notes, /reference only/);
-  assert.match(channel.notes, /95% off/);
+  assert.equal(channel.is_available, true);
+  assert.equal(channel.availability_locked, false);
+  assert.equal(channel.promo_ends_at, ARGON_PROMO_ENDS_AT);
+  assert.equal(CARBON_PROMO_ENDS_AT, ARGON_PROMO_ENDS_AT);
+  assert.match(channel.notes, /not reference-only/);
+  assert.match(channel.notes, /Batch and Flex/);
+  assert.match(channel.notes, /Priority \$3\.60/);
+  assert.match(channel.notes, /1,500\/day/);
+  assert.doesNotMatch(channel.notes, /reference only/);
   assert.ok(channel.notes.includes(CARBON_SOURCE));
 });
 
@@ -102,7 +119,7 @@ test('apply then repeated dry-run/apply is idempotent; other models and channels
   const model = f.data.models.find(row => row.slug === CARBON_SLUG)!;
   const channel = f.data.api_channel_prices.find(row => row.model_id === model.id)!;
   assert.deepEqual(channel, { ...carbonChannelRow(7, model.id), id: channel.id, updated_at: channel.updated_at });
-  assert.equal(channel.is_available, false);
+  assert.equal(channel.is_available, true);
   assert.deepEqual(f.data.models[0], before.models[0]);
   assert.deepEqual(f.data.api_channel_prices[0], before.api_channel_prices[0]);
   const seeded = structuredClone(f.data);
@@ -117,9 +134,11 @@ test('apply then repeated dry-run/apply is idempotent; other models and channels
 
 test('an existing Carbon row is corrected without deleting or updating another provider channel', async () => {
   const f = fixture({
-    models: [{ ...carbonModelRow(7), id: 10, context_window: 128_000 }],
+    models: [{ ...carbonModelRow(7), id: 10, context_window: 128_000, description: 'Status: announced.\nOld Fairwind-only note.' }],
     api_channel_prices: [
-      { ...carbonChannelRow(7, 10), id: 30, is_available: true, availability_locked: false },
+      { ...carbonChannelRow(7, 10), id: 30, is_available: false, availability_locked: true, promo_ends_at: null,
+        regular_input_price_per_1m: null, regular_output_price_per_1m: null, regular_cached_input_price_per_1m: null,
+        notes: 'reference only' },
       { id: 31, model_id: 10, provider_id: 8, notes: 'Third-party record', is_available: false },
     ],
   });
@@ -127,7 +146,9 @@ test('an existing Carbon row is corrected without deleting or updating another p
   const preview = await seedCarbon(f.sql);
   assert.equal(preview.length, 2);
   assert.equal(preview[0].changes.context_window.to, null);
-  assert.equal(preview[1].changes.is_available.to, false);
+  assert.equal(preview[1].changes.is_available.to, true);
+  assert.equal(preview[1].changes.availability_locked.to, false);
+  assert.equal(preview[1].changes.promo_ends_at.to, ARGON_PROMO_ENDS_AT);
   assert.equal(f.writes(), 0);
   await seedCarbon(f.sql, true);
   assert.deepEqual(await seedCarbon(f.sql), []);
