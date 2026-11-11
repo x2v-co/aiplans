@@ -8,9 +8,10 @@
  * Prices on this page are CNY (¥/元 per 1M tokens).
  */
 import type { ScraperResult } from '../utils/validator';
-import { KnownModelsExtractor, type KnownModel } from './lib/known-models-extractor';
+import { KnownModelsExtractor, mentionedKnownModels, type KnownModel } from './lib/known-models-extractor';
 
-const QWEN_PRICING_URL = 'https://help.aliyun.com/zh/model-studio/billing-for-model-studio';
+// Canonical price list. billing-for-model-studio redirects here (checked 2026-11-11).
+const QWEN_PRICING_URL = 'https://help.aliyun.com/zh/model-studio/model-pricing';
 
 const KNOWN_MODELS: KnownModel[] = [
   // Qwen3 Max series (flagship). Base input band 0-128K is ¥9/$54 as of the
@@ -98,6 +99,11 @@ export function qwenPositionalPair(name: string, candidates: readonly number[]):
     }
   }
   return inputPrice != null && outputPrice != null ? { input: inputPrice, output: outputPrice } : null;
+}
+
+/** Model ids whose header is on the price page. Used so a missed price window is not an absence retirement. */
+export function qwenMentionedNames(lines: readonly string[]): string[] {
+  return mentionedKnownModels(KNOWN_MODELS, lines);
 }
 
 class QwenScraper extends KnownModelsExtractor {

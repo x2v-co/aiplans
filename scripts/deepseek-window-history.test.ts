@@ -7,6 +7,7 @@ import * as pricing from '../src/lib/deepseek-pricing';
 import * as history from './utils/price-history';
 import * as normalizer from './utils/model-normalizer';
 import { buildOpenRouterVariants } from './scrapers/openrouter';
+import { hasScrapeAbsenceNote, stripScrapeAbsenceNote } from './utils/manual-unavailable';
 import { parseDeepSeekTable } from './scrapers/deepseek-dynamic';
 import type { ScraperResult } from './utils/validator';
 
@@ -41,6 +42,7 @@ function pipeline() {
   };
   runInNewContext(compiled, {
     exports: exported, ...pricing, ...history, ...normalizer, Date, db,
+    hasScrapeAbsenceNote, stripScrapeAbsenceNote,
     inferProviderId: () => -1, getChannelProviderId: async () => 3, inferRegion: () => 'global',
     getOrCreateProduct: async () => tables.models[0],
     upsertChannelPrice: async (row: Record<string, unknown>) => save('api_channel_prices', row),

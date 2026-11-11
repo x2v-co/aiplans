@@ -35,6 +35,21 @@ export function retainManualUnavailable<T extends Incoming>(data: T, existing: E
 
 /** Scraper soft-retirement marker (index-dynamic / queries retireUnseen*). */
 const SCRAPE_RETIRED = /\|?\s*retired \S+: absent from successful full-catalog [^|]*$/;
+const SCRAPE_RETIRED_ANY = /\|?\s*retired \S+: absent from successful full-catalog [^|]*/g;
+
+/** Drop a full-catalog absence marker. A model still on the official page is not delisted. */
+export function stripScrapeAbsenceNote(notes: string | null | undefined): string | null {
+  const stripped = String(notes ?? '')
+    .replace(SCRAPE_RETIRED_ANY, '')
+    .replace(/(?:\s*\|\s*){2,}/g, ' | ')
+    .replace(/^(?:\s*\|\s*)+|(?:\s*\|\s*)+$/g, '')
+    .trim();
+  return stripped || null;
+}
+
+export function hasScrapeAbsenceNote(notes: string | null | undefined): boolean {
+  return /retired \S+: absent from successful full-catalog /.test(String(notes ?? ''));
+}
 
 export function isScrapeRetired(existing: ExistingRow): boolean {
   return existing?.is_available === false && SCRAPE_RETIRED.test(String(existing.notes ?? ''));

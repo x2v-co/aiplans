@@ -97,7 +97,11 @@ export const IMAGE_MODEL_CATALOG_GOOGLE_OPENAI: AiCatalogItem[] = [
   }, IMAGE26_SEED)),
   gptImage('gpt-image-2.5-sunburst', 5, 8, 30),
   gptImage('gpt-image-2.5-flare', 5, 8, 30),
-  gptImage('gpt-image-2', 5, 8, 30),
+  gptImage('gpt-image-2', 5, 8, 30, undefined, {
+    status: 'deprecated', deprecatedAt: '2026-11-10', shutdownDate: '2027-02-10',
+    replacementModel: 'gpt-image-2.6-sunburst or gpt-image-2.6-flare', deprecationSourceUrl: OPENAI_DEPRECATIONS,
+    notes: 'Deprecated 2026-11-10 (deprecations entry "2026-11-10: GPT Image 2"). gpt-image-2 and snapshot gpt-image-2-2026-04-21 shut down 2027-02-10. Replacement: gpt-image-2.6-sunburst or gpt-image-2.6-flare. Standard tier; Batch is 50% off. Per-image cost depends on size/quality.',
+  }),
   gptImage('gpt-image-1.5', 5, 8, 32, 10, { status: 'deprecated', shutdownDate: '2026-12-01', deprecationSourceUrl: OPENAI_DEPRECATIONS }),
   gptImage('gpt-image-1-mini', 2, 2.5, 8, undefined, {
     status: 'deprecated', shutdownDate: '2026-12-01', deprecationSourceUrl: OPENAI_DEPRECATIONS,
