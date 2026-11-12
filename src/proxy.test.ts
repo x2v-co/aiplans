@@ -92,7 +92,7 @@ test('unknown prefix paths get the normal locale hop, never bypass routing as in
     const response = await proxy(new NextRequest(`https://aiplans.dev${path}`, {
       headers: { 'x-forwarded-proto': 'https' },
     }));
-    assert.equal(response.status, 307, path);
+    assert.equal(response.status, 308, path);
     assert.equal(new URL(response.headers.get('location')!).pathname, `/en${path}`);
   }
 });
@@ -121,7 +121,7 @@ test('locale-less model pages redirect even when their slug contains dots', asyn
   for (const path of ['/models/minimax-m3.1-flash', '/models/gpt-5']) {
     assert.equal(unstable_doesMiddlewareMatch({ config, url: path }), true, path);
     const response = await proxy(new NextRequest(`https://aiplans.dev${path}?source=test`));
-    assert.equal(response.status, 307, path);
+    assert.equal(response.status, 308, path);
     assert.equal(response.headers.get('location'), `https://aiplans.dev/en${path}?source=test`, path);
   }
 });
@@ -182,7 +182,7 @@ test('every /reports/*.md|json file referenced from src or public/reports exists
 test('ordinary locale-less pages still get the locale prefix next to report files', async () => {
   for (const path of ['/reports/api-price-index', '/guides', '/models/minimax-m3.1-flash']) {
     const response = await proxy(new NextRequest(`https://aiplans.dev${path}`));
-    assert.equal(response.status, 307, path);
+    assert.equal(response.status, 308, path);
     assert.equal(response.headers.get('location'), `https://aiplans.dev/en${path}`, path);
   }
 });

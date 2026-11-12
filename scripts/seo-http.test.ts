@@ -33,7 +33,7 @@ test('legitimate pages, locale redirects and old-slug 301 still work', { skip: !
   }
   assert.equal((await request('/')).status, 308);
   const locale = await request('/guides');
-  assert.equal(locale.status, 307);
+  assert.equal(locale.status, 308);
   assert.match(locale.headers.get('location') ?? '', /\/en\/guides$/);
   const legacy = await request('/models/gpt-6.1-sol?utm=gsc');
   assert.equal(legacy.status, 301);

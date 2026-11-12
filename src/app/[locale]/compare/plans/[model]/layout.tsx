@@ -6,7 +6,7 @@ import { findModelSlugRedirect } from '@/lib/model-slug-redirects';
 import { buildMetadata, type Locale } from '@/lib/seo';
 import { decodeSlugParam } from '@/lib/route-params';
 import { formatModelName } from '@/lib/model-names';
-import { selectSeoComparisons } from '@/lib/seo-index-policy';
+import { compareSeoFallback, selectSeoComparisons } from '@/lib/seo-index-policy';
 import { buildComparisonPricingCopy } from '@/lib/pricing-seo';
 import { getComparisonSeoData } from '@/lib/pricing-seo-data';
 
@@ -33,10 +33,13 @@ export async function generateMetadata({
   const en = buildComparisonPricingCopy(modelName, data.plans, 'en', undefined, modelSlug);
   const zh = buildComparisonPricingCopy(modelName, data.plans, 'zh', undefined, modelSlug);
   // Reuse sitemap eligibility: current primary releases need at least two
-  // priced subscriptions across two vendors. Other detail pages remain usable
-  // through existing links and pass crawlers on to useful pages.
+  // priced subscriptions across two vendors. A 200 noindex page (for
+  // example a 0-plan comparison) hands the crawler a dead end; 301 to the
+  // indexable model page, or to the comparison index.
   const isIndexable = selectSeoComparisons(comparable)
     .some((candidate) => candidate.slug === modelSlug);
+  const fallback = compareSeoFallback(locale, modelSlug, comparable);
+  if (fallback) permanentRedirect(fallback);
 
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,

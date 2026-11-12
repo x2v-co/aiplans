@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { buildMetadata } from './seo';
 import {
-  isLowValueModel, isLowValuePlanComparison, modelShouldIndex,
+  isLowValueModel, isLowValuePlanComparison, modelShouldIndex, compareSeoFallback,
   selectSeoModels, selectSeoComparisons, SEO_COMPARISON_ALLOWLIST, type SeoIndexFacts,
 } from './seo-index-policy';
 
@@ -105,4 +105,23 @@ test('metadata and sitemap use the shared query and policy, without a second SQL
   assert.match(comparison, /selectSeoComparisons\(comparable\)/);
   assert.match(sitemap, /selectSeoModels\(catalog, applyIndexPolicy\)/);
   assert.match(sitemap, /selectSeoComparisons\(catalog, applyIndexPolicy\)/);
+});
+
+test('non-indexable compare URLs 301 to the model page when it is indexable', () => {
+  const emptyCompare = facts({ slug: 'glm-5.2-fast', api_price_count: 1, plan_count: 0,
+    priced_subscription_count: 0, priced_subscription_provider_count: 0 });
+  const newest = facts({ slug: 'glm-5.3', plan_count: 6, priced_subscription_count: 6,
+    priced_subscription_provider_count: 2, released_at: '2026-10-01' });
+  const catalog = [emptyCompare, newest];
+  assert.equal(compareSeoFallback('en', 'glm-5.2-fast', catalog), '/en/models/glm-5.2-fast');
+  assert.equal(compareSeoFallback('zh', 'glm-5.2-fast', catalog), '/zh/models/glm-5.2-fast');
+  assert.equal(compareSeoFallback('en', 'glm-5.3', catalog), null);
+  const retired = facts({ slug: 'openai-gpt-4', active: false, api_price_count: 0 });
+  assert.equal(compareSeoFallback('en', 'openai-gpt-4', [retired, newest]), '/en/compare/plans');
+  const allowlisted = facts({ slug: 'gemini-3-pro', plan_count: 6, priced_subscription_count: 6,
+    priced_subscription_provider_count: 1, released_at: '2025-11-18' });
+  assert.equal(compareSeoFallback('en', 'gemini-3-pro', [allowlisted, newest]), null);
+  const layout = readFileSync('src/app/[locale]/compare/plans/[model]/layout.tsx', 'utf8');
+  const page = readFileSync('src/app/[locale]/compare/plans/[model]/page.tsx', 'utf8');
+  for (const source of [layout, page]) assert.match(source, /compareSeoFallback/);
 });

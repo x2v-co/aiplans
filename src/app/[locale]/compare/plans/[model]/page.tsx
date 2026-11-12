@@ -11,6 +11,8 @@ import { buildCompareFaqs } from "./faqs";
 import { decodeSlugParam } from "@/lib/route-params";
 import { formatModelName } from '@/lib/model-names';
 import { getVerifiedQuotaEstimates } from '@/lib/quota/data';
+import { getSeoIndexCatalog } from '@/lib/seo-index-data';
+import { compareSeoFallback } from '@/lib/seo-index-policy';
 
 // Catalog pages are ISR (aiplans GSC 2026-11-04): rendered on first request,
 // then served from the Next.js cache and regenerated in the background at most
@@ -46,15 +48,18 @@ export default async function ComparePlansModelPage({
   const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/compare/plans/${modelSlug}`);
   if (legacyTarget) permanentRedirect(legacyTarget);
 
-  const [data, couponByProvider] = await Promise.all([
+  const [data, couponByProvider, catalog] = await Promise.all([
     getPlanComparison(modelSlug, "USD" as CurrencyCode),
     getActiveCouponMap('plan'),
+    getSeoIndexCatalog(),
   ]);
   if (!data) {
     const target = await findModelSlugRedirect(modelSlug);
     if (target) permanentRedirect(`/${locale}/compare/plans/${encodeURIComponent(target)}`);
     notFound();
   }
+  const fallback = compareSeoFallback(locale, modelSlug, catalog);
+  if (fallback) permanentRedirect(fallback);
 
   const isZh = locale === "zh";
   const guideSlug = guideForModelSlug(modelSlug);
