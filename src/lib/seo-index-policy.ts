@@ -82,3 +82,17 @@ export function selectSeoComparisons<T extends SeoIndexFacts>(rows: T[], applyPo
 export function modelShouldIndex(row: SeoIndexFacts): boolean {
   return row.active && !isGluedModelSlug(row.slug) && !isLowValueModel(row);
 }
+
+/** Non-indexable /compare/plans pages should not stay as 200 noindex.
+ * Hand crawlers to the model page when that page is indexable, otherwise to
+ * the comparison index. Legacy table redirects still win when they match.
+ */
+export function compareSeoFallback(locale: string, slug: string, catalog: SeoIndexFacts[]): string | null {
+  const loc = locale === 'zh' ? 'zh' : 'en';
+  if (selectSeoComparisons(catalog).some(row => row.slug === slug)) return null;
+  const facts = catalog.find(row => row.slug === slug);
+  if (facts && modelShouldIndex(facts)) {
+    return `/${loc}/models/${encodeURIComponent(slug)}`;
+  }
+  return `/${loc}/compare/plans`;
+}

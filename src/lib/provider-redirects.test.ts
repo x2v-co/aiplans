@@ -133,7 +133,7 @@ test('preserves static children, metadata, plan index and nested routes without 
       // Locale-less pages, including dotted static route names, need a locale.
       const staticAsset = ['/featured.png', '/opengraph-image.png', '/twitter-image.jpg', '/icon.svg'].includes(segment);
       const localeHop = prefix === '' && !staticAsset;
-      assert.equal(response.status, localeHop ? 307 : 200, path);
+      assert.equal(response.status, localeHop ? 308 : 200, path);
       assert.equal(response.headers.get('location'), localeHop ? `${origin}/en${path}` : null, path);
     }
   }
