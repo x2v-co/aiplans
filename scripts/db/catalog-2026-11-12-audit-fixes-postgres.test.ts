@@ -40,8 +40,8 @@ test('Gemini Decision 1 seed satisfies Postgres constraints, re-runs to 0, and r
         SELECT slug, model_category, context_window, max_output_tokens, open_source
           FROM models WHERE slug = ${GEMINI_DECISION_SPEC.slug}`;
       assert.equal(model.model_category, 'decision');
-      assert.equal(model.context_window, 262_144);
-      assert.equal(model.max_output_tokens, 0);
+      assert.equal(Number(model.context_window), 262_144);
+      assert.equal(Number(model.max_output_tokens), 0);
       assert.equal(model.open_source, false);
 
       const prices = await tx<Array<Record<string, unknown>>>`
