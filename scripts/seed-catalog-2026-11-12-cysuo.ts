@@ -28,7 +28,7 @@ async function main() {
     console.log(apply
       ? `Applied: ${steps.filter(step => step.action !== 'skip').length} changes.`
       : `Dry-run (writes executed then ROLLBACK; nothing committed): ${steps.filter(step => step.action !== 'skip').length} changes. Negative IDs are new rows.`);
-    console.log('Expected production dry-run assumes cysuo is absent, nine catalog slugs already exist, and the three dated cysuo-only slugs do not:');
+    console.log('Expected production dry-run assumes cysuo is absent, nine catalog slugs already exist (GLM-5.1 at z-ai-glm-5-1, not glm-5.1), and the three dated cysuo-only slugs do not:');
     console.log(JSON.stringify(PRODUCTION_SHAPED_DRY_RUN, null, 2));
   } finally { await sql.end(); }
 }

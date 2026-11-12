@@ -30,9 +30,12 @@ test('11-12 cysuo CLI defaults to dry-run and rejects mixed or unknown flags', (
 test('verified listings cover 12 text models and 42 supplier prices', () => {
   assert.equal(LISTINGS.length, 12);
   assert.equal(LISTINGS.reduce((sum, row) => sum + row.suppliers.length, 0), 42);
+  const glm51 = LISTINGS.find(row => row.slug === 'glm-5.1')!;
+  assert.equal(glm51.catalogSlug, 'z-ai-glm-5-1');
+  assert.deepEqual(glm51.aliases, ['z-ai-glm-5-1']);
   assert.deepEqual(EXISTING_PRODUCTION_SLUGS, [
     'deepseek-v4.1-flash', 'deepseek-v4-flash', 'deepseek-v4-pro',
-    'glm-5.1', 'glm-5.2', 'glm-5.3', 'glm-5.3-flash', 'kimi-k3', 'ernie-5.1',
+    'z-ai-glm-5-1', 'glm-5.2', 'glm-5.3', 'glm-5.3-flash', 'kimi-k3', 'ernie-5.1',
   ]);
   assert.deepEqual(NEW_PRODUCTION_SLUGS, [
     'deepseek-v4.1-flash-1017', 'deepseek-v4-flash-0731', 'deepseek-v4-pro-0813',
@@ -106,8 +109,34 @@ test('production-shaped dry-run inserts cysuo, three dated models, 12 channels a
   assert.equal(ernieChannel.output_price_per_1m, 18);
   assert.equal(ernieChannel.cached_input_price_per_1m, null);
 
+  const glm = f.data.models.find(row => row.slug === 'z-ai-glm-5-1')!;
+  assert.equal(glm.name, 'z-ai-glm-5-1', 'existing GLM-5.1 metadata is not rewritten');
+  assert.ok(!f.data.models.some(row => row.slug === 'glm-5.1'), 'must not insert a duplicate glm-5.1 row');
+  const glmChannel = f.data.api_channel_prices.find(row => row.model_id === glm.id && row.provider_id === provider.id)!;
+  assert.equal(glmChannel.input_price_per_1m, 2.88);
+  assert.equal(glmChannel.output_price_per_1m, 11.52);
+  assert.equal(f.data.api_channel_price_variants.filter(row => row.model_id === glm.id).length, 2);
+
   const again = await seedCatalog20261112Cysuo(f.tx, true);
   assert.deepEqual(again.filter(step => step.action !== 'skip'), []);
+});
+
+test('cysuo glm-5.1 attaches to z-ai-glm-5-1; both slugs together fail', async () => {
+  const aliasOnly = fakeSeedTx({
+    providers: [baidu, baiduGlobal],
+    models: existingModels,
+  });
+  const steps = await seedCatalog20261112Cysuo(aliasOnly.tx, true);
+  assert.deepEqual(seedStepCounts(steps), PRODUCTION_SHAPED_DRY_RUN);
+  assert.equal(steps.find(step => step.table === 'models' && step.target === 'z-ai-glm-5-1')?.action, 'update');
+  assert.ok(!steps.some(step => step.table === 'models' && step.target === 'glm-5.1'));
+
+  const both = fakeSeedTx({
+    providers: [baidu, baiduGlobal],
+    models: [...existingModels, { id: 99, slug: 'glm-5.1', name: 'dup', type: 'llm', provider_ids: [5] }],
+  });
+  await assert.rejects(() => seedCatalog20261112Cysuo(both.tx, true), /Ambiguous models\/glm-5\.1\|z-ai-glm-5-1/);
+  assert.equal(both.writes(), 0);
 });
 
 test('wrong cysuo provider type fails; fresher channel prices are left alone', async () => {
