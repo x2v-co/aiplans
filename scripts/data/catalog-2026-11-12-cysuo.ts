@@ -64,6 +64,10 @@ export type ModelListing = {
   name: string;
   vendor: string;
   existingInProduction: boolean;
+  /** Production models.slug when it differs from the cysuo market id (`slug`). */
+  catalogSlug?: string;
+  /** Extra models.slug values to look up; never used to rename an existing row. */
+  aliases?: readonly string[];
   releasedAt: string;
   contextWindow: number;
   maxOutputTokens: number;
@@ -283,6 +287,8 @@ export const LISTINGS: ModelListing[] = [
     name: "GLM-5.1",
     vendor: "智谱",
     existingInProduction: true,
+    catalogSlug: 'z-ai-glm-5-1',
+    aliases: ['z-ai-glm-5-1'],
     releasedAt: '2026-04-07',
     contextWindow: 200000,
     maxOutputTokens: 131072,
@@ -558,7 +564,8 @@ export function channelNote(listing: ModelListing, headline: SupplierListing): s
   );
 }
 
-/** Production-shaped dry-run: cysuo is absent; the 9 catalog slugs already exist; the 3 dated cysuo-only slugs do not. */
+/** Production-shaped dry-run: cysuo is absent; the 9 catalog slugs already exist
+ * (GLM-5.1 lives at z-ai-glm-5-1, not glm-5.1); the 3 dated cysuo-only slugs do not. */
 export const PRODUCTION_SHAPED_DRY_RUN = {
   providers: { insert: 1, update: 0 },
   models: { insert: 3, update: 9 },
@@ -566,7 +573,13 @@ export const PRODUCTION_SHAPED_DRY_RUN = {
   api_channel_price_variants: { insert: 42, update: 0 },
 } as const;
 
-export const EXISTING_PRODUCTION_SLUGS = LISTINGS.filter(row => row.existingInProduction).map(row => row.slug);
+export function lookupSlugs(listing: ModelListing): string[] {
+  return [...new Set([listing.slug, listing.catalogSlug, ...(listing.aliases ?? [])].filter((slug): slug is string => !!slug))];
+}
+
+export const productionModelSlug = (listing: ModelListing) => listing.catalogSlug ?? listing.slug;
+
+export const EXISTING_PRODUCTION_SLUGS = LISTINGS.filter(row => row.existingInProduction).map(productionModelSlug);
 export const NEW_PRODUCTION_SLUGS = LISTINGS.filter(row => !row.existingInProduction).map(row => row.slug);
 
 export function catalog20261112CysuoSeedOptions(args: string[]) {
@@ -650,7 +663,7 @@ export async function seedCatalog20261112Cysuo(tx: Sql, apply = false): Promise<
     notes: PROVIDER_NOTES,
   }, PROVIDER_SLUG);
 
-  const slugs = LISTINGS.map(row => row.slug);
+  const slugs = [...new Set(LISTINGS.flatMap(lookupSlugs))];
   const models = slugs.length
     ? await tx<Row[]>`SELECT * FROM models WHERE slug IN ${tx(slugs)}`
     : [];
@@ -659,13 +672,14 @@ export async function seedCatalog20261112Cysuo(tx: Sql, apply = false): Promise<
     if (!listing.suppliers.length) fail(`${listing.slug} has no verified supplier prices`);
     const ids = new Set(listing.suppliers.map(row => row.providerId));
     if (ids.size !== listing.suppliers.length) fail(`${listing.slug} has duplicate supplier ids`);
-    const existing = one(models.filter(row => row.slug === listing.slug), `models/${listing.slug}`);
+    const keys = lookupSlugs(listing);
+    const existing = one(models.filter(row => keys.includes(String(row.slug))), `models/${keys.join('|')}`);
     const ownerIds = [...new Set([
       ...((existing?.provider_ids as number[] | undefined) ?? []),
       cysuo.id,
     ])];
     const model = existing
-      ? save('models', existing, { provider_ids: ownerIds }, listing.slug)
+      ? save('models', existing, { provider_ids: ownerIds }, String(existing.slug))
       : save('models', null, {
         slug: listing.slug,
         name: listing.name,
