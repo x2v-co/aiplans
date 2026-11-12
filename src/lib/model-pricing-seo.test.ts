@@ -37,14 +37,21 @@ test('currency ranking retains native prices in snippets, table rows and single-
   const zh = buildModelPricingSeo(model, rows, 'zh');
   assert.equal(en.cheapest?.id, 2);
   assert.equal(en.tableChannels.length, 3);
-  assert.match(en.description, /CNY 6 per 1M tokens/);
-  assert.match(zh.description, /CNY 6\/百万 tokens/);
+  assert.match(en.description, /Compare official and channel input, output and cache-read rates/);
+  assert.match(zh.description, /对照GLM 5.3 Flash官方与各渠道/);
+  assert.doesNotMatch(en.description + zh.description, /最低|lowest input|CNY 6|USD /);
   assert.match(en.title, /API Pricing \/ Price per 1M tokens/);
   assert.equal(zh.title, 'GLM 5.3 Flash 价格与 API 费用');
-  assert.equal(buildModelPricingSeo({ name: 'DeepSeek V4.1 Flash', slug: 'deepseek-v4.1-flash' }, [], 'zh').title,
-    'DeepSeek V4.1 Flash 价格与 API 费用');
+  const flash = buildModelPricingSeo({ name: 'DeepSeek V4.1 Flash (1017)', slug: 'deepseek-v4.1-flash' }, [], 'zh');
+  assert.equal(flash.title, 'DeepSeek V4.1 Flash价格与渠道对照');
+  assert.match(flash.description, /高峰与空闲规则/);
+  assert.doesNotMatch(flash.description, /最低|USD /);
+  const astra = buildModelPricingSeo({ name: 'GPT 6 Astra', slug: 'openai-gpt-6-astra' }, [quote()], 'zh');
+  assert.equal(astra.title, 'GPT-6 Astra价格：官方与渠道对照');
+  assert.match(astra.description, /不把渠道促销价当作官价/);
+  assert.doesNotMatch(astra.description, /最低|USD /);
   for (const content of [en, zh]) {
-    assert.match(content.description, /2026-10-13/);
+    assert.match(content.faqs[3].answer, /2026-10-13/);
     assert.equal(content.faqs.length, 6);
     assert.match(content.faqs[2].answer, /CNY 0/);
     const offer = content.aggregateOffer!;
@@ -66,10 +73,10 @@ test('invalid, missing, unavailable and non-token rates cannot become offers or 
   assert.equal(result.cheapest, undefined);
   assert.equal(result.aggregateOffer, undefined);
   assert.match(result.faqs[2].answer, /missing prices do not imply free/);
-  assert.match(result.description, /No input price available/);
+  assert.match(result.description, /No input price is currently recorded/);
   const empty = buildModelPricingSeo({ name: 'Unknown', slug: 'unknown' }, [], 'zh');
   assert.equal(empty.updatedOn, null);
-  assert.match(empty.description, /暂无记录/);
+  assert.match(empty.description, /暂无可用输入报价/);
   assert.equal(pricingLabel(null, 'USD'), '—');
   assert.equal(pricingLabel(0.000001, 'USD'), 'USD 0.000001');
   const free = buildModelPricingSeo(model, [quote({ input_price_per_1m: 0 })], 'en');
@@ -94,7 +101,7 @@ test('Argon uses the #104 schedule for table, snippet, offers and FAQs at and af
     assert.deepEqual([after.tableChannels[0].input_price_per_1m, after.tableChannels[0].output_price_per_1m,
       after.tableChannels[0].cached_input_price_per_1m], [4, 20, 0.2]);
     assert.equal(after.aggregateOffer?.lowPrice, '4');
-    assert.match(after.description, /USD 4/);
+    assert.doesNotMatch(after.description, /USD 4|最低|lowest input/);
     assert.match(after.faqs[0].answer, /USD 20/);
     assert.match(after.faqs[2].answer, /USD 0.2/);
     assert.equal(after.updatedOn, '2026-10-13');

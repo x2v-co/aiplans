@@ -13,7 +13,7 @@ test('DeepSeek brand intent leads to the requested model while prices remain dat
   const metadata = buildComparisonPricingCopy(name, [{ id: 1, name: 'Go', price: 10,
     price_unit: 'per_month', currency: 'USD', pricing_model: 'subscription', is_contact_sales: false }], 'zh', 2026, slug);
   assert.match(metadata.title, /^DeepSeek 订阅套餐对比/);
-  assert.match(metadata.title, /月付 \$10 起/);
+  assert.doesNotMatch(metadata.title + metadata.description, /月付 \$10 起|最低/);
   assert.match(subscriptionSearchCopy('kimi-k2', 'Kimi K2', 'en').heading, /^Kimi K2 Subscription Plans$/);
   assert.doesNotMatch(subscriptionSearchCopy('deepseek-r1', 'DeepSeek R1', 'zh').heading, /V4.1/);
 });
@@ -46,7 +46,7 @@ test('subscription snippets exclude pay-as-you-go and packs from counts', () => 
     { ...common, id: 2, pricing_model: 'pay_as_you_go' },
     { ...common, id: 3, pricing_model: 'token_pack' }];
   assert.match(buildComparisonPricingCopy('Kimi K2', plans, 'zh', 2026).title, /1 个套餐/);
-  assert.match(buildComparisonPricingCopy('Kimi K2', plans, 'en', 2026).title, /1 Plan,/);
+  assert.match(buildComparisonPricingCopy('Kimi K2', plans, 'en', 2026).title, /1 Plan$/);
 });
 
 

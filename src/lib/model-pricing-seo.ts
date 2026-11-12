@@ -52,6 +52,25 @@ export interface PricingSeoOptions {
 
 const roundMoney = (value: number) => Number(value.toFixed(6));
 
+
+/** Editorial title/description overrides for pages with documented search demand.
+ * English falls back to the shared template, which also omits floor prices.
+ */
+const MODEL_SEO_OVERRIDES: Record<string, Partial<Record<'en' | 'zh', { title: string; description: string }>>> = {
+  'deepseek-v4.1-flash': {
+    zh: {
+      title: 'DeepSeek V4.1 Flash价格与渠道对照',
+      description: '对照DeepSeek V4.1 Flash（1017）官方与各渠道的输入、输出和缓存计价，并注明高峰与空闲规则、币种及核对日期。',
+    },
+  },
+  'openai-gpt-6-astra': {
+    zh: {
+      title: 'GPT-6 Astra价格：官方与渠道对照',
+      description: '对照GPT-6 Astra官方与各渠道的输入、输出和缓存计价，页内按原币种列出并注明核对日期。不把渠道促销价当作官价。',
+    },
+  },
+};
+
 export function buildModelPricingSeo(
   model: { name: string; slug: string; updated_at?: Date | string | null },
   rows: PricingChannel[],
@@ -90,12 +109,19 @@ export function buildModelPricingSeo(
 
   // One template for every Chinese model page. Search queries put 价格
   // directly after the model name ("glm 5.3 flash 价格", "deepseek v4.1 flash价格").
-  const title = isZh ? `${model.name} 价格与 API 费用`
-    : `${model.name} API Pricing / Price per 1M tokens`;
+  // Meta descriptions must not name a "lowest" rate or a specific amount:
+  // those figures go stale and had been suppressing clicks.
   const cheapestLabel = cheapest ? pricingLabel(cheapest.input_price_per_1m, cheapest.currency) : null;
-  const description = isZh
-    ? `${model.name} API 定价：${cheapestLabel ? `最低输入价格 ${cheapestLabel}/百万 tokens。` : '暂无可用输入报价。'}对比官方与渠道的输入、输出和缓存读取价格。${updateText}。`
-    : `${model.name} API pricing: ${cheapestLabel ? `lowest input price ${cheapestLabel} per 1M tokens.` : 'No input price available.'} Compare official and channel input, output and cache-read rates. ${updateText}.`;
+  const override = MODEL_SEO_OVERRIDES[model.slug]?.[isZh ? 'zh' : 'en'];
+  const title = override?.title ?? (isZh ? `${model.name} 价格与 API 费用`
+    : `${model.name} API Pricing / Price per 1M tokens`);
+  const description = override?.description ?? (isZh
+    ? (cheapestLabel
+      ? `对照${model.name}官方与各渠道的输入、输出和缓存计价；币种和核对日期见页内。`
+      : `对照${model.name}官方与各渠道的输入、输出和缓存计价。暂无可用输入报价；币种和核对日期见页内。`)
+    : (cheapestLabel
+      ? `Compare official and channel input, output and cache-read rates for ${model.name}. Prices are listed in their original currencies with verification dates on the page.`
+      : `Compare official and channel input, output and cache-read rates for ${model.name}. No input price is currently recorded.`));
 
   // One native currency per AggregateOffer; never publish converted rates as offers.
   const offerCurrency = pickOfferCurrency(pricedChannels.map(row => row.currency || 'USD'));
@@ -191,8 +217,12 @@ function buildUsagePricingSeo(
   const kindText = highKind ? `${kind} – ${highKind}` : kind;
   const source = usage?.official ? (isZh ? '官方报价' : 'official rate') : (isZh ? '最低报价' : 'lowest listed rate');
   const description = isZh
-    ? `${model.name} API 定价：${rangeLabel ? `${source} ${rangeLabel}${per}（${kindText}）。` : `按${noun}计费，暂无可用报价。`}对比官方与渠道价格。${updateText}。`
-    : `${model.name} API pricing: ${rangeLabel ? `${source} ${rangeLabel}${per} (${kindText}).` : `billed per ${noun}; no price available.`} Compare official and channel rates. ${updateText}.`;
+    ? (rangeLabel
+      ? `对照${model.name}官方与各渠道按${noun}计费的报价；币种和核对日期见页内。`
+      : `对照${model.name}按${noun}计费的官方与渠道报价。暂无可用报价；核对日期见页内。`)
+    : (rangeLabel
+      ? `Compare official and channel ${noun} rates for ${model.name}. Prices are listed in their original currencies with verification dates on the page.`
+      : `Compare official and channel ${noun} rates for ${model.name}. No price is currently recorded.`);
 
   const offerRows = (usage?.rows ?? []).filter(row => isRealPrice(row.price));
   const offerCurrency = offerRows[0]?.currency || (offerRows.length ? 'USD' : null);

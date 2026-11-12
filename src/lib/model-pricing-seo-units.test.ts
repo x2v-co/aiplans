@@ -39,8 +39,9 @@ test('eleven-v4 title, meta, FAQ and JSON-LD say 1K characters, not 1M tokens (e
   assert.equal(en.mode, 'usage');
   assert.equal(en.title, 'Eleven v4 API Pricing / Price per 1K characters');
   assert.equal(zh.title, 'Eleven v4 价格与 API 费用（每千字符）');
-  assert.match(en.description, /official rate USD 0\.08 per 1K characters/);
-  assert.match(zh.description, /官方报价 USD 0\.08\/千字符/);
+  assert.match(en.description, /1K characters/);
+  assert.match(zh.description, /千字符/);
+  assert.doesNotMatch(en.description + zh.description, /USD 0\.08|最低报价|lowest listed|official rate USD/);
   for (const content of [en, zh]) {
     const text = [content.title, content.description, content.costAnswer, ...content.faqs.flatMap(f => [f.question, f.answer])].join('\n');
     assert.doesNotMatch(text, /1M tokens|百万 tokens|cache|缓存|input price|输入价格/i);
@@ -65,13 +66,13 @@ test('per_second, per_minute, per_image and per_generation pages state their own
   const cases: Array<[string, string, ModelUsagePriceRow[], RegExp, RegExp, string]> = [
     ['grok-imagine-video', 'per_second', [usageRow({ price_kind: '720p video', unit: 'second', price: 0.05 }),
       usageRow({ id: 2, price_kind: '1080p video', unit: 'second', price: 0.1 })],
-    /Price per second/, /USD 0\.05–0\.1\/秒/, 'per second'],
+    /Price per second/, /按秒计费/, 'per second'],
     ['gemini-3.5-transcribe-live', 'per_minute', [usageRow({ price_kind: 'live transcription', unit: 'minute', price: 0.009 })],
-      /Price per minute/, /USD 0\.009\/分钟/, 'per minute'],
+      /Price per minute/, /按分钟计费/, 'per minute'],
     ['some-image-model', 'per_image', [usageRow({ price_kind: 'image_generation', unit: 'image', price: 0.04 })],
-      /Price per image/, /USD 0\.04\/张图片/, 'per image'],
+      /Price per image/, /按张图片计费/, 'per image'],
     ['mureka-v8', 'per_generation', [usageRow({ price_kind: 'song', unit: 'per_generation', price: 0.03 })],
-      /Price per generation/, /USD 0\.03\/次生成/, 'per generation'],
+      /Price per generation/, /按次生成计费/, 'per generation'],
   ];
   for (const [slug, unit, rows, enTitle, zhDesc, unitText] of cases) {
     const en = seo(slug, slug, unit, rows, 'en');
@@ -79,6 +80,7 @@ test('per_second, per_minute, per_image and per_generation pages state their own
     assert.match(en.title, enTitle, slug);
     assert.doesNotMatch(en.title + en.description, /1M tokens/, slug);
     assert.match(zh.description, zhDesc, slug);
+    assert.doesNotMatch(zh.description + en.description, /USD |最低/, slug);
     assert.equal(en.aggregateOffer?.priceSpecification.unitText, unitText, slug);
   }
 });
@@ -87,7 +89,8 @@ test('non-token model without any price still names its unit; token pages are un
   const en = seo('eleven-v4', 'Eleven v4', 'per_1k_characters', [], 'en');
   assert.equal(en.title, 'Eleven v4 API Pricing / Price per 1K characters');
   assert.equal(en.aggregateOffer, undefined);
-  assert.match(en.description, /billed per 1K characters; no price available/);
+  assert.match(en.description, /1K characters/);
+  assert.match(en.description, /No price is currently recorded/);
   const unknown = seo('mystery', 'Mystery', 'unknown', [], 'en');
   assert.match(unknown.title, /Price per 1M tokens/);
   assert.equal(unknown.mode, 'token');

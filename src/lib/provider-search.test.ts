@@ -25,8 +25,8 @@ test('API-only providers do not advertise subscription tiers or invent free allo
   }
   const mixed = buildProviderPricingCopy('Moonshot', [plan('subscription'), plan('pay_as_you_go', 0)], 'en', 2026, 'moonshot-china');
   assert.match(mixed.title, /Kimi/);
-  assert.match(mixed.description, /1 listed subscription plan, from \$20/);
-  assert.doesNotMatch(mixed.description, /from \$0/);
+  assert.match(mixed.description, /1 listed subscription plan/);
+  assert.doesNotMatch(mixed.description, /from \$20|from \$0|最低/);
 });
 
 test('unknown providers get their actual name and neutral pricing guidance', () => {
