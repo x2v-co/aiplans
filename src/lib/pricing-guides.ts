@@ -465,10 +465,10 @@ export const PRICING_GUIDES: Record<PricingGuideSlug, PricingGuide> = {
   },
   'kimi-api-pricing': {
     slug: 'kimi-api-pricing',
-    title: { en: 'Kimi Pricing: API Costs, Subscription & Coding Plans', zh: 'Kimi 价格：月之暗面 API、会员订阅与编程套餐' },
+    title: { en: 'Kimi Pricing: API Costs, Subscription & Coding Plans', zh: 'Kimi订阅与月之暗面API如何区分' },
     description: {
       en: 'Compare current Kimi and Moonshot API prices, subscription plans, China and global channels, and example costs.',
-      zh: '对比 Kimi 与 Moonshot 当前 API 价格、订阅套餐、国内外渠道和示例成本。',
+      zh: '说明Kimi会员订阅、编程套餐与月之暗面API是不同产品；对照国内外渠道计价，并链到套餐页查看额度与核对日期。',
     },
     intro: {
       en: 'Kimi is offered through Moonshot’s China and global services as well as third-party channels. API token pricing and Kimi application subscriptions are separate products, so this guide presents API costs first and links to the relevant plan comparisons.',

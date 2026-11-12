@@ -264,9 +264,11 @@ test('Pro retains the $10 tie in tier-ordered copy; seat-only SEO floors remain 
     assert.ok(!copy.summary.includes('Copilot Standalone'));
     assert.ok(copy.faqs.some(faq => faq.answer.includes('Copilot Pro')));
     assert.ok(copy.faqs.every(faq => !faq.answer.includes('Copilot Standalone')));
-    // Without Pro, generic metadata treats the seat fee as an unqualified floor.
+    // Titles no longer publish a starting price, so a seat-only plan cannot
+    // be misread as a "$10 from" floor in the snippet.
     const seo = buildComparisonPricingCopy('Preview model', [standalone as unknown as SeoPlan], locale, 2026);
-    assert.ok(seo.title.includes('$10'));
+    assert.equal(seo.title.includes('$10'), false);
+    assert.equal(seo.description.includes('$10'), false);
     assert.ok(!seo.description.includes('enterprise budget'));
   }
 });

@@ -51,26 +51,20 @@ export function monthlyPlanFloors(plans: SeoPlan[]): PriceFloor[] {
   ));
 }
 
-function monthlyFrom(plans: SeoPlan[], locale: Locale): string {
-  const floors = monthlyPlanFloors(plans);
-  if (!floors.length) return '';
-  const prices = floors.map(seoPrice).join(' / ');
-  return locale === 'zh' ? `，月付 ${prices} 起` : `, from ${prices}/mo`;
-}
-
 export function buildComparisonPricingCopy(
   modelName: string, plans: SeoPlan[], locale: Locale, year = new Date().getUTCFullYear(),
   modelSlug = '',
 ): PricingCopy {
   const subscriptions = plans.filter(plan => plan.pricing_model === 'subscription');
-  const from = monthlyFrom(subscriptions, locale);
   const heading = subscriptionSearchCopy(modelSlug, modelName, locale).heading;
+  // Titles and descriptions must not include a starting price: those figures
+  // go stale and can be read as "free" when a floor is zero.
   return locale === 'zh' ? {
-    title: `${heading} ${year}：${subscriptions.length} 个套餐${from}`,
-    description: `对比包含 ${modelName} 的 ${subscriptions.length} 个订阅套餐${from}。查看供应商、月付与年付价格、消息限额和模型权限；不同货币分别列出最低月付价。`,
+    title: `${heading} ${year}：${subscriptions.length} 个套餐`,
+    description: `对比包含 ${modelName} 的 ${subscriptions.length} 个订阅套餐。查看供应商、月付与年付价格、消息限额和模型权限；价格以页内原币种和核对日期为准。`,
   } : {
-    title: `${heading} & Pricing ${year}: ${subscriptions.length} ${subscriptions.length === 1 ? 'Plan' : 'Plans'}${from}`,
-    description: `Compare ${subscriptions.length} plans with ${modelName} access${from}. See monthly vs annual subscription prices and message limits. Lowest monthly prices shown by currency.`,
+    title: `${heading} & Pricing ${year}: ${subscriptions.length} ${subscriptions.length === 1 ? 'Plan' : 'Plans'}`,
+    description: `Compare ${subscriptions.length} plans with ${modelName} access. See monthly vs annual subscription prices and message limits. Prices are listed in their original currencies with verification dates on the page.`,
   };
 }
 
@@ -93,22 +87,39 @@ function compactNames(names: string[]): string {
     : names.join(', ');
 }
 
+
+const PROVIDER_SEO_OVERRIDES: Record<string, Partial<Record<Locale, PricingCopy>>> = {
+  'moonshot-china': {
+    zh: {
+      title: '月之暗面API价格与Kimi订阅对照',
+      description: '对照月之暗面官方与各渠道的API计价，并区分Kimi会员订阅与按量API；币种、档位和核对日期在页内标明。',
+    },
+  },
+  'minimax-china': {
+    zh: {
+      title: 'MiniMax国内Token Plan与M Plan对照',
+      description: '对照MiniMax国内站旧Token Plan与现行M Plan档位，以及官方API按量计价；订阅与按量费用分开看，核对日期见页内。',
+    },
+  },
+};
+
 export function buildProviderPricingCopy(
   providerName: string, plans: SeoPlan[], locale: Locale, year = new Date().getUTCFullYear(),
   slug?: string,
 ): PricingCopy {
+  const editorial = slug ? PROVIDER_SEO_OVERRIDES[slug]?.[locale] : undefined;
+  if (editorial) return editorial;
   const subscriptions = plans.filter(plan => plan.pricing_model === 'subscription');
   const names = compactNames(featuredPlanNames(subscriptions));
-  const from = monthlyFrom(subscriptions, locale);
   const brand = providerSearchProfile(slug ?? '', providerName, locale).name;
   const suffix = subscriptions.length ? (locale === 'zh' ? 'API 价格与订阅套餐' : 'Pricing: API Costs & Subscription Plans')
     : (locale === 'zh' ? 'API 价格与模型费用' : 'API Pricing & Model Costs');
   return locale === 'zh' ? {
     title: `${brand} ${suffix} ${year}${names ? `：${names}` : ''}`,
-    description: `查看 ${brand} API 价格、计费单位与模型费用。${subscriptions.length ? `另有 ${subscriptions.length} 个已收录订阅套餐${from}${names ? `，包括 ${names}` : ''}，可比较月付、年付与使用限额。` : '暂无已收录订阅套餐；可通过模型入口查看其他供应商的订阅方案。'}免费额度与按量费用应分别核对。`,
+    description: `查看 ${brand} API 价格、计费单位与模型费用。${subscriptions.length ? `另有 ${subscriptions.length} 个已收录订阅套餐${names ? `，包括 ${names}` : ''}，可比较月付、年付与使用限额。` : '暂无已收录订阅套餐；可通过模型入口查看其他供应商的订阅方案。'}免费额度与按量费用应分别核对。`,
   } : {
     title: `${brand} ${suffix} ${year}${names ? `: ${names}` : ''}`,
-    description: `Compare ${brand} API pricing, billing units and model costs. ${subscriptions.length ? `${subscriptions.length} listed subscription ${subscriptions.length === 1 ? 'plan' : 'plans'}${from}${names ? `: ${names}` : ''}, with monthly/annual prices and usage limits.` : 'No subscription plans are listed; model links compare access through other providers.'} Check free allowances separately from metered charges.`,
+    description: `Compare ${brand} API pricing, billing units and model costs. ${subscriptions.length ? `${subscriptions.length} listed subscription ${subscriptions.length === 1 ? 'plan' : 'plans'}${names ? `: ${names}` : ''}, with monthly/annual prices and usage limits.` : 'No subscription plans are listed; model links compare access through other providers.'} Check free allowances separately from metered charges.`,
   };
 }
 
