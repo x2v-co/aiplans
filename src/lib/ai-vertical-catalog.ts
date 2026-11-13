@@ -1,5 +1,6 @@
 import { CATALOG_1104, MUREKA_1104 } from './catalog-2026-11-04';
 import { CATALOG_1105 } from './catalog-2026-11-05';
+import { CATALOG_1113, CATALOG_1113_SLUGS } from './catalog-2026-11-13';
 import { EMBEDDING_MODELS_1106 } from './catalog-2026-11-06-embeddings';
 import { NON_LLM_CATALOG } from './non-llm-catalog';
 import { IMAGE_MODEL_CATALOG } from './image-model-catalog';
@@ -118,9 +119,10 @@ const VERIFIED_AT = '2026-09-15';
  */
 export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   ...NON_LLM_CATALOG,
-  ...CATALOG_1104,
+  ...CATALOG_1104.filter(item => !CATALOG_1113_SLUGS.has(item.slug!)),
   ...EMBEDDING_MODELS_1106,
-  ...CATALOG_1105,
+  ...CATALOG_1105.filter(item => !CATALOG_1113_SLUGS.has(item.slug!)),
+  ...CATALOG_1113,
   ...IMAGE_MODEL_CATALOG,
   ...PERPLEXITY_DECIDER_CATALOG,
   ...DECISION_MODELS_2026_11_03,
