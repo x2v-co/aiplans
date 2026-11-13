@@ -189,6 +189,8 @@ export default async function PlansIndexPage({
                           <CouponBadge
                             coupons={couponByProvider[provider.slug] ?? []}
                             locale={locale}
+                            placement="plans"
+                            channelSlug={provider.slug}
                             size="xs"
                           />
                           <Link

@@ -10,6 +10,7 @@ import {
   subscribeToConsent,
 } from '@/lib/consent';
 import { classifyTrackedLink, guideSlugFromPath, trackAnalyticsEvent, trackFunnelEvent } from '@/lib/analytics';
+import { localeFromPath, readCouponOutbound, trackCouponClick } from '@/lib/coupon-analytics';
 import {
   ANALYTICS_NOT_SET,
   analyticsDay,
@@ -110,6 +111,15 @@ export default function GoogleAnalytics() {
 
       if (tracked.kind === 'outbound') {
         const channel = readOutboundChannel(anchor.dataset);
+        const coupon = readCouponOutbound(anchor.dataset);
+        const couponParams = coupon.isCoupon
+          ? {
+              link_source: 'coupon',
+              coupon_id: coupon.coupon_id,
+              placement: coupon.placement,
+              provider_slug: coupon.provider_slug,
+            }
+          : null;
         trackAnalyticsEvent('outbound_click', {
           link_domain: tracked.domain,
           link_text: anchor.innerText.trim().slice(0, 100),
@@ -118,13 +128,25 @@ export default function GoogleAnalytics() {
           channel_slug: channel.channel_slug,
           channel_type: channel.channel_type,
           model_slug: channel.model_slug,
+          ...(couponParams ?? {}),
         });
         trackFunnelEvent('outboundClick', {
           link_domain: sanitizeHost(tracked.domain) ?? ANALYTICS_NOT_SET,
           channel_slug: channel.channel_slug,
           channel_type: channel.channel_type,
           model_slug: channel.model_slug,
+          ...(couponParams ?? {}),
         });
+        if (coupon.isCoupon) {
+          trackCouponClick({
+            couponId: coupon.coupon_id === ANALYTICS_NOT_SET ? null : coupon.coupon_id,
+            providerSlug: coupon.provider_slug === ANALYTICS_NOT_SET ? null : coupon.provider_slug,
+            channelSlug: coupon.channel_slug === ANALYTICS_NOT_SET ? null : coupon.channel_slug,
+            placement: coupon.placement === ANALYTICS_NOT_SET ? null : coupon.placement,
+            locale: localeFromPath(window.location.pathname),
+            pathname: window.location.pathname,
+          });
+        }
         markFunnelOutbound();
         return;
       }

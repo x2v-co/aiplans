@@ -17,6 +17,7 @@ import {
   isCouponExpired,
 } from "@/lib/coupon-format";
 import type { Coupon } from "@/lib/coupons";
+import { couponOutboundDataset, trackCouponCopy } from "@/lib/coupon-analytics";
 
 // Provider info
 const providerMeta: Record<number, { name: string; logo: string; color: string; website: string }> = {
@@ -44,10 +45,17 @@ export default function CouponsView({
   const [copiedValue, setCopiedValue] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const handleCopy = (value: string) => {
+  const handleCopy = (value: string, coupon: Coupon) => {
     navigator.clipboard.writeText(value);
     setCopiedValue(value);
     setTimeout(() => setCopiedValue(null), 2000);
+    trackCouponCopy({
+      couponId: coupon.id,
+      providerSlug: coupon.providers?.slug,
+      channelSlug: coupon.providers?.slug,
+      placement: 'coupons',
+      locale,
+    });
   };
 
   const formatDiscount = (coupon: Coupon) => formatCouponDiscount(coupon, locale, t);
@@ -202,7 +210,7 @@ export default function CouponsView({
                             <Button
                               size="sm"
                               variant={copiedValue === target ? "secondary" : "default"}
-                              onClick={() => handleCopy(target)}
+                              onClick={() => handleCopy(target, coupon)}
                               className="gap-1 flex-1 lg:flex-none"
                             >
                               {copiedValue === target ? (
@@ -221,6 +229,13 @@ export default function CouponsView({
                                 target="_blank"
                                 rel="sponsored noopener noreferrer"
                                 className="flex-1 lg:flex-none"
+                                {...couponOutboundDataset({
+                                  couponId: coupon.id,
+                                  providerSlug: coupon.providers?.slug,
+                                  channelSlug: coupon.providers?.slug,
+                                  placement: 'coupons',
+                                  locale,
+                                })}
                               >
                                 <Button size="sm" variant="outline" className="gap-1 w-full lg:w-auto">
                                   {t('visit')} <ExternalLink className="w-3 h-3" />

@@ -268,6 +268,10 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
               <CouponBadge
                 coupons={couponsFor(couponByProvider, model.provider?.slug)}
                 locale={locale}
+                placement="compare"
+                channelSlug={model.provider?.slug}
+                channelType={model.provider?.type}
+                modelSlug={model.slug}
                 size="sm"
               />
             </div>
@@ -599,6 +603,10 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                                     <CouponBadge
                                       coupons={couponsFor(couponByProvider, plan.channel?.slug)}
                                       locale={locale}
+                                      placement="compare"
+                                      channelSlug={plan.channel?.slug}
+                                      channelType={plan.channel?.type}
+                                      modelSlug={model.slug}
                                       size="xs"
                                     />
                                   </div>
@@ -654,6 +662,10 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                 <CouponBadge
                   coupons={couponsFor(couponByProvider, model.provider?.slug)}
                   locale={locale}
+                  placement="compare"
+                  channelSlug={model.provider?.slug}
+                  channelType={model.provider?.type}
+                  modelSlug={model.slug}
                   size="sm"
                   className="self-center"
                 />

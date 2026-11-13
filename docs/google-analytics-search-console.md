@@ -17,7 +17,9 @@ script is emitted.
 
 After analytics consent, the app also sends these product events:
 
-- `outbound_click`: a visitor follows an external provider or source link.
+- `outbound_click`: a visitor follows an external provider or source link. Coupon offer links include `link_source=coupon` and `coupon_id`.
+- `coupon_click`: a visitor follows a coupon offer or visit URL.
+- `coupon_copy`: a visitor copies a coupon code or invite link.
 - `compare_start`: a visitor opens a localized model or plan comparison.
 - `comparison_model_change`: a visitor adds or removes a model in the comparison tool.
 - `pricing_filter_change`: a visitor changes a pricing region, channel, sort, or access filter.

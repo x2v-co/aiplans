@@ -59,7 +59,18 @@ function ProviderVisitLink({
   modelSlug?: string;
 }) {
   const href = getProviderVisitUrl(provider, 'api');
-  const badge = <CouponBadge coupons={coupons ?? []} locale={locale} size="xs" align="end" />;
+  const badge = (
+    <CouponBadge
+      coupons={coupons ?? []}
+      locale={locale}
+      placement="api-pricing"
+      channelSlug={provider.slug}
+      channelType={provider.type}
+      modelSlug={modelSlug}
+      size="xs"
+      align="end"
+    />
+  );
   if (!href) return (
     <div className="flex flex-col items-end gap-1">
       <span className="text-zinc-400">-</span>

@@ -237,7 +237,14 @@ export default async function ProviderPage({
                 </p>
                 {providerCoupons.length > 0 && (
                   <div className="mt-3">
-                    <CouponBadge coupons={providerCoupons} locale={locale} size="sm" />
+                    <CouponBadge
+                      coupons={providerCoupons}
+                      locale={locale}
+                      placement="provider"
+                      channelSlug={providerSlug}
+                      channelType={provider.type}
+                      size="sm"
+                    />
                   </div>
                 )}
               </div>
