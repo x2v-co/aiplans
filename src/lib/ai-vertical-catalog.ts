@@ -8,6 +8,7 @@ import { PERPLEXITY_DECIDER_CATALOG } from './perplexity-decider-catalog';
 import { DECISION_MODELS_2026_11_03 } from './decision-models-2026-11-03';
 import { DECISION_MODELS_2026_11_05 } from './decision-models-2026-11-05';
 import { DECISION_MODELS_2026_11_12 } from './decision-models-2026-11-12';
+import { DECISION_MODELS_2026_11_13 } from './decision-models-2026-11-13';
 
 export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model' | 'voice-model' | 'image-model' | 'embedding-model';
 
@@ -128,6 +129,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   ...DECISION_MODELS_2026_11_03,
   ...DECISION_MODELS_2026_11_05,
   ...DECISION_MODELS_2026_11_12,
+  ...DECISION_MODELS_2026_11_13,
   // Agent / coding-agent plans
   {
     kind: 'agent',

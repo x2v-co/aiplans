@@ -5,7 +5,7 @@ import { TOOL_API_PRICES, formatToolPrice } from './tool-api-pricing';
 test('every tool price is official, sourced and verified', () => {
   for (const row of TOOL_API_PRICES) {
     assert.equal(new URL(row.sourceUrl).protocol, 'https:');
-    assert.ok(/(claude\.com|openai\.com|ai\.google\.dev|x\.ai|deepseek\.com|baidu\.com|vercel\.com)$/.test(new URL(row.sourceUrl).hostname), row.sourceUrl);
+    assert.ok(/(claude\.com|openai\.com|ai\.google\.dev|x\.ai|deepseek\.com|baidu\.com|vercel\.com|brave\.com|octen\.ai)$/.test(new URL(row.sourceUrl).hostname), row.sourceUrl);
     assert.ok(row.pricePer1k >= 0 && Number.isFinite(row.pricePer1k));
     assert.match(row.verifiedAt, /^\d{4}-\d{2}-\d{2}$/);
   }
@@ -76,3 +76,41 @@ test('Vercel AI Gateway DeepSeek Search and Fetch use the published $0.75 billab
   assert.match(rows[1].note!.zh, /非空页面内容/);
   assert.equal(formatToolPrice(rows[0], 'en'), '$0.75 / 1,000 billable requests');
 });
+
+test('Brave x402 and Octen PAYG rates match the official pages verified 2026-11-13', () => {
+  const brave = TOOL_API_PRICES.find(row => row.providerSlug === 'brave' && row.tool === 'Search API (x402)')!;
+  assert.equal(brave.kind, 'web_search');
+  assert.equal(brave.pricePer1k, 5);
+  assert.equal(brave.currency, 'USD');
+  assert.equal(brave.verifiedAt, '2026-11-13');
+  assert.equal(brave.sourceUrl, 'https://brave.com/blog/search-api-agentic-payments/');
+  assert.equal(formatToolPrice(brave, 'en'), '$5 / 1,000 requests');
+  for (const locale of ['en', 'zh'] as const) {
+    assert.ok(brave.note![locale].includes('x402'));
+    assert.ok(brave.note![locale].includes('5'));
+    assert.ok(brave.note![locale].includes('https://brave.com/search/api/'));
+  }
+
+  const web = TOOL_API_PRICES.find(row => row.providerSlug === 'octen' && row.tool === 'Web Search')!;
+  const lite = TOOL_API_PRICES.find(row => row.providerSlug === 'octen' && row.tool === 'Pulse Search (lite)')!;
+  const standard = TOOL_API_PRICES.find(row => row.providerSlug === 'octen' && row.tool === 'Pulse Search (standard)')!;
+  assert.deepEqual([web.pricePer1k, lite.pricePer1k, standard.pricePer1k], [1, 0.1, 0.2]);
+  for (const row of [web, lite, standard]) {
+    assert.equal(row.provider, 'Octen');
+    assert.equal(row.kind, 'web_search');
+    assert.equal(row.currency, 'USD');
+    assert.equal(row.verifiedAt, '2026-11-13');
+    assert.equal(row.sourceUrl, 'https://docs.octen.ai/overview/pricing');
+  }
+  for (const locale of ['en', 'zh'] as const) {
+    assert.ok(web.note![locale].includes('20'));
+    assert.ok(web.note![locale].includes('100'));
+    assert.ok(web.note![locale].includes('80'));
+  }
+  assert.match(web.note!.en, /\$50\/quarter/);
+  assert.match(web.note!.zh, /50 美元\/季/);
+  assert.match(standard.note!.en, /first result per search is free/);
+  assert.equal(formatToolPrice(web, 'en'), '$1 / 1,000 calls');
+  assert.equal(formatToolPrice(lite, 'zh'), '$0.1 / 每千次调用');
+});
+

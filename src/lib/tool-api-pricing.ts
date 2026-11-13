@@ -26,6 +26,11 @@ const VERCEL_SEARCH_CHANGELOG = 'https://vercel.com/changelog/ai-gateway-adds-de
 const BAIDU_VERIFIED_AT = '2026-10-31';
 const BAIDU = 'https://cloud.baidu.com/doc/qianfan/s/1mh4sv6c4';
 const BAIDU_CAMPAIGN = 'https://cloud.baidu.com/product/AI-SEARCH/campaign.html';
+const BRAVE_X402 = 'https://brave.com/blog/search-api-agentic-payments/';
+const BRAVE_API = 'https://brave.com/search/api/';
+const OCTEN_PRICING = 'https://docs.octen.ai/overview/pricing';
+const SEARCH_API_VERIFIED_AT = '2026-11-13';
+
 const ANTHROPIC = 'https://platform.claude.com/docs/en/about-claude/pricing';
 const OPENAI = 'https://developers.openai.com/api/docs/pricing';
 const GOOGLE = 'https://ai.google.dev/gemini-api/docs/pricing';
@@ -96,6 +101,34 @@ export const TOOL_API_PRICES: ToolApiPrice[] = [
     note: { en: `Domestic content list price: ¥0.072/call. Limited-time campaign 2026-10-30 to 2026-12-31: ¥9.9 per 1,000 calls (invite code required). 1,500 free calls/month; default 3 QPS. Overseas content: ¥0.072/call. Campaign: ${BAIDU_CAMPAIGN}`,
       zh: `国内内容刊例价 0.072 元/次。限时活动 2026-10-30 至 2026-12-31：量包 9.9 元/千次（需邀请码）。每月免费 1,500 次；默认 3QPS。国外内容 0.072 元/次。活动页：${BAIDU_CAMPAIGN}` },
     sourceUrl: BAIDU, verifiedAt: BAIDU_VERIFIED_AT },
+  { provider: 'Brave', providerSlug: 'brave', tool: 'Search API (x402)', kind: 'web_search', pricePer1k: 5, currency: 'USD',
+    unit: { en: '1,000 requests', zh: '每千次请求' }, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
+    note: {
+      en: `x402 pay-per-request (Base USDC); no account or API key. A request without payment gets HTTP 402, then is retried after payment. LLM Context, web, news, image, video, and local are all $5 per 1,000 ($0.005/request). Gas fees are waived for a limited time. Same $5 per 1,000 list price as the published Search / LLM Context plan on ${BRAVE_API} (account plan includes $5 free credits/month). Answers is a different product ($4 per 1,000 plus $5/M tokens) and is not this row.`,
+      zh: `x402 按次付费（Base 链 USDC），无需账号或 API key。未付款请求返回 HTTP 402，付款后重试。LLM Context、web、news、image、video、local 均为每千次 5 美元（每次 0.005 美元）。限时免除 gas。与刊例页 ${BRAVE_API} 的 Search / LLM Context 每千次 5 美元相同（账号方案每月送 5 美元额度）。Answers 是另一产品（每千次 4 美元另加每百万 token 5 美元），不在本行。`,
+    },
+    sourceUrl: BRAVE_X402, verifiedAt: SEARCH_API_VERIFIED_AT },
+  { provider: 'Octen', providerSlug: 'octen', tool: 'Web Search', kind: 'web_search', pricePer1k: 1, currency: 'USD',
+    unit: { en: '1,000 calls', zh: '每千次调用' }, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
+    note: {
+      en: 'Pay-as-you-go $1 per 1,000 calls (80% off the $5 list price). Full content $0.50 per 1,000 results; the first 10 results per search are free. Personal prepaid Search Plans (one plan at a time, Search or QPS): Standard $20/month ($50/quarter, $180/year) unlimited Web Search plus 1,000 image searches/month, no overage; Plus $100/month ($1,000/year) plus 5,000 image searches/month. Requests may queue when busy; unserved requests are not charged. Extra image search, full content (no free results on the plan), and other APIs stay pay-as-you-go.',
+      zh: '按量价每千次 1 美元（刊例 5 美元，八折）。全文每千条结果 0.50 美元，每次搜索前 10 条免费。个人预付费 Search Plan（同时只能有 Search 或 QPS 一种）：Standard 20 美元/月（50 美元/季、180 美元/年）不限量 Web Search + 每月 1,000 次图片搜索、无超额；Plus 100 美元/月（1,000 美元/年）+ 每月 5,000 次图片搜索。忙时可能排队，未能服务的请求不计费。额外图片搜索、套餐内全文（无免费条数）及其他 API 仍按量计费。',
+    },
+    sourceUrl: OCTEN_PRICING, verifiedAt: SEARCH_API_VERIFIED_AT },
+  { provider: 'Octen', providerSlug: 'octen', tool: 'Pulse Search (lite)', kind: 'web_search', pricePer1k: 0.1, currency: 'USD',
+    unit: { en: '1,000 calls', zh: '每千次调用' }, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
+    note: {
+      en: 'Official table: $0.1 / 1k calls. A standard call is billed as lite when page details are not available for any result. Search Plan details are on the Web Search row.',
+      zh: '官方表为每千次 0.1 美元。若所有结果都没有页面详情，standard 调用按 lite 计费。Search Plan 详见 Web Search 行。',
+    },
+    sourceUrl: OCTEN_PRICING, verifiedAt: SEARCH_API_VERIFIED_AT },
+  { provider: 'Octen', providerSlug: 'octen', tool: 'Pulse Search (standard)', kind: 'web_search', pricePer1k: 0.2, currency: 'USD',
+    unit: { en: '1,000 calls', zh: '每千次调用' }, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
+    note: {
+      en: 'Official table: $0.2 / 1k calls, plus full content $0.5 / 1k results. The full content of the first result per search is free; only additional results are billed. Search Plan details are on the Web Search row.',
+      zh: '官方表为每千次 0.2 美元，另加全文每千条结果 0.5 美元。每次搜索第一条全文免费，只对额外结果计费。Search Plan 详见 Web Search 行。',
+    },
+    sourceUrl: OCTEN_PRICING, verifiedAt: SEARCH_API_VERIFIED_AT },
 ];
 
 export function formatToolPrice(row: ToolApiPrice, locale: 'en' | 'zh'): string {
