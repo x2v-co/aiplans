@@ -9,7 +9,7 @@ import { ASR_TTS_1105 } from '../../src/lib/catalog-2026-11-05';
 import { GROK_VIDEO_1104 } from '../../src/lib/catalog-2026-11-04';
 import {
   LIFECYCLE, PRODUCTION_SHAPED_DRY_RUN, QWEN_PREVIEW_SHUTDOWN, QWEN_PREVIEW_SLUG,
-  catalog20261113AuditFixesSeedOptions, seedCatalog20261113AuditFixes, seedStepCounts,
+  catalog20261113AuditFixesSeedOptions, day, seedCatalog20261113AuditFixes, seedStepCounts,
 } from './catalog-2026-11-13-audit-fixes';
 import { fakeSeedTx } from './fake-seed-tx';
 
@@ -127,6 +127,21 @@ test('apply writes official rates and dates, attaches aliases in place, then re-
   assert.equal(bySlug['gpt-image-2'].deprecated_at, '2026-11-10');
   assert.equal(bySlug[QWEN_PREVIEW_SLUG].shutdown_date, '2026-11-26');
   assert.equal(bySlug[QWEN_PREVIEW_SLUG].pricing_unit, 'subscription_only');
+
+  // Postgres returns DATE / timestamp columns as Date; a second dry-run must stay empty.
+  for (const row of data.models) {
+    for (const field of ['deprecated_at', 'shutdown_date'] as const) {
+      const value = row[field];
+      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+        row[field] = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+      }
+    }
+  }
+  assert.deepEqual(
+    (await seedCatalog20261113AuditFixes(tx, false)).filter(step => step.action !== 'skip'),
+    [],
+    'second dry-run after apply stays empty when dates come back as Date',
+  );
   assert.equal(bySlug['elevenlabs-scribe-v3'].name, 'Scribe v3');
   assert.equal(bySlug['elevenlabs-realtime-v1-mini'].pricing_unit, 'per_minute');
 
@@ -179,3 +194,15 @@ test('a missing baidu-style wrong type, two lookup slugs, or a non-canonical qwe
   await assert.rejects(() => seedCatalog20261113AuditFixes(wrong.tx, true), /has type aggregator/);
   assert.equal(wrong.writes(), 0);
 });
+
+test('day normalizes Postgres Date objects and ISO dates to YYYY-MM-DD', () => {
+  assert.equal(day(new Date('2026-10-31T00:00:00Z')), '2026-10-31');
+  assert.equal(day(new Date('2027-04-30T00:00:00Z')), '2027-04-30');
+  assert.equal(day('2026-10-31'), '2026-10-31');
+  assert.equal(day('2026-10-31T00:00:00.000Z'), '2026-10-31');
+  assert.equal(day(null), null);
+  assert.equal(day(''), null);
+  // The previous slice(0, 10) of String(Date) produced "Sat Oct 31" and broke idempotency.
+  assert.notEqual(day(new Date('2026-10-31T00:00:00Z')), String(new Date('2026-10-31T00:00:00Z')).slice(0, 10));
+});
+

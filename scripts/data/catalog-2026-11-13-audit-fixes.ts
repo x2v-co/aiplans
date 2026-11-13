@@ -165,10 +165,11 @@ function appendEvidence(existing: unknown, note: string) {
   const previous = String(existing ?? '');
   return previous.includes(note) ? previous : [previous, note].filter(Boolean).join('\n');
 }
-const day = (value: unknown) => {
+export const day = (value: unknown) => {
   if (value == null || value === '') return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value.toISOString().slice(0, 10);
   const text = String(value);
-  return text.length >= 10 ? text.slice(0, 10) : text;
+  return /^\d{4}-\d{2}-\d{2}/.test(text) ? text.slice(0, 10) : text;
 };
 
 export async function seedCatalog20261113AuditFixes(tx: Sql, apply = false): Promise<Step[]> {
