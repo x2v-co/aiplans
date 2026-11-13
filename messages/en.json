@@ -533,6 +533,8 @@
     "audio_input": "Audio input",
     "text_output": "Text output",
     "transcription_estimate": "Transcription (per-minute estimate)",
+    "connected_audio": "Connected audio",
+    "video_second": "Video (per second)",
     "input_tokens": "Input tokens",
     "output_tokens": "Output tokens",
     "image_starting": "Starting image price",

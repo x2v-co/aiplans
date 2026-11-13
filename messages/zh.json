@@ -533,6 +533,8 @@
     "audio_input": "音频输入",
     "text_output": "文本输出",
     "transcription_estimate": "转录（按分钟估算）",
+    "connected_audio": "连线音频",
+    "video_second": "视频（每秒）",
     "input_tokens": "输入 token",
     "output_tokens": "输出 token",
     "image_starting": "图像起步价",
