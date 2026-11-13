@@ -61,6 +61,11 @@ export function isVerifiedFreeOutput(modelSlug: string | undefined, providerSlug
     if (modelSlug === 'perplexity-pplx-decider-v1-2' && input === 0.02) return true;
     if (modelSlug === 'perplexity-pplx-decider-flash-v1-2' && input === 0.01) return true;
   }
+  // Official Decisions API pricing + Vercel model pages, verified 2026-11-13: input-only, same rates as v1.2.
+  if (providerSlug === 'perplexity' || providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway') {
+    if (modelSlug === 'perplexity-pplx-decider-v1-3' && input === 0.02) return true;
+    if (modelSlug === 'perplexity-pplx-decider-flash-v1-3' && input === 0.01) return true;
+  }
   return OPENROUTER_INPUT_ONLY.has(modelSlug ?? '') && providerSlug === 'openrouter' && input != null && input > 0;
 }
 

@@ -122,7 +122,7 @@ test('only audited video/music values are numeric; range and approximation are e
 
 test('decision models distinguish free output from unknown task prices in en/zh', () => {
   const items = catalogForKind('decision-model');
-  assert.equal(items.length, 20); // 9 audited 2026-10-15 + 8 from 2026-11-03 + Sarvam Prism + Morph Reflex + Gemini Decision 1
+  assert.equal(items.length, 22); // 9 audited 2026-10-15 + 8 from 2026-11-03 + Sarvam Prism + Morph Reflex + Gemini Decision 1 + Decider v1.3 / Flash v1.3
   assert.ok(!items.some(item => item.slug === 'decision-1'));
   for (const item of items) assert.equal(item.pricePer1MTasks, null);
   const snap = items.find(i => i.slug === 'subq-snap')!;
@@ -178,6 +178,7 @@ test('audited entries have factual modalities and the static audit passes withou
     'cloudflare-clef-flash': ['text', 'image'], 'cloudflare-clairic': ['text', 'image'],
     'liquid-d1': ['text', 'image'], 'liquid-d1-ultra': ['text', 'image'],
     'morph-reflex': ['text', 'image'], 'gemini-decision-1': ['text', 'image', 'video', 'audio'],
+    'perplexity-pplx-decider-v1-3': ['text', 'image'], 'perplexity-pplx-decider-flash-v1-3': ['text', 'image'],
   };
   for (const item of catalogForKind('decision-model')) {
     assert.deepEqual(item.inputModalities, multimodal[item.slug!] ?? ['text'], item.slug);
