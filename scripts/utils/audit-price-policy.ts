@@ -57,10 +57,12 @@ export function isVerifiedFreeOutput(modelSlug: string | undefined, providerSlug
   if (INPUT_ONLY_1103.get(modelSlug ?? '')?.has(providerSlug ?? '') && input != null && input > 0) return true;
   if (modelSlug === 'subq-snap' && providerSlug === 'subq' && input === 0.05) return true;
   // Vercel Decider announcement, verified 2026-10-17: input-only billing.
-  if (providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway' || providerSlug === 'perplexity') {
+  if (providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway') {
     if (modelSlug === 'perplexity-pplx-decider-v1-2' && input === 0.02) return true;
     if (modelSlug === 'perplexity-pplx-decider-flash-v1-2' && input === 0.01) return true;
-    // Official Decisions API pricing + Vercel model pages, verified 2026-11-13: same input-only rates as v1.2.
+  }
+  // Official Decisions API pricing + Vercel model pages, verified 2026-11-13: input-only, same rates as v1.2.
+  if (providerSlug === 'perplexity' || providerSlug === 'vercel' || providerSlug === 'vercel-ai-gateway') {
     if (modelSlug === 'perplexity-pplx-decider-v1-3' && input === 0.02) return true;
     if (modelSlug === 'perplexity-pplx-decider-flash-v1-3' && input === 0.01) return true;
   }
