@@ -1015,6 +1015,10 @@ export default async function ModelPage({
                             <CouponBadge
                               coupons={couponByProvider[cp.providers.slug] ?? []}
                               locale={locale}
+                              placement="model"
+                              channelSlug={cp.providers.slug}
+                              channelType={cp.providers.type}
+                              modelSlug={slug}
                               size="xs"
                               align="end"
                             />

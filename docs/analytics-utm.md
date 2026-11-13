@@ -6,10 +6,14 @@
 |---|---|---|
 | `guide_model_click` | On `/{locale}/guides/{slug}`, click to `/{locale}/models/{x}` or `/{locale}/plans/{x}` | `guide_slug`, `target_type` (`model`/`plan`), `target_slug`, `target_path`, `position` (row in guide table, if any) |
 | `compare_start` | Click to `/{locale}/compare/models|plans` | `compare_type`, `target_path`, `guide_slug` (when clicked on a guide) |
-| `outbound_click` | Click to another origin | `link_domain`, `link_text`, `link_url`, `guide_slug` (when clicked on a guide) |
+| `outbound_click` | Click to another origin | `link_domain`, `link_text`, `link_url`, `guide_slug` (when clicked on a guide). Coupon offer links also send `link_source=coupon`, `coupon_id`, `placement`, `provider_slug`, and `channel_slug` |
+| `coupon_click` | Click an external coupon offer / visit URL | `provider_slug`, `channel_slug`, `coupon_id`, `placement`, `page_family`, `locale`, `action=outbound` |
+| `coupon_copy` | Copy a coupon code or invite link | Same params as `coupon_click`, with `action=copy` |
+
+`coupon_id` is the numeric row id, never the redeem code. `placement` is one of `plans`, `model`, `provider`, `api-pricing`, `compare`, `coupons`. `page_family` matches funnel `page_group` tokens, plus `coupons` and `plans`. Coupon offer `<a>` tags also carry `outboundChannelDataset` plus `data-link-source="coupon"`, so the global `outbound_click` / `funnel_outbound_click` handlers can separate coupon exits from other CTAs.
 
 Funnel: landing on guide (page_view with `utm_*`) → `guide_model_click` → `compare_start` → `outbound_click`.
-In GA4, register `guide_slug`, `target_type`, `target_slug` as event-scoped custom dimensions to report on them.
+In GA4, register `guide_slug`, `target_type`, `target_slug` as event-scoped custom dimensions to report on them. For coupon reporting, also register `coupon_id`, `placement`, `page_family`, `locale`, `action`, `provider_slug`, and `link_source` (event-scoped). `channel_slug` is already in the funnel dimension list.
 
 ## Closed loop (visit → compare → outbound → return)
 

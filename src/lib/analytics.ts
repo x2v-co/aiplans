@@ -6,6 +6,8 @@ export type AnalyticsEventName =
   | 'compare_start'
   | 'comparison_model_change'
   | 'outbound_click'
+  | 'coupon_click'
+  | 'coupon_copy'
   | 'pricing_filter_change'
   | 'pricing_search'
   | 'global_search'

@@ -12,6 +12,11 @@ import {
   formatCouponDiscount,
 } from "@/lib/coupon-format";
 import type { CouponOffer } from "@/lib/coupon-format";
+import {
+  couponOutboundDataset,
+  trackCouponCopy,
+  type CouponPlacement,
+} from "@/lib/coupon-analytics";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,6 +28,11 @@ import { cn } from "@/lib/utils";
 export interface CouponBadgeProps {
   coupons: CouponOffer[];
   locale: string;
+  /** Where this badge is rendered; sent as the coupon event `placement`. */
+  placement: CouponPlacement;
+  channelSlug?: string | null;
+  channelType?: string | null;
+  modelSlug?: string | null;
   size?: "xs" | "sm";
   align?: "start" | "center" | "end";
   className?: string;
@@ -38,7 +48,17 @@ const pillSizes = {
   sm: "px-2 py-0.5 text-xs",
 };
 
-export function CouponBadge({ coupons, locale, size = "sm", align = "center", className }: CouponBadgeProps) {
+export function CouponBadge({
+  coupons,
+  locale,
+  placement,
+  channelSlug,
+  channelType,
+  modelSlug,
+  size = "sm",
+  align = "center",
+  className,
+}: CouponBadgeProps) {
   const t = useTranslations("coupons");
   if (!coupons.length) return null;
 
@@ -47,6 +67,14 @@ export function CouponBadge({ coupons, locale, size = "sm", align = "center", cl
   if (coupons.length === 1) {
     const coupon = coupons[0];
     const shared = cn(pillBase, pillSizes[size], className);
+    const dataset = couponOutboundDataset({
+      couponId: coupon.id,
+      providerSlug: coupon.providerSlug,
+      channelSlug: channelSlug ?? coupon.providerSlug,
+      channelType,
+      modelSlug,
+      placement,
+    });
     return coupon.offerUrl ? (
       <a
         href={coupon.offerUrl}
@@ -54,6 +82,7 @@ export function CouponBadge({ coupons, locale, size = "sm", align = "center", cl
         rel="sponsored noopener noreferrer"
         className={shared}
         title={coupon.description}
+        {...dataset}
       >
         <TicketPercent className="size-3 shrink-0" />
         <span className="truncate">{label}</span>
@@ -82,7 +111,15 @@ export function CouponBadge({ coupons, locale, size = "sm", align = "center", cl
       <PopoverContent align={align} className="w-[19rem]">
         <div className="divide-y">
           {coupons.map((coupon) => (
-            <CouponOfferRow key={coupon.id} coupon={coupon} locale={locale} />
+            <CouponOfferRow
+              key={coupon.id}
+              coupon={coupon}
+              locale={locale}
+              placement={placement}
+              channelSlug={channelSlug}
+              channelType={channelType}
+              modelSlug={modelSlug}
+            />
           ))}
         </div>
       </PopoverContent>
@@ -90,17 +127,41 @@ export function CouponBadge({ coupons, locale, size = "sm", align = "center", cl
   );
 }
 
-function CouponOfferRow({ coupon, locale }: { coupon: CouponOffer; locale: string }) {
+function CouponOfferRow({
+  coupon,
+  locale,
+  placement,
+  channelSlug,
+  channelType,
+  modelSlug,
+}: {
+  coupon: CouponOffer;
+  locale: string;
+  placement: CouponPlacement;
+  channelSlug?: string | null;
+  channelType?: string | null;
+  modelSlug?: string | null;
+}) {
   const t = useTranslations("coupons");
   const [copied, setCopied] = React.useState(false);
   const target = couponCopyTarget(coupon);
   const targetIsLink = target.startsWith("http");
   const label = formatCouponDiscount(coupon, locale, t);
+  const tracking = {
+    couponId: coupon.id,
+    providerSlug: coupon.providerSlug,
+    channelSlug: channelSlug ?? coupon.providerSlug,
+    channelType,
+    modelSlug,
+    placement,
+    locale,
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(target);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    trackCouponCopy(tracking);
   };
 
   return (
@@ -132,7 +193,12 @@ function CouponOfferRow({ coupon, locale }: { coupon: CouponOffer; locale: strin
         </Button>
         {coupon.offerUrl ? (
           <Button asChild size="icon-xs" variant="ghost" aria-label={t("visit")} title={t("visit")}>
-            <a href={coupon.offerUrl} target="_blank" rel="sponsored noopener noreferrer">
+            <a
+              href={coupon.offerUrl}
+              target="_blank"
+              rel="sponsored noopener noreferrer"
+              {...couponOutboundDataset(tracking)}
+            >
               <ExternalLink className="size-3.5" />
             </a>
           </Button>
