@@ -255,6 +255,8 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-06-embeddings:apply`),
       ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-05-intel:apply').map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-05-intel:apply`),
+      ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-13-audit-fixes:apply').map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-13-audit-fixes:apply`),
       ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-11-token-plan-h3-image:apply').map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-11-token-plan-h3-image:apply`),
       ...PERPLEXITY_DECIDER_CATALOG.map(item =>
