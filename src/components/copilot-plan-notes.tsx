@@ -1,6 +1,6 @@
 "use client";
 import { useTranslations } from 'next-intl';
-import { COPILOT_DEPRECATION_SOURCE, COPILOT_MODEL_DEPRECATIONS } from '@/lib/copilot';
+import { COPILOT_DEPRECATION_SOURCES, COPILOT_MODEL_DEPRECATIONS } from '@/lib/copilot';
 
 /** Seeded source notes stay available on both subscription comparison surfaces.
  * Pre-seed/legacy rows with absent notes render nothing.
@@ -21,7 +21,9 @@ export function CopilotPlanNotes({ slug, notes }: { slug?: string | null; notes?
           </li>
         ))}
       </ul>
-      <a className="underline" href={COPILOT_DEPRECATION_SOURCE} target="_blank" rel="noopener noreferrer">{t('deprecationSource')}</a>
+      {COPILOT_DEPRECATION_SOURCES.map(href => (
+        <a key={href} className="mt-1 block underline" href={href} target="_blank" rel="noopener noreferrer">{t('deprecationSource')}</a>
+      ))}
     </details>
   );
 }

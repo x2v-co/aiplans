@@ -3,7 +3,7 @@
  * Static (no DB table yet; see docs/proposals/tool-api-pricing.md). Each row cites its source.
  * Only official, published prices are listed; anything unverified is left out.
  */
-export type ToolKind = 'web_search' | 'web_fetch';
+export type ToolKind = 'web_search' | 'web_fetch' | 'ocr' | 'tts' | 'asr';
 export interface ToolApiPrice {
   provider: string;
   providerSlug: string;
@@ -30,6 +30,7 @@ const BRAVE_X402 = 'https://brave.com/blog/search-api-agentic-payments/';
 const BRAVE_API = 'https://brave.com/search/api/';
 const OCTEN_PRICING = 'https://docs.octen.ai/overview/pricing';
 const SEARCH_API_VERIFIED_AT = '2026-11-13';
+const DEEPSEEK_SPEECH_VERIFIED_AT = '2026-11-14';
 
 const ANTHROPIC = 'https://platform.claude.com/docs/en/about-claude/pricing';
 const OPENAI = 'https://developers.openai.com/api/docs/pricing';
@@ -75,6 +76,27 @@ export const TOOL_API_PRICES: ToolApiPrice[] = [
     unit: { en: '1,000 successful requests', zh: '每千次成功请求' }, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
     note: { en: `US$0.75 on the English page (${DEEPSEEK_EN}). Same free period as Search.`, zh: '英文页为 0.75 美元。免费期同 Search。' },
     sourceUrl: DEEPSEEK_CN, verifiedAt: V },
+  { provider: 'DeepSeek', providerSlug: 'deepseek', tool: 'File parsing / OCR API', kind: 'ocr', pricePer1k: 1.5, currency: 'CNY',
+    unit: { en: '1,000 pages', zh: '每 1,000 页' }, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
+    note: {
+      en: `US$0.225 on the English page (${DEEPSEEK_EN}). File parsing and OCR share this list price. Billed by successfully recognized pages (page_count); a recognition that fails or times out is not billed. Disconnecting does not cancel a recognition already received.`,
+      zh: '英文页为 0.225 美元。文件解析与 OCR 共用此刊例价。按成功识别页数（page_count）计费；失败或超时不计费。客户端断开后，已接收的识别仍会跑完并在成功时计费。',
+    },
+    sourceUrl: DEEPSEEK_CN, verifiedAt: DEEPSEEK_SPEECH_VERIFIED_AT },
+  { provider: 'DeepSeek', providerSlug: 'deepseek', tool: 'Text to Speech (TTS)', kind: 'tts', pricePer1k: 3, currency: 'CNY',
+    unit: { en: '10,000 billed characters', zh: '每 10,000 计费字符' }, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
+    note: {
+      en: `List price. Limited-time 50% off is ¥1.5 / US$0.225; no end date is published. English list price is US$0.45 (${DEEPSEEK_EN}). A Chinese character counts as 2 billed characters; any other character (letter, digit or space) counts as 1. At most 10,000 billed characters per full-text request.`,
+      zh: '刊例价。限时 5 折为 1.5 元 / 0.225 美元，官方未公布截止日期。英文刊例价为 0.45 美元。汉字计 2 个计费字符，其他字符（字母、数字、空格）计 1 个。全文请求最多 10,000 个计费字符。',
+    },
+    sourceUrl: DEEPSEEK_CN, verifiedAt: DEEPSEEK_SPEECH_VERIFIED_AT },
+  { provider: 'DeepSeek', providerSlug: 'deepseek', tool: 'Speech to Text (ASR)', kind: 'asr', pricePer1k: 0.78, currency: 'CNY',
+    unit: { en: 'hour of audio', zh: '每小时音频' }, tokens: { en: 'Standalone API, no tokens', zh: '独立 API，不计 token' },
+    note: {
+      en: `List price. Limited-time 50% off is ¥0.39 / US$0.058; no end date is published. English list price is US$0.116 (${DEEPSEEK_EN}). Billed by audio duration to the second; a fraction of a second counts as 1 second.`,
+      zh: '刊例价。限时 5 折为 0.39 元 / 0.058 美元，官方未公布截止日期。英文刊例价为 0.116 美元。按音频时长精确到秒计费，不足 1 秒按 1 秒计。',
+    },
+    sourceUrl: DEEPSEEK_CN, verifiedAt: DEEPSEEK_SPEECH_VERIFIED_AT },
   { provider: 'Vercel AI Gateway', providerSlug: 'vercel-ai-gateway', tool: 'DeepSeek Search', kind: 'web_search', pricePer1k: 0.75, currency: 'USD',
     unit: { en: '1,000 billable requests', zh: '每千次可计费请求' },
     tokens: { en: 'Host model tokens billed separately', zh: '宿主模型 token 另计' },

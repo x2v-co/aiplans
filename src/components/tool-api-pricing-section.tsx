@@ -5,9 +5,9 @@ export function ToolApiPricingSection({ locale }: { locale: string }) {
   const l = locale === 'zh' ? 'zh' : 'en';
   return (
     <section id="tool-pricing" className="container mx-auto max-w-6xl px-4 py-10">
-      <h2 className="text-2xl font-bold mb-2">{l === 'zh' ? '联网搜索 / 抓取工具按次价格' : 'Web search & fetch tool pricing (per request)'}</h2>
+      <h2 className="text-2xl font-bold mb-2">{l === 'zh' ? '联网搜索、抓取、文件解析与语音 API 价格' : 'Search, fetch, file parse and speech API pricing'}</h2>
       <p className="text-sm text-zinc-500 mb-4">
-        {l === 'zh' ? '官方公布的按次价格，token 费用另计。每行附官方来源与核验日期。' : 'Official per-request prices; token costs are separate. Each row links its official source and verification date.'}
+        {l === 'zh' ? '官方公布的按次或按计费单位价格，模型 token 费用另计。每行附官方来源与核验日期。' : 'Official per-call or per published-unit prices; model token costs are separate. Each row links its official source and verification date.'}
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

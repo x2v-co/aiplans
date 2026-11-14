@@ -28,6 +28,9 @@ export type LegacySlugTarget = {
 };
 
 export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
+  // Intel 2026-11-14: production /models/embeddinggemma-2 was 404; canonical Workers AI slug.
+  'embeddinggemma-2': { models: 'cloudflare-embeddinggemma-2' },
+  'google-embeddinggemma-2': { models: 'cloudflare-embeddinggemma-2' },
   // #275: both published IDs refer to MiniMax-M3.1-Flash. Proxy returns 301.
   'minimax-m3.1': { models: 'minimax-m3.1-flash' },
   'minimax-minimax-m3-1-flash': { models: 'minimax-m3.1-flash' },
