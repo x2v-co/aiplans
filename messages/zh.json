@@ -478,6 +478,8 @@
   },
   "nonLlmModels": {
     "per_1k_characters": "千字符",
+    "per_10k_characters": "每 1 万计费字符",
+    "per_1m_utf8_bytes": "每百万 UTF-8 字节",
     "text input through 2026-12-31": "文本输入 （截至 2026-12-31）",
     "text input through 2026-12-31 (batch)": "文本输入 （截至 2026-12-31） （批处理）",
     "audio output through 2026-12-31": "音频输出 （截至 2026-12-31）",
@@ -547,6 +549,8 @@
     "per_image": "每张图",
     "per_megapixel": "每百万像素",
     "per_hour": "每小时",
+    "official list": "刊例价",
+    "Zyphra Inference": "Zyphra Inference",
     "per_minute": "每分钟",
     "subscription": "订阅内含",
     "subscription_only": "仅订阅（无 API）",

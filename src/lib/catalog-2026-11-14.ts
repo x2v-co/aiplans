@@ -219,7 +219,7 @@ function deepseekTts(): AiCatalogItem {
     lastVerified: VERIFIED,
     verifiedAt: VERIFIED,
     usageRates: [
-      { priceKind: 'list', unit: 'per_10k_characters', price: 0.45 },
+      { priceKind: 'official list', unit: 'per_10k_characters', price: 0.45 },
     ],
     notes: [
       'Standalone DeepSeek Speech API, not a chat-model token rate.',
@@ -262,7 +262,7 @@ function deepseekAsr(): AiCatalogItem {
     lastVerified: VERIFIED,
     verifiedAt: VERIFIED,
     usageRates: [
-      { priceKind: 'list', unit: 'per_hour', price: 0.116 },
+      { priceKind: 'official list', unit: 'per_hour', price: 0.116 },
     ],
     notes: [
       'Standalone DeepSeek Speech API, not a chat-model token rate.',
