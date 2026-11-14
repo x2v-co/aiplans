@@ -229,3 +229,11 @@ test('both MiniMax Flash legacy slugs land on the canonical model through the pr
     assert.equal(legacySlugRedirect(`/${locale}/models/minimax-m3.1-flash`), null);
   }
 });
+
+test('bare Inkling 2 Small ids redirect to the thinkingmachines- catalog slugs', () => {
+  for (const locale of ['en', 'zh']) {
+    assert.equal(legacySlugRedirect(`/${locale}/models/inkling-2-small`), `/${locale}/models/thinkingmachines-inkling-2-small`);
+    assert.equal(legacySlugRedirect(`/${locale}/models/inkling-2-small-free`), `/${locale}/models/thinkingmachines-inkling-2-small-free`);
+    assert.equal(legacySlugRedirect(`/${locale}/models/thinkingmachines-inkling-2-small`), null);
+  }
+});

@@ -28,6 +28,10 @@ export type LegacySlugTarget = {
 };
 
 export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
+  // Intel 2026-11-14 evening: /models/inkling-2-small and -free were 404; the catalog slugs carry the
+  // thinkingmachines- prefix (the 11-06 seed only used the bare id as a lookup alias, never as a URL).
+  'inkling-2-small': { models: 'thinkingmachines-inkling-2-small' },
+  'inkling-2-small-free': { models: 'thinkingmachines-inkling-2-small-free' },
   // Intel 2026-11-14: production /models/embeddinggemma-2 was 404; canonical Workers AI slug.
   'embeddinggemma-2': { models: 'cloudflare-embeddinggemma-2' },
   'google-embeddinggemma-2': { models: 'cloudflare-embeddinggemma-2' },
