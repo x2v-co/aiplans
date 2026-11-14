@@ -114,3 +114,33 @@ test('Brave x402 and Octen PAYG rates match the official pages verified 2026-11-
   assert.equal(formatToolPrice(lite, 'zh'), '$0.1 / 每千次调用');
 });
 
+
+test('DeepSeek OCR, TTS and ASR list prices match the official pages verified 2026-11-14', () => {
+  const ocr = TOOL_API_PRICES.find(row => row.providerSlug === 'deepseek' && row.kind === 'ocr')!;
+  const tts = TOOL_API_PRICES.find(row => row.providerSlug === 'deepseek' && row.kind === 'tts')!;
+  const asr = TOOL_API_PRICES.find(row => row.providerSlug === 'deepseek' && row.kind === 'asr')!;
+  assert.equal(ocr.tool, 'File parsing / OCR API');
+  assert.equal(ocr.pricePer1k, 1.5);
+  assert.equal(ocr.currency, 'CNY');
+  assert.equal(ocr.verifiedAt, '2026-11-14');
+  assert.equal(ocr.sourceUrl, 'https://api-docs.deepseek.com/zh-cn/quick_start/pricing');
+  assert.equal(formatToolPrice(ocr, 'en'), '¥1.5 / 1,000 pages');
+  assert.equal(formatToolPrice(ocr, 'zh'), '¥1.5 / 每 1,000 页');
+  assert.match(ocr.note!.en, /US\$0\.225/);
+  assert.match(ocr.note!.zh, /0\.225 美元/);
+
+  assert.equal(tts.pricePer1k, 3);
+  assert.equal(formatToolPrice(tts, 'en'), '¥3 / 10,000 billed characters');
+  assert.match(tts.note!.en, /US\$0\.45/);
+  assert.match(tts.note!.en, /US\$0\.225/);
+  assert.match(tts.note!.en, /no end date/);
+  assert.match(tts.note!.zh, /1\.5 元/);
+  assert.match(tts.note!.en, /Chinese character counts as 2/);
+
+  assert.equal(asr.pricePer1k, 0.78);
+  assert.equal(formatToolPrice(asr, 'zh'), '¥0.78 / 每小时音频');
+  assert.match(asr.note!.en, /US\$0\.116/);
+  assert.match(asr.note!.en, /US\$0\.058/);
+  assert.match(asr.note!.zh, /0\.39 元/);
+  assert.match(asr.note!.en, /fraction of a second counts as 1 second/);
+});

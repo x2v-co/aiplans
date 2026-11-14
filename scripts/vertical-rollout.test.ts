@@ -10,6 +10,7 @@ import { DECISION_MODELS_2026_11_03 } from '../src/lib/decision-models-2026-11-0
 import { DECISION_MODELS_2026_11_05 } from '../src/lib/decision-models-2026-11-05';
 import { DECISION_MODELS_2026_11_12 } from '../src/lib/decision-models-2026-11-12';
 import { DECISION_MODELS_2026_11_13 } from '../src/lib/decision-models-2026-11-13';
+import { CATALOG_1114 } from '../src/lib/catalog-2026-11-14';
 import * as auditVertical from './data/catalog-audit-vertical';
 import * as catalog20261029 from './data/catalog-2026-10-29';
 import * as seedDiff from './utils/seed-diff';
@@ -270,6 +271,8 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-12-audit-fixes:apply`),
       ...DECISION_MODELS_2026_11_13.map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-13-decider-search-apis:apply`),
+      ...CATALOG_1114.map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-14-intel:apply`),
       'WARNING music-model:mureka: DB drift: missing models row; run npm run seed:catalog-2026-11-04:apply',
     ],
   );
@@ -309,6 +312,10 @@ test('deferred catalog rows point at their image, non-LLM or glimpse-decider see
   for (const item of DECISION_MODELS_2026_11_13) {
     assert.equal(item.deferredDbSeed, true, item.slug);
     assert.equal(item.deferredDbSeedScript, 'seed:catalog-2026-11-13-decider-search-apis:apply', item.slug);
+  }
+  for (const item of CATALOG_1114) {
+    assert.equal(item.deferredDbSeed, true, item.slug);
+    assert.equal(item.deferredDbSeedScript, 'seed:catalog-2026-11-14-intel:apply', item.slug);
   }
 });
 
@@ -737,6 +744,7 @@ test('embedding vertical serves audited models through localized routes, navigat
     'gemini-embedding-2', 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002',
     'voyage-4-large', 'voyage-4', 'voyage-4-lite', 'voyage-context-4', 'voyage-code-4',
     'embed-v5.0-pro', 'embed-v5.0-fast', 'text-embedding-v4',
+    'cloudflare-embeddinggemma-2',
   ]);
   for (const suffix of ['page.tsx', '[slug]/page.tsx']) {
     const route = readFileSync(new URL(`../src/app/[locale]/embedding-models/${suffix}`, import.meta.url), 'utf8');
@@ -762,6 +770,9 @@ test('embedding vertical serves audited models through localized routes, navigat
   for (const item of items) {
     assert.equal(item.deferredDbSeed, true);
     const added1106 = ['voyage-4-large', 'voyage-4', 'voyage-4-lite', 'voyage-context-4', 'voyage-code-4', 'embed-v5.0-pro', 'embed-v5.0-fast', 'text-embedding-v4'];
-    assert.equal(item.deferredDbSeedScript, added1106.includes(item.slug!) ? 'seed:catalog-2026-11-06-embeddings:apply' : 'seed:catalog-2026-11-04:apply');
+    const expected = item.slug === 'cloudflare-embeddinggemma-2'
+      ? 'seed:catalog-2026-11-14-intel:apply'
+      : added1106.includes(item.slug!) ? 'seed:catalog-2026-11-06-embeddings:apply' : 'seed:catalog-2026-11-04:apply';
+    assert.equal(item.deferredDbSeedScript, expected);
   }
 });
