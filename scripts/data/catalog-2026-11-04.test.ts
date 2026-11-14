@@ -264,3 +264,13 @@ test('1104 keeps existing model type, capabilities, official link and descriptio
   assert.equal(f.data.models.find(r => r.slug === 'eleven-v4')!.type, 'llm');
   assert.deepEqual(await seedCatalog20261104(f.tx, true), []);
 });
+
+test('3.8 TTS notes carry the 2026-12-18 preview TTS shutdown and the deprecations source', () => {
+  for (const slug of ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts']) {
+    const item = VOICE_MODELS_1104.find(r => r.slug === slug)!;
+    assert.match(item.notes!, /gemini-3\.1-flash-tts-preview, gemini-2\.5-flash-preview-tts, gemini-2\.5-pro-preview-tts shut down 2026-12-18 \(earliest possible/);
+    assert.equal(item.sourceUrls![0].url, 'https://ai.google.dev/gemini-api/docs/pricing');
+    assert.equal(item.sourceUrls![1].url, 'https://ai.google.dev/gemini-api/docs/deprecations');
+    assert.equal(item.shutdownDate, undefined);
+  }
+});

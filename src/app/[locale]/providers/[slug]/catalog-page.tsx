@@ -43,6 +43,7 @@ import SiteHeader from '@/components/SiteHeader';
 import { CouponBadge } from '@/components/coupon-badge';
 import { getActiveCouponMap } from '@/lib/coupons';
 import { XUltraQuota } from '@/components/x-ultra-quota';
+import { OpenAiPlatformDeprecations } from '@/components/openai-platform-deprecations';
 import { guideForProviderSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import {
   featureLooksEstimated,
@@ -264,6 +265,7 @@ export default async function ProviderPage({
         </section>
 
         {providerSlug === 'xai' && <XUltraQuota locale={locale} />}
+        {providerSlug === 'openai' && <OpenAiPlatformDeprecations locale={locale} />}
 
         {comparisons.length > 0 && (
           <section aria-labelledby="provider-subscriptions-heading" className="mb-10 rounded-xl border p-6">

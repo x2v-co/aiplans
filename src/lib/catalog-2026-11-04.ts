@@ -26,6 +26,15 @@ function item(slug: string, name: string, provider: string, providerSlug: string
   };
 }
 
+/**
+ * Intel 2026-11-14 evening, checked on the deprecations page that day. The preview
+ * TTS models are not catalog rows (they would be shutdown-only rows), so the date
+ * lives on their recommended replacements.
+ */
+export const TTS_PREVIEW_SHUTDOWN_DATE = '2026-12-18';
+export const TTS_PREVIEW_MODELS = ['gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'] as const;
+export const TTS_PREVIEW_SHUTDOWN_NOTE = `Preview TTS ${TTS_PREVIEW_MODELS.join(', ')} shut down ${TTS_PREVIEW_SHUTDOWN_DATE} (earliest possible date per the Gemini API deprecations page, checked 2026-11-14); recommended replacement gemini-3.8-flash-tts or gemini-3.8-flash-lite-tts.`;
+
 const tts = (lite: boolean): AiCatalogItem => {
   const output = lite ? 6 : 9;
   const current = [rate('text input through 2026-12-31', 0.5), rate('audio output through 2026-12-31', output)];
@@ -35,7 +44,11 @@ const tts = (lite: boolean): AiCatalogItem => {
     inputPricePer1M: 0.5, outputPricePer1M: output,
     inputModalities: ['text'], outputModalities: ['audio'],
     usageRates: [...batch(current).map(r => ({ ...r, validThrough: '2026-12-31' })), ...batch(future).map(r => ({ ...r, validFrom: '2027-01-01' }))],
-    notes: `Approximately $${lite ? '0.0015' : '0.00225'} per 10 seconds of audio through 2026-12-31. Future rates are separate dated tiers; batch is half.`,
+    notes: `Approximately $${lite ? '0.0015' : '0.00225'} per 10 seconds of audio through 2026-12-31. Future rates are separate dated tiers; batch is half. ${TTS_PREVIEW_SHUTDOWN_NOTE}`,
+    sourceUrls: [
+      { label: 'Google official pricing', url: SOURCES_1104.google, publisher: 'Google' },
+      { label: 'Gemini API deprecations', url: SOURCES_1104.deprecations, publisher: 'Google' },
+    ],
   });
 };
 export const VOICE_MODELS_1104: AiCatalogItem[] = [
