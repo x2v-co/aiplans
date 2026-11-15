@@ -80,7 +80,28 @@ export async function getVerticalModelDetail(kind: AiCatalogKind, slug: string, 
       console.warn(`getModelUsagePrices(${slug}) failed`, error);
       return [];
     }) : [];
-  return { item, plans: [], usagePrices: availableUsagePrices(usagePrices, true), benchmarks: [], source: 'catalog' };
+  return { item, plans: [], usagePrices: availableUsagePrices(usagePrices, true), benchmarks: catalogBenchmarks(kind, item), source: 'catalog' };
+}
+
+/**
+ * Static benchmark summaries for decision models (e.g. AA Decision Index on Decider v1.3).
+ * Other kinds keep their existing detail behaviour.
+ */
+export function catalogBenchmarks(kind: AiCatalogKind, item: AiCatalogItem): ModelBenchmarkScore[] {
+  if (kind !== 'decision-model') return [];
+  return (item.benchmarkSummaries ?? []).map(summary => ({
+    benchmark_slug: summary.benchmarkSlug,
+    benchmark_name: summary.benchmarkName,
+    benchmark_type: 'decision',
+    official_url: summary.officialUrl,
+    version_label: summary.benchmarkName.match(/v\d+(?:\.\d+)*/)?.[0] ?? '',
+    task_name: summary.taskName,
+    metric_name: summary.metricName,
+    unit: summary.unit,
+    higher_better: true,
+    value: summary.value,
+    release_date: null,
+  }));
 }
 
 export function verticalKindPath(kind: AiCatalogKind): string {
