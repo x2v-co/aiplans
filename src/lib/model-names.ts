@@ -56,3 +56,14 @@ export function formatModelName(value: string): string {
     .map(formatToken)
     .join(' ');
 }
+
+/**
+ * Model-page label. A free channel row (`…-free` slug) whose stored name lacks
+ * "free" would otherwise render the base model's exact title and H1
+ * (`inclusionai-ling-3-2-flash-free` vs `inclusionai-ling-3-2-flash`), giving
+ * Google two pages with one title. Most free rows already carry "(Free)".
+ */
+export function modelPageName(name: string | null | undefined, slug: string): string {
+  const label = formatModelName(name || slug);
+  return /-free$/i.test(slug) && !/\bfree\b/i.test(label) ? `${label} (Free)` : label;
+}

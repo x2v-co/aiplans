@@ -48,7 +48,7 @@ import { decodeSlugParam } from "@/lib/route-params";
 import SiteHeader from '@/components/SiteHeader';
 import { CouponBadge } from "@/components/coupon-badge";
 import { getActiveCouponMap } from "@/lib/coupons";
-import { formatModelName } from '@/lib/model-names';
+import { modelPageName } from '@/lib/model-names';
 import { guideForModelSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import ModelBenchmarkPanel from '@/components/model-benchmark-panel';
 import CodingAgentModelSection from '@/components/coding-agent-model-section';
@@ -109,7 +109,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     notFound();
   }
   const indexFacts = (await getSeoIndexCatalog()).find(row => row.slug === slug);
-  const productName = formatModelName(product.name || slug);
+  const productName = modelPageName(product.name, slug);
 
   const statsRows = await sql<PricingChannel[]>`
     SELECT cp.*, jsonb_build_object('name', p.name, 'type', p.type) AS providers
@@ -401,7 +401,7 @@ export default async function ModelPage({
   const t = await getTranslations({ locale, namespace: 'modelDetail' });
   const apiT = await getTranslations({ locale, namespace: 'apiPricing' });
   const showTrust = isTrustModelSlug(slug);
-  const productName = formatModelName(product.name);
+  const productName = modelPageName(product.name, slug);
   const description = localizedModelDescription(product.slug, product.description, locale);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
   const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { formatModelName } from './model-names';
+import { formatModelName, modelPageName } from './model-names';
 
 test('formats common model slugs as readable product names', () => {
   assert.equal(formatModelName('kimi-k2.5'), 'Kimi K2.5');
@@ -15,4 +15,12 @@ test('formats common model slugs as readable product names', () => {
 test('preserves already-readable numeric and mixed-case labels', () => {
   assert.equal(formatModelName('GPT-4.1'), 'GPT 4.1');
   assert.equal(formatModelName('DeepSeek_V3'), 'DeepSeek V3');
+});
+
+test('free-variant pages get a distinct label from the base model', () => {
+  assert.equal(modelPageName('Ling 3.2 Flash', 'inclusionai-ling-3-2-flash-free'), 'Ling 3.2 Flash (Free)');
+  assert.equal(modelPageName('Ling 3.2 Flash', 'inclusionai-ling-3-2-flash'), 'Ling 3.2 Flash');
+  assert.equal(modelPageName('Gemma 4 31B (Free)', 'google-gemini-gemma-4-31b-it-free'), 'Gemma 4 31B (Free)');
+  assert.equal(modelPageName('Cat Jam Free', 'cat-jam-free'), 'Cat Jam Free');
+  assert.equal(modelPageName(null, 'some-model-free'), 'Some Model Free');
 });
