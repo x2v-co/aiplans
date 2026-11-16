@@ -16,7 +16,16 @@
  */
 import type { CurrencyCode } from '@/lib/currency';
 import { convertToUSD } from '@/lib/currency-conversion';
-import type { ChannelPrice, GroupedProduct } from '@/lib/grouped-products';
+
+/** The fields cheapest-channel selection reads; GroupedProduct and the slim /api-pricing rows both fit. */
+export interface PricedChannel {
+  input_price_per_1m: number | null | undefined;
+  currency: CurrencyCode;
+  providers?: { type?: string | null } | null;
+}
+interface PricedProduct<C extends PricedChannel> {
+  versions: C[];
+}
 
 /** Normalises a channel price to USD for comparison only. */
 export function usd(
@@ -48,7 +57,7 @@ export function normalizeChannelType(
   }
 }
 
-function isOfficial(cp: ChannelPrice): boolean {
+function isOfficial(cp: PricedChannel): boolean {
   const t = cp.providers?.type;
   return t === 'official' || t === 'producer';
 }
@@ -57,8 +66,8 @@ function isOfficial(cp: ChannelPrice): boolean {
  * The single cheapest available channel of a model by USD-normalised input
  * price. Returns null when the model has no priced channel.
  */
-export function getCheapestChannel(product: GroupedProduct): ChannelPrice | null {
-  let best: ChannelPrice | null = null;
+export function getCheapestChannel<C extends PricedChannel>(product: PricedProduct<C>): C | null {
+  let best: C | null = null;
   let bestUsd = Infinity;
   for (const cp of product.versions) {
     const v = usd(cp.input_price_per_1m, cp.currency || 'USD');
@@ -75,10 +84,10 @@ export function getCheapestChannel(product: GroupedProduct): ChannelPrice | null
  * price. Used as the baseline for "vs Official" savings. Returns null when the
  * model has no official channel priced.
  */
-export function getCheapestOfficialChannel(
-  product: GroupedProduct,
-): ChannelPrice | null {
-  let best: ChannelPrice | null = null;
+export function getCheapestOfficialChannel<C extends PricedChannel>(
+  product: PricedProduct<C>,
+): C | null {
+  let best: C | null = null;
   let bestUsd = Infinity;
   for (const cp of product.versions) {
     if (!isOfficial(cp)) continue;
@@ -92,7 +101,7 @@ export function getCheapestOfficialChannel(
 }
 
 /** Cheapest input price across all channels, in USD. Falls back to official. */
-export function getLowestPriceUSD(product: GroupedProduct): number | null {
+export function getLowestPriceUSD(product: PricedProduct<PricedChannel>): number | null {
   const cheapest = getCheapestChannel(product);
   if (cheapest) {
     return usd(
@@ -104,7 +113,7 @@ export function getLowestPriceUSD(product: GroupedProduct): number | null {
 }
 
 /** Cheapest official/producer input price, in USD. */
-export function getCheapestOfficialPrice(product: GroupedProduct): number | null {
+export function getCheapestOfficialPrice(product: PricedProduct<PricedChannel>): number | null {
   const official = getCheapestOfficialChannel(product);
   if (!official) return null;
   return usd(

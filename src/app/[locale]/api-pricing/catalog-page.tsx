@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { computeApiPricingStats } from "@/lib/api-pricing-copy";
 import ApiPricingView from "./api-pricing-view";
 import { ToolApiPricingSection } from "@/components/tool-api-pricing-section";
+import { buildApiPricingPayload } from "@/lib/api-pricing-payload";
 
 /**
  * Server component. The whole page used to be a client component that fetched
@@ -15,7 +16,10 @@ import { ToolApiPricingSection } from "@/components/tool-api-pricing-section";
  * here puts all ~320 models and their channel prices in the served HTML.
  *
  * The interactive parts (search, sort, filters) live in api-pricing-view.tsx and
- * are unchanged; only where the data comes from moved.
+ * are unchanged; only where the data comes from moved. The view receives a
+ * trimmed payload (lib/api-pricing-payload.ts): every client-component prop is
+ * serialized into the HTML as RSC flight data, and the untrimmed catalog made
+ * this page 3.8 MB.
  */
 export async function generateMetadata({
   params,
@@ -107,7 +111,7 @@ export default async function ApiPricingPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage(faqs) }} />
       <ApiPricingView
         locale={locale}
-        products={listedProducts}
+        payload={buildApiPricingPayload(listedProducts)}
         initialQuery={q}
         initialFilters={initialFilters}
         stats={stats}
