@@ -13,7 +13,7 @@ import SiteHeader from '@/components/SiteHeader';
 import { formatModelName } from '@/lib/model-names';
 import { formatPrice, calculateSavingsPercent } from "@/lib/currency";
 import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
-import type { GroupedProduct } from "@/lib/grouped-products";
+import type { ChannelPrice, GroupedProduct } from "@/lib/grouped-products";
 import { trackAnalyticsEvent, trackFunnelEvent } from "@/lib/analytics";
 import {
   usd,
@@ -47,8 +47,8 @@ function formatReleaseDate(value: string | null | undefined, locale: string): st
 
 interface Comparison {
   product: GroupedProduct;
-  cheapest: ReturnType<typeof getCheapestChannel>;
-  official: ReturnType<typeof getCheapestOfficialChannel>;
+  cheapest: ChannelPrice | null;
+  official: ChannelPrice | null;
   inputUsd: number | null;
   outputUsd: number | null;
   savings: number | null;

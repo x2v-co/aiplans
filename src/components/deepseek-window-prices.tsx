@@ -3,7 +3,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import type { ChannelPriceVariant } from '@/lib/grouped-products';
 
 /** Only display a published schedule; older / unseeded rows have no badge. */
-export function DeepSeekWindowPrices({ variants }: { variants?: ChannelPriceVariant[] | null }) {
+type WindowVariant = Pick<ChannelPriceVariant, 'input_price_per_1m' | 'output_price_per_1m' | 'currency'>
+  & Partial<Pick<ChannelPriceVariant, 'variant_kind' | 'cached_input_price_per_1m' | 'constraints_json'>>;
+
+export function DeepSeekWindowPrices({ variants }: { variants?: WindowVariant[] | null }) {
   const t = useTranslations('deepseekWindows');
   const locale = useLocale();
   if (!Array.isArray(variants)) return null;

@@ -782,7 +782,7 @@ export default async function ModelPage({
           </Card>
 
           {/* China support is shown only with sourced country evidence. */}
-          {isZh && channelPrices.some((cp: any) => shouldShowChinaBadge(deriveProviderRegions(cp.providers), locale)) && <Card>
+          {isZh && channelPrices.some((cp) => shouldShowChinaBadge(deriveProviderRegions(cp.providers), locale)) && <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 🇨🇳 {t('bestInChina')}
