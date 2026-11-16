@@ -1,4 +1,5 @@
 import { isGluedModelSlug } from './glued-model-slug';
+import { isDuplicateModelSlug, JUNK_MODEL_SLUGS } from './duplicate-model-slugs';
 import { selectIndexablePlanComparisons, type PlanComparisonCandidate } from './search-indexing';
 import { publicModelDescription } from './public-catalog-copy';
 
@@ -59,7 +60,8 @@ export function selectSeoModels<T extends SeoIndexFacts>(rows: T[], applyPolicy 
   return rows.filter(row => row.active && row.is_llm && row.available_api_count > 0)
     .slice(0, 2000)
     .filter(row => !isGluedModelSlug(row.slug) && (!applyPolicy
-      || (!isRouterAliasSlug(row.slug) && !isLowValueModel(row))));
+      || (!isRouterAliasSlug(row.slug) && !isDuplicateModelSlug(row.slug)
+        && !JUNK_MODEL_SLUGS.has(row.slug) && !isLowValueModel(row))));
 }
 
 /**
@@ -92,7 +94,10 @@ export function selectSeoComparisons<T extends SeoIndexFacts>(rows: T[], applyPo
 }
 
 export function modelShouldIndex(row: SeoIndexFacts): boolean {
-  return row.active && !isGluedModelSlug(row.slug) && !isRouterAliasSlug(row.slug) && !isLowValueModel(row);
+  // Duplicate rows keep their robots tag (they declare rel=canonical instead;
+  // noindex + a cross-page canonical sends mixed signals). Junk rows are noindex.
+  return row.active && !isGluedModelSlug(row.slug) && !isRouterAliasSlug(row.slug)
+    && !JUNK_MODEL_SLUGS.has(row.slug) && !isLowValueModel(row);
 }
 
 /** Non-indexable /compare/plans pages should not stay as 200 noindex.
