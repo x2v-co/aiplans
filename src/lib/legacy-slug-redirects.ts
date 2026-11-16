@@ -25,6 +25,9 @@ import { splitGluedModelSlug } from './glued-model-slug';
 export type LegacySlugTarget = {
   models?: string;
   compare?: string;
+  /** Brand-level slugs (`kimi`, `grok`) land on the provider page for both
+   * sections. It is indexable and matches the brand pricing intent. */
+  provider?: string;
 };
 
 export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
@@ -61,13 +64,14 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'seed-2.1-turbo': { models: 'doubao-seed-2.1-turbo' },
   'minimax-01': { models: 'minimax-minimax-01', compare: 'minimax-minimax-01' },
   'minimax-m2-her': { models: 'minimax-minimax-m2-her', compare: 'minimax-minimax-m2-her' },
-  // Brand-level slugs point at the catalog's floating "latest" page; the guard
-  // is only that the page exists (checked 2026-10-29). `qwen3.5-max` still has
-  // no single successor, so it falls back to the section list.
-  'kimi': { models: '~moonshotai-kimi-latest' },
-  'claude-sonnet': { models: '~anthropic-claude-sonnet-latest' },
-  'grok': { models: '~x-ai-grok-latest' },
-  'gemini-pro': { models: '~google-gemini-pro-latest' },
+  // Brand-level slugs go to the provider page. They used to point at the
+  // OpenRouter `~vendor-model-latest` routing pages, which duplicate a concrete
+  // model page and are now noindex (seo-index-policy isRouterAliasSlug).
+  // `qwen3.5-max` still has no single successor, so it falls back to the list.
+  'kimi': { provider: 'moonshot-global' },
+  'claude-sonnet': { provider: 'anthropic' },
+  'grok': { provider: 'xai' },
+  'gemini-pro': { provider: 'google' },
   'qwen2.5-7b': { models: 'qwen-qwen-2-5-7b-instruct' },
   'claude-sonnet-4': { models: 'anthropic-claude-sonnet-4' },
   'qwen3.5-max': {},
@@ -149,8 +153,8 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'qwen3.5-27b': { models: 'qwen-qwen3-5-27b' },
   'qwen3.6-max': { models: 'qwen-qwen3-6-max-preview' },
   'qwen3-next-80b-a3b': { models: 'qwen-qwen3-next-80b-a3b-instruct' },
-  'claude-fable': { models: '~anthropic-claude-fable-latest' },
-  'gpt-mini': { models: '~openai-gpt-mini-latest' },
+  'claude-fable': { provider: 'anthropic' },
+  'gpt-mini': { provider: 'openai' },
 };
 
 /**
@@ -193,6 +197,7 @@ export function legacySlugRedirect(pathname: string): string | null {
     return null;
   }
   const entry = LEGACY_MODEL_SLUGS[lookup];
+  if (entry.provider) return `/${locale}/providers/${entry.provider}`;
   const targetSlug = entry[sectionKey];
   if (targetSlug) {
     const destination = `/${locale}/${section}/${targetSlug}`;
