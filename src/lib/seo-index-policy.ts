@@ -17,6 +17,17 @@ export interface SeoIndexFacts extends PlanComparisonCandidate {
   is_llm: boolean;
 }
 
+/** OpenRouter `~vendor/model-latest` auto-routing endpoints, stored as
+ * `~vendor-model-latest`. They are not models: each one renders the same
+ * prices and title as the concrete model it currently routes to (for example
+ * `~deepseek-deepseek-v4-flash-latest` vs `deepseek-v4-flash`), so indexing
+ * them publishes duplicate pages. Flagship and compare discovery already skip
+ * them; the sitemap and robots tag do too. The pages stay reachable.
+ */
+export function isRouterAliasSlug(slug: string): boolean {
+  return slug.startsWith('~');
+}
+
 export function hasModelPriceData(facts: SeoIndexFacts): boolean {
   return facts.api_price_count > 0 || facts.priced_plan_count > 0 || facts.usage_price_count > 0;
 }
@@ -47,7 +58,8 @@ export function selectSeoModels<T extends SeoIndexFacts>(rows: T[], applyPolicy 
   // the cap so the report reproduces the old sitemap's limit on the same rows.
   return rows.filter(row => row.active && row.is_llm && row.available_api_count > 0)
     .slice(0, 2000)
-    .filter(row => !isGluedModelSlug(row.slug) && (!applyPolicy || !isLowValueModel(row)));
+    .filter(row => !isGluedModelSlug(row.slug) && (!applyPolicy
+      || (!isRouterAliasSlug(row.slug) && !isLowValueModel(row))));
 }
 
 /**
@@ -80,7 +92,7 @@ export function selectSeoComparisons<T extends SeoIndexFacts>(rows: T[], applyPo
 }
 
 export function modelShouldIndex(row: SeoIndexFacts): boolean {
-  return row.active && !isGluedModelSlug(row.slug) && !isLowValueModel(row);
+  return row.active && !isGluedModelSlug(row.slug) && !isRouterAliasSlug(row.slug) && !isLowValueModel(row);
 }
 
 /** Non-indexable /compare/plans pages should not stay as 200 noindex.

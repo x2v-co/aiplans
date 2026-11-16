@@ -61,8 +61,10 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/en/models/qwen3-vl-8b', '/en/models/qwen-qwen3-vl-8b-instruct'],
   ['/en/models/qwen3-coder-480b-a35b', '/en/models/qwen-qwen3-coder'],
   ['/en/models/seed-1.6', '/en/models/bytedance-seed-seed-1-6'],
-  ['/en/models/kimi', '/en/models/~moonshotai-kimi-latest'],
-  ['/zh/models/gemini-pro', '/zh/models/~google-gemini-pro-latest'],
+  ['/en/models/kimi', '/en/providers/moonshot-global'],
+  ['/zh/models/gemini-pro', '/zh/providers/google'],
+  ['/en/compare/plans/grok', '/en/providers/xai'],
+  ['/en/models/gpt-mini', '/en/providers/openai'],
 ];
 
 const LIST_FALLBACKS: Array<[string, string]> = [
@@ -227,5 +229,13 @@ test('both MiniMax Flash legacy slugs land on the canonical model through the pr
       for (const section of ['models', 'compare/plans']) assert.equal(legacySlugRedirect(`/${locale}/${section}/${slug}`), `/${locale}/models/minimax-m3.1-flash`);
     }
     assert.equal(legacySlugRedirect(`/${locale}/models/minimax-m3.1-flash`), null);
+  }
+});
+
+test('no legacy redirect lands on a noindex OpenRouter ~alias page', () => {
+  for (const [from, target] of Object.entries({ ...LEGACY_MODEL_SLUGS, ...LEGACY_COMPARE_ONLY_SLUGS })) {
+    for (const slug of [target.models, target.compare]) {
+      assert.ok(!slug?.startsWith('~'), `${from} -> ${slug} is a router alias`);
+    }
   }
 });

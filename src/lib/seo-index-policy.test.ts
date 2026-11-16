@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { buildMetadata } from './seo';
 import {
   isLowValueModel, isLowValuePlanComparison, modelShouldIndex, compareSeoFallback,
-  selectSeoModels, selectSeoComparisons, SEO_COMPARISON_ALLOWLIST, type SeoIndexFacts,
+  selectSeoModels, selectSeoComparisons, SEO_COMPARISON_ALLOWLIST, isRouterAliasSlug, type SeoIndexFacts,
 } from './seo-index-policy';
 
 export const facts = (overrides: Partial<SeoIndexFacts> = {}): SeoIndexFacts => ({
@@ -124,4 +124,16 @@ test('non-indexable compare URLs 301 to the model page when it is indexable', ()
   const layout = readFileSync('src/app/[locale]/compare/plans/[model]/layout.tsx', 'utf8');
   const page = readFileSync('src/app/[locale]/compare/plans/[model]/page.tsx', 'utf8');
   for (const source of [layout, page]) assert.match(source, /compareSeoFallback/);
+});
+
+test('OpenRouter ~alias routing pages are noindex and out of the sitemap', () => {
+  const alias = facts({ slug: '~deepseek-deepseek-v4-flash-latest', api_price_count: 3 });
+  const concrete = facts({ slug: 'deepseek-v4-flash', api_price_count: 3 });
+  assert.equal(isRouterAliasSlug(alias.slug), true);
+  assert.equal(isRouterAliasSlug(concrete.slug), false);
+  assert.equal(modelShouldIndex(alias), false);
+  assert.equal(modelShouldIndex(concrete), true);
+  assert.deepEqual(selectSeoModels([alias, concrete]).map(row => row.slug), ['deepseek-v4-flash']);
+  // The read-only report's "before" view (policy off) keeps the old candidate set.
+  assert.equal(selectSeoModels([alias], false).length, 1);
 });
