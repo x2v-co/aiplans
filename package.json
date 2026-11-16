@@ -10,7 +10,7 @@
     "docker:down": "docker compose -p planprice-production -f deploy/production/compose.yml --env-file deploy/production/.env.production down",
     "docker:scrape": "deploy/production/run-scrapers.sh",
     "db:test": "node test-connection.mjs",
-    "test:db": "node --import tsx --test scripts/db/allow-unit-migration.test.ts scripts/db/supported-regions-migration.test.ts scripts/db/introductory-prices.test.ts scripts/db/catalog-2026-11-04-postgres.test.ts scripts/db/hy4-2026-11-04-postgres.test.ts scripts/db/catalog-2026-11-06-ling-inkling-postgres.test.ts scripts/db/catalog-2026-11-07-new-models-postgres.test.ts scripts/db/catalog-2026-11-10-fable-nex-inkling-postgres.test.ts scripts/db/catalog-2026-11-11-token-plan-h3-image-postgres.test.ts scripts/db/catalog-2026-11-11-carbon-ernie-postgres.test.ts scripts/db/catalog-2026-11-11-audit-fixes-postgres.test.ts scripts/db/catalog-2026-11-12-audit-fixes-postgres.test.ts scripts/db/catalog-2026-11-12-cysuo-postgres.test.ts scripts/db/catalog-2026-11-12-ernie-wizshot-me-postgres.test.ts scripts/db/catalog-2026-11-13-audit-fixes-postgres.test.ts scripts/db/catalog-2026-11-13-decider-search-apis-postgres.test.ts scripts/db/catalog-2026-11-14-intel-postgres.test.ts",
+    "test:db": "node --import tsx --test scripts/db/allow-unit-migration.test.ts scripts/db/supported-regions-migration.test.ts scripts/db/introductory-prices.test.ts scripts/db/catalog-2026-11-04-postgres.test.ts scripts/db/hy4-2026-11-04-postgres.test.ts scripts/db/catalog-2026-11-06-ling-inkling-postgres.test.ts scripts/db/catalog-2026-11-07-new-models-postgres.test.ts scripts/db/catalog-2026-11-10-fable-nex-inkling-postgres.test.ts scripts/db/catalog-2026-11-11-token-plan-h3-image-postgres.test.ts scripts/db/catalog-2026-11-11-carbon-ernie-postgres.test.ts scripts/db/catalog-2026-11-11-audit-fixes-postgres.test.ts scripts/db/catalog-2026-11-12-audit-fixes-postgres.test.ts scripts/db/catalog-2026-11-12-cysuo-postgres.test.ts scripts/db/catalog-2026-11-12-ernie-wizshot-me-postgres.test.ts scripts/db/catalog-2026-11-13-audit-fixes-postgres.test.ts scripts/db/catalog-2026-11-13-decider-search-apis-postgres.test.ts scripts/db/catalog-2026-11-14-intel-postgres.test.ts scripts/db/catalog-2026-11-16-hy4-flash-postgres.test.ts",
     "lint": "eslint",
     "report:funnel": "tsx scripts/print-funnel-weekly-query.ts",
     "scrape": "tsx scripts/index-dynamic.ts",
@@ -199,7 +199,9 @@
     "seed:deepseek-official-v41": "tsx scripts/seed-deepseek-official-v41-2026-10-22.ts",
     "seed:deepseek-official-v41:apply": "tsx scripts/seed-deepseek-official-v41-2026-10-22.ts --apply",
     "seed:supported-regions-2026-11-05": "tsx scripts/seed-supported-regions-2026-11-05.ts",
-    "seed:supported-regions-2026-11-05:apply": "tsx scripts/seed-supported-regions-2026-11-05.ts --apply"
+    "seed:supported-regions-2026-11-05:apply": "tsx scripts/seed-supported-regions-2026-11-05.ts --apply",
+    "seed:catalog-2026-11-16-hy4-flash": "tsx scripts/seed-catalog-2026-11-16-hy4-flash.ts",
+    "seed:catalog-2026-11-16-hy4-flash:apply": "tsx scripts/seed-catalog-2026-11-16-hy4-flash.ts --apply"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
