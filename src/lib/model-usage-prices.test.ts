@@ -11,6 +11,7 @@ import type { ModelPlanCardRow } from '@/components/model-plan-card';
 import type { PricingChannel } from './model-pricing-seo';
 import { catalogForKind } from './ai-vertical-catalog';
 import type { VerticalModelDetail } from './vertical-model-detail';
+import type { OfferReader } from './price-offers/read';
 
 const slug = 'gemini-omni-1-1-flash';
 const rows: ModelUsagePriceRow[] = [1.5, 9, 17.5].map((price, i) => ({
@@ -33,19 +34,34 @@ function loadModule(path: string, mocks: Record<string, unknown>): Record<string
 }
 
 async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingChannel[], locale: string,
-  fixture?: { slug: string; producer: { id: number; name: string; slug: string }; plans: ModelPlanCardRow[] }) {
+  fixture?: { slug: string; producer: { id: number; name: string; slug: string }; plans: ModelPlanCardRow[] },
+  offerReader?: OfferReader) {
   const requestedSlug = fixture?.slug ?? slug;
   const producer = fixture?.producer ?? { name: 'Google', slug: 'google' };
+  let selectedPlanIds: number[] = [];
+  const offerReads: number[][] = [];
+  // The query helper's unsafe() models SQL fragments, not awaited postgres queries.
+  // Inject the typed read boundary instead; keep the real route/loader/attachPriceOffers.
+  // Legacy usage fixtures have no subscription offers. This is not a PG/driver double.
+  const reader: OfferReader = { async read(ids) {
+    offerReads.push([...ids]);
+    assert.deepEqual([...ids], [...new Set(selectedPlanIds)], 'offer read is bounded to the selected plans');
+    return offerReader ? offerReader.read(ids) : { status: 'available', rows: [] };
+  } };
   const sql = Object.assign(async (strings: TemplateStringsArray, ...values: unknown[]) => {
     const query = strings.join('?');
     if (/FROM models\s+WHERE slug/.test(query)) return [{ id: 10, name: fixture ? requestedSlug : 'Gemini Omni Flash', slug: requestedSlug,
       provider_ids: [], description: null }];
     if (query.includes('FROM api_channel_prices cp')) return channels;
     if (query.includes('FROM plans pl')) {
-      if (fixture) return fixture.plans;
+      if (fixture) {
+        selectedPlanIds = fixture.plans.map(plan => plan.id);
+        return fixture.plans;
+      }
       // The combined query also runs when only producer plans may be present.
       const usagePlanIds = values[1] as number[];
       if (!usagePlanIds.includes(2256)) return [];
+      selectedPlanIds = [2256];
       return [{ id: 2256, name: 'Gemini API paid tier', slug: 'gemini-api-paid', price: null,
         annual_price: null, tier: 'payg', currency: 'USD', plan_kind: 'api', features: [],
         providers: { id: 3, name: 'Google', slug: 'google', logo: null } }];
@@ -54,7 +70,10 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
   }, { array: (values: unknown[]) => values });
   const route = loadModule('../app/[locale]/models/[slug]/page.tsx', {
     '@/lib/db': { sql, INT4_ARRAY: 1007 },
-    '@/lib/model-plans-query': loadModule('./model-plans-query.ts', { './db': { sql, INT4_ARRAY: 1007 } }),
+    '@/lib/model-plans-query': loadModule('./model-plans-query.ts', {
+      './db': { sql, INT4_ARRAY: 1007 },
+      './price-offers/postgres': { createPostgresOfferReader: () => reader },
+    }),
     '@/lib/schema-adapters': { getPrimaryProvidersForModels: async () => new Map([[10, producer]]) },
     '@/lib/model-usage-prices-query': { getModelUsagePrices: async () => usagePrices },
     '@/lib/coupons': { getActiveCouponMap: async () => new Map() },
@@ -63,9 +82,12 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
     '@/components/SiteHeader': { default: () => null, __esModule: true },
   });
   const Page = route.default as (props: { params: Promise<{ locale: string; slug: string }> }) => Promise<ReactElement>;
+  const page = await Page({ params: Promise.resolve({ locale, slug: requestedSlug }) });
+  assert.deepEqual(offerReads, selectedPlanIds.length ? [[...new Set(selectedPlanIds)]] : [],
+    'the real route opts into one batched offer read; no-plan pages do not read offers');
   const providerProps = {
     locale, timeZone: 'UTC', messages: locale === 'zh' ? zh : en,
-    children: await Page({ params: Promise.resolve({ locale, slug: requestedSlug }) }),
+    children: page,
   };
   return renderToStaticMarkup(createElement(NextIntlClientProvider, providerProps));
 }
@@ -341,6 +363,44 @@ test('veo-3-1 renders $0.20–$0.60 per second in both cards and a Chinese descr
   // Even before the seed runs, a same-unit legacy row cannot narrow the range below the Vertex tiers.
   const before = summaryCards(await modelHtml([veoLegacy62, ...veoVertex], [], 'en', veoFixture));
   assert.ok(before.official.includes('$0.20–$0.60<span'), before.official);
+});
+
+test('opted-in route batches exactly its selected plans and preserves bilingual legacy HTML for empty/missing-table offers', async () => {
+  const fixture = { ...veoFixture, plans: [...veoFixture.plans,
+    { ...veoFixture.plans[0], id: 2054, slug: 'synthetic-offer-boundary-only', name: 'SYNTHETIC unpriced boundary fixture' }] };
+  for (const locale of ['en', 'zh']) {
+    const legacy = await modelHtml(veoVertex, [], locale, fixture);
+    for (const status of ['available', 'missing-table'] as const) {
+      let reads = 0;
+      const html = await modelHtml(veoVertex, [], locale, fixture, { async read(ids) {
+        reads++;
+        assert.deepEqual([...ids], [2053, 2054]);
+        return { status, rows: [] };
+      } });
+      assert.equal(reads, 1);
+      assert.equal(html, legacy);
+      assert.doesNotMatch(html, /data-original-offer-price|Reviewed regional offers|已核验的地区报价/);
+    }
+  }
+});
+
+test('opted-in route never invokes an offer reader when its plan selection is empty', async () => {
+  await modelHtml(rows, [], 'en', undefined, { async read() {
+    assert.fail('an empty plan selection must not load offers');
+  } });
+});
+
+test('opted-in route propagates offer-reader failures without a legacy fallback or blanket catch', async () => {
+  for (const code of ['42501', '42601', '42P01', '08006']) {
+    const failure = Object.assign(new Error(`SYNTHETIC injected offer-read failure ${code}`), { code });
+    let reads = 0;
+    await assert.rejects(modelHtml(veoVertex, [], 'en', veoFixture, { async read(ids) {
+      reads++;
+      assert.deepEqual([...ids], [2053]);
+      throw failure;
+    } }), error => error === failure);
+    assert.equal(reads, 1);
+  }
 });
 
 test('every Veo zh description quotes each Vertex rate of its catalog row', () => {

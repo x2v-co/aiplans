@@ -488,3 +488,4 @@ export type Product = Model;
 export type ChannelPrice = ApiChannelPrice;
 
 export * from './quota';
+export * from './price-offers';

@@ -1,7 +1,10 @@
 import React from 'react';
 import { formatPrice, type CurrencyCode } from '@/lib/currency';
+import type { PlanOfferFields } from '@/lib/price-offers/read';
+import { RegionalOfferPrices } from './regional-offer-prices';
 
-type PlanPrice = {
+type PlanPrice = PlanOfferFields & {
+  id?: number;
   price?: number | string | null;
   price_unit?: string | null;
   annual_price?: number | string | null;
@@ -28,11 +31,12 @@ export function providerPlanPrice(plan: PlanPrice, showYearly: boolean) {
 
 /** Keep the amount and billing unit together: an annual tab is not evidence
  * that a monthly-only plan has an annual price. */
-export function ProviderPlanPrice({ plan, showYearly, currency, locale }: {
+export function ProviderPlanPrice({ plan, showYearly, currency, locale, now }: {
   plan: PlanPrice;
   showYearly: boolean;
   currency: CurrencyCode;
   locale: string;
+  now?: Date;
 }) {
   const isZh = locale === 'zh';
   const { price: value, price_unit: unit, fallback } = providerPlanPrice(plan, showYearly);
@@ -58,5 +62,7 @@ export function ProviderPlanPrice({ plan, showYearly, currency, locale }: {
         {isZh ? '暂无年付报价，显示月付价格。' : 'Annual price unavailable; showing monthly price.'}
       </p>
     )}
+    {plan.id != null && now && <RegionalOfferPrices planId={plan.id} offers={plan.priceOffers}
+      status={plan.priceOfferStatus} locale={locale} now={now.toISOString()} />}
   </>;
 }

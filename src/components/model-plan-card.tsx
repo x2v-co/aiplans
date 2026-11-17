@@ -15,8 +15,10 @@ import { pricingLabel } from '@/lib/model-pricing-seo';
 import type { ModelUsagePriceRow } from '@/lib/model-usage-prices';
 import type { ChannelTermsFields } from '@/lib/channel-terms';
 import { normalizeThirdPartyCoverage, type PlanCoverageFields } from '@/lib/third-party-coverage';
+import type { PlanOfferFields } from '@/lib/price-offers/read';
+import { RegionalOfferPrices } from './regional-offer-prices';
 
-export interface ModelPlanCardRow extends PlanTrustRow, PlanOfferRow, ChannelTermsFields, Partial<PlanCoverageFields>, PlanHighlightFields {
+export interface ModelPlanCardRow extends PlanTrustRow, PlanOfferRow, ChannelTermsFields, Partial<PlanCoverageFields>, PlanHighlightFields, PlanOfferFields {
   id: number;
   name: string;
   slug: string;
@@ -102,6 +104,8 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
       </div>
     </CardHeader>
     <CardContent className="space-y-3 px-4">
+      <RegionalOfferPrices planId={plan.id} offers={plan.priceOffers} status={plan.priceOfferStatus}
+        locale={locale} now={now.toISOString()} />
       {copy.points.length > 0 && <ul className="space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
         {copy.points.map(point => <li key={point} className="line-clamp-2 [overflow-wrap:anywhere]">
           <EntitlementLine text={point} locale={locale} />
