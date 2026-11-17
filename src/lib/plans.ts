@@ -1,3 +1,5 @@
+import { attachPriceOffers, type PlanOfferFields } from './price-offers/read';
+import { createPostgresOfferReader } from './price-offers/postgres';
 import { derivePlanRegions, deriveProviderRegions, sourcedChinaAccess, type RegionFields } from './supported-regions';
 import { currentPlanCondition } from './plan-lifecycle-query';
 import { isSupersededPlan } from './plan-lifecycle';
@@ -14,6 +16,8 @@ import type { EconomicPlan } from '@/lib/plan-economics';
  */
 
 export type PlanQuery = {
+  /** PR1 opt-in typed evidence; default legacy queries are unchanged. */
+  includePriceOffers?: boolean;
   tier?: string | null;
   pricingModel?: string | null;
   providerId?: number | null;
@@ -40,7 +44,7 @@ interface PlanModel {
   context_window: number | null;
 }
 
-export interface ListedPlan extends EconomicPlan, PlanCoverageFields, ChannelTermsFields, RegionFields {
+export interface ListedPlan extends EconomicPlan, PlanCoverageFields, ChannelTermsFields, RegionFields, PlanOfferFields {
   id: number;
   name: string;
   tier: string | null;
@@ -132,7 +136,7 @@ export async function getPlans(query: PlanQuery = {}): Promise<ListedPlan[]> {
   }
 
   // Keep compatibility booleans derived from the same winning evidence layer.
-  return plans.map((plan) => {
+  const result: ListedPlan[] = plans.map((plan) => {
     const provider = plan.provider_id ? providerMap.get(plan.provider_id) : null;
     return {
       ...plan,
@@ -140,4 +144,5 @@ export async function getPlans(query: PlanQuery = {}): Promise<ListedPlan[]> {
       access_from_china: sourcedChinaAccess(derivePlanRegions(plan, provider)),
     };
   });
+  return query.includePriceOffers ? attachPriceOffers(result, createPostgresOfferReader(sql)) : result;
 }
