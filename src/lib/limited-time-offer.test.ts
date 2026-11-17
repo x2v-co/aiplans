@@ -125,17 +125,21 @@ test('promo toggle href adds and removes only the promo parameter', () => {
   );
 });
 
-test('offer pages revalidate within minutes and filtered lists opt out of indexing', () => {
+test('public offer pages retain ISR300 and filtered pages render per request with protected SEO', () => {
   const read = (path: string) => readFileSync(new URL(`../app/[locale]/${path}`, import.meta.url), 'utf8');
   const modelPage = read('models/[slug]/page.tsx');
   const modelList = read('models/catalog-page.tsx');
   const apiPricing = read('api-pricing/catalog-page.tsx');
-  // Promo prices end at a timestamp: cached pages must regenerate within 5 minutes,
-  // and the filtered (?promo=) variants render per request.
-  for (const path of ['models/[slug]/page.tsx', 'models/page.tsx', 'api-pricing/page.tsx']) {
-    assert.match(read(path), /export const revalidate = 300;/);
+  // Preserve the public-route performance contract. ISR revalidates after 300s;
+  // stale-while-revalidate is not a hard expiry deadline. Fresh renders still
+  // enforce the exact promo cutoff (covered by the render-time tests above).
+  for (const path of ['models/[slug]/page.tsx', 'providers/[slug]/page.tsx', 'models/page.tsx', 'api-pricing/page.tsx', 'plans/page.tsx']) {
+    const source = read(path);
+    assert.match(source, /export const revalidate = 300;/, path);
+    assert.match(source, /export function generateStaticParams\(\)/, path);
+    assert.doesNotMatch(source, /force-dynamic|force-no-store|unstable_noStore|\b(?:cookies|headers|connection|draftMode)\(/, path);
   }
-  for (const path of ['filtered/models/page.tsx', 'filtered/api-pricing/page.tsx']) {
+  for (const path of ['filtered/models/page.tsx', 'filtered/api-pricing/page.tsx', 'filtered/plans/page.tsx', 'filtered/providers/[slug]/page.tsx']) {
     assert.match(read(path), /export const dynamic = 'force-dynamic'/);
   }
   assert.match(modelPage, /LimitedTimeOfferMark/);
@@ -145,7 +149,10 @@ test('offer pages revalidate within minutes and filtered lists opt out of indexi
   assert.match(apiPricing, /applyPromoFilter/);
   const schema = readFileSync(new URL('../db/schema/index.ts', import.meta.url), 'utf8');
   const plans = schema.slice(schema.indexOf("pgTable('plans'"), schema.indexOf("pgTable('api_channel_prices'"));
-  assert.doesNotMatch(plans, /promo_ends_at|regular_input_price_per_1m|regular_output_price_per_1m/);
+  assert.match(plans, /promo_ends_at/);
+  assert.match(plans, /regular_price/);
+  assert.match(plans, /regular_annual_price/);
+  assert.doesNotMatch(plans, /regular_input_price_per_1m|regular_output_price_per_1m/);
   const channels = schema.slice(schema.indexOf("pgTable('api_channel_prices'"), schema.indexOf("pgTable('api_channel_price_variants'"));
   assert.match(channels, /promo_ends_at/);
   assert.match(channels, /regular_input_price_per_1m/);

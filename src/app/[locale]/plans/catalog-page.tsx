@@ -1,3 +1,6 @@
+import { getActivePlanOffers } from '@/lib/plan-offers-query';
+import { isPromoFilter, filteredListMetadata } from '@/lib/limited-time-offer';
+import { LimitedTimeOfferToggle } from '@/components/limited-time-offer';
 import { currentPlanCondition } from '@/lib/plan-lifecycle-query';
 import Link from "next/link";
 import { ProviderLogo } from '@/components/provider-logo';
@@ -17,19 +20,22 @@ import { buildGatewaySectionRows, gatewaySectionCopy, GATEWAY_SECTION_ID, type G
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ kind?: string | string[]; promo?: string | string[] }>;
 }): Promise<Metadata> {
   const { locale } = await params;
   const providers = await getPlansSeoProviders();
   const en = buildPlansIndexPricingCopy(providers, 'en');
   const zh = buildPlansIndexPricingCopy(providers, 'zh');
-  return buildMetadata({
+  const metadata = buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: '/plans',
     title: { en: en.title, zh: zh.title },
     description: { en: en.description, zh: zh.description },
   });
+  return { ...metadata, ...filteredListMetadata(locale, '/plans', isPromoFilter((await searchParams)?.promo)) };
 }
 
 async function getProvidersWithPlans() {
@@ -60,16 +66,25 @@ export default async function PlansIndexPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ kind?: string | string[] }>;
+  searchParams?: Promise<{ kind?: string | string[]; promo?: string | string[] }>;
 }) {
   const { locale } = await params;
-  const kindParam = (await searchParams)?.kind;
+  const query = await searchParams;
+  const kindParam = query?.kind;
+  const promoOnly = isPromoFilter(query?.promo);
+  const now = new Date();
   const gatewayOnly = (Array.isArray(kindParam) ? kindParam[0] : kindParam) === 'gateway_subscription';
-  const [providers, couponByProvider, gatewayPlans] = await Promise.all([
+  const [allProviders, couponByProvider, allGatewayPlans, offers] = await Promise.all([
     getProvidersWithPlans(),
     getActiveCouponMap('plan'),
     getGatewaySubscriptionPlans(),
+    promoOnly ? getActivePlanOffers(now) : Promise.resolve([]),
   ]);
+  const counts = new Map<number, number>();
+  for (const offer of offers) counts.set(offer.provider_id, (counts.get(offer.provider_id) ?? 0) + 1);
+  const providers = promoOnly ? allProviders.filter(p => counts.has(p.id)).map(p => ({ ...p, planCount: counts.get(p.id)! })) : allProviders;
+  const offerIds = new Set(offers.map(row => row.id));
+  const gatewayPlans = promoOnly ? allGatewayPlans.filter(plan => offerIds.has(plan.id)) : allGatewayPlans;
   const gatewayRows = buildGatewaySectionRows(gatewayPlans, locale);
   const gatewayCopy = gatewaySectionCopy(locale);
 
@@ -115,6 +130,11 @@ export default async function PlansIndexPage({
             <SquarePen className="h-4 w-4" />
             {isZh ? '提交供应商或专属优惠' : 'Submit a provider or exclusive offer'}
           </Link>
+        </div>
+
+        <div className="mb-6 flex flex-wrap gap-2">
+          <LimitedTimeOfferToggle locale={locale} path="/plans" active={promoOnly}
+            preserve={{ kind: Array.isArray(kindParam) ? kindParam[0] : kindParam }} />
         </div>
 
         {/* Gateway subscriptions (plan_kind = gateway_subscription); hidden when empty */}
@@ -209,7 +229,7 @@ export default async function PlansIndexPage({
             <Card>
               <CardContent className="py-12 text-center">
                 <p className="text-zinc-500">
-                  {isZh ? '暂无供应商计划数据' : 'No provider plans available yet.'}
+                  {promoOnly ? (isZh ? '暂无有效的限时优惠套餐' : 'No active limited-time plan offers.') : (isZh ? '暂无供应商计划数据' : 'No provider plans available yet.')}
                 </p>
               </CardContent>
             </Card>

@@ -127,3 +127,18 @@ test('China availability is absent for bare legacy true, shown only for sourced 
   assert.doesNotMatch(render('en', sourced), /国内可用|支持中国大陆访问|China Available|Accessible from mainland China/i);
   assert.doesNotMatch(render('zh', { ...sourced, supported_regions: [] }), /国内可用|支持中国大陆访问/);
 });
+
+
+test('model cards display subscription offer metadata, including annual-only offers, without exposing it after expiry', () => {
+  const live = { ...plan, pricing_model: 'subscription', regular_price: 40, regular_annual_price: 300, promo_ends_at: '2026-12-01T08:00:00Z' };
+  for (const locale of ['zh', 'en'] as const) {
+    const monthly = render(locale, live);
+    assert.match(monthly, /data-plan-limited-time-offer="active"/);
+    assert.match(monthly, /原价|Was/);
+    const annual = render(locale, { ...live, regular_price: null });
+    const mark = annual.split('data-plan-limited-time-offer="active"')[1].split('</div>')[0];
+    assert.match(mark, /\$200.*\$300/);
+    assert.match(mark, locale === 'zh' ? /年/ : /year/);
+    assert.doesNotMatch(render(locale, { ...live, promo_ends_at: '2020-01-01T00:00:00Z' }), /data-plan-limited-time-offer/);
+  }
+});

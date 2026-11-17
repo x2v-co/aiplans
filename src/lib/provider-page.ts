@@ -1,3 +1,4 @@
+import type { PlanOfferRow } from './plan-limited-time-offer';
 import type { RegionFields } from './supported-regions';
 import type { ChannelTermsFields } from './channel-terms';
 import { jsonLd, SITE_URL } from './seo';
@@ -23,7 +24,7 @@ export type ProviderRecord = RegionFields & {
   access_from_china: boolean | null;
 };
 
-export type ProviderPlanRecord = EconomicPlan & ChannelTermsFields & RegionFields & {
+export type ProviderPlanRecord = EconomicPlan & PlanOfferRow & ChannelTermsFields & RegionFields & {
   id: number;
   name: string;
   plan_kind: string | null;

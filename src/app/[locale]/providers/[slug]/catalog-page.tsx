@@ -1,3 +1,4 @@
+import { PlanLimitedTimeOfferMark } from '@/components/plan-limited-time-offer';
 import { derivePlanRegions, chinaAccessMark, formatAvailableIn } from '@/lib/supported-regions';
 import { getPlansByProvider } from '@/lib/provider-plans-query';
 import { publicModelName } from '@/lib/public-catalog-copy';
@@ -363,6 +364,7 @@ export default async function ProviderPage({
                   <CardContent>
                     <div className="mb-4">
                       <ProviderPlanPrice plan={plan} showYearly={showYearly} currency={planCurrency(plan)} locale={locale} />
+                      <PlanLimitedTimeOfferMark plan={{ ...plan, providers: { slug: providerSlug, region: provider.region } }} locale={locale} now={now} yearly={showYearly} />
                       {showTrust && (
                         <DataTrustLabel fact={planPriceTrust({ ...plan, ...providerPlanPrice(plan, showYearly) }, planSource, locale, now, provider.slug)} locale={locale} />
                       )}

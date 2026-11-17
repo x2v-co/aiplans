@@ -50,11 +50,13 @@ export default function ModelPricingSummary({ pricing, locale, now, officialUsag
           : (isZh ? '各币种原始报价 / 每百万 tokens；最低按输入价格排序' : 'Published currencies / per 1M tokens; cheapest ranked by input')}
       </p>
       <div className="min-w-0 w-full max-w-full overflow-x-auto">
-        <table className="w-full text-left text-sm">
+        {/* Keep readable columns inside this scroll frame, rather than inheriting
+            the model page's anywhere wrapping and squeezing words into letters. */}
+        <table className={`w-full ${usageMode ? 'min-w-[36rem]' : 'min-w-[52rem]'} text-left text-sm [overflow-wrap:normal]`}>
           <caption className="sr-only">{isZh ? '官方与最低价渠道 API 定价' : 'Official and cheapest channel API pricing'}</caption>
           <thead><tr className="border-b">
-            {headers.map(label =>
-              <th key={label} scope="col" className="px-2 py-2">{label}</th>)}
+            {headers.map((label, index) =>
+              <th key={label} scope="col" className={`px-2 py-2 whitespace-nowrap ${index === 0 ? 'min-w-64' : index === headers.length - 1 ? 'min-w-48' : 'min-w-32'}`}>{label}</th>)}
           </tr></thead>
           <tbody>
             {officialUsagePrices.length > 0 && <tr className="border-b"><th scope="row" className="px-2 py-2">{isZh ? '官方' : 'Official'}</th>
@@ -62,7 +64,7 @@ export default function ModelPricingSummary({ pricing, locale, now, officialUsag
             {pricing.official.length === 0 && officialUsagePrices.length === 0 && <tr className="border-b"><th scope="row" className="px-2 py-2">{isZh ? '官方' : 'Official'}</th>
               <td colSpan={usageMode ? 2 : 4} className="px-2 py-2">{isZh ? '暂无官方报价' : 'No official quote recorded'}</td></tr>}
             {tableChannels.map((row, index) => <tr key={row.id ?? index} className="border-b last:border-0">
-              <th scope="row" className="px-2 py-2 font-medium">
+              <th scope="row" className="min-w-64 px-2 py-2 align-top font-medium">
                 <ChannelName row={row} locale={locale} />
                 {pricing.official.includes(row) && <span className="ml-2">{isZh ? '官方' : 'Official'}</span>}
                 {row === pricing.cheapest && <span className="ml-2 text-green-700 dark:text-green-400">{isZh ? '最低输入价' : 'Lowest input'}</span>}

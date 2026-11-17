@@ -1,3 +1,5 @@
+import { PlanLimitedTimeOfferMark } from '@/components/plan-limited-time-offer';
+import { planLimitedTimeOffer, type PlanOfferRow } from '@/lib/plan-limited-time-offer';
 import { derivePlanRegions, shouldShowChinaBadge, type RegionFields } from '@/lib/supported-regions';
 import { createTranslator } from 'next-intl';
 import enMessages from '../../messages/en.json';
@@ -14,7 +16,7 @@ import type { ModelUsagePriceRow } from '@/lib/model-usage-prices';
 import type { ChannelTermsFields } from '@/lib/channel-terms';
 import { normalizeThirdPartyCoverage, type PlanCoverageFields } from '@/lib/third-party-coverage';
 
-export interface ModelPlanCardRow extends PlanTrustRow, ChannelTermsFields, Partial<PlanCoverageFields>, PlanHighlightFields {
+export interface ModelPlanCardRow extends PlanTrustRow, PlanOfferRow, ChannelTermsFields, Partial<PlanCoverageFields>, PlanHighlightFields {
   id: number;
   name: string;
   slug: string;
@@ -91,6 +93,7 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
         {priceState !== 'contactSales' && plan.annual_price != null && <div className="mt-1 text-sm text-zinc-500">
           {planMoney(plan.annual_price, currency)} / {t('year')}
         </div>}
+        <PlanLimitedTimeOfferMark plan={plan} locale={locale} now={now} yearly={planLimitedTimeOffer(plan, now) == null} />
         {usagePrices.length > 0 && <div className="mt-2 max-h-32 space-y-1 overflow-y-auto text-sm">
           {usagePrices.map(row => <div key={row.id}>
             {labelNonLlmPriceKey(row.price_kind, locale)}: {pricingLabel(row.price, row.currency)} / {labelNonLlmPriceKey(row.unit, locale)}

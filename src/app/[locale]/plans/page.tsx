@@ -1,19 +1,17 @@
 import CatalogPage, { generateMetadata as catalogMetadata } from './catalog-page';
 
-// Catalog pages are ISR (aiplans GSC 2026-11-04): rendered on first request,
-// then served from the Next.js cache and regenerated in the background at most
-// every 5 minutes (Cache-Control: s-maxage=300, stale-while-revalidate). Before
-// this every crawler hit re-rendered the page and 16 concurrent requests queued
-// for 8–28 s on the 1.5-CPU app container. Scheduled prices therefore switch
-// within one revalidate window instead of on the exact request.
+// Retain ISR300: the prior performance fix recorded 16 concurrent crawler
+// renders queuing for 8–28s on the 1.5-CPU server without this cache.
+// Promotions are evaluated at render time. After 300s, ISR can serve stale
+// HTML while revalidating; expiry appears after successful regeneration,
+// not necessarily on the first request at the cutoff.
 export const revalidate = 300;
-// Empty list: nothing is prerendered at build (CI builds without a database);
-// every locale/slug is rendered on demand and then cached.
+// No database-backed catalog paths are prerendered at build time.
 export function generateStaticParams() {
   return [];
 }
 
-// Filtered variants (?kind=) are rewritten by src/proxy.ts to
+// Filtered variants (?kind= or ?promo=) are rewritten by src/proxy.ts to
 // /[locale]/filtered/plans, which renders the same view per request.
 type Props = { params: Promise<{ locale: string }> };
 const NO_QUERY = Promise.resolve({});

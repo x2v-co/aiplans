@@ -5,10 +5,8 @@ import { SITE_URL } from './seo';
 /**
  * Display-only view of an API channel's limited-time price.
  *
- * Columns live on `api_channel_prices` only: `promo_ends_at`,
- * `regular_input_price_per_1m`, `regular_output_price_per_1m`,
- * `regular_cached_input_price_per_1m`. `plans` has none of these, so
- * subscription rows are not treated as offers and no migration is added here.
+ * API columns are independent from subscription promotion metadata.
+ * Subscription displays use plan-limited-time-offer.ts.
  * This module does not rewrite stored or effective prices.
  */
 export interface LimitedTimeOfferRow extends PriceSchedule, PromoProviderRef {
