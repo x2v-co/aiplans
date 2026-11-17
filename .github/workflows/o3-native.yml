@@ -54,6 +54,17 @@ jobs:
           set -euo pipefail
           timeout 240s env -u DATABASE_URL -u O3_DATABASE_URL -u ARGON_TEST_DATABASE_URL \
             node --import tsx scripts/o3-model-only/postgres.integration.ts
+      - name: Fresh isolated closure database and shipped PG17 psql checks
+        if: always()
+        env:
+          O3_CLOSURE_TEST_DATABASE_URL: postgres://o3_native_ci:synthetic_ci_only@127.0.0.1:55439/dedupe54_test_o3_closure_ci
+          O3_CLOSURE_TEST_PSQL_MODE: docker-ci
+        run: |
+          set -euo pipefail
+          timeout 15s docker exec o3-native-pg createdb -h 127.0.0.1 -p 55439 \
+            -U o3_native_ci --owner=o3_native_ci dedupe54_test_o3_closure_ci
+          timeout 240s env -u DATABASE_URL -u O3_DATABASE_URL -u ARGON_TEST_DATABASE_URL \
+            node --import tsx scripts/o3-model-only/sre-closure.postgres.integration.ts
       - name: Remove ephemeral Postgres
         if: always()
         run: docker rm --force --volumes o3-native-pg

@@ -1,4 +1,6 @@
-# Unsigned read-only closure proposal for PR370
+# Legacy superseded read-only closure proposal for PR370
+
+Use the [fresh check](o3-model-only-sre-check.md) and its shipped SQL as the recommended review. This historical check intentionally cannot approve metadata: its six missing baseline expectations remain blockers. It is retained for regression coverage, not recommended approval. No production action is authorized.
 
 This proposal is unexecuted and grants no production authorization. The parent
 and SRE must review its exact hash, SQL and expectations before choosing a live
@@ -12,9 +14,11 @@ choose a survivor or authorize other pairs.
 
 The SQL opens REPEATABLE READ READ ONLY, pins pg_catalog/public and UTC, sets
 15s statement/1s lock/60s idle limits, and ends with explicit ROLLBACK. Every gate
-failure explicitly rolls back and exits psql3. ON_ERROR_STOP also aborts on SQL
+failure completes ROLLBACK, emits a fixed O3_REJECT_<gate>_ROLLED_BACK marker,
+then runs fixed SELECT 1 / 0; ON_ERROR_STOP produces exit3/SQLSTATE22012.
+Every other nonzero exit is failure. ON_ERROR_STOP also aborts on SQL
 errors; connection close rolls back that read-only transaction. Run with psql-X,
-no echo-all or statement logging to an exported transcript. SQL errors are terse,
+no echo-all or statement logging to an exported transcript. SQL errors use PG17 VERBOSITY sqlstate,
 context disabled. Do not replace false gates, relax timeouts or automatically
 query more objects. The proposal has no bootstrap, temporary table, DML, lock
 acquisition, function execution by discovered name or operational SRE action.
@@ -121,4 +125,4 @@ Reviewed-source SHA256 (file bytes; not unknown live content):
 | structure.ts | 60f054e244b4c0d1df53eb460a7b62e86fac539548e9c58660ec72047a10a85f |
 | supported-affected-profile.json | 886016b232cd215ba77cec6dc466a5523c473017ada0206ec396391a60519af8 |
 | public-models.json | 130dda16a80460f31f022c4511048c975efb2d1f671078fcae87b165e217e3fa |
-| sre-readonly-closure.sql | 13579a8ece90c19eee0c7f5f83fcb29becd052f1986772f0e2a23980c21557c8 |
+| sre-readonly-closure.sql | a931d439a9b2430726aad5b58fe567c4d5cd8c0a26e58978cbfa12b2f2b7d20d |

@@ -5,7 +5,7 @@
 -- Run only after parent/SRE review with psql -X -v ON_ERROR_STOP=1 -f THIS_FILE.
 \set ON_ERROR_STOP on
 \set ECHO none
-\set VERBOSITY terse
+\set VERBOSITY sqlstate
 \set SHOW_CONTEXT never
 BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
 SET LOCAL search_path=pg_catalog,public;
@@ -21,7 +21,8 @@ SELECT current_setting('server_version_num')::integer BETWEEN 170000 AND 179999
 \if :o3_environment_ok
 \else
   ROLLBACK;
-  \quit 3
+  \echo O3_REJECT_environment_ROLLED_BACK
+  SELECT 1 / 0;
 \endif
 WITH RECURSIVE columns_raw AS (
 SELECT c.relname AS "table",a.attname AS name,format_type(a.atttypid,a.atttypmod) AS type,
@@ -117,7 +118,8 @@ SELECT *, (columns_ok AND constraints_ok AND indexes_ok AND incoming_ok AND rela
 \if :o3_structure_ok
 \else
   ROLLBACK;
-  \quit 3
+  \echo O3_REJECT_structure_ROLLED_BACK
+  SELECT 1 / 0;
 \endif
 -- Only audited builtin types/operators and known structure may reach row reads.
 SELECT 'source_reference.api_channel_price_variants' AS object_label,count(*) AS row_count FROM public."api_channel_price_variants" WHERE model_id=3014
@@ -167,7 +169,8 @@ UNION ALL SELECT 'target_channel.history',count(*) FROM public.price_history WHE
 \if :o3_pair_ok
 \else
   ROLLBACK;
-  \quit 3
+  \echo O3_REJECT_pair_ROLLED_BACK
+  SELECT 1 / 0;
 \endif
 -- Notes never leave DB, including unknown values/digests. JSON syntax is checked
 -- before a cast; only exact public source ID and prelisted kind/version classify.
@@ -196,7 +199,8 @@ SELECT coalesce(bool_and(known_kind),false) AND count(*) FILTER(WHERE served_mod
 \if :o3_quota_rows_ok
 \else
   ROLLBACK;
-  \quit 3
+  \echo O3_REJECT_quota_rows_ROLLED_BACK
+  SELECT 1 / 0;
 \endif
 SELECT count(*)=2 AND bool_and(coalesce(CASE id
  WHEN 'coding-high-cache' THEN cache_read_pct=97 AND input_pct=2.5 AND output_pct=0.5
@@ -206,7 +210,8 @@ SELECT count(*)=2 AND bool_and(coalesce(CASE id
 \if :o3_mixes_ok
 \else
   ROLLBACK;
-  \quit 3
+  \echo O3_REJECT_mixes_ROLLED_BACK
+  SELECT 1 / 0;
 \endif
 -- Historical baseline only. Absent/changed metadata forces a new explicit reviewed baseline.
 SELECT 'model3192.id' AS object_label,CASE WHEN coalesce((SELECT "id" IS NOT DISTINCT FROM '3192'::integer FROM public.models WHERE id=3192),false) THEN 'matches_prelisted' ELSE 'different_stop' END AS expected_class,coalesce((SELECT s."id" IS NOT DISTINCT FROM t."id" FROM public.models s CROSS JOIN public.models t WHERE s.id=3014 AND t.id=3192),false) AS pair_equal
@@ -386,7 +391,8 @@ SELECT coalesce((SELECT "id" IS NOT DISTINCT FROM '3192'::integer FROM public.mo
 \if :o3_metadata_ok
 \else
   ROLLBACK;
-  \quit 3
+  \echo O3_REJECT_metadata_ROLLED_BACK
+  SELECT 1 / 0;
 \endif
 \echo result proposal_checks_match_pending_parent_SRE_freeze
 ROLLBACK;

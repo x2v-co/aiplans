@@ -200,9 +200,12 @@ not GitHub service network options or bridge port publishing. Readiness, driver
 and job timeouts are finite; always-cleanup removes the container and volume.
 The strict actual `inet_server_addr()` guard stays enabled.
 
-The unsigned [read-only closure proposal](../../scripts/o3-model-only/sre-readonly-closure.sql)
-and [output/scope review](o3-model-only-sre-closure.md) specify remaining live
-checks. No proposal execution, production connection, writer deployment, merge
+The recommended unsigned [fresh read-only check](../../scripts/o3-model-only/sre-readonly-check.sql)
+and [output/scope review](o3-model-only-sre-check.md) specify remaining live
+checks. The legacy [historical check](o3-model-only-sre-closure.md) intentionally
+cannot approve metadata and is superseded. CI tests the shipped fresh and legacy
+SQL with container PG17 psql in a second fresh synthetic database after the native
+lifecycle. No proposal execution, production connection, writer deployment, merge
 or production apply is authorized by fixture results. Fresh supported structure,
 privileges, public restoration metadata, same-snapshot references/quota, backup,
 writer coordination and approval of a fresh preview digest remain SRE/parent
