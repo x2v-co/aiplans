@@ -92,28 +92,73 @@ supported inputs, not claims about fresh production defaults/sequence ownership.
 `fixtures/supported-public-schema.sql` retains the33-table scaffold and corrects
 all captured types from0428; the three affected tables are complete under the
 explicit profile. Unrelated tables/defaults/enum evidence are scaffolding, not a
-full production mirror. The old partial fixture/evidence is preserved untouched.
+full production mirror. No old partial fixture or archive dependency is needed.
 An unrelated public function or plans enum does not create a universal blocker.
 No user function bodies are exported by the executor.
 
-Existing exact upstream OpenRouter `openai/o3:batch` → channel15334 binding,
-writer ambiguity refusal, alias-before-normalization, batch selector exclusion,
-materializer/coding resolver, chart and variant protections remain. The native
-driver uses the real application upsert/history path and quota seed; it verifies
-zero-write quota before/after/repeat and a nonempty sample collector. The ordinary
-writer's quote update and history insert remain separate transactions. General
-multi-offer chart/variant behavior and the other53 pairs are outside this scope.
+The reviewed writer support in this tree carries exact OpenRouter upstream
+`openai/o3:batch` identity to the existing model3192/provider59/channel15334.
+`channel-write-target.ts` checks IDs, slugs, provider/model ownership, retained
+channel15031 OFF and the exact candidate set. Unbound multirow writes, unbound fixed-target writes (including before merge
+or missing quote), and writes to retained15031 refuse. Ordinary unrelated absent/single-row upserts keep their
+existing behavior. Both scraper resolution and getOrCreate consult the exact
+source alias before lossy canonicalization; missing/rebound identities refuse
+creation. Lookup/update/history errors count as scrape failures and suppress
+unseen price/variant retirement. Quote update and history insert still use
+separate application transactions; a history failure can follow a price update.
 
-Offline (no DB or network):
+Every shared production delta has a narrow purpose:
+
+| Path | Necessary behavior |
+| --- | --- |
+| scripts/db/channel-write-target.ts | Stable exact feed binding; distinguish no row from multirow; preserve retained OFF quote |
+| scripts/db/queries.ts | Use checked target in real upsert, scope update ownership, propagate bound history errors, refuse fixed identity recreation |
+| scripts/index-dynamic.ts | Same target for comparison/update/history, resolve exact pair before normalization, suppress unsafe retirement, report caught entry errors correctly |
+| scripts/scrapers/openrouter.ts | Carry the public upstream ID beside the existing generated slug |
+| scripts/utils/validator.ts | Type the upstream ID without changing ordinary scraper data |
+| src/lib/catalog-identity.ts | Resolve exact persisted aliases and reject conflicts/dangling targets; only fixed-pair writer callers are added |
+
+The native harness executes these actual current source functions with injected
+I/O and the existing PostgreSQL query builder, excluding only credential-loading
+preludes and the main scraper scheduler. It imports the actual quota seed and
+collector functions directly. It runs the existing two API SELECTs and model-page
+quote/history SELECTs against PG, and the existing selector and chart helpers.
+Under this pair's sourceOFF/history0/variants0 preconditions there is one visible
+quote and no newly shared variant/history. Selector/materializer/host/frontend
+production modules are unchanged. General multi-offer behavior is outside scope.
+The existing seedQuotaPayg and pay-as-you-go implementation are unchanged; the
+driver asserts actual before/after/repeated zero-write behavior.
+
+Offline (no DB or network), with existing dependencies:
 
 ```sh
-bash scripts/o3-model-only/check-offline.sh
+node_modules/.bin/tsc --noEmit --incremental false
+node_modules/.bin/tsc --noEmit -p scripts/tsconfig.quota.json
+node_modules/.bin/tsc --noEmit -p scripts/o3-model-only/tsconfig.json
+for file in scripts/o3-model-only/*.test.ts; do node --import tsx "$file"; done
+npm test
+git diff --check
 ```
 
-Coordinator only, NORMAL Shell, freshly provisioned empty isolated database:
+The narrow config strictly checks core/native/support modules; it does not claim
+the broader unrelated index-dynamic import graph passes a global scripts check.
+Do not suppress global diagnostics. Subprocess EPERM failures inside Codex must
+be disclosed and rerun in normal Shell.
+
+Coordinator only, NORMAL Shell, fresh empty isolated database at the existing
+loopback PG55439 (provision it separately, never reuse the final APPLIED fixture):
 
 ```sh
-O3_TEST_DATABASE_URL='postgres://127.0.0.1:55439/dedupe54_test_o3_timefix_0805' node --import tsx scripts/o3-model-only/postgres.integration.ts
+O3_TEST_DATABASE_URL='postgres://dedupe54@127.0.0.1:55439/dedupe54_test_o3_clean_0830' bash scripts/o3-model-only/validate-normal-shell.sh
+```
+
+The script makes a unique `/tmp/o3-clean-pr-validation.XXXXXXXX` log directory,
+strips production DB variables, validates the explicit URL, runs full units,
+three typechecks, focused units and the same native driver. It provisions no DB.
+The exact standalone real-PG command from this worktree is:
+
+```sh
+env -u DATABASE_URL -u O3_DATABASE_URL -u ARGON_TEST_DATABASE_URL O3_TEST_DATABASE_URL='postgres://dedupe54@127.0.0.1:55439/dedupe54_test_o3_clean_0830' node --import tsx scripts/o3-model-only/postgres.integration.ts
 ```
 
 The driver fails on absent URL, wrong host/port/name, overrides, nonempty DB or
@@ -130,8 +175,9 @@ ends APPLIED with a legitimate new scrape/history row for inspection.
 Operator syntax (explicit connection supplied outside Codex): `cli.ts preview`,
 `cli.ts bootstrap`, then `cli.ts MODE ABS_JOURNAL_DIR EXPECTED_DIGEST`. Bootstrap
 must be reviewed before execution; inspect preview and approve that exact digest.
-The timestamp/postcondition repair has offline protocol regressions only until
-the coordinator executes this native command in normal Shell. The harness wraps
+The timestamp/postcondition repair previously passed real PG in a broader local
+tree. This clean PR's newly ported harness still requires coordinator execution
+and remote CI before any clean-tree native PASS claim. The harness wraps
 the real client solely in test code to reproduce the old timestamp codec, omit a
 restore column, corrupt input/result and inject protected target/channel/history
 writes during apply and restore. Each exported operation must refuse inside its
@@ -142,13 +188,22 @@ Unsupported timestamp ranges/types still refuse. Sequence/default nonexecution,
 late legitimate scrape/history restore refusal and nonempty collector phases are
 required. If native fails, stop and report; no automatic repair chain.
 
-The independent core review remains11 files: eight runtime/data/runbook files,
-two unit files and the SQL fixture. The native harness additionally imports the
-existing dirty application replay/writer/quota modules; it is not standalone
-11-file PR CI. Coordinator fullsuite/typecheck/native and live gates remain open.
-Native fixture success would prove authored-profile behavior, not live readiness.
-Remaining live work: fresh supported evaluated structure/privilege review, public
-source restoration fields and same-snapshot identity/reference/quota checks,
-backup and writer coordination, and approval of the resulting exact digest.
-Do not combine older snapshots into a frozen plan. No production operation is
-authorized by this runbook or implementation round.
+The clean PR now includes its self-contained native driver, test harness,
+public-model fixture, six minimal shared writer/identity support paths and an
+isolated `.github/workflows/o3-native.yml` check. It imports no old54/archive
+source. The existing generic PR CI is unchanged. The native workflow runs on
+every pull request and push to main; configure `o3 native PG17 lifecycle and
+rollback` as required in repository branch protection. There is no conditional
+skip, optional integration flag or continue-on-error. CI uses an explicit Linux
+Docker host-network PG17 container with listen_addresses=127.0.0.1 and port55439,
+not GitHub service network options or bridge port publishing. Readiness, driver
+and job timeouts are finite; always-cleanup removes the container and volume.
+The strict actual `inet_server_addr()` guard stays enabled.
+
+The unsigned [read-only closure proposal](../../scripts/o3-model-only/sre-readonly-closure.sql)
+and [output/scope review](o3-model-only-sre-closure.md) specify remaining live
+checks. No proposal execution, production connection, writer deployment, merge
+or production apply is authorized by fixture results. Fresh supported structure,
+privileges, public restoration metadata, same-snapshot references/quota, backup,
+writer coordination and approval of a fresh preview digest remain SRE/parent
+requirements. Do not combine old snapshots or reuse any fixture digest.
