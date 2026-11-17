@@ -1,0 +1,661 @@
+{
+  "version": 1,
+  "documents": [
+    {
+      "id": "minimax-mplan-cn-archive",
+      "site": "mainland-website",
+      "kind": "archive",
+      "sourceUrl": "https://platform.minimaxi.com/docs/m-plan/monthly-offer.md",
+      "finalUrl": null,
+      "observedAt": null,
+      "inspectedAt": "2026-11-17T19:56:06.181+08:00",
+      "sourceUpdatedAt": null,
+      "sha256": "9a8bcb04dafa4528906a26593e0b8baf80498b88df26333281ccde24d13f3213",
+      "assetPath": "scripts/scrapers/fixtures/minimax-mplan-offer-cn.md",
+      "scopes": [
+        "price",
+        "promotion"
+      ],
+      "excerpts": [
+        {
+          "locator": "L22-L22",
+          "text": "| Go | 5 折 | ¥49/月 |"
+        },
+        {
+          "locator": "L23-L23",
+          "text": "| Explore | 5 折 | ¥119/月 |"
+        },
+        {
+          "locator": "L24-L24",
+          "text": "| Build | 5 折 | ¥469/月 |"
+        },
+        {
+          "locator": "L13-L13",
+          "text": "即日起至10月14日"
+        },
+        {
+          "locator": "L28-L28",
+          "text": "* **续费**：首月结束后，订阅将按目标档位的原价自动续费。如不需要续费，可在当前周期结束前关闭自动续费，详见 [升级与取消](/docs/m-plan/change-plan)。"
+        }
+      ],
+      "archiveDateClaim": "2026-10-15 in the existing local fixture test name; no source observation instant or publication date is established."
+    },
+    {
+      "id": "minimax-mplan-global-archive",
+      "site": "international-website",
+      "kind": "archive",
+      "sourceUrl": "https://platform.minimax.io/docs/m-plan/monthly-offer.md",
+      "finalUrl": null,
+      "observedAt": null,
+      "inspectedAt": "2026-11-17T19:56:06.181+08:00",
+      "sourceUpdatedAt": null,
+      "sha256": "ad0baa50c0bb3bcf8f6bf9ff52abb67f75238b3dffe58ed38f08ad5e98d2f85f",
+      "assetPath": "scripts/scrapers/fixtures/minimax-mplan-offer-global.md",
+      "scopes": [
+        "price",
+        "promotion"
+      ],
+      "excerpts": [
+        {
+          "locator": "L22-L22",
+          "text": "| Go | 50% off | \\$22/month |"
+        },
+        {
+          "locator": "L23-L23",
+          "text": "| Explore | 50% off | \\$55/month |"
+        },
+        {
+          "locator": "L24-L24",
+          "text": "| Build | 50% off | \\$132/month |"
+        },
+        {
+          "locator": "L13-L13",
+          "text": "From now through October 14"
+        },
+        {
+          "locator": "L28-L28",
+          "text": "* **Renewal**: After the first month, your subscription renews automatically at the regular price of your tier. If you do not want to renew, turn off auto-renewal before the current period ends. See [Upgrades and cancellation](/docs/m-plan/change-plan)."
+        }
+      ],
+      "archiveDateClaim": "2026-10-15 in the existing local fixture test name; no source observation instant or publication date is established."
+    }
+  ],
+  "candidates": [
+    {
+      "productFamily": "m-plan",
+      "site": "mainland-website",
+      "providerSlug": "minimax-china",
+      "planSlug": "minimax-mplan-go",
+      "draft": {
+        "id": "minimax-mplan-go-website-monthly-candidate",
+        "identity": {
+          "entitlementGroup": null,
+          "entitlementVersion": null,
+          "market": {
+            "scope": "unknown",
+            "country": null
+          },
+          "merchant": null,
+          "channel": "website",
+          "storefrontCountry": null,
+          "billing": {
+            "period": "month",
+            "count": 1
+          },
+          "commitment": {
+            "period": "unknown",
+            "count": null
+          },
+          "unit": "unknown",
+          "unitCount": null,
+          "promotion": "unknown",
+          "promotionId": null,
+          "eligibilityClass": null
+        },
+        "price": {
+          "kind": "unknown",
+          "amount": null,
+          "currency": null
+        },
+        "tax": {
+          "status": "unknown",
+          "review": "unknown",
+          "description": null
+        },
+        "qualification": {
+          "account": {
+            "status": "unknown",
+            "description": null
+          },
+          "payment": {
+            "status": "unknown",
+            "description": null
+          },
+          "seat": {
+            "status": "unknown",
+            "description": null
+          }
+        },
+        "reviews": {
+          "price": "unknown",
+          "entitlement": "unknown",
+          "market": "unknown",
+          "channel": "unknown",
+          "promotion": "unknown",
+          "tax": "unknown",
+          "eligibility": "unknown",
+          "validity": "unknown"
+        },
+        "state": "unverified",
+        "authority": "scraper",
+        "observedAt": null,
+        "reviewedAt": null,
+        "validity": {
+          "status": "unknown",
+          "startsAt": null,
+          "endsAt": null,
+          "openEnded": false
+        },
+        "renewalOfferId": null,
+        "sourceIds": [
+          "minimax-mplan-cn-archive"
+        ]
+      },
+      "historicalListing": {
+        "amount": "49.00",
+        "currency": "CNY",
+        "billing": {
+          "period": "month",
+          "count": 1
+        },
+        "evidenceId": "minimax-mplan-cn-archive"
+      },
+      "quarantineReasons": [
+        "fresh_official_verification_pending",
+        "archive_promotion_year_zone_and_current_availability_unknown",
+        "commitment_and_unit_unreviewed",
+        "same_tier_name_does_not_prove_equivalent_entitlements"
+      ]
+    },
+    {
+      "productFamily": "m-plan",
+      "site": "mainland-website",
+      "providerSlug": "minimax-china",
+      "planSlug": "minimax-mplan-explore",
+      "draft": {
+        "id": "minimax-mplan-explore-website-monthly-candidate",
+        "identity": {
+          "entitlementGroup": null,
+          "entitlementVersion": null,
+          "market": {
+            "scope": "unknown",
+            "country": null
+          },
+          "merchant": null,
+          "channel": "website",
+          "storefrontCountry": null,
+          "billing": {
+            "period": "month",
+            "count": 1
+          },
+          "commitment": {
+            "period": "unknown",
+            "count": null
+          },
+          "unit": "unknown",
+          "unitCount": null,
+          "promotion": "unknown",
+          "promotionId": null,
+          "eligibilityClass": null
+        },
+        "price": {
+          "kind": "unknown",
+          "amount": null,
+          "currency": null
+        },
+        "tax": {
+          "status": "unknown",
+          "review": "unknown",
+          "description": null
+        },
+        "qualification": {
+          "account": {
+            "status": "unknown",
+            "description": null
+          },
+          "payment": {
+            "status": "unknown",
+            "description": null
+          },
+          "seat": {
+            "status": "unknown",
+            "description": null
+          }
+        },
+        "reviews": {
+          "price": "unknown",
+          "entitlement": "unknown",
+          "market": "unknown",
+          "channel": "unknown",
+          "promotion": "unknown",
+          "tax": "unknown",
+          "eligibility": "unknown",
+          "validity": "unknown"
+        },
+        "state": "unverified",
+        "authority": "scraper",
+        "observedAt": null,
+        "reviewedAt": null,
+        "validity": {
+          "status": "unknown",
+          "startsAt": null,
+          "endsAt": null,
+          "openEnded": false
+        },
+        "renewalOfferId": null,
+        "sourceIds": [
+          "minimax-mplan-cn-archive"
+        ]
+      },
+      "historicalListing": {
+        "amount": "119.00",
+        "currency": "CNY",
+        "billing": {
+          "period": "month",
+          "count": 1
+        },
+        "evidenceId": "minimax-mplan-cn-archive"
+      },
+      "quarantineReasons": [
+        "fresh_official_verification_pending",
+        "archive_promotion_year_zone_and_current_availability_unknown",
+        "commitment_and_unit_unreviewed",
+        "same_tier_name_does_not_prove_equivalent_entitlements"
+      ]
+    },
+    {
+      "productFamily": "m-plan",
+      "site": "mainland-website",
+      "providerSlug": "minimax-china",
+      "planSlug": "minimax-mplan-build",
+      "draft": {
+        "id": "minimax-mplan-build-website-monthly-candidate",
+        "identity": {
+          "entitlementGroup": null,
+          "entitlementVersion": null,
+          "market": {
+            "scope": "unknown",
+            "country": null
+          },
+          "merchant": null,
+          "channel": "website",
+          "storefrontCountry": null,
+          "billing": {
+            "period": "month",
+            "count": 1
+          },
+          "commitment": {
+            "period": "unknown",
+            "count": null
+          },
+          "unit": "unknown",
+          "unitCount": null,
+          "promotion": "unknown",
+          "promotionId": null,
+          "eligibilityClass": null
+        },
+        "price": {
+          "kind": "unknown",
+          "amount": null,
+          "currency": null
+        },
+        "tax": {
+          "status": "unknown",
+          "review": "unknown",
+          "description": null
+        },
+        "qualification": {
+          "account": {
+            "status": "unknown",
+            "description": null
+          },
+          "payment": {
+            "status": "unknown",
+            "description": null
+          },
+          "seat": {
+            "status": "unknown",
+            "description": null
+          }
+        },
+        "reviews": {
+          "price": "unknown",
+          "entitlement": "unknown",
+          "market": "unknown",
+          "channel": "unknown",
+          "promotion": "unknown",
+          "tax": "unknown",
+          "eligibility": "unknown",
+          "validity": "unknown"
+        },
+        "state": "unverified",
+        "authority": "scraper",
+        "observedAt": null,
+        "reviewedAt": null,
+        "validity": {
+          "status": "unknown",
+          "startsAt": null,
+          "endsAt": null,
+          "openEnded": false
+        },
+        "renewalOfferId": null,
+        "sourceIds": [
+          "minimax-mplan-cn-archive"
+        ]
+      },
+      "historicalListing": {
+        "amount": "469.00",
+        "currency": "CNY",
+        "billing": {
+          "period": "month",
+          "count": 1
+        },
+        "evidenceId": "minimax-mplan-cn-archive"
+      },
+      "quarantineReasons": [
+        "fresh_official_verification_pending",
+        "archive_promotion_year_zone_and_current_availability_unknown",
+        "commitment_and_unit_unreviewed",
+        "local_build_cn_12x_global_7.5x_not_equivalent"
+      ]
+    },
+    {
+      "productFamily": "m-plan",
+      "site": "international-website",
+      "providerSlug": "minimax-global",
+      "planSlug": "minimax-global-mplan-go",
+      "draft": {
+        "id": "minimax-global-mplan-go-website-monthly-candidate",
+        "identity": {
+          "entitlementGroup": null,
+          "entitlementVersion": null,
+          "market": {
+            "scope": "international",
+            "country": null
+          },
+          "merchant": null,
+          "channel": "website",
+          "storefrontCountry": null,
+          "billing": {
+            "period": "month",
+            "count": 1
+          },
+          "commitment": {
+            "period": "unknown",
+            "count": null
+          },
+          "unit": "unknown",
+          "unitCount": null,
+          "promotion": "unknown",
+          "promotionId": null,
+          "eligibilityClass": null
+        },
+        "price": {
+          "kind": "unknown",
+          "amount": null,
+          "currency": null
+        },
+        "tax": {
+          "status": "unknown",
+          "review": "unknown",
+          "description": null
+        },
+        "qualification": {
+          "account": {
+            "status": "unknown",
+            "description": null
+          },
+          "payment": {
+            "status": "unknown",
+            "description": null
+          },
+          "seat": {
+            "status": "unknown",
+            "description": null
+          }
+        },
+        "reviews": {
+          "price": "unknown",
+          "entitlement": "unknown",
+          "market": "unknown",
+          "channel": "unknown",
+          "promotion": "unknown",
+          "tax": "unknown",
+          "eligibility": "unknown",
+          "validity": "unknown"
+        },
+        "state": "unverified",
+        "authority": "scraper",
+        "observedAt": null,
+        "reviewedAt": null,
+        "validity": {
+          "status": "unknown",
+          "startsAt": null,
+          "endsAt": null,
+          "openEnded": false
+        },
+        "renewalOfferId": null,
+        "sourceIds": [
+          "minimax-mplan-global-archive"
+        ]
+      },
+      "historicalListing": {
+        "amount": "22.00",
+        "currency": "USD",
+        "billing": {
+          "period": "month",
+          "count": 1
+        },
+        "evidenceId": "minimax-mplan-global-archive"
+      },
+      "quarantineReasons": [
+        "fresh_official_verification_pending",
+        "archive_promotion_year_zone_and_current_availability_unknown",
+        "commitment_and_unit_unreviewed",
+        "same_tier_name_does_not_prove_equivalent_entitlements"
+      ]
+    },
+    {
+      "productFamily": "m-plan",
+      "site": "international-website",
+      "providerSlug": "minimax-global",
+      "planSlug": "minimax-global-mplan-explore",
+      "draft": {
+        "id": "minimax-global-mplan-explore-website-monthly-candidate",
+        "identity": {
+          "entitlementGroup": null,
+          "entitlementVersion": null,
+          "market": {
+            "scope": "international",
+            "country": null
+          },
+          "merchant": null,
+          "channel": "website",
+          "storefrontCountry": null,
+          "billing": {
+            "period": "month",
+            "count": 1
+          },
+          "commitment": {
+            "period": "unknown",
+            "count": null
+          },
+          "unit": "unknown",
+          "unitCount": null,
+          "promotion": "unknown",
+          "promotionId": null,
+          "eligibilityClass": null
+        },
+        "price": {
+          "kind": "unknown",
+          "amount": null,
+          "currency": null
+        },
+        "tax": {
+          "status": "unknown",
+          "review": "unknown",
+          "description": null
+        },
+        "qualification": {
+          "account": {
+            "status": "unknown",
+            "description": null
+          },
+          "payment": {
+            "status": "unknown",
+            "description": null
+          },
+          "seat": {
+            "status": "unknown",
+            "description": null
+          }
+        },
+        "reviews": {
+          "price": "unknown",
+          "entitlement": "unknown",
+          "market": "unknown",
+          "channel": "unknown",
+          "promotion": "unknown",
+          "tax": "unknown",
+          "eligibility": "unknown",
+          "validity": "unknown"
+        },
+        "state": "unverified",
+        "authority": "scraper",
+        "observedAt": null,
+        "reviewedAt": null,
+        "validity": {
+          "status": "unknown",
+          "startsAt": null,
+          "endsAt": null,
+          "openEnded": false
+        },
+        "renewalOfferId": null,
+        "sourceIds": [
+          "minimax-mplan-global-archive"
+        ]
+      },
+      "historicalListing": {
+        "amount": "55.00",
+        "currency": "USD",
+        "billing": {
+          "period": "month",
+          "count": 1
+        },
+        "evidenceId": "minimax-mplan-global-archive"
+      },
+      "quarantineReasons": [
+        "fresh_official_verification_pending",
+        "archive_promotion_year_zone_and_current_availability_unknown",
+        "commitment_and_unit_unreviewed",
+        "same_tier_name_does_not_prove_equivalent_entitlements"
+      ]
+    },
+    {
+      "productFamily": "m-plan",
+      "site": "international-website",
+      "providerSlug": "minimax-global",
+      "planSlug": "minimax-global-mplan-build",
+      "draft": {
+        "id": "minimax-global-mplan-build-website-monthly-candidate",
+        "identity": {
+          "entitlementGroup": null,
+          "entitlementVersion": null,
+          "market": {
+            "scope": "international",
+            "country": null
+          },
+          "merchant": null,
+          "channel": "website",
+          "storefrontCountry": null,
+          "billing": {
+            "period": "month",
+            "count": 1
+          },
+          "commitment": {
+            "period": "unknown",
+            "count": null
+          },
+          "unit": "unknown",
+          "unitCount": null,
+          "promotion": "unknown",
+          "promotionId": null,
+          "eligibilityClass": null
+        },
+        "price": {
+          "kind": "unknown",
+          "amount": null,
+          "currency": null
+        },
+        "tax": {
+          "status": "unknown",
+          "review": "unknown",
+          "description": null
+        },
+        "qualification": {
+          "account": {
+            "status": "unknown",
+            "description": null
+          },
+          "payment": {
+            "status": "unknown",
+            "description": null
+          },
+          "seat": {
+            "status": "unknown",
+            "description": null
+          }
+        },
+        "reviews": {
+          "price": "unknown",
+          "entitlement": "unknown",
+          "market": "unknown",
+          "channel": "unknown",
+          "promotion": "unknown",
+          "tax": "unknown",
+          "eligibility": "unknown",
+          "validity": "unknown"
+        },
+        "state": "unverified",
+        "authority": "scraper",
+        "observedAt": null,
+        "reviewedAt": null,
+        "validity": {
+          "status": "unknown",
+          "startsAt": null,
+          "endsAt": null,
+          "openEnded": false
+        },
+        "renewalOfferId": null,
+        "sourceIds": [
+          "minimax-mplan-global-archive"
+        ]
+      },
+      "historicalListing": {
+        "amount": "132.00",
+        "currency": "USD",
+        "billing": {
+          "period": "month",
+          "count": 1
+        },
+        "evidenceId": "minimax-mplan-global-archive"
+      },
+      "quarantineReasons": [
+        "fresh_official_verification_pending",
+        "archive_promotion_year_zone_and_current_availability_unknown",
+        "commitment_and_unit_unreviewed",
+        "local_build_cn_12x_global_7.5x_not_equivalent"
+      ]
+    }
+  ]
+}
