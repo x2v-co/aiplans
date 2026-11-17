@@ -1,14 +1,16 @@
 /** Offline authored-profile checks, not a PostgreSQL/native equivalence claim. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import profile from './fixtures/supported-affected-profile.json';
 import { canonical, digest } from './exact';
-import { O3Executor } from './adapter';
+import { O3Executor, bootstrapO3 } from './adapter';
 import { checkStructure, StructureConflict } from './structure';
 import type { Sql } from 'postgres';
+import { runInNewContext } from 'node:vm';
+import ts from 'typescript';
 
 test('complete authored affected columns/constraints/indexes and ten FK families, no invented channel unique',()=>{
   assert.equal(profile.columns.length,55);assert.equal(profile.constraints.length,11);assert.equal(profile.indexes.length,7);assert.equal(profile.incoming.length,10);
@@ -180,9 +182,12 @@ function executorProtocol() {
     {source,moved:false,alias:false};
   let fault: 'none'|'timestamp'|'missing-result-field'|'conservation' = 'none';
   const calls: string[]=[];
+  let environment = { version: 170011, origin: true };
   const catalog = structureSql();
   const execute = async (q: string, values: unknown[] = []): Promise<unknown[]> => {
     calls.push(q);
+    if (q.includes("current_setting('server_version_num')") && q.includes("current_setting('session_replication_role')"))
+      return [{ok: environment.version >= 170000 && environment.version <= 179999 && environment.origin}];
     if (/FROM pg_attribute a JOIN pg_class c|r.relname AS target|FROM pg_constraint k JOIN pg_class c|FROM pg_index i JOIN pg_class c|SELECT c.relname AS name|WITH RECURSIVE roots/.test(q))
       return Reflect.apply(catalog,undefined,[[q]]);
     if (q.includes("to_regclass('o3_executor.commits')")) return [{present:true}];
@@ -234,11 +239,13 @@ function executorProtocol() {
   const tx = Object.assign(async (strings: TemplateStringsArray,...values:unknown[])=>execute(strings.join('?'),values),{
     unsafe:(q:string,values:unknown[]=[])=>execute(q,values),json:(v:unknown)=>v,
   });
-  const sql = {begin:async (_isolation:string,work:(tx:unknown)=>unknown)=>{
+  const sql = {begin:async (isolationOrWork:string|((tx:unknown)=>unknown),work?:(tx:unknown)=>unknown)=>{
+    const callback=typeof isolationOrWork==='function' ? isolationOrWork : work!;
     const before=structuredClone(state);
-    try {return await work(tx);} catch(e) {state=before;throw e;}
+    try {return await callback(tx);} catch(e) {state=before;throw e;}
   }} as unknown as Sql;
-  return {sql,calls,setFault:(value:typeof fault)=>{fault=value;},state:()=>structuredClone(state)};
+  return {sql,calls,setFault:(value:typeof fault)=>{fault=value;},state:()=>structuredClone(state),
+    setEnvironment:(value:typeof environment)=>{environment=value;}};
 }
 
 test('exported restore binds all 29 fields as text and proves exact reread/conservation before RESTORED',async()=>{
@@ -276,5 +283,87 @@ test('exported apply refuses conservation failure before APPLIED and leaves sour
     assert.deepEqual(protocol.state(),before);
     assert.ok(!protocol.calls.some(q=>q.startsWith('INSERT INTO o3_executor.commits')));
     protocol.setFault('none');assert.equal((await adapter.apply(plan.planDigest)).status,'APPLIED');
+    const lastLock = protocol.calls.findLastIndex(q => q.startsWith('LOCK TABLE'));
+    assert.ok(lastLock >= 0);
+    const lock = protocol.calls[lastLock];
+    assert.ok(lock.includes('o3_executor.commits') && lock.endsWith('IN SHARE ROW EXCLUSIVE MODE'));
+    for (const table of [...profile.tables,...profile.readTables]) assert.ok(lock.includes('public."' + table + '"'));
   } finally {rmSync(root,{recursive:true,force:true});}
+});
+
+test('exported execution acquires complete relation locks before its first SELECT', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'o3-lock-protocol-'));
+  try {
+    const protocol = executorProtocol(); const adapter = new O3Executor(protocol.sql, join(root, 'journal'));
+    const p = await adapter.preview(); await adapter.freeze(p.planDigest); protocol.calls.length = 0;
+    await adapter.apply(p.planDigest);
+    const lock = protocol.calls.findIndex(q => q.startsWith('LOCK TABLE'));
+    const read = protocol.calls.findIndex(q => q.startsWith('SELECT'));
+    assert.ok(lock >= 0 && read > lock);
+    assert.ok(protocol.calls.slice(0,lock).every(q => q.startsWith('SET LOCAL')));
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('every runtime entrypoint fails closed on unsupported PG version or replica before reads/DML/publication', async t => {
+  const fresh = readFileSync(new URL('./sre-readonly-check.sql', import.meta.url), 'utf8');
+  const predicate = fresh.match(/SELECT (current_setting\('server_version_num'\)[\s\S]*?) AS environment_ok/)![1].replace(/\s+/g,' ');
+  for (const environment of [
+    {version:160999,origin:true}, {version:180000,origin:true}, {version:0,origin:true}, {version:170011,origin:false},
+  ]) await t.test(environment.origin ? 'unsupported-'+environment.version : 'replica', async () => {
+    const root = mkdtempSync(join(tmpdir(),'o3-environment-'));
+    try {
+      const protocol = executorProtocol(); const directory = join(root,'journal');
+      const adapter = new O3Executor(protocol.sql,directory);
+      const p = await adapter.preview(); await adapter.freeze(p.planDigest);
+      const before = protocol.state(), files = readdirSync(directory);
+      // Test-only controlled client: production code has no injected version flag.
+      protocol.setEnvironment(environment);
+      for (const mode of ['bootstrap','preview','freeze','rehearse','apply','repeat0','restoreRehearse','restore','resume'] as const) {
+        protocol.calls.length=0;
+        const operation = mode==='bootstrap' ? bootstrapO3(protocol.sql) : mode==='preview' ? adapter.preview() : adapter[mode](p.planDigest);
+        await assert.rejects(operation, /^Error: Runtime environment requires PostgreSQL 17 and origin session_replication_role$/);
+        assert.deepEqual(protocol.state(),before,mode+' changed simulated rows/marker');
+        assert.deepEqual(readdirSync(directory),files,mode+' published a journal');
+        const gate = protocol.calls.findIndex(q=>q.includes("current_setting('server_version_num')"));
+        assert.ok(gate>=0);
+        assert.equal(protocol.calls[gate].replace(/\s+/g,' '),'SELECT '+predicate+' AS ok');
+        assert.equal(protocol.calls.length,gate+1,'No catalog/business read or DML after refused environment');
+        const lock = protocol.calls.findIndex(q=>q.startsWith('LOCK TABLE'));
+        if (['rehearse','apply','repeat0','restoreRehearse','restore'].includes(mode)) {
+          const firstRead = protocol.calls.findIndex(q=>q.startsWith('SELECT'));
+          assert.ok(lock>=0 && firstRead>lock && gate>lock);
+          assert.ok(protocol.calls[lock].includes('o3_executor.commits'));
+          assert.ok(protocol.calls.slice(0,lock).every(q=>q.startsWith('SET LOCAL')));
+        } else assert.equal(lock,-1);
+      }
+    } finally { rmSync(root,{recursive:true,force:true}); }
+  });
+});
+
+test('runtime keeps exactly the shipped PG17 version interval', async () => {
+  const protocol=executorProtocol(); const adapter=new O3Executor(protocol.sql);
+  for(const version of [170000,170011,179999]) {
+    protocol.setEnvironment({version,origin:true});
+    assert.equal((await adapter.preview()).status,'READY');
+  }
+});
+
+test('concurrency failure diagnostics retain only fixed context, validated code/class and source line', () => {
+  const source=readFileSync(new URL('./concurrency.postgres.integration.ts',import.meta.url),'utf8');
+  const functions=source.slice(source.indexOf('function sqlstate('),source.indexOf('function barrier('));
+  const compiled=ts.transpileModule(functions,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
+  const output:string[]=[];
+  const helpers=runInNewContext(compiled+'\n({sqlstate,diagnostic})',{
+    assert,Error,phase:'writer-commit',currentAction:'apply',currentAttack:'cascade-reference',
+    console:{error:(line:string)=>output.push(line)},
+  });
+  const privateText='DO_NOT_EMIT_RAW_NOTES_URL_OR_QUERY_PARAMETERS';
+  const error=Object.assign(new Error(privateText),{code:'23514',detail:privateText,query:privateText});
+  error.stack='Error: '+privateText+'\n    at writer (/fixture/scripts/o3-model-only/concurrency.postgres.integration.ts:54:7)';
+  helpers.diagnostic(error);
+  assert.deepEqual(JSON.parse(output[0]),{suite:'concurrency',status:'FAIL',phase:'writer-commit',action:'apply',
+    attack:'cascade-reference',code:'23514',errorClass:'ERROR',sourceLine:54});
+  assert.ok(!output.join('').includes(privateText));
+  assert.equal(helpers.sqlstate(Object.assign(new Error(privateText),{code:privateText})),undefined);
+  assert.equal(helpers.sqlstate(new Error('PostgreSQL operation refused; SQLSTATE 55P03')),'55P03');
 });

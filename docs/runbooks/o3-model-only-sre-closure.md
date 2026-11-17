@@ -111,18 +111,34 @@ prove the running scraper process version; coordinate all writers and a freeze
 window; verify role/catalog/marker/bootstrap privileges and private durable
 journal ownership0700/files0600/fsync/storage; identify a backup and tested
 restore point; estimate protected full-table scans/temporary space and a short
-15-table lock window within existing15s/1s limits; review the fresh complete
+15-public-relation plus marker lock window within existing15s/1s limits; review the fresh complete
 public restoration expectations and same-snapshot refs/quota; obtain a new
 preview digest and approve that exact freeze. A late legitimate writer/history
 change means stop and re-review; do not force restore or retry apply blindly.
 The proposal does not take locks to measure impact or run a writer as a probe.
 
-Reviewed-source SHA256 (file bytes; not unknown live content):
 
-| Source | SHA256 |
-| --- | --- |
-| adapter.ts | a577d5f47f6888fc5abbee42d934cd652fab1c04259d2c764787d3570e265505 |
-| structure.ts | 60f054e244b4c0d1df53eb460a7b62e86fac539548e9c58660ec72047a10a85f |
-| supported-affected-profile.json | 886016b232cd215ba77cec6dc466a5523c473017ada0206ec396391a60519af8 |
-| public-models.json | 130dda16a80460f31f022c4511048c975efb2d1f671078fcae87b165e217e3fa |
-| sre-readonly-closure.sql | a931d439a9b2430726aad5b58fe567c4d5cd8c0a26e58978cbfa12b2f2b7d20d |
+Reviewed-head evidence replaces the old executable head/hash tables. After scope
+review, the coordinator runs `node scripts/o3-model-only/review-manifest.mjs ABS_OUTPUT_JSON` from this checkout. It records the actual HEAD commit/tree,
+tracked diff SHA256, hashes of every bounded source file, and whether the checkout
+is dirty. An uncommitted repair is a candidate, not an approved reviewed head.
+The coordinator attaches finite acceptance receipts (command, exit, PG version,
+synthetic database, case/mode results) only after the corresponding normal-Shell
+runs and regenerates the manifest after any change or commit. Never interpret
+an old file hash table or a green CI badge as SRE approval.
+
+The original SRE audit was unavailable during initial authoring. Its supplied
+byte-identical copy, `SRE_AUDIT_ORIGINAL.md` in the parent evidence directory, was
+read completely in the same-session 12:35 SGT continuation, together with
+`SRE_INPUT_READ.md`, `SRE_TRANSCRIPT_HANDOFF.json` and the shared independent-audit
+`INDEX.md`. Original report SHA256:
+`ee97a3d700585d874f3ca8f6bbe62fc6f85d378a8572d7227396896860550666`.
+This records the later read, without claiming an earlier read. The historical
+CASCADE tool_result is missing; the preserved normal-Shell PG17.11 controls are
+separate new evidence, not recovered historical receipts. The prior claim of
+no bugs/readiness remains withdrawn. The 12:29 acceptance run stopped at a
+synthetic fixture CHECK violation after ten offer/quota races; it did not reach
+the moved-state or SQL/runtime parity cases. The corrected candidate still
+requires a complete new normal-Shell run and independent SRE re-review. Keep
+PR370 draft. These files grant no merge, deploy, production connection, implicit
+bootstrap, production URL authorization or settings changes.

@@ -1,5 +1,5 @@
-/** NATIVE COORDINATOR ONLY. Calls the same exported methods as the operator CLI.
- * Requires a fresh dedicated empty database. Never run inside Codex. */
+/** Calls the same exported methods as the operator CLI. Strictly synthetic:
+ * requires an explicit fresh dedicated empty loopback PG17 database. */
 import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,7 +20,7 @@ import { resolveSelector } from '../../src/lib/plan-selector';
 
 const fixtureStatements: string[] = [];
 const asOf = new Date('2026-11-17T00:00:00Z');
-async function fixture(sql: Sql) {
+export async function fixture(sql: Sql) {
   await sql.unsafe(readFileSync(new URL('./fixtures/supported-public-schema.sql', import.meta.url), 'utf8'));
   // Explicit fixture-only defaults, not production metadata. No unknown function stub.
   await sql.unsafe(`CREATE SEQUENCE public.o3_fixture_history_id START 1000;
@@ -465,6 +465,30 @@ export async function main() {
     const [lateState]=await sql`SELECT phase,(SELECT count(*)::text FROM public.models WHERE id=3014) AS source FROM o3_executor.commits WHERE plan_digest=${late.planDigest}`;
     assert.equal(lateState.phase,'APPLIED');assert.equal(lateState.source,'0');
     emit({mode:'late-scrape-restore',status:'REFUSED_ATOMICALLY',planDigest:late.planDigest});
+    // Actual bounded writer failure, with real PostgreSQL transactions. The
+    // price UPDATE commits before the separate history INSERT is refused.
+    // This is an existing residual, not an atomicity guarantee of this repair.
+    await sql`ALTER TABLE public.price_history ADD CONSTRAINT o3_synthetic_history_failure CHECK(new_input_price IS DISTINCT FROM 3)`;
+    const historyBeforeFailure = (await sql`SELECT count(*)::text AS n FROM public.price_history`)[0].n;
+    const failedWriter = applicationPaths(actualQueryClient(sql));
+    const failed = await failedWriter.run({success:true,source:'OpenRouter',prices:[{upstreamModelId:'openai/o3:batch',
+      modelSlug:'openai-o3-batch',modelName:'o3-batch',inputPricePer1M:3,outputPricePer1M:12,isAvailable:true}]},true);
+    assert.equal(failed.errors,1); assert.equal(failedWriter.retirements(),0);
+    assert.ok(failedWriter.errors.length > 0);
+    assert.equal((await sql`SELECT input_price_per_1m::text AS price FROM public.api_channel_prices WHERE id=15334`)[0].price,'3');
+    assert.equal((await sql`SELECT count(*)::text AS n FROM public.price_history`)[0].n,historyBeforeFailure);
+    assert.equal((await sql`SELECT count(*)::text AS n FROM public.api_channel_prices WHERE model_id=3192`)[0].n,'2');
+    assert.equal((await sql`SELECT is_available FROM public.api_channel_prices WHERE id=15031`)[0].is_available,false);
+    const [writerIdentity] = await sql`SELECT
+      (SELECT count(*)=1 AND bool_and(id=3192 AND slug='openai-o3-batch') FROM public.models
+        WHERE id IN (3014,3192) OR slug IN ('o3-(batch)','openai-o3-batch')) AS models,
+      (SELECT count(*)=1 AND bool_and(old_slug='o3-(batch)' AND model_id=3192) FROM public.model_slug_redirects) AS aliases,
+      (SELECT (to_jsonb(c)-'model_id')=(to_jsonb(b)-'model_id') FROM public.api_channel_prices c
+        JOIN o3_before_channels b USING(id) WHERE c.id=15031) AS retained`;
+    assert.ok(writerIdentity.models && writerIdentity.aliases && writerIdentity.retained);
+    await sql`ALTER TABLE public.price_history DROP CONSTRAINT o3_synthetic_history_failure`;
+    await assert.rejects(adapter.restore(late.planDigest),/conflict/);
+    emit({mode:'bound-history-failure',status:'PRICE_PERSISTED_HISTORY_REFUSED_ERROR_SURFACED_BOTH_RETIREMENTS_INHIBITED'});
     console.log(JSON.stringify({status:'PASS',profile:'authored affected shape, not live equivalence',journalPath:directory,modes:outputs},null,2));
     console.log('PASS real exported preview/freeze/rehearse/apply/repeat0/fresh-process resume/restore-rehearse/restore; negative drift and late scrape conflicts. Dedicated fixture ends APPLIED after deliberate late scrape.');
   } finally { await execution.end({timeout:5});await sql.end({timeout:5}); }

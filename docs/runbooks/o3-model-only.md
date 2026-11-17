@@ -8,10 +8,15 @@ quote/availability change, renumbering, sequence call or other model pair.
 `O3Executor` in `scripts/o3-model-only/adapter.ts` exports real `preview`, `freeze`,
 `rehearse`, `apply`, `repeat0`, `restoreRehearse`, `restore` and `resume` methods.
 The CLI uses those methods with an explicit `O3_DATABASE_URL`, never dotenv or an
-application DB singleton. No old archive executor is imported. Native execution
-has not been run inside Codex. Live equivalence/approval is still separate work.
+application DB singleton. The operator connection is caller-supplied; accepting
+that URL grants no authorization and does not enforce a production-mode gate.
+The strict loopback URL guard applies to synthetic test drivers only. No old
+archive executor is imported. Required PG acceptance of this repair is pending in normal Shell. Live equivalence/approval is still separate work.
 
-Preview opens a read-only repeatable-read transaction. It creates no files, DDL,
+Every runtime entrypoint requires PostgreSQL17 and origin replication role,
+matching the shipped SQL environment predicate. Setup remains SET-only; mutating
+and repeat modes acquire the complete public/marker locks before their first
+SELECT, including the environment check. Preview opens a read-only repeatable-read transaction. It creates no files, DDL,
 markers or sequence effects. Its deterministic nonnull SHA256 covers exact public
 models, safe channel fields, dependency/version witnesses, supported evaluated
 structure and sparse mutation decisions. Timestamps use six-digit UTC text;
@@ -30,8 +35,10 @@ Channel/quota opaque values remain server-side. Physical row-version witnesses
 are public conflict fingerprints, not content hashes of those opaque fields.
 
 An explicit, reviewed bootstrap creates only `o3_executor.commits`; preview and
-freeze never bootstrap. Apply/rehearse take a transaction advisory lock, bounded
-writer-excluding table locks and row locks, recheck evaluated schema, reread the
+freeze never bootstrap. All execution modes use READ COMMITTED. After SET LOCAL only, they acquire every
+required public relation and o3_executor.commits in one SHARE ROW EXCLUSIVE LOCK
+command, before any session/advisory/catalog/business SELECT. They then take the
+transaction advisory and row locks, recheck evaluated schema, reread the
 public inputs and rederive the digest before executing the same sparse method.
 All model reference families, source history/variants, alias collisions, exact two
 offers, OFF/LIVE and quota oldlabel0/canonical2 with channel15334 provenance must
@@ -105,7 +112,14 @@ existing behavior. Both scraper resolution and getOrCreate consult the exact
 source alias before lossy canonicalization; missing/rebound identities refuse
 creation. Lookup/update/history errors count as scrape failures and suppress
 unseen price/variant retirement. Quote update and history insert still use
-separate application transactions; a history failure can follow a price update.
+separate application transactions; a history failure can follow a price update. This remains an explicit residual:
+atomicity is not needed for the sparse executor's correctness because a changed
+price row version or a late history entry independently blocks restoration. The
+real writer test injects a bound history CHECK failure after a committed price
+update, requires an error result, zero history growth, retained15031 OFF, exactly
+two offers, and inhibition of both quote and variant retirement. No all-atomic
+claim is made. Unrelated absent/single-row behavior is preserved; ambiguity and
+retirement failure tightening already existed in the starting tree.
 
 Every shared production delta has a narrow purpose:
 
@@ -145,21 +159,24 @@ the broader unrelated index-dynamic import graph passes a global scripts check.
 Do not suppress global diagnostics. Subprocess EPERM failures inside Codex must
 be disclosed and rerun in normal Shell.
 
-Coordinator only, NORMAL Shell, fresh empty isolated database at the existing
-loopback PG55439 (provision it separately, never reuse the final APPLIED fixture):
+Coordinator only, NORMAL Shell: provision a NEW empty PG17 loopback cluster on
+port55439 with no production environment. Create three distinct fresh databases
+owned by synthetic role dedupe54. Supply these explicit URLs, substituting a new
+lowercase alphanumeric/underscore suffix each run, then execute:
 
 ```sh
-O3_TEST_DATABASE_URL='postgres://dedupe54@127.0.0.1:55439/dedupe54_test_o3_clean_0830' bash scripts/o3-model-only/validate-normal-shell.sh
+O3_TEST_DATABASE_URL="postgres://dedupe54@127.0.0.1:55439/dedupe54_test_o3_native_${RUN_ID}" \
+O3_RACE_TEST_DATABASE_URL="postgres://dedupe54@127.0.0.1:55439/dedupe54_test_o3_race_${RUN_ID}" \
+O3_CLOSURE_TEST_DATABASE_URL="postgres://dedupe54@127.0.0.1:55439/dedupe54_test_o3_closure_${RUN_ID}" \
+bash scripts/o3-model-only/validate-normal-shell.sh
 ```
 
-The script makes a unique `/tmp/o3-clean-pr-validation.XXXXXXXX` log directory,
-strips production DB variables, validates the explicit URL, runs full units,
-three typechecks, focused units and the same native driver. It provisions no DB.
-The exact standalone real-PG command from this worktree is:
-
-```sh
-env -u DATABASE_URL -u O3_DATABASE_URL -u ARGON_TEST_DATABASE_URL O3_TEST_DATABASE_URL='postgres://dedupe54@127.0.0.1:55439/dedupe54_test_o3_clean_0830' node --import tsx scripts/o3-model-only/postgres.integration.ts
-```
+RUN_ID must be set explicitly. The script strips production DB variables, checks
+all three URLs, runs full/focused units and all three typechecks, then runs the
+real lifecycle, executable concurrency controls, and all shipped psql/runtime
+parity cases. It provisions no DB and must refuse reused fixture databases.
+The six existing subprocess cases and unrelated opt-in skips remain in the full
+unit suite. No opt-in flag or skip was added for the new native regressions.
 
 The driver fails on absent URL, wrong host/port/name, overrides, nonempty DB or
 server identity mismatch. It prints each mode status/digest immediately, preserving
@@ -192,8 +209,11 @@ The clean PR now includes its self-contained native driver, test harness,
 public-model fixture, six minimal shared writer/identity support paths and an
 isolated `.github/workflows/o3-native.yml` check. It imports no old54/archive
 source. The existing generic PR CI is unchanged. The native workflow runs on
-every pull request and push to main; configure `o3 native PG17 lifecycle and
-rollback` as required in repository branch protection. There is no conditional
+every pull request and push to main. Before any separately authorized integration,
+manual review must confirm both generic `Type-check, unit tests, build` and native
+`o3 native PG17 lifecycle and rollback` success for the exact reviewed head and
+actual checkout/tree recorded in the manifest. No repository settings change is
+part of this work. There is no conditional
 skip, optional integration flag or continue-on-error. CI uses an explicit Linux
 Docker host-network PG17 container with listen_addresses=127.0.0.1 and port55439,
 not GitHub service network options or bridge port publishing. Readiness, driver
@@ -210,3 +230,38 @@ or production apply is authorized by fixture results. Fresh supported structure,
 privileges, public restoration metadata, same-snapshot references/quota, backup,
 writer coordination and approval of a fresh preview digest remain SRE/parent
 requirements. Do not combine old snapshots or reuse any fixture digest.
+
+Reviewed-head evidence replaces the old executable head/hash tables. After scope
+review, the coordinator runs `node scripts/o3-model-only/review-manifest.mjs ABS_OUTPUT_JSON` from this checkout. It records the actual HEAD commit/tree,
+tracked diff SHA256, hashes of every bounded source file, and whether the checkout
+is dirty. An uncommitted repair is a candidate, not an approved reviewed head.
+The coordinator attaches finite acceptance receipts (command, exit, PG version,
+synthetic database, case/mode results) only after the corresponding normal-Shell
+runs and regenerates the manifest after any change or commit. Never interpret
+an old file hash table or a green CI badge as SRE approval.
+
+The original SRE audit was unavailable during initial authoring. Its supplied
+byte-identical copy, `SRE_AUDIT_ORIGINAL.md` in the parent evidence directory, was
+read completely in the same-session 12:35 SGT continuation, together with
+`SRE_INPUT_READ.md`, `SRE_TRANSCRIPT_HANDOFF.json` and the shared independent-audit
+`INDEX.md`. Original report SHA256:
+`ee97a3d700585d874f3ca8f6bbe62fc6f85d378a8572d7227396896860550666`.
+This records the later read, without claiming an earlier read. The historical
+CASCADE tool_result is missing; the preserved normal-Shell PG17.11 controls are
+separate new evidence, not recovered historical receipts. The prior claim of
+no bugs/readiness remains withdrawn. The 12:29 acceptance run stopped at a
+synthetic fixture CHECK violation after ten offer/quota races; it did not reach
+the moved-state or SQL/runtime parity cases. The corrected candidate still
+requires a complete new normal-Shell run and independent SRE re-review. Keep
+PR370 draft. These files grant no merge, deploy, production connection, implicit
+bootstrap, production URL authorization or settings changes.
+
+The mandatory native check also runs the real exported concurrent-writer races in
+a third fresh database. A backend lock-wait witness precedes the actual third
+offer/old-quota DML; lock timeouts do not count as a successful gate. Same-driver
+SERIALIZABLE controls test LOCK snapshot behavior and CASCADE40001 independently
+of the READ COMMITTED executor. The psql harness preserves its original89
+invocations, then adds41 safety cases, for171 psql invocations plus actual runtime
+preview/freeze/apply/rehearse coverage. The machine-readable safety-case inventory
+explicitly maps the legacy historical-baseline refusal to fresh runtime success.
+No production or normal-Shell acceptance follows from authoring these tests.

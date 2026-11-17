@@ -5,6 +5,7 @@ import type { Sql } from 'postgres';
 import { FileJournal, type Prepared } from './file-journal';
 import { PAIR, MODEL_FK_TABLES, canonical, digest, invariant, requireDigest, assertPair, type Mode } from './exact';
 import { checkStructure, checkMarker, profile, qualified, identifier } from './structure';
+import { publicGates } from './public-gates';
 export { PAIR, MODEL_FK_TABLES, canonical, assertPair, MODES } from './exact';
 export type { Mode } from './exact';
 type TextRow = Record<string, string | null>;
@@ -37,16 +38,20 @@ async function setup(tx: Sql) {
   await tx`SET LOCAL lock_timeout='1s'`;
   await tx`SET LOCAL synchronous_commit='on'`;
   await tx`SET LOCAL idle_in_transaction_session_timeout='60s'`;
-  const [session] = await tx`SELECT current_setting('session_replication_role')='origin' AS ok`;
-  invariant(session.ok, 'session_replication_role must be origin');
+}
+async function sessionGate(tx: Sql) {
+  const [session] = await tx`SELECT current_setting('server_version_num')::integer BETWEEN 170000 AND 179999
+    AND current_setting('session_replication_role')='origin' AS ok`;
+  invariant(session.ok, 'Runtime environment requires PostgreSQL 17 and origin session_replication_role');
 }
 async function lock(tx: Sql) {
+  // Acquire the COMPLETE relation scope, including the durable marker, before
+  // any SELECT. READ COMMITTED then gives every post-lock statement a fresh
+  // view; all DML/DDL writers of these relations stay excluded through COMMIT.
+  // LOCK itself does not establish a snapshot (PG17 PlannedStmtRequiresSnapshot).
+  await tx.unsafe('LOCK TABLE ' + [...locks.map(qualified), 'o3_executor.commits'].sort().join(',') + ' IN SHARE ROW EXCLUSIVE MODE');
   const [r] = await tx`SELECT pg_try_advisory_xact_lock(3014,3192) AS ok`;
   invariant(r.ok, 'o3 executor advisory lock busy');
-  // Short, bounded writer exclusion closes predicate/new-reference and schema races.
-  // Row locks alone cannot protect zero-result FK/soft-reference predicates.
-  await tx.unsafe('LOCK TABLE ' + locks.map(qualified).join(',') + ' IN SHARE ROW EXCLUSIVE MODE');
-
 }
 async function models(tx: Sql): Promise<TextRow[]> {
   return await tx.unsafe(`SELECT ${projection('models')} FROM public.models WHERE id IN (3014,3192) OR slug IN ('o3-(batch)','openai-o3-batch') ORDER BY id`) as unknown as TextRow[];
@@ -57,14 +62,7 @@ async function channels(tx: Sql): Promise<TextRow[]> {
     FROM public.api_channel_prices WHERE id IN (15031,15334) OR model_id IN (3014,3192) ORDER BY id`) as unknown as TextRow[];
 }
 async function prerequisites(tx: Sql, moved: boolean) {
-  // to_char supplies canonical six-digit UTC timestamps. Explicitly refuse values
-  // outside its supported finite AD range instead of silently losing an era/infinity.
-  for (const table of ['models','api_channel_prices']) {
-    const cols=profile.columns.filter(c=>c.table===table && c.type==='timestamp with time zone');
-    const where=table==='models' ? 'id IN (3014,3192)' : 'id IN (15031,15334)';
-    const [r]=await tx.unsafe('SELECT coalesce(bool_and('+cols.map(c=>'('+identifier(c.name)+' IS NULL OR (isfinite('+identifier(c.name)+') AND extract(year FROM '+identifier(c.name)+') BETWEEN 1 AND 9999))').join(' AND ')+'),false) AS ok FROM '+qualified(table)+' WHERE '+where);
-    invariant(r.ok,'Unsupported finite AD timestamp range: '+table);
-  }
+  await publicGates(tx, moved);
   const ms = await models(tx);
   invariant(ms.length === (moved ? 1 : 2), 'Model row/slug collision or source/target missing');
   invariant(ms.some(m => m.id === '3192' && m.slug === PAIR.targetSlug && m.name === 'o3-batch'
@@ -86,16 +84,6 @@ async function prerequisites(tx: Sql, moved: boolean) {
     WHERE old_slug IN ('o3-(batch)','openai-o3-batch') OR model_id IN (3014,3192) ORDER BY old_slug`;
   invariant(moved ? redirects.length === 1 && canonical(redirects[0]) === canonical({ ...alias, model_id: '3192' })
     : redirects.length === 0, 'Alias collision/drift: require no prior aliases and only own redirect after apply');
-  const [q] = await tx`SELECT
-    count(*) FILTER(WHERE served_model='o3-(batch)')::text AS old,
-    count(*) FILTER(WHERE served_model='openai-o3-batch' AND is_current)::text AS current,
-    count(DISTINCT usage_mix_id) FILTER(WHERE served_model='openai-o3-batch' AND is_current)::text AS mixes,
-    coalesce(bool_and(coalesce(plan_id IS NULL AND plan_slug='payg:openrouter' AND "window"='monthly'
-      AND usage_mix_id IN ('coding-high-cache','chat')
-      AND CASE WHEN notes IS JSON OBJECT THEN notes::jsonb #>> '{source,api_channel_price_id}'='15334' ELSE false END,false))
-      FILTER(WHERE served_model='openai-o3-batch' AND is_current),false) AS bound
-    FROM public.quota_estimates WHERE served_model IN ('o3-(batch)','openai-o3-batch')`;
-  invariant(q.old === '0' && q.current === '2' && q.mixes === '2' && q.bound, 'Quota precondition conflict: require oldlabel0/canonical2, both mixes bound to channel15334');
   const mixes = await tx`SELECT id,cache_read_pct::text,input_pct::text,output_pct::text FROM public.usage_mixes
     WHERE id IN ('coding-high-cache','chat') ORDER BY id`;
   // Exact approved mix values are checked against the application constants below in SQL.
@@ -144,7 +132,7 @@ function prepared(p: Plan): Prepared {
 }
 export async function bootstrapO3(sql: Sql) {
   await sql.begin(async raw => {
-    const tx = raw as unknown as Sql; await setup(tx);
+    const tx = raw as unknown as Sql; await setup(tx); await sessionGate(tx);
     const [r] = await tx`SELECT to_regnamespace('o3_executor') IS NULL AS absent`;
     invariant(r.absent, 'Bootstrap requires absent o3_executor namespace; never changes an existing namespace');
     await tx.unsafe(readFileSync(new URL('./bootstrap.sql', import.meta.url), 'utf8'));
@@ -156,7 +144,7 @@ export class O3Executor {
   private journal() { invariant(this.journalDirectory, 'Explicit journal directory required'); return new FileJournal(this.journalDirectory); }
   async preview(): Promise<Plan> {
     return this.sql.begin('isolation level repeatable read read only', async raw => {
-      const tx = raw as unknown as Sql; await setup(tx); return plan(tx);
+      const tx = raw as unknown as Sql; await setup(tx); await sessionGate(tx); return plan(tx);
     }) as unknown as Promise<Plan>;
   }
   async freeze(expectedDigest: string) {
@@ -177,13 +165,11 @@ export class O3Executor {
       && canonical(journal.alias) === canonical(alias), 'Prepared journal identity/digest mismatch');
     let report: Record<string, unknown> | undefined;
     try {
-      await this.sql.begin('isolation level serializable', async raw => {
-        const tx = raw as unknown as Sql; await setup(tx); await lock(tx);
+      await this.sql.begin('isolation level read committed', async raw => {
+        const tx = raw as unknown as Sql; await setup(tx); await lock(tx); await sessionGate(tx);
         const schemaDigest = await checkStructure(tx); invariant(schemaDigest === journal.schemaDigest, 'Journal schema digest drift');
         await tx`SELECT id FROM public.models WHERE id IN (3014,3192) ORDER BY id FOR UPDATE`;
         await tx`SELECT id FROM public.api_channel_prices WHERE id IN (15031,15334) ORDER BY id FOR UPDATE`;
-        await checkMarker(tx);
-        await tx`LOCK TABLE o3_executor.commits IN SHARE ROW EXCLUSIVE MODE`;
         await checkMarker(tx);
         const markers = await tx`SELECT journal_hash,phase,post_state FROM o3_executor.commits WHERE plan_digest=${expectedDigest} FOR UPDATE`;
         if (!restoring) {
@@ -225,7 +211,7 @@ export class O3Executor {
   async resume(expectedDigest: string) {
     const j = this.journal().read(requireDigest(expectedDigest));
     return this.sql.begin('isolation level repeatable read read only', async raw => {
-      const tx = raw as unknown as Sql; await setup(tx); await checkMarker(tx);
+      const tx = raw as unknown as Sql; await setup(tx); await sessionGate(tx); await checkMarker(tx);
       const rows = await tx`SELECT journal_hash,phase FROM o3_executor.commits WHERE plan_digest=${expectedDigest}`;
       if (!rows.length) return { status: 'PREPARED_ONLY', planDigest: expectedDigest };
       invariant(rows[0].journal_hash === digest(j), 'Journal hash differs from durable commit proof');

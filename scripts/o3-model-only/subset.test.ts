@@ -165,6 +165,9 @@ test('bound feed history insertion failure propagates to result and blocks unsee
   const response = await app.run(result(), true);
   assert.equal(response.errors, 1); assert.equal(app.retirements(), 0);
   assert.equal(tables.price_history.length, 0);
+  assert.equal(tables.api_channel_prices[1].input_price_per_1m, 2, 'Price persists despite history failure');
+  assert.equal(tables.api_channel_prices[0].is_available, false);
+  assert.equal(tables.api_channel_prices.length, 2);
   assert.deepEqual(memory.mutations, ['api_channel_prices:update']);
   // Existing application upsert+history are separate transactions; an update
   // can precede a history failure. This test promises error propagation only.
