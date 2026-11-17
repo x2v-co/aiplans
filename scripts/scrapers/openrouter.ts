@@ -444,6 +444,7 @@ export async function scrapeOpenRouter(): Promise<ScraperResult> {
         const modelSlug = generateOpenRouterSlug(model.id);
 
         prices.push({
+          upstreamModelId: model.id,
           modelName,
           modelSlug,
           producerSlug: openRouterProducerSlug(model.id),
