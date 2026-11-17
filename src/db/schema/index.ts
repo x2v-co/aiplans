@@ -75,6 +75,10 @@ export const plans = pgTable('plans', {
   price: real('price'),
   priceUnit: text('price_unit'), // 'per_month', 'per_year', 'per_1m_tokens'
   annualPrice: real('annual_price'),
+  // Display-only promotion metadata; never inferred from annual billing.
+  promoEndsAt: timestamp('promo_ends_at', { withTimezone: true }),
+  regularPrice: real('regular_price'),
+  regularAnnualPrice: real('regular_annual_price'),
   tier: text('tier'), // 'free', 'basic', 'pro', 'team', 'enterprise'
   providerId: integer('provider_id').references(() => providers.id),
   productId: integer('product_id').references(() => providers.id), // References provider for plan ownership

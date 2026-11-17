@@ -17,7 +17,7 @@ interface CatalogQueryRoute {
 
 const CATALOG_QUERY_ROUTES: readonly CatalogQueryRoute[] = [
   { pattern: new RegExp(`^/${LOCALE}/models$`), params: ['promo'] },
-  { pattern: new RegExp(`^/${LOCALE}/plans$`), params: ['kind'] },
+  { pattern: new RegExp(`^/${LOCALE}/plans$`), params: ['kind', 'promo'] },
   { pattern: new RegExp(`^/${LOCALE}/api-pricing$`), params: ['q', 'sort', 'order', 'china', 'region', 'channel', 'promo'] },
   { pattern: new RegExp(`^/${LOCALE}/compare/models$`), params: ['models'] },
   { pattern: new RegExp(`^/${LOCALE}/providers/[^/]+$`), params: ['period'] },

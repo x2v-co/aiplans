@@ -14,10 +14,11 @@ const LINE_LABEL = {
 } as const;
 
 /**
- * Server-rendered limited-time offer mark. `now` is the request time from the
- * page so an expired `promo_ends_at` disappears on the next request. Callers
- * that render this must stay dynamic; a static/ISR cache would keep the mark
- * after the cutoff.
+ * Server-rendered limited-time offer mark evaluated at the page's render time.
+ * Public pages retain ISR300, so cached HTML may show the previous mark until
+ * successful revalidation (including stale-while-revalidate or refresh errors).
+ * Filtered routes render per request. This component does not require callers
+ * to disable their cache or promise exact-cutoff HTML freshness.
  */
 export function LimitedTimeOfferMark({
   row,
