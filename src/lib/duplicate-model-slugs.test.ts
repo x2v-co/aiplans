@@ -39,5 +39,5 @@ test('duplicates leave the sitemap but keep their robots tag; junk rows are noin
 
 test('model page metadata canonicalizes duplicate rows', () => {
   const page = readFileSync('src/app/[locale]/models/[slug]/page.tsx', 'utf8');
-  assert.match(page, /path: `\/models\/\$\{canonicalModelSlug\(slug\)\}`/);
+  assert.match(page, /path: `\/models\/\$\{modelCanonicalSlug\(slug\)\}`/);
 });

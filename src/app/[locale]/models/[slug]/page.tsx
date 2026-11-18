@@ -1,6 +1,6 @@
 import { deriveProviderRegions, shouldShowChinaBadge, chinaAccessMark } from '@/lib/supported-regions';
 import { getSeoIndexCatalog } from '@/lib/seo-index-data';
-import { modelShouldIndex } from '@/lib/seo-index-policy';
+import { modelCanonicalSlug, modelShouldIndex } from '@/lib/seo-index-policy';
 import { localizeProvider, providerDisplayName } from '@/lib/provider-display-name';
 import { publicModelName } from '@/lib/public-catalog-copy';
 import { localizedModelDescription } from '@/lib/model-description-locale';
@@ -49,7 +49,6 @@ import SiteHeader from '@/components/SiteHeader';
 import { CouponBadge } from "@/components/coupon-badge";
 import { getActiveCouponMap } from "@/lib/coupons";
 import { modelPageName } from '@/lib/model-names';
-import { canonicalModelSlug } from '@/lib/duplicate-model-slugs';
 import { guideForModelSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import ModelBenchmarkPanel from '@/components/model-benchmark-panel';
 import CodingAgentModelSection from '@/components/coding-agent-model-section';
@@ -124,8 +123,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     ...buildMetadata({
       locale: locale === 'zh' ? 'zh' : 'en',
-      // A duplicate row's page points Google at the row that should rank.
-      path: `/models/${canonicalModelSlug(slug)}`,
+      // A duplicate row's page points Google at the row that should rank
+      // (batch variants are noindex and keep a self canonical).
+      path: `/models/${modelCanonicalSlug(slug)}`,
       noindex: !indexFacts || !modelShouldIndex(indexFacts),
       title: {
         en: `${pricing.title} | aiplans.dev`,
