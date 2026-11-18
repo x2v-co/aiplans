@@ -1,5 +1,5 @@
 import { isGluedModelSlug } from './glued-model-slug';
-import { isDuplicateModelSlug, JUNK_MODEL_SLUGS } from './duplicate-model-slugs';
+import { canonicalModelSlug, isDuplicateModelSlug, JUNK_MODEL_SLUGS } from './duplicate-model-slugs';
 import { selectIndexablePlanComparisons, type PlanComparisonCandidate } from './search-indexing';
 import { publicModelDescription } from './public-catalog-copy';
 
@@ -27,6 +27,24 @@ export interface SeoIndexFacts extends PlanComparisonCandidate {
  */
 export function isRouterAliasSlug(slug: string): boolean {
   return slug.startsWith('~');
+}
+
+/** Batch-API variants (`openai-gpt-5-2-batch`, `claude-opus-5:batch`,
+ * `gpt-5.2-(batch)`). Each page repeats its base model's page with the batch
+ * discount applied (~97% identical text in the 2026-11 audit; 76 of the 81 in
+ * the sitemap had a base model page), so Google files them as near-duplicates.
+ * They are noindex, follow and out of the sitemap; the pages stay reachable.
+ */
+export function isBatchVariantSlug(slug: string): boolean {
+  return /(?:[-:]batch|-\(batch\))$/i.test(slug);
+}
+
+/** Canonical path segment for a model page. Batch variants are noindex and
+ * keep a self canonical: noindex plus a canonical pointing at another
+ * (also noindex) batch row would send Google mixed signals.
+ */
+export function modelCanonicalSlug(slug: string): string {
+  return isBatchVariantSlug(slug) ? slug : canonicalModelSlug(slug);
 }
 
 export function hasModelPriceData(facts: SeoIndexFacts): boolean {
@@ -60,7 +78,7 @@ export function selectSeoModels<T extends SeoIndexFacts>(rows: T[], applyPolicy 
   return rows.filter(row => row.active && row.is_llm && row.available_api_count > 0)
     .slice(0, 2000)
     .filter(row => !isGluedModelSlug(row.slug) && (!applyPolicy
-      || (!isRouterAliasSlug(row.slug) && !isDuplicateModelSlug(row.slug)
+      || (!isRouterAliasSlug(row.slug) && !isBatchVariantSlug(row.slug) && !isDuplicateModelSlug(row.slug)
         && !JUNK_MODEL_SLUGS.has(row.slug) && !isLowValueModel(row))));
 }
 
@@ -95,8 +113,10 @@ export function selectSeoComparisons<T extends SeoIndexFacts>(rows: T[], applyPo
 
 export function modelShouldIndex(row: SeoIndexFacts): boolean {
   // Duplicate rows keep their robots tag (they declare rel=canonical instead;
-  // noindex + a cross-page canonical sends mixed signals). Junk rows are noindex.
+  // noindex + a cross-page canonical sends mixed signals). Junk rows and batch
+  // variants are noindex.
   return row.active && !isGluedModelSlug(row.slug) && !isRouterAliasSlug(row.slug)
+    && !isBatchVariantSlug(row.slug)
     && !JUNK_MODEL_SLUGS.has(row.slug) && !isLowValueModel(row);
 }
 

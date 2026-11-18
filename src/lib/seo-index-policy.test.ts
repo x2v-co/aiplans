@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { buildMetadata } from './seo';
 import {
   isLowValueModel, isLowValuePlanComparison, modelShouldIndex, compareSeoFallback,
-  selectSeoModels, selectSeoComparisons, SEO_COMPARISON_ALLOWLIST, isRouterAliasSlug, type SeoIndexFacts,
+  selectSeoModels, selectSeoComparisons, SEO_COMPARISON_ALLOWLIST, isRouterAliasSlug, isBatchVariantSlug, modelCanonicalSlug, type SeoIndexFacts,
 } from './seo-index-policy';
 
 export const facts = (overrides: Partial<SeoIndexFacts> = {}): SeoIndexFacts => ({
@@ -136,4 +136,22 @@ test('OpenRouter ~alias routing pages are noindex and out of the sitemap', () =>
   assert.deepEqual(selectSeoModels([alias, concrete]).map(row => row.slug), ['deepseek-v4-flash']);
   // The read-only report's "before" view (policy off) keeps the old candidate set.
   assert.equal(selectSeoModels([alias], false).length, 1);
+});
+
+test('batch-API variants are noindex, out of the sitemap and self-canonical', () => {
+  for (const slug of ['openai-gpt-5-2-batch', 'claude-opus-5:batch', 'gpt-5.2-(batch)', 'gemma-4-31b-batch']) {
+    assert.equal(isBatchVariantSlug(slug), true, slug);
+  }
+  for (const slug of ['gpt-5.2', 'batch-runner', 'openai-gpt-5-2']) {
+    assert.equal(isBatchVariantSlug(slug), false, slug);
+  }
+  const priced = { api_price_count: 2 };
+  const batch = facts({ slug: 'openai-gpt-5-2-batch', ...priced });
+  const base = facts({ slug: 'gpt-5.2', ...priced });
+  assert.equal(modelShouldIndex(batch), false);
+  assert.equal(modelShouldIndex(base), true);
+  assert.deepEqual(selectSeoModels([batch, base]).map(row => row.slug), ['gpt-5.2']);
+  // A batch duplicate does not point its canonical at another noindex batch row.
+  assert.equal(modelCanonicalSlug('gpt-5.2-(batch)'), 'gpt-5.2-(batch)');
+  assert.equal(modelCanonicalSlug('openai-gpt-5-4'), 'gpt-5.4');
 });
