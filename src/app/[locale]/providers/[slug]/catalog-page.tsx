@@ -297,7 +297,7 @@ export default async function ProviderPage({
           <ProviderApiModels products={apiModels} locale={locale} now={now} showTrust={showTrust} />
         </section>
 
-        {showTrust && <><TrustScopeNote locale={locale} />
+        {showTrust && <><TrustScopeNote locale={locale} kind="provider" slug={providerSlug} />
           <DataTrustLabel showUnknownDate record={`provider:${providerSlug}:summary`} locale={locale}
             fact={calculatedTrust(locale, '价格范围、最低价、套餐摘要和 FAQ 由下列记录计算；各字段来源与核验时间独立，不代表全部已核验', now)} />
         </>}

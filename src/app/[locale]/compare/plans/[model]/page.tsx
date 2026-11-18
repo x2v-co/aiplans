@@ -1,4 +1,4 @@
-import { isTrustPage } from '@/lib/data-trust';
+import { isTrustDisplayPage } from '@/lib/data-trust';
 import { guideForModelSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import { notFound, permanentRedirect } from "next/navigation";
 import { getPlanComparison } from "@/lib/compare-plans";
@@ -82,7 +82,7 @@ export default async function ComparePlansModelPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqPage(faqs) }} />
-      <ComparePlansView showTrust={isTrustPage(locale, 'compare-plan', modelSlug)} now={new Date().toISOString()} pricingGuide={pricingGuide} locale={locale} data={data} faqs={faqs} couponByProvider={couponByProvider} quotaEstimates={quotaEstimates} />
+      <ComparePlansView showTrust={isTrustDisplayPage(locale, 'compare-plan', modelSlug)} now={new Date().toISOString()} pricingGuide={pricingGuide} locale={locale} data={data} faqs={faqs} couponByProvider={couponByProvider} quotaEstimates={quotaEstimates} />
     </>
   );
 }

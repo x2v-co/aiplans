@@ -1,5 +1,5 @@
-import type { TrustAssessment } from '@/lib/data-trust';
-import { featureLooksEstimated } from '@/lib/data-trust';
+import type { TrustAssessment, TrustPageKind } from '@/lib/data-trust';
+import { featureLooksEstimated, isTrustPage } from '@/lib/data-trust';
 import { stripDisplayUrls } from '@/lib/plan-card-display';
 
 function externalUrl(url: string): boolean {
@@ -71,7 +71,12 @@ export function DataTrustLabel({ fact, locale, showUnknownDate = false, record }
 }
 
 /** Sampling is a selection decision, never evidence of official verification. */
-export function TrustScopeNote({ locale }: { locale: string }) {
+export function TrustScopeNote({ locale, kind, slug }: { locale: string; kind: TrustPageKind; slug: string }) {
+  if (!isTrustPage(locale, kind, slug)) return <p data-trust-scope="legacy-selected-review" className="mb-5 max-w-4xl text-sm text-zinc-600 dark:text-zinc-300">
+    {locale === 'zh'
+      ? '本页保留根据首页热门入口选取的既有核验页面标识，不属于本轮详情页 PV 样本。历史记录不代表本轮已核验当前价格或权益；来源、适用条件和核验时间按字段标注，缺失即待核验。估算不是确定权益。'
+      : 'This page retains labels from the existing review selection based on homepage popular entries; it is outside this detail-page PV sample. Historical records do not confirm current prices or entitlements in this review. Sources, conditions and verification times are field-specific; missing evidence needs verification. Estimates are not confirmed entitlements.'}
+  </p>;
   return <p data-trust-scope="pv-detail-sample-20261118" className="mb-5 max-w-4xl text-sm text-zinc-600 dark:text-zinc-300">
     {locale === 'zh'
       ? '本页属于选定的 10 个详情页 PV 样本（新加坡时间 2026-10-21 至 11-17），不代表全站排名或全部已获官方核验。来源、适用条件和核验时间按字段标注；缺失即待核验。估算不是确定权益。'

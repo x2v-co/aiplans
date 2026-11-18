@@ -7,7 +7,7 @@ import { createTranslator, NextIntlClientProvider } from 'next-intl';
 import en from '../../messages/en.json';
 import zh from '../../messages/zh.json';
 import { loadQueryModule } from './test-helpers/query-module';
-import { TOP_TRUST_PAGES, isTrustPage, channelListPriceTrust, planEntitlementTrust, planPriceTrust, quotaEstimateTrust, reviewedPlanSource, variantPriceTrust, usagePriceTrust } from './data-trust';
+import { TOP_TRUST_PAGES, LEGACY_TRUST_PAGES, isTrustDisplayPage, isTrustPage, channelListPriceTrust, planEntitlementTrust, planPriceTrust, quotaEstimateTrust, reviewedPlanSource, variantPriceTrust, usagePriceTrust } from './data-trust';
 import type { VerifiedQuotaEstimate } from './quota/estimates';
 import type { PlanComparison } from './compare-plans';
 import type { Metadata } from 'next';
@@ -62,8 +62,8 @@ function fact(html: string, record: string) {
   const escaped = record.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const match = html.match(new RegExp(`<aside[^>]*data-trust-record="${escaped}"[\\s\\S]*?</aside>`));
   assert.ok(match, `real rendered field label ${record}`);
-  assert.match(match[0], /适用条件/);
-  assert.match(match[0], /最近核验|核验时间|估算 \/ 方法记录日期/);
+  assert.match(match[0], /适用条件|Conditions/);
+  assert.match(match[0], /最近核验|核验时间|估算 \/ 方法记录日期|Last verified|Verification time|Estimate \/ method record date/);
   return match[0];
 }
 
@@ -200,19 +200,65 @@ for (const page of TOP_TRUST_PAGES) test(`synthetic real-route coverage: ${page.
   }
 });
 
-test('actual runtime routes exclude all English sample variants and out-of-sample paths', async t => {
+test('runtime English sample variants retain only PR379 coverage and outside-union paths stay unlabeled', async t => {
   t.mock.timers.enable({ apis: ['Date'], now: new Date(NOW) });
   for (const page of TOP_TRUST_PAGES) {
     const html = page.kind === 'compare-plan' ? (await compareHtml(page.slug, 'en')).html
       : page.kind === 'provider' ? await providerHtml(page.slug, 'en') : await modelHtml(page.slug, 'en');
-    assert.doesNotMatch(html, /data-trust-label=|data-trust-scope=/, page.path);
+    assert.equal(isTrustPage('en', page.kind, page.slug), false, page.path);
+    if (page.kind === 'provider' && ['openai', 'google'].includes(page.slug)) {
+      assert.match(html, /data-trust-label=/);
+      assert.match(html, /data-trust-scope="legacy-selected-review"/);
+      assert.match(html, /outside this detail-page PV sample/);
+      assert.doesNotMatch(html, /data-trust-scope="pv-detail-sample/);
+    } else assert.doesNotMatch(html, /data-trust-label=|data-trust-scope=/, page.path);
   }
-  for (const [kind, slug] of [['model', 'openai-gpt-6-sol'], ['provider', 'anthropic'], ['compare-plan', 'synthetic-outside']] as const) {
+  for (const [kind, slug] of [['model', 'synthetic-outside'], ['provider', 'fixture-unselected'], ['compare-plan', 'synthetic-outside']] as const) {
     assert.equal(isTrustPage('zh', kind, slug), false);
+    assert.equal(isTrustDisplayPage('zh', kind, slug), false);
     const html = kind === 'model' ? await modelHtml(slug, 'zh') : kind === 'provider' ? await providerHtml(slug, 'zh') : (await compareHtml(slug, 'zh')).html;
     assert.doesNotMatch(html, /data-trust-label=|data-trust-scope=/);
   }
 });
+
+// Every PR379 locale path must keep actual route labels, not merely a helper entry.
+for (const page of LEGACY_TRUST_PAGES) for (const locale of ['zh', 'en']) {
+  test(`retained PR379 real-route coverage: /${locale}/${page.kind}/${page.slug}`, async t => {
+    t.mock.timers.enable({ apis: ['Date'], now: new Date(NOW) });
+    const html = page.kind === 'model' ? await modelHtml(page.slug, locale) : await providerHtml(page.slug, locale);
+    const sampled = isTrustPage(locale, page.kind, page.slug);
+    assert.equal(isTrustDisplayPage(locale, page.kind, page.slug), true);
+    assert.equal(sampled, locale === 'zh' && page.kind === 'provider' && ['openai', 'google'].includes(page.slug));
+    assert.match(html, sampled ? /data-trust-scope="pv-detail-sample-20261118"/ : /data-trust-scope="legacy-selected-review"/);
+    if (!sampled) {
+      assert.doesNotMatch(html, /data-trust-scope="pv-detail-sample|本页属于选定的 10 个详情页 PV 样本|This page belongs to a selected ten-detail-page/);
+      assert.match(html, locale === 'zh' ? /不属于本轮详情页 PV 样本/ : /outside this detail-page PV sample/);
+      assert.match(html, locale === 'zh' ? /历史记录不代表本轮已核验当前价格或权益/ : /Historical records do not confirm current prices or entitlements/);
+    }
+    for (const p of plans) {
+      const price = fact(html, `plan:${p.slug}:price`);
+      assert.match(price, /data-trust-unverified="true"/);
+      assert.match(price, locale === 'zh' ? /历史价格记录/ : /Historical price record/);
+      const rights = fact(html, `plan:${p.slug}:entitlements`);
+      assert.match(rights, /data-trust-unverified="true"/);
+      assert.match(rights, locale === 'zh' ? /核验时间：未知/ : /Verification time: unknown/);
+      assert.doesNotMatch(rights, /<time|>已核验<|>Verified</);
+      assert.match(fact(html, `plan:${p.slug}:calculated`), /data-trust-estimated="true"/);
+      if (p.id === 2) {
+        assert.match(price, /data-trust-expired="true"/);
+        assert.match(price, locale === 'zh' ? /核验时间：未知/ : /Verification time: unknown/);
+        assert.doesNotMatch(price, /reseller\.example\.test/);
+      } else assert.match(price, /dateTime="2026-11-01"/);
+    }
+    const variant = fact(html, 'variant:11:price');
+    assert.match(variant, /data-trust-unverified="true"/);
+    assert.doesNotMatch(variant, /<time|producer\.example\.test/);
+    if (page.kind === 'model') {
+      assert.match(fact(html, 'channel:10:summary-price'), /2026-11-02/);
+      assert.match(fact(html, 'usage:22'), /data-trust-unverified="true"/);
+    } else assert.match(fact(html, 'channel:10:price'), /2026-11-02/);
+  });
+}
 
 test('missing provenance cannot inherit homepage, price, variant or estimate verification', () => {
   const now = new Date(NOW);

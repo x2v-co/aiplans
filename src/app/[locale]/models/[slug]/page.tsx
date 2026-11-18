@@ -705,7 +705,7 @@ export default async function ModelPage({
 
         <CodingAgentModelSection rows={codingAgentRows} locale={locale} />
 
-        {showTrust && <><TrustScopeNote locale={locale} />
+        {showTrust && <><TrustScopeNote locale={locale} kind="model" slug={slug} />
           <DataTrustLabel showUnknownDate record={`model:${slug}:specifications`} locale={locale}
             fact={unknownFactTrust(locale, '模型上下文、能力和适用范围：仅存储记录，未记录逐字段核验', now)} />
           <DataTrustLabel showUnknownDate record={`model:${slug}:comparison-summary`} locale={locale}

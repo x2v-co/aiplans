@@ -3,9 +3,10 @@ import { introductoryEndDate, isIntroductoryPriceActive, promoTimeZone, promoTim
 /**
  * Exact locale paths from the frozen 2026-11-18 detail-page PV sample:
  * SG 2026-10-21..11-17, 311 PV, cutoff 15 vs 14 (no cutoff tie).
- * This sample selects labeling scope; it does not certify any source fact or
- * establish a user-approved acceptance window. Legacy TOP_TRUST_PAGES and
- * slug helper names remain for callers, but membership always includes locale.
+ * This sample adds labeling coverage without removing the PR379 review pages.
+ * It does not certify any source fact or establish an acceptance window.
+ * TOP_TRUST_PAGES/isTrustPage describe only the sample; display helpers retain
+ * the legacy bilingual pages as well. Sample membership always includes locale.
  * Staleness uses the same 30-day window as the read-only price/plan audit.
  * Nothing here writes the database.
  */
@@ -32,6 +33,20 @@ export const TOP_TRUST_PAGES: readonly TrustPage[] = [
   { rank: 8, kind: 'provider', slug: 'deepseek', path: '/zh/providers/deepseek' },
   { rank: 9, kind: 'model', slug: 'deepseek-v4.1-flash', path: '/zh/models/deepseek-v4.1-flash' },
   { rank: 10, kind: 'compare-plan', slug: 'kimi-k3', path: '/zh/compare/plans/kimi-k3' },
+];
+
+/** PR379 display coverage, selected for review using homepage entries, not PV. */
+export const LEGACY_TRUST_PAGES: readonly Pick<TrustPage, 'kind' | 'slug'>[] = [
+  { kind: 'model', slug: 'anthropic-claude-fable-5-1' },
+  { kind: 'model', slug: 'anthropic-claude-opus-5-5' },
+  { kind: 'model', slug: 'anthropic-claude-sonnet-5-5' },
+  { kind: 'model', slug: 'openai-gpt-6-astra' },
+  { kind: 'model', slug: 'openai-gpt-6-1-sol' },
+  { kind: 'model', slug: 'openai-gpt-6-sol' },
+  { kind: 'provider', slug: 'openai' },
+  { kind: 'provider', slug: 'anthropic' },
+  { kind: 'provider', slug: 'google' },
+  { kind: 'provider', slug: 'zhipu-china' },
 ];
 
 const REVIEWED_API_SOURCES: Record<string, { zh: string; en: string; url: string }> = {
@@ -125,12 +140,18 @@ export function isTrustPage(locale: string, kind: TrustPageKind, slug: string): 
   return TOP_TRUST_PAGES.some(page => page.path === `/${locale}/${family}/${slug}`);
 }
 
+/** Display is the old 20 locale paths plus eight new exact sample paths. */
+export function isTrustDisplayPage(locale: string, kind: TrustPageKind, slug: string): boolean {
+  return isTrustPage(locale, kind, slug) || ((locale === 'zh' || locale === 'en')
+    && LEGACY_TRUST_PAGES.some(page => page.kind === kind && page.slug === slug));
+}
+
 export function isTrustModelSlug(slug: string, locale: string): boolean {
-  return isTrustPage(locale, 'model', slug);
+  return isTrustDisplayPage(locale, 'model', slug);
 }
 
 export function isTrustProviderSlug(slug: string, locale: string): boolean {
-  return isTrustPage(locale, 'provider', slug);
+  return isTrustDisplayPage(locale, 'provider', slug);
 }
 
 export function safeSourceUrl(value: unknown): string | null {

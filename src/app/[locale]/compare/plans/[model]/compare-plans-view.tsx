@@ -217,7 +217,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
       <SiteHeader locale={locale} />
 
       <main className="container mx-auto px-4 py-8">
-        {showTrust && <TrustScopeNote locale={locale} />}
+        {showTrust && <TrustScopeNote locale={locale} kind="compare-plan" slug={data.model.slug} />}
         {showTrust && <>
           <DataTrustLabel showUnknownDate record={`comparison:${model.slug}:summary`} locale={locale}
             fact={calculatedTrust(locale, '最低价、各组起价、年付折扣、相对差价和 FAQ：按所列套餐与汇率计算；不继承最新一条价格核验日期', clock)} />
