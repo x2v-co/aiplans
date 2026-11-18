@@ -300,8 +300,8 @@ export default async function ProviderPage({
         {showTrust && (
           <p className="mb-5 max-w-4xl text-sm text-zinc-600 dark:text-zinc-300">
             {isZh
-              ? '本页在前 10 高流量核验范围内。每条套餐标价和权益都标出来源、适用条件、最近核验时间，以及是否过期或估算。估算不是确定权益。'
-              : 'This page is in the top-10 traffic review set. Each plan price and entitlement shows its source, conditions, last verification, and whether it is expired or an estimate. Estimates are not confirmed entitlements.'}
+              ? '本页属于根据首页热门入口选取的核验页面。每条套餐标价和权益都标出来源、适用条件、最近核验时间，以及是否过期或估算。估算不是确定权益。'
+              : 'This page was selected for review using homepage popular entries. Each plan price and entitlement shows its source, conditions, last verification, and whether it is expired or an estimate. Estimates are not confirmed entitlements.'}
           </p>
         )}
 
@@ -337,13 +337,17 @@ export default async function ProviderPage({
                   </p>
                 </div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {kindPlans.map((plan) => (
-                <Card key={plan.id} id={plan.slug} className={plan.tier === 'pro' ? 'border-blue-500' : ''}>
+                  {kindPlans.map((plan) => {
+                    // Expiry takes priority even outside the selected trust-label pages.
+                    const priceTrust = planPriceTrust({ ...plan, ...providerPlanPrice(plan, showYearly) }, planSource, locale, now, provider.slug);
+                    const isPopular = plan.tier === 'pro' && !priceTrust.flags.expired;
+                    return (
+                <Card key={plan.id} id={plan.slug} className={isPopular ? 'border-blue-500' : ''}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <CardTitle>{plan.name}</CardTitle>
-                      {plan.tier === 'pro' && (
-                        <Badge className="bg-blue-600">Popular</Badge>
+                      {isPopular && (
+                        <Badge className="bg-blue-600">{isZh ? '热门' : 'Popular'}</Badge>
                       )}
                     </div>
                     <CardDescription>
@@ -366,7 +370,7 @@ export default async function ProviderPage({
                       <ProviderPlanPrice plan={plan} showYearly={showYearly} currency={planCurrency(plan)} locale={locale} now={now} />
                       <PlanLimitedTimeOfferMark plan={{ ...plan, providers: { slug: providerSlug, region: provider.region } }} locale={locale} now={now} yearly={showYearly} />
                       {showTrust && (
-                        <DataTrustLabel fact={planPriceTrust({ ...plan, ...providerPlanPrice(plan, showYearly) }, planSource, locale, now, provider.slug)} locale={locale} />
+                        <DataTrustLabel fact={priceTrust} locale={locale} />
                       )}
                       <div className="mt-1"><QuotaBenchBadge planSlug={plan.slug} locale={locale} /></div>
                     </div>
@@ -486,7 +490,8 @@ export default async function ProviderPage({
                     })()}
                   </CardContent>
                 </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             ))}

@@ -686,8 +686,8 @@ export default async function ModelPage({
         {showTrust && (
           <p className="mb-6 max-w-4xl text-sm text-zinc-600 dark:text-zinc-300">
             {isZh
-              ? '本页在前 10 高流量核验范围内。每条关键价格和权益都标出来源、适用条件、最近核验时间，以及是否过期或估算。估算不是确定权益。'
-              : 'This page is in the top-10 traffic review set. Each key price and entitlement shows its source, conditions, last verification, and whether it is expired or an estimate. Estimates are not confirmed entitlements.'}
+              ? '本页属于根据首页热门入口选取的核验页面。每条关键价格和权益都标出来源、适用条件、最近核验时间，以及是否过期或估算。估算不是确定权益。'
+              : 'This page was selected for review using homepage popular entries. Each key price and entitlement shows its source, conditions, last verification, and whether it is expired or an estimate. Estimates are not confirmed entitlements.'}
           </p>
         )}
 
