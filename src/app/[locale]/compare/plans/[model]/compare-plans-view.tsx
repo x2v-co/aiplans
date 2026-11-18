@@ -3,6 +3,8 @@ import { chinaAccessMark, formatAvailableIn } from '@/lib/supported-regions';
 
 import { subscriptionSearchCopy } from '@/lib/subscription-search';
 
+import { DataTrustLabel, EntitlementLine, TrustScopeNote } from '@/components/data-trust-label';
+import { calculatedTrust, planPriceTrust, planEntitlementTrust, reviewedPlanSource, unknownFactTrust } from '@/lib/data-trust';
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -38,6 +40,8 @@ import { couponsFor, type CouponOffer } from "@/lib/coupon-format";
 
 interface ComparePlansViewProps {
   locale: string;
+  showTrust?: boolean;
+  now?: string;
   /** Comparison payload, already fetched and shaped on the server. */
   data: PlanComparison;
   /** Data-driven FAQ, built on the server and mirrored as FAQPage JSON-LD. */
@@ -67,7 +71,8 @@ interface PlanGroup {
   plans: any[];
 }
 
-export default function ComparePlansView({ locale, data, faqs, couponByProvider, quotaEstimates, pricingGuide }: ComparePlansViewProps) {
+export default function ComparePlansView({ locale, data, faqs, couponByProvider, quotaEstimates, pricingGuide, showTrust = false, now }: ComparePlansViewProps) {
+  const clock = now ? new Date(now) : new Date();
   // Billing toggle
   const [showYearly, setShowYearly] = useState(false);
   // Every provider starts expanded, and it has to be the *initial* state rather
@@ -212,6 +217,13 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
       <SiteHeader locale={locale} />
 
       <main className="container mx-auto px-4 py-8">
+        {showTrust && <TrustScopeNote locale={locale} kind="compare-plan" slug={data.model.slug} />}
+        {showTrust && <>
+          <DataTrustLabel showUnknownDate record={`comparison:${model.slug}:summary`} locale={locale}
+            fact={calculatedTrust(locale, '最低价、各组起价、年付折扣、相对差价和 FAQ：按所列套餐与汇率计算；不继承最新一条价格核验日期', clock)} />
+          <DataTrustLabel showUnknownDate record={`model:${model.slug}:context`} locale={locale}
+            fact={unknownFactTrust(locale, '模型上下文和最大输出：模型记录未附逐字段来源与核验日期', clock)} />
+        </>}
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
           <Link href={`/${locale}`} className="hover:text-blue-600">Home</Link>
@@ -394,7 +406,10 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                     <div className="p-4 bg-white dark:bg-black">
                       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {group.plans.map((plan: any, planIndex: number) => {
-                          const isRecommended = groupIndex === 0 && planIndex === 0 && plan.pricing.monthly > 0;
+                          const source = reviewedPlanSource(plan.channel?.slug, locale, { name: plan.channel?.name, pricing_url: plan.channel?.pricingUrl });
+                          const priceTrust = planPriceTrust(plan.trust ?? { price: plan.pricing.monthly }, source, locale, clock, plan.channel?.slug, { historicalOnly: showTrust });
+                          const entitlementTrust = planEntitlementTrust(plan.trust ?? {}, source, locale, clock);
+                          const isRecommended = groupIndex === 0 && planIndex === 0 && plan.pricing.monthly > 0 && !(showTrust && priceTrust.flags.expired);
                           const price = showYearly
                             ? (plan.pricing.yearlyMonthly || plan.pricing.monthly)
                             : plan.pricing.monthly;
@@ -404,6 +419,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                           return (
                             <Card
                               key={plan.plan.id}
+                              data-comparison-plan={plan.plan.slug}
                               className={`relative flex flex-col ${
                                 isRecommended
                                   ? "border-blue-500 shadow-lg shadow-blue-100 dark:shadow-blue-900/20"
@@ -461,6 +477,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                                   <div className="mt-1"><QuotaBenchBadge planSlug={plan.plan.slug} locale={locale} /></div>
                                 </div>
 
+                                {showTrust && <DataTrustLabel showUnknownDate record={`plan:${plan.plan.slug}:price`} fact={priceTrust} locale={locale} />}
                                 {/* Key Limits - Always show */}
                                 <div className="space-y-1 mb-2">
                                   <div className="flex items-center justify-between text-xs">
@@ -501,6 +518,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                                   </div>
                                 </div>
 
+                                {showTrust && <DataTrustLabel showUnknownDate record={`plan:${plan.plan.slug}:entitlements`} fact={entitlementTrust} locale={locale} />}
                                 {/* Effective unit rate. Sits above Features
                                     because it is the number that makes two
                                     vendors' plans actually comparable. */}
@@ -513,8 +531,10 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                                   </div>
                                 )}
 
+                                {showTrust && <DataTrustLabel showUnknownDate record={`plan:${plan.plan.slug}:calculated`} locale={locale}
+                                  fact={calculatedTrust(locale, '有效单价、相对额度和年付折扣：按本套餐与基准套餐原始值及假设计算，不确认官方额度', clock)} />}
                                 {/* Features - Show more */}
-                                <PlanQuotaEstimates estimates={quotaEstimates} planSlug={plan.plan.slug} locale={locale} />
+                                <PlanQuotaEstimates estimates={quotaEstimates} planSlug={plan.plan.slug} locale={locale} showTrust={showTrust} now={now} />
                                 <div className="mb-3">
                                   <ChannelTermsBadges terms={{ data_for_discount: plan.plan?.dataForDiscount, data_for_discount_note: plan.plan?.dataForDiscountNote, quota_unit: plan.plan?.quotaUnit }} />
                                   <PlanCoverage coverage={plan.plan?.thirdPartyCoverage} note={plan.plan?.thirdPartyCoverageNote} locale={locale} />
@@ -531,6 +551,8 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                                         ? (locale === "zh" ? "长上下文订阅内含，无额外费用" : "long context included, no surcharge")
                                         : (locale === "zh" ? "长上下文按 API 溢价计费" : "long-context API premium applies")}
                                     </a>
+                                    {showTrust && <DataTrustLabel showUnknownDate record={`plan:${plan.plan.slug}:subscription-context`} locale={locale}
+                                      fact={unknownFactTrust(locale, '订阅场景上下文及附加计费条件：仅有参考来源，未记录独立核验日期', clock, plan.plan.subscriptionContext.sourceUrl)} />}
                                   </div>
                                 )}
                                 {plan.plan?.features && plan.plan.features.length > 0 && (
@@ -541,8 +563,8 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                                     <ul className="space-y-1">
                                       {plan.plan.features.slice(0, 5).map((feature: string, idx: number) => (
                                         <li key={idx} className="flex items-start gap-1 text-xs">
-                                          <Check className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
-                                          <span className="text-zinc-600 dark:text-zinc-400 line-clamp-2">{feature}</span>
+                                          {!showTrust && <Check className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />}
+                                          <span className="text-zinc-600 dark:text-zinc-400 line-clamp-2">{showTrust ? <EntitlementLine text={feature} locale={locale} /> : feature}</span>
                                         </li>
                                       ))}
                                       {plan.plan.features.length > 5 && (
@@ -733,10 +755,11 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
         </div>
 
         {/* Footer Info */}
+
         <div className="bg-zinc-100 dark:bg-zinc-900 rounded-lg p-6">
           <h3 className="font-semibold mb-4">📝 Notes</h3>
           <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-            {lastVerified && (
+            {!showTrust && lastVerified && (
               <li>
                 • {locale === "zh" ? "价格最后核实：" : "Prices last verified: "}
                 {lastVerified}
@@ -745,7 +768,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
             <li>• Exchange rate: 1 USD = 6.90 CNY (fixed reference rate)</li>
             <li>• Actual costs may vary based on usage patterns, cache hit rates, and other factors</li>
             <li>
-              • Data sources: Official pricing pages from each provider{" "}
+              {showTrust ? (locale === 'zh' ? '逐条来源与核验时间见各字段；官方与第三方套餐均需独立核验。' : 'See field-specific sources and dates; official and third-party plans each need independent verification.') : <>• Data sources: Official pricing pages from each provider{" "}
               {data?.model?.provider?.website ? (
                 <a
                   href={data.model.provider.website}
@@ -764,7 +787,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                 <Link href={`/${locale}/api-pricing`} className="text-blue-600 hover:underline">
                   [View sources]
                 </Link>
-              )}
+              )}</>}
             </li>
             <li>
               • Found a pricing error?{" "}

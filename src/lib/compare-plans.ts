@@ -65,6 +65,7 @@ export async function getPlanComparison(
             qps, tokens_per_minute, features, region, access_from_china, supported_regions, regions_source_url, regions_verified_at,
             payment_methods, is_official, last_verified, provider_id, notes,
             plan_kind, plan_line, tier_rank,
+            to_jsonb(plans)->>'legacy_ends_on' AS legacy_ends_on,
             quotas, is_contact_sales, pack_validity_days,
             third_party_coverage, third_party_coverage_note,
             (to_jsonb(plans)->>'data_for_discount')::boolean AS data_for_discount,
@@ -225,6 +226,15 @@ export async function getPlanComparison(
         priceDiffLabel: isOfficial ? 'Official Price' : null,
         rpmDiffPercent: null,
         qpsDiffPercent: null,
+      },
+      // Independent provenance payload, never inferred from provider home URLs.
+      trust: {
+        name: plan.name, tier: plan.tier, price: plan.price, currency: plan.currency,
+        price_unit: plan.price_unit, last_verified: plan.last_verified,
+        legacy_ends_on: plan.legacy_ends_on ?? null, notes: plan.notes,
+        is_contact_sales: plan.is_contact_sales, quota_unit: plan.quota_unit,
+        data_for_discount_note: plan.data_for_discount_note,
+        third_party_coverage_note: plan.third_party_coverage_note,
       },
       lastVerified: plan.last_verified,
       sourceUrl: null,

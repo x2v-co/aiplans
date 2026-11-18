@@ -56,13 +56,16 @@ import VariantBadges from '@/components/variant-badges';
 import { isArenaBenchmark, type ModelBenchmarkScore } from '@/lib/benchmarks';
 import { getCodingAgentRowsForModel } from '@/lib/coding-agents';
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
-import { DataTrustLabel } from '@/components/data-trust-label';
+import { DataTrustLabel, TrustScopeNote } from '@/components/data-trust-label';
 import type { ModelPlanCardRow } from '@/components/model-plan-card';
 import { ModelPlanGroups } from '@/components/model-plan-groups';
 import { getModelPlans } from '@/lib/model-plans-query';
 import { groupModelPlansByOwnership } from '@/lib/model-plan-groups';
 import {
   channelListPriceTrust,
+  calculatedTrust,
+  unknownFactTrust,
+  usagePriceTrust,
   isTrustModelSlug,
   usageEstimateTrust,
   variantPriceTrust,
@@ -71,6 +74,7 @@ import {
 import { buildModelPricingSeo, type PricingChannel } from '@/lib/model-pricing-seo';
 import ModelPricingSummary from '@/components/model-pricing-summary';
 import { ModelUsagePriceHeadline } from '@/components/model-usage-prices';
+import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 import { availableUsagePrices, officialUsageFallback, pricingSeoUsage, usagePriceHeadlineRange } from '@/lib/model-usage-prices';
 import { getModelUsagePrices } from '@/lib/model-usage-prices-query';
 
@@ -400,7 +404,7 @@ export default async function ModelPage({
   const isZh = locale === 'zh';
   const t = await getTranslations({ locale, namespace: 'modelDetail' });
   const apiT = await getTranslations({ locale, namespace: 'apiPricing' });
-  const showTrust = isTrustModelSlug(slug);
+  const showTrust = isTrustModelSlug(slug, locale);
   const productName = modelPageName(product.name, slug);
   const description = localizedModelDescription(product.slug, product.description, locale);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
@@ -587,7 +591,23 @@ export default async function ModelPage({
             </div>
           </div>
           <p className="mb-3 text-sm text-zinc-500">{isZh ? '也称' : 'Also known as'}: {pricing.aliases.join(' · ')}</p>
-          {!announcementLabel && <ModelPricingSummary pricing={pricing} locale={locale} now={now} officialUsagePrices={officialUsagePrices} />}
+          {!announcementLabel && <>
+            <ModelPricingSummary pricing={pricing} locale={locale} now={now} officialUsagePrices={officialUsagePrices} />
+            {showTrust && <section className="mb-6 min-w-0 space-y-3" aria-label="API 价格速览来源与适用条件">
+              <h2 className="text-sm font-semibold">上述 API 价格速览：逐条来源与适用条件</h2>
+              {(officialUsagePrices.length > 0
+                ? pricing.tableChannels.filter(row => !pricing.official.includes(row))
+                : pricing.tableChannels).map((row, index) => <div key={row.id ?? index}>
+                <p className="text-sm">{row.providers?.name || '渠道'} · 输入 / 输出 / 缓存报价</p>
+                <DataTrustLabel showUnknownDate record={`channel:${row.id}:summary-price`} fact={channelListPriceTrust(row, locale, now)} locale={locale} />
+              </div>)}
+              {officialUsagePrices.map(row => <div key={row.id}>
+                <p className="text-sm">官方 · {labelNonLlmPriceKey(row.price_kind, locale)}</p>
+                <DataTrustLabel showUnknownDate record={`usage:${row.id}`} fact={usagePriceTrust(row, locale, now)} locale={locale} />
+              </div>)}
+              <DataTrustLabel showUnknownDate record="model:summary-calculation" fact={calculatedTrust(locale, '费用速览、最低价格和跨币种排名：按所列报价与用量假设计算；更新日期不是所有报价核验日期', now)} locale={locale} />
+            </section>}
+          </>}
           <div className="flex flex-wrap gap-3">
             {product.context_window && (
               <Badge variant="outline" className="text-sm">
@@ -649,6 +669,8 @@ export default async function ModelPage({
                 <p>{announcementMessages('output', { price: formatPrice(reference.output_price_per_1m, channelCurrency(reference), locale) })}</p>
                 <p>{announcementMessages('cachedInput', { price: formatPrice(reference.cached_input_price_per_1m, channelCurrency(reference), locale) })}</p>
                 {reference.notes && <p className="text-sm">{reference.notes}</p>}
+                {showTrust && <DataTrustLabel showUnknownDate record={`reference:${reference.id}:price`} locale={locale}
+                  fact={unknownFactTrust(locale, '未上线的参考报价，不是现行可购买价格；未记录本报价的独立来源与核验日期', now)} />}
               </div>
             ))}
             {product.offical_link && (
@@ -683,13 +705,12 @@ export default async function ModelPage({
 
         <CodingAgentModelSection rows={codingAgentRows} locale={locale} />
 
-        {showTrust && (
-          <p className="mb-6 max-w-4xl text-sm text-zinc-600 dark:text-zinc-300">
-            {isZh
-              ? '本页属于根据首页热门入口选取的核验页面。每条关键价格和权益都标出来源、适用条件、最近核验时间，以及是否过期或估算。估算不是确定权益。'
-              : 'This page was selected for review using homepage popular entries. Each key price and entitlement shows its source, conditions, last verification, and whether it is expired or an estimate. Estimates are not confirmed entitlements.'}
-          </p>
-        )}
+        {showTrust && <><TrustScopeNote locale={locale} kind="model" slug={slug} />
+          <DataTrustLabel showUnknownDate record={`model:${slug}:specifications`} locale={locale}
+            fact={unknownFactTrust(locale, '模型上下文、能力和适用范围：仅存储记录，未记录逐字段核验', now)} />
+          <DataTrustLabel showUnknownDate record={`model:${slug}:comparison-summary`} locale={locale}
+            fact={calculatedTrust(locale, '最低价、节省比例、排序、套餐摘要及历史图表引用下方记录；各条报价独立核验', now)} />
+        </>}
 
         {/* Quick Stats */}
         {!announcementLabel && <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -702,7 +723,7 @@ export default async function ModelPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{cheapestChannel?.providers?.name || cheapestUsageHeadline?.plan_name || cheapestUsageHeadline?.provider_name || 'N/A'}</div>
-              {cheapestUsageHeadline ? <ModelUsagePriceHeadline row={cheapestUsageHeadline} high={cheapestUsageRange?.high} locale={locale} /> : <>
+              {cheapestUsageHeadline ? <ModelUsagePriceHeadline row={cheapestUsageHeadline} high={cheapestUsageRange?.high} locale={locale} showTrust={showTrust} now={now} /> : <>
                 <div className="text-3xl font-bold text-green-600 mt-1">
                   {formatPrice(cheapestChannel?.input_price_per_1m, channelCurrency(cheapestChannel), locale)}
                   <span className="text-sm font-normal text-zinc-500">/1M input</span>
@@ -721,7 +742,7 @@ export default async function ModelPage({
                 <Badge className="mt-2 bg-green-100 text-green-800">国内可用</Badge>
               )}
               {showTrust && cheapestChannel && (
-                <DataTrustLabel fact={channelListPriceTrust(cheapestChannel, locale, now)} locale={locale} />
+                <DataTrustLabel showUnknownDate record={`channel:${cheapestChannel.id}:cheapest`} fact={channelListPriceTrust(cheapestChannel, locale, now)} locale={locale} />
               )}
               {cheapestChannel?.providers?.website && (
                 <a
@@ -746,7 +767,7 @@ export default async function ModelPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{officialChannel?.providers?.name || officialUsageHeadline?.provider_name || 'N/A'}</div>
-              {officialUsageHeadline && <ModelUsagePriceHeadline row={officialUsageHeadline} high={officialUsageRange?.high} locale={locale} />}
+              {officialUsageHeadline && <ModelUsagePriceHeadline row={officialUsageHeadline} high={officialUsageRange?.high} locale={locale} showTrust={showTrust} now={now} />}
               {officialChannel && officialUsagePrices.length === 0 ? (
                 <>
                   <div className="text-3xl font-bold mt-1">
@@ -761,7 +782,7 @@ export default async function ModelPage({
                     <Badge variant="outline" className="mt-2">国内可用</Badge>
                   )}
                   {showTrust && (
-                    <DataTrustLabel fact={channelListPriceTrust(officialChannel, locale, now)} locale={locale} />
+                    <DataTrustLabel showUnknownDate record={`channel:${officialChannel.id}:official`} fact={channelListPriceTrust(officialChannel, locale, now)} locale={locale} />
                   )}
                   {officialChannel.providers?.website && (
                     <a
@@ -813,7 +834,7 @@ export default async function ModelPage({
                       {isZh ? '支付宝/微信可用' : 'Alipay/WeChat Pay accepted'}
                     </Badge>
                     {showTrust && (
-                      <DataTrustLabel fact={channelListPriceTrust(cheapestChina, locale, now)} locale={locale} />
+                      <DataTrustLabel showUnknownDate record={`channel:${cheapestChina.id}:china`} fact={channelListPriceTrust(cheapestChina, locale, now)} locale={locale} />
                     )}
                     {cheapestChina.providers?.website && (
                       <a
@@ -852,7 +873,7 @@ export default async function ModelPage({
                 </p>
               </div>
 
-              <ModelPlanGroups groups={ownershipGroups} locale={locale} now={now}
+              <ModelPlanGroups showTrust={showTrust} groups={ownershipGroups} locale={locale} now={now}
                 usagePrices={usagePrices} recommendedPlanIds={recommendedPlanIds} bestValuePlanId={bestValuePlanId} />
 
               <Link href={`/${locale}/compare/plans/${slug}`} className="mt-4 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">
@@ -952,9 +973,13 @@ export default async function ModelPage({
                           </div>
                           <ChannelTermsBadges terms={cp} />
                           <DeepSeekWindowPrices variants={cp.price_variants} />
+                          {showTrust && cp.price_variants?.length === 1 && <DataTrustLabel showUnknownDate
+                            record={`variant:${cp.price_variants[0].id}:price`} fact={variantPriceTrust(cp.price_variants[0], cp, locale, now)} locale={locale} />}
                           <LimitedTimeOfferMark row={cp} locale={locale} now={now} />
                           {showTrust && (
-                            <DataTrustLabel fact={channelListPriceTrust(cp, locale, now)} locale={locale} />
+                            <><DataTrustLabel showUnknownDate record={`channel:${cp.id}:price`} fact={channelListPriceTrust(cp, locale, now)} locale={locale} />
+                            <DataTrustLabel showUnknownDate record={`channel:${cp.id}:terms`} locale={locale}
+                              fact={unknownFactTrust(locale, '本渠道的速率、数据使用条件和适用限制：未记录独立核验', now)} /></>
                           )}
                         </TableCell>
                         <TableCell>
@@ -1049,7 +1074,7 @@ export default async function ModelPage({
                                         <div className="mt-1 text-xs text-zinc-500">{variant.variant_kind}</div>
                                       )}
                                       {showTrust && (
-                                        <DataTrustLabel fact={variantPriceTrust(variant, cp, locale, now)} locale={locale} />
+                                        <DataTrustLabel showUnknownDate record={`variant:${variant.id}:price`} fact={variantPriceTrust(variant, cp, locale, now)} locale={locale} />
                                       )}
                                     </div>
                                   ))}
@@ -1078,6 +1103,8 @@ export default async function ModelPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {showTrust && <DataTrustLabel showUnknownDate record={`model:${slug}:history`} locale={locale}
+              fact={unknownFactTrust(locale, '历史价格是抓取观察记录，观测日期不是官方核验时间；逐次官方来源与核验时间未记录', now)} />}
             <PriceHistoryChart
               history={priceHistory}
               locale={isZh ? 'zh' : 'en'}
@@ -1101,7 +1128,7 @@ export default async function ModelPage({
               {isZh
                 ? '基于典型使用比例（输入:输出 = 2:1），所有渠道统一换算为美元对比'
                 : 'Based on typical usage patterns (input:output = 2:1 ratio); all channels converted to USD for comparison'}
-              {showTrust && <DataTrustLabel fact={usageEstimateTrust(locale, now)} locale={locale} />}
+              {showTrust && <DataTrustLabel showUnknownDate record={`model:${slug}:usage-method`} fact={usageEstimateTrust(locale, now)} locale={locale} />}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1156,6 +1183,8 @@ export default async function ModelPage({
             <h2 className="text-2xl font-bold mb-4">
               {isZh ? `关于 ${product.name} 的常见问题` : `Frequently asked questions about ${product.name}`}
             </h2>
+            {showTrust && <DataTrustLabel showUnknownDate record={`model:${slug}:faq`} locale={locale}
+              fact={calculatedTrust(locale, 'FAQ 由本页报价、汇率与假设生成；原始字段状态见对应标签，非独立官方核验', now)} />}
             <div className="space-y-4">
               {pricing.faqs.map((faq, idx) => (
                 <Card key={idx}>

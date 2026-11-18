@@ -23,7 +23,7 @@ import { gatewaySubscriptionEconomics, gatewaySubscriptionSummary } from "@/lib/
 import { describeEconomics, planEconomics, type EconomicPlan } from "@/lib/plan-economics";
 import { PlanRate } from "@/components/plan-rate";
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
-import { DataTrustLabel, EntitlementLine } from '@/components/data-trust-label';
+import { DataTrustLabel, EntitlementLine, TrustScopeNote } from '@/components/data-trust-label';
 import { CopilotPlanNotes } from '@/components/copilot-plan-notes';
 import { PlanCoverage } from "@/components/plan-coverage";
 import { PlanQuotaEstimates } from '@/components/quota-estimates';
@@ -46,7 +46,7 @@ import { getActiveCouponMap } from '@/lib/coupons';
 import { XUltraQuota } from '@/components/x-ultra-quota';
 import { guideForProviderSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import {
-  featureLooksEstimated,
+  calculatedTrust,
   isTrustProviderSlug,
   planCreditTrust,
   planEntitlementTrust,
@@ -136,7 +136,7 @@ export default async function ProviderPage({
 
   // Structured data: breadcrumb + ItemList of Offers (one per plan)
   const isZh = locale === 'zh';
-  const showTrust = isTrustProviderSlug(provider.slug);
+  const showTrust = isTrustProviderSlug(providerSlug, locale);
   const planSource = reviewedPlanSource(provider.slug, locale, provider);
   const breadcrumbJson = breadcrumbList([
     { name: isZh ? '首页' : 'Home', url: `${SITE_URL}/${locale}` },
@@ -294,16 +294,13 @@ export default async function ProviderPage({
             <ProviderOutboundLink url={provider.pricing_url} providerSlug={providerSlug} locale={locale} label={t('pricing')} channelType={provider.type} />
             <ProviderOutboundLink url={provider.console_url} providerSlug={providerSlug} locale={locale} label={t('console')} channelType={provider.type} />
           </div>
-          <ProviderApiModels products={apiModels} locale={locale} now={now} />
+          <ProviderApiModels products={apiModels} locale={locale} now={now} showTrust={showTrust} />
         </section>
 
-        {showTrust && (
-          <p className="mb-5 max-w-4xl text-sm text-zinc-600 dark:text-zinc-300">
-            {isZh
-              ? '本页属于根据首页热门入口选取的核验页面。每条套餐标价和权益都标出来源、适用条件、最近核验时间，以及是否过期或估算。估算不是确定权益。'
-              : 'This page was selected for review using homepage popular entries. Each plan price and entitlement shows its source, conditions, last verification, and whether it is expired or an estimate. Estimates are not confirmed entitlements.'}
-          </p>
-        )}
+        {showTrust && <><TrustScopeNote locale={locale} kind="provider" slug={providerSlug} />
+          <DataTrustLabel showUnknownDate record={`provider:${providerSlug}:summary`} locale={locale}
+            fact={calculatedTrust(locale, '价格范围、最低价、套餐摘要和 FAQ 由下列记录计算；各字段来源与核验时间独立，不代表全部已核验', now)} />
+        </>}
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
           <h2 id="provider-plans-heading" className="text-2xl font-bold">{searchProfile.name} {isZh ? '套餐价格与计费方式' : 'plan prices & billing options'}</h2>
@@ -339,7 +336,7 @@ export default async function ProviderPage({
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {kindPlans.map((plan) => {
                     // Expiry takes priority even outside the selected trust-label pages.
-                    const priceTrust = planPriceTrust({ ...plan, ...providerPlanPrice(plan, showYearly) }, planSource, locale, now, provider.slug);
+                    const priceTrust = planPriceTrust({ ...plan, ...providerPlanPrice(plan, showYearly) }, planSource, locale, now, provider.slug, { historicalOnly: showTrust });
                     const isPopular = plan.tier === 'pro' && !priceTrust.flags.expired;
                     return (
                 <Card key={plan.id} id={plan.slug} className={isPopular ? 'border-blue-500' : ''}>
@@ -370,7 +367,7 @@ export default async function ProviderPage({
                       <ProviderPlanPrice plan={plan} showYearly={showYearly} currency={planCurrency(plan)} locale={locale} now={now} />
                       <PlanLimitedTimeOfferMark plan={{ ...plan, providers: { slug: providerSlug, region: provider.region } }} locale={locale} now={now} yearly={showYearly} />
                       {showTrust && (
-                        <DataTrustLabel fact={priceTrust} locale={locale} />
+                        <DataTrustLabel showUnknownDate record={`plan:${plan.slug}:price`} fact={priceTrust} locale={locale} />
                       )}
                       <div className="mt-1"><QuotaBenchBadge planSlug={plan.slug} locale={locale} /></div>
                     </div>
@@ -388,7 +385,7 @@ export default async function ProviderPage({
                         {isZh ? '包含每月 API 额度；具体金额待核验。' : 'Includes monthly API credit; amount needs verification.'}{' '}
                         <a href="https://claude.com/pricing" target="_blank" rel="noreferrer" className="underline">{isZh ? '官方定价' : 'Official pricing'}</a>
                       </p>
-                      {showTrust && <DataTrustLabel fact={planCreditTrust(planSource, locale, now)} locale={locale} />}
+                      {showTrust && <DataTrustLabel showUnknownDate record={`plan:${plan.slug}:credit`} fact={planCreditTrust(planSource, locale, now)} locale={locale} />}
                     </div>}
 
                     {/* Effective unit rate, directly under the headline price:
@@ -396,6 +393,8 @@ export default async function ProviderPage({
                         buy", and separating them invites reading one alone. */}
                     <div className="mb-4 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/60">
                       <PlanRate display={economicsFor(plan as EconomicPlan)} locale={locale} />
+                      {showTrust && <DataTrustLabel showUnknownDate record={`plan:${plan.slug}:calculated`} locale={locale}
+                        fact={calculatedTrust(locale, '有效单价、相对用量、网关折算及年付折扣：来自本套餐及基准套餐价格、额度和假设，非保证权益', now)} />}
                     </div>
 
                     {(() => {
@@ -411,7 +410,7 @@ export default async function ProviderPage({
                       <ul className="space-y-2 mb-4">
                         {plan.features.filter((feature): feature is string => typeof feature === 'string').slice(0, 4).map((feature, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-sm">
-                            {!(showTrust && featureLooksEstimated(feature)) && (
+                            {!showTrust && (
                               <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                             )}
                             <span>{showTrust ? <EntitlementLine text={feature} locale={locale} /> : feature}</span>
@@ -421,7 +420,7 @@ export default async function ProviderPage({
                     )}
 
                     <CopilotPlanNotes slug={plan.slug} notes={plan.notes} />
-                    <PlanQuotaEstimates estimates={quotaEstimates} planSlug={plan.slug} locale={locale} showTrust={showTrust} />
+                    <PlanQuotaEstimates estimates={quotaEstimates} planSlug={plan.slug} locale={locale} showTrust={showTrust} now={now.toISOString()} />
                     <Separator className="my-4" />
 
                     <div className="space-y-2 text-sm">
@@ -453,7 +452,7 @@ export default async function ProviderPage({
                         <div className="text-xs text-zinc-500">Available in: <a href={derivePlanRegions(plan, provider).sourceUrl!} target="_blank" rel="noopener noreferrer" className="underline">{formatAvailableIn(derivePlanRegions(plan, provider), { locale })}</a></div>
                       )}
                       {showTrust && (
-                        <DataTrustLabel fact={planEntitlementTrust(plan, planSource, locale, now)} locale={locale} />
+                        <DataTrustLabel showUnknownDate record={`plan:${plan.slug}:entitlements`} fact={planEntitlementTrust(plan, planSource, locale, now)} locale={locale} />
                       )}
                     </div>
 

@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   TOP_TRUST_PAGES,
+  LEGACY_TRUST_PAGES,
+  isTrustDisplayPage,
+  isTrustPage,
+  isTrustModelSlug,
+  isTrustProviderSlug,
   TRUST_STALE_DAYS,
   channelListPriceTrust,
   featureLooksEstimated,
@@ -16,22 +21,46 @@ import {
 
 const NOW = new Date('2026-10-18T12:00:00Z');
 
-test('top traffic set is ten unique model and provider pages', () => {
+test('detail sample has ten unique exact locale paths across all three route kinds', () => {
   assert.equal(TOP_TRUST_PAGES.length, 10);
-  assert.equal(new Set(TOP_TRUST_PAGES.map((page) => `${page.kind}:${page.slug}`)).size, 10);
-  assert.deepEqual(TOP_TRUST_PAGES.map((page) => page.rank), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.deepEqual(
-    TOP_TRUST_PAGES.filter((page) => page.kind === 'model').map((page) => page.slug),
-    [
-      'anthropic-claude-fable-5-1',
-      'anthropic-claude-opus-5-5',
-      'anthropic-claude-sonnet-5-5',
-      'openai-gpt-6-astra',
-      'openai-gpt-6-1-sol',
-      'openai-gpt-6-sol',
-    ],
-  );
-  assert.ok(TOP_TRUST_PAGES.some((page) => page.slug === 'zhipu-china' && page.kind === 'provider'));
+  assert.equal(new Set(TOP_TRUST_PAGES.map(page => page.path)).size, 10);
+  assert.deepEqual(TOP_TRUST_PAGES.map(page => page.rank), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  assert.deepEqual(TOP_TRUST_PAGES.filter(page => page.kind === 'model').map(page => page.slug), ['deepseek-v4.1-flash']);
+  assert.equal(TOP_TRUST_PAGES.filter(page => page.kind === 'compare-plan').length, 4);
+  assert.equal(TOP_TRUST_PAGES.filter(page => page.kind === 'provider').length, 5);
+  assert.ok(TOP_TRUST_PAGES.every(page => page.path.startsWith('/zh/')));
+});
+
+test('display retains the exact PR379 bilingual pages and adds only eight sample paths', () => {
+  const models = ['anthropic-claude-fable-5-1', 'anthropic-claude-opus-5-5', 'anthropic-claude-sonnet-5-5',
+    'openai-gpt-6-astra', 'openai-gpt-6-1-sol', 'openai-gpt-6-sol'];
+  const providers = ['openai', 'anthropic', 'google', 'zhipu-china'];
+  assert.deepEqual(LEGACY_TRUST_PAGES, [
+    ...models.map(slug => ({ kind: 'model', slug })), ...providers.map(slug => ({ kind: 'provider', slug })),
+  ]);
+  const oldPaths = new Set<string>();
+  for (const locale of ['zh', 'en']) for (const page of LEGACY_TRUST_PAGES) {
+    const path = `/${locale}/${page.kind === 'model' ? 'models' : 'providers'}/${page.slug}`;
+    oldPaths.add(path);
+    assert.equal(isTrustDisplayPage(locale, page.kind, page.slug), true, path);
+    assert.equal(page.kind === 'model' ? isTrustModelSlug(page.slug, locale) : isTrustProviderSlug(page.slug, locale), true, path);
+    assert.equal(isTrustPage(locale, page.kind, page.slug), locale === 'zh' && ['openai', 'google'].includes(page.slug), path);
+    assert.equal(isTrustDisplayPage('fr', page.kind, page.slug), false);
+  }
+  const additions = TOP_TRUST_PAGES.filter(page => !oldPaths.has(page.path));
+  assert.equal(oldPaths.size, 20);
+  assert.equal(additions.length, 8);
+  assert.equal(new Set([...oldPaths, ...TOP_TRUST_PAGES.map(page => page.path)]).size, 28);
+  for (const page of TOP_TRUST_PAGES) {
+    assert.equal(isTrustDisplayPage('zh', page.kind, page.slug), true);
+    assert.equal(isTrustPage('en', page.kind, page.slug), false);
+    assert.equal(isTrustDisplayPage('en', page.kind, page.slug), ['openai', 'google'].includes(page.slug));
+  }
+  for (const locale of ['zh', 'en']) {
+    assert.equal(isTrustModelSlug('synthetic-outside', locale), false);
+    assert.equal(isTrustProviderSlug('fixture-unselected', locale), false);
+    assert.equal(isTrustDisplayPage(locale, 'compare-plan', 'openai-gpt-6-sol'), false);
+  }
 });
 
 test('source urls reject scripts and credentials', () => {

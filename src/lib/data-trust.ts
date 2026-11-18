@@ -1,21 +1,19 @@
 import { introductoryEndDate, isIntroductoryPriceActive, promoTimeZone, promoTimeZoneLabel, type PriceSchedule } from './effective-price';
 
 /**
- * Provenance for key prices and entitlements on a fixed set of high-traffic
- * pages. Ranking and the field rules are reviewed in
- * docs/trust-labels-top10-2026-10-18.md.
- *
- * No pageview export exists in this repo (GA4 is not stored; `clicks` counts
- * outbound hops). The ten pages are the 2026-10-18 production homepage's
- * first six "高性能模型渠道比价" links, plus the four subscription brands that
- * homepage copy names and that still have a live provider page.
+ * Exact locale paths from the frozen 2026-11-18 detail-page PV sample:
+ * SG 2026-10-21..11-17, 311 PV, cutoff 15 vs 14 (no cutoff tie).
+ * This sample adds labeling coverage without removing the PR379 review pages.
+ * It does not certify any source fact or establish an acceptance window.
+ * TOP_TRUST_PAGES/isTrustPage describe only the sample; display helpers retain
+ * the legacy bilingual pages as well. Sample membership always includes locale.
  * Staleness uses the same 30-day window as the read-only price/plan audit.
  * Nothing here writes the database.
  */
 export const TRUST_STALE_DAYS = 30;
 export const USAGE_ESTIMATE_REVIEWED_ON = '2026-10-18';
 
-export type TrustPageKind = 'model' | 'provider';
+export type TrustPageKind = 'model' | 'provider' | 'compare-plan';
 
 export type TrustPage = {
   rank: number;
@@ -25,16 +23,30 @@ export type TrustPage = {
 };
 
 export const TOP_TRUST_PAGES: readonly TrustPage[] = [
-  { rank: 1, kind: 'model', slug: 'anthropic-claude-fable-5-1', path: '/models/anthropic-claude-fable-5-1' },
-  { rank: 2, kind: 'model', slug: 'anthropic-claude-opus-5-5', path: '/models/anthropic-claude-opus-5-5' },
-  { rank: 3, kind: 'model', slug: 'anthropic-claude-sonnet-5-5', path: '/models/anthropic-claude-sonnet-5-5' },
-  { rank: 4, kind: 'model', slug: 'openai-gpt-6-astra', path: '/models/openai-gpt-6-astra' },
-  { rank: 5, kind: 'model', slug: 'openai-gpt-6-1-sol', path: '/models/openai-gpt-6-1-sol' },
-  { rank: 6, kind: 'model', slug: 'openai-gpt-6-sol', path: '/models/openai-gpt-6-sol' },
-  { rank: 7, kind: 'provider', slug: 'openai', path: '/providers/openai' },
-  { rank: 8, kind: 'provider', slug: 'anthropic', path: '/providers/anthropic' },
-  { rank: 9, kind: 'provider', slug: 'google', path: '/providers/google' },
-  { rank: 10, kind: 'provider', slug: 'zhipu-china', path: '/providers/zhipu-china' },
+  { rank: 1, kind: 'compare-plan', slug: 'deepseek-v4-pro', path: '/zh/compare/plans/deepseek-v4-pro' },
+  { rank: 2, kind: 'provider', slug: 'openai', path: '/zh/providers/openai' },
+  { rank: 3, kind: 'compare-plan', slug: 'gemini-4-argon', path: '/zh/compare/plans/gemini-4-argon' },
+  { rank: 4, kind: 'provider', slug: 'moonshot-china', path: '/zh/providers/moonshot-china' },
+  { rank: 5, kind: 'provider', slug: 'google', path: '/zh/providers/google' },
+  { rank: 6, kind: 'provider', slug: 'minimax-china', path: '/zh/providers/minimax-china' },
+  { rank: 7, kind: 'compare-plan', slug: 'deepseek-v4.1-flash', path: '/zh/compare/plans/deepseek-v4.1-flash' },
+  { rank: 8, kind: 'provider', slug: 'deepseek', path: '/zh/providers/deepseek' },
+  { rank: 9, kind: 'model', slug: 'deepseek-v4.1-flash', path: '/zh/models/deepseek-v4.1-flash' },
+  { rank: 10, kind: 'compare-plan', slug: 'kimi-k3', path: '/zh/compare/plans/kimi-k3' },
+];
+
+/** PR379 display coverage, selected for review using homepage entries, not PV. */
+export const LEGACY_TRUST_PAGES: readonly Pick<TrustPage, 'kind' | 'slug'>[] = [
+  { kind: 'model', slug: 'anthropic-claude-fable-5-1' },
+  { kind: 'model', slug: 'anthropic-claude-opus-5-5' },
+  { kind: 'model', slug: 'anthropic-claude-sonnet-5-5' },
+  { kind: 'model', slug: 'openai-gpt-6-astra' },
+  { kind: 'model', slug: 'openai-gpt-6-1-sol' },
+  { kind: 'model', slug: 'openai-gpt-6-sol' },
+  { kind: 'provider', slug: 'openai' },
+  { kind: 'provider', slug: 'anthropic' },
+  { kind: 'provider', slug: 'google' },
+  { kind: 'provider', slug: 'zhipu-china' },
 ];
 
 const REVIEWED_API_SOURCES: Record<string, { zh: string; en: string; url: string }> = {
@@ -123,12 +135,23 @@ export type TrustKind = 'list_price' | 'entitlement' | 'estimate';
 
 type TrustSource = { label: string; url: string | null };
 
-export function isTrustModelSlug(slug: string): boolean {
-  return TOP_TRUST_PAGES.some((page) => page.kind === 'model' && page.slug === slug);
+export function isTrustPage(locale: string, kind: TrustPageKind, slug: string): boolean {
+  const family = kind === 'model' ? 'models' : kind === 'provider' ? 'providers' : 'compare/plans';
+  return TOP_TRUST_PAGES.some(page => page.path === `/${locale}/${family}/${slug}`);
 }
 
-export function isTrustProviderSlug(slug: string): boolean {
-  return TOP_TRUST_PAGES.some((page) => page.kind === 'provider' && page.slug === slug);
+/** Display is the old 20 locale paths plus eight new exact sample paths. */
+export function isTrustDisplayPage(locale: string, kind: TrustPageKind, slug: string): boolean {
+  return isTrustPage(locale, kind, slug) || ((locale === 'zh' || locale === 'en')
+    && LEGACY_TRUST_PAGES.some(page => page.kind === kind && page.slug === slug));
+}
+
+export function isTrustModelSlug(slug: string, locale: string): boolean {
+  return isTrustDisplayPage(locale, 'model', slug);
+}
+
+export function isTrustProviderSlug(slug: string, locale: string): boolean {
+  return isTrustDisplayPage(locale, 'provider', slug);
 }
 
 export function safeSourceUrl(value: unknown): string | null {
@@ -301,12 +324,8 @@ function channelSource(channel: ChannelTrustRow, locale: string): TrustSource {
   const provider = channel.providers ?? {};
   const official = provider.type === 'official' || provider.type === 'producer';
   const reviewed = official ? reviewedCopy(REVIEWED_API_SOURCES, provider.slug, locale) : null;
-  const headline = (channel.price_variants ?? []).find((variant) => variant.is_headline && safeSourceUrl(variant.source_url));
   const url = reviewed?.url
-    || safeSourceUrl(headline?.source_url)
-    || safeSourceUrl(provider.pricing_url)
-    || safeSourceUrl(provider.api_docs_url)
-    || safeSourceUrl(provider.website);
+    || safeSourceUrl(provider.pricing_url);
   const label = reviewed?.label
     || (provider.name ? (zh(locale) ? `${provider.name} 定价页` : `${provider.name} pricing`) : '');
   return { label, url };
@@ -360,7 +379,7 @@ export function channelListPriceTrust(channel: ChannelTrustRow, locale: string, 
 
 export function variantPriceTrust(variant: VariantRef, channel: ChannelTrustRow, locale: string, now = new Date()): TrustAssessment {
   const channelLevel = channelSource(channel, locale);
-  const url = safeSourceUrl(variant.source_url) || channelLevel.url;
+  const url = safeSourceUrl(variant.source_url);
   const label = variant.source_url
     ? (zh(locale) ? `${variant.variant_name || '报价变体'} 来源` : `${variant.variant_name || 'Variant'} source`)
     : channelLevel.label;
@@ -377,7 +396,7 @@ export function variantPriceTrust(variant: VariantRef, channel: ChannelTrustRow,
       ...constraintConditions(variant.constraints_json, locale),
       note,
     ],
-    verifiedAt: variant.last_verified || channel.last_verified,
+    verifiedAt: variant.last_verified,
     notes: variant.notes,
     now,
   });
@@ -393,7 +412,7 @@ export function reviewedPlanSource(
   const name = fallback?.name;
   return {
     label: name ? (zh(locale) ? `${name} 定价页` : `${name} pricing`) : '',
-    url: safeSourceUrl(fallback?.pricing_url) || safeSourceUrl(fallback?.website),
+    url: safeSourceUrl(fallback?.pricing_url),
   };
 }
 
@@ -429,6 +448,7 @@ export function planPriceTrust(
   locale: string,
   now = new Date(),
   providerSlug?: string | null,
+  options: { historicalOnly?: boolean } = {},
 ): TrustAssessment {
   source = planReviewSource(plan, source, locale);
   const review = priceReviewNote(providerSlug, plan.name, locale, plan);
@@ -439,15 +459,21 @@ export function planPriceTrust(
     sourceUrl: source.url,
     verifiedAt: plan.last_verified,
     notes: plan.notes,
-    withheld: review?.withheld,
+    withheld: options.historicalOnly || review?.withheld || plan.price === null || plan.is_contact_sales === true,
     legacyEndsOn: plan.legacy_ends_on,
     now,
     conditions: [
       unitCondition(plan.currency, plan.price_unit || 'per_month', locale),
+      options.historicalOnly ? (zh(locale)
+        ? '历史价格记录；所列日期不是本轮核价。本轮未逐字段确认当前金额、币种、税费、购买资格或来源是否仍适用；API 定价、首页、公告或失效链接不能确认订阅价格'
+        : 'Historical price record; the date is not a check in this review. Current amount, currency, tax, eligibility and source applicability are unconfirmed; API pricing, homepages, announcements or dead links do not confirm subscription prices') : null,
+      options.historicalOnly && plan.price === 0 ? (zh(locale)
+        ? '原值 0 或「免费」不构成该档存在、正式发布或官方免费的确认；当前价格待核验'
+        : 'A stored zero or Free display does not confirm this tier exists, is published or is officially free; current price needs verification') : null,
       plan.is_contact_sales ? (zh(locale)
         ? '需联系销售；标成 0 或空白的价格不是公开成交价'
         : 'Contact sales; a zero or blank price is not a public purchase price') : null,
-      plan.price === 0 && !plan.is_contact_sales && plan.tier === 'free' ? (zh(locale) ? '免费档公开标价' : 'Published free tier') : null,
+      !options.historicalOnly && plan.price === 0 && !plan.is_contact_sales && plan.tier === 'free' ? (zh(locale) ? '免费档公开标价' : 'Published free tier') : null,
       plan.legacy_ends_on ? (zh(locale)
         ? `旧套餐，宽限期截止 ${plan.legacy_ends_on}`
         : `Legacy tier; grace period ends ${plan.legacy_ends_on}`) : null,
@@ -456,18 +482,23 @@ export function planPriceTrust(
   });
 }
 
-export function planEntitlementTrust(plan: PlanTrustRow, source: TrustSource, locale: string, now = new Date()): TrustAssessment {
+export function planEntitlementTrust(plan: PlanTrustRow, source: TrustSource, locale: string, now = new Date(), options: { explainMissingVerification?: boolean } = {}): TrustAssessment {
   source = planReviewSource(plan, source, locale);
   return assessTrust({
     locale,
     kind: 'entitlement',
     sourceLabel: source.label,
     sourceUrl: source.url,
-    verifiedAt: plan.last_verified,
+    // last_verified is the plan price check, not a field-specific rights check.
+    verifiedAt: null,
+    withheld: true,
     notes: plan.notes,
     legacyEndsOn: plan.legacy_ends_on,
     now,
     conditions: [
+      options.explainMissingVerification === false ? null : zh(locale)
+        ? '仅供查阅的套餐来源；未记录权益专属核验时间，价格核验不能确认权益'
+        : 'Plan reference only; entitlement-specific verification time is not recorded. A price check does not confirm rights',
       zh(locale)
         ? '功能列表、消息限额、上下文和速率来自同一套餐记录；带「估算」标记的句子不是厂商保证额度'
         : 'Features, message caps, context and rate limits come from the same plan row; lines marked Estimate are not guaranteed allowances',
@@ -496,6 +527,30 @@ export function planCreditTrust(source: TrustSource, locale: string, now = new D
   });
 }
 
+/** A recorded value without its own source/date must not borrow a price check. */
+export function unknownFactTrust(locale: string, conditions: string, now = new Date(), sourceUrl?: string | null): TrustAssessment {
+  return assessTrust({ locale, kind: 'entitlement', sourceLabel: zh(locale) ? '字段参考资料（未核验）' : 'Field reference (unverified)',
+    sourceUrl, verifiedAt: null, withheld: true, now, conditions: [conditions,
+      zh(locale) ? '未记录此字段的独立来源或核验时间；不继承价格核验' : 'No independent source or verification time recorded for this field; no inherited price verification'],
+  });
+}
+
+/** Arithmetic has a method, not an official verification date. Inputs retain their own labels. */
+export function calculatedTrust(locale: string, conditions: string, now = new Date()): TrustAssessment {
+  return assessTrust({ locale, kind: 'estimate', sourceLabel: zh(locale) ? '本站计算方法（非官方权益）' : 'Site calculation (not official rights)',
+    sourceUrl: `/${locale === 'zh' ? 'zh' : 'en'}/methodology`, verifiedAt: null, now,
+    conditions: [conditions, zh(locale) ? '依赖所列原始值、汇率和假设；计算日期未记录，不代表当前官方价格或保证额度'
+      : 'Depends on displayed inputs, exchange rates and assumptions; calculation date not recorded. Not a current official price check or guaranteed allowance'],
+  });
+}
+
+export function usagePriceTrust(row: { source_url?: string | null; last_verified?: string | null; currency?: string | null; unit?: string; price_kind?: string; constraints_json?: unknown }, locale: string, now = new Date()): TrustAssessment {
+  return assessTrust({ locale, kind: 'list_price', sourceLabel: zh(locale) ? '本条用量报价来源' : 'This usage-rate source',
+    sourceUrl: row.source_url, verifiedAt: row.last_verified, now,
+    conditions: [unitCondition(row.currency, row.unit, locale), row.price_kind, ...constraintConditions(row.constraints_json, locale)],
+  });
+}
+
 export function usageEstimateTrust(locale: string, now = new Date()): TrustAssessment {
   return assessTrust({
     locale,
@@ -507,6 +562,7 @@ export function usageEstimateTrust(locale: string, now = new Date()): TrustAsses
     conditions: [
       zh(locale) ? '输入:输出 = 2:1，四档假设用量' : 'input:output = 2:1 across four assumed usage tiers',
       zh(locale) ? '渠道价先换算为美元再相加，不能当成账单' : 'Channel prices are converted to USD and summed; this is not an invoice',
+      zh(locale) ? '日期仅为用量假设的方法复核日，不是各渠道当前价格核验日' : 'Date is the usage-method review date, not a current channel price check',
     ],
   });
 }
@@ -528,12 +584,14 @@ export function quotaEstimateTrust(input: {
     sourceUrl: input.evidenceUrl || `/${locale === 'zh' ? 'zh' : 'en'}/methodology`,
     verifiedAt: input.verifiedAt,
     superseded: !input.isCurrent,
+    withheld: !safeSourceUrl(input.evidenceUrl),
     now,
     conditions: [
       zh(locale) ? `额度周期 ${input.windowLabel}` : `Allowance window ${input.windowLabel}`,
       input.mix,
       input.servedModel ? (zh(locale) ? `按模型 ${input.servedModel} 的配比估算` : `Estimated for ${input.servedModel}`) : (zh(locale) ? '未指定承载模型' : 'Served model not recorded'),
       zh(locale) ? '区间取决于假设配比，不是厂商保证的 token 额度' : 'The range depends on the assumed mix and is not a vendor-guaranteed token allowance',
+      zh(locale) ? '日期仅对应估算记录；证据缺失时方法链接不构成官方额度证据' : 'Date belongs only to the estimate record; a method link is not official quota evidence when evidence is absent',
     ],
   });
 }
