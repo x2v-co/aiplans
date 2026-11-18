@@ -41,7 +41,8 @@ export function loadQueryModule(url: URL, mocks: Record<string, unknown>): Recor
     jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
   } });
   const loaded = { exports: {} as Record<string, unknown> };
-  const execute = runInNewContext(`(function(require, module, exports) { ${outputText}\n})`);
+  // Share the host clock so node:test Date mocks also govern route timestamps.
+  const execute = runInNewContext(`(function(require, module, exports) { ${outputText}\n})`, { Date });
   execute((id: string) => {
     if (id in dependencies) return dependencies[id];
     if (id === './plan-lifecycle-query' || id === '@/lib/plan-lifecycle-query') {
