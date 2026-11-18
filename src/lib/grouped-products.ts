@@ -19,6 +19,8 @@ import { benchmarkKey, type ModelBenchmarkScore } from '@/lib/benchmarks';
  */
 
 export interface ChannelPriceVariant {
+  source_url?: string | null;
+  last_verified?: string | null;
   id: number;
   variant_key: string;
   variant_name: string;
@@ -34,6 +36,7 @@ export interface ChannelPriceVariant {
 }
 
 export interface ChannelPrice extends PriceSchedule, ChannelTermsFields {
+  last_verified?: string | null;
   id: number;
   model_id: number;
   provider_id: number;
@@ -198,6 +201,7 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
         to_jsonb(cp)->>'data_for_discount_note' AS data_for_discount_note,
         to_jsonb(cp)->>'quota_unit' AS quota_unit,
         cp.notes,
+        cp.last_verified,
         cp.rate_limit,
         cp.is_available,
         COALESCE((
@@ -213,7 +217,9 @@ export async function getGroupedProducts(type?: string | null, providerId?: numb
             'price_unit', v.price_unit,
             'is_headline', v.is_headline,
             'headline_reason', v.headline_reason,
-            'constraints_json', v.constraints_json
+            'constraints_json', v.constraints_json,
+            'source_url', v.source_url,
+            'last_verified', v.last_verified
           ) ORDER BY v.is_headline DESC, v.headline_rank ASC NULLS LAST, v.input_price_per_1m ASC NULLS LAST)
           FROM api_channel_price_variants v
           WHERE v.model_id = cp.model_id

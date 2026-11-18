@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
 import { createElement, type ReactElement } from 'react';
@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createTranslator, NextIntlClientProvider } from 'next-intl';
 import en from '../../messages/en.json';
 import zh from '../../messages/zh.json';
-import { isTrustProviderSlug, planPriceTrust, reviewedPlanSource, TOP_TRUST_PAGES, USAGE_ESTIMATE_REVIEWED_ON } from './data-trust';
+import { isTrustProviderSlug, isTrustPage, planPriceTrust, reviewedPlanSource, TOP_TRUST_PAGES, USAGE_ESTIMATE_REVIEWED_ON } from './data-trust';
 import { loadQueryModule } from './test-helpers/query-module';
 
 const NOW = '2026-11-18T00:00:00Z';
@@ -78,39 +78,40 @@ function popular(card: string, expected: boolean, locale: string) {
   if (locale === 'zh') assert.doesNotMatch(card, />Popular</);
 }
 
-test('model and provider scope copy describes selected review pages in both locales', async t => {
+test('sample scope wording is honest and the runtime gate excludes English', async t => {
   t.mock.timers.enable({ apis: ['Date'], now: new Date(NOW) });
-  for (const family of ['models', 'providers']) {
-    const filename = family === 'models' ? 'page.tsx' : 'catalog-page.tsx';
-    const source = readFileSync(new URL(`../app/[locale]/${family}/[slug]/${filename}`, import.meta.url), 'utf8');
-    assert.equal(/top-10 traffic review set|前 10 高流量核验范围内/.test(source), false, family);
-    assert.match(source, /本页属于根据首页热门入口选取的核验页面。/);
-    assert.match(source, /This page was selected for review using homepage popular entries\./);
-    assert.match(source, /来源、适用条件、最近核验时间，以及是否过期或估算。估算不是确定权益。/);
-    assert.match(source, /source, conditions, last verification, and whether it is expired or an estimate\. Estimates are not confirmed entitlements\./);
-  }
   for (const locale of ['zh', 'en']) {
     const { html } = await render(locale, sample);
-    assert.match(html, locale === 'zh' ? /本页属于根据首页热门入口选取的核验页面。/ : /This page was selected for review using homepage popular entries\./);
-    assert.match(html, locale === 'zh' ? /估算不是确定权益/ : /Estimates are not confirmed entitlements/);
+    if (locale === 'zh') {
+      assert.match(html, /选定的 10 个详情页 PV 样本/);
+      assert.match(html, /不代表全站排名或全部已获官方核验/);
+      assert.match(html, /估算不是确定权益/);
+    } else assert.doesNotMatch(html, /data-trust-scope=|data-trust-label=/);
   }
 });
 
-test('the original ten-page membership and estimate review date remain fixed', () => {
-  assert.deepEqual(TOP_TRUST_PAGES.map(p => [p.rank, p.kind, p.slug, p.path]), [
-    ...['anthropic-claude-fable-5-1', 'anthropic-claude-opus-5-5', 'anthropic-claude-sonnet-5-5', 'openai-gpt-6-astra', 'openai-gpt-6-1-sol', 'openai-gpt-6-sol'].map((slug, i) => [i + 1, 'model', slug, `/models/${slug}`]),
-    ...['openai', 'anthropic', 'google', 'zhipu-china'].map((slug, i) => [i + 7, 'provider', slug, `/providers/${slug}`]),
+test('the frozen exact-locale detail sample replaces homepage membership; method date stays fixed', () => {
+  assert.deepEqual(TOP_TRUST_PAGES.map(p => p.path), [
+    '/zh/compare/plans/deepseek-v4-pro', '/zh/providers/openai',
+    '/zh/compare/plans/gemini-4-argon', '/zh/providers/moonshot-china',
+    '/zh/providers/google', '/zh/providers/minimax-china',
+    '/zh/compare/plans/deepseek-v4.1-flash', '/zh/providers/deepseek',
+    '/zh/models/deepseek-v4.1-flash', '/zh/compare/plans/kimi-k3',
   ]);
+  for (const page of TOP_TRUST_PAGES) {
+    assert.equal(isTrustPage('zh', page.kind, page.slug), true);
+    assert.equal(isTrustPage('en', page.kind, page.slug), false);
+  }
   assert.equal(USAGE_ESTIMATE_REVIEWED_ON, '2026-10-18');
 });
 
 test('generic expired pro cards lose Popular and its border inside and outside selected scope', async t => {
   t.mock.timers.enable({ apis: ['Date'], now: new Date(NOW) });
-  assert.equal(isTrustProviderSlug('fixture-unselected'), false);
+  assert.equal(isTrustProviderSlug('fixture-unselected', 'zh'), false);
   for (const provider of ['openai', 'fixture-unselected']) for (const locale of ['zh', 'en']) {
     const { card } = await render(locale, { ...sample, legacy_ends_on: '2026-10-29' }, provider);
     popular(card, false, locale);
-    if (provider === 'openai') {
+    if (provider === 'openai' && locale === 'zh') {
       assert.match(card, /data-trust-expired="true"/);
       assert.match(card, locale === 'zh' ? /已过期/ : /Expired/);
       assert.match(card, /dateTime="2026-11-01"/);
@@ -129,7 +130,8 @@ test('legacy grace date is inclusive through the UTC day, with the same state in
     t.mock.timers.setTime(new Date(instant).getTime());
     for (const locale of ['zh', 'en']) {
       const { card } = await render(locale, plan);
-      assert.match(card, new RegExp(`data-trust-expired="${expired}"`), instant);
+      if (locale === 'zh') assert.match(card, new RegExp(`data-trust-expired="${expired}"`), instant);
+      else assert.doesNotMatch(card, /data-trust-label=/);
       popular(card, !expired, locale);
     }
   }
@@ -151,9 +153,9 @@ test('valid pro, stale verification and unknown verification retain Popular; non
     const before = structuredClone(plan);
     const { card } = await render(locale, plan);
     popular(card, plan.tier === 'pro', locale);
-    if (plan.slug === 'stale-pro') assert.match(card, /data-trust-stale="true"/);
-    if (['unknown-pro', 'invalid-verification'].includes(plan.slug)) assert.match(card, /data-trust-unverified="true"/);
-    if (plan.slug !== 'expired-team') assert.match(card, /data-trust-expired="false"/);
+    if (locale === 'zh' && plan.slug === 'stale-pro') assert.match(card, /data-trust-stale="true"/);
+    if (locale === 'zh' && ['unknown-pro', 'invalid-verification'].includes(plan.slug)) assert.match(card, /data-trust-unverified="true"/);
+    if (locale === 'zh' && plan.slug !== 'expired-team') assert.match(card, /data-trust-expired="false"/);
     assert.deepEqual(plan, before);
   }
 });
@@ -168,7 +170,8 @@ test('missing and malformed legacy metadata keep existing trust parsing semantic
     for (const locale of ['zh', 'en']) {
       const { card } = await render(locale, plan);
       popular(card, !expected, locale);
-      assert.match(card, new RegExp(`data-trust-expired="${expected}"`));
+      if (locale === 'zh') assert.match(card, new RegExp(`data-trust-expired="${expected}"`));
+      else assert.doesNotMatch(card, /data-trust-label=/);
     }
   }
 });
@@ -183,7 +186,8 @@ test('a temporary promotion ending leaves an active pro plan Popular and its sto
     for (const locale of ['zh', 'en']) for (const yearly of [false, true]) {
       const { card } = await render(locale, plan, 'openai', yearly);
       popular(card, true, locale);
-      assert.match(card, /data-trust-expired="false"/);
+      if (locale === 'zh') assert.match(card, /data-trust-expired="false"/);
+      else assert.doesNotMatch(card, /data-trust-label=/);
       assert.equal(card.includes('data-plan-limited-time-offer="active"'), instant < new Date(cutoff).getTime());
       assert.match(card, yearly ? /\$100\.00/ : /\$10\.00/);
       assert.match(card, yearly ? (locale === 'zh' ? /\/年/ : /\/year</) : (locale === 'zh' ? /\/月/ : /\/mo</));

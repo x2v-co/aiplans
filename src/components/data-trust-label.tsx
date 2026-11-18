@@ -7,7 +7,7 @@ function externalUrl(url: string): boolean {
 }
 
 /** Four provenance facts. Expired and estimated states stay visually separate from a verified price. */
-export function DataTrustLabel({ fact, locale }: { fact: TrustAssessment; locale: string }) {
+export function DataTrustLabel({ fact, locale, showUnknownDate = false, record }: { fact: TrustAssessment; locale: string; showUnknownDate?: boolean; record?: string }) {
   const isZh = locale === 'zh';
   const { flags } = fact;
   const tone = flags.expired
@@ -20,6 +20,7 @@ export function DataTrustLabel({ fact, locale }: { fact: TrustAssessment; locale
   return (
     <aside
       data-trust-label="true"
+      data-trust-record={record}
       data-trust-estimated={flags.estimated ? 'true' : 'false'}
       data-trust-expired={flags.expired ? 'true' : 'false'}
       data-trust-stale={flags.stale ? 'true' : 'false'}
@@ -36,16 +37,18 @@ export function DataTrustLabel({ fact, locale }: { fact: TrustAssessment; locale
           >
             {fact.sourceLabel}
           </a>
-        ) : fact.sourceLabel}
+        ) : <>{fact.sourceLabel}{showUnknownDate && (isZh ? '（来源未知）' : ' (source unknown)')}</>}
       </p>
       <p>
         <span className="font-semibold">{isZh ? '适用条件' : 'Conditions'}: </span>
         {fact.conditions.map(stripDisplayUrls).filter(Boolean).join(isZh ? '；' : '; ')}
       </p>
       {fact.verifiedOn && <p>
-        <span className="font-semibold">{isZh ? '最近核验' : 'Last verified'}: </span>
+        <span className="font-semibold">{flags.estimated ? (isZh ? '估算 / 方法记录日期' : 'Estimate / method record date') : (isZh ? '最近核验' : 'Last verified')}: </span>
         <time dateTime={fact.verifiedOn}>{fact.verifiedOn}</time>
       </p>}
+      {!fact.verifiedOn && showUnknownDate && <p>{isZh ? '核验时间：未知 / 未记录' : 'Verification time: unknown / not recorded'}</p>}
+      {fact.verifiedOn && showUnknownDate && !flags.estimated && <p>{isZh ? '以上为历史记录日期，不代表本轮已核验当前事实。' : 'Historical record date; this review has not confirmed the current fact.'}</p>}
       <p className="mt-1 flex flex-wrap gap-1">
         {flags.estimated && (
           <strong className="rounded bg-amber-300 px-1.5 py-0.5 text-amber-950">{isZh ? '估算' : 'Estimate'}</strong>
@@ -60,11 +63,20 @@ export function DataTrustLabel({ fact, locale }: { fact: TrustAssessment; locale
           <strong className="rounded bg-amber-300 px-1.5 py-0.5 text-amber-950">{isZh ? '核验已超过 30 天' : 'Verification older than 30 days'}</strong>
         )}
         {!flags.estimated && !flags.expired && !flags.unverified && !flags.stale && (
-          <strong className="text-emerald-800 dark:text-emerald-200">{isZh ? '已核验' : 'Verified'}</strong>
+          <strong className="text-emerald-800 dark:text-emerald-200">{showUnknownDate ? (isZh ? '历史记录标为已核验' : 'Historically marked verified') : (isZh ? '已核验' : 'Verified')}</strong>
         )}
       </p>
     </aside>
   );
+}
+
+/** Sampling is a selection decision, never evidence of official verification. */
+export function TrustScopeNote({ locale }: { locale: string }) {
+  return <p data-trust-scope="pv-detail-sample-20261118" className="mb-5 max-w-4xl text-sm text-zinc-600 dark:text-zinc-300">
+    {locale === 'zh'
+      ? '本页属于选定的 10 个详情页 PV 样本（新加坡时间 2026-10-21 至 11-17），不代表全站排名或全部已获官方核验。来源、适用条件和核验时间按字段标注；缺失即待核验。估算不是确定权益。'
+      : 'This page belongs to a selected ten-detail-page PV sample (Singapore, 2026-10-21 through 11-17), not a site-wide ranking or confirmation of official verification. Sources, conditions and verification times are field-specific; missing evidence needs verification. Estimates are not confirmed entitlements.'}
+  </p>;
 }
 
 /** An estimated sentence does not get a confirmation check. */

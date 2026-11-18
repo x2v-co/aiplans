@@ -16,22 +16,14 @@ import {
 
 const NOW = new Date('2026-10-18T12:00:00Z');
 
-test('top traffic set is ten unique model and provider pages', () => {
+test('detail sample has ten unique exact locale paths across all three route kinds', () => {
   assert.equal(TOP_TRUST_PAGES.length, 10);
-  assert.equal(new Set(TOP_TRUST_PAGES.map((page) => `${page.kind}:${page.slug}`)).size, 10);
-  assert.deepEqual(TOP_TRUST_PAGES.map((page) => page.rank), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.deepEqual(
-    TOP_TRUST_PAGES.filter((page) => page.kind === 'model').map((page) => page.slug),
-    [
-      'anthropic-claude-fable-5-1',
-      'anthropic-claude-opus-5-5',
-      'anthropic-claude-sonnet-5-5',
-      'openai-gpt-6-astra',
-      'openai-gpt-6-1-sol',
-      'openai-gpt-6-sol',
-    ],
-  );
-  assert.ok(TOP_TRUST_PAGES.some((page) => page.slug === 'zhipu-china' && page.kind === 'provider'));
+  assert.equal(new Set(TOP_TRUST_PAGES.map(page => page.path)).size, 10);
+  assert.deepEqual(TOP_TRUST_PAGES.map(page => page.rank), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  assert.deepEqual(TOP_TRUST_PAGES.filter(page => page.kind === 'model').map(page => page.slug), ['deepseek-v4.1-flash']);
+  assert.equal(TOP_TRUST_PAGES.filter(page => page.kind === 'compare-plan').length, 4);
+  assert.equal(TOP_TRUST_PAGES.filter(page => page.kind === 'provider').length, 5);
+  assert.ok(TOP_TRUST_PAGES.every(page => page.path.startsWith('/zh/')));
 });
 
 test('source urls reject scripts and credentials', () => {

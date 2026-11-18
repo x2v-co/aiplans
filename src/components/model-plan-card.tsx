@@ -6,9 +6,9 @@ import enMessages from '../../messages/en.json';
 import zhMessages from '../../messages/zh.json';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { EntitlementLine } from '@/components/data-trust-label';
+import { DataTrustLabel, EntitlementLine } from '@/components/data-trust-label';
 import { planCardCopy, planMoney, planPriceState, type PlanHighlightFields } from '@/lib/plan-card-display';
-import { planEntitlementTrust, planPriceTrust, reviewedPlanSource, safeSourceUrl, type PlanTrustRow } from '@/lib/data-trust';
+import { planEntitlementTrust, planPriceTrust, reviewedPlanSource, safeSourceUrl, usagePriceTrust, calculatedTrust, type PlanTrustRow } from '@/lib/data-trust';
 import { providerDisplayName } from '@/lib/provider-display-name';
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 import { pricingLabel } from '@/lib/model-pricing-seo';
@@ -34,13 +34,14 @@ export interface ModelPlanCardRow extends PlanTrustRow, PlanOfferRow, ChannelTer
     pricing_url?: string | null; website?: string | null } | null;
 }
 
-export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended, bestValue }: {
+export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended, bestValue, showTrust = false }: {
   plan: ModelPlanCardRow;
   locale: string;
   now: Date;
   usagePrices?: ModelUsagePriceRow[];
   recommended?: boolean;
   bestValue?: boolean;
+  showTrust?: boolean;
 }) {
   // Native <details> needs no client state. Keep the static card on the server
   // so dates, currency and translations are computed once per request.
@@ -50,8 +51,8 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
   const terms = createTranslator({ locale, messages, namespace: 'channelTerms' });
   const source = reviewedPlanSource(plan.providers?.slug, locale, plan.providers
     ? { ...plan.providers, name: providerDisplayName(plan.providers, locale) } : null);
-  const priceTrust = planPriceTrust(plan, source, locale, now, plan.providers?.slug);
-  const entitlementTrust = planEntitlementTrust(plan, source, locale, now);
+  const priceTrust = planPriceTrust(plan, source, locale, now, plan.providers?.slug, { historicalOnly: showTrust });
+  const entitlementTrust = planEntitlementTrust(plan, source, locale, now, { explainMissingVerification: showTrust });
   const copy = planCardCopy({
     name: plan.name,
     locale,
@@ -66,7 +67,7 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
       plan.data_for_discount ? terms('training') : null,
     ],
   });
-  const sourceUrl = priceTrust.sourceUrl || safeSourceUrl(usagePrices[0]?.source_url)
+  const sourceUrl = showTrust ? priceTrust.sourceUrl : priceTrust.sourceUrl || safeSourceUrl(usagePrices[0]?.source_url)
     || safeSourceUrl(plan.notes?.match(/https?:\/\/[^\s]+/)?.[0]);
   const flags = priceTrust.flags;
   const currency = plan.currency || 'USD';
@@ -74,6 +75,8 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
   const period = !plan.price_unit || plan.price_unit === 'per_month' ? t('month')
     : plan.price_unit === 'per_year' ? t('year') : labelNonLlmPriceKey(plan.price_unit, locale);
 
+  recommended = recommended && !(showTrust && flags.expired);
+  bestValue = bestValue && !(showTrust && flags.expired);
   return <Card data-plan-card={plan.id} className={`min-w-0 gap-3 py-4 ${recommended
     ? 'border-2 border-blue-500' : bestValue ? 'border-2 border-green-500' : ''}`}>
     <CardHeader className="gap-2 px-4">
@@ -99,11 +102,16 @@ export function ModelPlanCard({ plan, locale, now, usagePrices = [], recommended
         {usagePrices.length > 0 && <div className="mt-2 max-h-32 space-y-1 overflow-y-auto text-sm">
           {usagePrices.map(row => <div key={row.id}>
             {labelNonLlmPriceKey(row.price_kind, locale)}: {pricingLabel(row.price, row.currency)} / {labelNonLlmPriceKey(row.unit, locale)}
+            {showTrust && <DataTrustLabel showUnknownDate record={`usage:${row.id}`} fact={usagePriceTrust(row, locale, now)} locale={locale} />}
           </div>)}
         </div>}
       </div>
     </CardHeader>
     <CardContent className="space-y-3 px-4">
+      {showTrust && <DataTrustLabel showUnknownDate record={`plan:${plan.slug}:price`} fact={priceTrust} locale={locale} />}
+      {showTrust && <DataTrustLabel showUnknownDate record={`plan:${plan.slug}:entitlements`} fact={entitlementTrust} locale={locale} />}
+      {showTrust && <DataTrustLabel showUnknownDate record={`plan:${plan.slug}:calculated`} locale={locale}
+        fact={calculatedTrust(locale, '年付月均、相对用量及派生额度来自套餐记录与基准假设，不是官方保证权益', now)} />}
       <RegionalOfferPrices planId={plan.id} offers={plan.priceOffers} status={plan.priceOfferStatus}
         locale={locale} now={now.toISOString()} />
       {copy.points.length > 0 && <ul className="space-y-2 text-sm text-zinc-700 dark:text-zinc-300">

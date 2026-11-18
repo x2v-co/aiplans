@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { currentPlanEstimates, tokenRange, type VerifiedQuotaEstimate } from '@/lib/quota/estimates';
-import { quotaEstimateTrust } from '@/lib/data-trust';
+import { quotaEstimateTrust, calculatedTrust } from '@/lib/data-trust';
 import { DataTrustLabel } from '@/components/data-trust-label';
 import { PlanBenchSummary, benchmarkForPlan } from './quota-bench-summary';
 
@@ -31,8 +31,8 @@ export function QuotaEstimateDetails({ estimate, locale }: { estimate: VerifiedQ
   );
 }
 
-export function PlanQuotaEstimates({ estimates, planSlug, locale, showTrust = false }: {
-  estimates: VerifiedQuotaEstimate[]; planSlug: string; locale: string; showTrust?: boolean;
+export function PlanQuotaEstimates({ estimates, planSlug, locale, showTrust = false, now }: {
+  estimates: VerifiedQuotaEstimate[]; planSlug: string; locale: string; showTrust?: boolean; now?: string;
 }) {
   const t = useTranslations('quota');
   const current = currentPlanEstimates(estimates, planSlug);
@@ -42,11 +42,13 @@ export function PlanQuotaEstimates({ estimates, planSlug, locale, showTrust = fa
       <h3 className="text-sm font-semibold">{t('title')}</h3>
       {(!benchmark || current.length > 0) && <p className="text-xs text-zinc-500">{t('caveat')}</p>}
       {benchmark && <PlanBenchSummary record={benchmark} locale={locale} />}
+      {showTrust && benchmark && <DataTrustLabel showUnknownDate record={`plan:${planSlug}:benchmark-method`} locale={locale}
+        fact={calculatedTrust(locale, '额度实测与折算仅对应上述实验条件及记录日期，不确认当前官方权益或价格', now ? new Date(now) : undefined)} />}
       {current.length ? current.map(estimate => (
         <div key={estimate.id}>
           <QuotaEstimateDetails estimate={estimate} locale={locale} />
           {showTrust && (
-            <DataTrustLabel
+            <DataTrustLabel showUnknownDate record={`quota:${estimate.id}`}
               fact={quotaEstimateTrust({
                 verifiedAt: estimate.verifiedAt,
                 windowLabel: t(`windows.${estimate.window}`),
@@ -54,7 +56,7 @@ export function PlanQuotaEstimates({ estimates, planSlug, locale, showTrust = fa
                 servedModel: estimate.servedModel,
                 evidenceUrl: estimate.evidence[0]?.url ?? null,
                 isCurrent: estimate.isCurrent,
-              }, locale)}
+              }, locale, now ? new Date(now) : undefined)}
               locale={locale}
             />
           )}
