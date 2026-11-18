@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import Script from 'next/script';
 import { notFound } from 'next/navigation';
 import { isSupportedLocale } from '@/lib/route-locale';
 import '../globals.css';
@@ -229,16 +228,6 @@ async function LocaleLayoutContent({
           <Footer locale={locale} />
           <ConsentManager locale={locale} />
         </LocaleClientWrapper>
-        {/* Third-party telemetry loads after the window load event so its
-            142 KB bundle (4–5 s on slow links) never delays the page's load
-            signal. next/script copies the data-vl-* attributes onto the
-            injected tag, which is where the script reads its config. */}
-        <Script
-          strategy="lazyOnload"
-          src="https://vibeloft.ai/telemetry/v1.js"
-          data-vl-product-id="f40d0112-f5cc-4732-a453-4355c9d13bf8"
-          data-vl-auth-key="vl_web.L-CUndfW81L-io6E6m7Z19J57YKzVM9ngqLJgOhZ73Y"
-        />
       </body>
     </html>
   );
