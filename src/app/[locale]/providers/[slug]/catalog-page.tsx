@@ -99,7 +99,7 @@ export default async function ProviderPage({
   const { period } = await searchParams;
   const showYearly = period === 'yearly';
   const [data, couponByProvider] = await Promise.all([
-    getPlansByProvider(providerSlug),
+    getPlansByProvider(providerSlug, { includePriceOffers: true }),
     getActiveCouponMap('plan'),
   ]);
 
@@ -363,7 +363,7 @@ export default async function ProviderPage({
                   </CardHeader>
                   <CardContent>
                     <div className="mb-4">
-                      <ProviderPlanPrice plan={plan} showYearly={showYearly} currency={planCurrency(plan)} locale={locale} />
+                      <ProviderPlanPrice plan={plan} showYearly={showYearly} currency={planCurrency(plan)} locale={locale} now={now} />
                       <PlanLimitedTimeOfferMark plan={{ ...plan, providers: { slug: providerSlug, region: provider.region } }} locale={locale} now={now} yearly={showYearly} />
                       {showTrust && (
                         <DataTrustLabel fact={planPriceTrust({ ...plan, ...providerPlanPrice(plan, showYearly) }, planSource, locale, now, provider.slug)} locale={locale} />

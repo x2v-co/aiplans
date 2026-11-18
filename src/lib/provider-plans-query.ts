@@ -1,3 +1,5 @@
+import { attachPriceOffers, type PlanOfferFields } from './price-offers/read';
+import { createPostgresOfferReader } from './price-offers/postgres';
 import { sql, INT4_ARRAY } from './db';
 import { currentPlanCondition } from './plan-lifecycle-query';
 import { isSupersededPlan } from './plan-lifecycle';
@@ -6,7 +8,7 @@ import { providerSubscriptionComparisons } from './subscription-search';
 import type { PlanComparisonCandidate } from './search-indexing';
 import type { ProviderRecord, ProviderPlanRecord, ProviderModelRecord } from './provider-page';
 
-export async function getPlansByProvider(providerSlug: string) {
+export async function getPlansByProvider(providerSlug: string, options: { includePriceOffers?: boolean } = {}) {
   const [provider] = await sql<ProviderRecord[]>`
     SELECT * FROM providers WHERE slug = ${providerSlug} LIMIT 1
   `;
@@ -46,6 +48,8 @@ export async function getPlansByProvider(providerSlug: string) {
       AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date)
     GROUP BY m.id, m.slug, m.name, m.released_at, m.updated_at
   ` : [];
-  return { provider, models: uniqueModels, plans, comparisons: providerSubscriptionComparisons(comparisonCandidates.map(model => ({ ...model, isPrimaryProvider: model.provider_ids?.[0] === provider.id })), new Set(uniqueModels.map(model => model.slug))) };
+  const offeredPlans: (ProviderPlanRecord & PlanOfferFields)[] = options.includePriceOffers
+    ? await attachPriceOffers(plans, createPostgresOfferReader(sql)) : plans;
+  return { provider, models: uniqueModels, plans: offeredPlans, comparisons: providerSubscriptionComparisons(comparisonCandidates.map(model => ({ ...model, isPrimaryProvider: model.provider_ids?.[0] === provider.id })), new Set(uniqueModels.map(model => model.slug))) };
 }
 

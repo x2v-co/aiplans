@@ -293,7 +293,7 @@ async function getProductWithChannels(slug: string, now = new Date()) {
   // explicitly official API channel is the fallback when ownership is missing.
   const producerId = modelProvider?.id ?? derivedProvider?.id ?? null;
   const plansData = await getModelPlans(model.id, producerId,
-    usagePrices.flatMap(row => row.plan_id == null ? [] : [row.plan_id]), now);
+    usagePrices.flatMap(row => row.plan_id == null ? [] : [row.plan_id]), now, { includePriceOffers: true });
 
   // Return the model with provider attached
   const product = {

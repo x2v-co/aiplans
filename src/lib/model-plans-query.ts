@@ -1,3 +1,5 @@
+import { attachPriceOffers, type PlanOfferFields } from './price-offers/read';
+import { createPostgresOfferReader } from './price-offers/postgres';
 import { currentPlanCondition } from './plan-lifecycle-query';
 import { sql, INT4_ARRAY } from './db';
 import type { ModelPlanCardRow } from '@/components/model-plan-card';
@@ -13,8 +15,9 @@ export async function getModelPlans(
   producerId: number | null,
   usagePlanIds: number[] = [],
   now = new Date(),
-): Promise<ModelPlanCardRow[]> {
-  return [...await sql<ModelPlanCardRow[]>`
+  options: { includePriceOffers?: boolean } = {},
+): Promise<(ModelPlanCardRow & PlanOfferFields)[]> {
+  const plans = [...await sql<ModelPlanCardRow[]>`
     SELECT
       pl.id,
       pl.name,
@@ -101,4 +104,5 @@ export async function getModelPlans(
       AND ${currentPlanCondition('pl')}
     ORDER BY pl.price ASC NULLS LAST, pl.id
   `];
+  return options.includePriceOffers ? attachPriceOffers(plans, createPostgresOfferReader(sql)) : plans;
 }
