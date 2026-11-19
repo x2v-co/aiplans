@@ -8,6 +8,7 @@
 import { DEEPSEEK_MODELS, deepseekPricingWindow, deepseekObservations, reconcileDeepSeekObservation } from '../src/lib/deepseek-pricing';
 import { syncResellerPromos } from './db/promo-sync';
 import { scrapeOpenRouter } from './scrapers/openrouter';
+import { currentChannelWriteTarget, O3_BATCH_FEED } from './db/channel-write-target';
 import { describePriceChange, pickCanonicalPerProduct, type ResolvedEntry } from './utils/price-history';
 
 // Dynamic scrapers (Phase 1 - API-based, high priority ⭐⭐⭐)
@@ -58,6 +59,7 @@ import {
 import type { ScraperResult } from './utils/validator';
 import type { PlanScraperResult } from './utils/plan-validator';
 import { canonicalizeModelSlug, normalizeModelName, normalizeSlug } from './utils/model-normalizer';
+import { resolveCatalogIdentity } from '../src/lib/catalog-identity';
 import { checkModelIdentity } from './utils/model-identity-guard';
 import { closeBrowser } from './scrapers/base-fetcher';
 import { runWithTransientDegrade, type ScraperRunResult } from './utils/scraper-degrade';
@@ -294,10 +296,27 @@ async function processAPIScraper(
   const seenModelIds = new Set<number>();
   const modelIdBySlug = new Map<string, number>();
   const headlinePriceByModelId = new Map<number, typeof result.prices[number]>();
-  const resolveProduct = async (price: { modelName: string; modelSlug?: string; contextWindow?: number; releasedAt?: string; producerSlug?: string }) => {
+  const resolveProduct = async (price: { modelName: string; modelSlug?: string; contextWindow?: number; releasedAt?: string; producerSlug?: string; upstreamModelId?: string }) => {
     const providerId = inferProviderId(price.modelName, channelName);
     const normalizedName = normalizeModelName(price.modelName);
-    const normalizedSlug = canonicalizeModelSlug(price.modelSlug || normalizeSlug(price.modelName));
+    const rawSlug = price.modelSlug || normalizeSlug(price.modelName);
+    const bound = result.source === O3_BATCH_FEED.source && price.upstreamModelId === O3_BATCH_FEED.upstreamModelId;
+    let normalizedSlug = canonicalizeModelSlug(rawSlug);
+    if (bound || rawSlug === O3_BATCH_FEED.sourceModelSlug || rawSlug === O3_BATCH_FEED.modelSlug) {
+      // Exact reviewed pair only: consult persisted identity before lossy normalization.
+      const catalog = await db.from('models').select('id, slug').in('id', [3014, 3192]);
+      const aliases = await db.from('model_slug_redirects').select('old_slug, model_id').eq('old_slug', rawSlug);
+      if (catalog.error || aliases.error) throw catalog.error || aliases.error;
+      const identity = resolveCatalogIdentity(rawSlug, catalog.data ?? [], aliases.data ?? []);
+      if (!identity || !((rawSlug === O3_BATCH_FEED.sourceModelSlug && identity.id === 3014 && identity.slug === rawSlug) ||
+        (identity.id === 3192 && identity.slug === O3_BATCH_FEED.modelSlug))) {
+        throw new Error('o3 batch persisted identity missing or rebound; creation refused');
+      }
+      normalizedSlug = identity.slug;
+      if (bound && (identity.id !== O3_BATCH_FEED.modelId || channelProviderId !== O3_BATCH_FEED.providerId)) {
+        throw new Error('o3 batch feed model/provider identity drift; no creation permitted');
+      }
+    }
     const OFFICIAL_PROVIDER_IDS = [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50];
 
     // OpenRouter namespaces identify producers even when our hardcoded producer
@@ -414,13 +433,9 @@ async function processAPIScraper(
       let price = scrapedPrice;
       let windowOnly = false;
 
-      // Get existing price for comparison
-      const { data: existingPrice } = await db
-        .from('api_channel_prices')
-        .select('*')
-        .eq('model_id', product.id)
-        .eq('provider_id', channelProviderId)
-        .single();
+      // Use exactly the same checked target for baseline, update and history.
+      const feed = { source: result.source, upstreamModelId: price.upstreamModelId };
+      const existingPrice = await currentChannelWriteTarget(db, product.id, channelProviderId, feed);
 
       if (price.deepseekWindow) {
         const official = result.source === 'DeepSeek-API';
@@ -483,7 +498,7 @@ async function processAPIScraper(
         currency: priceCurrency,
         price_unit: 'per_1m_tokens',
         notes,
-      });
+      }, feed);
       seenModelIds.add(product.id);
 
       // Log price change if significant
@@ -502,7 +517,7 @@ async function processAPIScraper(
             new_output_price: price.outputPricePer1M,
             change_percent: changePercent,
             currency: priceCurrency,
-          });
+          }, feed.source === O3_BATCH_FEED.source && feed.upstreamModelId === O3_BATCH_FEED.upstreamModelId);
 
           console.log(`  💰 Price change detected for ${price.modelName}: ${changePercent.toFixed(1)}%`);
         }
@@ -510,8 +525,8 @@ async function processAPIScraper(
 
       updatedCount++;
     } catch (error) {
-      console.error(`  ❌ Error processing ${price.modelName}:`, error);
-      recordError(result.source, `${price.modelName}: ${errText(error)}`);
+      console.error(`  ❌ Error processing ${scrapedPrice.modelName}:`, error);
+      recordError(result.source, `${scrapedPrice.modelName}: ${errText(error)}`);
       errorCount++;
     }
   }
@@ -521,8 +536,7 @@ async function processAPIScraper(
     try {
       const product = await resolveProduct(price);
       if (!product) continue;
-      const { data: existingRow } = await db.from('api_channel_prices').select('input_price_per_1m, output_price_per_1m')
-        .eq('model_id', product.id).eq('provider_id', channelProviderId).single();
+      const existingRow = await currentChannelWriteTarget(db, product.id, channelProviderId);
       if (keepsLastKnownPrice(existingRow)) {
         console.warn(`⚠️ ${result.source}: ${price.modelSlug} base price not parsed this run; keeping last-known ${existingRow!.input_price_per_1m}/${existingRow!.output_price_per_1m}`);
         modelIdBySlug.set(price.modelSlug, product.id);
@@ -607,7 +621,7 @@ async function processAPIScraper(
       recordError(result.source, `variants batch: ${errText(error)}`);
       errorCount++;
     }
-    if (fullCatalog && warningCount === 0 && seenVariants.length > 0) {
+    if (fullCatalog && errorCount === 0 && warningCount === 0 && seenVariants.length > 0) {
       try {
         const retiredVariants = await retireUnseenChannelPriceVariants(channelProviderId, seenVariants, result.source);
         if (retiredVariants > 0) console.log(`🧹 ${result.source}: Soft-disabled ${retiredVariants} variants absent from full-catalog scrape`);

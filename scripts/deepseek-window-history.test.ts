@@ -9,6 +9,7 @@ import * as normalizer from './utils/model-normalizer';
 import { buildOpenRouterVariants } from './scrapers/openrouter';
 import { hasScrapeAbsenceNote, stripScrapeAbsenceNote } from './utils/manual-unavailable';
 import { parseDeepSeekTable } from './scrapers/deepseek-dynamic';
+import { currentChannelWriteTarget, O3_BATCH_FEED } from './db/channel-write-target';
 import type { ScraperResult } from './utils/validator';
 
 type Row = Record<string, unknown> & { id: number };
@@ -24,6 +25,7 @@ function pipeline() {
     const filters: Array<(row: Row) => boolean> = [];
     const query = {
       select() { return query; }, eq(key: string, value: unknown) { filters.push(row => row[key] === value); return query; },
+      then(resolve: (value: unknown) => unknown) { return Promise.resolve({ data: structuredClone(tables[table].filter(row => filters.every(filter => filter(row)))), error: null }).then(resolve); },
       async single() { return { data: structuredClone(tables[table].find(row => filters.every(filter => filter(row))) ?? null), error: null }; },
     };
     return query;
@@ -42,7 +44,7 @@ function pipeline() {
   };
   runInNewContext(compiled, {
     exports: exported, ...pricing, ...history, ...normalizer, Date, db,
-    hasScrapeAbsenceNote, stripScrapeAbsenceNote,
+    hasScrapeAbsenceNote, stripScrapeAbsenceNote, currentChannelWriteTarget, O3_BATCH_FEED,
     inferProviderId: () => -1, getChannelProviderId: async () => 3, inferRegion: () => 'global',
     getOrCreateProduct: async () => tables.models[0],
     upsertChannelPrice: async (row: Record<string, unknown>) => save('api_channel_prices', row),

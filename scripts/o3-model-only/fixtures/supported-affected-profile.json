@@ -1,0 +1,1136 @@
+{
+  "version": "o3-affected-v1",
+  "tables": [
+    "models",
+    "api_channel_prices",
+    "model_slug_redirects"
+  ],
+  "columns": [
+    {
+      "table": "api_channel_prices",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": "nextval('public.o3_profile_channels_id'::regclass)"
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "model_id",
+      "type": "integer",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "input_price_per_1m",
+      "type": "real",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "output_price_per_1m",
+      "type": "real",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "cached_input_price_per_1m",
+      "type": "real",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "rate_limit",
+      "type": "integer",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "is_available",
+      "type": "boolean",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "last_verified",
+      "type": "timestamp with time zone",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "notes",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "currency",
+      "type": "character varying(3)",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": "'USD'::character varying"
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "price_unit",
+      "type": "character varying(20)",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": "'per_1m_tokens'::character varying"
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "provider_id",
+      "type": "integer",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "promo_ends_at",
+      "type": "timestamp with time zone",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "regular_input_price_per_1m",
+      "type": "real",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "regular_output_price_per_1m",
+      "type": "real",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "regular_cached_input_price_per_1m",
+      "type": "real",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "data_for_discount",
+      "type": "boolean",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "data_for_discount_note",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "quota_unit",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "availability_locked",
+      "type": "boolean",
+      "nullable": false,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": "false"
+    },
+    {
+      "table": "model_slug_redirects",
+      "name": "old_slug",
+      "type": "text",
+      "nullable": false,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "model_slug_redirects",
+      "name": "model_id",
+      "type": "integer",
+      "nullable": false,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "model_slug_redirects",
+      "name": "reason",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "model_slug_redirects",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "nullable": false,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": "now()"
+    },
+    {
+      "table": "models",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": "nextval('public.o3_profile_models_id'::regclass)"
+    },
+    {
+      "table": "models",
+      "name": "name",
+      "type": "text",
+      "nullable": false,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "slug",
+      "type": "text",
+      "nullable": false,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "type",
+      "type": "text",
+      "nullable": false,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "description",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "context_window",
+      "type": "integer",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "released_at",
+      "type": "timestamp with time zone",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "max_output_tokens",
+      "type": "bigint",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "open_source",
+      "type": "boolean",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "features",
+      "type": "text[]",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "offical_link",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "input_type",
+      "type": "text[]",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "output_type",
+      "type": "text[]",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "parameters",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "active parameters",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "provider_ids",
+      "type": "integer[]",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "model_category",
+      "type": "text",
+      "nullable": false,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": "'text'::text"
+    },
+    {
+      "table": "models",
+      "name": "input_modalities",
+      "type": "text[]",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": "'{}'::text[]"
+    },
+    {
+      "table": "models",
+      "name": "output_modalities",
+      "type": "text[]",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": "'{}'::text[]"
+    },
+    {
+      "table": "models",
+      "name": "capabilities",
+      "type": "text[]",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": "'{}'::text[]"
+    },
+    {
+      "table": "models",
+      "name": "pricing_unit",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": "'per_1m_tokens'::text"
+    },
+    {
+      "table": "models",
+      "name": "shutdown_date",
+      "type": "date",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "replacement_model",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "deprecation_source_url",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "deprecated_at",
+      "type": "date",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "license",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    },
+    {
+      "table": "models",
+      "name": "license_url",
+      "type": "text",
+      "nullable": true,
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "authoredDefault": null
+    }
+  ],
+  "constraints": [
+    {
+      "table": "api_channel_prices",
+      "name": "api_channel_prices_quota_unit_check",
+      "kind": "c",
+      "definition": "CHECK ((quota_unit = ANY (ARRAY['usd'::text, 'requests'::text, 'tokens'::text, 'credits'::text])))"
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "channel_prices_currency_check",
+      "kind": "c",
+      "definition": "CHECK (((currency)::text = ANY ((ARRAY['USD'::character varying, 'CNY'::character varying, 'EUR'::character varying, 'GBP'::character varying, 'JPY'::character varying, 'KRW'::character varying, 'SGD'::character varying])::text[])))"
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "channel_prices_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id)"
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "channel_prices_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "channel_prices_provider_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (provider_id) REFERENCES providers(id)"
+    },
+    {
+      "table": "model_slug_redirects",
+      "name": "model_slug_redirects_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "model_slug_redirects",
+      "name": "model_slug_redirects_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (old_slug)"
+    },
+    {
+      "table": "models",
+      "name": "models_model_category_chk",
+      "kind": "c",
+      "definition": "CHECK ((model_category = ANY (ARRAY['text'::text, 'image'::text, 'video'::text, 'audio'::text, 'music'::text, 'world'::text, 'embedding'::text, 'speech'::text, 'agent'::text, 'decision'::text])))"
+    },
+    {
+      "table": "models",
+      "name": "models_pricing_unit_chk",
+      "kind": "c",
+      "definition": "CHECK ((pricing_unit = ANY (ARRAY['per_1m_tokens'::text, 'per_second'::text, 'per_minute'::text, 'per_generation'::text, 'per_credit'::text, 'per_compute_hour'::text, 'subscription_only'::text, 'unknown'::text, 'per_hour'::text, 'per_megapixel'::text, 'per_image'::text, 'per_1k_characters'::text])))"
+    },
+    {
+      "table": "models",
+      "name": "products_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "models",
+      "name": "products_slug_key",
+      "kind": "u",
+      "definition": "UNIQUE (slug)"
+    }
+  ],
+  "indexes": [
+    {
+      "table": "api_channel_prices",
+      "name": "channel_prices_pkey",
+      "definition": "CREATE UNIQUE INDEX channel_prices_pkey ON public.api_channel_prices USING btree (id)"
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "idx_channel_prices_currency",
+      "definition": "CREATE INDEX idx_channel_prices_currency ON public.api_channel_prices USING btree (currency)"
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "idx_channel_prices_last_verified",
+      "definition": "CREATE INDEX idx_channel_prices_last_verified ON public.api_channel_prices USING btree (last_verified DESC)"
+    },
+    {
+      "table": "model_slug_redirects",
+      "name": "model_slug_redirects_pkey",
+      "definition": "CREATE UNIQUE INDEX model_slug_redirects_pkey ON public.model_slug_redirects USING btree (old_slug)"
+    },
+    {
+      "table": "models",
+      "name": "models_model_category_idx",
+      "definition": "CREATE INDEX models_model_category_idx ON public.models USING btree (model_category, slug)"
+    },
+    {
+      "table": "models",
+      "name": "products_pkey",
+      "definition": "CREATE UNIQUE INDEX products_pkey ON public.models USING btree (id)"
+    },
+    {
+      "table": "models",
+      "name": "products_slug_key",
+      "definition": "CREATE UNIQUE INDEX products_slug_key ON public.models USING btree (slug)"
+    }
+  ],
+  "incoming": [
+    {
+      "table": "api_channel_price_variants",
+      "name": "api_channel_price_variants_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id)",
+      "target": "models"
+    },
+    {
+      "table": "api_channel_prices",
+      "name": "channel_prices_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id)",
+      "target": "models"
+    },
+    {
+      "table": "coding_agent_scores",
+      "name": "coding_agent_scores_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id)",
+      "target": "models"
+    },
+    {
+      "table": "evaluation_run",
+      "name": "evaluation_run_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id)",
+      "target": "models"
+    },
+    {
+      "table": "external_price_references",
+      "name": "external_price_references_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id)",
+      "target": "models"
+    },
+    {
+      "table": "model_benchmark_scores",
+      "name": "model_bench_scores_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id)",
+      "target": "models"
+    },
+    {
+      "table": "model_offical",
+      "name": "model_offical_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id)",
+      "target": "models"
+    },
+    {
+      "table": "model_plan_mapping",
+      "name": "model_plan_mapping_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE",
+      "target": "models"
+    },
+    {
+      "table": "model_slug_redirects",
+      "name": "model_slug_redirects_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE",
+      "target": "models"
+    },
+    {
+      "table": "usage_prices",
+      "name": "usage_prices_model_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (model_id) REFERENCES models(id)",
+      "target": "models"
+    }
+  ],
+  "readColumns": [
+    {
+      "table": "api_channel_price_variants",
+      "name": "model_id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": true
+    },
+    {
+      "table": "coding_agent_scores",
+      "name": "model_id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": true
+    },
+    {
+      "table": "evaluation_run",
+      "name": "model_id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": true
+    },
+    {
+      "table": "external_price_references",
+      "name": "model_id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": true
+    },
+    {
+      "table": "model_benchmark_scores",
+      "name": "model_id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": true
+    },
+    {
+      "table": "model_offical",
+      "name": "model_id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": true
+    },
+    {
+      "table": "model_plan_mapping",
+      "name": "model_id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": true
+    },
+    {
+      "table": "price_history",
+      "name": "id",
+      "type": "bigint",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": false
+    },
+    {
+      "table": "price_history",
+      "name": "channel_price_id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": false
+    },
+    {
+      "table": "providers",
+      "name": "id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": false
+    },
+    {
+      "table": "providers",
+      "name": "slug",
+      "type": "text",
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "nullable": false
+    },
+    {
+      "table": "quota_estimates",
+      "name": "id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": false
+    },
+    {
+      "table": "quota_estimates",
+      "name": "plan_id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": true
+    },
+    {
+      "table": "quota_estimates",
+      "name": "plan_slug",
+      "type": "text",
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "nullable": false
+    },
+    {
+      "table": "quota_estimates",
+      "name": "served_model",
+      "type": "text",
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "nullable": true
+    },
+    {
+      "table": "quota_estimates",
+      "name": "window",
+      "type": "text",
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "nullable": false
+    },
+    {
+      "table": "quota_estimates",
+      "name": "usage_mix_id",
+      "type": "text",
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "nullable": false
+    },
+    {
+      "table": "quota_estimates",
+      "name": "notes",
+      "type": "text",
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "nullable": true
+    },
+    {
+      "table": "quota_estimates",
+      "name": "is_current",
+      "type": "boolean",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": false
+    },
+    {
+      "table": "usage_mixes",
+      "name": "id",
+      "type": "text",
+      "identity": "",
+      "generated": "",
+      "collation": "default",
+      "nullable": false
+    },
+    {
+      "table": "usage_mixes",
+      "name": "cache_read_pct",
+      "type": "numeric",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": false
+    },
+    {
+      "table": "usage_mixes",
+      "name": "input_pct",
+      "type": "numeric",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": false
+    },
+    {
+      "table": "usage_mixes",
+      "name": "output_pct",
+      "type": "numeric",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": false
+    },
+    {
+      "table": "usage_prices",
+      "name": "model_id",
+      "type": "integer",
+      "identity": "",
+      "generated": "",
+      "collation": "",
+      "nullable": true
+    }
+  ],
+  "readTables": [
+    "api_channel_price_variants",
+    "coding_agent_scores",
+    "evaluation_run",
+    "external_price_references",
+    "model_benchmark_scores",
+    "model_offical",
+    "model_plan_mapping",
+    "usage_prices",
+    "price_history",
+    "quota_estimates",
+    "usage_mixes",
+    "providers"
+  ],
+  "readIndexes": [
+    {
+      "table": "api_channel_price_variants",
+      "name": "api_channel_price_variants_headline_idx",
+      "definition": "CREATE INDEX api_channel_price_variants_headline_idx ON public.api_channel_price_variants USING btree (provider_id, model_id) WHERE (is_headline = true)"
+    },
+    {
+      "table": "api_channel_price_variants",
+      "name": "api_channel_price_variants_one_headline_idx",
+      "definition": "CREATE UNIQUE INDEX api_channel_price_variants_one_headline_idx ON public.api_channel_price_variants USING btree (provider_id, model_id) WHERE ((is_headline = true) AND (is_available = true))"
+    },
+    {
+      "table": "api_channel_price_variants",
+      "name": "api_channel_price_variants_pkey",
+      "definition": "CREATE UNIQUE INDEX api_channel_price_variants_pkey ON public.api_channel_price_variants USING btree (id)"
+    },
+    {
+      "table": "api_channel_price_variants",
+      "name": "api_channel_price_variants_provider_id_model_id_variant_key_key",
+      "definition": "CREATE UNIQUE INDEX api_channel_price_variants_provider_id_model_id_variant_key_key ON public.api_channel_price_variants USING btree (provider_id, model_id, variant_key)"
+    },
+    {
+      "table": "api_channel_price_variants",
+      "name": "api_channel_price_variants_provider_model_idx",
+      "definition": "CREATE INDEX api_channel_price_variants_provider_model_idx ON public.api_channel_price_variants USING btree (provider_id, model_id)"
+    },
+    {
+      "table": "api_channel_price_variants",
+      "name": "api_channel_price_variants_provider_model_key_idx",
+      "definition": "CREATE UNIQUE INDEX api_channel_price_variants_provider_model_key_idx ON public.api_channel_price_variants USING btree (provider_id, model_id, variant_key)"
+    },
+    {
+      "table": "api_channel_price_variants",
+      "name": "api_channel_price_variants_verified_idx",
+      "definition": "CREATE INDEX api_channel_price_variants_verified_idx ON public.api_channel_price_variants USING btree (last_verified DESC)"
+    },
+    {
+      "table": "coding_agent_scores",
+      "name": "coding_agent_scores_model_idx",
+      "definition": "CREATE INDEX coding_agent_scores_model_idx ON public.coding_agent_scores USING btree (model_id)"
+    },
+    {
+      "table": "coding_agent_scores",
+      "name": "coding_agent_scores_pkey",
+      "definition": "CREATE UNIQUE INDEX coding_agent_scores_pkey ON public.coding_agent_scores USING btree (id)"
+    },
+    {
+      "table": "coding_agent_scores",
+      "name": "coding_agent_scores_rank_idx",
+      "definition": "CREATE INDEX coding_agent_scores_rank_idx ON public.coding_agent_scores USING btree (index_score DESC) WHERE (is_unavailable IS NOT TRUE)"
+    },
+    {
+      "table": "coding_agent_scores",
+      "name": "coding_agent_scores_source_record_id_key",
+      "definition": "CREATE UNIQUE INDEX coding_agent_scores_source_record_id_key ON public.coding_agent_scores USING btree (source_record_id)"
+    },
+    {
+      "table": "evaluation_run",
+      "name": "evaluation_run_pkey",
+      "definition": "CREATE UNIQUE INDEX evaluation_run_pkey ON public.evaluation_run USING btree (id)"
+    },
+    {
+      "table": "external_price_references",
+      "name": "ext_price_refs_model_idx",
+      "definition": "CREATE INDEX ext_price_refs_model_idx ON public.external_price_references USING btree (model_id)"
+    },
+    {
+      "table": "external_price_references",
+      "name": "ext_price_refs_observed_idx",
+      "definition": "CREATE INDEX ext_price_refs_observed_idx ON public.external_price_references USING btree (source, observed_date)"
+    },
+    {
+      "table": "external_price_references",
+      "name": "external_price_references_pkey",
+      "definition": "CREATE UNIQUE INDEX external_price_references_pkey ON public.external_price_references USING btree (id)"
+    },
+    {
+      "table": "external_price_references",
+      "name": "external_price_references_source_source_model_slug_key",
+      "definition": "CREATE UNIQUE INDEX external_price_references_source_source_model_slug_key ON public.external_price_references USING btree (source, source_model_slug)"
+    },
+    {
+      "table": "model_benchmark_scores",
+      "name": "model_bench_scores_pkey",
+      "definition": "CREATE UNIQUE INDEX model_bench_scores_pkey ON public.model_benchmark_scores USING btree (id)"
+    },
+    {
+      "table": "model_offical",
+      "name": "model_offical_pkey",
+      "definition": "CREATE UNIQUE INDEX model_offical_pkey ON public.model_offical USING btree (id)"
+    },
+    {
+      "table": "model_plan_mapping",
+      "name": "model_plan_mapping_model_id_plan_id_key",
+      "definition": "CREATE UNIQUE INDEX model_plan_mapping_model_id_plan_id_key ON public.model_plan_mapping USING btree (model_id, plan_id)"
+    },
+    {
+      "table": "model_plan_mapping",
+      "name": "model_plan_mapping_pkey",
+      "definition": "CREATE UNIQUE INDEX model_plan_mapping_pkey ON public.model_plan_mapping USING btree (id)"
+    },
+    {
+      "table": "model_plan_mapping",
+      "name": "model_plan_mapping_uniq",
+      "definition": "CREATE UNIQUE INDEX model_plan_mapping_uniq ON public.model_plan_mapping USING btree (plan_id, model_id)"
+    },
+    {
+      "table": "price_history",
+      "name": "idx_price_history_channel_price_id",
+      "definition": "CREATE INDEX idx_price_history_channel_price_id ON public.price_history USING btree (channel_price_id)"
+    },
+    {
+      "table": "price_history",
+      "name": "idx_price_history_recorded_at",
+      "definition": "CREATE INDEX idx_price_history_recorded_at ON public.price_history USING btree (recorded_at DESC)"
+    },
+    {
+      "table": "price_history",
+      "name": "price_history_pkey",
+      "definition": "CREATE UNIQUE INDEX price_history_pkey ON public.price_history USING btree (id)"
+    },
+    {
+      "table": "providers",
+      "name": "providers_pkey",
+      "definition": "CREATE UNIQUE INDEX providers_pkey ON public.providers USING btree (id)"
+    },
+    {
+      "table": "providers",
+      "name": "providers_slug_key",
+      "definition": "CREATE UNIQUE INDEX providers_slug_key ON public.providers USING btree (slug)"
+    },
+    {
+      "table": "quota_estimates",
+      "name": "quota_estimates_current_idx",
+      "definition": "CREATE UNIQUE INDEX quota_estimates_current_idx ON public.quota_estimates USING btree (plan_slug, COALESCE(served_model, ''::text), \"window\", usage_mix_id) WHERE is_current"
+    },
+    {
+      "table": "quota_estimates",
+      "name": "quota_estimates_history_idx",
+      "definition": "CREATE INDEX quota_estimates_history_idx ON public.quota_estimates USING btree (plan_slug, created_at DESC)"
+    },
+    {
+      "table": "quota_estimates",
+      "name": "quota_estimates_pkey",
+      "definition": "CREATE UNIQUE INDEX quota_estimates_pkey ON public.quota_estimates USING btree (id)"
+    },
+    {
+      "table": "usage_mixes",
+      "name": "usage_mixes_pkey",
+      "definition": "CREATE UNIQUE INDEX usage_mixes_pkey ON public.usage_mixes USING btree (id)"
+    },
+    {
+      "table": "usage_prices",
+      "name": "usage_prices_model_provider_idx",
+      "definition": "CREATE INDEX usage_prices_model_provider_idx ON public.usage_prices USING btree (model_id, provider_id, price_kind)"
+    },
+    {
+      "table": "usage_prices",
+      "name": "usage_prices_pkey",
+      "definition": "CREATE UNIQUE INDEX usage_prices_pkey ON public.usage_prices USING btree (id)"
+    },
+    {
+      "table": "usage_prices",
+      "name": "usage_prices_plan_idx",
+      "definition": "CREATE INDEX usage_prices_plan_idx ON public.usage_prices USING btree (plan_id, price_kind)"
+    }
+  ]
+}

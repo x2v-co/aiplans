@@ -1,6 +1,8 @@
 export type CurrencyCode = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'KRW' | 'SGD';
 
 export interface ScrapedPrice {
+  /** Exact upstream feed ID retained independently of catalog slug normalization. */
+  upstreamModelId?: string;
   /** Only official DeepSeek or a confirmed StreamLake DeepSeek route. */
   deepseekWindow?: boolean;
   observedAt?: string;

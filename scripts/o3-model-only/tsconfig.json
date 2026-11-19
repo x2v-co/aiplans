@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "incremental": false, "target": "ES2022" },
+  "include": ["*.ts", "../../src/lib/catalog-identity.ts", "../db/channel-write-target.ts"],
+  "exclude": []
+}

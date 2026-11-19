@@ -1,0 +1,81 @@
+name: o3 native executor
+
+# Always report this check on PRs, including PR370; no path filter or optional skip.
+# Manual acceptance confirms generic/native success for the exact reviewed head
+# and actual checkout/tree. No repository-settings change is part of this repair.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: o3 native PG17 lifecycle and rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      O3_TEST_DATABASE_URL: postgres://o3_native_ci:synthetic_ci_only@127.0.0.1:55439/dedupe54_test_o3_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Strict native/core types
+        run: node_modules/.bin/tsc --noEmit -p scripts/o3-model-only/tsconfig.json
+      - name: Start isolated loopback Postgres 17
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Explicit docker run is supported on Linux hosted runners. Host network
+          # avoids DNAT: inet_server_addr() must itself be 127.0.0.1, not 172.*.
+          # No volumes, inherited env, production secrets or reused database.
+          timeout 120s docker pull postgres:17
+          docker run --detach --name o3-native-pg --network host \
+            --env POSTGRES_USER=o3_native_ci \
+            --env POSTGRES_PASSWORD=synthetic_ci_only \
+            --env POSTGRES_DB=dedupe54_test_o3_ci \
+            postgres:17 -c listen_addresses=127.0.0.1 -c port=55439 \
+            -c statement_timeout=15000 -c lock_timeout=1000
+          ready=false
+          for attempt in $(seq 1 40); do
+            if docker exec o3-native-pg pg_isready -h 127.0.0.1 -p 55439 -U o3_native_ci -d dedupe54_test_o3_ci; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = true
+      - name: Actual exported executor and application paths
+        run: |
+          set -euo pipefail
+          timeout 240s env -u DATABASE_URL -u O3_DATABASE_URL -u ARGON_TEST_DATABASE_URL \
+            node --import tsx scripts/o3-model-only/postgres.integration.ts
+      - name: Fresh isolated closure database and shipped PG17 psql checks
+        if: always()
+        env:
+          O3_CLOSURE_TEST_DATABASE_URL: postgres://o3_native_ci:synthetic_ci_only@127.0.0.1:55439/dedupe54_test_o3_closure_ci
+          O3_CLOSURE_TEST_PSQL_MODE: docker-ci
+        run: |
+          set -euo pipefail
+          timeout 15s docker exec o3-native-pg createdb -h 127.0.0.1 -p 55439 \
+            -U o3_native_ci --owner=o3_native_ci dedupe54_test_o3_closure_ci
+          timeout 240s env -u DATABASE_URL -u O3_DATABASE_URL -u ARGON_TEST_DATABASE_URL \
+            node --import tsx scripts/o3-model-only/sre-closure.postgres.integration.ts
+      - name: Required exported executor races, hard gates and SERIALIZABLE controls
+        if: always()
+        env:
+          O3_RACE_TEST_DATABASE_URL: postgres://o3_native_ci:synthetic_ci_only@127.0.0.1:55439/dedupe54_test_o3_race_ci
+        run: |
+          set -euo pipefail
+          timeout 15s docker exec o3-native-pg createdb -h 127.0.0.1 -p 55439 \
+            -U o3_native_ci --owner=o3_native_ci dedupe54_test_o3_race_ci
+          timeout 240s env -u DATABASE_URL -u O3_DATABASE_URL -u ARGON_TEST_DATABASE_URL \
+            node --import tsx scripts/o3-model-only/concurrency.postgres.integration.ts
+      - name: Remove ephemeral Postgres
+        if: always()
+        run: docker rm --force --volumes o3-native-pg
