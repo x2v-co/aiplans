@@ -6,6 +6,8 @@ export const PPLX_PRICING = 'https://docs.perplexity.ai/docs/getting-started/pri
 export const PPLX_CHANGELOG = 'https://docs.perplexity.ai/docs/resources/changelog';
 export const PPLX_QUICKSTART = 'https://docs.perplexity.ai/docs/decisions/quickstart';
 export const CONTEXT = 262_144;
+/** Intel 2026-11-15 item 7: Artificial Analysis Decision Index v2.1, read from the evaluation page 2026-11-15 (indexScore 70.41 / 64.07; AA displays 70 / 64). */
+export const AA_DECISION_INDEX = 'https://artificialanalysis.ai/evaluations/artificial-analysis-decision-index';
 
 export interface DeciderV13Spec {
   slug: string;
@@ -18,6 +20,7 @@ export interface DeciderV13Spec {
   openrouterFree: string;
   hf: string;
   aliases: readonly string[];
+  aaDecisionIndexV21: number;
 }
 
 export const DECIDER_V13: DeciderV13Spec = {
@@ -31,6 +34,7 @@ export const DECIDER_V13: DeciderV13Spec = {
   openrouterFree: 'https://openrouter.ai/perplexity/pplx-decider-v1.3:free',
   hf: 'https://huggingface.co/perplexity-ai/pplx-decider-v1.3',
   aliases: ['perplexity-pplx-decider-v1-3', 'pplx-decider-v1.3'],
+  aaDecisionIndexV21: 70,
 };
 
 export const DECIDER_FLASH_V13: DeciderV13Spec = {
@@ -44,6 +48,7 @@ export const DECIDER_FLASH_V13: DeciderV13Spec = {
   openrouterFree: 'https://openrouter.ai/perplexity/pplx-decider-flash-v1.3:free',
   hf: 'https://huggingface.co/perplexity-ai/pplx-decider-flash-v1.3',
   aliases: ['perplexity-pplx-decider-flash-v1-3', 'pplx-decider-flash-v1.3'],
+  aaDecisionIndexV21: 64,
 };
 
 export const DECIDER_V13_MODELS: readonly DeciderV13Spec[] = [DECIDER_V13, DECIDER_FLASH_V13];
@@ -105,6 +110,15 @@ function item(spec: DeciderV13Spec): AiCatalogItem {
       { label: 'OpenRouter :free', url: spec.openrouterFree, publisher: 'OpenRouter' },
       { label: 'Hugging Face weights', url: spec.hf, publisher: 'Hugging Face' },
     ],
+    benchmarkSummaries: [{
+      benchmarkSlug: 'artificial-analysis-decision-index',
+      benchmarkName: 'Artificial Analysis Decision Index v2.1',
+      taskName: 'Decision Index',
+      metricName: 'Index score',
+      unit: null,
+      value: spec.aaDecisionIndexV21,
+      officialUrl: AA_DECISION_INDEX,
+    }],
     deferredDbSeed: true,
     deferredDbSeedScript: 'seed:catalog-2026-11-13-decider-search-apis:apply',
   };

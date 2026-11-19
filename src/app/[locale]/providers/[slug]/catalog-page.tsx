@@ -25,6 +25,7 @@ import { PlanRate } from "@/components/plan-rate";
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { DataTrustLabel, EntitlementLine } from '@/components/data-trust-label';
 import { CopilotPlanNotes } from '@/components/copilot-plan-notes';
+import { ChatGptVoiceNote } from '@/components/chatgpt-voice-note';
 import { PlanCoverage } from "@/components/plan-coverage";
 import { PlanQuotaEstimates } from '@/components/quota-estimates';
 import { QuotaBenchBadge } from '@/components/quota-bench-usd';
@@ -421,6 +422,7 @@ export default async function ProviderPage({
                     )}
 
                     <CopilotPlanNotes slug={plan.slug} notes={plan.notes} />
+                    <ChatGptVoiceNote slug={plan.slug} locale={locale} />
                     <PlanQuotaEstimates estimates={quotaEstimates} planSlug={plan.slug} locale={locale} showTrust={showTrust} />
                     <Separator className="my-4" />
 

@@ -24,6 +24,7 @@ import type { PlanComparison } from "@/lib/compare-plans";
 import { PlanRate } from "@/components/plan-rate";
 import { ChannelTermsBadges } from '@/components/channel-terms-badges';
 import { CopilotPlanNotes } from '@/components/copilot-plan-notes';
+import { ChatGptVoiceNote } from '@/components/chatgpt-voice-note';
 import { PlanCoverage } from "@/components/plan-coverage";
 import { PlanQuotaEstimates } from '@/components/quota-estimates';
 import { QuotaBenchBadge } from '@/components/quota-bench-usd';
@@ -519,6 +520,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
                                   <ChannelTermsBadges terms={{ data_for_discount: plan.plan?.dataForDiscount, data_for_discount_note: plan.plan?.dataForDiscountNote, quota_unit: plan.plan?.quotaUnit }} />
                                   <PlanCoverage coverage={plan.plan?.thirdPartyCoverage} note={plan.plan?.thirdPartyCoverageNote} locale={locale} />
                                   <CopilotPlanNotes slug={plan.plan?.slug} notes={plan.plan?.notes} />
+                                  <ChatGptVoiceNote slug={plan.plan?.slug} locale={locale} />
                                 </div>
                                 {plan.plan?.subscriptionContext && (
                                   <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
