@@ -12,11 +12,13 @@
  * Vertex "Gemini 4 Argon (starting December 1, 2026), ..." (planprice
  * 2026-11-03 MANUAL_REVIEW): parenthetical notes, anything after a comma,
  * footnote markers and "starting/through/effective <date>" tails. Returns a
- * lowercase [a-z0-9.-] slug.
+ * lowercase [a-z0-9.-] slug. Batch, thinking and free are product qualifiers,
+ * not annotations; keep them so their prices cannot overwrite the base SKU.
  */
 export function sanitizeModelSlug(raw: string): string {
   return raw
-    .replace(/\s*\((?!batch\))[^)]*\)?/gi, ' ')
+    .replace(/\s*\((batch|thinking|free)\)/gi, '-$1')
+    .replace(/\s*\([^)]*\)?/g, ' ')
     .replace(/,.*$/, '')
     .replace(/\*.*$/, '')
     .replace(/\b(?:starting|through|effective)\b.*$/i, '')
@@ -228,13 +230,17 @@ export function normalizeModelName(name: string): string {
   // (openai/gpt-4o:batch) or a "(batch)" display name. They are distinct
   // catalog products — see the separate *-batch model rows for Claude — and
   // must never overwrite the base model's standard price. Normalize both
-  // forms, resolve the base name recursively, then reattach.
-  if (/\(batch\)$/.test(lower)) {
-    lower = lower.replace(/[-\s]*\(batch\)$/, '-batch');
-  }
-  if (/(?::|-)batch$/.test(lower)) {
-    const base = normalizeModelName(lower.replace(/(?::|-)batch$/, ''));
-    return base.endsWith('-batch') ? base : `${base}-batch`;
+  // forms, resolve the batch base name recursively, then reattach. For
+  // thinking/free, retain the complete remaining source identity: recursively
+  // normalizing it can strip preview/instruct/date suffixes or a namespace.
+  const variant = lower.match(/(?::|-)(batch|thinking|free)$/);
+  if (variant) {
+    const suffix = `-${variant[1]}`;
+    const remainder = lower.slice(0, -variant[0].length);
+    const base = variant[1] === 'batch'
+      ? normalizeModelName(remainder)
+      : remainder.replace(/[/:]+/g, '-');
+    return base.endsWith(suffix) ? base : `${base}${suffix}`;
   }
 
   // 尝试直接匹配

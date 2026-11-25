@@ -3,11 +3,33 @@ import test from 'node:test';
 import { isGluedModelSlug, splitGluedModelSlug } from './glued-model-slug';
 import { LEGACY_COMPARE_ONLY_SLUGS, LEGACY_MODEL_SLUGS, legacySlugRedirect } from './legacy-slug-redirects';
 
+// Explicit same-entity comparison destinations; no version-family inference.
+const SAME_IDENTITY_COMPARISONS: Readonly<Record<string, string>> = {
+  'gpt-6.1-sol': 'openai-gpt-6-1-sol',
+  'minimax-01': 'minimax-minimax-01',
+  'minimax-m2-her': 'minimax-minimax-m2-her',
+};
+
+test('every explicit comparison target preserves its mapped product identity', () => {
+  const comparisons: Record<string, string> = {};
+  for (const [alias, target] of Object.entries(LEGACY_MODEL_SLUGS)) {
+    if (!target.compare) continue;
+    assert.equal(target.compare, target.models, `${alias}: comparison must use the same mapped model`);
+    assert.equal(target.compare, SAME_IDENTITY_COMPARISONS[alias], `${alias}: same-identity comparison needs explicit evidence`);
+    comparisons[alias] = target.compare;
+  }
+  assert.deepEqual(comparisons, SAME_IDENTITY_COMPARISONS, 'preserve all verified same-entity comparisons');
+  for (const [alias, target] of Object.entries(LEGACY_COMPARE_ONLY_SLUGS)) {
+    assert.equal(target.models, alias, `${alias}: comparison-only fallback retains the exact model ID`);
+    assert.equal(target.compare, undefined);
+  }
+});
+
 const IMPRESSED_REDIRECTS: Array<[string, string]> = [
-  ['/en/compare/plans/kimi-k2', '/en/compare/plans/kimi-k3'],
-  ['/en/compare/plans/kimi-k2-thinking', '/en/compare/plans/kimi-k3'],
-  ['/en/compare/plans/kimi-k2.5', '/en/compare/plans/kimi-k3'],
-  ['/zh/compare/plans/kimi-k2', '/zh/compare/plans/kimi-k3'],
+  ['/en/compare/plans/kimi-k2', '/en/models/moonshotai-kimi-k2'],
+  ['/en/compare/plans/kimi-k2-thinking', '/en/models/moonshotai-kimi-k2-thinking'],
+  ['/en/compare/plans/kimi-k2.5', '/en/models/moonshotai-kimi-k2-5'],
+  ['/zh/compare/plans/kimi-k2', '/zh/models/moonshotai-kimi-k2'],
   ['/en/models/gpt-6.1-sol', '/en/models/openai-gpt-6-1-sol'],
   ['/en/models/claude-opus-5.5', '/en/models/anthropic-claude-opus-5-5'],
   ['/zh/models/claude-opus-5.5', '/zh/models/anthropic-claude-opus-5-5'],
@@ -29,8 +51,8 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/zh/models/claude-opus-4.6', '/zh/models/anthropic-claude-opus-4-6'],
   ['/en/compare/plans/claude-opus-4.8', '/en/models/anthropic-claude-opus-4-8'],
   ['/en/compare/plans/claude-opus-5-batch', '/en/models/anthropic-claude-opus-5-batch'],
-  ['/en/compare/plans/glm-4.6v', '/en/compare/plans/glm-5.3'],
-  ['/en/compare/plans/glm-4.7-flash', '/en/compare/plans/glm-5.3-flash'],
+  ['/en/compare/plans/glm-4.6v', '/en/models/z-ai-glm-4-6v'],
+  ['/en/compare/plans/glm-4.7-flash', '/en/models/z-ai-glm-4-7-flash'],
   ['/en/compare/plans/minimax-m2-her', '/en/compare/plans/minimax-minimax-m2-her'],
   ['/en/compare/plans/qwen3.5-35b-a3b', '/en/models/qwen-qwen3-5-35b-a3b'],
   ['/en/models/claude-sonnet-5', '/en/models/anthropic-claude-sonnet-5'],
@@ -38,7 +60,7 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/zh/models/claude-opus-4.7', '/zh/models/anthropic-claude-opus-4-7'],
   ['/en/compare/plans/claude-fable-5.1-batch', '/en/models/anthropic-claude-fable-5-1-batch'],
   ['/en/compare/plans/seed-2.1-turbo', '/en/models/doubao-seed-2.1-turbo'],
-  ['/en/compare/plans/glm-5', '/en/compare/plans/glm-5.3'],
+  ['/en/compare/plans/glm-5', '/en/models/z-ai-glm-5'],
   // Backfilled 2026-10-29 from the Search Console page export. These are the
   // highest-impression rows that were still returning 404.
   ['/en/models/gpt-4', '/en/models/openai-gpt-4'],
@@ -49,7 +71,7 @@ const IMPRESSED_REDIRECTS: Array<[string, string]> = [
   ['/en/models/claude-sonnet-4.6', '/en/models/anthropic-claude-sonnet-4-6'],
   ['/en/compare/plans/claude-sonnet-4.6', '/en/models/anthropic-claude-sonnet-4-6'],
   ['/en/models/glm-4.5-air', '/en/models/z-ai-glm-4-5-air'],
-  ['/en/compare/plans/glm-4.5-air', '/en/compare/plans/glm-5.3'],
+  ['/en/compare/plans/glm-4.5-air', '/en/models/z-ai-glm-4-5-air'],
   ['/zh/models/glm-5.2-(free)', '/zh/models/z-ai-glm-5-2-free'],
   ['/en/models/o3', '/en/models/openai-o3'],
   ['/en/models/qwen3.6-27b', '/en/models/qwen-qwen3-6-27b'],
@@ -101,20 +123,18 @@ test('a dead compare URL falls through to the model page, not the list', () => {
   }
 });
 
-test('glued pricing-cell slugs redirect to the first model, not the concatenated page', () => {
+test('multi-entity pricing-cell slugs have no inferred redirect destination', () => {
   const glued = 'kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-instructkimi-k2-base';
   assert.deepEqual(splitGluedModelSlug(glued), [
     'kimi-k2-thinking', 'kimi-k2-instruct-0905', 'kimi-k2-instruct', 'kimi-k2-base',
   ]);
-  assert.equal(
-    legacySlugRedirect(`/en/compare/plans/${glued}`),
-    '/en/compare/plans/kimi-k3',
-  );
-  assert.equal(
-    legacySlugRedirect(`/en/models/${glued}kimi-k2.5kimi-k2.6kimi-k2.7-code`),
-    '/en/models/moonshotai-kimi-k2-thinking',
-  );
-  assert.equal(legacySlugRedirect('/en/compare/plans/glm-5glm-5.1'), '/en/compare/plans/glm-5.3');
+  for (const locale of ['en', 'zh']) {
+    for (const section of ['models', 'compare/plans']) {
+      for (const slug of [glued, `${glued}kimi-k2.5kimi-k2.6kimi-k2.7-code`, 'glm-5glm-5.1', 'glm-99glm-100']) {
+        assert.equal(legacySlugRedirect(`/${locale}/${section}/${slug}`), null, slug);
+      }
+    }
+  }
 });
 
 test('live slugs, vendor-prefixed ids and unrelated paths are left alone', () => {
@@ -127,6 +147,25 @@ test('live slugs, vendor-prefixed ids and unrelated paths are left alone', () =>
   assert.equal(isGluedModelSlug('deepseek-deepseek-v4-flash'), false);
 });
 
+test('supported provider prefixes do not hide concatenated identities or invalidate single models', () => {
+  for (const [slug, parts] of [
+    ['z-ai-glm-5glm-5.1', ['z-ai-glm-5', 'glm-5.1']],
+    ['moonshotai-kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-base',
+      ['moonshotai-kimi-k2-thinking', 'kimi-k2-instruct-0905', 'kimi-k2-base']],
+    ['qwen-qwen3-8-27bqwen3-14b', ['qwen-qwen3-8-27b', 'qwen3-14b']],
+    ['z-ai-glm-5z-ai-glm-5.1', ['z-ai-glm-5', 'z-ai-glm-5.1']],
+  ] as const) {
+    assert.deepEqual(splitGluedModelSlug(slug), parts, slug);
+    assert.equal(isGluedModelSlug(slug), true, slug);
+    assert.equal(legacySlugRedirect(`/en/models/${slug}`), null);
+  }
+  for (const slug of ['qwen-qwen3-8-27b', 'deepseek-deepseek-v4', 'z-ai-glm-4-6v',
+    'moonshotai-kimi-k2-thinking', 'google-gemini-gemini-3-flash-preview-free',
+    'anthropic-claude-3.7-sonnet-thinking', 'openai-gpt-4-1-nano']) {
+    assert.equal(isGluedModelSlug(slug), false, slug);
+  }
+});
+
 test('the redirect table does not chain and every target is a different slug', () => {
   for (const [from, target] of Object.entries(LEGACY_MODEL_SLUGS)) {
     assert.equal(Object.hasOwn(LEGACY_MODEL_SLUGS, target.models ?? ''), false, from);
@@ -136,84 +175,82 @@ test('the redirect table does not chain and every target is a different slug', (
   }
 });
 
-// /compare/plans pages in the live sitemap on 2026-11-04 (index, follow). The
-// old exact successors (moonshotai-kimi-k2, z-ai-glm-5, anthropic-claude-*)
-// are noindex because selectIndexablePlanComparisons keeps only the newest
-// member of a series; a 301 onto them dropped the old URL from Google. The
-// 10-29 targets claude-*-4.5/5.5, gpt-5.x, doubao-seed-2.1-turbo had become
-// noindex by 11-04 and were replaced by the /models successor.
-const INDEXABLE_COMPARE_TARGETS = new Set([
-  'glm-5.3', 'glm-5.3-flash', 'kimi-k3', 'minimax-minimax-01', 'minimax-minimax-m2-her',
-  'openai-gpt-6-1-sol',
-]);
-// /models pages in the live sitemap on 2026-11-04 that compare URLs fall back to.
-const INDEXABLE_MODEL_FALLBACKS = new Set([
-  'anthropic-claude-opus-5-5', 'anthropic-claude-opus-5-batch', 'anthropic-claude-opus-4-8',
-  'anthropic-claude-opus-4-7', 'anthropic-claude-opus-4-6', 'anthropic-claude-sonnet-5',
-  'anthropic-claude-sonnet-4-6-batch', 'anthropic-claude-haiku-4-5', 'doubao-seed-2.1-turbo',
-  'openai-gpt-5-2-pro', 'openai-gpt-5-5-pro', 'openai-gpt-5-6-luna-pro',
-  'anthropic-claude-opus-4-8-batch', 'anthropic-claude-opus-5', 'anthropic-claude-sonnet-4-6',
-  'gpt-5.4-nano', 'gpt-5.3-codex',
-]);
+// Identity evidence wins over the old sitemap snapshot. A retired model detail
+// can be noindex and still be the truthful destination for that exact model.
+const SAME_MODEL_REPAIRS: Readonly<Record<string, string>> = {
+  'kimi-k2': 'moonshotai-kimi-k2',
+  'kimi-k2.5': 'moonshotai-kimi-k2-5',
+  'glm-5': 'z-ai-glm-5',
+  'glm-4.5': 'z-ai-glm-4-5',
+  'glm-4.7-flash': 'z-ai-glm-4-7-flash',
+  'glm-4.5-air': 'z-ai-glm-4-5-air',
+  'glm-4.6': 'z-ai-glm-4-6',
+  'glm-5v-turbo': 'z-ai-glm-5v-turbo',
+  'gpt-5.1-codex-max': 'gpt-5.1-codex-max',
+  'gpt-5.2-codex': 'gpt-5.2-codex',
+  'kimi-k2-thinking': 'moonshotai-kimi-k2-thinking',
+  'glm-4.6v': 'z-ai-glm-4-6v',
+  'gpt-4.1-nano': 'gpt-4.1-nano',
+};
 
-test('every compare redirect lands on an indexable sitemap page or the list', () => {
-  for (const [from, target] of Object.entries(LEGACY_MODEL_SLUGS)) {
-    if (!target.compare) continue;
-    assert.ok(INDEXABLE_COMPARE_TARGETS.has(target.compare), `${from} -> ${target.compare} is not indexable`);
-  }
-  for (const [from, target] of Object.entries(LEGACY_COMPARE_ONLY_SLUGS)) {
-    if (target.compare) assert.ok(INDEXABLE_COMPARE_TARGETS.has(target.compare), `${from} -> ${target.compare} is not indexable`);
-    else assert.ok(target.models && INDEXABLE_MODEL_FALLBACKS.has(target.models), `${from} -> ${target.models} is not indexable`);
-  }
-});
-
-test('compare URLs whose family lost its indexable comparison fall back to an indexable model page', () => {
+test('comparison fallbacks keep the configured model destination without a second redirect', () => {
   const fallbacks = [
-    ...Object.entries(LEGACY_MODEL_SLUGS).filter(([, t]) => !t.compare && t.models && INDEXABLE_MODEL_FALLBACKS.has(t.models)),
+    ...Object.entries(LEGACY_MODEL_SLUGS).filter(([, t]) => !t.compare && t.models),
     ...Object.entries(LEGACY_COMPARE_ONLY_SLUGS).filter(([, t]) => !t.compare),
   ];
-  assert.ok(fallbacks.length >= 17, String(fallbacks.length));
+  assert.ok(fallbacks.length > 0);
   for (const [from, target] of fallbacks) {
     assert.equal(legacySlugRedirect(`/en/compare/plans/${from}`), `/en/models/${target.models}`, from);
     assert.equal(legacySlugRedirect(`/en/models/${target.models}`), null, `${target.models} must not redirect again`);
   }
 });
 
-test('compare-only backfills leave the live /models page untouched', () => {
+test('compare-only backfills leave the existing /models page untouched', () => {
   for (const [from, target] of Object.entries(LEGACY_COMPARE_ONLY_SLUGS)) {
     assert.equal(Object.hasOwn(LEGACY_MODEL_SLUGS, from), false, from);
     const to = target.compare ? `compare/plans/${target.compare}` : `models/${target.models}`;
-    assert.notEqual(target.compare ?? target.models, from);
+    assert.notEqual(`/en/${to}`, `/en/compare/plans/${from}`);
     assert.equal(legacySlugRedirect(`/en/compare/plans/${from}`), `/en/${to}`, from);
     assert.equal(legacySlugRedirect(`/zh/compare/plans/${from}`), `/zh/${to}`, from);
     assert.equal(legacySlugRedirect(`/en/models/${from}`), null, `${from} /models must stay live`);
   }
 });
 
-test('the 18 impressed compare URLs that hit noindex now 301 to indexable pages in one hop', () => {
+test('legacy compare destinations and the specific identity repairs stay one hop', () => {
   const cases: Array<[string, string]> = [
-    ['/en/compare/plans/kimi-k2', '/en/compare/plans/kimi-k3'],
-    ['/en/compare/plans/kimi-k2-thinking', '/en/compare/plans/kimi-k3'],
-    ['/en/compare/plans/kimi-k2.5', '/en/compare/plans/kimi-k3'],
-    ['/en/compare/plans/glm-5glm-5.1', '/en/compare/plans/glm-5.3'],
-    ['/en/compare/plans/glm-5', '/en/compare/plans/glm-5.3'],
-    ['/zh/compare/plans/kimi-k2', '/zh/compare/plans/kimi-k3'],
+    ['/en/compare/plans/kimi-k2', '/en/models/moonshotai-kimi-k2'],
+    ['/en/compare/plans/kimi-k2-thinking', '/en/models/moonshotai-kimi-k2-thinking'],
+    ['/en/compare/plans/kimi-k2.5', '/en/models/moonshotai-kimi-k2-5'],
+    ['/en/compare/plans/glm-5', '/en/models/z-ai-glm-5'],
+    ['/zh/compare/plans/kimi-k2', '/zh/models/moonshotai-kimi-k2'],
     ['/en/compare/plans/claude-opus-4.6', '/en/models/anthropic-claude-opus-4-6'],
     ['/en/compare/plans/claude-sonnet-5', '/en/models/anthropic-claude-sonnet-5'],
     ['/en/compare/plans/claude-opus-4.8', '/en/models/anthropic-claude-opus-4-8'],
-    ['/en/compare/plans/glm-4.7-flash', '/en/compare/plans/glm-5.3-flash'],
-    ['/en/compare/plans/glm-4.6v', '/en/compare/plans/glm-5.3'],
+    ['/en/compare/plans/glm-4.7-flash', '/en/models/z-ai-glm-4-7-flash'],
+    ['/en/compare/plans/glm-4.6v', '/en/models/z-ai-glm-4-6v'],
     ['/en/compare/plans/claude-opus-5-batch', '/en/models/anthropic-claude-opus-5-batch'],
     ['/en/compare/plans/claude-opus-4.7', '/en/models/anthropic-claude-opus-4-7'],
     ['/en/compare/plans/claude-haiku-4-5', '/en/models/anthropic-claude-haiku-4-5'],
     ['/zh/compare/plans/qwen3-14b', '/zh/models/qwen-qwen3-14b'],
-    ['/zh/compare/plans/kimi-k2.5', '/zh/compare/plans/kimi-k3'],
+    ['/zh/compare/plans/kimi-k2.5', '/zh/models/moonshotai-kimi-k2-5'],
     ['/en/compare/plans/qwen3.5-35b-a3b', '/en/models/qwen-qwen3-5-35b-a3b'],
     ['/en/compare/plans/qwen-2.5-72b', '/en/models/qwen-qwen-2-5-72b-instruct'],
   ];
   for (const [from, to] of cases) {
     assert.equal(legacySlugRedirect(from), to, from);
     assert.equal(legacySlugRedirect(to), null, `${to} must not redirect again`);
+  }
+});
+
+test('the reviewed comparison repairs retain exact model identity in both locales', () => {
+  for (const locale of ['en', 'zh']) {
+    for (const [from, target] of Object.entries(SAME_MODEL_REPAIRS)) {
+      const destination = `/${locale}/models/${target}`;
+      assert.equal(legacySlugRedirect(`/${locale}/compare/plans/${from}`), destination);
+      assert.equal(legacySlugRedirect(destination), null, 'no redirect chain');
+      assert.equal(legacySlugRedirect(`/${locale}/models/${from}`),
+        from === target ? null : destination, 'model identity stays intact');
+    }
   }
 });
 

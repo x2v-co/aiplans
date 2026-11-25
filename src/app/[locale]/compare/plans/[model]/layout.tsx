@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { getSeoIndexCatalog } from '@/lib/seo-index-data';
 import { legacySlugRedirect } from '@/lib/legacy-slug-redirects';
+import { isGluedModelSlug } from '@/lib/glued-model-slug';
 import { findModelSlugRedirect } from '@/lib/model-slug-redirects';
 import { buildMetadata, type Locale } from '@/lib/seo';
 import { decodeSlugParam } from '@/lib/route-params';
@@ -19,6 +20,7 @@ export async function generateMetadata({
   const modelSlug = decodeSlugParam(rawModel);
   const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/compare/plans/${modelSlug}`);
   if (legacyTarget) permanentRedirect(legacyTarget);
+  if (isGluedModelSlug(modelSlug)) notFound();
 
   const [data, comparable] = await Promise.all([
     getComparisonSeoData(modelSlug),

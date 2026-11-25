@@ -67,6 +67,16 @@ test('locale-less plan URLs resolve to English', () => {
   assert.equal(resolvePlanRedirect(request!, catalog), '/en/providers/github#copilot-free');
 });
 
+test('unprefixed /plans/grok normalizes in one hop and preserves query parameters', async () => {
+  // This checks route normalization only. The current production owner of the
+  // grok slug still needs a catalog read; do not infer it from the model brand.
+  const response = await fixtureProxy(new NextRequest(`${origin}/plans/grok?period=yearly&utm=gsc`, {
+    headers: { cookie: 'NEXT_LOCALE=zh' },
+  }));
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get('location'), `${origin}/en/providers/grok?period=yearly&utm=gsc`);
+});
+
 test('decodes slug parameters and safely encodes targets and fragments', () => {
   const request = planRedirectRequest('/zh/plans/plan%3Apro');
   assert.deepEqual(request, { locale: 'zh', slug: 'plan:pro' });

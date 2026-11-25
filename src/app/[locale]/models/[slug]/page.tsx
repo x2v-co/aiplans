@@ -20,6 +20,7 @@ import { AFFILIATE_LINK_REL, affiliateDisclosureText, resolveOutboundLink } from
 import { outboundChannelDataset } from '@/lib/funnel-analytics';
 import { notFound, permanentRedirect } from "next/navigation";
 import { legacySlugRedirect } from "@/lib/legacy-slug-redirects";
+import { isGluedModelSlug } from '@/lib/glued-model-slug';
 import { findModelSlugRedirect } from "@/lib/model-slug-redirects";
 import { Metadata } from "next";
 import { Button } from "@/components/ui/button";
@@ -90,6 +91,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const slug = decodeSlugParam(rawSlug);
   const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/models/${slug}`);
   if (legacyTarget) permanentRedirect(legacyTarget);
+
+  // A concatenated pricing cell represents several entities, even if an old
+  // row remains in the catalog. Never guess a model or follow a stale DB alias.
+  if (isGluedModelSlug(slug)) notFound();
 
   // Get product name. An unknown slug 404s from *here*, not from the page
   // body, and there is deliberately no loading.tsx anywhere above this route.
@@ -372,6 +377,7 @@ export default async function ModelPage({
   const slug = decodeSlugParam(rawSlug);
   const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/models/${slug}`);
   if (legacyTarget) permanentRedirect(legacyTarget);
+  if (isGluedModelSlug(slug)) notFound();
   const now = new Date();
   const [data, couponByProvider] = await Promise.all([
     getProductWithChannels(slug, now),

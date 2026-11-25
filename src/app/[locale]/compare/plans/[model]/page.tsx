@@ -2,6 +2,7 @@ import { guideForModelSlug, PRICING_GUIDES } from '@/lib/pricing-guides';
 import { notFound, permanentRedirect } from "next/navigation";
 import { getPlanComparison } from "@/lib/compare-plans";
 import { legacySlugRedirect } from "@/lib/legacy-slug-redirects";
+import { isGluedModelSlug } from '@/lib/glued-model-slug';
 import { findModelSlugRedirect } from "@/lib/model-slug-redirects";
 import { getActiveCouponMap } from "@/lib/coupons";
 import type { CurrencyCode } from "@/lib/currency";
@@ -47,6 +48,7 @@ export default async function ComparePlansModelPage({
   const modelSlug = decodeSlugParam(rawModel);
   const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/compare/plans/${modelSlug}`);
   if (legacyTarget) permanentRedirect(legacyTarget);
+  if (isGluedModelSlug(modelSlug)) notFound();
 
   const [data, couponByProvider, catalog] = await Promise.all([
     getPlanComparison(modelSlug, "USD" as CurrencyCode),
