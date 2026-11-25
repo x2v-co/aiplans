@@ -1,0 +1,18 @@
+{
+  "fixture": true,
+  "not_market_data": true,
+  "rows": [
+    {
+      "channel_price_id": 424242,
+      "old_input_price": 2,
+      "new_input_price": 3,
+      "old_output_price": 8,
+      "new_output_price": 8,
+      "change_percent": 50,
+      "currency": "USD",
+      "source": "example-scraper",
+      "recorded_at": "2026-10-21T00:00:00.000Z",
+      "notes": "fixture-secret-note-9f3a"
+    }
+  ]
+}
