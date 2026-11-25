@@ -56,6 +56,9 @@ test('Kimi pricing cell splits ids that were concatenated with no separator', ()
   assert.equal(checkModelIdentity(glued, glued).ok, false);
   assert.ok(checkModelIdentity('Model', glued).reasons.includes('glued model ids'));
   assert.equal(checkModelIdentity('Model', 'glm-5glm-5.1').ok, false);
+  for (const slug of ['z-ai-glm-5glm-5.1', 'moonshotai-kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-base']) {
+    assert.ok(checkModelIdentity('Model', slug).reasons.includes('glued model ids'), slug);
+  }
 });
 
 test('Kimi pricing cell: badge / tooltip text is stripped to the model id', () => {

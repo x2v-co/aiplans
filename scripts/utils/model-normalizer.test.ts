@@ -1,6 +1,43 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { canonicalizeModelSlug, normalizeModelName, normalizeSlug } from './model-normalizer';
+import { canonicalizeModelSlug, normalizeModelName, normalizeSlug, sanitizeModelSlug } from './model-normalizer';
+
+test('thinking and free qualifiers survive ingestion separately from the base SKU', () => {
+  for (const [input, expected] of [
+    ['claude-3.7-sonnet-(thinking)', 'claude-3.7-sonnet-thinking'],
+    ['Claude Opus 5 (Thinking)', 'claude-opus-5-thinking'],
+    ['gpt-4o (free)', 'gpt-4o-free'],
+    ['gemini-2.0-flash (free)', 'gemini-2.0-flash-free'],
+  ]) {
+    assert.equal(normalizeSlug(input), expected, input);
+    assert.equal(normalizeSlug(expected), expected, 'normalization is idempotent');
+    assert.notEqual(normalizeSlug(input), normalizeSlug(input.replace(/[- ]*\((?:thinking|free)\)$/i, '')));
+  }
+  for (const qualifier of ['thinking', 'free', 'batch']) {
+    const expected = `claude-opus-5-${qualifier}`;
+    assert.equal(sanitizeModelSlug(`Claude Opus 5 (${qualifier})`), expected);
+    assert.equal(canonicalizeModelSlug(`claude-opus-5-(${qualifier})`), expected);
+    assert.equal(normalizeSlug(`claude-opus-5:${qualifier}`), expected);
+    assert.equal(normalizeSlug(expected), expected);
+  }
+  assert.equal(sanitizeModelSlug('Gemini 4 Argon (starting December 1, 2026), Gemini 4 Argon Batch'), 'gemini-4-argon');
+});
+
+test('free and thinking preserve the complete preview, instruct, dated and namespace identity', () => {
+  for (const qualifier of ['free', 'thinking']) {
+    for (const base of ['gemini-3-flash-preview', 'google-gemini-gemini-3-flash-preview',
+      'qwen3-next-80b-a3b-instruct', 'claude-opus-5-preview', 'gpt-4o-2024-08-06']) {
+      const expected = `${base}-${qualifier}`;
+      for (const input of [expected, `${base}:${qualifier}`, `${base} (${qualifier})`]) {
+        assert.equal(normalizeSlug(input), expected, input);
+        assert.equal(normalizeSlug(expected), expected, 'idempotent');
+      }
+    }
+    assert.equal(normalizeSlug(`google/gemini-3-flash-preview:${qualifier}`), `google-gemini-3-flash-preview-${qualifier}`);
+    assert.notEqual(normalizeSlug(`gemini-3-flash-preview-${qualifier}`), normalizeSlug(`gemini-3-flash-${qualifier}`));
+    assert.notEqual(normalizeSlug(`qwen3-next-80b-a3b-instruct-${qualifier}`), normalizeSlug(`qwen3-next-80b-a3b-${qualifier}`));
+  }
+});
 
 test('Argon names, provider IDs and legacy explicit slugs resolve to canonical products', () => {
   const baseInputs = [

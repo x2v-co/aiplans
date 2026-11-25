@@ -65,6 +65,23 @@ test('retired, glued slugs and old/operational comparison variants stay excluded
   assert.ok(selectSeoComparisons(rows).every(row => !isLowValuePlanComparison(row)));
 });
 
+test('glued multi-entity rows stay outside both sitemaps while thinking/free models remain indexable', () => {
+  const priced = { api_price_count: 1, plan_count: 3, priced_subscription_count: 3, priced_subscription_provider_count: 2 };
+  for (const slug of ['kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-instructkimi-k2-base', 'glm-5glm-5.1',
+    'z-ai-glm-5glm-5.1', 'moonshotai-kimi-k2-thinkingkimi-k2-instruct-0905kimi-k2-base']) {
+    const row = facts({ ...priced, slug });
+    assert.equal(modelShouldIndex(row), false);
+    assert.deepEqual(selectSeoModels([row]), []);
+    assert.deepEqual(selectSeoComparisons([row]), []);
+  }
+  for (const slug of ['claude-3.7-sonnet-(thinking)', 'inclusionai-ling-3-2-flash-free']) {
+    const row = facts({ ...priced, slug });
+    assert.equal(modelShouldIndex(row), true);
+    assert.deepEqual(selectSeoModels([row]), [row]);
+    assert.equal(modelCanonicalSlug(slug), slug);
+  }
+});
+
 test('allowlisted older comparisons with Search demand stay indexable, bypassing only the vendor-count bar', () => {
   const good = { plan_count: 6, priced_subscription_count: 6, priced_subscription_provider_count: 3 };
   const rows = [

@@ -44,16 +44,39 @@ test('301s a locale-less dotted slug in one hop', async () => {
   });
   const response = await proxy(request);
   assert.equal(response.status, 301);
-  assert.match(response.headers.get('location') ?? '', /\/en\/compare\/plans\/kimi-k3$/);
+  assert.match(response.headers.get('location') ?? '', /\/en\/models\/moonshotai-kimi-k2-5$/);
 });
 
-test('301s a glued compare slug to the first model', async () => {
-  const request = new NextRequest('https://aiplans.dev/zh/compare/plans/glm-5glm-5.1', {
-    headers: { 'x-forwarded-proto': 'https' },
-  });
-  const response = await proxy(request);
-  assert.equal(response.status, 301);
-  assert.match(response.headers.get('location') ?? '', /\/zh\/compare\/plans\/glm-5\.3$/);
+test('glued URLs reach the detail 404 gate without an inferred entity redirect', async () => {
+  for (const locale of ['en', 'zh']) {
+    const request = new NextRequest(`https://aiplans.dev/${locale}/compare/plans/glm-5glm-5.1`, {
+      headers: { 'x-forwarded-proto': 'https' },
+    });
+    const response = await proxy(request);
+    assert.equal(response.headers.get('location'), null);
+    assert.equal(response.headers.get('x-middleware-next'), '1');
+  }
+  const response = await proxy(new NextRequest('https://aiplans.dev/compare/plans/glm-5glm-5.1?utm=gsc'));
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get('location'), 'https://aiplans.dev/en/compare/plans/glm-5glm-5.1?utm=gsc');
+});
+
+test('specific legacy comparison redirects keep model identity and preserve query parameters', async () => {
+  for (const prefix of ['/en', '/zh', '']) for (const [slug, target] of [
+    ['kimi-k2-thinking', 'moonshotai-kimi-k2-thinking'],
+    ['glm-4.6v', 'z-ai-glm-4-6v'], ['gpt-4.1-nano', 'gpt-4.1-nano'],
+    ['kimi-k2', 'moonshotai-kimi-k2'], ['kimi-k2.5', 'moonshotai-kimi-k2-5'],
+    ['glm-5', 'z-ai-glm-5'], ['glm-4.5', 'z-ai-glm-4-5'],
+    ['glm-4.7-flash', 'z-ai-glm-4-7-flash'], ['glm-4.5-air', 'z-ai-glm-4-5-air'],
+    ['glm-4.6', 'z-ai-glm-4-6'], ['glm-5v-turbo', 'z-ai-glm-5v-turbo'],
+    ['gpt-5.1-codex-max', 'gpt-5.1-codex-max'], ['gpt-5.2-codex', 'gpt-5.2-codex'],
+  ]) {
+    const response = await proxy(new NextRequest(`https://aiplans.dev${prefix}/compare/plans/${slug}?utm=gsc`));
+    assert.equal(response.status, 301);
+    assert.equal(response.headers.get('location'), `https://aiplans.dev${prefix || '/en'}/models/${target}?utm=gsc`);
+    const destination = await proxy(new NextRequest(response.headers.get('location')!));
+    assert.equal(destination.headers.get('location'), null, 'no second redirect');
+  }
 });
 
 test('uses X-Forwarded-Proto when Cloudflare metadata is unavailable', async () => {

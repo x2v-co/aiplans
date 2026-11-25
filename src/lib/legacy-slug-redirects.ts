@@ -1,22 +1,18 @@
-import { splitGluedModelSlug } from './glued-model-slug';
-
 /**
  * Old public slugs that now 404, keyed to the live catalog slug.
  *
  * Targets were checked against the live site on 2026-10-19: each named slug
  * returns 200 on both `/models` and `/compare/plans`. An empty target means
  * there is no single successor, so the section falls back to its list page.
- * Glued ids (`kimi-k2-thinkingkimi-k2-instruct…`) use the first id's row.
+ * Multi-entity glued ids have no inferred successor. Only an exact,
+ * source-verified entry here can redirect; otherwise detail routes return 404.
  *
- * `/compare/plans` targets must be indexable. selectIndexablePlanComparisons
- * marks older members of a series noindex, so a 301 onto e.g.
- * moonshotai-kimi-k2 handed Google a noindex page and the old URL dropped out
- * of the index. Compare targets therefore point at the newest page in the same
- * family that is in the sitemap; a family with no indexable comparison falls
- * back to the /models successor. Re-checked against the live sitemap on
- * 2026-11-04: the Claude, GPT-5.x Pro/Luna and Seed 2.1 Turbo compare pages had
- * dropped out (noindex), so those entries now hand compare URLs to the model
- * page, which is indexable and renders the same plan table.
+ * Comparison aliases retain the exact model identity. Indexability alone does
+ * not establish equivalence: use the exact model detail if no same-entity
+ * comparison target is configured, even if lifecycle rules noindex that detail.
+ * Do not substitute a newer generation for an exact model query.
+ * The dated catalog/sitemap checks in their comments are historical evidence,
+ * not a guarantee of today's target availability or indexing status.
  *
  * The table is the only redirect layer for these slugs: `model_slug_redirects`
  * in the database covers renames the crawler inserted, and the seeds do not
@@ -49,13 +45,15 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'claude-sonnet-4.6-batch': { models: 'anthropic-claude-sonnet-4-6-batch' },
   'claude-haiku-4-5': { models: 'anthropic-claude-haiku-4-5' },
   'claude-fable-5.1-batch': { models: 'anthropic-claude-fable-5-1-batch' },
-  'kimi-k2': { models: 'moonshotai-kimi-k2', compare: 'kimi-k3' },
-  'kimi-k2-thinking': { models: 'moonshotai-kimi-k2-thinking', compare: 'kimi-k3' },
-  'kimi-k2.5': { models: 'moonshotai-kimi-k2-5', compare: 'kimi-k3' },
-  'glm-5': { models: 'z-ai-glm-5', compare: 'glm-5.3' },
-  'glm-4.5': { models: 'z-ai-glm-4-5', compare: 'glm-5.3' },
-  'glm-4.6v': { models: 'z-ai-glm-4-6v', compare: 'glm-5.3' },
-  'glm-4.7-flash': { models: 'z-ai-glm-4-7-flash', compare: 'glm-5.3-flash' },
+  'kimi-k2': { models: 'moonshotai-kimi-k2' },
+  // Same K2 Thinking identity: scripts/data/catalog-2026-10-29.ts KIMI_K2_SLUGS.
+  'kimi-k2-thinking': { models: 'moonshotai-kimi-k2-thinking' },
+  'kimi-k2.5': { models: 'moonshotai-kimi-k2-5' },
+  'glm-5': { models: 'z-ai-glm-5' },
+  'glm-4.5': { models: 'z-ai-glm-4-5' },
+  // Keep the existing exact GLM-4.6V model mapping for comparison URLs too.
+  'glm-4.6v': { models: 'z-ai-glm-4-6v' },
+  'glm-4.7-flash': { models: 'z-ai-glm-4-7-flash' },
   'qwen3.8-27b': { models: 'qwen-qwen3-8-27b' },
   'qwen3.5-35b-a3b': { models: 'qwen-qwen3-5-35b-a3b' },
   'qwen3-14b': { models: 'qwen-qwen3-14b' },
@@ -80,9 +78,8 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   // every slug below still carried impressions while returning 404, because
   // the catalog moved the same model under a vendor-prefixed slug. Each
   // `models` target was fetched on 2026-10-29 and returns 200 with
-  // `index, follow`; a `compare` target is only set when the same model family
-  // has an indexable /compare/plans page (an older member of the series is
-  // noindex, so redirecting onto it drops the old URL).
+  // `index, follow`. Comparison targets must preserve the same model identity;
+  // the historical availability checks do not justify newer-version targets.
   'gpt-3.5-turbo': { models: 'openai-gpt-3-5-turbo' },
   'gpt-4': { models: 'openai-gpt-4' },
   'gpt-4-turbo': { models: 'openai-gpt-4-turbo' },
@@ -104,13 +101,13 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
   'claude-opus-4.8-batch': { models: 'anthropic-claude-opus-4-8-batch' },
   'claude-opus-5': { models: 'anthropic-claude-opus-5' },
   'claude-sonnet-4.6': { models: 'anthropic-claude-sonnet-4-6' },
-  'glm-4.5-air': { models: 'z-ai-glm-4-5-air', compare: 'glm-5.3' },
+  'glm-4.5-air': { models: 'z-ai-glm-4-5-air' },
   'glm-4.5v': { models: 'z-ai-glm-4-5v' },
-  'glm-4.6': { models: 'z-ai-glm-4-6', compare: 'glm-5.3' },
+  'glm-4.6': { models: 'z-ai-glm-4-6' },
   'glm-5-turbo': { models: 'z-ai-glm-5-turbo' },
   'glm-5.1': { models: 'z-ai-glm-5-1' },
   'glm-5.2-(free)': { models: 'z-ai-glm-5-2-free' },
-  'glm-5v-turbo': { models: 'z-ai-glm-5v-turbo', compare: 'glm-5.3' },
+  'glm-5v-turbo': { models: 'z-ai-glm-5v-turbo' },
   'qwen3-32b': { models: 'qwen-qwen3-32b' },
   'qwen3-coder-next': { models: 'qwen-qwen3-coder-next' },
   'qwen3-max-thinking': { models: 'qwen-qwen3-max-thinking' },
@@ -158,17 +155,18 @@ export const LEGACY_MODEL_SLUGS: Record<string, LegacySlugTarget> = {
 };
 
 /**
- * `/compare/plans` pages that are gone while the same slug's `/models` page is
- * still live and indexable. They cannot live in LEGACY_MODEL_SLUGS: an entry
- * with a `compare` target but no `models` target also redirects `/models` to
- * the section list, which would drop a page that currently serves traffic.
+ * Comparison-only aliases leave the original /models route untouched, including
+ * retired-model details. A comparison-only entry in LEGACY_MODEL_SLUGS would
+ * also redirect /models to the section list. Lifecycle is not model identity.
  */
 export const LEGACY_COMPARE_ONLY_SLUGS: Record<string, LegacySlugTarget> = {
-  // Same 2026-10-29 export. On 2026-11-04 the successor compare pages were
-  // noindex, so the compare URL goes to the successor's indexable model page.
-  'gpt-4.1-nano': { models: 'gpt-5.4-nano' },
-  'gpt-5.1-codex-max': { models: 'gpt-5.3-codex' },
-  'gpt-5.2-codex': { models: 'gpt-5.3-codex' },
+  // Exact catalog ID in fix-data-audit.ts; shutdown/replacement is a separate
+  // fact in data/openai-shutdowns.ts, not a URL identity migration.
+  'gpt-4.1-nano': { models: 'gpt-4.1-nano' },
+  // Exact IDs in data/openai-shutdowns.ts. Existing model pages are verified
+  // separately; retirement does not make GPT-5.3 Codex the same product.
+  'gpt-5.1-codex-max': { models: 'gpt-5.1-codex-max' },
+  'gpt-5.2-codex': { models: 'gpt-5.2-codex' },
 };
 
 const ROUTE = /^\/(en|zh)\/(models|compare\/plans)\/([^/]+)\/?$/;
@@ -184,12 +182,8 @@ export function legacySlugRedirect(pathname: string): string | null {
   if (!match) return null;
   const [, locale, section, slug] = match;
   const sectionKey = section === 'models' ? 'models' : 'compare';
-  const parts = splitGluedModelSlug(slug);
-  const lookup = parts?.[0] ?? slug;
+  const lookup = slug;
   if (!Object.hasOwn(LEGACY_MODEL_SLUGS, lookup)) {
-    // An unresolvable glued id (one price cell stored as a slug) still lands on
-    // the section list, as it always has.
-    if (parts) return `/${locale}/${section}`;
     const compareOnly = sectionKey === 'compare' && Object.hasOwn(LEGACY_COMPARE_ONLY_SLUGS, lookup)
       ? LEGACY_COMPARE_ONLY_SLUGS[lookup] : undefined;
     if (compareOnly?.compare) return `/${locale}/${section}/${compareOnly.compare}`;
@@ -203,11 +197,8 @@ export function legacySlugRedirect(pathname: string): string | null {
     const destination = `/${locale}/${section}/${targetSlug}`;
     return destination === `/${locale}/${section}/${slug}` ? null : destination;
   }
-  // The family has no indexable comparison: hand the compare URL to the model
-  // page, which renders the same plan table, instead of the section list.
-  // selectIndexablePlanComparisons marks every older member of a series
-  // noindex (their plan set is a subset of the newest one), so those pages are
-  // near-duplicates and must stay noindex rather than becoming compare targets.
+  // No comparison destination is configured: use the mapped model detail.
+  // Its lifecycle/indexing policy is independent of the redirect's identity.
   if (sectionKey === 'compare' && entry.models) {
     return `/${locale}/models/${entry.models}`;
   }

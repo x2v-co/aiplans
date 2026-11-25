@@ -13,8 +13,17 @@ const FAMILIES = [
 ] as const;
 
 const FAMILY = FAMILIES.join('|');
-const GLUE = new RegExp(`(?<=[a-z0-9.])(?=(?:${FAMILY})(?:-|\\d))`, 'i');
-const START = new RegExp(`^(?:${FAMILY})(?:-|\\d)`, 'i');
+// Namespaces already used by catalog/OpenRouter slugs. Recognize them only as
+// prefixes of a known family, never strip arbitrary leading words to guess an
+// entity. Hyphen-separated provider/family repetitions remain single IDs.
+const PROVIDERS = [
+  'google-gemini', 'google', 'openai', 'anthropic', 'z-ai', 'zai', 'zhipu', 'thudm',
+  'moonshotai', 'moonshot', 'qwen', 'deepseek', 'mistral', 'mistralai', 'x-ai', 'xai',
+  'meta-llama', 'meta', 'minimax', 'stepfun', 'bytedance-seed', 'bytedance',
+].join('|');
+const MODEL_START = `(?:(?:${PROVIDERS})-)?(?:${FAMILY})(?:-|\\d)`;
+const GLUE = new RegExp(`(?<=[a-z0-9.])(?=${MODEL_START})`, 'i');
+const START = new RegExp(`^${MODEL_START}`, 'i');
 
 export function splitGluedModelSlug(slug: string): string[] | null {
   const parts = slug.split(GLUE).filter(Boolean);
