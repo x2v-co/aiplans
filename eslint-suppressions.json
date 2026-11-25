@@ -9,11 +9,6 @@
       "count": 11
     }
   },
-  "src/app/[locale]/api-pricing/api-pricing-view.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    }
-  },
   "src/app/[locale]/compare/plans/[model]/compare-plans-view.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 9

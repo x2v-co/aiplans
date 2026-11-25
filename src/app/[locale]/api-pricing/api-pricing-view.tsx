@@ -1,907 +1,242 @@
 "use client";
 
-import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
-
-import { ModelLifecycleBadge } from '@/components/model-lifecycle-badge';
-import { Fragment, useState, useMemo, useDeferredValue } from "react";
-import Link from "next/link";
-import { useTranslations } from '@/lib/translations';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, BarChart3, BookOpen, Check, ExternalLink, Filter, Search, Globe, MapPin, HelpCircle } from "lucide-react";
-import { ChannelTermsBadges } from '@/components/channel-terms-badges';
-import { LimitedTimeOfferMark, LimitedTimeOfferToggle } from '@/components/limited-time-offer';
-import SiteHeader from '@/components/SiteHeader';
-import {
-  formatPrice,
-  calculateSavingsPercent,
-} from "@/lib/currency";
-import { getProviderLogoFallback, getProviderLogoSrc } from "@/lib/provider-branding";
-import {
-  expandApiPricingPayload,
-  showChinaBadge,
-  type ApiPricingChannel,
-  type ApiPricingPayload,
-  type ApiPricingVariant,
-} from "@/lib/api-pricing-payload";
-import type { ApiPricingStats, FaqItem } from "@/lib/api-pricing-copy";
-import { modelFreshnessTime } from "@/lib/model-freshness";
-import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
-import { formatModelName } from '@/lib/model-names';
-import { trackAnalyticsEvent } from '@/lib/analytics';
+import { Fragment, useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
+import type { CatalogChannel, CatalogPage, CatalogRow, ChannelPage, VariantPage } from '@/lib/api-pricing-catalog';
+import { catalogQueryParams, parseCatalogRequest, CATALOG_PAGE_SIZE, CHANNEL_PAGE_SIZE, VARIANT_PAGE_SIZE, type CatalogQuery } from '@/lib/api-pricing-query';
+import { useTranslations } from 'next-intl';
+import { channelTermBadges, type ChannelTermsFields } from '@/lib/channel-terms';
+import { LimitedTimeOfferMark } from '@/components/limited-time-offer';
+import { CouponBadge } from '@/components/coupon-badge';
+import type { CouponOffer } from '@/lib/coupon-format';
+import { PRICE_UNIT_INFO } from '@/lib/currency';
 import { outboundChannelDataset } from '@/lib/funnel-analytics';
-import { matchesSearch } from '@/lib/search-match';
-import { CouponBadge } from "@/components/coupon-badge";
-import { couponsFor, type CouponOffer } from "@/lib/coupon-format";
-// Currency-normalised cheapest-channel selection. These are pure, module-scope
-// functions (see channel-price-utils.ts) so the React Compiler can preserve the
-// memoization of `filteredProducts` below — that memo is what keeps filtering
-// 320 models off the keystroke path.
-import {
-  usd,
-  getLowestPriceUSD,
-  normalizeChannelType,
-} from "@/lib/channel-price-utils";
 
-const INITIAL_VISIBLE_MODELS = 36;
-const LOAD_MORE_MODELS = 36;
+const control = 'rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:bg-zinc-900';
+// One locally scoped sheet replaces presentation attributes repeated in every
+// SSR row. Keep shared interactive badge components unchanged on other pages.
+const catalogStyles = `
+.api-pricing-catalog table{width:100%;border-collapse:collapse;font-size:.875rem;line-height:1.25rem}
+.api-pricing-catalog th,.api-pricing-catalog td{border-bottom:1px solid var(--border);padding:.75rem;text-align:left;vertical-align:top}
+.api-pricing-catalog table a:not([class]){color:var(--color-blue-600);text-decoration:underline}
+.api-pricing-catalog tbody>tr>td:first-child>a{font-weight:500}
+.api-pricing-catalog tbody>tr>td:first-child>p{font-size:.75rem;line-height:1rem}
+.api-pricing-catalog tbody>tr>td:first-child>p:first-of-type,.api-pricing-catalog .ap-provider>div:first-of-type,.api-pricing-catalog .ap-rates>div:last-child{color:var(--color-zinc-500);font-size:.75rem;line-height:1rem}
+.api-pricing-catalog .ap-provider,.api-pricing-catalog .ap-rates{font-size:.875rem;line-height:1.25rem}
+.api-pricing-catalog .ap-provider>:not(:last-child),.api-pricing-catalog .ap-rates>:not(:last-child){margin-bottom:.25rem}
+.api-pricing-catalog .ap-rates span{white-space:nowrap;font-family:var(--font-geist-mono),monospace}
+.api-pricing-catalog .ap-terms{margin-top:.25rem;display:flex;flex-wrap:wrap;gap:.25rem;white-space:normal}
+.api-pricing-catalog .ap-terms>span{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:9999px;padding:.125rem .5rem;font-size:.75rem;line-height:1rem;font-weight:400;white-space:nowrap}
+.api-pricing-catalog .ap-terms>.ap-training{font-weight:500;border-color:var(--color-amber-400);background:var(--color-amber-50);color:var(--color-amber-900)}
+.api-pricing-catalog .ap-note{font-size:.75rem;line-height:1rem;color:var(--color-amber-800)}
+.api-pricing-catalog summary{cursor:pointer;color:var(--color-blue-600)}
+.dark .api-pricing-catalog .ap-terms>.ap-training{background:var(--color-amber-950);color:var(--color-amber-200)}
+`;
 
-function ProviderVisitLink({
-  provider,
-  label,
-  locale,
-  coupons,
-  modelSlug,
-}: {
-  provider: ApiPricingChannel['providers'];
-  label: string;
-  locale: string;
-  coupons?: CouponOffer[];
-  modelSlug?: string;
-}) {
-  const href = getProviderVisitUrl(provider, 'api');
-  const badge = (
-    <CouponBadge
-      coupons={coupons ?? []}
-      locale={locale}
-      placement="api-pricing"
-      channelSlug={provider.slug}
-      channelType={provider.type}
-      modelSlug={modelSlug}
-      size="xs"
-      align="end"
-    />
-  );
-  if (!href) return (
-    <div className="flex flex-col items-end gap-1">
-      <span className="text-zinc-400">-</span>
-      {badge}
-    </div>
-  );
-
-  return (
-    <div className="flex flex-col items-end gap-1">
-      <Button asChild variant="outline" size="xs">
-        <a
-          href={href}
-          target="_blank"
-          rel={getProviderVisitRel(provider, 'api')}
-          {...outboundChannelDataset({
-            channelSlug: provider.slug,
-            channelType: provider.type,
-            modelSlug,
-          })}
-        >
-          {label}
-          <ExternalLink />
-        </a>
-      </Button>
-      {badge}
-    </div>
-  );
+/** Same evidence and translations as ChannelTermsBadges; static list styling. */
+function CatalogTerms({ terms }: { terms: ChannelTermsFields }) {
+  const t = useTranslations('channelTerms');
+  const badges = channelTermBadges(terms);
+  if (!badges.length) return null;
+  return <div className="ap-terms">{badges.map(badge => badge.kind === 'training'
+    ? <span key="training" className="ap-training" title={badge.note ?? undefined}>{t('training')}</span>
+    : <span key="quota">{t('quota', { unit: t(`units.${badge.unit}`) })}</span>)}</div>;
 }
 
-/**
- * The expandable variant list (e.g. ~80 OpenRouter upstream endpoints on one
- * channel). Its cards render only once opened: collapsed, they were ~200 KB of
- * the server HTML for content hidden by default. The variants still arrive in
- * the payload, so opening needs no request.
- */
-function PriceVariantList({ variants, locale }: { variants: ApiPricingVariant[]; locale: string }) {
+type Coupons = Record<string, CouponOffer[]>;
+type Envelope<T> = { page: T; couponByProvider: Coupons; requestedAt: string };
+
+/** Only event handlers call load. Mounting/hydrating this component downloads no catalog. */
+function useCatalogRequest<T>(onSuccess?: (params: URLSearchParams) => void) {
+  const [result, setResult] = useState<Envelope<T> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const pending = useRef<AbortController | null>(null);
+  const sequence = useRef(0);
+  const failedParams = useRef<string | null>(null);
+  useEffect(() => () => { sequence.current++; pending.current?.abort(); }, []);
+  async function load(params: URLSearchParams) {
+    const target = params.toString();
+    const current = ++sequence.current;
+    pending.current?.abort();
+    const controller = new AbortController();
+    pending.current = controller;
+    setLoading(true);
+    setError(false);
+    failedParams.current = null;
+    try {
+      const response = await fetch(`/api/pricing/catalog?${target}`, { signal: controller.signal, cache: 'no-store' });
+      if (!response.ok) throw new Error('Catalog unavailable');
+      const data = await response.json() as Envelope<T>;
+      if (current === sequence.current) { setResult(data); onSuccess?.(new URLSearchParams(target)); return data; }
+    } catch {
+      if (current === sequence.current && !controller.signal.aborted) { failedParams.current = target; setError(true); }
+    } finally {
+      if (current === sequence.current) setLoading(false);
+    }
+    return null;
+  }
+  const retry = () => failedParams.current === null ? Promise.resolve(null) : load(new URLSearchParams(failedParams.current));
+  return { result, loading, error, load, retry };
+}
+
+function Money({ value, currency }: { value: number | null | undefined; currency: string }) {
+  // Significant digits preserve tiny positive token rates; the ISO code disambiguates CNY/JPY/USD.
+  return <span>{value == null || !Number.isFinite(value) ? '—' :
+    `${currency} ${value.toLocaleString('en-US', { maximumSignificantDigits: 10 })}`}</span>;
+}
+
+function Rates({ row, locale }: { row: Pick<CatalogChannel, 'input_price_per_1m' | 'output_price_per_1m' | 'cached_input_price_per_1m' | 'currency' | 'price_unit'>; locale: string }) {
+  const zh = locale === 'zh';
+  const unit = PRICE_UNIT_INFO[row.price_unit]?.label[zh ? 'zh' : 'en'] ?? row.price_unit;
+  return <div className="ap-rates">
+    <div>{zh ? '输入' : 'Input'}: <Money value={row.input_price_per_1m} currency={row.currency} /></div>
+    <div>{zh ? '输出' : 'Output'}: <Money value={row.output_price_per_1m} currency={row.currency} /></div>
+    <div>{zh ? '缓存读取' : 'Cache read'}: <Money value={row.cached_input_price_per_1m} currency={row.currency} /></div>
+    <div>{unit || (zh ? '单位未提供' : 'Unit not supplied')}</div>
+  </div>;
+}
+
+function Provider({ row, locale, coupons }: { row: CatalogChannel; locale: string; coupons: Coupons }) {
+  const p = row.providers;
+  return <div className="ap-provider">
+    {p.href ? <a href={p.href} rel={p.rel} target="_blank"
+      {...outboundChannelDataset({ channelSlug: p.slug, channelType: p.type, modelSlug: row.model_slug })}>{p.name}</a> : <span>{p.name}</span>}
+    <div>{p.type} · {p.region ?? (locale === 'zh' ? '地区未知' : 'Region unknown')}
+      {locale === 'zh' && p.china ? ' · 中国大陆支持地区已核对' : ''}</div>
+    <CouponBadge coupons={coupons[p.slug] ?? []} locale={locale} placement="api-pricing" channelSlug={p.slug}
+      channelType={p.type} modelSlug={row.model_slug} size="xs" align="end" />
+  </div>;
+}
+
+function ErrorMessage({ locale }: { locale: string }) {
+  return <p role="alert" className="my-3 text-amber-800">{locale === 'zh' ? '价格暂时无法加载。请重试，或打开模型详情。' : 'Prices could not load. Retry, or open the model detail page.'}</p>;
+}
+
+function Variants({ row, slug, locale, query }: { row: CatalogChannel; slug: string; locale: string; query: CatalogQuery }) {
+  const request = useCatalogRequest<VariantPage>();
   const [open, setOpen] = useState(false);
-  return (
-    <details className="text-sm" onToggle={(event) => setOpen(event.currentTarget.open)}>
-      <summary className="cursor-pointer text-zinc-600 hover:text-blue-600">
-        {locale === 'zh' ? '展开全部报价变体' : 'Show all price variants'}
-      </summary>
-      {open && (
-        <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-          {variants.map((variant) => (
-            <div key={variant.id} className="rounded-md border bg-white p-3 dark:bg-zinc-950">
-              <div className="mb-1 flex items-center gap-2">
-                <span className="font-medium">{variant.variant_name}</span>
-                {variant.is_headline && <Badge className="text-xs">{locale === 'zh' ? '默认' : 'Default'}</Badge>}
-              </div>
-              <div className="font-mono text-xs text-zinc-600">
-                {formatPrice(variant.input_price_per_1m, variant.currency || 'USD', locale)} / {formatPrice(variant.output_price_per_1m, variant.currency || 'USD', locale)} per 1M
-              </div>
-              {variant.variant_kind && <div className="mt-1 text-xs text-zinc-500">{variant.variant_kind}</div>}
-            </div>
-          ))}
-        </div>
-      )}
-    </details>
-  );
+  const zh = locale === 'zh';
+  const load = (offset: number) => {
+    const params = catalogQueryParams({ ...query, offset });
+    params.set('mode', 'variants'); params.set('slug', slug); params.set('channelId', String(row.id));
+    return request.load(params);
+  };
+  const page = request.result?.page;
+  return <div className="mt-2">
+    <button type="button" className={control} disabled={request.loading} aria-expanded={open} onClick={() => {
+      setOpen(!open); if (!open && !page) void load(0);
+    }}>{row.variantCount} {zh ? '个报价变体' : 'price variants'}</button>
+    {request.loading && <p role="status">{zh ? '加载中…' : 'Loading…'}</p>}
+    {request.error && <><ErrorMessage locale={locale} /><button type="button" className={control} onClick={() => void request.retry()}>{zh ? '重试' : 'Retry'}</button></>}
+    {open && page && <div className="my-3 space-y-3">
+      {page.rows.map(v => <div key={v.id} className="rounded border p-3">
+        <p className="font-medium">{v.variant_name} {v.is_headline ? (zh ? '（默认）' : '(Default)') : ''}</p>
+        <p className="text-xs">{v.variant_kind}</p>
+        <Rates row={v} locale={locale} />
+        {v.constraints_json && <p className="text-xs">{String(v.constraints_json.time_window ?? '')} · {String(v.constraints_json.peak_schedule ?? '')}</p>}
+      </div>)}
+      <p className="text-xs">{page.offset + 1}–{page.offset + page.rows.length} / {page.total}</p>
+      <button type="button" className={control} disabled={request.loading || page.offset === 0} onClick={() => void load(Math.max(0, page.offset - VARIANT_PAGE_SIZE))}>{zh ? '上一页' : 'Previous'}</button>{' '}
+      <button type="button" className={control} disabled={request.loading || page.nextOffset === null} onClick={() => void load(page.nextOffset!)}>{zh ? '下一页' : 'Next'}</button>
+    </div>}
+  </div>;
 }
 
-/**
- * The interactive half of /api-pricing: search, sort and the four filters.
- *
- * `products` arrives as a prop from the server component rather than from an
- * effect. It used to be `useState([])` + `useEffect(fetch)`, which meant the
- * server rendered `loading=true` and emitted nothing but a spinner — 63
- * characters of HTML on the page CLAUDE.md calls the site's core SEO surface.
- * Filtering stays here and stays client-side, so it is still instant.
- */
-type SortBy = "price" | "name" | "elo" | "latest" | "context";
+function Channels({ row, locale, query }: { row: CatalogRow; locale: string; query: CatalogQuery }) {
+  const request = useCatalogRequest<ChannelPage>();
+  const page = request.result?.page;
+  const zh = locale === 'zh';
+  const load = (offset: number) => {
+    const params = catalogQueryParams({ ...query, offset });
+    params.set('mode', 'channels'); params.set('slug', row.slug);
+    return request.load(params);
+  };
+  return <details aria-describedby="api-pricing-channels-help" onToggle={event => { if (event.currentTarget.open && !request.result && !request.loading) void load(0); }}>
+    <summary>{zh ? '查看匹配渠道' : 'Compare matching channels'} ({row.channelCount})</summary>
+    <a href={`/${locale}/models/${encodeURIComponent(row.slug)}`}>{zh ? '模型详情与订阅套餐' : 'Model details and subscription plans'}</a>
+    {request.loading && <p role="status">{zh ? '加载中…' : 'Loading…'}</p>}
+    {request.error && <><ErrorMessage locale={locale} /><button type="button" className={control} onClick={() => void request.retry()}>{zh ? '重试' : 'Retry'}</button></>}
+    {page && <div className="my-3 space-y-3" aria-busy={request.loading}>
+      {page.rows.map(cp => <div key={cp.id} className="rounded border p-3">
+        <a className="text-blue-600 underline" href={`/${locale}/models/${encodeURIComponent(cp.model_slug)}`}>{cp.model_slug}</a>
+        <p className="text-xs">{cp.variant?.join(' · ')}</p>
+        {cp.member_shutdown_date && <p className="text-xs">{zh ? '退役日期' : 'Retirement date'}: {cp.member_shutdown_date}</p>}
+        <Provider row={cp} locale={locale} coupons={request.result!.couponByProvider} />
+        <Rates row={cp} locale={locale} />
+        <CatalogTerms terms={cp} />
+        <LimitedTimeOfferMark row={cp} locale={locale} now={new Date(page.requestedAt)} />
+        {cp.notes && <p className="text-xs text-amber-800">{cp.notes}</p>}
+        {cp.variantCount > 0 && <Variants key={`${cp.id}-${page.requestedAt}`} row={cp} slug={row.slug} locale={locale} query={query} />}
+      </div>)}
+      <p className="text-xs">{page.offset + 1}–{page.offset + page.rows.length} / {page.total}</p>
+      <button type="button" className={control} disabled={request.loading || page.offset === 0} onClick={() => void load(Math.max(0, page.offset - CHANNEL_PAGE_SIZE))}>{zh ? '上一页' : 'Previous'}</button>{' '}
+      <button type="button" className={control} disabled={request.loading || page.nextOffset === null} onClick={() => void load(page.nextOffset!)}>{zh ? '下一页' : 'Next'}</button>
+    </div>}
+  </details>;
+}
 
-export type ApiPricingInitialFilters = Partial<{
-  sortBy: SortBy;
-  sortOrder: "asc" | "desc";
-  regionFilter: "all" | "global" | "china";
-  channelTypeFilter: "all" | "official" | "cloud" | "aggregator" | "reseller";
-  chinaAccessOnly: boolean;
-}>;
-
-export default function ApiPricingView({
-  locale,
-  payload,
-  initialQuery,
-  initialFilters,
-  stats,
-  copy,
-  faqs,
-  couponByProvider,
-  promoOnly = false,
-  requestedAt,
-}: {
-  locale: string;
-  /** Trimmed catalog from buildApiPricingPayload (lib/api-pricing-payload.ts). */
-  payload: ApiPricingPayload;
-  /** Initial search term, e.g. from ?q=gpt (the WebSite SearchAction target). */
-  initialQuery?: string;
-  /** Initial sort/filter state, e.g. from ?sort=context&china=1 deep links. */
-  initialFilters?: ApiPricingInitialFilters;
-  stats: ApiPricingStats;
-  copy: { heading: string; introduction: string; updatedOn: string | null };
-  faqs: FaqItem[];
-  /** Active api-scoped coupons keyed by provider slug. */
-  couponByProvider: Record<string, CouponOffer[]>;
-  /** Server already limited `products` to unexpired offers when true. */
-  promoOnly?: boolean;
-  /** Request time. The offer mark must not read the browser clock. */
-  requestedAt: string;
+export default function ApiPricingView({ locale, initialPage, initialQuery, couponByProvider, requestedAt }: {
+  locale: string; initialPage: CatalogPage; initialQuery: CatalogQuery; couponByProvider: Coupons; requestedAt: string;
 }) {
-  const t = useTranslations('apiPricing');
-  const isZh = locale === "zh";
-  const offerNow = new Date(requestedAt);
-  const products = useMemo(() => expandApiPricingPayload(payload), [payload]);
-
-  // 获取嵌套翻译的辅助函数
-  const tChina = () => t('china' as any);
-  const tGlobal = () => t('global' as any);
-
-  const [searchQuery, setSearchQuery] = useState(() => initialQuery?.trim() ?? "");
-  const [sortBy, setSortBy] = useState<SortBy>(initialFilters?.sortBy ?? "elo");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
-    initialFilters?.sortOrder ?? "desc",
-  );
-  const [regionFilter, setRegionFilter] = useState<"all" | "global" | "china">(
-    initialFilters?.regionFilter ?? "all",
-  );
-  const [channelTypeFilter, setChannelTypeFilter] = useState<"all" | "official" | "cloud" | "aggregator" | "reseller">(
-    initialFilters?.channelTypeFilter ?? "all",
-  );
-  const [chinaAccessOnly, setChinaAccessOnly] = useState(locale === 'zh' && (initialFilters?.chinaAccessOnly ?? false));
-  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_MODELS);
-  const deferredSearchQuery = useDeferredValue(searchQuery);
-
-  const filteredProducts = useMemo(() => {
-    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
-    const filtered = products.filter(p => {
-      // Search across model name + all channel provider names. The shared
-      // matcher ignores punctuation and resolves brand aliases, so
-      // "chatgpt" surfaces GPT models and "智谱" GLM channels.
-      if (normalizedQuery) {
-        const searchValues = [
-          p.name,
-          p.slug,
-          p.baseName,
-          p.providers?.name,
-          ...Array.from(p.memberSlugs ?? []),
-          ...p.versions.flatMap((cp) => [cp.providers?.name, cp.providers?.slug, cp.model_slug]),
-        ];
-
-        if (!matchesSearch(deferredSearchQuery.trim(), searchValues)) return false;
-      }
-
-      // Region filter: match if the product's primary producer is in the
-      // selected region, OR at least one of its tracked channels is. The
-      // producer fallback is important for models like GLM / Kimi where we
-      // haven't imported the official CN platform's channel prices yet —
-      // Zhipu and Moonshot are CN producers, so their models should still
-      // surface under "🇨🇳 China" even if we only track aggregator channels.
-      if (regionFilter !== "all") {
-        const producerMatch = p.providers?.region === regionFilter;
-        const channelMatch = p.versions.some((cp) => cp.providers?.region === regionFilter);
-        if (!producerMatch && !channelMatch) return false;
-      }
-
-      // Channel type filter: keep if any channel matches the selected type.
-      // "official" also matches "producer" for backward-compat with older rows.
-      if (channelTypeFilter !== "all") {
-        const hasType = p.versions.some((cp) => {
-          const t = cp.providers?.type;
-          if (channelTypeFilter === "official") return t === "official" || t === "producer";
-          return t === channelTypeFilter;
-        });
-        if (!hasType) return false;
-      }
-
-      // Only sourced country support qualifies for the zh filter.
-      if (locale === 'zh' && chinaAccessOnly) {
-        const producerAccess = showChinaBadge(p.providers, locale);
-        const channelAccess = p.versions.some((cp) => showChinaBadge(cp.providers, locale));
-        if (!producerAccess && !channelAccess) return false;
-      }
-
-      return true;
-    });
-
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "price":
-          const priceA = getLowestPriceUSD(a);
-          const priceB = getLowestPriceUSD(b);
-          return sortOrder === "asc"
-            ? (priceA || Infinity) - (priceB || Infinity)
-            : (priceB || Infinity) - (priceA || Infinity);
-        case "name":
-          return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-        case "elo":
-          const eloA = a.benchmark_arena_elo || 0;
-          const eloB = b.benchmark_arena_elo || 0;
-          return sortOrder === "asc" ? eloA - eloB : eloB - eloA;
-        case "latest":
-          return sortOrder === "asc"
-            ? modelFreshnessTime(a) - modelFreshnessTime(b)
-            : modelFreshnessTime(b) - modelFreshnessTime(a);
-        case "context": {
-          const ctxA = a.context_window || 0;
-          const ctxB = b.context_window || 0;
-          return sortOrder === "asc" ? ctxA - ctxB : ctxB - ctxA;
-        }
-        default:
-          return 0;
-      }
-    });
-
-    return filtered;
-  }, [products, deferredSearchQuery, sortBy, sortOrder, regionFilter, channelTypeFilter, chinaAccessOnly, locale]);
-
-  const clearFilters = () => {
-    setSearchQuery("");
-    setRegionFilter("all");
-    setChannelTypeFilter("all");
-    setChinaAccessOnly(false);
-    trackAnalyticsEvent('pricing_filter_change', {
-      filter_name: 'clear_all',
-      filter_value: 'default',
-      locale,
-    });
+  const zh = locale === 'zh';
+  const [query, setQuery] = useState(initialQuery);
+  const request = useCatalogRequest<CatalogPage>(params => setQuery(parseCatalogRequest(params).query));
+  const page = request.result?.page ?? initialPage;
+  const coupons = request.result?.couponByProvider ?? couponByProvider;
+  const at = request.result?.requestedAt ?? requestedAt;
+  const update = (next: CatalogQuery) => request.load(catalogQueryParams(next));
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    for (const [key, value] of new FormData(event.currentTarget)) if (typeof value === 'string') params.set(key, value);
+    params.set('q', (params.get('q') ?? '').replace(/[\u0000-\u001f\u007f]/g, ''));
+    params.set('locale', locale);
+    params.set('offset', '0');
+    void update(parseCatalogRequest(params).query);
+  }
+  const href = (offset: number) => `/${locale}/api-pricing?${catalogQueryParams({ ...query, offset })}`;
+  const navigate = (event: MouseEvent<HTMLAnchorElement>, offset: number) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault(); void update({ ...query, offset });
   };
-
-  const trackFilter = (filterName: string, filterValue: string | boolean) => {
-    trackAnalyticsEvent('pricing_filter_change', {
-      filter_name: filterName,
-      filter_value: String(filterValue),
-      locale,
-    });
-  };
-
-  const hasActiveFilters =
-    searchQuery !== "" ||
-    regionFilter !== "all" ||
-    channelTypeFilter !== "all" ||
-    chinaAccessOnly;
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
-      <SiteHeader locale={locale} />
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{copy.heading}</h1>
-          <p className="text-zinc-600 dark:text-zinc-400 mb-6">
-            {copy.introduction}
-          </p>
-          {copy.updatedOn && (
-            <p className="mb-6 text-sm text-zinc-500">
-              {isZh ? '价格数据更新于：' : 'Price data updated on: '}
-              <time dateTime={copy.updatedOn}>{copy.updatedOn}</time> (UTC)
-            </p>
-          )}
-          <div className="mb-6 flex flex-wrap gap-4 text-sm font-medium">
-            <Link href={`/${locale}/guides`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline">
-              <BookOpen className="h-4 w-4" />
-              {isZh ? '阅读价格指南' : 'Read pricing guides'}
-            </Link>
-            <Link href={`/${locale}/reports/api-price-index`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline">
-              <BarChart3 className="h-4 w-4" />
-              {isZh ? '查看 API 价格指数' : 'View the API Price Index'}
-            </Link>
-          </div>
-          {/* Stats strip — real counts from the payload, gives the page
-              crawlable, data-specific intro copy. */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { value: stats.modelCount, label: isZh ? "模型" : "models" },
-              { value: stats.channelCount, label: isZh ? "API 渠道" : "API channels" },
-              { value: stats.providerCount, label: isZh ? "供应商" : "providers" },
-              { value: stats.chinaModelCount, label: isZh ? "可中国直连" : "China-reachable" },
-            ].map((s) => (
-              <div key={s.label} className="rounded-lg border bg-white px-4 py-3 dark:bg-zinc-900">
-                <div className="text-2xl font-bold">{s.value.toLocaleString()}</div>
-                <div className="text-xs text-zinc-500">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Filter className="w-4 h-4" />
-              <span className="font-medium">{t('filters')}</span>
-              {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-xs h-7">
-                  {t('clearAll')}
-                </Button>
-              )}
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="relative lg:col-span-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                <Input
-                  placeholder={t('searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onBlur={() => {
-                    const query = searchQuery.trim();
-                    if (query) {
-                      trackAnalyticsEvent('pricing_search', {
-                        query_length: Math.min(query.length, 100),
-                        result_count: filteredProducts.length,
-                        locale,
-                      });
-                    }
-                  }}
-                  className="pl-9"
-                />
-              </div>
-
-              <div>
-                <Select value={regionFilter} onValueChange={(v) => {
-                  setRegionFilter(v as typeof regionFilter);
-                  trackFilter('region', v);
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('region')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('allRegions')}</SelectItem>
-                    <SelectItem value="global">{t('global')}</SelectItem>
-                    <SelectItem value="china">{t('china')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Select value={channelTypeFilter} onValueChange={(v) => {
-                  setChannelTypeFilter(v as typeof channelTypeFilter);
-                  trackFilter('channel_type', v);
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('channelType')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('allTypes')}</SelectItem>
-                    <SelectItem value="official">{t('channelTypes.official' as any)}</SelectItem>
-                    <SelectItem value="cloud">{t('channelTypes.cloud' as any)}</SelectItem>
-                    <SelectItem value="aggregator">{t('channelTypes.aggregator' as any)}</SelectItem>
-                    <SelectItem value="reseller">{t('channelTypes.reseller' as any)}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="lg:col-span-2">
-                <Select
-                  value={`${sortBy}-${sortOrder}`}
-                  onValueChange={(value) => {
-                    const [by, order] = value.split("-") as [SortBy, "asc" | "desc"];
-                    setSortBy(by);
-                    setSortOrder(order);
-                    trackFilter('sort', value);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('sortBy')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="latest-desc">{t('latestFirst')}</SelectItem>
-                    <SelectItem value="elo-desc">{t('performanceHighToLow')}</SelectItem>
-                    <SelectItem value="context-desc">{t('contextHighToLow')}</SelectItem>
-                    <SelectItem value="elo-asc">{locale === 'zh' ? '⭐ 性能从低到高' : '⭐ Performance (Low to High)'}</SelectItem>
-                    <SelectItem value="price-asc">{t('priceLowToHigh')}</SelectItem>
-                    <SelectItem value="price-desc">{t('priceHighToLow')}</SelectItem>
-                    <SelectItem value="name-asc">{t('nameAZ')}</SelectItem>
-                    <SelectItem value="name-desc">{t('nameZA')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="lg:col-span-2 flex flex-wrap items-center gap-4">
-                <LimitedTimeOfferToggle
-                  locale={locale}
-                  path="/api-pricing"
-                  active={promoOnly}
-                  preserve={{
-                    q: initialQuery,
-                    sort: initialFilters?.sortBy,
-                    order: initialFilters?.sortOrder,
-                    china: initialFilters?.chinaAccessOnly ? '1' : undefined,
-                    region: initialFilters?.regionFilter && initialFilters.regionFilter !== 'all' ? initialFilters.regionFilter : undefined,
-                    channel: initialFilters?.channelTypeFilter && initialFilters.channelTypeFilter !== 'all' ? initialFilters.channelTypeFilter : undefined,
-                  }}
-                />
-                {locale === 'zh' && <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={chinaAccessOnly}
-                    onChange={(e) => {
-                      setChinaAccessOnly(e.target.checked);
-                      trackFilter('china_access_only', e.target.checked);
-                    }}
-                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <MapPin className="w-4 h-4 text-zinc-400" />
-                  {t('chinaAccessOnly')}
-                </label>}
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-zinc-500">
-              {filteredProducts.length} {filteredProducts.length === 1 ? 'model' : 'models'}
-              {deferredSearchQuery.trim() ? ` matched "${deferredSearchQuery}"` : ''}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('modelChannelPrices')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredProducts.length === 0 ? (
-              <div className="text-center py-12 text-zinc-500">
-                {t('noResults')}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {filteredProducts.slice(0, visibleCount).map((product) => {
-                  // 按渠道名称分组版本
-                  const versionsByChannel = new Map<string, ApiPricingChannel[]>();
-                  product.versions.forEach(cp => {
-                    const key = cp.providers.name;
-                    if (!versionsByChannel.has(key)) {
-                      versionsByChannel.set(key, []);
-                    }
-                    versionsByChannel.get(key)!.push(cp);
-                  });
-
-                  // 获取最便宜的官方价格（用于计算节省）。只取标准型号行，
-                  // 避免 mini/batch 折扣行把基准价拉低。
-                  const officialPrices = product.versions.filter(cp => !cp.variant && (cp.providers.type === 'official' || cp.providers.type === 'producer') && cp.input_price_per_1m != null);
-                  const cheapestOfficial = officialPrices.length > 0
-                    ? officialPrices.reduce((min, cp) =>
-                        // 折算成 USD 再比大小：官方渠道里同时有 CNY 和 USD 定价，
-                        // 直接比原始数字会把国内官方价当成最贵的那个，于是所有
-                        // "省 x%" 都是相对错误的基准算出来的。
-                        (usd(cp.input_price_per_1m, cp.currency) ?? Infinity) <
-                        (usd(min.input_price_per_1m, min.currency) ?? Infinity) ? cp : min
-                      )
-                    : null;
-
-                  return (
-                    <div key={product.id} className="border-b pb-6 last:border-0">
-                      {/* 模型名称和基本信息 */}
-                      <div className="flex items-start gap-4 mb-4">
-                        {getProviderLogoSrc(product.providers) ? (
-                          <img
-                            src={getProviderLogoSrc(product.providers)!}
-                            alt={product.providers?.name || formatModelName(product.name)}
-                            className="w-12 h-12 rounded-lg flex-shrink-0"
-                          />
-                        ) : (
-                          <span className="text-4xl flex-shrink-0">{getProviderLogoFallback(product.providers, "🤖")}</span>
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Link
-                              href={`/${locale}/models/${product.slug}`}
-                              className="text-xl font-bold hover:text-blue-600"
-                            >
-                              {formatModelName(product.name)}
-                            </Link>
-                            <ModelLifecycleBadge shutdownDate={product.shutdown_date} replacement={product.replacement_model} />
-                            {product.benchmark_arena_elo && (
-                              <Badge variant="outline" className="ml-2" title="Agent Arena net improvement">
-                                Agent {product.benchmark_arena_elo}%
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                            {product.providers?.slug ? (
-                              <Link href={`/${locale}/providers/${product.providers.slug}`} className="hover:text-blue-600 hover:underline">
-                                {product.providers.name}
-                              </Link>
-                            ) : (
-                              product.providers?.name
-                            )}
-                            {' • '}
-                            {product.context_window ? `${product.context_window.toLocaleString()} tokens` : 'N/A'}
-                            {(product.released_at || product.created_at) && (
-                              <>
-                                {' • '}
-                                {product.released_at
-                                  ? locale === 'zh' ? '发布于' : 'Released'
-                                  : locale === 'zh' ? '收录于' : 'Added'}{' '}
-                                {new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
-                                  dateStyle: 'medium',
-                                  timeZone: 'Asia/Singapore',
-                                }).format(new Date(product.released_at ?? product.created_at!))}
-                              </>
-                            )}
-                            {' • '}
-                            <Link href={`/${locale}/compare/plans/${product.slug}`} className="text-blue-600 hover:underline">
-                              {locale === 'zh' ? '对比订阅计划' : 'Compare plans'}
-                            </Link>
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* 国内版和国际版价格表格 */}
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>{t('channel')}</TableHead>
-                            <TableHead className="text-center w-20">{t('region')}</TableHead>
-                            <TableHead className="text-right">{t('inputPer1M')}</TableHead>
-                            <TableHead className="text-right">{t('outputPer1M')}</TableHead>
-                            <TableHead className="text-right">{t('savings')}</TableHead>
-                            <TableHead className="w-28 text-right">{locale === 'zh' ? '访问' : 'Visit'}</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {Array.from(versionsByChannel.entries()).map(([channelName, prices]) => {
-                            // 按国内/国际版本分组
-                            const chinaVersion = prices.find(cp => cp.providers.region === 'china');
-                            const globalVersion = prices.find(cp => cp.providers.region === 'global');
-                            const isOfficial = prices.some(cp => cp.providers.type === 'official' || cp.providers.type === 'producer' || cp.providers.type === 'producer');
-
-                            // 如果是官方渠道且同时有国内和国际版本，合并显示
-                            if (isOfficial && chinaVersion && globalVersion) {
-                              // No raw-number pre-check: calculateSavingsPercent
-                              // already converts both sides to USD and returns a
-                              // negative number when the channel is dearer, and
-                              // every render site gates on `> 0`. The old guard
-                              // compared ¥ against $ and so hid the badge on
-                              // exactly the CN channels that are cheapest.
-                              const savingsChina = cheapestOfficial && cheapestOfficial.input_price_per_1m != null &&
-                                  chinaVersion.input_price_per_1m != null
-                                ? calculateSavingsPercent(
-                                    chinaVersion.input_price_per_1m,
-                                    chinaVersion.currency || 'USD',
-                                    cheapestOfficial.input_price_per_1m,
-                                    cheapestOfficial.currency || 'USD'
-                                  )
-                                : 0;
-                              const savingsGlobal = cheapestOfficial && cheapestOfficial.input_price_per_1m != null &&
-                                  globalVersion.input_price_per_1m != null
-                                ? calculateSavingsPercent(
-                                    globalVersion.input_price_per_1m,
-                                    globalVersion.currency || 'USD',
-                                    cheapestOfficial.input_price_per_1m,
-                                    cheapestOfficial.currency || 'USD'
-                                  )
-                                : 0;
-
-                              return (
-                                <TableRow key={channelName}>
-                                  <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      <div className="flex flex-col gap-1">
-                                        {/* 国内版 */}
-                                        <div key="china-version" className="flex items-center gap-2">
-                                          <MapPin className="w-3 h-3 text-zinc-400" />
-                                          <span className="text-sm font-medium">
-                                            {channelName} {tChina()}
-                                          </span>
-                                          {showChinaBadge(chinaVersion.providers, locale) && (
-                                            <Check className="w-3 h-3 text-green-600" />
-                                          )}
-                                        </div>
-                                        {/* 国际版 */}
-                                        <div key="global-version" className="flex items-center gap-2">
-                                          <Globe className="w-3 h-3 text-zinc-400" />
-                                          <span className="text-sm font-medium">
-                                            {channelName} {tGlobal()}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <LimitedTimeOfferMark row={chinaVersion} locale={locale} now={offerNow} />
-                                    <LimitedTimeOfferMark row={globalVersion} locale={locale} now={offerNow} />
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    <Badge variant="outline">
-                                      {t('channelTypes.official')}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                      {/* 国内版价格 */}
-                                      <div key="china-input-price" className="flex items-center gap-2">
-                                        <span className="text-zinc-500">{t('china')}:</span>
-                                        <span className="font-mono text-sm">
-                                          {formatPrice(chinaVersion.input_price_per_1m, chinaVersion.currency || 'USD', locale)}
-                                        </span>
-                                      </div>
-                                      {/* 国际版价格 */}
-                                      <div key="global-input-price" className="flex items-center gap-2">
-                                        <span className="text-zinc-500">{t('global')}:</span>
-                                        <span className="font-mono text-sm">
-                                          {formatPrice(globalVersion.input_price_per_1m, globalVersion.currency || 'USD', locale)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                      {/* 国内版价格 */}
-                                      <div key="china-output-price" className="flex items-center gap-2">
-                                        <span className="text-zinc-500">{t('china')}:</span>
-                                        <span className="font-mono text-sm">
-                                          {formatPrice(chinaVersion.output_price_per_1m, chinaVersion.currency || 'USD', locale)}
-                                        </span>
-                                      </div>
-                                      {/* 国际版价格 */}
-                                      <div key="global-output-price" className="flex items-center gap-2">
-                                        <span className="text-zinc-500">{t('global')}:</span>
-                                        <span className="font-mono text-sm">
-                                          {formatPrice(globalVersion.output_price_per_1m, globalVersion.currency || 'USD', locale)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <div className="flex flex-col gap-1">
-                                      {/* 国内版节省 */}
-                                      <div key="china-savings" className="flex items-center gap-2">
-                                        <span className="text-zinc-500">{t('china')}:</span>
-                                        {savingsChina > 0 ? (
-                                          <span className="text-green-600 font-medium text-sm">-{savingsChina}%</span>
-                                        ) : (
-                                          <span className="text-zinc-400 text-sm">-</span>
-                                        )}
-                                      </div>
-                                      {/* 国际版节省 */}
-                                      <div key="global-savings" className="flex items-center gap-2">
-                                        <span className="text-zinc-500">{t('global')}:</span>
-                                        {savingsGlobal > 0 ? (
-                                          <span className="text-green-600 font-medium text-sm">-{savingsGlobal}%</span>
-                                        ) : (
-                                          <span className="text-zinc-400 text-sm">-</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <ProviderVisitLink
-                                      provider={chinaVersion.providers}
-                                      label={locale === 'zh' ? '访问' : 'Visit'}
-                                      locale={locale}
-                                      modelSlug={product.slug}
-                                      coupons={couponsFor(
-                                        couponByProvider,
-                                        chinaVersion.providers.slug,
-                                        globalVersion?.providers.slug,
-                                      )}
-                                    />
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            }
-
-                            // 标准单行显示（非合并的国内/国际版本）
-                            return prices.map((cp, idx) => {
-                              const savings = cheapestOfficial && cheapestOfficial.input_price_per_1m != null &&
-                                  cp.input_price_per_1m != null
-                                ? calculateSavingsPercent(
-                                    cp.input_price_per_1m,
-                                    cp.currency || 'USD',
-                                    cheapestOfficial.input_price_per_1m,
-                                    cheapestOfficial.currency || 'USD'
-                                  )
-                                : 0;
-
-                              return (
-                                <Fragment key={`${cp.id}-${idx}`}>
-                                <TableRow>
-                                  <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      <span className={cp === cheapestOfficial ? "font-medium" : ""}>
-                                        {cp.providers.name}
-                                      </span>
-                                      {(cp.price_variants?.length ?? 0) > 1 && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          {cp.price_variants!.length} {locale === 'zh' ? '档报价' : 'variants'}
-                                        </Badge>
-                                      )}
-                                      {cp.member_shutdown_date && cp.member_shutdown_date !== product.shutdown_date && (
-                                        <ModelLifecycleBadge shutdownDate={cp.member_shutdown_date} />
-                                      )}
-                                      {(cp.variant ?? []).map(tag => {
-                                        const label = locale === 'zh'
-                                          ? { mini: '轻量', nano: 'Nano', batch: '批量' }[tag]
-                                          : tag.charAt(0).toUpperCase() + tag.slice(1);
-                                        return (
-                                          <Badge
-                                            key={tag}
-                                            variant="secondary"
-                                            className="ml-1 text-xs"
-                                            title={tag === 'batch' ? t('variantBatchTooltip') : undefined}
-                                          >
-                                            {label}
-                                          </Badge>
-                                        );
-                                      })}
-                                      {showChinaBadge(cp.providers, locale) && (
-                                        <Check className="w-3 h-3 text-green-600" />
-                                      )}
-                                      {showChinaBadge(cp.providers, locale) && (
-                                        <Badge className="ml-2 text-xs" variant="outline">
-                                          🇨🇳
-                                        </Badge>
-                                      )}
-                                      {cp.providers.region === 'global' && (
-                                        <Badge className="ml-2 text-xs" variant="outline">
-                                          🌍
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <ChannelTermsBadges terms={cp} />
-                          <DeepSeekWindowPrices variants={cp.price_variants} />
-                                    <LimitedTimeOfferMark row={cp} locale={locale} now={offerNow} />
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    <Badge variant="outline">
-                                      {t(`channelTypes.${normalizeChannelType(cp.providers.type)}` as any)}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-right font-mono">
-                                    {formatPrice(cp.input_price_per_1m, cp.currency || 'USD', locale)}
-                                  </TableCell>
-                                  <TableCell className="text-right font-mono">
-                                    {formatPrice(cp.output_price_per_1m, cp.currency || 'USD', locale)}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    {savings > 0 ? (
-                                      <span className="text-green-600 font-medium">-{savings}%</span>
-                                    ) : cp === cheapestOfficial ? (
-                                      <Badge variant="outline" className="text-xs">{t('officialBaseline')}</Badge>
-                                    ) : (
-                                      <span className="text-zinc-400">-</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <ProviderVisitLink
-                                      provider={cp.providers}
-                                      label={locale === 'zh' ? '访问' : 'Visit'}
-                                      locale={locale}
-                                      modelSlug={product.slug}
-                                      coupons={couponsFor(couponByProvider, cp.providers.slug)}
-                                    />
-                                  </TableCell>
-                                </TableRow>
-                                {cp.notes?.startsWith('[needs-verification]') && (
-                                  <TableRow>
-                                    <TableCell colSpan={6} className="text-xs text-amber-700 dark:text-amber-400">{cp.notes}</TableCell>
-                                  </TableRow>
-                                )}
-                                {(cp.price_variants?.length ?? 0) > 1 && (
-                                  <TableRow>
-                                    <TableCell colSpan={6} className="bg-zinc-50/70 dark:bg-zinc-900/50">
-                                      <PriceVariantList variants={cp.price_variants!} locale={locale} />
-                                    </TableCell>
-                                  </TableRow>
-                                )}
-                                </Fragment>
-                              );
-                            });
-                          })}
-                        </TableBody>
-                      </Table>
-
-                      {/* 详情按钮 */}
-                      <div className="mt-4 flex justify-end">
-                        <Link href={`/${locale}/models/${product.slug}`}>
-                          <Button variant="ghost" size="sm" className="gap-1">
-                            {t('details')} <ArrowRight className="w-3 h-3" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
-                {visibleCount < filteredProducts.length && (
-                  <div className="flex flex-col items-center gap-2 border-t pt-6">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setVisibleCount((count) => count + LOAD_MORE_MODELS)}
-                    >
-                      {isZh ? '加载更多模型' : 'Load more models'}
-                    </Button>
-                    <p className="text-xs text-zinc-500">
-                      {isZh
-                        ? `已显示 ${Math.min(visibleCount, filteredProducts.length)} / ${filteredProducts.length}`
-                        : `Showing ${Math.min(visibleCount, filteredProducts.length)} of ${filteredProducts.length}`}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* FAQ — visible mirror of the FAQPage JSON-LD emitted by the server
-            component, built from the same stats/faqs so they never drift. */}
-        {faqs.length > 0 && (
-          <section className="mt-12">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <HelpCircle className="w-6 h-6 text-blue-600" />
-              {isZh ? "常见问题" : "Frequently asked questions"}
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {faqs.map((faq, i) => (
-                <Card key={i}>
-                  <CardContent className="py-4">
-                    <h3 className="font-semibold mb-1">{faq.question}</h3>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                      {faq.answer}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        )}
-      </main>
+  return <section className="api-pricing-catalog" aria-label={zh ? 'API 价格目录' : 'API pricing catalog'}>
+    <style>{catalogStyles}</style>
+    <form action={`/${locale}/api-pricing`} method="get" onSubmit={submit} className="mb-5 flex flex-wrap items-end gap-3">
+      <label>{zh ? '搜索模型或渠道' : 'Search models or channels'}<br /><input name="q" maxLength={128} defaultValue={initialQuery.q} className={control} /></label>
+      <label>{zh ? '排序' : 'Sort'}<br /><select name="sort" defaultValue={initialQuery.sort} className={control}>
+        {(['selected', 'price', 'name', 'elo', 'latest', 'context'] as const).map((value, i) => <option key={value} value={value}>{(zh ? ['精选模型', '输入价格', '名称', 'Arena 分数', '最新', '上下文'] : ['Selected models', 'Input price', 'Name', 'Arena score', 'Latest', 'Context'])[i]}</option>)}
+      </select></label>
+      <label>{zh ? '方向' : 'Order'}<br /><select name="order" defaultValue={initialQuery.order} className={control}><option value="desc">{zh ? '降序' : 'Descending'}</option><option value="asc">{zh ? '升序' : 'Ascending'}</option></select></label>
+      <label>{zh ? '地区' : 'Region'}<br /><select name="region" defaultValue={initialQuery.region} className={control}>{['all', 'global', 'china'].map(v => <option key={v} value={v}>{zh ? ({ all: '全部', global: '国际', china: '中国' } as Record<string, string>)[v] : v}</option>)}</select></label>
+      <label>{zh ? '渠道类型' : 'Channel type'}<br /><select name="channel" defaultValue={initialQuery.channel} className={control}>{['all', 'official', 'cloud', 'aggregator', 'reseller'].map(v => <option key={v} value={v}>{zh ? ({ all: '全部', official: '官方', cloud: '云厂商', aggregator: '聚合', reseller: '分销' } as Record<string, string>)[v] : v}</option>)}</select></label>
+      {zh && <label><input type="checkbox" name="china" value="1" defaultChecked={initialQuery.china} /> 仅中国大陆可用</label>}
+      <label><input type="checkbox" name="promo" value="1" defaultChecked={initialQuery.promo} /> {zh ? '限时优惠' : 'Limited-time offers'}</label>
+      <button className={control} disabled={request.loading}>{zh ? '更新结果' : 'Update results'}</button>
+      <a className="text-sm text-blue-600 underline" href={`/${locale}/api-pricing`}>{zh ? '重置' : 'Reset'}</a>
+    </form>
+    <p className="mb-3 text-sm text-zinc-500">{zh ? '精选模型优先采用现有审核名单，再按 Arena 分数和模型标识排序。报价须属于本模型且满足全部渠道筛选条件；仅有匹配成员时不显示本模型价格。地区筛选依据渠道证据，不采用生产商所在地。批量及变体请展开查看。跨币种价格排序按固定汇率折算美元，按百万 token 统一单位。' : 'Selected models uses the existing reviewed selection, then Arena score and model slug. Each quote belongs to the linked model and matches every channel filter. Matching siblings alone do not establish its price. Region filters use channel evidence, not producer location. Expand for batch and variants. Price sorting uses fixed exchange rates to USD per million tokens.'}</p>
+    <p role="status" className="my-3">{request.loading ? (zh ? '加载中…' : 'Loading…') : `${page.total} ${zh ? '个模型组' : 'model groups'} · ${page.rows.length ? page.offset + 1 : 0}–${page.offset + page.rows.length}`}</p>
+    {request.error && <><ErrorMessage locale={locale} /><button type="button" className={control} onClick={() => void request.retry()}>{zh ? '重试' : 'Retry'}</button></>}
+    <p id="api-pricing-channels-help" className="my-2 text-xs text-zinc-500">{zh ? '逐条显示满足当前筛选条件的渠道及原模型标识、地区、批量与缓存价格。模型详情包含其他渠道。' : 'Channels match the current filters and identify their model, region, batch and cache pricing. Model details include other channels.'}</p>
+    <div className="overflow-x-auto" aria-busy={request.loading}>
+      <table>
+        <thead><tr>{(zh ? ['模型', '示例渠道', '原币种价格', '对比'] : ['Model', 'Quoted channel', 'Native prices', 'Compare']).map(label => <th key={label} scope="col">{label}</th>)}</tr></thead>
+        <tbody>{page.rows.map(row => <Fragment key={row.slug}><tr>
+          <td><a href={`/${locale}/models/${encodeURIComponent(row.slug)}`}>{row.name}</a>
+            <p>{row.producer} · {row.slug}</p>
+            {!!row.context && <p>{zh ? '上下文' : 'Context'}: {row.context.toLocaleString('en-US')}</p>}
+            {row.shutdown && <p>{zh ? '退役日期' : 'Retirement date'}: {row.shutdown}</p>}
+          </td>
+          <td>{row.quote ? <Provider row={row.quote} locale={locale} coupons={coupons} /> : '—'}</td>
+          <td>{row.quote ? <><Rates row={row.quote} locale={locale} /><CatalogTerms terms={row.quote} /><LimitedTimeOfferMark row={row.quote} locale={locale} now={new Date(at)} />{row.quote.notes && <p className="ap-note">{row.quote.notes}</p>}</> : (zh ? '本模型暂无匹配报价；请展开查看匹配的成员报价' : 'No matching canonical quote; expand for matching member prices')}</td>
+          <td><Channels key={`${row.slug}-${catalogQueryParams(query)}`} row={row} locale={locale} query={query} /></td>
+        </tr></Fragment>)}</tbody>
+      </table>
     </div>
-  );
+    {!page.rows.length && <p className="my-6">{zh ? '没有匹配的模型。请调整筛选条件。' : 'No matching models. Try different filters.'}</p>}
+    <nav className="my-5 flex gap-4" aria-label={zh ? '价格目录分页' : 'Catalog pagination'}>
+      {page.offset > 0 && <a className={control} href={href(Math.max(0, page.offset - CATALOG_PAGE_SIZE))} onClick={e => navigate(e, Math.max(0, page.offset - CATALOG_PAGE_SIZE))}>{zh ? '上一页' : 'Previous'}</a>}
+      {page.nextOffset !== null && <a className={control} href={href(page.nextOffset)} onClick={e => navigate(e, page.nextOffset!)}>{zh ? '下一页' : 'Next'}</a>}
+    </nav>
+  </section>;
 }
