@@ -1,0 +1,134 @@
+{
+  "schema": "aiplans-price-change-radar/1",
+  "threshold_percent": 15,
+  "fixture": true,
+  "baseline_only": false,
+  "previous_snapshot_id": "sha256:0ce0bc566aaef09f49f8d19a0e84d83912f203ee5102e7399a42d41670747db3",
+  "current_snapshot_id": "sha256:1ddf6320ee2248017d7c67ab5e918b9c2c1dd6df7918eed57910ef0d54bf0b73",
+  "previous_as_of": "2026-11-01T00:00:00.000Z",
+  "current_as_of": "2026-11-01T00:00:00.000Z",
+  "publishable_events": [
+    {
+      "model_slug": "example-alpha",
+      "model_name": "Example Alpha (synthetic fixture)",
+      "provider_slug": "example-official",
+      "provider_name": "Example Official",
+      "currency": "USD",
+      "price_unit": "per_1m_tokens",
+      "billing_conditions": "scope=headline;input=quoted;output=quoted;cache=quoted;promo=none",
+      "source_url_previous": "https://example.test/pricing/alpha",
+      "source_url_current": "https://example.test/pricing/alpha",
+      "verified_at_previous": "2026-10-20T00:00:00.000Z",
+      "verified_at_current": "2026-10-20T00:00:00.000Z",
+      "citation_url_en": "https://aiplans.dev/en/models/example-alpha",
+      "citation_url_zh": "https://aiplans.dev/zh/models/example-alpha",
+      "components": [
+        {
+          "component": "input",
+          "old_price": 2,
+          "new_price": 3,
+          "change_percent": 50
+        },
+        {
+          "component": "output",
+          "old_price": 8,
+          "new_price": 8,
+          "change_percent": 0
+        },
+        {
+          "component": "cached_input",
+          "old_price": 1,
+          "new_price": 1,
+          "change_percent": 0
+        }
+      ],
+      "threshold_percent": 15,
+      "event_id": "sha256:fb517015eca7cea044fbb101a0d425436eb25468e4a37e3ab848d8049459b45e"
+    }
+  ],
+  "withheld": [
+    {
+      "identity": "example-beta\texample-official\tUSD\tper_1m_tokens\tscope=headline;input=quoted;output=quoted;cache=missing;promo=none",
+      "reason": "below_threshold",
+      "detail": "max_abs_percent=10.00"
+    },
+    {
+      "identity": "example-delta\texample-official\tUSD\tper_1m_tokens\tscope=headline;input=quoted;output=quoted;cache=missing;promo=none",
+      "reason": "zero_value"
+    },
+    {
+      "identity": "example-epsilon\texample-official",
+      "reason": "missing_price"
+    },
+    {
+      "identity": "example-eta\texample-official",
+      "reason": "condition_changed"
+    },
+    {
+      "identity": "example-gamma\texample-official",
+      "reason": "unit_changed"
+    },
+    {
+      "identity": "example-iota\texample-official",
+      "reason": "not_in_current_rows"
+    },
+    {
+      "identity": "example-kappa-v2\texample-official",
+      "reason": "version_replaced",
+      "detail": "example-kappa-v1 -> example-kappa-v2"
+    },
+    {
+      "identity": "example-nu\texample-official",
+      "reason": "new_listing"
+    },
+    {
+      "identity": "example-omicron\texample-official\tUSD\tper_1m_tokens\tscope=headline;input=quoted;output=quoted;cache=missing;promo=none",
+      "reason": "missing_source"
+    },
+    {
+      "identity": "example-pi\texample-official\tUSD\tper_1m_tokens\tscope=headline;input=quoted;output=quoted;cache=missing;promo=none",
+      "reason": "unverified"
+    },
+    {
+      "identity": "example-theta\texample-official\tUSD\tper_1m_tokens\tscope=headline;input=quoted;output=quoted;cache=missing;promo=none",
+      "reason": "stale"
+    },
+    {
+      "identity": "example-zeta\texample-official",
+      "reason": "currency_changed"
+    }
+  ],
+  "withheld_counts": {
+    "below_threshold": 1,
+    "condition_changed": 1,
+    "currency_changed": 1,
+    "missing_price": 1,
+    "missing_source": 1,
+    "new_listing": 1,
+    "not_in_current_rows": 1,
+    "stale": 1,
+    "unit_changed": 1,
+    "unverified": 1,
+    "version_replaced": 1,
+    "zero_value": 1
+  },
+  "duplicates_collapsed": 0,
+  "history_rows_reviewed": 1,
+  "history_publishable_events": [],
+  "history_withheld_counts": {
+    "incomplete_history": 1
+  },
+  "previous_excluded_counts": {
+    "unverified": 1
+  },
+  "current_excluded_counts": {
+    "invalid_source": 1,
+    "missing_price": 1,
+    "missing_source": 1,
+    "non_official_channel": 2,
+    "restricted_or_nonpublic": 1,
+    "stale": 1,
+    "unavailable": 1,
+    "unverified": 1
+  }
+}

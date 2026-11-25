@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatPrice } from '@/lib/currency';
 import { getPriceIndexSnapshot } from '@/lib/api-price-index';
+import { CitablePriceDownload } from '@/components/citable-price-download';
 import { buildMetadata, jsonLd, SITE_NAME, SITE_URL, type Locale } from '@/lib/seo';
 
 export const revalidate = 21600;
@@ -124,6 +125,8 @@ export default async function ApiPriceIndexPage({
           ))}
         </section>
 
+        <CitablePriceDownload locale={locale} />
+
         <section className="border-t py-9" aria-labelledby="lowest-paid-prices">
           <div className="max-w-3xl">
             <h2 id="lowest-paid-prices" className="text-2xl font-semibold">
@@ -131,8 +134,8 @@ export default async function ApiPriceIndexPage({
             </h2>
             <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">
               {locale === 'zh'
-                ? '每个主模型只保留当前最低价渠道。美元值仅用于排序，账单仍以供应商显示的原始币种为准。'
-                : 'Each model identifier is represented by its lowest current channel. The USD value is only for ranking; billing remains in the provider’s displayed currency.'}
+                ? '每个主模型只保留本站当前收录渠道里的最低输入价。美元值仅用于排序，账单仍以供应商显示的原始币种为准。'
+                : 'Each model identifier keeps the lowest input price among the channels indexed on this site. The USD value is only for ranking; billing remains in the provider’s displayed currency.'}
             </p>
           </div>
           <div className="mt-6 overflow-x-auto rounded-md border bg-white dark:bg-zinc-900">
@@ -173,8 +176,8 @@ export default async function ApiPriceIndexPage({
             </h2>
             <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">
               {locale === 'zh'
-                ? '以下为价格历史表中每个渠道最近一次显著价格变化。'
-                : 'These records show the latest material change for each channel in the price history log.'}
+                ? '以下为价格历史表中每个渠道最近一次显著价格变化。这张表来自价格历史日志。日志行没有新旧计价单位、计费条件和两侧核验时间，同口径待审稿不直接使用这些行。'
+                : 'These records show the latest material change for each channel in the price history log. A log row has no old/new price unit, billing conditions, or verification times on both sides, so the same-scope draft does not use these rows directly.'}
             </p>
           </div>
           {snapshot.recentChanges.length > 0 ? (
