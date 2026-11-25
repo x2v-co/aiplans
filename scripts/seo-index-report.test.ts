@@ -11,16 +11,16 @@ const row = (overrides: Partial<SeoIndexFacts> = {}): SeoIndexFacts => ({
 });
 
 test('report counts actual URLs in both locales and lists every removal and reason', () => {
-  const rows = [row(), row({ slug: 'useful-model', api_price_count: 1, priced_subscription_provider_count: 2 })];
+  const rows = [row(), row({ slug: 'gpt-5.2', api_price_count: 1, priced_subscription_provider_count: 2 })];
   const report = indexReport(rows, catalogUrls(rows, false), catalogUrls(rows, true));
   assert.equal(report.before, 8);
-  assert.equal(report.after, 4);
+  assert.equal(report.after, 2);
   assert.deepEqual(report.added, []);
   assert.deepEqual(report.removed, [
-    'https://aiplans.dev/en/compare/plans/example-model', 'https://aiplans.dev/en/models/example-model',
-    'https://aiplans.dev/zh/compare/plans/example-model', 'https://aiplans.dev/zh/models/example-model',
+    'https://aiplans.dev/en/compare/plans/example-model', 'https://aiplans.dev/en/compare/plans/gpt-5.2', 'https://aiplans.dev/en/models/example-model',
+    'https://aiplans.dev/zh/compare/plans/example-model', 'https://aiplans.dev/zh/compare/plans/gpt-5.2', 'https://aiplans.dev/zh/models/example-model',
   ]);
-  assert.equal(report.noindex.length, 4);
+  assert.equal(report.noindex.length, 6);
   assert.ok(report.noindex.every(entry => entry.reason.length > 0));
 });
 

@@ -1,13 +1,12 @@
-import { currentPlanCondition } from './plan-lifecycle-query';
 import { AI_VERTICAL_CATALOG } from '@/lib/ai-vertical-catalog';
 import { modelLifecycleStatus } from '@/lib/model-shutdown';
 import { MetadataRoute } from 'next';
 import { isIndexableVerticalDbSlug } from '@/lib/vertical-model-aliases';
 import type { AiCatalogKind } from '@/lib/ai-vertical-catalog';
 import { sql } from '@/lib/db';
-import { selectSeoModels, selectSeoComparisons } from '@/lib/seo-index-policy';
+import { selectSeoModels, selectSeoComparisons, providerShouldIndex, verticalShouldIndex } from '@/lib/seo-index-policy';
 import type { SeoIndexRow } from '@/lib/seo-index-data';
-import { getSeoIndexCatalog } from '@/lib/seo-index-data';
+import { getSeoIndexCatalog, getSeoProviderCatalog } from '@/lib/seo-index-data';
 import { STATIC_PATHS, resolveStaticLastmod, type ChangeFrequency } from '@/lib/sitemap-static-paths';
 import { getVerifiedQuotaEstimates } from '@/lib/quota/data';
 import { quotaChanges } from '@/lib/quota/estimates';
@@ -64,16 +63,9 @@ export async function buildSitemap(applyIndexPolicy = true, catalogRows?: SeoInd
   }
   // Provider pages have useful content with plans or available API pricing.
   try {
-    const providers = await sql<Array<{ slug: string | null; updated_at: Date | string | null }>>`
-      SELECT slug, updated_at FROM providers
-      WHERE EXISTS (SELECT 1 FROM plans WHERE plans.provider_id = providers.id AND ${currentPlanCondition()})
-         OR EXISTS (SELECT 1 FROM api_channel_prices cp WHERE cp.provider_id = providers.id AND cp.is_available = true
-           AND EXISTS (SELECT 1 FROM models m WHERE m.id = cp.model_id
-             AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date)))
-      ORDER BY priority ASC NULLS LAST
-    `;
+    const providers = await getSeoProviderCatalog();
     for (const p of providers) {
-      if (!p.slug) continue;
+      if (!p.slug || (applyIndexPolicy && !providerShouldIndex(p.slug))) continue;
       const lastMod = p.updated_at ? new Date(p.updated_at) : now;
       for (const locale of LOCALES) {
         urls.push({
@@ -90,7 +82,8 @@ export async function buildSitemap(applyIndexPolicy = true, catalogRows?: SeoInd
   }
 
   for (const item of AI_VERTICAL_CATALOG.filter(i => ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model', 'embedding-model'].includes(i.kind) && i.slug
-    && modelLifecycleStatus(i.shutdownDate) !== 'retired')) {
+    && modelLifecycleStatus(i.shutdownDate) !== 'retired'
+    && (!applyIndexPolicy || verticalShouldIndex(i.kind, i.slug, i.shutdownDate)))) {
     for (const locale of LOCALES) urls.push({ url: `${BASE_URL}/${locale}/${item.kind}s/${item.slug}`,
       lastModified: item.verifiedAt ? new Date(item.verifiedAt) : now, changeFrequency: 'weekly', priority: 0.68 });
   }
@@ -134,7 +127,8 @@ export async function buildSitemap(applyIndexPolicy = true, catalogRows?: SeoInd
     // Only slugs whose detail route returns 200: Arena benchmark rows
     // (arena-t2v-*) and DB-only world models 404, aliases redirect.
     for (const row of extras.filter(row => row.slug && row.model_category && !auditedSlugs.has(row.slug)
-      && isIndexableVerticalDbSlug(`${row.model_category}-model` as AiCatalogKind, row.slug))) {
+      && isIndexableVerticalDbSlug(`${row.model_category}-model` as AiCatalogKind, row.slug)
+      && (!applyIndexPolicy || verticalShouldIndex(`${row.model_category}-model` as AiCatalogKind, row.slug)))) {
       for (const locale of LOCALES) urls.push({ url: `${BASE_URL}/${locale}/${row.model_category}-models/${row.slug}`,
         lastModified: row.updated_at ? new Date(row.updated_at) : now, changeFrequency: 'weekly', priority: 0.68 });
     }

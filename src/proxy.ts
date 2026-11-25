@@ -1,6 +1,8 @@
 import { isInfrastructurePath } from '@/lib/route-locale';
 import { planRedirectRequest, resolvePlanRedirect, withPlanRedirectCatalogTimeout, type PlanRedirectRow } from '@/lib/provider-redirects';
 import { legacySlugRedirect } from '@/lib/legacy-slug-redirects';
+import { isSeoCatalogDetail } from '@/lib/seo-redirects';
+import { decodeSlugParam } from '@/lib/route-params';
 import { filteredCatalogPath, publicPathForFilteredRoute } from '@/lib/catalog-query-routes';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -32,6 +34,14 @@ export function createProxy(
     return getPlanRedirectCatalog();
   },
   staticPlanSegments: string[] = JSON.parse(process.env.PLAN_REDIRECT_STATIC_SEGMENTS || '[]'),
+  destinationIndexable: (path: string) => Promise<boolean> = async path => {
+    const { seoDestinationIndexable } = await import('@/lib/seo-redirects');
+    return seoDestinationIndexable(path);
+  },
+  comparisonPage: (slug: string) => Promise<{ redirect: string | null } | null> = async slug => {
+    const { getComparisonPage } = await import('@/lib/model-plan-comparison');
+    return getComparisonPage(slug);
+  },
 ) {
   return async function proxy(request: NextRequest) {
     if (process.env.NODE_ENV === 'production' && requestUsedHttp(request)) {
@@ -65,7 +75,12 @@ export function createProxy(
       }
       const target = new URL(resolvePlanRedirect(planRequest, catalog), request.url);
       target.search = request.nextUrl.search;
-      return NextResponse.redirect(target, 301);
+      if (await destinationIndexable(target.pathname)) return NextResponse.redirect(target, 301);
+      // Resolve the same provider/plan without a permanent hop to noindex.
+      // Its existing metadata supplies noindex,follow and the canonical path.
+      target.hash = '';
+      target.pathname = filteredCatalogPath(target.pathname, target.searchParams) ?? target.pathname;
+      return NextResponse.rewrite(target);
     }
 
     // Check if pathname already has a locale
@@ -78,9 +93,25 @@ export function createProxy(
     const localizedPath = pathnameHasLocale ? pathname : `/${defaultLocale}${pathname === '/' ? '' : pathname}`;
     const legacyTarget = legacySlugRedirect(localizedPath);
     if (legacyTarget) {
+      const comparison = /^\/(en|zh)\/compare\/plans\/([^/]+)\/?$/.exec(localizedPath);
+      if (comparison) {
+        const resolved = await comparisonPage(decodeSlugParam(comparison[2]));
+        if (resolved?.redirect) {
+          const url = request.nextUrl.clone();
+          url.pathname = resolved.redirect.replace(/^\/en\//, `/${comparison[1]}/`);
+          return NextResponse.redirect(url, 301);
+        }
+        // The comparison route renders its own noindex fallback, including
+        // known aliases with no equivalent subscription payload.
+        if (pathnameHasLocale) return NextResponse.next();
+        const url = request.nextUrl.clone();
+        url.pathname = localizedPath;
+        return NextResponse.rewrite(url);
+      }
       const url = request.nextUrl.clone();
       url.pathname = legacyTarget;
-      return NextResponse.redirect(url, 301);
+      if (await destinationIndexable(legacyTarget)) return NextResponse.redirect(url, 301);
+      return NextResponse.rewrite(url);
     }
 
     if (pathnameHasLocale) {
@@ -88,6 +119,7 @@ export function createProxy(
       // become a second public URL for the same content.
       const publicPath = publicPathForFilteredRoute(pathname);
       if (publicPath) {
+        if (isSeoCatalogDetail(publicPath) && !await destinationIndexable(publicPath)) return NextResponse.next();
         const url = request.nextUrl.clone();
         url.pathname = publicPath;
         return NextResponse.redirect(url, 301);
@@ -119,6 +151,19 @@ export function createProxy(
     const isStaticFile = /\.(?:avif|bmp|css|csv|eot|gif|html|ico|jpe?g|js|json|map|md|mjs|mp3|mp4|ogg|otf|pdf|png|svg|ttf|txt|wasm|webm|webmanifest|webp|woff2?|xml|zip)$/i.test(pathname);
     if (!isInfrastructurePath(pathname) && !isStaticFile) {
       request.nextUrl.pathname = `/${defaultLocale}${pathname}`;
+      const comparison = /^\/en\/compare\/plans\/([^/]+)\/?$/.exec(request.nextUrl.pathname);
+      if (comparison) {
+        const resolved = await comparisonPage(decodeSlugParam(comparison[1]));
+        if (resolved?.redirect) {
+          request.nextUrl.pathname = resolved.redirect;
+          return NextResponse.redirect(request.nextUrl, 301);
+        }
+        return NextResponse.rewrite(request.nextUrl);
+      }
+      if (isSeoCatalogDetail(request.nextUrl.pathname) && !await destinationIndexable(request.nextUrl.pathname)) {
+        request.nextUrl.pathname = filteredCatalogPath(request.nextUrl.pathname, request.nextUrl.searchParams) ?? request.nextUrl.pathname;
+        return NextResponse.rewrite(request.nextUrl);
+      }
       // Same rule as `/` → `/en`: crawlers have no locale cookie, so a
       // permanent 308 lets Google consolidate locale-less URLs onto /en/...
       return NextResponse.redirect(request.nextUrl, 308);

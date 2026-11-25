@@ -36,8 +36,10 @@ import { getProviderVisitRel, getProviderVisitUrl } from "@/lib/provider-links";
 import { formatModelName } from '@/lib/model-names';
 import { CouponBadge } from "@/components/coupon-badge";
 import { couponsFor, type CouponOffer } from "@/lib/coupon-format";
+import { CURRENCY_INFO, type CurrencyCode } from '@/lib/currency';
 
 interface ComparePlansViewProps {
+  embedded?: boolean;
   locale: string;
   /** Comparison payload, already fetched and shaped on the server. */
   data: PlanComparison;
@@ -68,7 +70,7 @@ interface PlanGroup {
   plans: any[];
 }
 
-export default function ComparePlansView({ locale, data, faqs, couponByProvider, quotaEstimates, pricingGuide }: ComparePlansViewProps) {
+export default function ComparePlansView({ locale, data, faqs, couponByProvider, quotaEstimates, pricingGuide, embedded = false }: ComparePlansViewProps) {
   // Billing toggle
   const [showYearly, setShowYearly] = useState(false);
   // Every provider starts expanded, and it has to be the *initial* state rather
@@ -89,7 +91,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
   // Helper functions
   const formatPrice = (value: number | null, curr: string): string => {
     if (value === null) return "-";
-    const symbol = curr === "CNY" ? "¥" : "$";
+    const symbol = CURRENCY_INFO[curr as CurrencyCode]?.symbol ?? `${curr} `;
     return `${symbol}${value.toFixed(2)}`;
   };
 
@@ -208,11 +210,14 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
   // lines: $20 buys the chat plan, not the $200 coding plan. Show a floor per line.
   const cheapestByKind: CheapestByKind[] = summary?.cheapestByKind || [];
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
-      <SiteHeader locale={locale} />
+  const Content = embedded ? 'section' : 'main';
+  const Heading = embedded ? 'h2' : 'h1';
 
-      <main className="container mx-auto px-4 py-8">
+  return (
+    <div className={embedded ? '' : "min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900"}>
+      {!embedded && <SiteHeader locale={locale} />}
+
+      <Content id={embedded ? "subscription-comparison" : undefined} className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
           <Link href={`/${locale}`} className="hover:text-blue-600">Home</Link>
@@ -230,7 +235,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
             ) : (
               <span className="text-4xl">{model.provider?.logoFallback || getProviderLogoFallback(model.provider)}</span>
             )}
-            <h1 className="text-3xl font-bold md:text-4xl">{searchCopy.heading}</h1>
+            <Heading className="text-3xl font-bold md:text-4xl">{searchCopy.heading}</Heading>
           </div>
           <p className="text-base text-zinc-600 dark:text-zinc-400 mb-6 max-w-2xl mx-auto md:text-lg">
             {searchCopy.intro}
@@ -776,7 +781,7 @@ export default function ComparePlansView({ locale, data, faqs, couponByProvider,
             </li>
           </ul>
         </div>
-      </main>
+      </Content>
     </div>
   );
 }

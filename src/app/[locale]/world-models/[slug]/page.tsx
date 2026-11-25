@@ -1,3 +1,4 @@
+import { verticalShouldIndex } from '@/lib/seo-index-policy';
 import type { Metadata } from 'next';
 import { decodeSlugParam } from '@/lib/route-params';
 import { buildMetadata, breadcrumbList, SITE_URL, type Locale } from '@/lib/seo';
@@ -11,6 +12,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: `/world-models/${slug}`,
+    noindex: !verticalShouldIndex('world-model', slug, item.shutdownDate),
     title: {
       en: `${item.name} World Model · Availability, Sources, Plans | aiplans.dev`,
       zh: `${item.name} 世界模型 · 可用性、来源与套餐 | aiplans.dev`,

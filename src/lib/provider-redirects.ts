@@ -1,11 +1,10 @@
 import { decodeSlugParam } from './route-params';
 
-/** Only aliases whose targets do not depend on the database belong in config. */
+/** All provider redirects now need the actual shared catalog eligibility gate
+ * in proxy, including cursor. Keep the config API without an unconditional hop.
+ */
 export function providerRedirects() {
-  return [
-    { source: '/:locale(en|zh)/plans/cursor', destination: '/:locale/providers/xai', statusCode: 301 as const },
-    { source: '/plans/cursor', destination: '/en/providers/xai', statusCode: 301 as const },
-  ];
+  return [];
 }
 
 export type PlanRedirectRequest = { locale: string; slug: string };

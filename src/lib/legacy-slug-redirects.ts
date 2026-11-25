@@ -7,9 +7,10 @@
  * Multi-entity glued ids have no inferred successor. Only an exact,
  * source-verified entry here can redirect; otherwise detail routes return 404.
  *
- * Comparison aliases retain the exact model identity. Indexability alone does
- * not establish equivalence: use the exact model detail if no same-entity
- * comparison target is configured, even if lifecycle rules noindex that detail.
+ * This table resolves identity only. Callers must check current destination
+ * eligibility before a permanent redirect, and comparison callers also require
+ * the exact shared payload on the model destination. Excluded identities render
+ * at their original accessible noindex route instead of redirecting.
  * Do not substitute a newer generation for an exact model query.
  * The dated catalog/sitemap checks in their comments are historical evidence,
  * not a guarantee of today's target availability or indexing status.
@@ -198,7 +199,7 @@ export function legacySlugRedirect(pathname: string): string | null {
     return destination === `/${locale}/${section}/${slug}` ? null : destination;
   }
   // No comparison destination is configured: use the mapped model detail.
-  // Its lifecycle/indexing policy is independent of the redirect's identity.
+  // The caller separately checks actual eligibility and comparison parity.
   if (sectionKey === 'compare' && entry.models) {
     return `/${locale}/models/${entry.models}`;
   }

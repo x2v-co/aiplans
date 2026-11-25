@@ -7,6 +7,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import * as catalog from '../src/lib/ai-vertical-catalog';
 import * as aliases from '../src/lib/vertical-model-aliases';
+import * as seoIndexPolicy from '../src/lib/seo-index-policy';
 import type { AiCatalogItem } from '../src/lib/ai-vertical-catalog';
 import type { getVerticalModelCatalog } from '../src/lib/vertical-models';
 import type { getVerticalModelDetail } from '../src/lib/vertical-model-detail';
@@ -134,6 +135,7 @@ function serverFixture({ unavailable = false, benchmarkFailure = false, rows = [
     '@/lib/vertical-models': models,
     '@/lib/model-usage-prices-query': { getModelUsagePrices: async () => [] },
     '@/lib/model-usage-prices': { availableUsagePrices },
+    '@/lib/seo-index-policy': seoIndexPolicy,
   });
   return { ...models, ...detail, benchmarkIds, summaries, queryCount: () => queries };
 }

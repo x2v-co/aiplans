@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NextRequest } from 'next/server';
-import proxy, { config, requestUsedHttp } from './proxy';
+import { createProxy, config, requestUsedHttp } from './proxy';
+import { legacySlugRedirect } from './lib/legacy-slug-redirects';
+import { SEO_MODEL_ALLOWLIST, SEO_PROVIDER_ALLOWLIST } from './lib/seo-index-policy';
+
+// Explicit deterministic existence/quality fixture; actual loader has separate tests.
+const proxy = createProxy(async () => [], [], async path => {
+  const slug = path.split('/').at(-1)!;
+  return path.includes('/providers/') ? SEO_PROVIDER_ALLOWLIST.has(slug) : SEO_MODEL_ALLOWLIST.has(slug);
+}, async slug => {
+  const mapped = legacySlugRedirect(`/en/compare/plans/${slug}`);
+  const target = mapped?.split('/').at(-1);
+  return { redirect: target && SEO_MODEL_ALLOWLIST.has(target) ? `/en/models/${target}` : null };
+});
 import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
 
 test('permanently redirects Cloudflare HTTP requests to the same HTTPS URL', async () => {
@@ -57,8 +69,9 @@ test('glued URLs reach the detail 404 gate without an inferred entity redirect',
     assert.equal(response.headers.get('x-middleware-next'), '1');
   }
   const response = await proxy(new NextRequest('https://aiplans.dev/compare/plans/glm-5glm-5.1?utm=gsc'));
-  assert.equal(response.status, 308);
-  assert.equal(response.headers.get('location'), 'https://aiplans.dev/en/compare/plans/glm-5glm-5.1?utm=gsc');
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('location'), null);
+  assert.equal(response.headers.get('x-middleware-rewrite'), 'https://aiplans.dev/en/compare/plans/glm-5glm-5.1?utm=gsc');
 });
 
 test('specific legacy comparison redirects keep model identity and preserve query parameters', async () => {
@@ -72,6 +85,11 @@ test('specific legacy comparison redirects keep model identity and preserve quer
     ['gpt-5.1-codex-max', 'gpt-5.1-codex-max'], ['gpt-5.2-codex', 'gpt-5.2-codex'],
   ]) {
     const response = await proxy(new NextRequest(`https://aiplans.dev${prefix}/compare/plans/${slug}?utm=gsc`));
+    if (!SEO_MODEL_ALLOWLIST.has(target)) {
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get('location'), null);
+      continue;
+    }
     assert.equal(response.status, 301);
     assert.equal(response.headers.get('location'), `https://aiplans.dev${prefix || '/en'}/models/${target}?utm=gsc`);
     const destination = await proxy(new NextRequest(response.headers.get('location')!));
@@ -140,12 +158,14 @@ test('Next matcher excludes complete service segments while keeping similarly na
   }
 });
 
-test('locale-less model pages redirect even when their slug contains dots', async () => {
+test('locale-less dotted model IDs redirect only when selected; excluded identities rewrite to noindex details', async () => {
   for (const path of ['/models/minimax-m3.1-flash', '/models/gpt-5']) {
     assert.equal(unstable_doesMiddlewareMatch({ config, url: path }), true, path);
     const response = await proxy(new NextRequest(`https://aiplans.dev${path}?source=test`));
-    assert.equal(response.status, 308, path);
-    assert.equal(response.headers.get('location'), `https://aiplans.dev/en${path}?source=test`, path);
+    const selected = SEO_MODEL_ALLOWLIST.has(path.split('/').at(-1)!);
+    assert.equal(response.status, selected ? 308 : 200, path);
+    assert.equal(response.headers.get('location'), selected ? `https://aiplans.dev/en${path}?source=test` : null, path);
+    if (!selected) assert.equal(response.headers.get('x-middleware-rewrite'), `https://aiplans.dev/en${path}?source=test`);
   }
 });
 
@@ -203,7 +223,7 @@ test('every /reports/*.md|json file referenced from src or public/reports exists
 });
 
 test('ordinary locale-less pages still get the locale prefix next to report files', async () => {
-  for (const path of ['/reports/api-price-index', '/guides', '/models/minimax-m3.1-flash']) {
+  for (const path of ['/reports/api-price-index', '/guides', '/models/gpt-5']) {
     const response = await proxy(new NextRequest(`https://aiplans.dev${path}`));
     assert.equal(response.status, 308, path);
     assert.equal(response.headers.get('location'), `https://aiplans.dev/en${path}`, path);
@@ -223,4 +243,30 @@ test('direct requests to the internal filtered route 301 to the public URL', asy
   const response = await proxy(new NextRequest('https://aiplans.dev/zh/filtered/plans?kind=coding', { headers: { 'x-forwarded-proto': 'https' } }));
   assert.equal(response.status, 301);
   assert.match(response.headers.get('location') ?? '', /\/zh\/plans\?kind=coding$/);
+});
+
+test('excluded provider rewrites apply supported filters and preserve locale and query', async () => {
+  for (const prefix of ['', '/en', '/zh']) {
+    for (const [query, filtered] of [
+      ['period=yearly&kind=coding&utm_source=gsc', true],
+      ['period=monthly', true],
+      ['kind=coding&utm_source=gsc', false],
+      ['utm_source=gsc', false],
+    ] as const) {
+      const response = await proxy(new NextRequest(`https://aiplans.dev${prefix}/providers/cysuo?${query}`));
+      assert.equal(response.headers.get('location'), null);
+      assert.equal(response.status, 200);
+      const destination = `${prefix || '/en'}${filtered ? '/filtered' : ''}/providers/cysuo?${query}`;
+      assert.equal(response.headers.get('x-middleware-rewrite'), filtered || !prefix ? `https://aiplans.dev${destination}` : null);
+    }
+  }
+});
+
+test('selected locale-less providers retain one permanent locale hop with filters intact', async () => {
+  const response = await proxy(new NextRequest('https://aiplans.dev/providers/openai?period=yearly&kind=coding'));
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get('location'), 'https://aiplans.dev/en/providers/openai?period=yearly&kind=coding');
+  const destination = await proxy(new NextRequest(response.headers.get('location')!));
+  assert.equal(destination.headers.get('location'), null);
+  assert.equal(destination.headers.get('x-middleware-rewrite'), 'https://aiplans.dev/en/filtered/providers/openai?period=yearly&kind=coding');
 });

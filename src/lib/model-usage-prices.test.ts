@@ -12,6 +12,7 @@ import type { PricingChannel } from './model-pricing-seo';
 import { catalogForKind } from './ai-vertical-catalog';
 import type { VerticalModelDetail } from './vertical-model-detail';
 import type { OfferReader } from './price-offers/read';
+import type { PlanComparison } from './compare-plans';
 
 const slug = 'gemini-omni-1-1-flash';
 const rows: ModelUsagePriceRow[] = [1.5, 9, 17.5].map((price, i) => ({
@@ -34,9 +35,9 @@ function loadModule(path: string, mocks: Record<string, unknown>): Record<string
 }
 
 async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingChannel[], locale: string,
-  fixture?: { slug: string; producer: { id: number; name: string; slug: string }; plans: ModelPlanCardRow[] },
-  offerReader?: OfferReader) {
-  const requestedSlug = fixture?.slug ?? slug;
+  fixture?: { slug: string; producer: { id: number; name: string; slug: string }; plans: ModelPlanCardRow[]; mappedPlanIds?: number[] },
+  offerReader?: OfferReader, requestedIdentity?: string, comparisonFixture?: PlanComparison) {
+  const requestedSlug = requestedIdentity ?? fixture?.slug ?? slug;
   const producer = fixture?.producer ?? { name: 'Google', slug: 'google' };
   let selectedPlanIds: number[] = [];
   const offerReads: number[][] = [];
@@ -50,8 +51,14 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
   } };
   const sql = Object.assign(async (strings: TemplateStringsArray, ...values: unknown[]) => {
     const query = strings.join('?');
-    if (/FROM models\s+WHERE slug/.test(query)) return [{ id: 10, name: fixture ? requestedSlug : 'Gemini Omni Flash', slug: requestedSlug,
-      provider_ids: [], description: null }];
+    assert.match(query.trim(), /^SELECT/, 'route reads must remain SELECT-only');
+    if (/SELECT plan_id FROM model_plan_mapping/.test(query)) {
+      assert.deepEqual(values, [10], 'availability evidence must belong to the exact model');
+      return (fixture?.mappedPlanIds ?? []).map(plan_id => ({ plan_id }));
+    }
+    if (/FROM models\s+WHERE slug/.test(query)) return fixture && values[0] !== fixture.slug ? []
+      : [{ id: 10, name: fixture ? fixture.slug : 'Gemini Omni Flash', slug: fixture?.slug ?? requestedSlug,
+        provider_ids: [], description: null }];
     if (query.includes('FROM api_channel_prices cp')) return channels;
     if (query.includes('FROM plans pl')) {
       if (fixture) {
@@ -78,6 +85,35 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
     '@/lib/model-usage-prices-query': { getModelUsagePrices: async () => usagePrices },
     '@/lib/coupons': { getActiveCouponMap: async () => new Map() },
     '@/lib/coding-agents': { getCodingAgentRowsForModel: async () => [] },
+    '@/lib/seo-redirects': loadModule('./seo-redirects.ts', {
+      './seo-index-data': { getSeoIndexCatalog: async () => [], getSeoProviderCatalog: async () => [] },
+    }),
+    '@/lib/model-slug-redirects': { findModelSlugRedirect: async (old: string) =>
+      requestedIdentity && old === requestedIdentity && old !== fixture?.slug ? fixture?.slug ?? null : null },
+    // This fixture exercises usage/producer-plan cards, not the independent
+    // mapped-subscription comparison. Keep its real component but supply the
+    // typed read boundary, just as the offer reader above. Integration/parity
+    // has separate model-plan-comparison and component rendering tests.
+    '@/components/model-subscription-comparison': {
+      __esModule: true,
+      default: loadModule('../components/model-subscription-comparison.tsx', {
+        '@/lib/model-plan-comparison': comparisonFixture ? loadModule('./model-plan-comparison.ts', {
+          react: { cache: (fn: unknown) => fn },
+          './compare-plans': { getPlanComparison: async (model: string, currency: string) => {
+            assert.equal(model, requestedSlug); assert.equal(currency, 'USD'); return comparisonFixture;
+          } },
+          './seo-index-data': { getSeoIndexCatalog: async () => [{ slug: requestedSlug, active: true, is_llm: true,
+            description: null, available_api_count: 0, api_price_count: 0, priced_plan_count: 3, usage_price_count: 0,
+            plan_count: 3, priced_subscription_count: 3, priced_subscription_provider_count: 2 }] },
+        }) : { getIntegratedPlanComparison: async () => null },
+        '@/lib/coupons': { getActiveCouponMap: async () => ({}) },
+        '@/lib/quota/data': { getVerifiedQuotaEstimates: async (slugs: string[]) => {
+          assert.deepEqual(Array.from(slugs), comparisonFixture
+            ? [...comparisonFixture.officialPlans, ...comparisonFixture.thirdPartyPlans].map(p => p.plan.slug) : []);
+          return [];
+        } },
+      }).default,
+    },
     'next-intl/server': { getTranslations: async ({ namespace }: { namespace: string }) => createTranslator({ locale, messages: locale === 'zh' ? zh : en, namespace: namespace as 'modelDetail' }) },
     '@/components/SiteHeader': { default: () => null, __esModule: true },
   });
@@ -97,6 +133,12 @@ function summaryCards(html: string) {
     cheapest: html.split(/Cheapest Option|最低价选项/)[1].split(/Official Price|官方价格/)[0],
     official: html.split(/Official Price|官方价格/)[1].split(/data-slot="separator"|Best in China|国内优选/)[0],
   };
+}
+
+function planCardOpening(html: string, id: number) {
+  const marker = html.indexOf(`data-plan-card="${id}"`);
+  assert.ok(marker >= 0, `plan card ${id} remains visible`);
+  return html.slice(html.lastIndexOf('<div', marker), html.indexOf('>', marker));
 }
 
 test('plan query still runs without model/usage links and binds only the exact producer for supplementary subscriptions', async () => {
@@ -430,4 +472,110 @@ test('regional claims and China recommendation disappear without sourced support
   const html = await modelHtml([], [excluded], 'zh');
   assert.doesNotMatch(html, /国内可用|国内优选/);
   assert.match(html, /✗/);
+});
+
+test('real K2 and Thinking identities render retained sourced context without invented API quotes or plan mappings', async () => {
+  for (const slug of ['moonshotai-kimi-k2', 'moonshotai-kimi-k2-thinking']) for (const locale of ['en', 'zh']) {
+    const html = await modelHtml([], [], locale, { slug,
+      producer: { id: 42, name: 'Moonshot AI / Kimi', slug: 'moonshot-china' }, plans: [] });
+    assert.ok(html.includes(`data-retained-model="${slug}"`));
+    assert.match(html, /https:\/\/platform.moonshot.cn\/docs\/pricing\/chat/);
+    assert.match(html, /2026-10-29/);
+    assert.match(html, locale === 'zh' ? /不证明任何套餐包含此型号/ : /do not prove that any plan includes this model/);
+    assert.match(html, locale === 'zh' ? /未在此重新核验/ : /not a new verification/);
+    assert.match(html, locale === 'zh' ? /暂无可用的输入报价/ : /No input rate is available/);
+  }
+});
+
+test('K2 routes keep producer reference prices and sources without asserting subscription access in either locale', async () => {
+  const producer = { id: 42, name: 'Moonshot AI / Kimi', slug: 'moonshot-china', logo: null };
+  // Controlled reference prices exercise rendering, not a claim about current catalog prices.
+  const referencePlans: ModelPlanCardRow[] = [
+    { id: 8101, name: 'Kimi Free', slug: 'kimi-free', tier: 'free', price: 0, annual_price: null,
+      currency: 'CNY', pricing_model: 'subscription', features: [], access_from_china: null, plan_kind: 'chat', providers: producer },
+    { id: 8102, name: 'Fixture paid reference', slug: 'fixture-paid-reference', tier: 'pro', price: 49, annual_price: 468,
+      currency: 'CNY', pricing_model: 'subscription', features: [], access_from_china: null, plan_kind: 'chat', providers: producer },
+  ];
+  for (const slug of ['moonshotai-kimi-k2', 'moonshotai-kimi-k2-thinking']) for (const locale of ['en', 'zh']) {
+    const html = await modelHtml([], [], locale, { slug, producer, plans: referencePlans });
+    assert.ok(html.includes(`data-retained-model="${slug}"`));
+    assert.match(html, /https:\/\/platform.moonshot.cn\/docs\/pricing\/chat/);
+    assert.match(html, locale === 'zh' ? /不证明任何套餐包含此型号/ : /do not prove that any plan includes this model/);
+    assert.match(html, locale === 'zh' ? /仅供厂商价格参考/ : /provider pricing references only/);
+    assert.match(html, locale === 'zh' ? /暂无可用的输入报价/ : /No input rate is available/);
+    assert.doesNotMatch(html, /It is also available through subscription plans|可通过订阅套餐使用|is included in these plans|以下套餐包含/);
+    assert.doesNotMatch(html, /Best for trying out|Ideal for individual professionals|Which plan is right for you|哪个套餐适合你/);
+    for (const id of [8101, 8102]) {
+      assert.doesNotMatch(planCardOpening(html, id), /border-2 border-(?:blue|green)-500/);
+    }
+    assert.match(html, /Kimi Free/);
+    assert.match(html, /¥49\.00/);
+    assert.match(html, /¥468\.00/);
+    assert.match(html, locale === 'zh' ? /免费/ : /Free/);
+    assert.ok(html.includes((locale === 'zh' ? zh : en).modelDetail.sourceNotRecorded));
+  }
+});
+
+test('explicit model mapping preserves subscription copy and recommendation while excluding producer references', async () => {
+  const producer = { id: 42, name: 'Moonshot AI / Kimi', slug: 'moonshot-china', logo: null };
+  const mapped: ModelPlanCardRow = { id: 8201, name: 'Fixture mapped subscription', slug: 'fixture-mapped', tier: 'pro',
+    price: 20, annual_price: 200, currency: 'USD', pricing_model: 'subscription',
+    features: [], access_from_china: null, plan_kind: 'chat', providers: producer };
+  const reference = { ...mapped, id: 8202, name: 'Fixture reference subscription', slug: 'fixture-reference', tier: 'free', price: 0 };
+  const api = { ...mapped, id: 8203, name: 'Fixture mapped API', slug: 'fixture-api', pricing_model: 'payg', plan_kind: 'api' };
+  for (const locale of ['en', 'zh']) {
+    const html = await modelHtml([], [], locale, { slug: 'moonshotai-kimi-k2', producer,
+      plans: [reference, mapped, api], mappedPlanIds: [mapped.id, api.id] });
+    assert.match(html, locale === 'zh' ? /可通过订阅套餐使用，例如 Fixture mapped subscription/ : /available through subscription plans such as Fixture mapped subscription/);
+    assert.doesNotMatch(html, /(?:such as|例如|these plans:|以下套餐包含[^：]*：) Fixture reference subscription|Best for trying out/);
+    assert.match(planCardOpening(html, 8201), /border-2 border-blue-500/);
+    assert.doesNotMatch(planCardOpening(html, 8202), /border-2 border-(?:blue|green)-500/);
+    assert.doesNotMatch(planCardOpening(html, 8203), /border-2 border-(?:blue|green)-500/);
+    assert.doesNotMatch(html, /Fixture mapped subscription(?:, |、)Fixture mapped API/);
+    assert.match(html, /data-plan-card="8202"/);
+  }
+});
+
+test('excluded legacy and DB-renamed model bodies render their exact existing record without a redirect', async () => {
+  for (const [alias, target] of [
+    ['minimax-m3.1', 'minimax-m3.1-flash'],
+    ['embeddinggemma-2', 'cloudflare-embeddinggemma-2'],
+    ['qwen3-coder-next', 'qwen-qwen3-coder-next'],
+    ['glm-5.1', 'z-ai-glm-5-1'],
+    ['old-id', 'an-existing-model-with-a-legitimate-provider-prefixed-identity-over-fifty-five-characters'],
+  ]) for (const locale of ['en', 'zh']) {
+    const html = await modelHtml([], [], locale, { slug: target,
+      producer: { id: 1, name: 'Fixture producer', slug: 'fixture-producer' }, plans: [] }, undefined, alias);
+    assert.ok(html.includes(`/${locale}/models/${target}`), target);
+    assert.match(html, /<h1/);
+  }
+});
+
+test('model route genuinely integrates the real comparison helper, component and renderer in both languages', async () => {
+  const entry = (slug: string, name: string, monthly: number, channelName: string, currency: string, tierRank: number) => ({
+    plan: { slug, name, planKind: 'coding', planLine: 'fixture-coding', tierRank,
+      features: ['Batch access terms retained', 'Cached input terms retained'], quotaUnit: 'tokens' },
+    channel: { slug: channelName.toLowerCase(), name: channelName },
+    pricing: { billingModel: 'subscription', monthly, yearly: monthly * 10, yearlyMonthly: monthly * 10 / 12,
+      yearlyDiscountPercent: 100 / 6, currency },
+  });
+  const payload = { model: { slug: 'gpt-5.2', name: 'GPT-5.2', provider: { slug: 'openai', name: 'OpenAI' } },
+    officialPlans: [entry('fixture-pro', 'Fixture Pro', 20, 'OpenAI', 'USD', 1),
+      entry('fixture-max', 'Fixture Max', 40, 'OpenAI', 'USD', 2)],
+    thirdPartyPlans: [entry('fixture-third', 'Fixture Third', 12, 'Fixture Vendor', 'EUR', 1)],
+    summary: { totalPlans: 3, cheapestByKind: [] } } as unknown as PlanComparison;
+  for (const locale of ['en', 'zh']) {
+    const html = await modelHtml([], [], locale, { slug: 'gpt-5.2',
+      producer: { id: 1, name: 'OpenAI', slug: 'openai' }, plans: [] }, undefined, undefined, payload);
+    const embedded = html.split('id="subscription-comparison"')[1];
+    assert.ok(embedded, 'real model destination contains the shared comparison');
+    for (const label of ['Fixture Pro', 'Fixture Max', 'Fixture Third', 'Fixture Vendor',
+      'Batch access terms retained', 'Cached input terms retained', '20.00', '40.00', '12.00']) assert.ok(embedded.includes(label), label);
+    assert.ok(embedded.indexOf('Fixture Pro') < embedded.indexOf('Fixture Max'), 'tier ordering retained');
+    assert.match(embedded, /€/);
+    assert.match(embedded, /role="switch"/);
+    assert.match(embedded, locale === 'zh' ? /年付/ : /Yearly/);
+    assert.match(embedded, locale === 'zh' ? /额度[^<]*token|token[^<]*额度/ : /Quota[^<]*token|token[^<]*quota/i);
+    assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
+  }
 });
