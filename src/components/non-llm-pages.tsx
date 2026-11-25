@@ -1,3 +1,4 @@
+import { verticalShouldIndex } from '@/lib/seo-index-policy';
 import type { Metadata } from 'next';
 import SiteHeader from '@/components/SiteHeader';
 import VerticalModelDetailPage from '@/components/vertical-model-detail-page';
@@ -19,6 +20,7 @@ export async function nonLlmMetadata(kind: Kind, params: Params): Promise<Metada
   const keys = copyKeys(kind);
   const title = (language: string) => `${item ? `${item.name} · ` : ''}${nonLlmCopy(language)[keys.title]} | aiplans.dev`;
   return buildMetadata({ locale: locale === 'zh' ? 'zh' : 'en', path: `/${kind}s${slug == null ? '' : `/${slug}`}`,
+    noindex: slug != null && !verticalShouldIndex(kind, slug, item?.shutdownDate),
     title: { en: title('en'), zh: title('zh') },
     description: { en: nonLlmCopy('en')[keys.description], zh: nonLlmCopy('zh')[keys.description] } });
 }

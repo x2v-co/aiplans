@@ -4,8 +4,8 @@ import { AI_VERTICAL_CATALOG } from '../src/lib/ai-vertical-catalog';
 import { modelLifecycleStatus } from '../src/lib/model-shutdown';
 import { STATIC_PATHS } from '../src/lib/sitemap-static-paths';
 import {
-  isLowValueModel, isLowValuePlanComparison, modelShouldIndex,
-  selectSeoModels, selectSeoComparisons, type SeoIndexFacts,
+  isLowValueModel, modelShouldIndex,
+  selectSeoModels, selectSeoComparisons, verticalShouldIndex, type SeoIndexFacts,
 } from '../src/lib/seo-index-policy';
 
 const BASE = 'https://aiplans.dev';
@@ -32,12 +32,11 @@ export function indexReport(rows: SeoIndexFacts[], beforeUrls: string[], afterUr
       const entries: Array<{ url: string; reason: string }> = [];
       if (!modelShouldIndex(row)) {
         for (const url of localized(`/models/${row.slug}`)) entries.push({ url,
-          reason: isLowValueModel(row) ? 'no prices and no independent description' : 'retired or invalid slug' });
+          reason: isLowValueModel(row) ? 'no prices and no independent description' : 'outside stable selection, retired, non-LLM, or duplicate/invalid slug' });
       }
       if (!comparisonSlugs.has(row.slug)) {
         for (const url of localized(`/compare/plans/${row.slug}`)) entries.push({ url,
-          reason: isLowValuePlanComparison(row) ? 'fewer than two priced subscriptions or two priced vendors'
-            : 'retired, non-LLM, invalid/operational variant, or superseded release' });
+          reason: 'comparison detail consolidated only on exact content parity; otherwise accessible noindex' });
       }
       return entries;
     }).sort((a, b) => a.url.localeCompare(b.url)),
@@ -78,9 +77,7 @@ export async function runReport() {
       const { buildSitemap } = await import('../src/lib/build-sitemap');
       const rows = await getSeoIndexCatalog();
       const before = (await buildSitemap(false, rows, true)).map(entry => entry.url);
-      const policyUrls = new Set(catalogUrls(rows, true));
-      const dynamicDetail = /^https:\/\/aiplans\.dev\/(en|zh)\/(models\/[^/]+|compare\/plans\/[^/]+)$/;
-      const after = before.filter(url => !dynamicDetail.test(url) || policyUrls.has(url));
+      const after = (await buildSitemap(true, rows, true)).map(entry => entry.url);
       return { source: 'DATABASE_URL (read-only)', scope: 'full sitemap, same data snapshot for both policies',
         ...indexReport(rows, before, after) };
     } finally {
@@ -88,18 +85,22 @@ export async function runReport() {
     }
   }
   const rows = await offlineCatalog();
-  const unchanged = [
+  const beforeStaticAndVertical = [
     ...STATIC_PATHS.filter(entry => entry.path !== '/quota-changes').flatMap(entry => localized(entry.path)),
     ...AI_VERTICAL_CATALOG.filter(item => item.slug
-      && ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model'].includes(item.kind)
+      && ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model', 'embedding-model'].includes(item.kind)
       && modelLifecycleStatus(item.shutdownDate) !== 'retired')
       .flatMap(item => localized(`/${item.kind}s/${item.slug}`)),
   ];
+  const afterStaticAndVertical = beforeStaticAndVertical.filter(url => {
+    const match = new URL(url).pathname.match(/^\/(?:en|zh)\/([^/]+-models)\/([^/]+)$/);
+    return !match || verticalShouldIndex(match[1].slice(0, -1) as import('../src/lib/ai-vertical-catalog').AiCatalogKind, match[2]);
+  });
   return {
     source: 'offline: ARENA_LEADERBOARD_DATA.json, ANTHROPIC_PRICING_DATA.json, STATIC_PATHS, AI_VERTICAL_CATALOG',
     scope: 'partial offline sitemap only; NOT production totals or evidence of current availability',
     limitations: 'No DATABASE_URL: historical snapshots lack subscription mappings, provider pages, DB-only verticals and quota history. Counts apply only to reconstructable URLs; noindex lists missing evidence in these snapshots, not confirmed production removals. Use DATABASE_URL for actionable totals.',
-    ...indexReport(rows, [...unchanged, ...catalogUrls(rows, false)], [...unchanged, ...catalogUrls(rows, true)]),
+    ...indexReport(rows, [...beforeStaticAndVertical, ...catalogUrls(rows, false)], [...afterStaticAndVertical, ...catalogUrls(rows, true)]),
   };
 }
 

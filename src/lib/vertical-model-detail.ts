@@ -6,6 +6,7 @@ import type { ModelBenchmarkScore } from '@/lib/benchmarks';
 import type { PlanCoverageFields } from '@/lib/third-party-coverage';
 import { getModelUsagePrices } from '@/lib/model-usage-prices-query';
 import { availableUsagePrices } from '@/lib/model-usage-prices';
+import { verticalShouldIndex } from '@/lib/seo-index-policy';
 
 const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, AiModelCategory>> = {
   'video-model': 'video',
@@ -62,22 +63,26 @@ export interface VerticalModelDetail {
 export async function getVerticalModelDetail(kind: AiCatalogKind, slug: string, locale?: string): Promise<VerticalModelDetail> {
   if (!KIND_TO_CATEGORY[kind]) notFound();
   if (CATALOG_ONLY_DETAIL_KINDS.includes(kind) && !catalogForKind(kind).some(i => i.slug === slug)) notFound();
-  const parent = parentSlugFor(kind, slug);
-  if (parent) permanentRedirect(`/${locale ?? 'en'}/${verticalKindPath(kind)}/${parent}`);
   const catalog = await getVerticalModelCatalog(kind);
+  let resolvedSlug = parentSlugFor(kind, slug) ?? slug;
   // Old Arena benchmark URLs (arena-t2v-<model>) were once in the sitemap:
   // 301 them to the model family / model page when one exists.
   const base = benchmarkBaseSlug(slug);
   if (base) {
     const target = parentSlugFor(kind, base) ?? (catalog.some(entry => entry.slug === base) ? base : undefined);
-    if (target) permanentRedirect(`/${locale ?? 'en'}/${verticalKindPath(kind)}/${target}`);
+    if (target) resolvedSlug = target;
   }
-  if (isBenchmarkOnlySlug(slug)) notFound();
-  const item = catalog.find(entry => entry.slug === slug);
+  if (isBenchmarkOnlySlug(resolvedSlug)) notFound();
+  const item = catalog.find(entry => entry.slug === resolvedSlug);
   if (!item) notFound();
+  if (resolvedSlug !== slug && verticalShouldIndex(kind, resolvedSlug, item.shutdownDate)) {
+    permanentRedirect(`/${locale ?? 'en'}/${verticalKindPath(kind)}/${resolvedSlug}`);
+  }
+  // An excluded destination still resolves the existing family mapping, but
+  // renders at the original noindex alias instead of permanently redirecting.
   const usagePrices = kind === 'video-model'
-    ? await getModelUsagePrices(slug).catch(error => {
-      console.warn(`getModelUsagePrices(${slug}) failed`, error);
+    ? await getModelUsagePrices(resolvedSlug).catch(error => {
+      console.warn(`getModelUsagePrices(${resolvedSlug}) failed`, error);
       return [];
     }) : [];
   return { item, plans: [], usagePrices: availableUsagePrices(usagePrices, true), benchmarks: catalogBenchmarks(kind, item), source: 'catalog' };

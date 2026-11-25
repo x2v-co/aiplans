@@ -63,3 +63,23 @@ export const getSeoIndexCatalog = cache(async (): Promise<SeoIndexRow[]> => {
     ORDER BY m.updated_at DESC NULLS LAST, m.slug
   `;
 });
+
+export interface SeoProviderRow {
+  slug: string | null;
+  updated_at: Date | string | null;
+}
+
+/** Same existence/content gate for provider metadata and sitemap. */
+export const getSeoProviderCatalog = cache(async (): Promise<SeoProviderRow[]> => {
+  const [{ sql }, { currentPlanCondition }] = await Promise.all([
+    import('./db'), import('./plan-lifecycle-query'),
+  ]);
+  return sql<SeoProviderRow[]>`
+    SELECT slug, updated_at FROM providers
+    WHERE EXISTS (SELECT 1 FROM plans WHERE plans.provider_id = providers.id AND ${currentPlanCondition()})
+       OR EXISTS (SELECT 1 FROM api_channel_prices cp WHERE cp.provider_id = providers.id AND cp.is_available = true
+         AND EXISTS (SELECT 1 FROM models m WHERE m.id = cp.model_id
+           AND (m.shutdown_date IS NULL OR m.shutdown_date > (now() AT TIME ZONE 'UTC')::date)))
+    ORDER BY priority ASC NULLS LAST
+  `;
+});

@@ -8,7 +8,7 @@ import {
 } from './seo-index-policy';
 
 export const facts = (overrides: Partial<SeoIndexFacts> = {}): SeoIndexFacts => ({
-  slug: 'example-model', description: null, active: true, is_llm: true,
+  slug: 'gpt-5.2', description: null, active: true, is_llm: true,
   available_api_count: 1, api_price_count: 0, priced_plan_count: 0,
   usage_price_count: 0, plan_count: 2, priced_subscription_count: 0,
   priced_subscription_provider_count: 0, ...overrides,
@@ -33,7 +33,8 @@ test('empty, single priced vendor, and unknown price comparisons are low value',
   }
   const useful = facts({ priced_subscription_count: 2, priced_subscription_provider_count: 2 });
   assert.equal(isLowValuePlanComparison(useful), false);
-  assert.deepEqual(selectSeoComparisons([useful]), [useful]);
+  assert.deepEqual(selectSeoComparisons([useful]), []);
+  assert.deepEqual(selectSeoComparisons([useful], false), [useful]);
 });
 
 test('model robots and sitemap make identical low-value decisions, including free/API/usage/plan-only facts', () => {
@@ -46,10 +47,10 @@ test('model robots and sitemap make identical low-value decisions, including fre
     assert.equal(typeof robots === 'object' && robots != null && typeof robots.googleBot === 'object' && robots.googleBot.index,
       selectSeoModels([row]).length === 1);
   }
-  // Prior API-only eligibility is retained, rather than expanding sitemap scope.
+  // Selected subscription/usage-only model pages use the same gate as metadata.
   const planOnly = facts({ available_api_count: 0, priced_plan_count: 1 });
   assert.equal(modelShouldIndex(planOnly), true);
-  assert.equal(selectSeoModels([planOnly]).length, 0);
+  assert.equal(selectSeoModels([planOnly]).length, 1);
 });
 
 test('retired, glued slugs and old/operational comparison variants stay excluded', () => {
@@ -60,7 +61,8 @@ test('retired, glued slugs and old/operational comparison variants stay excluded
     facts({ ...good, slug: 'claude-opus-4.8-(batch)', released_at: '2026-08-01' }),
     facts({ ...good, slug: 'retired-model', active: false }),
   ];
-  assert.deepEqual(selectSeoComparisons(rows).map(row => row.slug), ['claude-opus-4.8']);
+  assert.deepEqual(selectSeoComparisons(rows), []);
+  assert.deepEqual(selectSeoComparisons(rows, false).map(row => row.slug), ['claude-opus-4.8']);
   assert.equal(modelShouldIndex(rows[3]), false);
   assert.ok(selectSeoComparisons(rows).every(row => !isLowValuePlanComparison(row)));
 });
@@ -74,7 +76,7 @@ test('glued multi-entity rows stay outside both sitemaps while thinking/free mod
     assert.deepEqual(selectSeoModels([row]), []);
     assert.deepEqual(selectSeoComparisons([row]), []);
   }
-  for (const slug of ['claude-3.7-sonnet-(thinking)', 'inclusionai-ling-3-2-flash-free']) {
+  for (const slug of ['moonshotai-kimi-k2-thinking', 'inclusionai-ling-3-2-flash-free']) {
     const row = facts({ ...priced, slug });
     assert.equal(modelShouldIndex(row), true);
     assert.deepEqual(selectSeoModels([row]), [row]);
@@ -82,75 +84,50 @@ test('glued multi-entity rows stay outside both sitemaps while thinking/free mod
   }
 });
 
-test('allowlisted older comparisons with Search demand stay indexable, bypassing only the vendor-count bar', () => {
-  const good = { plan_count: 6, priced_subscription_count: 6, priced_subscription_provider_count: 3 };
-  const rows = [
-    facts({ ...good, slug: 'gemini-3-pro', released_at: '2025-11-18' }),
-    facts({ ...good, slug: 'gemini-3.5-pro', released_at: '2026-06-01' }),
-    facts({ ...good, slug: 'claude-opus-4.5', released_at: '2025-11-01' }),
-    facts({ ...good, slug: 'claude-opus-4.8', released_at: '2026-08-01' }),
-  ];
-  assert.ok(SEO_COMPARISON_ALLOWLIST.has('gemini-3-pro'));
-  assert.deepEqual(selectSeoComparisons(rows).map(row => row.slug).sort(),
-    ['claude-opus-4.8', 'gemini-3-pro', 'gemini-3.5-pro']);
-  // Allowlisted slugs skip only the >= 2 vendors rule (production: Google-only tiers).
-  for (const slug of SEO_COMPARISON_ALLOWLIST) {
-    const single = facts({ ...good, slug, priced_subscription_provider_count: 1 });
-    assert.deepEqual(selectSeoComparisons([single, rows[1]]).map(r => r.slug).sort(),
-      [slug, 'gemini-3.5-pro'].sort());
-  }
-  // A non-allowlisted page with one priced vendor still fails the bar.
-  assert.deepEqual(selectSeoComparisons([
-    facts({ ...good, slug: 'claude-opus-4.8', released_at: '2026-08-01', priced_subscription_provider_count: 1 }),
-  ]), []);
-  // Allowlisted but < 2 priced subscriptions, no longer active, or < 2 plans is excluded.
-  for (const row of [
-    facts({ ...good, slug: 'gemini-3-pro', priced_subscription_count: 1, priced_subscription_provider_count: 1 }),
-    facts({ ...good, slug: 'gemini-3-pro', active: false }),
-    facts({ ...good, slug: 'gemini-3-pro', plan_count: 1 }),
-  ]) assert.deepEqual(selectSeoComparisons([row, rows[1]]).map(r => r.slug), ['gemini-3.5-pro']);
-  // A report run without the policy keeps the old candidate set plus the allowlist.
-  assert.equal(selectSeoComparisons(rows, false).filter(r => r.slug === 'gemini-3-pro').length, 1);
+test('historical comparison allowlist remains available to the before report, while details leave the new sitemap', () => {
+  const rows = [...SEO_COMPARISON_ALLOWLIST].map(slug => facts({ slug,
+    plan_count: 6, priced_subscription_count: 6, priced_subscription_provider_count: 1 }));
+  assert.deepEqual(selectSeoComparisons(rows), []);
+  assert.deepEqual(selectSeoComparisons(rows, false).map(row => row.slug).sort(), [...SEO_COMPARISON_ALLOWLIST].sort());
 });
 
 test('metadata and sitemap use the shared query and policy, without a second SQL eligibility implementation', () => {
   const model = readFileSync('src/app/[locale]/models/[slug]/page.tsx', 'utf8');
   const comparison = readFileSync('src/app/[locale]/compare/plans/[model]/layout.tsx', 'utf8');
   const sitemap = readFileSync('src/lib/build-sitemap.ts', 'utf8');
-  for (const source of [model, comparison, sitemap]) assert.match(source, /getSeoIndexCatalog/);
+  for (const source of [model, sitemap]) assert.match(source, /getSeoIndexCatalog/);
   assert.match(model, /noindex: !indexFacts \|\| !modelShouldIndex\(indexFacts\)/);
-  assert.match(comparison, /selectSeoComparisons\(comparable\)/);
+  assert.match(comparison, /noindex: true/);
+  assert.match(comparison, /getComparisonPage/);
   assert.match(sitemap, /selectSeoModels\(catalog, applyIndexPolicy\)/);
   assert.match(sitemap, /selectSeoComparisons\(catalog, applyIndexPolicy\)/);
 });
 
-test('non-indexable compare URLs 301 to the model page when it is indexable', () => {
-  const emptyCompare = facts({ slug: 'glm-5.2-fast', api_price_count: 1, plan_count: 0,
-    priced_subscription_count: 0, priced_subscription_provider_count: 0 });
-  const newest = facts({ slug: 'glm-5.3', plan_count: 6, priced_subscription_count: 6,
-    priced_subscription_provider_count: 2, released_at: '2026-10-01' });
-  const catalog = [emptyCompare, newest];
-  assert.equal(compareSeoFallback('en', 'glm-5.2-fast', catalog), '/en/models/glm-5.2-fast');
-  assert.equal(compareSeoFallback('zh', 'glm-5.2-fast', catalog), '/zh/models/glm-5.2-fast');
-  assert.equal(compareSeoFallback('en', 'glm-5.3', catalog), null);
-  const retired = facts({ slug: 'openai-gpt-4', active: false, api_price_count: 0 });
-  assert.equal(compareSeoFallback('en', 'openai-gpt-4', [retired, newest]), '/en/compare/plans');
-  const allowlisted = facts({ slug: 'gemini-3-pro', plan_count: 6, priced_subscription_count: 6,
-    priced_subscription_provider_count: 1, released_at: '2025-11-18' });
-  assert.equal(compareSeoFallback('en', 'gemini-3-pro', [allowlisted, newest]), null);
+test('comparison redirect requires integrated exact-entity content, existing eligible model and locale agreement', () => {
+  const row = facts({ slug: 'glm-5.2-fast', api_price_count: 1 });
+  for (const locale of ['en', 'zh']) {
+    assert.equal(compareSeoFallback(locale, row.slug, [row], row.slug), `/${locale}/models/${row.slug}`);
+    for (const target of [undefined, 'glm-5.3', 'glm-5.2-fast-free', 'glm-5.2-fast-preview']) {
+      assert.equal(compareSeoFallback(locale, row.slug, [row], target), null);
+    }
+    assert.equal(compareSeoFallback(locale, row.slug, [], row.slug), null);
+    assert.equal(compareSeoFallback(locale, row.slug, [{ ...row, active: false }], row.slug), null);
+    const excluded = facts({ slug: 'unselected-model', api_price_count: 1 });
+    assert.equal(compareSeoFallback(locale, excluded.slug, [excluded], excluded.slug), null);
+  }
   const layout = readFileSync('src/app/[locale]/compare/plans/[model]/layout.tsx', 'utf8');
   const page = readFileSync('src/app/[locale]/compare/plans/[model]/page.tsx', 'utf8');
-  for (const source of [layout, page]) assert.match(source, /compareSeoFallback/);
+  for (const source of [layout, page]) assert.match(source, /getComparisonPage/);
 });
 
 test('OpenRouter ~alias routing pages are noindex and out of the sitemap', () => {
   const alias = facts({ slug: '~deepseek-deepseek-v4-flash-latest', api_price_count: 3 });
-  const concrete = facts({ slug: 'deepseek-v4-flash', api_price_count: 3 });
+  const concrete = facts({ slug: 'deepseek-v4-pro', api_price_count: 3 });
   assert.equal(isRouterAliasSlug(alias.slug), true);
   assert.equal(isRouterAliasSlug(concrete.slug), false);
   assert.equal(modelShouldIndex(alias), false);
   assert.equal(modelShouldIndex(concrete), true);
-  assert.deepEqual(selectSeoModels([alias, concrete]).map(row => row.slug), ['deepseek-v4-flash']);
+  assert.deepEqual(selectSeoModels([alias, concrete]).map(row => row.slug), ['deepseek-v4-pro']);
   // The read-only report's "before" view (policy off) keeps the old candidate set.
   assert.equal(selectSeoModels([alias], false).length, 1);
 });

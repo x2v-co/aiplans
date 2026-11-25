@@ -1,3 +1,4 @@
+import { verticalShouldIndex } from '@/lib/seo-index-policy';
 import type { Metadata } from 'next';
 import { decodeSlugParam } from '@/lib/route-params';
 import { buildMetadata, breadcrumbList, SITE_URL, type Locale } from '@/lib/seo';
@@ -11,6 +12,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: `/video-models/${slug}`,
+    noindex: !verticalShouldIndex('video-model', slug, item.shutdownDate),
     title: {
       en: `${item.name} Video Model · Pricing, Plans, Sources | aiplans.dev`,
       zh: `${item.name} 视频模型 · 价格、套餐与来源 | aiplans.dev`,

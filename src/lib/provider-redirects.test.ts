@@ -9,6 +9,20 @@ import {
   resolvePlanRedirect,
   type PlanRedirectRow,
 } from './provider-redirects';
+import { providerShouldIndex } from './seo-index-policy';
+import { filteredCatalogPath } from './catalog-query-routes';
+
+const eligible = async (path: string) => {
+  const slug = decodeURIComponent(path.split('/').at(-1)!);
+  return providerShouldIndex(slug) && (providerSlugs.has(slug) || slug === 'xai');
+};
+function assertResolution(response: Response, target: URL) {
+  const slug = decodeURIComponent(target.pathname.split('/').at(-1)!);
+  const indexable = providerShouldIndex(slug) && (providerSlugs.has(slug) || slug === 'xai');
+  assert.equal(response.status, indexable ? 301 : 200, target.toString());
+  assert.equal(response.headers.get('location'), indexable ? target.toString() : null);
+  if (!indexable) { target.hash = ''; target.pathname = filteredCatalogPath(target.pathname, target.searchParams) ?? target.pathname; assert.equal(response.headers.get('x-middleware-rewrite'), target.toString()); }
+}
 
 // Next normally installs this during server bootstrap. The standalone Node test
 // runner must install the real implementation before loading Next's helpers.
@@ -23,7 +37,7 @@ before(async () => {
   ({ createProxy } = await import('../proxy'));
   ({ unstable_getResponseFromNextConfig } = await import('next/experimental/testing/server'));
   ({ default: nextConfig } = await import('../../next.config'));
-  fixtureProxy = createProxy(async () => catalog);
+  fixtureProxy = createProxy(async () => catalog, [], eligible);
 });
 
 const origin = 'https://aiplans.dev';
@@ -73,8 +87,7 @@ test('unprefixed /plans/grok normalizes in one hop and preserves query parameter
   const response = await fixtureProxy(new NextRequest(`${origin}/plans/grok?period=yearly&utm=gsc`, {
     headers: { cookie: 'NEXT_LOCALE=zh' },
   }));
-  assert.equal(response.status, 301);
-  assert.equal(response.headers.get('location'), `${origin}/en/providers/grok?period=yearly&utm=gsc`);
+  assertResolution(response, new URL(`${origin}/en/providers/grok?period=yearly&utm=gsc`));
 });
 
 test('decodes slug parameters and safely encodes targets and fragments', () => {
@@ -86,8 +99,8 @@ test('decodes slug parameters and safely encodes targets and fragments', () => {
   assert.equal(resolvePlanRedirect(planRedirectRequest('/plans/lone%')!, []), '/en/providers/lone%25');
 });
 
-test('config only handles Cursor; catalog-dependent URLs reach proxy', async () => {
-  for (const path of ['/en/plans/github', '/zh/plans/copilot-free', '/plans/copilot-free']) {
+test('config lets Cursor and all catalog-dependent URLs reach the actual proxy eligibility gate', async () => {
+  for (const path of ['/en/plans/cursor', '/plans/cursor', '/en/plans/github', '/zh/plans/copilot-free', '/plans/copilot-free']) {
     const response = await unstable_getResponseFromNextConfig({ url: `${origin}${path}`, nextConfig });
     assert.equal(response.headers.get('location'), null, path);
   }
@@ -98,7 +111,7 @@ test('config only handles Cursor; catalog-dependent URLs reach proxy', async () 
   }
 });
 
-test('returns a single 301 with locale, query and plan fragment intact', async () => {
+test('returns one guarded 301 or same-provider rewrite with locale and query intact', async () => {
   for (const prefix of ['/en', '/zh', '']) {
     for (const [slug, target] of [
       ['github', 'github'], ['copilot-free', 'github#copilot-free'],
@@ -107,8 +120,7 @@ test('returns a single 301 with locale, query and plan fragment intact', async (
       const response = await responseFor(`${prefix}/plans/${slug}?period=yearly&utm=gsc`);
       const expected = new URL(`${origin}${prefix || '/en'}/providers/${target}`);
       expected.search = '?period=yearly&utm=gsc';
-      assert.equal(response.status, 301);
-      assert.equal(response.headers.get('location'), expected.toString());
+      assertResolution(response, expected);
       const destination = await responseFor(expected.pathname + expected.search);
       assert.equal(destination.headers.get('location'), null, 'target must not redirect again');
     }
@@ -124,8 +136,7 @@ test('all 204 production plans resolve directly in both locales and without a lo
       const target = `${prefix || '/en'}/providers/${providerSlug}${providerSlugs.has(planSlug) ? '' : `#${planSlug}`}`;
       assert.equal(resolvePlanRedirect(planRedirectRequest(path)!, catalog), target, path);
       const response = await responseFor(path);
-      assert.equal(response.status, 301, path);
-      assert.equal(response.headers.get('location'), `${origin}${target}`, path);
+      assertResolution(response, new URL(`${origin}${target}`));
     }
   }
 });
@@ -183,24 +194,22 @@ test('failed catalog reads warn once, fall back to the provider slug and are ret
     if (++loads === 1) throw new Error('DB unavailable');
     return catalog;
   });
-  const proxy = createProxy(lookup);
+  const proxy = createProxy(lookup, [], eligible);
   const fallback = await proxy(new NextRequest(`${origin}/zh/plans/copilot-free?utm=gsc`));
-  assert.equal(fallback.status, 301);
-  assert.equal(fallback.headers.get('location'), `${origin}/zh/providers/copilot-free?utm=gsc`);
+  assertResolution(fallback, new URL(`${origin}/zh/providers/copilot-free?utm=gsc`));
   assert.equal(warn.mock.callCount(), 1);
   assert.match(String(warn.mock.calls[0].arguments[1]), /DB unavailable/);
   const response = await proxy(new NextRequest(`${origin}/plans/copilot-free`));
-  assert.equal(response.headers.get('location'), `${origin}/en/providers/github#copilot-free`);
+  assertResolution(response, new URL(`${origin}/en/providers/github#copilot-free`));
   assert.equal(loads, 2);
   assert.equal(warn.mock.callCount(), 1);
 });
 
 test('a synchronous catalog loader throw also falls back with one warning', async (t) => {
   const warn = t.mock.method(console, 'warn', () => {});
-  const proxy = createProxy(() => { throw new Error('DB unavailable'); });
+  const proxy = createProxy(() => { throw new Error('DB unavailable'); }, [], eligible);
   const response = await proxy(new NextRequest(`${origin}/plans/copilot-free?utm=gsc`));
-  assert.equal(response.status, 301);
-  assert.equal(response.headers.get('location'), `${origin}/en/providers/copilot-free?utm=gsc`);
+  assertResolution(response, new URL(`${origin}/en/providers/copilot-free?utm=gsc`));
   assert.equal(warn.mock.callCount(), 1);
 });
 
@@ -215,7 +224,7 @@ for (const cached of [false, true]) {
       return loads === 1 ? new Promise<PlanRedirectRow[]>(resolve => { finishSlowLoad = resolve; })
         : Promise.resolve(catalog);
     };
-    const proxy = createProxy(cached ? cachePlanRedirectCatalog(load) : load);
+    const proxy = createProxy(cached ? cachePlanRedirectCatalog(load) : load, [], eligible);
     let settled = false;
     const pending = proxy(new NextRequest(`${origin}/plans/copilot-free?utm=gsc`)).then(response => {
       settled = true;
@@ -227,21 +236,20 @@ for (const cached of [false, true]) {
     assert.equal(warn.mock.callCount(), 0);
     t.mock.timers.tick(1);
     const fallback = await pending;
-    assert.equal(fallback.status, 301);
-    assert.equal(fallback.headers.get('location'), `${origin}/en/providers/copilot-free?utm=gsc`);
+    assertResolution(fallback, new URL(`${origin}/en/providers/copilot-free?utm=gsc`));
     assert.equal(warn.mock.callCount(), 1);
     assert.match(String(warn.mock.calls[0].arguments[1]), /timed out/);
 
     // Retry while the original DB call is still hung.
     const response = await proxy(new NextRequest(`${origin}/plans/copilot-free`));
-    assert.equal(response.headers.get('location'), `${origin}/en/providers/github#copilot-free`);
+    assertResolution(response, new URL(`${origin}/en/providers/github#copilot-free`));
     assert.equal(loads, 2);
 
     // A late result from the timed-out call must not overwrite the recovered cache.
     finishSlowLoad([]);
     await Promise.resolve();
     const afterLateResult = await proxy(new NextRequest(`${origin}/plans/copilot-free`));
-    assert.equal(afterLateResult.headers.get('location'), `${origin}/en/providers/github#copilot-free`);
+    assertResolution(afterLateResult, new URL(`${origin}/en/providers/github#copilot-free`));
     assert.equal(warn.mock.callCount(), 1);
   });
 }

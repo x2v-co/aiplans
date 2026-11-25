@@ -1,15 +1,10 @@
+import { getComparisonPage } from '@/lib/model-plan-comparison';
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { getSeoIndexCatalog } from '@/lib/seo-index-data';
-import { legacySlugRedirect } from '@/lib/legacy-slug-redirects';
 import { isGluedModelSlug } from '@/lib/glued-model-slug';
-import { findModelSlugRedirect } from '@/lib/model-slug-redirects';
 import { buildMetadata, type Locale } from '@/lib/seo';
 import { decodeSlugParam } from '@/lib/route-params';
 import { formatModelName } from '@/lib/model-names';
-import { compareSeoFallback, selectSeoComparisons } from '@/lib/seo-index-policy';
-import { buildComparisonPricingCopy } from '@/lib/pricing-seo';
-import { getComparisonSeoData } from '@/lib/pricing-seo-data';
 
 export async function generateMetadata({
   params,
@@ -18,37 +13,21 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, model: rawModel } = await params;
   const modelSlug = decodeSlugParam(rawModel);
-  const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/compare/plans/${modelSlug}`);
-  if (legacyTarget) permanentRedirect(legacyTarget);
   if (isGluedModelSlug(modelSlug)) notFound();
-
-  const [data, comparable] = await Promise.all([
-    getComparisonSeoData(modelSlug),
-    getSeoIndexCatalog(),
-  ]);
-  if (!data) {
-    const target = await findModelSlugRedirect(modelSlug);
-    if (target) permanentRedirect(`/${locale}/compare/plans/${encodeURIComponent(target)}`);
-    notFound();
-  }
-  const modelName = formatModelName(data.model.name);
-  const en = buildComparisonPricingCopy(modelName, data.plans, 'en', undefined, modelSlug);
-  const zh = buildComparisonPricingCopy(modelName, data.plans, 'zh', undefined, modelSlug);
-  // Reuse sitemap eligibility: current primary releases need at least two
-  // priced subscriptions across two vendors. A 200 noindex page (for
-  // example a 0-plan comparison) hands the crawler a dead end; 301 to the
-  // indexable model page, or to the comparison index.
-  const isIndexable = selectSeoComparisons(comparable)
-    .some((candidate) => candidate.slug === modelSlug);
-  const fallback = compareSeoFallback(locale, modelSlug, comparable);
-  if (fallback) permanentRedirect(fallback);
-
+  const resolution = await getComparisonPage(modelSlug);
+  if (!resolution) notFound();
+  if (resolution.redirect) permanentRedirect(resolution.redirect.replace(/^\/en\//, `/${locale === 'zh' ? 'zh' : 'en'}/`));
+  const modelName = formatModelName(resolution.data?.model.name ?? resolution.slug);
+  const description = {
+    en: `Recorded subscription prices and usage terms for ${modelName}. Missing prices do not mean free access; check provider terms for model availability.`,
+    zh: `${modelName} 已记录的订阅价格与用量条款。未记录报价不代表免费；型号可用性以厂商条款为准。`,
+  };
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: `/compare/plans/${modelSlug}`,
-    title: { en: en.title, zh: zh.title },
-    description: { en: en.description, zh: zh.description },
-    noindex: !isIndexable,
+    title: { en: `${modelName} subscription comparison`, zh: `${modelName} 订阅套餐对比` },
+    description,
+    noindex: true,
   });
 }
 

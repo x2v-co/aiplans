@@ -1,3 +1,5 @@
+import { providerShouldIndex } from '@/lib/seo-index-policy';
+import { getSeoProviderCatalog } from '@/lib/seo-index-data';
 import { PlanLimitedTimeOfferMark } from '@/components/plan-limited-time-offer';
 import { derivePlanRegions, chinaAccessMark, formatAvailableIn } from '@/lib/supported-regions';
 import { getPlansByProvider } from '@/lib/provider-plans-query';
@@ -77,12 +79,16 @@ export async function generateMetadata({
   // first, which turns the page's own notFound() into a 200 soft 404.
   if (!provider) notFound();
   const providerName = provider.name ?? providerSlug;
-  const plans = await getProviderSeoPlans(provider.id);
+  const [plans, indexProviders] = await Promise.all([
+    getProviderSeoPlans(provider.id),
+    providerShouldIndex(providerSlug) ? getSeoProviderCatalog() : Promise.resolve([]),
+  ]);
   const en = buildProviderPricingCopy(providerName, plans, 'en', undefined, providerSlug);
   const zh = buildProviderPricingCopy(providerName, plans, 'zh', undefined, providerSlug);
   return buildMetadata({
     locale: (locale === 'zh' ? 'zh' : 'en') as Locale,
     path: `/providers/${encodeURIComponent(providerSlug)}`,
+    noindex: !providerShouldIndex(providerSlug) || !indexProviders.some(row => row.slug === providerSlug),
     title: { en: en.title, zh: zh.title },
     description: { en: en.description, zh: zh.description },
   });

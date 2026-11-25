@@ -26,12 +26,13 @@ test('known duplicate pairs resolve to the row that ranks', () => {
   assert.equal(canonicalModelSlug('gpt-5.4'), 'gpt-5.4');
 });
 
-test('duplicates leave the sitemap but keep their robots tag; junk rows are noindex', () => {
+test('duplicate canonicals remain stable while curation noindexes duplicate and excluded rows; junk stays noindex', () => {
   const priced = { api_price_count: 1 };
   const dup = facts({ slug: 'openai-gpt-5-4', ...priced });
   const canonical = facts({ slug: 'gpt-5.4', ...priced });
-  assert.deepEqual(selectSeoModels([dup, canonical]).map(row => row.slug), ['gpt-5.4']);
-  assert.equal(modelShouldIndex(dup), true);
+  assert.deepEqual(selectSeoModels([dup, canonical]), []);
+  assert.equal(canonicalModelSlug(dup.slug), canonical.slug);
+  assert.equal(modelShouldIndex(dup), false);
   const junk = facts({ slug: 'chat', ...priced });
   assert.equal(modelShouldIndex(junk), false);
   assert.equal(selectSeoModels([junk]).length, 0);

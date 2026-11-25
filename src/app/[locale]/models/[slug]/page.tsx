@@ -1,9 +1,12 @@
+import ModelSubscriptionComparison from '@/components/model-subscription-comparison';
 import { deriveProviderRegions, shouldShowChinaBadge, chinaAccessMark } from '@/lib/supported-regions';
 import { getSeoIndexCatalog } from '@/lib/seo-index-data';
 import { modelCanonicalSlug, modelShouldIndex } from '@/lib/seo-index-policy';
 import { localizeProvider, providerDisplayName } from '@/lib/provider-display-name';
 import { publicModelName } from '@/lib/public-catalog-copy';
 import { localizedModelDescription } from '@/lib/model-description-locale';
+import { retainedModelContext } from '@/lib/retained-model-context';
+import { seoDestinationIndexable } from '@/lib/seo-redirects';
 import { DeepSeekWindowPrices } from '@/components/deepseek-window-prices';
 import { CodexModelMeasurements } from '@/components/codex-model-measurements';
 import { isCodexQuotaModel } from '@/lib/codex-pro200';
@@ -90,7 +93,15 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale, slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
   const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/models/${slug}`);
-  if (legacyTarget) permanentRedirect(legacyTarget);
+  if (legacyTarget) {
+    if (await seoDestinationIndexable(legacyTarget)) permanentRedirect(legacyTarget);
+    const targetSlug = decodeURIComponent(legacyTarget.split('/').at(-1)!);
+    if (legacyTarget.includes('/providers/')) {
+      const { generateMetadata: providerMetadata } = await import('../../providers/[slug]/catalog-page');
+      return providerMetadata({ params: Promise.resolve({ locale, slug: targetSlug }) });
+    }
+    if (targetSlug !== slug) return generateMetadata({ params: Promise.resolve({ locale, slug: targetSlug }) });
+  }
 
   // A concatenated pricing cell represents several entities, even if an old
   // row remains in the catalog. Never guess a model or follow a stale DB alias.
@@ -108,7 +119,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   `;
   if (!product) {
     const target = await findModelSlugRedirect(slug);
-    if (target) permanentRedirect(`/${locale}/models/${encodeURIComponent(target)}`);
+    if (target && target !== slug) {
+      const path = `/${locale}/models/${encodeURIComponent(target)}`;
+      if (await seoDestinationIndexable(path)) permanentRedirect(path);
+      return generateMetadata({ params: Promise.resolve({ locale, slug: target }) });
+    }
     notFound();
   }
   const indexFacts = (await getSeoIndexCatalog()).find(row => row.slug === slug);
@@ -299,6 +314,11 @@ async function getProductWithChannels(slug: string, now = new Date()) {
   const producerId = modelProvider?.id ?? derivedProvider?.id ?? null;
   const plansData = await getModelPlans(model.id, producerId,
     usagePrices.flatMap(row => row.plan_id == null ? [] : [row.plan_id]), now, { includePriceOffers: true });
+  // The plan reader also returns producer references. Only an explicit mapping
+  // supports model-specific subscription copy or recommendations.
+  const modelPlanMappings = plansData.length ? await sql<{ plan_id: number }[]>`
+    SELECT plan_id FROM model_plan_mapping WHERE model_id = ${model.id}
+  ` : [];
 
   // Return the model with provider attached
   const product = {
@@ -360,6 +380,7 @@ async function getProductWithChannels(slug: string, now = new Date()) {
     referencePrices,
     usagePrices,
     plans: plansData,
+    mappedPlanIds: modelPlanMappings.map(row => row.plan_id),
     producerId,
     arenaElo,
     benchmarkScores,
@@ -376,7 +397,15 @@ export default async function ModelPage({
   const { locale, slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
   const legacyTarget = legacySlugRedirect(`/${locale === 'zh' ? 'zh' : 'en'}/models/${slug}`);
-  if (legacyTarget) permanentRedirect(legacyTarget);
+  if (legacyTarget) {
+    if (await seoDestinationIndexable(legacyTarget)) permanentRedirect(legacyTarget);
+    const targetSlug = decodeURIComponent(legacyTarget.split('/').at(-1)!);
+    if (legacyTarget.includes('/providers/')) {
+      const { default: ProviderPage } = await import('../../providers/[slug]/catalog-page');
+      return ProviderPage({ params: Promise.resolve({ locale, slug: targetSlug }), searchParams: Promise.resolve({}) });
+    }
+    if (targetSlug !== slug) return ModelPage({ params: Promise.resolve({ locale, slug: targetSlug }) });
+  }
   if (isGluedModelSlug(slug)) notFound();
   const now = new Date();
   const [data, couponByProvider] = await Promise.all([
@@ -386,12 +415,16 @@ export default async function ModelPage({
 
   if (!data) {
     const target = await findModelSlugRedirect(slug);
-    if (target) permanentRedirect(`/${locale}/models/${encodeURIComponent(target)}`);
+    if (target && target !== slug) {
+      const path = `/${locale}/models/${encodeURIComponent(target)}`;
+      if (await seoDestinationIndexable(path)) permanentRedirect(path);
+      return ModelPage({ params: Promise.resolve({ locale, slug: target }) });
+    }
     notFound();
   }
 
   const { product: rawProduct, channelPrices: rawChannelPrices, usagePrices: rawUsagePrices,
-    referencePrices, plans, arenaElo, benchmarkScores, priceHistory: rawHistory, relatedModels, producerId } = data;
+    referencePrices, plans, mappedPlanIds, arenaElo, benchmarkScores, priceHistory: rawHistory, relatedModels, producerId } = data;
   const product = { ...rawProduct, providers: localizeProvider(rawProduct.providers, locale) };
   const channelPrices = rawChannelPrices.map(cp => ({ ...cp, providers: localizeProvider(cp.providers, locale) }));
   const usagePrices = rawUsagePrices.map(row => ({ ...row, provider_name: providerDisplayName({ name: row.provider_name, slug: row.provider_slug }, locale) }));
@@ -409,6 +442,7 @@ export default async function ModelPage({
   const showTrust = isTrustModelSlug(slug);
   const productName = modelPageName(product.name, slug);
   const description = localizedModelDescription(product.slug, product.description, locale);
+  const retainedContext = retainedModelContext(product.slug, locale);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
   const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);
   const announcementMessages = await getTranslations({ locale, namespace: 'modelAnnouncement' });
@@ -436,13 +470,16 @@ export default async function ModelPage({
   // A model now commonly maps to several product lines at once (chat, coding,
   // agent), so the plan list is grouped instead of being one flat price ladder.
   const ownershipGroups = groupModelPlansByOwnership(sortedPlans, producerId);
-  const planKindGroups = groupPlansByKind(sortedPlans, (plan) => plan.plan_kind);
+  const mappedIds = new Set(mappedPlanIds);
+  const mappedPlans = sortedPlans.filter(plan => mappedIds.has(plan.id) && plan.pricing_model === 'subscription');
+  const mappedOwnershipGroups = groupModelPlansByOwnership(mappedPlans, producerId);
+  const planKindGroups = groupPlansByKind(mappedPlans, (plan) => plan.plan_kind);
 
   // "Recommended" is per ownership group and product line. `tier === 'pro'` matches the Pro
   // tier of every line, so a model sold as both a chat and a coding plan used to
   // light up two blue-bordered cards in the same grid.
   const recommendedPlanIds = new Set<number>(
-    ownershipGroups.flatMap(group => group.kindGroups)
+    mappedOwnershipGroups.flatMap(group => group.kindGroups)
       .map(({ plans: kindPlans }) =>
         kindPlans.find((plan) => plan.tier === 'pro' && !plan.name.includes('Max'))?.id,
       )
@@ -455,7 +492,7 @@ export default async function ModelPage({
   const annualDiscount = (plan: any): number =>
     plan.annual_price && plan.price ? 1 - plan.annual_price / (plan.price * 12) : 0;
 
-  const bestValuePlanId: number | null = sortedPlans
+  const bestValuePlanId: number | null = mappedPlans
     .filter((plan) => annualDiscount(plan) > 0.15)
     .sort((a, b) => annualDiscount(b) - annualDiscount(a))[0]?.id ?? null;
 
@@ -495,7 +532,7 @@ export default async function ModelPage({
       channels: channelPrices as any[],
       officialChannel,
       cheapestChannel,
-      plans: plans as any[],
+      plans: mappedPlans,
       arenaElo,
     },
     (locale === 'zh' ? 'zh' : 'en') as Locale,
@@ -547,6 +584,8 @@ export default async function ModelPage({
     return savings > 0.1 ? savings.toFixed(1) : null;
   };
   const cheapestSavings = cheapestChannel ? calculateSavings(cheapestChannel) : null;
+
+  const subscriptionComparison = await ModelSubscriptionComparison({ slug, locale });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-zinc-50 dark:from-black dark:to-zinc-900">
@@ -685,6 +724,13 @@ export default async function ModelPage({
 
         {isCodexQuotaModel(product.slug) && <CodexModelMeasurements locale={locale} modelSlug={product.slug} />}
         {isClaudeProQuotaModel(product.slug) && <ClaudeProQuota locale={locale} />}
+        {retainedContext && <section className="rounded-xl border p-6" data-retained-model={product.slug}>
+          <h2 className="text-xl font-semibold">{retainedContext.heading}</h2>
+          <p className="mt-3 text-zinc-600 dark:text-zinc-400">{retainedContext.text}</p>
+          <a className="mt-3 inline-block underline" href={retainedContext.sourceUrl} target="_blank" rel="noopener noreferrer">
+            {locale === 'zh' ? '留存通知来源' : 'Retained notice source'} · {retainedContext.recordedOn}
+          </a>
+        </section>}
         <ModelBenchmarkPanel scores={benchmarkScores} locale={locale} />
 
         <CodingAgentModelSection rows={codingAgentRows} locale={locale} />
@@ -856,19 +902,24 @@ export default async function ModelPage({
                     ? `先列出 ${product.providers?.name || product.name} 的官网套餐，再列出已关联的第三方套餐；各组内按产品线分类。`
                     : `Plans from ${product.providers?.name || product.name} come first, followed by linked third-party plans; each group is organized by product line.`}
                 </p>
+                {planRows.some(plan => !mappedIds.has(plan.id)) && <p className="mt-2 text-sm text-zinc-500">
+                  {isZh
+                    ? '未关联此型号的套餐仅供厂商价格参考，不证明模型可用性或包含额度；请核对套餐来源。'
+                    : 'Plans without a mapping to this model are provider pricing references only, not evidence of model availability or included allowances. Check each plan’s source.'}
+                </p>}
               </div>
 
               <ModelPlanGroups groups={ownershipGroups} locale={locale} now={now}
                 usagePrices={usagePrices} recommendedPlanIds={recommendedPlanIds} bestValuePlanId={bestValuePlanId} />
 
-              <Link href={`/${locale}/compare/plans/${slug}`} className="mt-4 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">
+              <Link href={subscriptionComparison ? '#subscription-comparison' : `/${locale}/compare/plans/${slug}`} className="mt-4 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">
                 {isZh ? `${productName} 订阅套餐价格对比` : `${productName} subscription plans & pricing`}
               </Link>
 
               {/* Quick Comparison. With more than one product line present, "which
                   line" is the reader's first question and the Free/Pro/Max ladder is
                   the wrong axis -- those tiers repeat inside every line. */}
-              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              {mappedPlans.length > 0 && <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
                 <div className="flex items-start gap-3">
                   <div className="text-2xl">💡</div>
                   <div>
@@ -885,16 +936,16 @@ export default async function ModelPage({
                         ))
                       ) : (
                         <>
-                          {planRows.find((p) => p.tier === 'free') && (
+                          {mappedPlans.find((p) => p.tier === 'free') && (
                             <p><strong>Free:</strong> Best for trying out {product.name} with basic usage</p>
                           )}
-                          {planRows.find((p) => p.tier === 'pro' && !p.name.includes('Max')) && (
+                          {mappedPlans.find((p) => p.tier === 'pro' && !p.name.includes('Max')) && (
                             <p><strong>Pro:</strong> Ideal for individual professionals with regular usage needs</p>
                           )}
-                          {planRows.find((p) => p.name.includes('Max')) && (
+                          {mappedPlans.find((p) => p.name.includes('Max')) && (
                             <p><strong>Max:</strong> For power users who need extended thinking and highest usage limits</p>
                           )}
-                          {planRows.find((p) => p.tier === 'team') && (
+                          {mappedPlans.find((p) => p.tier === 'team') && (
                             <p><strong>Team:</strong> Perfect for teams needing collaboration and centralized billing</p>
                           )}
                         </>
@@ -902,12 +953,14 @@ export default async function ModelPage({
                     </div>
                   </div>
                 </div>
-              </div>
+              </div>}
             </section>
 
             <Separator className="my-8" />
           </>
         )}
+
+        {subscriptionComparison}
 
         {/* Detailed Comparison Table */}
         <Card>
