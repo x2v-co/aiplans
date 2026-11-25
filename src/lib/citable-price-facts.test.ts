@@ -31,15 +31,17 @@ function row(overrides: Record<string, unknown> = {}): RawChannelQuote {
     price_unit: 'per_1m_tokens',
     input_price_per_1m: 2,
     output_price_per_1m: 8,
-    source_url: 'https://pricing.example.com/alpha',
+    source_url: 'https://pricing.synthetic-provider.dev/pricing/alpha',
     last_verified: VERIFIED,
     is_available: true,
+    is_public: true, is_self_service: true, is_partner_only: false, data_for_discount: false,
+    constraints_json: { processing: 'standard' },
     ...overrides,
   };
 }
 
 function quotes(overrides: Record<string, unknown> = {}, options: { allowFixture?: boolean; asOf?: Date; generatedAt?: Date } = {}) {
-  return prepareQuotes([row(overrides)], { asOf: AS_OF, generatedAt: AS_OF, ...options });
+  return prepareQuotes([row(overrides)], { allowFixture: true, asOf: AS_OF, generatedAt: AS_OF, ...options });
 }
 
 function walk(value: unknown): void {
@@ -53,12 +55,12 @@ function walk(value: unknown): void {
 test('normalizes case, unit aliases, and a stable snapshot id', () => {
   const first = prepareQuotes([
     row({ price_unit: 'per-million-tokens', model_name: ' Example   Alpha ' }),
-    row({ model_slug: 'example-beta', model_name: 'Example Beta', input_price_per_1m: 4, output_price_per_1m: 4, source_url: 'https://pricing.example.com/beta' }),
-  ], { asOf: AS_OF, generatedAt: AS_OF });
+    row({ model_slug: 'example-beta', model_name: 'Example Beta', input_price_per_1m: 4, output_price_per_1m: 4, source_url: 'https://pricing.synthetic-provider.dev/pricing/beta' }),
+  ], { allowFixture: true, asOf: AS_OF, generatedAt: AS_OF });
   const reversed = prepareQuotes([
-    row({ model_slug: 'example-beta', model_name: 'Example Beta', input_price_per_1m: 4, output_price_per_1m: 4, source_url: 'https://pricing.example.com/beta' }),
+    row({ model_slug: 'example-beta', model_name: 'Example Beta', input_price_per_1m: 4, output_price_per_1m: 4, source_url: 'https://pricing.synthetic-provider.dev/pricing/beta' }),
     row({ price_unit: 'PER_1M_TOKENS' }),
-  ], { asOf: AS_OF, generatedAt: new Date('2026-12-01T00:00:00.000Z') });
+  ], { allowFixture: true, asOf: AS_OF, generatedAt: new Date('2026-12-01T00:00:00.000Z') });
   assert.equal(first.snapshot.schema, CITABLE_SCHEMA);
   assert.equal(first.snapshot.prior_snapshots_retained, false);
   assert.equal(first.snapshot.history, 'current_sample_only');
@@ -101,7 +103,8 @@ test('download fields omit secrets and mark missing prices instead of inventing 
   const csv = snapshotToCsv(prepared.snapshot);
   assert.equal(csv.charCodeAt(0), 0xfeff);
   assert.equal(csv.includes(SECRET), false);
-  assert.ok(csv.startsWith(`\uFEFF${PUBLIC_QUOTE_FIELDS.join(',')}`));
+  assert.ok(csv.includes(PUBLIC_QUOTE_FIELDS.join(',')));
+  assert.ok(csv.startsWith('\uFEFF# snapshot_id,'));
 });
 
 test('guards spreadsheet formulas in csv cells', () => {
@@ -157,11 +160,11 @@ test('rejects incomparable or non-public rows and blocks fixture hosts on the li
     row({ model_slug: 'example-stale', last_verified: '2026-01-01T00:00:00.000Z' }),
     row({ model_slug: 'example-boundary', last_verified: '2026-10-02T00:00:00.000Z' }),
     row({ model_slug: 'example-older', last_verified: '2026-10-01T23:59:59.999Z' }),
-    row({ model_slug: 'example-missing', source_url: undefined, pricing_url: undefined, website: undefined, invite_url: 'https://pricing.example.com/invite' }),
+    row({ model_slug: 'example-missing', source_url: undefined, pricing_url: undefined, website: undefined, invite_url: 'https://pricing.synthetic-provider.dev/pricing/invite' }),
     row({ model_slug: 'example-http', source_url: 'http://pricing.example.com/list' }),
     row({ model_slug: 'example-auth', source_url: 'https://user:pass@pricing.example.com/list' }),
     row({ model_slug: 'example-fixture-host', source_url: 'https://example.test/pricing' }),
-    row({ model_slug: 'example-synthetic', sample: 'synthetic_fixture', source_url: 'https://pricing.example.com/synthetic' }),
+    row({ model_slug: 'example-synthetic', sample: 'synthetic_fixture', source_url: 'https://pricing.synthetic-provider.dev/pricing/synthetic' }),
     row({ model_slug: 'example-zero', input_price_per_1m: 0, output_price_per_1m: 0 }),
     row({ model_slug: 'example-blank', input_price_per_1m: null, output_price_per_1m: null }),
     row({ model_slug: 'example-negative', input_price_per_1m: -1 }),
@@ -172,10 +175,13 @@ test('rejects incomparable or non-public rows and blocks fixture hosts on the li
     row({ model_slug: 'example-ambiguous', regular_input_price_per_1m: 9 }),
   ], { asOf: AS_OF, allowFixture: false });
 
-  const slugs = live.publishable.map((quote) => quote.model_slug);
+  assert.deepEqual(live.snapshot.quotes, []);
+  assert.equal(live.snapshot.empty_export_reason, 'redistribution_scope_unpublished');
+  const candidates = live.observations.filter((quote) => quote.withhold === 'redistribution_scope_unpublished');
+  const slugs = candidates.map((quote) => quote.model_slug);
   assert.deepEqual(slugs, ['example-boundary', 'example-producer', 'example-zero']);
-  assert.equal(live.publishable.find((quote) => quote.model_slug === 'example-zero')?.zero_price, true);
-  assert.equal(live.publishable.find((quote) => quote.model_slug === 'example-producer')?.channel_role, 'producer');
+  assert.equal(candidates.find((quote) => quote.model_slug === 'example-zero')?.zero_price, true);
+  assert.equal(candidates.find((quote) => quote.model_slug === 'example-producer')?.channel_role, 'producer');
   assert.equal(live.excluded_counts.non_official_channel, 2);
   assert.equal(live.excluded_counts.stale, 2);
   assert.equal(live.excluded_counts.missing_source, 1);
@@ -190,7 +196,7 @@ test('rejects incomparable or non-public rows and blocks fixture hosts on the li
   assert.equal(live.excluded_counts.expired_promo_without_regular, 1);
   assert.equal(live.excluded_counts.ambiguous_promo, 1);
   assert.equal(live.observations.some((item) => item.model_slug === 'example-stale' && item.withhold === 'stale'), true);
-  assert.ok(COVERAGE_WORDING.zh.includes('收录且经核验'));
+  assert.ok(COVERAGE_WORDING.zh.includes('下载不包含实时报价'));
   assert.equal(COVERAGE_WORDING.en.toLowerCase().includes('lowest price on the web'), false);
 });
 
@@ -198,11 +204,11 @@ test('drops conflicting duplicates and keeps identical ones once', () => {
   const conflict = prepareQuotes([
     row(),
     row({ input_price_per_1m: 9 }),
-  ], { asOf: AS_OF });
+  ], { allowFixture: true, asOf: AS_OF });
   assert.equal(conflict.publishable.length, 0);
   assert.equal(conflict.excluded_counts.ambiguous_duplicate, 1);
 
-  const identical = prepareQuotes([row(), row()], { asOf: AS_OF });
+  const identical = prepareQuotes([row(), row()], { allowFixture: true, asOf: AS_OF });
   assert.equal(identical.publishable.length, 1);
   assert.equal(identical.duplicates_collapsed, 1);
 });

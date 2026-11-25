@@ -21,7 +21,14 @@
       "id": 424242,
       "notes": "fixture-secret-note-9f3a",
       "invite_url": "https://evil.example/invite?token=secret-token-should-not-export",
-      "api_key": "sk-test-secret"
+      "api_key": "sk-test-secret",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     },
     {
       "model_slug": "example-beta",
@@ -36,7 +43,14 @@
       "source_url": "https://example.test/pricing/beta",
       "last_verified": "2026-10-20T00:00:00.000Z",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     },
     {
       "model_slug": "example-gamma",
@@ -51,7 +65,14 @@
       "source_url": "https://example.test/pricing/gamma",
       "last_verified": "2026-10-20T00:00:00.000Z",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     },
     {
       "model_slug": "example-delta",
@@ -66,7 +87,14 @@
       "source_url": "https://example.test/pricing/delta",
       "last_verified": "2026-10-20T00:00:00.000Z",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     },
     {
       "model_slug": "example-epsilon",
@@ -81,7 +109,14 @@
       "source_url": "https://example.test/pricing/epsilon",
       "last_verified": "2026-10-20T00:00:00.000Z",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     },
     {
       "model_slug": "example-zeta",
@@ -96,7 +131,14 @@
       "source_url": "https://example.test/pricing/zeta",
       "last_verified": "2026-10-20T00:00:00.000Z",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     },
     {
       "model_slug": "example-eta",
@@ -111,7 +153,14 @@
       "source_url": "https://example.test/pricing/eta",
       "last_verified": "2026-10-20T00:00:00.000Z",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     },
     {
       "model_slug": "example-theta",
@@ -126,7 +175,14 @@
       "source_url": "https://example.test/pricing/theta",
       "last_verified": "2026-10-20T00:00:00.000Z",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     },
     {
       "model_slug": "example-iota",
@@ -141,7 +197,14 @@
       "source_url": "https://example.test/pricing/iota",
       "last_verified": "2026-10-20T00:00:00.000Z",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     },
     {
       "model_slug": "example-kappa-v1",
@@ -156,7 +219,16 @@
       "source_url": "https://example.test/pricing/kappa",
       "last_verified": "2026-10-20T00:00:00.000Z",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      },
+      "replacement_model": "example-kappa-v2",
+      "shutdown_date": "2026-10-31"
     },
     {
       "model_slug": "example-omicron",
@@ -171,7 +243,14 @@
       "source_url": "https://example.test/pricing/omicron",
       "last_verified": "2026-10-20T00:00:00.000Z",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     },
     {
       "model_slug": "example-pi",
@@ -185,7 +264,14 @@
       "output_price_per_1m": 1,
       "source_url": "https://example.test/pricing/pi",
       "is_available": true,
-      "sample": "synthetic_fixture"
+      "sample": "synthetic_fixture",
+      "is_public": true,
+      "is_self_service": true,
+      "is_partner_only": false,
+      "data_for_discount": false,
+      "constraints_json": {
+        "processing": "standard"
+      }
     }
   ]
 }

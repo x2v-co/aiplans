@@ -17,11 +17,11 @@ test('both locales describe the citation sample without a republication license 
     assert.equal(html.toLowerCase().includes('cc0-1.0'), false);
     assert.equal(html.toLowerCase().includes('mit license'), false);
     if (locale === 'zh') {
-      assert.match(html, /收录且经核验/);
+      assert.match(html, /下载不包含实时报价/);
       assert.match(html, /不就这些第三方价格授予 CC0、MIT/);
       assert.match(html, /更早的快照文件不在这里提供/);
     } else {
-      assert.match(html, /indexed and verified/);
+      assert.match(html, /contains no live quotes/);
       assert.match(html, /does not grant a CC0, MIT/);
       assert.match(html, /Earlier snapshot files are not kept here/);
     }

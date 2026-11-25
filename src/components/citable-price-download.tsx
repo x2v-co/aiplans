@@ -10,15 +10,15 @@ export function CitablePriceDownload({ locale }: { locale: 'en' | 'zh' }) {
     <section className="border-t py-9" aria-labelledby="citable-prices">
       <div className="max-w-3xl">
         <h2 id="citable-prices" className="text-2xl font-semibold">
-          {zh ? '可引用的官方公开报价' : 'Citable official public prices'}
+          {zh ? '报价下载（再分发尚未发布）' : 'Quote download (redistribution unpublished)'}
         </h2>
         <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">
           {zh ? COVERAGE_WORDING.zh : COVERAGE_WORDING.en}
         </p>
         <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">
           {zh
-            ? '每一行带有来源链接、模型标识、渠道、币种、计价单位、输入和输出价格、缓存与促销条件、核验时间，以及整份样本的快照校验值。输入、输出、缓存或促销结束后的常规价如果没有，会标成缺失。'
-            : 'Each row carries a source link, model slug, channel, currency, price unit, input and output prices, cache and promotional conditions, a verification time, and the sample’s snapshot id. A missing input, output, cache, or post-promotion regular price stays marked missing.'}
+            ? '当前 JSON 与 CSV 的报价列表为空，并附有原因、快照校验值及不授予许可的说明。'
+            : 'The current JSON and CSV contain an empty quote list, its reason, a snapshot id, and statements that no license is granted.'}
         </p>
         <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">
           {zh ? REDISTRIBUTION.zh : REDISTRIBUTION.en}

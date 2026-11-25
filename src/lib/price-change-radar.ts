@@ -2,6 +2,9 @@ import { createHash } from 'node:crypto';
 import { canonicalJson } from '@/lib/planprice-v1-snapshot';
 import {
   canonicalPriceUnit,
+  normalizeChannelQuote,
+  trustedPricingSource,
+  type RawChannelQuote,
   channelKey,
   fullKey,
   type Observation,
@@ -16,6 +19,7 @@ export interface RadarOptions {
   asOf?: Date;
   maxAgeDays?: number;
   fixture?: boolean;
+  redistributionUnpublished?: boolean;
   previousSnapshotId?: string | null;
   currentSnapshotId?: string | null;
   previousAsOf?: string | null;
@@ -87,12 +91,18 @@ export interface HistoryRow {
   change_percent?: unknown;
   channel_price_id?: unknown;
   recorded_at?: unknown;
+  sample?: unknown;
+  previous_eligibility?: RawChannelQuote;
+  current_eligibility?: RawChannelQuote;
 }
 
 export interface RadarReport {
   schema: 'aiplans-price-change-radar/1';
   threshold_percent: number;
   fixture: boolean;
+  not_market_data: boolean;
+  comparison_as_of: string;
+  redistribution: 'synthetic_fixture' | 'unpublished';
   baseline_only: boolean;
   previous_snapshot_id: string | null;
   current_snapshot_id: string | null;
@@ -105,6 +115,7 @@ export interface RadarReport {
   history_rows_reviewed: number;
   history_publishable_events: PriceChangeEvent[];
   history_withheld_counts: Record<string, number>;
+  history_withheld: WithheldChange[];
   previous_excluded_counts: Record<string, number>;
   current_excluded_counts: Record<string, number>;
 }
@@ -130,6 +141,12 @@ const REASON_TEXT = {
     incomplete_history: 'the history row lacks same-scope fields',
     currency_pair_changed: 'old and new currencies differ',
     source_unverified: 'history source URLs are not both https',
+    redistribution_scope_unpublished: 'redistribution rights are unverified; live publication is withheld',
+    eligibility_unestablished: 'official/public eligibility is unestablished',
+    scope_unestablished: 'researched billing scope is missing',
+    invalid_source: 'a researched https pricing page is required',
+    non_official_channel: 'the channel is not official or producer',
+    restricted_or_nonpublic: 'public/self-service/discount restrictions exclude this row',
   },
   zh: {
     below_threshold: '变化低于去噪阈值',
@@ -151,6 +168,12 @@ const REASON_TEXT = {
     incomplete_history: '历史行缺少同口径字段',
     currency_pair_changed: '新旧币种不同',
     source_unverified: '历史来源不是两条 https 链接',
+    redistribution_scope_unpublished: '再分发权利尚未核验，实时报价不予发布',
+    eligibility_unestablished: '官方或公开报价资格尚未确立',
+    scope_unestablished: '缺少经研究的计费范围',
+    invalid_source: '需要经研究的 https 价格页面',
+    non_official_channel: '并非官方或生产者渠道',
+    restricted_or_nonpublic: '公开、自助或折扣条件不符合要求',
   },
 } as const;
 
@@ -184,10 +207,11 @@ function component(name: PriceComponentChange['component'], previous: number | n
   return { component: name, old_price: previous, new_price: next, change_percent: signedPercent(previous, next) };
 }
 
-function comparePair(previous: Observation, current: Observation, threshold: number): { event: PriceChangeEvent | null; withheld: WithheldChange | null } {
+function comparePair(previous: Observation, current: Observation, threshold: number, fixture: boolean): { event: PriceChangeEvent | null; withheld: WithheldChange | null } {
   const identity = fullKey(current);
   const withhold = current.withhold ?? previous.withhold;
   if (withhold) return { event: null, withheld: { identity, reason: withhold } };
+  if (!fixture) return { event: null, withheld: { identity, reason: 'redistribution_scope_unpublished' } };
   if (previous.zero_price || current.zero_price) return { event: null, withheld: { identity, reason: 'zero_value' } };
   if (!previous.source_url || !current.source_url || !previous.verified_at || !current.verified_at) {
     return { event: null, withheld: { identity, reason: 'missing_source' } };
@@ -286,6 +310,27 @@ export function classifyPriceHistoryRow(row: HistoryRow, options: RadarOptions &
   if (!model || !provider || !oldCurrency || !newCurrency || !oldUnit || !newUnit || !oldConditions || !newConditions || !previousSource || !currentSource || !previousVerified || !currentVerified) {
     return { event: null, reason: 'incomplete_history' };
   }
+  const allowFixture = options.fixture === true && row.sample === 'synthetic_fixture';
+  for (const side of [
+    { eligibility: row.previous_eligibility, source: previousSource, verified: previousVerified, currency: oldCurrency, unit: oldUnit, input: row.old_input_price, output: row.old_output_price, cached: row.old_cached_input_price, conditions: oldConditions },
+    { eligibility: row.current_eligibility, source: currentSource, verified: currentVerified, currency: newCurrency, unit: newUnit, input: row.new_input_price, output: row.new_output_price, cached: row.new_cached_input_price, conditions: newConditions },
+  ]) {
+    if (!side.eligibility) return { event: null, reason: 'eligibility_unestablished' };
+    if (!trustedPricingSource(side.source, allowFixture)) return { event: null, reason: 'invalid_source' };
+    const checked = normalizeChannelQuote({
+      ...side.eligibility,
+      sample: row.sample,
+      model_slug: model, model_name: row.model_name ?? model,
+      provider_slug: provider, provider_name: row.provider_name ?? provider,
+      currency: side.currency, price_unit: side.unit,
+      source_url: side.source, last_verified: side.verified,
+      input_price_per_1m: side.input, output_price_per_1m: side.output, cached_input_price_per_1m: side.cached,
+    }, { allowFixture, asOf, maxAgeDays });
+    if (checked.rejection) return { event: null, reason: checked.rejection.reason };
+    if (checked.observation?.withhold) return { event: null, reason: checked.observation.withhold };
+    // Conditions must be supported by that side's researched metadata.
+    if (checked.observation?.billing_conditions !== side.conditions) return { event: null, reason: 'condition_changed' };
+  }
   if (oldCurrency !== newCurrency) return { event: null, reason: 'currency_pair_changed' };
   if (oldUnit !== newUnit) return { event: null, reason: 'unit_changed' };
   if (oldConditions !== newConditions) return { event: null, reason: 'condition_changed' };
@@ -348,14 +393,16 @@ export function analyzeObservations(
     for (const item of current) {
       const exact = previous.find((candidate) => fullKey(candidate) === fullKey(item));
       if (exact) {
-        const compared = comparePair(exact, item, threshold);
+        const compared = comparePair(exact, item, threshold, options.fixture === true);
         if (compared.event) events.push(compared.event);
         if (compared.withheld) withheld.push(compared.withheld);
         consumed.add(fullKey(exact));
         continue;
       }
-      if (item.replaces_model_slug) {
-        const replaced = previous.filter((candidate) => candidate.provider_slug === item.provider_slug && candidate.model_slug === item.replaces_model_slug);
+      {
+        // replacement_model lives on the retiring row and names its successor.
+        const replaced = previous.filter((candidate) => candidate.provider_slug === item.provider_slug
+          && (candidate.successor_model_slug === item.model_slug || (item.replaces_model_slug && candidate.model_slug === item.replaces_model_slug)));
         if (replaced.length > 0) {
           for (const candidate of replaced) consumed.add(fullKey(candidate));
           withheld.push({ identity: channelKey(item), reason: 'version_replaced', detail: `${replaced.map((candidate) => candidate.model_slug).join(',')} -> ${item.model_slug}` });
@@ -414,6 +461,9 @@ export function analyzeObservations(
     schema: 'aiplans-price-change-radar/1',
     threshold_percent: threshold,
     fixture: options.fixture === true,
+    not_market_data: options.fixture === true,
+    comparison_as_of: (options.asOf ?? new Date()).toISOString(),
+    redistribution: options.fixture === true && !options.redistributionUnpublished ? 'synthetic_fixture' : 'unpublished',
     baseline_only: baseline,
     previous_snapshot_id: options.previousSnapshotId ?? null,
     current_snapshot_id: options.currentSnapshotId ?? null,
@@ -426,6 +476,7 @@ export function analyzeObservations(
     history_rows_reviewed: historyRows.length,
     history_publishable_events: historyEvents,
     history_withheld_counts: countsOf(historyWithheld),
+    history_withheld: historyWithheld,
     previous_excluded_counts: options.previousExcludedCounts ?? {},
     current_excluded_counts: options.currentExcludedCounts ?? {},
   };
@@ -457,7 +508,8 @@ export function renderRadarDraft(report: RadarReport, locale: 'en' | 'zh'): stri
   lines.push(zh
     ? `- 去噪阈值：${report.threshold_percent}%（可配置参数，用来减少草稿噪音）`
     : `- Denoising threshold: ${report.threshold_percent}% (a configurable parameter that shortens the draft)`);
-  if (report.current_as_of) lines.push(zh ? `- 比较时钟：${report.current_as_of}` : `- Comparison clock: ${report.current_as_of}`);
+  lines.push(zh ? `- 比较时钟：${report.comparison_as_of}` : `- Comparison clock: ${report.comparison_as_of}`);
+  if (report.redistribution === 'unpublished') lines.push(zh ? '- 再分发范围尚未发布，实时报价与事件保持为空。' : '- redistribution_scope_unpublished: live quotes and events remain unpublished; no license is granted.');
   lines.push(zh
     ? `- 上一份可引用样本：${report.previous_snapshot_id ?? '无'}`
     : `- Previous citable sample: ${report.previous_snapshot_id ?? 'none'}`);
@@ -519,6 +571,10 @@ export function renderRadarDraft(report: RadarReport, locale: 'en' | 'zh'): stri
     : `Reviewed ${report.history_rows_reviewed} rows. ${report.history_publishable_events.length} can stand alone as drafts. A stock price_history row stores one currency and the prices, without old/new units, billing conditions, source URLs, and verification times on both sides. Those rows stay incomplete_history and do not become events.`);
   if (report.history_publishable_events.length === 0) {
     lines.push(zh ? '历史日志没有可发事件。' : 'The history log has no publishable events.');
+  }
+  for (const item of report.history_withheld) {
+    const text = reasons[item.reason as keyof typeof reasons] ?? item.reason;
+    lines.push(`- ${item.identity}: ${item.reason} (${text})`);
   }
   for (const [reason, count] of Object.entries(report.history_withheld_counts)) {
     lines.push(`- ${reason}: ${count}`);

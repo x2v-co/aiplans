@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { prepareQuotes, type RawChannelQuote } from '../src/lib/citable-price-facts';
+import { loadRadarInput } from '../src/lib/price-radar-input';
 import { analyzeObservations, renderRadarDraft, type HistoryRow } from '../src/lib/price-change-radar';
 
 function option(name: string, fallback?: string): string {
@@ -12,23 +12,8 @@ function option(name: string, fallback?: string): string {
   return value ?? fallback ?? '';
 }
 
-interface QuoteBundle {
-  fixture?: unknown;
-  not_market_data?: unknown;
-  as_of?: unknown;
-  rows?: RawChannelQuote[];
-}
-
-async function loadQuotes(path: string): Promise<QuoteBundle> {
-  const parsed = JSON.parse(await readFile(path, 'utf8')) as QuoteBundle;
-  if (parsed.fixture === true && parsed.not_market_data !== true) {
-    console.error(`${path} is marked fixture but not not_market_data`);
-    process.exit(1);
-  }
-  return parsed;
-}
-
 async function main(): Promise<void> {
+  // --fixture requires synthetic inputs; the bundled examples are also the default.
   const baseline = process.argv.includes('--baseline');
   const previousPath = option('--previous', 'scripts/fixtures/citable-radar/previous.json');
   const currentPath = option('--current', 'scripts/fixtures/citable-radar/current.json');
@@ -46,34 +31,25 @@ async function main(): Promise<void> {
   }
 
   const historyBundle = JSON.parse(await readFile(historyPath, 'utf8')) as { rows?: HistoryRow[]; fixture?: unknown; not_market_data?: unknown };
-  const currentBundle = await loadQuotes(currentPath);
-  const previousBundle = baseline ? null : await loadQuotes(previousPath);
-  if (!baseline && (typeof previousBundle?.as_of !== 'string' || previousBundle.as_of !== currentBundle.as_of)) {
-    console.error('previous and current as_of must be the same timestamp');
-    process.exit(1);
-  }
-  if (typeof currentBundle.as_of !== 'string') {
-    console.error('current as_of must be a timestamp');
-    process.exit(1);
-  }
-  const asOf = new Date(currentBundle.as_of);
-  if (Number.isNaN(asOf.getTime())) {
-    console.error('as_of is not a timestamp');
-    process.exit(1);
-  }
+  const currentBundle = JSON.parse(await readFile(currentPath, 'utf8'));
+  const previousBundle = baseline ? null : JSON.parse(await readFile(previousPath, 'utf8'));
+  // Explicit comparison clock; individual snapshot observation times may differ.
+  const asOf = new Date(option('--as-of', currentBundle.as_of));
+  if (Number.isNaN(asOf.getTime())) throw new Error('invalid comparison --as-of timestamp');
   if (historyBundle.fixture === true && historyBundle.not_market_data !== true) {
-    console.error('history fixture must set not_market_data:true');
-    process.exit(1);
+    throw new Error('history fixture must set not_market_data:true');
   }
-  const allowPrevious = previousBundle?.fixture === true;
-  const allowCurrent = currentBundle.fixture === true;
-  const previous = previousBundle ? prepareQuotes(previousBundle.rows ?? [], { allowFixture: allowPrevious, asOf, generatedAt: asOf, maxAgeDays }) : null;
-  const current = prepareQuotes(currentBundle.rows ?? [], { allowFixture: allowCurrent, asOf, generatedAt: asOf, maxAgeDays });
+  const previous = previousBundle ? loadRadarInput(previousBundle, asOf, maxAgeDays) : null;
+  const current = loadRadarInput(currentBundle, asOf, maxAgeDays);
+  if (process.argv.includes('--fixture') && (!current.fixture || (previous && !previous.fixture) || historyBundle.fixture !== true)) {
+    throw new Error('--fixture requires synthetic quote and history inputs');
+  }
   const report = analyzeObservations(previous?.observations ?? null, current.observations, {
     thresholdPercent: threshold,
     asOf,
     maxAgeDays,
-    fixture: allowPrevious || allowCurrent || historyBundle.fixture === true,
+    fixture: previous?.fixture === true || current.fixture || historyBundle.fixture === true,
+    redistributionUnpublished: previous?.fixture === false || !current.fixture || (historyBundle.fixture !== true && (historyBundle.rows?.length ?? 0) > 0),
     previousSnapshotId: previous?.snapshot.snapshot_id ?? null,
     currentSnapshotId: current.snapshot.snapshot_id,
     previousAsOf: previous?.as_of ?? null,
@@ -99,5 +75,5 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : 'radar draft failed');
-  process.exit(1);
+  process.exitCode = 1;
 });

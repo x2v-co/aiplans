@@ -46,12 +46,8 @@ async function main(): Promise<void> {
   let generatedAt = new Date();
   let allowFixture = false;
   if (live) {
-    if (!process.argv.includes('--confirm-read-only') || !process.env.DATABASE_URL) {
-      console.error('live read refused: it needs DATABASE_URL and --confirm-read-only, and it does not write');
-      process.exit(1);
-    }
-    const query = await import('../src/lib/citable-price-query');
-    rows = await query.loadOfficialChannelRows();
+    // Redistribution is unpublished: export an empty envelope without contacting a database.
+    rows = [];
   } else {
     const fixture = await fixtureRows();
     rows = fixture.rows;
@@ -74,5 +70,5 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : 'export failed');
-  process.exit(1);
+  process.exitCode = 1;
 });

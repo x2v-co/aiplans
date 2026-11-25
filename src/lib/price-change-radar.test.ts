@@ -11,7 +11,7 @@ import {
 
 const AS_OF = new Date('2026-11-01T00:00:00.000Z');
 const VERIFIED = '2026-10-20T00:00:00.000Z';
-const CONDITIONS = 'scope=headline;input=quoted;output=quoted;cache=missing;promo=none';
+const CONDITIONS = prepareQuotes([row({ input_price_per_1m: 2, output_price_per_1m: 8 })], { allowFixture: true, asOf: AS_OF }).publishable[0].billing_conditions;
 
 function row(overrides: Record<string, unknown> = {}): RawChannelQuote {
   return {
@@ -24,9 +24,11 @@ function row(overrides: Record<string, unknown> = {}): RawChannelQuote {
     price_unit: 'per_1m_tokens',
     input_price_per_1m: 100,
     output_price_per_1m: 100,
-    source_url: 'https://pricing.example.com/alpha',
+    source_url: 'https://pricing.synthetic-provider.dev/pricing/alpha',
     last_verified: VERIFIED,
     is_available: true,
+    is_public: true, is_self_service: true, is_partner_only: false, data_for_discount: false,
+    constraints_json: { processing: 'standard' },
     ...overrides,
   };
 }
@@ -41,6 +43,8 @@ function history(overrides: Record<string, unknown> = {}): HistoryRow {
     model_name: 'Example Alpha',
     provider_slug: 'example-official',
     provider_name: 'Example Official',
+    sample: 'synthetic_fixture',
+    previous_eligibility: row(), current_eligibility: row(),
     old_currency: 'USD',
     new_currency: 'USD',
     old_price_unit: 'per_1m_tokens',
@@ -51,8 +55,8 @@ function history(overrides: Record<string, unknown> = {}): HistoryRow {
     new_input_price: 3,
     old_output_price: 8,
     new_output_price: 8,
-    source_url_previous: 'https://pricing.example.com/old',
-    source_url_current: 'https://pricing.example.com/new',
+    source_url_previous: 'https://pricing.synthetic-provider.dev/pricing/old',
+    source_url_current: 'https://pricing.synthetic-provider.dev/pricing/new',
     verified_at_previous: VERIFIED,
     verified_at_current: VERIFIED,
     change_percent: 0,
@@ -136,31 +140,31 @@ test('fixture comparison emits only the same-scope move at or above 15 percent',
 });
 
 test('15 percent is an inclusive denoising setting and duplicates collapse', () => {
-  const previous = prepareQuotes([row()], { asOf: AS_OF }).observations;
-  const atThreshold = prepareQuotes([row({ input_price_per_1m: 115 })], { asOf: AS_OF }).observations;
-  const below = prepareQuotes([row({ input_price_per_1m: 114 })], { asOf: AS_OF }).observations;
-  assert.equal(analyzeObservations(previous, atThreshold, { thresholdPercent: 15 }).publishable_events.length, 1);
-  assert.equal(analyzeObservations(previous, below, { thresholdPercent: 15 }).publishable_events.length, 0);
-  const fourteen = analyzeObservations(previous, below, { thresholdPercent: 14 }).publishable_events[0].components[0].change_percent;
+  const previous = prepareQuotes([row()], { allowFixture: true, asOf: AS_OF }).observations;
+  const atThreshold = prepareQuotes([row({ input_price_per_1m: 115 })], { allowFixture: true, asOf: AS_OF }).observations;
+  const below = prepareQuotes([row({ input_price_per_1m: 114 })], { allowFixture: true, asOf: AS_OF }).observations;
+  assert.equal(analyzeObservations(previous, atThreshold, { thresholdPercent: 15, fixture: true }).publishable_events.length, 1);
+  assert.equal(analyzeObservations(previous, below, { thresholdPercent: 15, fixture: true }).publishable_events.length, 0);
+  const fourteen = analyzeObservations(previous, below, { thresholdPercent: 14, fixture: true }).publishable_events[0].components[0].change_percent;
   assert.ok(Math.abs(fourteen - 14) < 1e-6);
   assert.throws(() => analyzeObservations(previous, atThreshold, { thresholdPercent: -1 }), /thresholdPercent/);
 
-  const duplicated = analyzeObservations(previous, [...atThreshold, ...atThreshold], { thresholdPercent: 15 });
+  const duplicated = analyzeObservations(previous, [...atThreshold, ...atThreshold], { thresholdPercent: 15, fixture: true });
   assert.equal(duplicated.publishable_events.length, 1);
   assert.ok(duplicated.duplicates_collapsed >= 1);
 
   const outputOnly = analyzeObservations(
     previous,
-    prepareQuotes([row({ output_price_per_1m: 150 })], { asOf: AS_OF }).observations,
-    { thresholdPercent: 15 },
+    prepareQuotes([row({ output_price_per_1m: 150 })], { allowFixture: true, asOf: AS_OF }).observations,
+    { thresholdPercent: 15, fixture: true },
   );
   assert.equal(outputOnly.publishable_events.length, 1);
   assert.equal(outputOnly.publishable_events[0].components.find((part) => part.component === 'output')?.change_percent, 50);
 
   const cacheOnly = analyzeObservations(
-    prepareQuotes([row({ cached_input_price_per_1m: 1 })], { asOf: AS_OF }).observations,
-    prepareQuotes([row({ cached_input_price_per_1m: 2 })], { asOf: AS_OF }).observations,
-    { thresholdPercent: 15 },
+    prepareQuotes([row({ cached_input_price_per_1m: 1 })], { allowFixture: true, asOf: AS_OF }).observations,
+    prepareQuotes([row({ cached_input_price_per_1m: 2 })], { allowFixture: true, asOf: AS_OF }).observations,
+    { thresholdPercent: 15, fixture: true },
   );
   assert.equal(cacheOnly.publishable_events[0].components.find((part) => part.component === 'cached_input')?.change_percent, 100);
 });
@@ -200,39 +204,39 @@ test('stock price_history cannot publish, and a complete row ignores the stored 
     currency: 'USD',
     source: 'example-scraper',
     recorded_at: VERIFIED,
-  }, { asOf: AS_OF });
+  }, { fixture: true, asOf: AS_OF });
   assert.equal(stock.event, null);
   assert.equal(stock.reason, 'incomplete_history');
 
-  const ignoredPercent = classifyPriceHistoryRow(history({ old_input_price: 10, new_input_price: 11, change_percent: 80 }), { asOf: AS_OF, thresholdPercent: 15 });
+  const ignoredPercent = classifyPriceHistoryRow(history({ old_input_price: 10, new_input_price: 11, change_percent: 80 }), { fixture: true, asOf: AS_OF, thresholdPercent: 15 });
   assert.equal(ignoredPercent.event, null);
   assert.equal(ignoredPercent.reason, 'below_threshold');
 
-  const recomputed = classifyPriceHistoryRow(history({ change_percent: 0 }), { asOf: AS_OF, thresholdPercent: 15 });
+  const recomputed = classifyPriceHistoryRow(history({ change_percent: 0 }), { fixture: true, asOf: AS_OF, thresholdPercent: 15 });
   assert.equal(recomputed.event?.components.find((part) => part.component === 'input')?.change_percent, 50);
   assert.equal(recomputed.event?.price_unit, 'per_1m_tokens');
 
-  assert.equal(classifyPriceHistoryRow(history({ new_currency: 'CNY' }), { asOf: AS_OF }).reason, 'currency_pair_changed');
-  assert.equal(classifyPriceHistoryRow(history({ new_price_unit: 'per_1k_tokens' }), { asOf: AS_OF }).reason, 'unit_changed');
-  assert.equal(classifyPriceHistoryRow(history({ new_billing_conditions: `${CONDITIONS};extra` }), { asOf: AS_OF }).reason, 'condition_changed');
-  assert.equal(classifyPriceHistoryRow(history({ new_input_price: 0 }), { asOf: AS_OF }).reason, 'zero_value');
-  assert.equal(classifyPriceHistoryRow(history({ verified_at_previous: '2020-01-01T00:00:00.000Z' }), { asOf: AS_OF }).reason, 'stale');
+  assert.equal(classifyPriceHistoryRow(history({ new_currency: 'CNY' }), { fixture: true, asOf: AS_OF }).reason, 'currency_pair_changed');
+  assert.equal(classifyPriceHistoryRow(history({ new_price_unit: 'per_1k_tokens' }), { fixture: true, asOf: AS_OF }).reason, 'unit_changed');
+  assert.equal(classifyPriceHistoryRow(history({ new_billing_conditions: `${CONDITIONS};extra` }), { fixture: true, asOf: AS_OF }).reason, 'condition_changed');
+  assert.equal(classifyPriceHistoryRow(history({ new_input_price: 0 }), { fixture: true, asOf: AS_OF }).reason, 'zero_value');
+  assert.equal(classifyPriceHistoryRow(history({ verified_at_previous: '2020-01-01T00:00:00.000Z' }), { fixture: true, asOf: AS_OF }).reason, 'stale');
 });
 
 test('identical history and snapshot events collapse to one draft event', () => {
-  const previous = prepareQuotes([row({ input_price_per_1m: 2, output_price_per_1m: 8 })], { asOf: AS_OF });
-  const current = prepareQuotes([row({ input_price_per_1m: 3, output_price_per_1m: 8 })], { asOf: AS_OF });
+  const previous = prepareQuotes([row({ input_price_per_1m: 2, output_price_per_1m: 8 })], { allowFixture: true, asOf: AS_OF });
+  const current = prepareQuotes([row({ input_price_per_1m: 3, output_price_per_1m: 8 })], { allowFixture: true, asOf: AS_OF });
   const event = classifyPriceHistoryRow(history({
     old_billing_conditions: current.publishable[0].billing_conditions,
     new_billing_conditions: current.publishable[0].billing_conditions,
-    source_url_previous: 'https://pricing.example.com/alpha',
-    source_url_current: 'https://pricing.example.com/alpha',
-  }), { asOf: AS_OF });
-  const report = analyzeObservations(previous.observations, current.observations, { thresholdPercent: 15, asOf: AS_OF }, event.event ? [history({
+    source_url_previous: 'https://pricing.synthetic-provider.dev/pricing/alpha',
+    source_url_current: 'https://pricing.synthetic-provider.dev/pricing/alpha',
+  }), { fixture: true, asOf: AS_OF });
+  const report = analyzeObservations(previous.observations, current.observations, { thresholdPercent: 15, fixture: true, asOf: AS_OF }, event.event ? [history({
     old_billing_conditions: current.publishable[0].billing_conditions,
     new_billing_conditions: current.publishable[0].billing_conditions,
-    source_url_previous: 'https://pricing.example.com/alpha',
-    source_url_current: 'https://pricing.example.com/alpha',
+    source_url_previous: 'https://pricing.synthetic-provider.dev/pricing/alpha',
+    source_url_current: 'https://pricing.synthetic-provider.dev/pricing/alpha',
   })] : []);
   assert.equal(report.publishable_events.length, 1);
   assert.equal(report.history_publishable_events.length, 0);

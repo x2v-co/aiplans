@@ -9,13 +9,13 @@ export const CITABLE_SCHEMA = 'aiplans-citable-official-quotes/1';
 export const DEFAULT_MAX_AGE_DAYS = 30;
 
 export const COVERAGE_WORDING = {
-  en: 'This file contains indexed and verified official or producer public list prices held by aiplans.dev. Coverage is exactly the rows in the file, each with its verification time.',
-  zh: '本文件只包含本站收录且经核验的官方或生产者公开标价。覆盖范围就是其中每一行，并带有该行的核验时间。',
+  en: 'Live quote redistribution is unpublished. This download contains no live quotes and is not a complete official tariff. Local synthetic fixtures are not market data.',
+  zh: '实时报价的再分发范围尚未发布，下载不包含实时报价，也不是完整的官方价目表。本地合成示例不是市场数据。',
 } as const;
 
 export const REDISTRIBUTION = {
-  en: 'aiplans.dev does not grant a CC0, MIT, or other republication license for these third-party prices. Cite the provider source URL together with this snapshot id. Aggregator, reseller, cloud-marketplace, and benchmark feeds stay out of this file.',
-  zh: 'aiplans.dev 不就这些第三方价格授予 CC0、MIT 或其他再分发许可。引用时请同时给出厂商来源链接和本快照校验值。聚合、转售、云市场和基准数据都不进入本文件。',
+  en: 'aiplans.dev does not grant a CC0, MIT, or other republication license for these third-party prices. Redistribution rights have not been independently verified; live quote exports remain empty (redistribution_scope_unpublished). Aggregator, reseller, cloud-marketplace, and benchmark feeds stay out of this file.',
+  zh: 'aiplans.dev 不就这些第三方价格授予 CC0、MIT 或其他再分发许可。再分发权利尚未经独立核验，实时报价导出保持为空（redistribution_scope_unpublished）。聚合、转售、云市场和基准数据都不进入本文件。',
 } as const;
 
 export const HISTORY_LIMIT = {
@@ -52,11 +52,13 @@ export const PUBLIC_QUOTE_FIELDS = [
   'citation_url_en',
   'citation_url_zh',
   'replaces_model_slug',
+  'successor_model_slug',
+  'shutdown_date',
 ] as const;
 
 export type PublicQuoteField = typeof PUBLIC_QUOTE_FIELDS[number];
 export type ChannelRole = 'official' | 'producer';
-export type WithholdReason = 'stale' | 'unverified' | 'missing_source';
+export type WithholdReason = 'stale' | 'unverified' | 'missing_source' | 'redistribution_scope_unpublished';
 
 export interface PublicQuote {
   model_slug: string;
@@ -87,6 +89,8 @@ export interface PublicQuote {
   citation_url_en: string;
   citation_url_zh: string;
   replaces_model_slug: string;
+  successor_model_slug: string;
+  shutdown_date: string | null;
 }
 
 /** A normalized row. Withheld rows stay available for same-scope comparisons and stay out of the download. */
@@ -123,6 +127,12 @@ export interface RawChannelQuote {
   sample?: unknown;
   replaces_model_slug?: unknown;
   replacement_model?: unknown;
+  shutdown_date?: unknown;
+  variant_key?: unknown;
+  variant_kind?: unknown;
+  constraints_json?: unknown;
+  channel_notes?: unknown;
+  variant_notes?: unknown;
 }
 
 export interface Rejection {
@@ -147,7 +157,10 @@ export interface CitableSnapshot {
     excluded_counts: Record<string, number>;
     excluded_counts_in_snapshot_id: false;
   };
+  not_market_data: boolean;
+  empty_export_reason: 'redistribution_scope_unpublished' | null;
   redistribution: {
+    status: 'synthetic_fixture' | 'unpublished';
     granted_license: null;
     cc0: false;
     mit: false;
@@ -240,12 +253,20 @@ function sourceCandidate(value: unknown, allowFixture: boolean): { url: string }
   if (url.protocol !== 'https:' || url.username || url.password) return { error: 'invalid' };
   const host = url.hostname.toLowerCase();
   if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')) return { error: 'invalid' };
-  if (!allowFixture && (host === 'example.test' || host === 'example.invalid')) return { error: 'fixture' };
+  if (!allowFixture && (/(^|\.)example\.(test|invalid|com|org|net)$/.test(host) || host.endsWith('.test') || host.endsWith('.invalid'))) return { error: 'fixture' };
+  // A site root/homepage cannot establish pricing provenance.
+  if (!url.pathname.replace(/\//g, '') || /(?:^|\/)(?:index\.(?:html?|php)|home)\/?$/i.test(url.pathname)) return { error: 'invalid' };
+  if (!/(?:pricing|prices|price|tariff|billing)/i.test(url.pathname)) return { error: 'invalid' };
   return { url: url.href };
 }
 
+export function trustedPricingSource(value: unknown, allowFixture = false): string | null {
+  const parsed = sourceCandidate(value, allowFixture);
+  return 'url' in parsed ? parsed.url : null;
+}
+
 function chooseSource(row: RawChannelQuote, allowFixture: boolean): { url: string | null; error: 'invalid' | 'fixture' | 'missing' | null } {
-  for (const candidate of [row.source_url, row.pricing_url, row.website]) {
+  for (const candidate of [row.source_url, row.pricing_url]) {
     const parsed = sourceCandidate(candidate, allowFixture);
     if ('url' in parsed) return { url: parsed.url, error: null };
     if (parsed.error !== 'missing') return { url: null, error: parsed.error };
@@ -263,8 +284,22 @@ function slot(price: number | null): 'quoted' | 'missing' {
   return price === null ? 'missing' : 'quoted';
 }
 
-function billingConditions(input: number | null, output: number | null, cached: number | null, promo: string): string {
-  return `scope=headline;input=${slot(input)};output=${slot(output)};cache=${slot(cached)};promo=${promo}`;
+function researchedScope(row: RawChannelQuote): string | null {
+  let constraints = row.constraints_json;
+  if (typeof constraints === 'string') {
+    try { constraints = JSON.parse(constraints); } catch { return null; }
+  }
+  if (!constraints || typeof constraints !== 'object' || Array.isArray(constraints)) return null;
+  const channelNotes = cleanText(row.channel_notes, 4000);
+  const variantNotes = cleanText(row.variant_notes, 4000);
+  if ((row.channel_notes && !channelNotes) || (row.variant_notes && !variantNotes)) return null;
+  if (Object.keys(constraints).length === 0 && !channelNotes && !variantNotes) return null;
+  // Canonical structured constraints and researched notes all participate in identity.
+  return canonicalJson({ variant: cleanText(row.variant_key, 200), kind: cleanText(row.variant_kind, 100), constraints, channel_notes: channelNotes, variant_notes: variantNotes });
+}
+
+function billingConditions(scope: string, input: number | null, output: number | null, cached: number | null, promo: string): string {
+  return `scope=${scope};input=${slot(input)};output=${slot(output)};cache=${slot(cached)};promo=${promo}`;
 }
 
 function sortedCounts(counts: Map<string, number>): Record<string, number> {
@@ -313,6 +348,12 @@ export function normalizeChannelQuote(row: RawChannelQuote, options: PrepareOpti
   if (isTrue(row.data_for_discount) || row.is_public === false || isTrue(row.is_partner_only) || row.is_self_service === false) {
     return rejection('restricted_or_nonpublic', model, provider);
   }
+
+  if (row.is_available !== true || row.is_public !== true || row.is_self_service !== true || row.is_partner_only !== false || row.data_for_discount !== false) {
+    return rejection('eligibility_unestablished', model, provider);
+  }
+  const scope = researchedScope(row);
+  if (!scope) return rejection('scope_unestablished', model, provider);
 
   const currency = cleanText(row.currency, 8)?.toUpperCase() ?? '';
   if (!/^[A-Z]{3}$/.test(currency)) return rejection('invalid_currency', model, provider);
@@ -369,7 +410,8 @@ export function normalizeChannelQuote(row: RawChannelQuote, options: PrepareOpti
   else if (!verified || verified.getTime() > asOf.getTime()) withhold = 'unverified';
   else if (verified.getTime() < asOf.getTime() - maxAgeDays * 86_400_000) withhold = 'stale';
 
-  const replaces = slug(row.replaces_model_slug) ?? slug(row.replacement_model) ?? '';
+  if (!withhold && !allowFixture) withhold = 'redistribution_scope_unpublished';
+  const replaces = slug(row.replaces_model_slug) ?? '';
   const observation: Observation = {
     model_slug: model,
     model_name: modelName,
@@ -393,12 +435,14 @@ export function normalizeChannelQuote(row: RawChannelQuote, options: PrepareOpti
     regular_output_missing: citedRegularOutput === null,
     regular_cached_input_price: citedRegularCached,
     regular_cached_input_missing: citedRegularCached === null,
-    billing_conditions: billingConditions(headlineInput, headlineOutput, headlineCached, promoActive && promoEnds ? `until:${promoEnds}` : 'none'),
+    billing_conditions: billingConditions(scope, headlineInput, headlineOutput, headlineCached, promoActive && promoEnds ? `until:${promoEnds}` : 'none'),
     source_url: source.url,
     verified_at: withhold === 'unverified' || !verified ? null : verified.toISOString(),
     citation_url_en: `${SITE_URL}/en/models/${model}`,
     citation_url_zh: `${SITE_URL}/zh/models/${model}`,
     replaces_model_slug: replaces,
+    successor_model_slug: slug(row.replacement_model) ?? '',
+    shutdown_date: readDate(row.shutdown_date)?.toISOString() ?? null,
     withhold,
   };
   return { observation, rejection: null };
@@ -435,7 +479,75 @@ export function toPublicQuote(observation: Observation): PublicQuote | null {
     citation_url_en: observation.citation_url_en,
     citation_url_zh: observation.citation_url_zh,
     replaces_model_slug: observation.replaces_model_slug,
+    successor_model_slug: observation.successor_model_slug,
+    shutdown_date: observation.shutdown_date,
   };
+}
+
+
+/** Re-evaluate a saved public quote at a later comparison clock. Does not rewrite snapshot bytes or the digest. */
+export function reobservePublicQuote(
+  quote: PublicQuote,
+  comparisonAsOf: Date,
+  options: { maxAgeDays?: number; fixture: boolean },
+): { observation: Observation | null; rejection: Rejection | null } {
+  const maxAgeDays = options.maxAgeDays ?? DEFAULT_MAX_AGE_DAYS;
+  const promoEnds = readDate(quote.promo_ends_at);
+  if (quote.promo_ends_at && !promoEnds) return rejection('ambiguous_promo', quote.model_slug, quote.provider_slug);
+
+  let input = quote.input_price;
+  let output = quote.output_price;
+  let cached = quote.cached_input_price;
+  let promoActive = quote.promo_active;
+  let promoEndsAt = quote.promo_ends_at;
+  let regularInput = quote.regular_input_price;
+  let regularOutput = quote.regular_output_price;
+  let regularCached = quote.regular_cached_input_price;
+  let billing = quote.billing_conditions;
+
+  if (promoEnds && promoEnds.getTime() <= comparisonAsOf.getTime()) {
+    if (quote.regular_input_price === null || quote.regular_output_price === null) {
+      return rejection('expired_promo_without_regular', quote.model_slug, quote.provider_slug);
+    }
+    input = quote.regular_input_price;
+    output = quote.regular_output_price;
+    cached = quote.regular_cached_input_price;
+    promoActive = false;
+    promoEndsAt = null;
+    regularInput = null;
+    regularOutput = null;
+    regularCached = null;
+    const scope = /^scope=(\{.*\});input=(quoted|missing);output=(quoted|missing);cache=(quoted|missing);promo=/.exec(quote.billing_conditions);
+    if (!scope) return rejection('scope_unestablished', quote.model_slug, quote.provider_slug);
+    billing = billingConditions(scope[1], input, output, cached, 'none');
+  }
+
+  let withhold: WithholdReason | null = options.fixture ? null : 'redistribution_scope_unpublished';
+  const verified = readDate(quote.verified_at);
+  if (!verified || verified.getTime() > comparisonAsOf.getTime()) withhold = 'unverified';
+  else if (verified.getTime() < comparisonAsOf.getTime() - maxAgeDays * 86_400_000) withhold = 'stale';
+
+  const observation: Observation = {
+    ...quote,
+    input_price: input,
+    input_missing: input === null,
+    output_price: output,
+    output_missing: output === null,
+    cached_input_price: cached,
+    cached_input_missing: cached === null,
+    zero_price: input === 0 || output === 0,
+    promo_active: promoActive,
+    promo_ends_at: promoEndsAt,
+    regular_input_price: regularInput,
+    regular_input_missing: regularInput === null,
+    regular_output_price: regularOutput,
+    regular_output_missing: regularOutput === null,
+    regular_cached_input_price: regularCached,
+    regular_cached_input_missing: regularCached === null,
+    billing_conditions: billing,
+    withhold,
+  };
+  return { observation, rejection: null };
 }
 
 function samePublic(left: Observation, right: Observation): boolean {
@@ -443,25 +555,15 @@ function samePublic(left: Observation, right: Observation): boolean {
     === canonicalJson(toPublicQuote({ ...right, withhold: null, source_url: right.source_url ?? 'https://example.invalid/', verified_at: right.verified_at ?? '1970-01-01T00:00:00.000Z' }));
 }
 
-export function prepareQuotes(rows: RawChannelQuote[], options: PrepareOptions = {}): PreparedQuotes {
-  const asOf = options.asOf ?? new Date();
-  const generatedAt = options.generatedAt ?? new Date();
-  const maxAgeDays = options.maxAgeDays ?? DEFAULT_MAX_AGE_DAYS;
+
+/** Collapse clock-adjusted observations with the same identity; conflicting values are rejected. */
+export function finalizeObservedQuotes(
+  observations: Observation[],
+  rejections: Rejection[] = [],
+): { kept: Observation[]; rejections: Rejection[]; duplicatesCollapsed: number; excludedCounts: Record<string, number> } {
   const counts = new Map<string, number>();
-  const rejections: Rejection[] = [];
-  const observations: Observation[] = [];
-  let duplicatesCollapsed = 0;
-
-  for (const row of rows) {
-    const normalized = normalizeChannelQuote(row, { ...options, asOf, maxAgeDays });
-    if (normalized.rejection) {
-      bump(counts, normalized.rejection.reason);
-      rejections.push(normalized.rejection);
-      continue;
-    }
-    if (normalized.observation) observations.push(normalized.observation);
-  }
-
+  const nextRejections = [...rejections];
+  for (const item of nextRejections) bump(counts, item.reason);
   const groups = new Map<string, Observation[]>();
   for (const observation of observations) {
     const key = fullKey(observation);
@@ -470,20 +572,47 @@ export function prepareQuotes(rows: RawChannelQuote[], options: PrepareOptions =
     groups.set(key, group);
   }
   const kept: Observation[] = [];
+  let duplicatesCollapsed = 0;
   for (const group of groups.values()) {
     const identical = group.every((item) => samePublic(item, group[0]));
     if (!identical) {
       bump(counts, 'ambiguous_duplicate');
-      rejections.push({ reason: 'ambiguous_duplicate', model_slug: group[0].model_slug, provider_slug: group[0].provider_slug });
+      nextRejections.push({ reason: 'ambiguous_duplicate', model_slug: group[0].model_slug, provider_slug: group[0].provider_slug });
       continue;
     }
     if (group.length > 1) duplicatesCollapsed += group.length - 1;
     kept.push(group[0]);
   }
-
   for (const observation of kept) {
     if (observation.withhold) bump(counts, observation.withhold);
   }
+  return {
+    kept: kept.sort((left, right) => fullKey(left).localeCompare(fullKey(right))),
+    rejections: nextRejections,
+    duplicatesCollapsed,
+    excludedCounts: sortedCounts(counts),
+  };
+}
+
+export function prepareQuotes(rows: RawChannelQuote[], options: PrepareOptions = {}): PreparedQuotes {
+  const asOf = options.asOf ?? new Date();
+  const generatedAt = options.generatedAt ?? new Date();
+  const maxAgeDays = options.maxAgeDays ?? DEFAULT_MAX_AGE_DAYS;
+  const rejections: Rejection[] = [];
+  const observations: Observation[] = [];
+
+  for (const row of rows) {
+    const normalized = normalizeChannelQuote(row, { ...options, asOf, maxAgeDays });
+    if (normalized.rejection) {
+      rejections.push(normalized.rejection);
+      continue;
+    }
+    if (normalized.observation) observations.push(normalized.observation);
+  }
+
+  const finalized = finalizeObservedQuotes(observations, rejections);
+  const kept = finalized.kept;
+  const countsFromFinalize = finalized.excludedCounts;
 
   const publishable = kept
     .map(toPublicQuote)
@@ -503,10 +632,13 @@ export function prepareQuotes(rows: RawChannelQuote[], options: PrepareOptions =
       wording_en: COVERAGE_WORDING.en,
       wording_zh: COVERAGE_WORDING.zh,
       included: publishable.length,
-      excluded_counts: sortedCounts(counts),
+      excluded_counts: countsFromFinalize,
       excluded_counts_in_snapshot_id: false,
     },
+    not_market_data: fixture,
+    empty_export_reason: fixture ? null : 'redistribution_scope_unpublished',
     redistribution: {
+      status: fixture ? 'synthetic_fixture' : 'unpublished',
       granted_license: null,
       cc0: false,
       mit: false,
@@ -522,10 +654,10 @@ export function prepareQuotes(rows: RawChannelQuote[], options: PrepareOptions =
     generated_at: snapshot.generated_at,
     max_age_days: maxAgeDays,
     observations: kept.sort((left, right) => fullKey(left).localeCompare(fullKey(right))),
-    rejections,
+    rejections: finalized.rejections,
     publishable,
     excluded_counts: snapshot.coverage.excluded_counts,
-    duplicates_collapsed: duplicatesCollapsed,
+    duplicates_collapsed: finalized.duplicatesCollapsed,
     snapshot,
   };
 }
@@ -536,7 +668,15 @@ function csvCell(value: string): string {
 }
 
 export function snapshotToCsv(snapshot: CitableSnapshot): string {
-  const lines = [PUBLIC_QUOTE_FIELDS.join(',')];
+  const metadata: Record<string, unknown> = {
+    snapshot_id: snapshot.snapshot_id, as_of: snapshot.as_of, sample_kind: snapshot.sample_kind,
+    not_market_data: snapshot.not_market_data, empty_export_reason: snapshot.empty_export_reason,
+    redistribution_status: snapshot.redistribution.status, granted_license: null, cc0: false, mit: false,
+    redistribution_en: snapshot.redistribution.statement_en, redistribution_zh: snapshot.redistribution.statement_zh,
+    coverage_en: snapshot.coverage.wording_en, coverage_zh: snapshot.coverage.wording_zh,
+  };
+  const lines = Object.entries(metadata).map(([key, value]) => `# ${key},${csvCell(value === null ? 'null' : String(value))}`);
+  lines.push(PUBLIC_QUOTE_FIELDS.join(','));
   for (const quote of snapshot.quotes) {
     lines.push(PUBLIC_QUOTE_FIELDS.map((field) => {
       const value = quote[field];

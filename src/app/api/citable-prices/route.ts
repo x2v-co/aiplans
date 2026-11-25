@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { citableRequestPlan, prepareQuotes, snapshotToCsv } from '@/lib/citable-price-facts';
-import { loadOfficialChannelRows } from '@/lib/citable-price-query';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +20,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const prepared = prepareQuotes(await loadOfficialChannelRows(), { allowFixture: false });
+    // Redistribution is unpublished: do not read or serialize live quotes.
+    const prepared = prepareQuotes([], { allowFixture: false });
     const headers = { ...noStore, 'X-Snapshot-Id': prepared.snapshot.snapshot_id };
     if (plan.format === 'csv') {
       return new NextResponse(snapshotToCsv(prepared.snapshot), {
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       headers: { ...headers, 'Content-Disposition': 'inline; filename="aiplans-official-quotes.json"' },
     });
   } catch {
-    console.error('citable prices query failed');
+    console.error('citable prices export failed');
     return NextResponse.json({
       error: 'source_unavailable',
       quotes: [],

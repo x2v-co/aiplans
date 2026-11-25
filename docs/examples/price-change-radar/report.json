@@ -2,9 +2,12 @@
   "schema": "aiplans-price-change-radar/1",
   "threshold_percent": 15,
   "fixture": true,
+  "not_market_data": true,
+  "comparison_as_of": "2026-11-01T00:00:00.000Z",
+  "redistribution": "synthetic_fixture",
   "baseline_only": false,
-  "previous_snapshot_id": "sha256:0ce0bc566aaef09f49f8d19a0e84d83912f203ee5102e7399a42d41670747db3",
-  "current_snapshot_id": "sha256:1ddf6320ee2248017d7c67ab5e918b9c2c1dd6df7918eed57910ef0d54bf0b73",
+  "previous_snapshot_id": "sha256:ca5196fed125d5ca585dfa049f19fe04bc586beebb523046fbac5d4f57354cfd",
+  "current_snapshot_id": "sha256:dab3a8ab4abaec7c03f2918c86bef565b5d14da9682463b3638be522cb814e17",
   "previous_as_of": "2026-11-01T00:00:00.000Z",
   "current_as_of": "2026-11-01T00:00:00.000Z",
   "publishable_events": [
@@ -15,7 +18,7 @@
       "provider_name": "Example Official",
       "currency": "USD",
       "price_unit": "per_1m_tokens",
-      "billing_conditions": "scope=headline;input=quoted;output=quoted;cache=quoted;promo=none",
+      "billing_conditions": "scope={\"channel_notes\":null,\"constraints\":{\"processing\":\"standard\"},\"kind\":null,\"variant\":null,\"variant_notes\":null};input=quoted;output=quoted;cache=quoted;promo=none",
       "source_url_previous": "https://example.test/pricing/alpha",
       "source_url_current": "https://example.test/pricing/alpha",
       "verified_at_previous": "2026-10-20T00:00:00.000Z",
@@ -43,17 +46,17 @@
         }
       ],
       "threshold_percent": 15,
-      "event_id": "sha256:fb517015eca7cea044fbb101a0d425436eb25468e4a37e3ab848d8049459b45e"
+      "event_id": "sha256:2b56a22628c595206f88a5bd3c4788cd798a25e856d475188765d5320b6049bc"
     }
   ],
   "withheld": [
     {
-      "identity": "example-beta\texample-official\tUSD\tper_1m_tokens\tscope=headline;input=quoted;output=quoted;cache=missing;promo=none",
+      "identity": "example-beta\texample-official\tUSD\tper_1m_tokens\tscope={\"channel_notes\":null,\"constraints\":{\"processing\":\"standard\"},\"kind\":null,\"variant\":null,\"variant_notes\":null};input=quoted;output=quoted;cache=missing;promo=none",
       "reason": "below_threshold",
       "detail": "max_abs_percent=10.00"
     },
     {
-      "identity": "example-delta\texample-official\tUSD\tper_1m_tokens\tscope=headline;input=quoted;output=quoted;cache=missing;promo=none",
+      "identity": "example-delta\texample-official\tUSD\tper_1m_tokens\tscope={\"channel_notes\":null,\"constraints\":{\"processing\":\"standard\"},\"kind\":null,\"variant\":null,\"variant_notes\":null};input=quoted;output=quoted;cache=missing;promo=none",
       "reason": "zero_value"
     },
     {
@@ -82,15 +85,15 @@
       "reason": "new_listing"
     },
     {
-      "identity": "example-omicron\texample-official\tUSD\tper_1m_tokens\tscope=headline;input=quoted;output=quoted;cache=missing;promo=none",
+      "identity": "example-omicron\texample-official\tUSD\tper_1m_tokens\tscope={\"channel_notes\":null,\"constraints\":{\"processing\":\"standard\"},\"kind\":null,\"variant\":null,\"variant_notes\":null};input=quoted;output=quoted;cache=missing;promo=none",
       "reason": "missing_source"
     },
     {
-      "identity": "example-pi\texample-official\tUSD\tper_1m_tokens\tscope=headline;input=quoted;output=quoted;cache=missing;promo=none",
+      "identity": "example-pi\texample-official\tUSD\tper_1m_tokens\tscope={\"channel_notes\":null,\"constraints\":{\"processing\":\"standard\"},\"kind\":null,\"variant\":null,\"variant_notes\":null};input=quoted;output=quoted;cache=missing;promo=none",
       "reason": "unverified"
     },
     {
-      "identity": "example-theta\texample-official\tUSD\tper_1m_tokens\tscope=headline;input=quoted;output=quoted;cache=missing;promo=none",
+      "identity": "example-theta\texample-official\tUSD\tper_1m_tokens\tscope={\"channel_notes\":null,\"constraints\":{\"processing\":\"standard\"},\"kind\":null,\"variant\":null,\"variant_notes\":null};input=quoted;output=quoted;cache=missing;promo=none",
       "reason": "stale"
     },
     {
@@ -118,6 +121,12 @@
   "history_withheld_counts": {
     "incomplete_history": 1
   },
+  "history_withheld": [
+    {
+      "identity": "*",
+      "reason": "incomplete_history"
+    }
+  ],
   "previous_excluded_counts": {
     "unverified": 1
   },
