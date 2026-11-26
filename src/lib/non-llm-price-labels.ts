@@ -38,6 +38,7 @@ export function catalogPriceLabelKeys(): string[] {
     ...catalogForKind('music-model'),
     ...catalogForKind('voice-model'),
     ...catalogForKind('embedding-model'),
+    ...catalogForKind('rerank-model'),
   ];
   for (const item of items) {
     if (item.pricingUnit) keys.add(item.pricingUnit);

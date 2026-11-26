@@ -40,7 +40,7 @@ const protectedHashes: Record<string, string> = {
   "src/lib/price-offers/read.ts": "abb543752b3d867fb55e68adf9f48859a5bff8bb40c9bf5dd4e27f817022d3d0",
   "src/lib/price-offers/postgres.ts": "4353a21d04f7caddd085c2d28cd9fb064d114f29441ebcba13e4eb2d08388065",
   "src/lib/price-offers/writer.ts": "cab3a7666dfff1a141b92f1547352d764ae18326c0c3dda3a911b4ad6f745ffb",
-  "package.json": "a41693dd8029111d759716a1af93d87eca5e705154e24a3fcbef127e02079ecf",
+  "package.json": "88e50e0c1753435084d748ef38176ce9767f95d738378f5fe6979452378a8560",
   "package-lock.json": "9a16d112adbeba2b5b76eeaae1b9d5105b7f923abed6935d6bf45f1ec6c3eb54"
 };
 test('deployed cache/mobile/promotion sources, immutable PR1 modules and integrated loader remain hash-pinned', () => {

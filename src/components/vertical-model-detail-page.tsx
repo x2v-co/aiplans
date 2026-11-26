@@ -150,7 +150,7 @@ export default function VerticalModelDetailPage({
           </div>
         )}
 
-        {['video-model', 'music-model', 'decision-model', 'embedding-model'].includes(kind) && <AuditedPricingFacts item={item} locale={locale} />}
+        {['video-model', 'music-model', 'decision-model', 'embedding-model', 'rerank-model'].includes(kind) && <AuditedPricingFacts item={item} locale={locale} />}
 
         {['voice-model', 'image-model'].includes(kind) && <NonLlmFacts item={item} locale={locale} />}
 

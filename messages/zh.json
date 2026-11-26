@@ -115,6 +115,7 @@
     "musicModels": "音乐模型",
     "decisionModels": "决策模型",
     "embeddingModels": "嵌入模型",
+    "rerankModels": "重排序模型",
     "worldModels": "世界模型",
     "coupons": "优惠码",
     "calculator": "计算器",
@@ -460,6 +461,10 @@
   "modelPricing": {
     "introductoryPrice": "入门价截至 {date}（太平洋时间），之后 {input} / {output} 每百万 token"
   },
+  "rerankModels": {
+    "title": "重排序模型",
+    "description": "按处理 token 数比较官方重排序 API 价格，附核验来源和免费额度。"
+  },
   "embeddingModels": {
     "title": "嵌入模型",
     "description": "按输入模态比较官方嵌入 API 价格，标明核验日期与来源，并区分正式模型和已下线的预览模型。"
@@ -477,6 +482,9 @@
     "window": "高峰：UTC 周一至周五 01:00–04:00 和 06:00–10:00，中国法定节假日除外。其余时间为低谷，周末和中国法定节假日全天为低谷（调休上班的周末也按低谷）。"
   },
   "nonLlmModels": {
+    "processed tokens": "处理 tokens",
+    "image/video pixels": "图像/视频像素",
+    "per_1b_pixels": "十亿像素",
     "per_1k_characters": "千字符",
     "per_10k_characters": "每 1 万计费字符",
     "per_1m_utf8_bytes": "每百万 UTF-8 字节",

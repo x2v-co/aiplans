@@ -2,10 +2,33 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { auditedPrice, AuditedPricingFacts, DecisionModelCatalog } from './audited-catalog';
+import { auditedPrice, AuditedPricingFacts, DecisionModelCatalog, EmbeddingModelCatalog } from './audited-catalog';
 import { NonLlmCatalog, NonLlmFacts } from './non-llm-catalog';
 import { AI_VERTICAL_CATALOG, type AiCatalogItem } from '../lib/ai-vertical-catalog';
 import { currencyPrefix, formatCurrencyAmount } from '../lib/currency';
+import { VOYAGE_CATALOG_1126 } from '../lib/catalog-2026-11-26-voyage';
+
+test('Voyage lists and facts preserve dual multimodal rates and separate rerank links in both locales', () => {
+  for (const locale of ['en', 'zh']) {
+    const html = renderToStaticMarkup(createElement(EmbeddingModelCatalog, { items: VOYAGE_CATALOG_1126, locale }));
+    for (const item of VOYAGE_CATALOG_1126) {
+      const path = item.kind === 'rerank-model' ? 'rerank-models' : 'embedding-models';
+      assert.ok(html.includes(`/${locale}/${path}/${item.slug}`));
+      assert.equal(auditedPrice(item, locale), item.pricing);
+      const facts = renderToStaticMarkup(createElement(AuditedPricingFacts, { item, locale }));
+      assert.ok(facts.includes(item.pricing));
+      assert.match(facts, /2026-11-26/);
+      if (item.slug!.startsWith('voyage-multimodal')) {
+        assert.match(facts, /\$0\.60\/billion pixels/);
+        assert.match(facts, /\$0\.6 \/ (?:1 billion pixels|十亿像素)/);
+        assert.match(facts, /150B pixels/);
+      }
+    }
+    assert.doesNotMatch(html, /embedding-models\/rerank/);
+    assert.match(html, /50 million tokens are free per account/);
+    assert.match(html, /\$0\.05\/M processed tokens/);
+  }
+});
 
 const base: AiCatalogItem = {
   kind: 'video-model', slug: 'x', name: 'X', provider: 'P', status: 'available', pricing: '', unit: 'seconds',

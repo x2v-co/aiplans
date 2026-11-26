@@ -12,6 +12,7 @@ const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, AiModelCategory>> = {
   'voice-model': 'speech',
   'image-model': 'image',
   'embedding-model': 'embedding',
+  'rerank-model': 'text',
 };
 
 interface DbVerticalModelRow {
@@ -64,7 +65,7 @@ function sourcesFromDescription(description: string | null): AiCatalogItem['sour
   }).filter((source) => source.publisher && source.url.startsWith('https://'));
 }
 
-const MODALITIES: AiCatalogModality[] = ['text', 'image', 'video', 'audio', 'music', '3d', 'simulation', 'code', 'robotics', 'embedding'];
+const MODALITIES: AiCatalogModality[] = ['text', 'image', 'video', 'audio', 'music', '3d', 'simulation', 'code', 'robotics', 'embedding', 'ranking'];
 
 function toModalities(values: string[] | null): AiCatalogModality[] {
   return (values ?? []).filter((value): value is AiCatalogModality => MODALITIES.includes(value as AiCatalogModality));
