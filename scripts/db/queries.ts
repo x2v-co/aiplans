@@ -5,6 +5,8 @@ import { checkModelIdentity, ModelIdentityRejectedError, isCachedPriceSane } fro
 import { canonicalizeModelSlug } from '../utils/model-normalizer';
 import { databaseSql, postgresAdmin } from './postgres-admin';
 import type { JSONValue } from 'postgres';
+import { currentChannelWriteTarget, type FeedIdentity } from './channel-write-target';
+import { resolveCatalogIdentity } from '../../src/lib/catalog-identity';
 
 // Direct PostgreSQL client (postgres.js). Historical name was supabaseAdmin;
 // the platform has never used Supabase at runtime. Exported so the many data
@@ -304,7 +306,7 @@ export async function upsertChannelPrice(data: {
    * notes on every run; when omitted existing notes are preserved.
    */
   notes?: string;
-}) {
+}, feed?: FeedIdentity) {
   // Defensive validation — reject obvious bad data at the write boundary so
   // scraper bugs fail loudly instead of silently overwriting good rows.
   // Free tiers allow zero; unknown rates require nulls plus the explicit provenance marker.
@@ -342,18 +344,7 @@ export async function upsertChannelPrice(data: {
       : data.rate_limit
     : undefined;
 
-  // First, check if a record exists
-  const { data: existing, error: selectError } = await db
-    .from('api_channel_prices')
-    .select('*')
-    .eq('model_id', data.model_id)
-    .eq('provider_id', data.provider_id)
-    .single();
-
-  if (selectError && selectError.code !== 'PGRST116') {
-    // PGRST116 means no rows found, which is expected for new records
-    throw selectError;
-  }
+  const existing = await currentChannelWriteTarget(db, data.model_id, data.provider_id, feed);
 
   data = retainMatchingPromo(data, existing);
   // 审计下架的无固定价路由行（-1 哨兵）不被无价格写入改回可用；
@@ -381,6 +372,7 @@ export async function upsertChannelPrice(data: {
         ...(data.notes !== undefined ? { notes: data.notes } : {}),
       })
       .eq('id', existing.id)
+      .eq('model_id', data.model_id).eq('provider_id', data.provider_id)
       .select()
       .single();
 
@@ -424,7 +416,7 @@ export async function logPriceChange(data: {
   change_percent: number;
   currency?: string;
   source?: string;
-}) {
+}, requireSuccess = false) {
   const { error } = await db
     .from('price_history')
     .insert({
@@ -440,6 +432,7 @@ export async function logPriceChange(data: {
 
   // Soft-fail: don't break the scrape pipeline if logging fails
   if (error) {
+    if (requireSuccess) throw error;
     console.error('⚠ logPriceChange failed:', error.message);
   }
 }
@@ -470,6 +463,19 @@ export async function getOrCreateProduct(data: {
   model_category?: string;
   released_at?: string;
 }) {
+  // The original spelling is lossy under name sanitization. Consult the durable
+  // alias before normalization, and never recreate this reviewed source identity.
+  if (data.slug === 'o3-(batch)' || data.slug === 'openai-o3-batch') {
+    const catalog = await db.from('models').select('id, slug').in('id', [3014, 3192]);
+    const aliases = await db.from('model_slug_redirects').select('old_slug, model_id').eq('old_slug', data.slug);
+    if (catalog.error || aliases.error) throw catalog.error || aliases.error;
+    const identity = resolveCatalogIdentity(data.slug, catalog.data ?? [], aliases.data ?? []);
+    if (!identity || !((data.slug === 'o3-(batch)' && identity.id === 3014 && identity.slug === 'o3-(batch)') ||
+      (identity.id === 3192 && identity.slug === 'openai-o3-batch'))) throw new Error('o3 batch persisted identity missing or rebound; creation refused');
+    const row = await db.from('models').select('*').eq('id', identity.id).single();
+    if (row.error) throw row.error;
+    return row.data;
+  }
   // Prefer the canonical row even while an old duplicate still exists.
   data = { ...data, slug: canonicalizeModelSlug(data.slug) };
   const backfillReleaseDate = async <T extends { id: number; released_at?: string | null }>(product: T): Promise<T> => {
