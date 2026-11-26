@@ -1,6 +1,6 @@
 import { TOOL_API_PRICES, formatToolPrice } from '@/lib/tool-api-pricing';
 
-/** Static, source-cited per-request prices for web search / fetch tools. */
+/** Static, source-cited usage prices for search, fetch, file and speech tools. */
 export function ToolApiPricingSection({ locale }: { locale: string }) {
   const l = locale === 'zh' ? 'zh' : 'en';
   return (
@@ -15,7 +15,7 @@ export function ToolApiPricingSection({ locale }: { locale: string }) {
             <tr className="text-left border-b">
               <th className="py-2 pr-4">{l === 'zh' ? '厂商' : 'Provider'}</th>
               <th className="py-2 pr-4">{l === 'zh' ? '工具' : 'Tool'}</th>
-              <th className="py-2 pr-4">{l === 'zh' ? '按次价格' : 'Per-request price'}</th>
+              <th className="py-2 pr-4">{l === 'zh' ? '价格 / 计费单位' : 'Price / billing unit'}</th>
               <th className="py-2 pr-4">Token</th>
               <th className="py-2 pr-4">{l === 'zh' ? '说明' : 'Notes'}</th>
               <th className="py-2">{l === 'zh' ? '来源' : 'Source'}</th>
