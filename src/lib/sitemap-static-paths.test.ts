@@ -5,6 +5,16 @@ import { STATIC_PATHS, resolveStaticLastmod } from './sitemap-static-paths';
 
 const now = new Date('2026-10-29T03:00:00Z');
 
+test('Voyage embedding and rerank listings use the current verified date', () => {
+  for (const path of ['/embedding-models', '/rerank-models']) {
+    const entry = STATIC_PATHS.find(row => row.path === path)!;
+    assert.ok(entry);
+    assert.deepEqual(resolveStaticLastmod(entry.lastmod, {
+      dataUpdatedAt: null, catalog: AI_VERTICAL_CATALOG, now: new Date('2026-11-26T12:00:00Z'),
+    }), new Date('2026-11-26T00:00:00Z'));
+  }
+});
+
 test('every fixed sitemap path has a real lastmod source and no future editorial date', () => {
   const seen = new Set<string>();
   for (const entry of STATIC_PATHS) {

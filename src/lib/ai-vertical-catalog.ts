@@ -9,15 +9,16 @@ import { DECISION_MODELS_2026_11_03 } from './decision-models-2026-11-03';
 import { DECISION_MODELS_2026_11_05 } from './decision-models-2026-11-05';
 import { DECISION_MODELS_2026_11_12 } from './decision-models-2026-11-12';
 import { DECISION_MODELS_2026_11_13 } from './decision-models-2026-11-13';
+import { VOYAGE_CATALOG_1126 } from './catalog-2026-11-26-voyage';
 import { CATALOG_1114 } from './catalog-2026-11-14';
 
-export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model' | 'voice-model' | 'image-model' | 'embedding-model';
+export type AiCatalogKind = 'agent' | 'creative-plan' | 'video-model' | 'music-model' | 'world-model' | 'decision-model' | 'voice-model' | 'image-model' | 'embedding-model' | 'rerank-model';
 
 export type AiCatalogStatus = 'available' | 'waitlist' | 'preview' | 'research' | 'announced' | 'discontinued' | 'needs-verification' | 'deprecated';
-export type AiCatalogModality = 'text' | 'image' | 'video' | 'audio' | 'music' | '3d' | 'simulation' | 'code' | 'robotics' | 'embedding';
+export type AiCatalogModality = 'text' | 'image' | 'video' | 'audio' | 'music' | '3d' | 'simulation' | 'code' | 'robotics' | 'embedding' | 'ranking';
 export type AiCatalogAccess = 'consumer-app' | 'api' | 'cloud-api' | 'open-weights' | 'research-preview' | 'enterprise' | 'waitlist';
 export type AiPricingConfidence = 'verified' | 'unit-only' | 'unknown' | 'not-commercial';
-export type AiModelCategory = 'video' | 'music' | 'world' | 'decision' | 'speech' | 'image' | 'embedding';
+export type AiModelCategory = 'text' | 'video' | 'music' | 'world' | 'decision' | 'speech' | 'image' | 'embedding';
 
 export interface AiCatalogSource {
   label: string;
@@ -132,6 +133,7 @@ export const AI_VERTICAL_CATALOG: AiCatalogItem[] = [
   ...DECISION_MODELS_2026_11_12,
   ...DECISION_MODELS_2026_11_13,
   ...CATALOG_1114,
+  ...VOYAGE_CATALOG_1126,
   // Agent / coding-agent plans
   {
     kind: 'agent',
@@ -1305,7 +1307,7 @@ export const WORLD_MODEL_RESEARCH_NOTES = [
   },
 ];
 
-export const RIGOROUS_MODEL_KINDS: AiCatalogKind[] = ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model', 'embedding-model'];
+export const RIGOROUS_MODEL_KINDS: AiCatalogKind[] = ['video-model', 'music-model', 'world-model', 'decision-model', 'voice-model', 'image-model', 'embedding-model', 'rerank-model'];
 
 export function catalogForKind(kind: AiCatalogKind): AiCatalogItem[] {
   return AI_VERTICAL_CATALOG.filter((item) => item.kind === kind);

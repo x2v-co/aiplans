@@ -11,7 +11,7 @@ import { CatalogProviderLogo } from '@/components/catalog-provider-logo';
 export function auditedPrice(item: AiCatalogItem, locale: string): string {
   if (item.priceStatus === 'not-public') return locale === 'zh' ? '未公开价格' : 'Price not public';
   if (item.priceStatus !== 'priced') return locale === 'zh' ? '待核验' : 'Needs verification';
-  if (['decision-model', 'embedding-model'].includes(item.kind)) return item.pricing;
+  if (['decision-model', 'embedding-model', 'rerank-model'].includes(item.kind)) return item.pricing;
   if (item.pricePerUnit == null) return '—';
   const money = (value: number) => formatCurrencyAmount(value.toLocaleString('en-US', {
     useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 4,
@@ -106,13 +106,13 @@ export function DecisionModelCards({ items, locale }: { items: AiCatalogItem[]; 
   </section>;
 }
 
-/** Embeddings have modality-specific input rates; no output-token price is inferred. */
+/** Shared source-backed rate table for embeddings and rerankers. */
 export function EmbeddingModelCatalog({ items, locale }: { items: AiCatalogItem[]; locale: string }) {
   const zh = locale === 'zh';
   return <div className="mt-8 overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm">
     <thead><tr>{[zh ? '模型' : 'Model', zh ? '价格' : 'Pricing', zh ? '状态 / 核验' : 'Status / verification', zh ? '来源' : 'Sources'].map(h => <th key={h} className="p-4">{h}</th>)}</tr></thead>
     <tbody>{items.map(item => <tr key={item.slug} className="border-t align-top">
-      <td className="p-4"><Link className="text-blue-600 underline" href={`/${locale}/embedding-models/${item.slug}`}>{item.name}</Link><p>{item.provider}</p></td>
+      <td className="p-4"><Link className="text-blue-600 underline" href={`/${locale}/${item.kind === 'rerank-model' ? 'rerank-models' : 'embedding-models'}/${item.slug}`}>{item.name}</Link><p>{item.provider}</p></td>
       <td className="p-4">{item.pricing}<p>{item.notes}</p></td>
       <td className="p-4">{item.shutdownDate ? (zh ? '已下线' : 'Shut down') : item.status}<p>{item.verifiedAt}</p></td>
       <td className="p-4">{item.sourceUrls?.map(source => <a key={source.url} className="block text-blue-600 underline" href={source.url} target="_blank" rel="noreferrer">{source.label}</a>)}</td>

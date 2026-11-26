@@ -115,6 +115,7 @@
     "musicModels": "Music Models",
     "decisionModels": "Decision Models",
     "embeddingModels": "Embedding Models",
+    "rerankModels": "Rerank Models",
     "worldModels": "World Models",
     "coupons": "Coupons",
     "calculator": "Calculator",
@@ -460,6 +461,10 @@
   "modelPricing": {
     "introductoryPrice": "Introductory price until {date} (Pacific time), then {input} / {output} per 1M"
   },
+  "rerankModels": {
+    "title": "Rerank Models",
+    "description": "Compare official reranker API prices per processed token, with verified sources and free quotas."
+  },
   "embeddingModels": {
     "title": "Embedding Models",
     "description": "Compare official embedding API prices by input modality. Dated sources distinguish active models from retired previews."
@@ -477,6 +482,9 @@
     "window": "Peak: 01:00–04:00 & 06:00–10:00 UTC Mon–Fri, excluding Chinese public holidays. All other times are off-peak, including weekends and Chinese public holidays all day (weekend make-up workdays stay off-peak)."
   },
   "nonLlmModels": {
+    "processed tokens": "Processed tokens",
+    "image/video pixels": "Image/video pixels",
+    "per_1b_pixels": "1 billion pixels",
     "per_1k_characters": "1K characters",
     "per_10k_characters": "10K billed characters",
     "per_1m_utf8_bytes": "1M UTF-8 bytes",

@@ -15,6 +15,7 @@ const KIND_TO_CATEGORY: Partial<Record<AiCatalogKind, AiModelCategory>> = {
   'voice-model': 'speech',
   'image-model': 'image',
   'embedding-model': 'embedding',
+  'rerank-model': 'text',
 };
 
 export interface VerticalModelPlanRow extends PlanCoverageFields {
@@ -112,5 +113,6 @@ export function verticalKindPath(kind: AiCatalogKind): string {
   if (kind === 'voice-model') return 'voice-models';
   if (kind === 'image-model') return 'image-models';
   if (kind === 'embedding-model') return 'embedding-models';
+  if (kind === 'rerank-model') return 'rerank-models';
   return 'models';
 }

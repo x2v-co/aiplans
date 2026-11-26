@@ -273,6 +273,8 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-13-decider-search-apis:apply`),
       ...CATALOG_1114.map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-14-intel:apply`),
+      ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-26-voyage:apply').map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-26-voyage:apply`),
       'WARNING music-model:mureka: DB drift: missing models row; run npm run seed:catalog-2026-11-04:apply',
     ],
   );
@@ -745,6 +747,7 @@ test('embedding vertical serves audited models through localized routes, navigat
     'voyage-4-large', 'voyage-4', 'voyage-4-lite', 'voyage-context-4', 'voyage-code-4',
     'embed-v5.0-pro', 'embed-v5.0-fast', 'text-embedding-v4',
     'cloudflare-embeddinggemma-2',
+    'voyage-finance-2', 'voyage-law-2', 'voyage-multimodal-3.5', 'voyage-multimodal-3',
   ]);
   for (const suffix of ['page.tsx', '[slug]/page.tsx']) {
     const route = readFileSync(new URL(`../src/app/[locale]/embedding-models/${suffix}`, import.meta.url), 'utf8');
@@ -770,9 +773,45 @@ test('embedding vertical serves audited models through localized routes, navigat
   for (const item of items) {
     assert.equal(item.deferredDbSeed, true);
     const added1106 = ['voyage-4-large', 'voyage-4', 'voyage-4-lite', 'voyage-context-4', 'voyage-code-4', 'embed-v5.0-pro', 'embed-v5.0-fast', 'text-embedding-v4'];
-    const expected = item.slug === 'cloudflare-embeddinggemma-2'
+    const expected = ['voyage-finance-2', 'voyage-law-2', 'voyage-multimodal-3.5', 'voyage-multimodal-3'].includes(item.slug!)
+      ? 'seed:catalog-2026-11-26-voyage:apply'
+      : item.slug === 'cloudflare-embeddinggemma-2'
       ? 'seed:catalog-2026-11-14-intel:apply'
       : added1106.includes(item.slug!) ? 'seed:catalog-2026-11-06-embeddings:apply' : 'seed:catalog-2026-11-04:apply';
     assert.equal(item.deferredDbSeedScript, expected);
+  }
+});
+
+test('rerank vertical has distinct localized routes, navigation, search, sitemap and a text DB category', () => {
+  const items = catalog.catalogForKind('rerank-model');
+  assert.deepEqual(items.map(item => item.slug), ['rerank-3', 'rerank-3-lite']);
+  for (const suffix of ['page.tsx', '[slug]/page.tsx']) {
+    const route = readFileSync(new URL(`../src/app/[locale]/rerank-models/${suffix}`, import.meta.url), 'utf8');
+    assert.match(route, /rerank-model/);
+    assert.match(route, /buildMetadata/);
+    assert.match(route, /breadcrumbList/);
+    assert.doesNotMatch(route, /Embedding Models|嵌入模型/);
+  }
+  for (const locale of ['en', 'zh']) {
+    const messages = JSON.parse(readFileSync(new URL(`../messages/${locale}.json`, import.meta.url), 'utf8'));
+    assert.ok(messages.nav.rerankModels);
+    assert.ok(messages.rerankModels.title && messages.rerankModels.description);
+  }
+  const files: [string, RegExp][] = [
+    ['src/components/SiteHeader.tsx', /rerank-models/],
+    ['src/lib/sitemap-static-paths.ts', /path: '\/rerank-models'/],
+    ['src/lib/build-sitemap.ts', /'rerank-model'/],
+    ['src/lib/vertical-models.ts', /'rerank-model': 'text'/],
+    ['src/lib/vertical-model-detail.ts', /'rerank-model': 'text'/],
+    ['src/lib/vertical-model-aliases.ts', /CATALOG_ONLY_DETAIL_KINDS.*'rerank-model'/],
+    ['src/app/api/search-index/route.ts', /slug: 'rerank-models', kind: 'rerank-model'/],
+    ['src/components/vertical-model-detail-page.tsx', /'rerank-model'\].includes\(kind\) && <AuditedPricingFacts/],
+  ];
+  for (const [path, expected] of files) assert.match(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'), expected, path);
+  for (const item of items) {
+    assert.equal(item.modelCategory, 'text');
+    assert.equal(item.deferredDbSeed, true);
+    assert.equal(item.deferredDbSeedScript, 'seed:catalog-2026-11-26-voyage:apply');
+    assert.deepEqual(item.outputModalities, ['ranking']);
   }
 });

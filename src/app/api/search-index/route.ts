@@ -27,6 +27,7 @@ const STATIC_PAGE_DEFS: Array<{ slug: string; kind?: AiCatalogKind; title: strin
   { slug: 'coding-agents', title: 'Coding Agent Leaderboard', zhTitle: '编程智能体排行榜', baseKeywords: ['coding agent', 'claude code', 'codex', 'devin', 'deepswe', 'terminal-bench', 'swe-atlas', 'cost per task'] },
   { slug: 'music-models', kind: 'music-model', title: 'AI Music Models', zhTitle: 'AI 音乐模型', baseKeywords: ['music', 'audio'] },
   { slug: 'embedding-models', kind: 'embedding-model', title: 'Embedding Models', zhTitle: '嵌入模型', baseKeywords: ['embedding', 'text embedding', '嵌入'] },
+  { slug: 'rerank-models', kind: 'rerank-model', title: 'Rerank Models', zhTitle: '重排序模型', baseKeywords: ['rerank', 'reranker', '重排序'] },
   { slug: 'world-models', kind: 'world-model', title: 'AI World Models', zhTitle: 'AI 世界模型', baseKeywords: ['world model', 'simulation'] },
   { slug: 'decision-models', kind: 'decision-model', title: 'AI Decision Models', zhTitle: 'AI 决策模型', baseKeywords: ['decision model', '决策模型'] },
 ];
