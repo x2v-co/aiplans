@@ -10,6 +10,7 @@ import { DECISION_MODELS_2026_11_03 } from '../src/lib/decision-models-2026-11-0
 import { DECISION_MODELS_2026_11_05 } from '../src/lib/decision-models-2026-11-05';
 import { DECISION_MODELS_2026_11_12 } from '../src/lib/decision-models-2026-11-12';
 import { DECISION_MODELS_2026_11_13 } from '../src/lib/decision-models-2026-11-13';
+import { DECISION_MODELS_2026_11_26 } from '../src/lib/decision-models-2026-11-26';
 import { CATALOG_1114 } from '../src/lib/catalog-2026-11-14';
 import * as auditVertical from './data/catalog-audit-vertical';
 import * as catalog20261029 from './data/catalog-2026-10-29';
@@ -271,6 +272,8 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-12-audit-fixes:apply`),
       ...DECISION_MODELS_2026_11_13.map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-13-decider-search-apis:apply`),
+      ...DECISION_MODELS_2026_11_26.map(item =>
+        `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-26-bailian-decision:apply`),
       ...CATALOG_1114.map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-14-intel:apply`),
       'WARNING music-model:mureka: DB drift: missing models row; run npm run seed:catalog-2026-11-04:apply',
@@ -312,6 +315,10 @@ test('deferred catalog rows point at their image, non-LLM or glimpse-decider see
   for (const item of DECISION_MODELS_2026_11_13) {
     assert.equal(item.deferredDbSeed, true, item.slug);
     assert.equal(item.deferredDbSeedScript, 'seed:catalog-2026-11-13-decider-search-apis:apply', item.slug);
+  }
+  for (const item of DECISION_MODELS_2026_11_26) {
+    assert.equal(item.deferredDbSeed, true, item.slug);
+    assert.equal(item.deferredDbSeedScript, 'seed:catalog-2026-11-26-bailian-decision:apply', item.slug);
   }
   for (const item of CATALOG_1114) {
     assert.equal(item.deferredDbSeed, true, item.slug);

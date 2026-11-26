@@ -58,11 +58,17 @@ test('AuditedPricingFacts / NonLlm 渲染的 usageRates 与 token 价按币种�
 
 test('static catalog preserves CNY and INR without currency conversion', () => {
   const nonUsd = AI_VERTICAL_CATALOG.filter(item => item.currency && item.currency !== 'USD');
-  assert.deepEqual(nonUsd.map(item => item.slug).sort(), ['minimax-h3-image', 'minimax-h3-image-highspeed', 'sarvam-prism', 'seedance', 'text-embedding-v4', 'wan-video']);
+  assert.deepEqual(nonUsd.map(item => item.slug).sort(), ['minimax-h3-image', 'minimax-h3-image-highspeed', 'qwen-decision-model', 'qwen-decision-model-preview', 'sarvam-prism', 'seedance', 'text-embedding-v4', 'wan-video']);
   for (const item of nonUsd) {
     for (const locale of ['en', 'zh']) {
       const text = auditedPrice(item, locale);
-      assert.match(text, item.currency === 'INR' ? /^₹/ : /^¥/, `${item.slug} ${locale}: ${text}`);
+      if (item.slug === 'qwen-decision-model-preview') {
+        assert.match(text, /限时免费 \(limited-time free\)/);
+        assert.match(text, /no end date/);
+        assert.equal(item.currency, 'CNY');
+      } else {
+        assert.match(text, item.currency === 'INR' ? /^₹/ : /^¥/, `${item.slug} ${locale}: ${text}`);
+      }
       assert.doesNotMatch(text, /\$/);
     }
   }
