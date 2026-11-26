@@ -11,6 +11,7 @@ import { isSupersededPlan } from '../../src/lib/plan-lifecycle';
 import { GEMINI_API_CHANNEL, catalog20261103FixSeedOptions, isLegacyVeoUsageRow, seedCatalog20261103Fix } from './catalog-2026-11-03-fix';
 import { seedCatalog20261103P1 } from './catalog-2026-11-03-p1';
 import { fakeSeedTx, type FakeRow } from './fake-seed-tx';
+import { seedCatalog20261126BailianDecision } from './catalog-2026-11-26-bailian-decision';
 
 const compile = (path: string) => ts.transpileModule(readFileSync(new URL(path, import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -40,7 +41,7 @@ test('input-only policy covers exactly the 8 verified specs on their verified ch
   assert.equal(isVerifiedFreeOutput('subq-snap', 'subq', 0.05), true);
 });
 
-async function auditFindings(tables: Record<string, FakeRow[]>) {
+async function auditFindings(tables: Record<string, FakeRow[]>, withVariants = false) {
   const messages: string[] = [];
   const process = { argv: ['node', 'audit-data', '--json'], exitCode: 0, exit(code: number) { throw new Error(`Audit exited ${code}: ${messages.join('\n')}`); } };
   const all = { plans: [], model_plan_mapping: [], exchange_rates: [], ...tables };
@@ -53,7 +54,12 @@ async function auditFindings(tables: Record<string, FakeRow[]>) {
     return builder;
   } };
   const databaseSql = async (parts: TemplateStringsArray) => {
-    assert.match(parts.join('?'), /information_schema.columns|FROM model_benchmark_scores AS score|AS regions_source_url/);
+    const query = parts.join('?');
+    if (withVariants && /table_name = 'api_channel_price_variants'/.test(query)) {
+      return Array.from({ length: 11 }, () => ({ column_name: 'present' }));
+    }
+    if (withVariants && /FROM api_channel_price_variants/.test(query)) return all.api_channel_price_variants;
+    assert.match(query, /information_schema.columns|FROM model_benchmark_scores AS score|AS regions_source_url/);
     return [];
   };
   const dependencies: Record<string, unknown> = {
@@ -98,6 +104,26 @@ test('real DB audit: the seeded 8 decision channels are no longer critical; othe
   assert.equal(decisionModel('cloudflare-clef').model_category, 'decision');
   // Catalog and seed agree that output is free.
   for (const item of DECISION_MODELS_2026_11_03) assert.equal(item.outputPricePer1M, 0);
+});
+
+test('offline audit consumer accepts 百炼 input-only and limited-time preview; other zero prices remain critical', async () => {
+  const f = fakeSeedTx({ providers: [
+    { id: 4, slug: 'qwen', type: 'official', name: '百炼' },
+    { id: 5, slug: 'unverified-channel', type: 'aggregator', name: 'Other' },
+  ] });
+  await seedCatalog20261126BailianDecision(f.tx, true);
+  const official = f.data.api_channel_prices;
+  const copies = official.map((row, i) => ({ ...row, id: 9001 + i, provider_id: 5 }));
+  const otherModel = { id: 50, slug: 'other-qwen-model', name: 'Other model' };
+  const otherZero = { ...official[0], id: 9003, model_id: 50 };
+  const findings = await auditFindings({ ...f.data,
+    models: [...f.data.models, otherModel], api_channel_prices: [...official, ...copies, otherZero],
+  }, true);
+  const zero = findings.filter(row => row.check === 'prices.zero_or_null');
+  assert.deepEqual([...new Set(zero.map(row => row.ref?.price_id))].sort(), [9001, 9002, 9003]);
+  assert.ok(zero.every(row => row.severity === 'critical'));
+  for (const row of official) assert.ok(!findings.some(finding => finding.ref?.price_id === row.id && finding.severity === 'critical'));
+  assert.deepEqual(findings.filter(row => row.check.startsWith('variants.') && row.severity === 'critical'), [], 'all four official regional variants pass C22');
 });
 
 // ---------- Problem 2: retire the shut-down Gemini API Veo rows ----------

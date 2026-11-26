@@ -12,6 +12,9 @@ export function isExplicitlyUnverifiedPrice(row: {
 
 /** Verified free channels. A free gateway must never exempt other model channels. */
 export function isVerifiedFreePrice(modelSlug: string | undefined, providerSlug: string | undefined) {
+  // 百炼 model-pricing, verified 2026-11-26: Beijing and Singapore 限时免费.
+  // End date unpublished; this is limited-time, not permanent free. Only the official channel.
+  if (providerSlug === 'qwen' && modelSlug === 'qwen-decision-model-preview') return true;
   if (providerSlug === 'zhipu-china' && (modelSlug === 'glm-4.7-flash' || modelSlug === 'glm-4.6v-flash')) return true;
   // Ant Ling pricing page, verified 2026-11-06: Ling-3.2-flash is free for the first two weeks
   // after the 2026-11-05 launch. No post-promo price. Only this official channel is exempt.
@@ -47,6 +50,10 @@ const INPUT_ONLY_1103 = new Map(DECISION_1103_SPECS.filter(spec => spec.inputOnl
   .map(spec => [spec.slug, new Set(decision1103ChannelProviders(spec))]));
 
 export function isVerifiedFreeOutput(modelSlug: string | undefined, providerSlug: string | undefined, input: number | null) {
+  // 百炼 model-pricing / System One API, verified 2026-11-26: input-only billing,
+  // no official output list price. Zero output is the catalog convention.
+  if (modelSlug === 'qwen-decision-model' && providerSlug === 'qwen'
+    && (input === 0.3 || input === 0.306)) return true;
   // https://openrouter.ai/morph/reflex, verified 2026-11-05: decisions bill input only.
   if (modelSlug === MORPH_REFLEX_SPEC.slug && providerSlug === MORPH_REFLEX_SPEC.channel && input != null && input > 0) return true;
   // Google pricing #gemini-decision and Vercel /v1/models/google/gemini-decision-1, verified 2026-11-12: input-only, $0.10 / 1M, 0 output tokens.
