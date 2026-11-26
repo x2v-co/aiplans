@@ -1,7 +1,7 @@
 import { labelNonLlmPriceKey } from '@/lib/non-llm-price-labels';
 import { pricingLabel } from '@/lib/model-pricing-seo';
 import { formatCurrencyAmount } from '@/lib/currency';
-import type { ModelUsagePriceRow } from '@/lib/model-usage-prices';
+import { usagePriceNote, type ModelUsagePriceRow } from '@/lib/model-usage-prices';
 
 const rangeMoney = (row: ModelUsagePriceRow) => formatCurrencyAmount(row.price!.toLocaleString('en-US', {
   useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 4,
@@ -24,11 +24,15 @@ export function ModelUsagePriceHeadline({ row, high, locale }: { row: ModelUsage
 export default function ModelUsagePrices({ rows, locale }: { rows: ModelUsagePriceRow[]; locale: string }) {
   if (rows.length === 0) return null;
   return <div className="space-y-2 text-sm">
-    {rows.map(row => <div key={row.id}>
-      <div>{labelNonLlmPriceKey(row.price_kind, locale)}: {pricingLabel(row.price, row.currency)} / {labelNonLlmPriceKey(row.unit, locale)}</div>
-      {row.source_url && <a href={row.source_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-        {locale === 'zh' ? '价格来源' : 'Price source'}
-      </a>}
-    </div>)}
+    {rows.map(row => {
+      const note = usagePriceNote(row);
+      return <div key={row.id}>
+        <div>{labelNonLlmPriceKey(row.price_kind, locale)}: {pricingLabel(row.price, row.currency)} / {labelNonLlmPriceKey(row.unit, locale)}</div>
+        {note && <p className="mt-1 whitespace-pre-line text-zinc-600 dark:text-zinc-400">{note}</p>}
+        {row.source_url && <a href={row.source_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+          {locale === 'zh' ? '价格来源' : 'Price source'}
+        </a>}
+      </div>;
+    })}
   </div>;
 }

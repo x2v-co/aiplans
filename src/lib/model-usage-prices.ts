@@ -23,6 +23,14 @@ export interface ModelUsagePriceRow {
   plan_slug: string | null;
 }
 
+/** Read only the persisted billing explanation; other constraint keys are not prose. */
+export function usagePriceNote(row: Pick<ModelUsagePriceRow, 'constraints_json'>): string | undefined {
+  const constraints = row.constraints_json;
+  if (!constraints || typeof constraints !== 'object' || Array.isArray(constraints)) return undefined;
+  const note = (constraints as Record<string, unknown>).note;
+  return typeof note === 'string' && note.trim() ? note.trim() : undefined;
+}
+
 /** Preserve billing dimensions; identical rows in the same scope appear once. */
 export function availableUsagePrices(rows: ModelUsagePriceRow[], includeReferences = false): ModelUsagePriceRow[] {
   const seen = new Set<string>();

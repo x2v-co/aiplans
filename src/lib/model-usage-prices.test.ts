@@ -6,11 +6,15 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createTranslator, NextIntlClientProvider } from 'next-intl';
 import en from '../../messages/en.json';
 import zh from '../../messages/zh.json';
-import { availableUsagePrices, officialUsageFallback, usagePriceHeadline, usagePriceHeadlineRange, type ModelUsagePriceRow } from './model-usage-prices';
+import { usagePriceNote, availableUsagePrices, officialUsageFallback, usagePriceHeadline, usagePriceHeadlineRange, type ModelUsagePriceRow } from './model-usage-prices';
 import type { ModelPlanCardRow } from '@/components/model-plan-card';
 import type { PricingChannel } from './model-pricing-seo';
 import { catalogForKind } from './ai-vertical-catalog';
 import type { VerticalModelDetail } from './vertical-model-detail';
+import { voyageCopyProductionFixture } from '../../scripts/data/catalog-2026-11-26-voyage-copy-fixture';
+import { localizedModelDescription } from './model-description-locale';
+import { publicModelDescription } from './public-catalog-copy';
+import ModelUsagePrices from '../components/model-usage-prices';
 import type { OfferReader } from './price-offers/read';
 
 const slug = 'gemini-omni-1-1-flash';
@@ -34,7 +38,7 @@ function loadModule(path: string, mocks: Record<string, unknown>): Record<string
 }
 
 async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingChannel[], locale: string,
-  fixture?: { slug: string; producer: { id: number; name: string; slug: string }; plans: ModelPlanCardRow[] },
+  fixture?: { slug: string; producer: { id: number; name: string; slug: string }; plans: ModelPlanCardRow[]; description?: string },
   offerReader?: OfferReader) {
   const requestedSlug = fixture?.slug ?? slug;
   const producer = fixture?.producer ?? { name: 'Google', slug: 'google' };
@@ -51,7 +55,7 @@ async function modelHtml(usagePrices: ModelUsagePriceRow[], channels: PricingCha
   const sql = Object.assign(async (strings: TemplateStringsArray, ...values: unknown[]) => {
     const query = strings.join('?');
     if (/FROM models\s+WHERE slug/.test(query)) return [{ id: 10, name: fixture ? requestedSlug : 'Gemini Omni Flash', slug: requestedSlug,
-      provider_ids: [], description: null }];
+      provider_ids: [], description: fixture?.description ?? null }];
     if (query.includes('FROM api_channel_prices cp')) return channels;
     if (query.includes('FROM plans pl')) {
       if (fixture) {
@@ -430,4 +434,52 @@ test('regional claims and China recommendation disappear without sourced support
   const html = await modelHtml([], [excluded], 'zh');
   assert.doesNotMatch(html, /国内可用|国内优选/);
   assert.match(html, /✗/);
+});
+
+test('Voyage model pages show billing facts once beside official price before/after copy seed, en/zh and JSON-LD', async () => {
+  const production = voyageCopyProductionFixture();
+  for (const [i, model] of production.models.entries()) {
+    const price = production.usage_prices[i];
+    const usage: ModelUsagePriceRow = { ...rows[0], ...price, last_verified: '2026-11-26T00:00:00Z',
+      provider_slug: 'voyage', provider_name: 'Voyage AI', provider_type: 'official' };
+    const cleaned = model.description.split('\n').filter(line => line !== price.constraints_json.note).join('\n');
+    for (const locale of ['en', 'zh']) {
+      for (const description of [model.description, cleaned]) {
+        const html = await modelHtml([usage], [], locale, { slug: model.slug, description,
+          producer: { id: 42, name: 'Voyage AI', slug: 'voyage' }, plans: [] });
+        assert.equal(html.split('Batch API has a 33% discount').length - 1, 1, `${model.slug}/${locale}: billing paragraph once`);
+        assert.ok(html.includes(price.constraints_json.note), `${model.slug}/${locale}: exact note survives`);
+        assert.ok(html.includes('https://docs.voyageai.com/docs/pricing'));
+        assert.doesNotMatch(html, /publishedPricingText|catalogOnlyRates|per_1b_pixels/);
+        const publicDescription = localizedModelDescription(model.slug, description, locale, [price.constraints_json.note]);
+        assert.equal(publicDescription, `${model.description.split('\n')[0]}\nSources: Voyage AI: https://docs.voyageai.com/docs/pricing`);
+        const scripts = [...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)];
+        assert.ok(scripts.length > 0);
+        const services = scripts.flatMap(match => {
+          const value = JSON.parse(match[1]);
+          return value['@graph'] ?? [value];
+        }).filter(value => value['@type'] === 'Service');
+        assert.equal(services.length, 1);
+        assert.equal(services[0].description, publicDescription);
+      }
+    }
+  }
+});
+
+test('price notes use only nonempty string .note, escape HTML, and descriptions retain unrendered notes', () => {
+  for (const constraints_json of [null, 'note', ['note'], { note: 1 }, { note: {} }, { note: '  ' }, { publishedPricingText: 'do not show' }]) {
+    assert.equal(usagePriceNote({ constraints_json }), undefined);
+    const html = renderToStaticMarkup(createElement(ModelUsagePrices, { rows: [{ ...rows[0], constraints_json }], locale: 'en' }));
+    assert.doesNotMatch(html, /do not show|\[object Object\]/);
+  }
+  const note = '<script>alert("billing")</script> $0.12/M (a+b) [x] {y} \u00d7 2? ^.* | \\';
+  const html = renderToStaticMarkup(createElement(ModelUsagePrices, { rows: [{ ...rows[0], constraints_json: { note } }], locale: 'en' }));
+  assert.ok(html.includes('&lt;script&gt;'));
+  assert.doesNotMatch(html, /<script>/);
+  const description = `Useful model.\n${note}\nSources: Vendor: https://example.com`;
+  assert.equal(publicModelDescription(description), description);
+  assert.equal(publicModelDescription(description, [note]), 'Useful model.\nSources: Vendor: https://example.com');
+  assert.equal(publicModelDescription(description.replace(' (a+b)', '\n(a+b)'), [note]), 'Useful model.\nSources: Vendor: https://example.com');
+  assert.equal(publicModelDescription(description, ['other note']), description);
+  assert.equal(publicModelDescription(`Useful model.\nPrefix ${note} suffix`, [note]), `Useful model.\nPrefix ${note} suffix`);
 });
