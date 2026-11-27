@@ -74,6 +74,8 @@
     "seed:catalog-2026-11-03-kimi-headline:apply": "tsx scripts/seed-catalog-2026-11-03-kimi-headline.ts --apply",
     "seed:catalog-2026-11-04": "tsx scripts/seed-catalog-2026-11-04.ts",
     "seed:catalog-2026-11-04:apply": "tsx scripts/seed-catalog-2026-11-04.ts --apply",
+    "seed:catalog-2026-11-27-fun-music": "tsx scripts/seed-catalog-2026-11-27-fun-music.ts",
+    "seed:catalog-2026-11-27-fun-music:apply": "tsx scripts/seed-catalog-2026-11-27-fun-music.ts --apply",
     "seed:catalog-2026-11-26-voyage": "tsx scripts/seed-catalog-2026-11-26-voyage.ts",
     "seed:catalog-2026-11-26-voyage:apply": "tsx scripts/seed-catalog-2026-11-26-voyage.ts --apply",
     "seed:catalog-2026-11-26-voyage-copy": "tsx scripts/seed-catalog-2026-11-26-voyage-copy.ts",

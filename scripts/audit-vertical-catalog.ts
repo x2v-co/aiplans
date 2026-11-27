@@ -347,10 +347,11 @@ async function auditDatabaseDrift() {
     }
 
     const pricingProvider = item.pricingProviderSlug ? providerBySlug.get(item.pricingProviderSlug) : expectedProvider;
-    const referencePlan = planBySlug.get(referencePlanSlug(item));
-    if (!referencePlan) {
+    const planless = item.pricingReference === 'planless-usage';
+    const referencePlan = planless ? undefined : planBySlug.get(referencePlanSlug(item));
+    if (!planless && !referencePlan) {
       report(item, `DB drift: missing official pricing reference plan ${referencePlanSlug(item)}`);
-    } else {
+    } else if (referencePlan) {
       if (pricingProvider && referencePlan.provider_id !== pricingProvider.id) {
         report(item, `DB drift: pricing reference plan provider_id ${referencePlan.provider_id} != ${pricingProvider.id}`);
       }
@@ -379,7 +380,7 @@ async function auditDatabaseDrift() {
       : [{ kind: referencePriceKind(item), unit: referenceUnit(item) }];
     const missingRate = expectedRates.find(rate => !usage.some((row) =>
       row.provider_id === expectedProviderId &&
-      (expectedPlanId == null || row.plan_id === expectedPlanId) &&
+      (planless ? row.plan_id == null : (expectedPlanId == null || row.plan_id === expectedPlanId)) &&
       row.price_kind === rate.kind &&
       row.unit === rate.unit &&
       row.source_url === expectedSource &&

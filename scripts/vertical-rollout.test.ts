@@ -17,6 +17,8 @@ import * as seedDiff from './utils/seed-diff';
 import type { Sql } from 'postgres';
 import { seedImageModels, seedNonLlm } from './data/non-llm-seed';
 import * as modelShutdown from '../src/lib/model-shutdown';
+import { seedFunMusic1127 } from './data/catalog-2026-11-27-fun-music';
+import { fakeSeedTx } from './data/fake-seed-tx';
 
 type Row = Record<string, unknown> & { id: number };
 
@@ -275,12 +277,37 @@ test('new non-LLM catalog rows are soft during rollout, including partially seed
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-14-intel:apply`),
       ...catalog.AI_VERTICAL_CATALOG.filter(item => item.deferredDbSeedScript === 'seed:catalog-2026-11-26-voyage:apply').map(item =>
         `WARNING ${item.kind}:${item.slug}: DB drift: missing models row; run npm run seed:catalog-2026-11-26-voyage:apply`),
+      'WARNING music-model:fun-music-preview: DB drift: missing models row; run npm run seed:catalog-2026-11-27-fun-music:apply',
+      'WARNING music-model:fun-music-v1: DB drift: missing models row; run npm run seed:catalog-2026-11-27-fun-music:apply',
       'WARNING music-model:mureka: DB drift: missing models row; run npm run seed:catalog-2026-11-04:apply',
     ],
   );
   const writes = f.writeCount();
   assert.deepEqual(await f.seedNonLlmRows(), []);
   assert.equal(f.writeCount(), writes);
+});
+
+test('Fun-Music audit requires planless audio usage while retaining plan requirements for other music entries', async () => {
+  const f = fixture();
+  await f.seed();
+  const qwen = f.data.providers.find(row => row.slug === 'qwen')!;
+  assert.ok(qwen);
+  const music = fakeSeedTx({ providers: [{ ...qwen, type: 'official' }] });
+  await seedFunMusic1127(music.tx, true);
+  f.data.models.push(...music.data.models);
+  f.data.usage_prices.push(...music.data.usage_prices);
+  const audited = await f.run('audit-vertical-catalog', ['--db']);
+  assert.equal(audited.code, 0, audited.output);
+  assert.doesNotMatch(audited.output, /(?:WARNING|CRITICAL) music-model:fun-music/);
+  const usage = f.data.usage_prices.find(row => row.price_kind === 'audio_second')!;
+  usage.plan_id = 987; // A plan-bound row must not satisfy the planless reference.
+  const wrongPlan = await f.run('audit-vertical-catalog', ['--db']);
+  assert.match(wrongPlan.output, /WARNING music-model:fun-music-preview: DB drift: missing usage_prices reference audio_second\/second/);
+  const suno = f.data.plans.find(row => row.slug === 'suno-official-pricing')!;
+  assert.ok(suno);
+  suno.slug = 'unrelated-plan';
+  const requiredPlan = await f.run('audit-vertical-catalog', ['--db']);
+  assert.match(requiredPlan.output, /CRITICAL music-model:suno: DB drift: missing official pricing reference plan suno-official-pricing/);
 });
 
 test('deferred catalog rows point at their image, non-LLM or glimpse-decider seed', async () => {
