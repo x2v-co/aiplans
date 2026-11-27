@@ -5,7 +5,7 @@ import { TOOL_API_PRICES, formatToolPrice } from './tool-api-pricing';
 test('every tool price is official, sourced and verified', () => {
   for (const row of TOOL_API_PRICES) {
     assert.equal(new URL(row.sourceUrl).protocol, 'https:');
-    assert.ok(/(claude\.com|openai\.com|ai\.google\.dev|x\.ai|deepseek\.com|baidu\.com|vercel\.com|brave\.com|octen\.ai)$/.test(new URL(row.sourceUrl).hostname), row.sourceUrl);
+    assert.ok(/(claude\.com|openai\.com|ai\.google\.dev|x\.ai|deepseek\.com|baidu\.com|vercel\.com|brave\.com|octen\.ai|developers\.cloudflare\.com)$/.test(new URL(row.sourceUrl).hostname), row.sourceUrl);
     assert.ok(row.pricePer1k >= 0 && Number.isFinite(row.pricePer1k));
     assert.match(row.verifiedAt, /^\d{4}-\d{2}-\d{2}$/);
   }
@@ -143,4 +143,50 @@ test('DeepSeek OCR, TTS and ASR list prices match the official pages verified 20
   assert.match(asr.note!.en, /US\$0\.058/);
   assert.match(asr.note!.zh, /0\.39 元/);
   assert.match(asr.note!.en, /fraction of a second counts as 1 second/);
+});
+
+test('Cloudflare AI Search overage prices retain the official billing units in both locales', () => {
+  const rows = TOOL_API_PRICES.filter(row => row.providerSlug === 'cloudflare');
+  assert.deepEqual(rows.map(row => [row.tool, row.pricePer1k, formatToolPrice(row, 'en'), formatToolPrice(row, 'zh')]), [
+    ['AI Search — Base ingestion', 0.75, '$0.75 / million ingestion tokens', '$0.75 / 每百万摄取 token'],
+    ['AI Search — Image processing / OCR surcharge', 0.5, '$0.5 / million image processing tokens (additional)', '$0.5 / 每百万图片处理 token（附加费）'],
+    ['AI Search — Storage', 2, '$2 / GB-month', '$2 / 每 GB·月'],
+    ['AI Search — Semantic, vector and hybrid queries', 0.75, '$0.75 / 1,000 queries', '$0.75 / 每千次查询'],
+    ['AI Search — Full-text queries', 0.1, '$0.1 / 1,000 queries', '$0.1 / 每千次查询'],
+  ]);
+  for (const row of rows) {
+    assert.equal(row.provider, 'Cloudflare');
+    assert.equal(row.kind, 'ai_search');
+    assert.equal(row.currency, 'USD');
+    assert.equal(row.sourceUrl, 'https://developers.cloudflare.com/ai-search/platform/limits-pricing/');
+    assert.equal(row.verifiedAt, '2026-11-26');
+    assert.match(row.note!.en, /Overage list price; AI Search billing begins December 1, 2026 \(2026-12-01\)/);
+    assert.match(row.note!.zh, /超额用量刊例价；AI Search 于 2026-12-01 起计费/);
+  }
+});
+
+test('Cloudflare AI Search includes monthly allowances, a shared OCR allotment and binding Free crawl limits', () => {
+  const get = (tool: string) => TOOL_API_PRICES.find(row => row.providerSlug === 'cloudflare' && row.tool === `AI Search — ${tool}`)!;
+  const ingestion = get('Base ingestion');
+  const image = get('Image processing / OCR surcharge');
+  const storage = get('Storage');
+  const semantic = get('Semantic, vector and hybrid queries');
+  const fullText = get('Full-text queries');
+
+  assert.match(ingestion.note!.en, /Every account includes 5 million ingestion tokens\/month, shared with image processing/);
+  assert.match(ingestion.note!.zh, /每个账号每月含 500 万摄取 token，与图片处理共享额度/);
+  assert.match(image.note!.en, /Additional to base ingestion/);
+  assert.match(image.note!.en, /shares the 5 million ingestion tokens\/month per account/);
+  assert.match(image.note!.en, /OCR is available on every account and billed as image processing ingestion tokens/);
+  assert.match(image.note!.zh, /在基础摄取费之上加收/);
+  assert.match(image.note!.zh, /共享每个账号每月 500 万 token 额度/);
+  assert.match(image.note!.zh, /所有账号均可使用 OCR，按图片处理摄取 token 计费/);
+  assert.match(storage.note!.en, /Every account includes 10 GB-month of storage each month/);
+  assert.match(storage.note!.zh, /每个账号每月含 10 GB·月存储额度/);
+  assert.match(semantic.note!.en, /Every account includes 1,000 semantic queries\/month/);
+  assert.match(semantic.note!.zh, /每个账号每月含 1,000 次语义查询/);
+  assert.match(fullText.note!.en, /Every account includes 1,000 full-text queries\/month/);
+  assert.match(fullText.note!.zh, /每个账号每月含 1,000 次全文查询/);
+  assert.match(semantic.note!.en, /Workers Free: maximum 500 pages crawled\/day \(binding limit\); Workers Paid: unlimited daily crawl/);
+  assert.match(semantic.note!.zh, /Workers Free 每天最多抓取 500 页（实际约束上限）；Workers Paid 每日抓取页数不限/);
 });

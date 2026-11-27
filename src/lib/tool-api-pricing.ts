@@ -1,15 +1,15 @@
 /**
- * Per-request pricing for server-side web search / fetch tools, curated from official pages.
+ * Usage pricing for search, fetch, file and speech tools, curated from official pages.
  * Static (no DB table yet; see docs/proposals/tool-api-pricing.md). Each row cites its source.
  * Only official, published prices are listed; anything unverified is left out.
  */
-export type ToolKind = 'web_search' | 'web_fetch' | 'ocr' | 'tts' | 'asr';
+export type ToolKind = 'web_search' | 'web_fetch' | 'ocr' | 'tts' | 'asr' | 'ai_search';
 export interface ToolApiPrice {
   provider: string;
   providerSlug: string;
   tool: string;
   kind: ToolKind;
-  /** Price per 1,000 billable units, in `currency`. 0 = no per-call fee (tokens only). */
+  /** Price per the published `unit`, in `currency` (legacy field name). 0 = no per-call fee (tokens only). */
   pricePer1k: number;
   currency: 'USD' | 'CNY';
   unit: { en: string; zh: string };
@@ -31,6 +31,14 @@ const BRAVE_API = 'https://brave.com/search/api/';
 const OCTEN_PRICING = 'https://docs.octen.ai/overview/pricing';
 const SEARCH_API_VERIFIED_AT = '2026-11-13';
 const DEEPSEEK_SPEECH_VERIFIED_AT = '2026-11-14';
+const CLOUDFLARE_AI_SEARCH = 'https://developers.cloudflare.com/ai-search/platform/limits-pricing/';
+const CLOUDFLARE_VERIFIED_AT = '2026-11-26';
+const CLOUDFLARE_BILLING = {
+  en: 'Overage list price; AI Search billing begins December 1, 2026 (2026-12-01).',
+  zh: '超额用量刊例价；AI Search 于 2026-12-01 起计费。',
+};
+const INGESTION_TOKENS = { en: 'Ingestion tokens, not model tokens', zh: '摄取 token，非模型 token' };
+const NO_TOKEN_UNIT = { en: '—', zh: '—' };
 
 const ANTHROPIC = 'https://platform.claude.com/docs/en/about-claude/pricing';
 const OPENAI = 'https://developers.openai.com/api/docs/pricing';
@@ -151,6 +159,41 @@ export const TOOL_API_PRICES: ToolApiPrice[] = [
       zh: '官方表为每千次 0.2 美元，另加全文每千条结果 0.5 美元。每次搜索第一条全文免费，只对额外结果计费。Search Plan 详见 Web Search 行。',
     },
     sourceUrl: OCTEN_PRICING, verifiedAt: SEARCH_API_VERIFIED_AT },
+  { provider: 'Cloudflare', providerSlug: 'cloudflare', tool: 'AI Search — Base ingestion', kind: 'ai_search', pricePer1k: 0.75, currency: 'USD',
+    unit: { en: 'million ingestion tokens', zh: '每百万摄取 token' }, tokens: INGESTION_TOKENS,
+    note: {
+      en: `${CLOUDFLARE_BILLING.en} Every account includes 5 million ingestion tokens/month, shared with image processing.`,
+      zh: `${CLOUDFLARE_BILLING.zh} 每个账号每月含 500 万摄取 token，与图片处理共享额度。`,
+    },
+    sourceUrl: CLOUDFLARE_AI_SEARCH, verifiedAt: CLOUDFLARE_VERIFIED_AT },
+  { provider: 'Cloudflare', providerSlug: 'cloudflare', tool: 'AI Search — Image processing / OCR surcharge', kind: 'ai_search', pricePer1k: 0.5, currency: 'USD',
+    unit: { en: 'million image processing tokens (additional)', zh: '每百万图片处理 token（附加费）' }, tokens: INGESTION_TOKENS,
+    note: {
+      en: `${CLOUDFLARE_BILLING.en} Additional to base ingestion. Image processing shares the 5 million ingestion tokens/month per account. OCR is available on every account and billed as image processing ingestion tokens.`,
+      zh: `${CLOUDFLARE_BILLING.zh} 在基础摄取费之上加收；图片处理与基础摄取共享每个账号每月 500 万 token 额度。所有账号均可使用 OCR，按图片处理摄取 token 计费。`,
+    },
+    sourceUrl: CLOUDFLARE_AI_SEARCH, verifiedAt: CLOUDFLARE_VERIFIED_AT },
+  { provider: 'Cloudflare', providerSlug: 'cloudflare', tool: 'AI Search — Storage', kind: 'ai_search', pricePer1k: 2, currency: 'USD',
+    unit: { en: 'GB-month', zh: '每 GB·月' }, tokens: NO_TOKEN_UNIT,
+    note: {
+      en: `${CLOUDFLARE_BILLING.en} Every account includes 10 GB-month of storage each month.`,
+      zh: `${CLOUDFLARE_BILLING.zh} 每个账号每月含 10 GB·月存储额度。`,
+    },
+    sourceUrl: CLOUDFLARE_AI_SEARCH, verifiedAt: CLOUDFLARE_VERIFIED_AT },
+  { provider: 'Cloudflare', providerSlug: 'cloudflare', tool: 'AI Search — Semantic, vector and hybrid queries', kind: 'ai_search', pricePer1k: 0.75, currency: 'USD',
+    unit: { en: '1,000 queries', zh: '每千次查询' }, tokens: NO_TOKEN_UNIT,
+    note: {
+      en: `${CLOUDFLARE_BILLING.en} Every account includes 1,000 semantic queries/month. Workers Free: maximum 500 pages crawled/day (binding limit); Workers Paid: unlimited daily crawl.`,
+      zh: `${CLOUDFLARE_BILLING.zh} 每个账号每月含 1,000 次语义查询。Workers Free 每天最多抓取 500 页（实际约束上限）；Workers Paid 每日抓取页数不限。`,
+    },
+    sourceUrl: CLOUDFLARE_AI_SEARCH, verifiedAt: CLOUDFLARE_VERIFIED_AT },
+  { provider: 'Cloudflare', providerSlug: 'cloudflare', tool: 'AI Search — Full-text queries', kind: 'ai_search', pricePer1k: 0.1, currency: 'USD',
+    unit: { en: '1,000 queries', zh: '每千次查询' }, tokens: NO_TOKEN_UNIT,
+    note: {
+      en: `${CLOUDFLARE_BILLING.en} Every account includes 1,000 full-text queries/month.`,
+      zh: `${CLOUDFLARE_BILLING.zh} 每个账号每月含 1,000 次全文查询。`,
+    },
+    sourceUrl: CLOUDFLARE_AI_SEARCH, verifiedAt: CLOUDFLARE_VERIFIED_AT },
 ];
 
 export function formatToolPrice(row: ToolApiPrice, locale: 'en' | 'zh'): string {
