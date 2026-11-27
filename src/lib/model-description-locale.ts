@@ -6,7 +6,7 @@ import { publicModelDescription } from './public-catalog-copy';
  * (bestFor + notes + Sources). Catalog rows with `descriptionZh` supply the zh copy;
  * the source links are kept, with a localized label.
  */
-export function localizedModelDescription(slug: string, dbDescription: string | null | undefined, locale: string): string {
+export function localizedModelDescription(slug: string, dbDescription: string | null | undefined, locale: string, displayedPriceNotes: readonly string[] = []): string {
   if (locale === 'zh') {
     const item = AI_VERTICAL_CATALOG.find(entry => entry.slug === slug && entry.descriptionZh);
     if (item?.descriptionZh) {
@@ -14,7 +14,7 @@ export function localizedModelDescription(slug: string, dbDescription: string | 
       return [item.descriptionZh, sources ? `来源：${sources}` : undefined].filter(Boolean).join('\n');
     }
   }
-  return publicModelDescription(dbDescription);
+  return publicModelDescription(dbDescription, displayedPriceNotes);
 }
 
 /** Vertical pages render catalog notes. zh uses descriptionZh when the row has one. */

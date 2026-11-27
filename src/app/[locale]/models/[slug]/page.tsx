@@ -72,7 +72,7 @@ import {
 import { buildModelPricingSeo, type PricingChannel } from '@/lib/model-pricing-seo';
 import ModelPricingSummary from '@/components/model-pricing-summary';
 import { ModelUsagePriceHeadline } from '@/components/model-usage-prices';
-import { availableUsagePrices, officialUsageFallback, pricingSeoUsage, usagePriceHeadlineRange } from '@/lib/model-usage-prices';
+import { usagePriceNote, availableUsagePrices, officialUsageFallback, pricingSeoUsage, usagePriceHeadlineRange } from '@/lib/model-usage-prices';
 import { getModelUsagePrices } from '@/lib/model-usage-prices-query';
 
 // Retain ISR300: the prior performance fix recorded 16 concurrent crawler
@@ -408,11 +408,15 @@ export default async function ModelPage({
   const apiT = await getTranslations({ locale, namespace: 'apiPricing' });
   const showTrust = isTrustModelSlug(slug);
   const productName = modelPageName(product.name, slug);
-  const description = localizedModelDescription(product.slug, product.description, locale);
   const shutdownMessages = await getTranslations({ locale, namespace: 'modelShutdown' });
   const shutdown = modelShutdownNotice(product.shutdown_date, locale, now);
   const announcementMessages = await getTranslations({ locale, namespace: 'modelAnnouncement' });
   const announcementLabel = modelAnnouncementLabel(product.description, { announced: announcementMessages('announced') });
+  const description = localizedModelDescription(product.slug, product.description, locale,
+    announcementLabel ? [] : officialUsagePrices.flatMap(row => {
+      const note = usagePriceNote(row);
+      return note ? [note] : [];
+    }));
   const billingNote = billingRedirectNote(product.slug, locale);
   const guideSlug = guideForModelSlug(product.slug);
   const pricing = buildModelPricingSeo({ ...product, name: productName }, channelPrices,
