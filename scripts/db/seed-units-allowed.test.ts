@@ -7,6 +7,7 @@ import { AI_VERTICAL_CATALOG } from '../../src/lib/ai-vertical-catalog';
 import { auditVerticalModelFields, isAuditOwnedVertical } from '../data/catalog-audit-vertical';
 import { CATALOG_ITEMS as CATALOG_1104_ITEMS } from '../data/catalog-2026-11-04';
 import { CATALOG_1105 } from '../../src/lib/catalog-2026-11-05';
+import { MODEL_SLUG as XING_SLUG, PRICING_UNIT as XING_PRICING_UNIT } from '../data/catalog-2026-11-27-xing';
 
 // migrate-data-accuracy replays every migration on each deploy, so 023 re-creates
 // models_pricing_unit_chk before 035/036 run. Its list alone must cover every seed unit
@@ -36,7 +37,7 @@ function allowedUnits(): Set<string> {
   return allowed;
 }
 
-test('every models.pricing_unit used by image, non-llm, catalog-audit and 2026-11-04 seeds is allowed by migrations', () => {
+test('every models.pricing_unit used by image, non-llm, catalog-audit and dated seeds is allowed by migrations', () => {
   const allowed = allowedUnits();
   const used = new Map<string, string>();
   for (const item of [...NON_LLM_CATALOG, ...IMAGE_MODEL_CATALOG]) if (item.pricingUnit) used.set(item.pricingUnit, item.slug ?? item.name);
@@ -45,6 +46,8 @@ test('every models.pricing_unit used by image, non-llm, catalog-audit and 2026-1
   for (const item of CATALOG_1104_ITEMS) if (item.pricingUnit) used.set(item.pricingUnit, item.slug ?? item.name);
   // Intel 11-05 seed (prod apply failed 23514 on tts-1 per_1m_characters).
   for (const item of CATALOG_1105) { assert.ok(item.pricingUnit, `${item.slug} has pricingUnit`); used.set(item.pricingUnit!, item.slug ?? item.name); }
+  // Ordinary text LLM: keep Xing on the existing token unit, with no new usage unit.
+  used.set(XING_PRICING_UNIT, XING_SLUG);
   const rejected = [...used].filter(([unit]) => !allowed.has(unit)).map(([unit, eg]) => `${unit} (e.g. ${eg})`);
   assert.deepEqual(rejected, [], `seed units missing from unit migrations: ${rejected.join(', ')}`);
   assert.ok(used.has('per_image'));
